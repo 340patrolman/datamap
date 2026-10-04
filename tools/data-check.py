@@ -18,6 +18,7 @@ SETS = [
     ['data/biz-bench.json', 365, 'auto', 'KOSIS 소상공인실태조사 새 해 → `tools/region/sbiz-bake.py fetch` → `build`'],
     ['data/r/11650/dongw.json', 92, 'auto', '`tools/region/dongw-bake.py fetch` → `build`(서울 아파트·직장인구-행정동 분기)'],
     ['data/gu-tax.json', 365, 'auto', '`tools/region/guTax-bake.py`(국세통계 새 해)'],
+    ['data/r/41111/ggdong.json', 183, 'hand', '경기데이터드림 카드매출_행정동·유동인구 요일별 행정동 새 달 확인 → `tools/region/gg-dong-bake.py fetch` → `build`(빠짐없이 담긴 달만 MONTHS 에)'],
     ['data/cpi.json', 31, 'auto', '`tools/region/cpi-bake.py`(소비자물가 다음 달)'],
     ['data/area-ref.json', 92, 'auto', '`tools/region/ref-bake.py`(dong·jgg 다시 구운 뒤)'],
     ['data/airkorea-stations.json', 365, 'auto', '에어코리아 측정소 자리 — `tools/region/airkorea-bake.py fetch` → `build`(504 가 나면 다시)'],

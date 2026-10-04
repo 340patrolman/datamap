@@ -309,6 +309,9 @@
   #m2dPnl .pleg { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; margin-top: 4px; } #m2dPnl .pleg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; }
   #m2dPnl .pband small { font-size: 10.5px; color: var(--ink2); }
   #m2dPnl table.it { width: 100%; border-collapse: collapse; font-size: 12px; } #m2dPnl table.it th, #m2dPnl table.it td { border-top: 1px dashed var(--line); padding: 3px 2px; text-align: right; } #m2dPnl table.it th:first-child, #m2dPnl table.it td:first-child { text-align: left; } #m2dPnl table.it tr.bar td { color: #b91c1c; }
+  .story { font-size: 13px; line-height: 1.65; margin-top: 6px; } .story p { margin: 0 0 9px; } .story small { color: var(--ink2); font-size: 11px; }
+  .story .sline { background: rgba(124,58,237,.09); border: 1px solid rgba(124,58,237,.35); border-radius: 10px; padding: 7px 9px; font-size: 13.5px; }
+  .story .snot { background: rgba(100,116,139,.10); border-radius: 10px; padding: 7px 9px; font-size: 12px; color: var(--ink2); }
   .talk { background: rgba(14,116,144,.08); border: 1px solid rgba(14,116,144,.35); border-radius: 10px; padding: 7px 9px; margin: 8px 0; font-size: 12.5px; line-height: 1.55; }
   .talk > b { display: block; margin-bottom: 2px; } .talk > div { margin: 2px 0; } .talk small { display: block; margin-top: 4px; color: var(--ink2); font-size: 10.5px; line-height: 1.4; } .talk em { font-style: normal; color: #b45309; font-size: 11px; }
   #m2dPanel .ph button[data-lh] { margin-left: auto; margin-right: 6px; } #m2dPanel .ph button[data-lh].on { background: #0e7490; color: #fff; border-color: #0e7490; }
@@ -445,7 +448,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.0.0"></script>
+<script src="js/map2d.js?v=2.1.0"></script>
 <script>
   // 캔버스 자리 = 위 막대 아래부터 화면 끝까지(막대 높이가 기기·글자 크기마다 다르다)
   (function () {

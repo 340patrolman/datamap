@@ -16,6 +16,7 @@ SETS = [
     ['data/biz-rates.json', 365, 'hand', '해마다 1월 — 최저임금·4대보험·산재·카드 우대수수료·기준금리 고시를 확인해 data/biz-rates.json 을 고친다'],
     ['data/biz-krei.json', 365, 'hand', '농식품부 「외식업체 경영실태 조사 통계보고서」 새 해 PDF → `tools/region/krei-bake.py <pdf>`(표 번호가 바뀌었는지 먼저 본다)'],
     ['data/biz-bench.json', 365, 'auto', 'KOSIS 소상공인실태조사 새 해 → `tools/region/sbiz-bake.py fetch` → `build`'],
+    ['data/cpi.json', 31, 'auto', '`tools/region/cpi-bake.py`(소비자물가 다음 달)'],
     ['data/area-ref.json', 92, 'auto', '`tools/region/ref-bake.py`(dong·jgg 다시 구운 뒤)'],
     ['data/airkorea-stations.json', 365, 'auto', '에어코리아 측정소 자리 — `tools/region/airkorea-bake.py fetch` → `build`(504 가 나면 다시)'],
     ['data/r/11650/jcnm.json', 183, 'hand', 'itsl 과 같은 NODELINKDATA 새 판으로 `tools/region/jcnm-bake.py <풀어 둔 폴더> <판 날짜>`(교차로·도로 이름 · 1분)'],

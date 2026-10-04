@@ -1058,7 +1058,7 @@
       var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + r.from + '~' + r.to)) + row('자리', esc(r.p)) + row('신고 인원', (r.n || '-') + '명 <em>(신고값)</em>') + (r.approx ? row('자리 표시', '<em>근사</em> — ' + esc(r.note)) : '');
       h += src('서울경찰청 「오늘의 주요집회」 · 주최자는 담지 않았다');
     }
-    if (it.kind === 'dong' && it.d && it.d.c) { h += talkDong(it.d) + '<div class="lg-btns"><button data-pnlhere="' + (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div>'; }
+    if (it.kind === 'dong' && it.d && it.d.c) { h += talkDong(it.d) + '<div class="lg-btns"><button data-story="1">📝 이 동 풀어 읽기</button><button data-pnlhere="' + (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div><div id="storyBox"></div>'; }
     card.innerHTML = '<button class="x" id="m2dX">닫기</button>' + h; card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
   }
@@ -2660,6 +2660,115 @@
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-pnlhere]'); if (!b) return; var a = b.getAttribute('data-pnlhere').split(','); pnlOpen(P(+a[0], +a[1])); });
   var JGGA = [], JGGL = {};
   function jgP(gu) { if (JGGL[gu]) return JGGL[gu]; JGGL[gu] = fetch('data/r/' + gu + '/jgg.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { j.items.forEach(function (t) { var r0 = t[2][0], sx = 0, sy = 0; r0.forEach(function (q) { sx += q[0]; sy += q[1]; }); JGGA.push({ t: t, c: P(sx / r0.length, sy / r0.length), gu: gu }); }); JGGL[gu].done = 1; }).catch(function () { JGGL[gu].done = 1; }); return JGGL[gu]; }
+  // ---------- 📝 이 동 풀어 읽기(v2.1.0 · 소유자 「동별·읍별로 데이터가 알려주는 만큼 구체적이고 세세하게 · 데이터를 충분히 풀어서 설명해야 이해도가 높아진다」) ----------
+  //  화면의 숫자를 규칙으로 읽어 문단으로 쓴다(지어내는 문장 없음 · 기준은 문단 끝에) — 원인 단정·전국 맥락은 자료에 없어서 쓰지 않는다.
+  var SDJ = {}, CPI = null, CPIP = null;
+  function sdLoad(gu) { if (SDJ[gu]) return SDJ[gu]; SDJ[gu] = Promise.all([fetch('data/r/' + gu + '/dong.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fetch('data/r/' + gu + '/dongx.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fLoad(gu), jgP(gu)]).then(function (a) { return { dong: a[0], x: a[1] }; }); return SDJ[gu]; }
+  function cpiLoad() { if (CPIP) return CPIP; CPIP = fetch('data/cpi.json').then(function (r) { return r.json(); }).then(function (j) { CPI = j; return j; }).catch(function () { return null; }); return CPIP; }
+  function qLab(q) { q = String(q); return q.slice(2, 4) + '년 ' + q.slice(4) + '분기'; }
+  function sgn(x, d) { return (x >= 0 ? '+' : '') + (d ? x.toFixed(d) : Math.round(x)) ; }
+  function storyData(d) {
+    var gu = d.gcd || '11650';
+    return Promise.all([sdLoad(gu), cpiLoad()]).then(function (a) {
+      var Dg = a[0].dong, Xg = a[0].x, row0 = Dg && Dg.dong.filter(function (q) { return d.k ? q.k === d.k : q.name === d.name; })[0] || {};
+      var k = row0.k || d.k, F = RFAC[gu] && RFAC[gu].dong ? RFAC[gu].dong[k] || null : null; if (!F && RFAC[gu] && RFAC[gu].dong) for (var kk in RFAC[gu].dong) if (RFAC[gu].dong[kk].name === (row0.name || d.name)) { F = RFAC[gu].dong[kk]; break; } var X = Xg && Xg.dong ? Xg.dong[k] || null : null;
+      var w = 0, c = 0, n = 0; JGGA.forEach(function (q) { if (q.gu === gu && q.t[1] === (row0.name || d.name)) { n++; w += q.t[9] || 0; c += q.t[8] || 0; } });
+      return { gu: gu, sido: sidoOf(gu), name: row0.name || d.name, guName: (Dg && Dg.name) || d.gu || '', pop: row0.pop || d.pop, live: row0.live || d.live || liveArr(d), sales: row0.sales || d.sales || salesOf(d), X: X, quarters: Xg && Xg.quarters, F: F, Fm: RFAC[gu], wrk: n ? w : null, corp: n ? c : null };
+    });
+  }
+  function storyHtml(S) {
+    var ref = AREF && AREF.ref[S.sido] || {}, P = [], tags = [], p = S.pop, f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); }, pc = function (a, b) { return b ? a / b * 100 : 0; };
+    var sum = function (a) { return (a || []).reduce(function (x, y) { return x + (y || 0); }, 0); };
+    // ① 사는 사람
+    if (p && p.tot) { var A = p.age, T = sum(A), s0 = pc(A[0], T), s2039 = pc(A[2] + A[3], T), s60 = pc(A[6] + A[7] + A[8] + A[9], T), s19 = pc(A[0] + A[1], T), RA = ref.age;
+      var r60 = RA ? RA[6] + RA[7] + RA[8] + RA[9] : null, r2039 = RA ? RA[2] + RA[3] : null, r0 = RA ? RA[0] : null, t = '<b>사는 사람.</b> 주민 ' + p.tot.toLocaleString() + '명. ';
+      t += '0~9세 ' + A[0].toLocaleString() + '명(' + f1(s0) + '%' + (r0 != null ? ' · ' + S.sido + ' 평균 ' + r0 + '%' : '') + '), 20·30대 ' + f1(s2039) + '%' + (r2039 != null ? '(평균 ' + f1(r2039) + '%)' : '') + ', 60세 이상 ' + f1(s60) + '%' + (r60 != null ? '(평균 ' + f1(r60) + '%)' : '') + '. ';
+      var kind = r60 != null && s60 - r60 >= 3 ? '어르신 비중이 평균보다 높은 주거지' : r2039 != null && s2039 - r2039 >= 3 ? '젊은 층 비중이 평균보다 높은 동' : r0 != null && s0 - r0 >= 1 ? '아이 있는 집이 평균보다 많은 동' : '연령 구성이 ' + S.sido + ' 평균과 비슷한 동';
+      t += '인구 구조만 보면 <b>' + kind + '</b>이다.';
+      if (S.F && S.F.sex) { var m = S.F.sex[0], fm = S.F.sex[1]; t += ' 남 ' + m.toLocaleString() + ' · 여 ' + fm.toLocaleString() + '(여자 100명당 남자 ' + Math.round(m / fm * 100) + '명).'; }
+      if (S.F && S.F.cc && S.F.cc[1]) { var fill = pc(S.F.cc[2], S.F.cc[1]); t += ' 어린이집 ' + S.F.cc[0] + '곳은 정원 ' + S.F.cc[1].toLocaleString() + '명에 지금 ' + S.F.cc[2].toLocaleString() + '명 — ' + Math.round(fill) + '%만 찬다' + (fill < 60 ? '(아이가 줄었거나 다른 동으로 다닌다)' : '') + '.';
+        if (S.F.ccy && S.Fm && S.Fm.cyears) { var cy = S.F.ccy; t += ' 어린이집 수는 ' + S.Fm.cyears[0] + '년 ' + cy[0] + '곳 → 지금 ' + cy[cy.length - 1] + '곳.'; } }
+      if (S.F && S.F.aca != null) t += ' 입시·교과 학원 ' + S.F.aca + '곳(학원 전체 ' + (S.F.acaAll || '-') + ')' + (s19 < 12 && S.F.aca > 20 ? ' — 학원 수는 이 동 아이 수와 따로 간다(다른 동 아이들이 온다)' : '') + '.';
+      tags.push(r60 != null && s60 - r60 >= 3 ? '어르신 많은 주거지' : r2039 != null && s2039 - r2039 >= 3 ? '젊은 층 많음' : r0 != null && s0 - r0 >= 1 ? '아이 많음' : '연령은 ' + S.sido + ' 평균 수준'); P.push(t); }
+    // ② 머무는 사람
+    var L = S.live; if (L && (L.wd || L.we) && p && p.tot) { var t2 = '<b>머무는 사람.</b> ', o = [];
+      ['wd', 'we'].forEach(function (k2) { var a = L[k2]; if (!a) return; var mx = Math.max.apply(null, a), mn = Math.min.apply(null, a), pk = a.indexOf(mx), busy = []; a.forEach(function (v, i) { if (v >= mn + (mx - mn) * 0.7) busy.push(i); });
+        o.push((k2 === 'wd' ? '평일' : '주말') + '에는 ' + pk + '시에 ' + mx.toLocaleString() + '명으로 가장 많고(주민의 ' + Math.round(mx / p.tot * 100) + '%), 가장 적을 때 ' + mn.toLocaleString() + '명 · 붐비는 때 ' + busy[0] + '~' + busy[busy.length - 1] + '시'); });
+      t2 += o.join('. ') + '. ';
+      var mxa = Math.max.apply(null, (L.wd || []).concat(L.we || [])), ratio = mxa / p.tot;
+      t2 += ratio >= 1.3 ? '머무는 사람이 주민보다 <b>' + Math.round((ratio - 1) * 100) + '% 많다</b> — 밖에서 들어왔다가 빠지는 사람이 주민 수 밖에 있다(일·장보기·술자리).' : ratio <= 0.95 ? '가장 붐빌 때도 주민 수보다 적다 — <b>낮에 주민이 밖으로 나가는 동</b>(출근·통학).' : '머무는 사람과 주민 수가 비슷하다 — 들고 나는 사람이 크지 않다.';
+      t2 += ' <small>(생활인구 = 그 시각 동 안에 있는 사람 수를 통신으로 추정한 값 — 하루 방문자 수가 아니다)</small>';
+      if (ratio >= 1.3) tags.push('밖에서 사람이 들어오는 곳'); P.push(t2); }
+    // ③ 일하는 사람
+    if (S.wrk != null && p && p.tot) { var r3 = S.wrk / p.tot, rr = ref.wrkPerPop, t3 = '<b>일하는 사람.</b> 이 동 집계구를 합치면 사업체 ' + Math.round(S.corp).toLocaleString() + '곳 · 종사자 ' + Math.round(S.wrk).toLocaleString() + '명 — 주민의 ' + f1(r3) + '배' + (rr ? '(' + S.sido + ' 평균 ' + rr + '배)' : '') + '. ';
+      t3 += r3 >= 2 ? '<b>일터형</b> — 낮에 일하러 오는 사람이 사는 사람보다 훨씬 많다. 평일 점심·퇴근길 장사.' : r3 >= 0.8 ? '<b>주거·일터 섞임</b> — 점심 손님(직장인)과 저녁 손님(주민)이 둘 다 있다.' : '<b>주거형</b> — 일터가 적어 낮 장사보다 저녁·주말 장사.';
+      t3 += ' <small>(통계청 SGIS 집계구 2023 · 기준: 종사자÷주민 2배↑ 일터형 · 0.8배↓ 주거형 — 앱 기준)</small>'; tags.push(r3 >= 2 ? '일터' : r3 >= 0.8 ? '주거·일터 섞임' : '주거지'); P.push(t3); }
+    if (S.F && S.F.gov) { var gk = Object.keys(S.F.gov); if (gk.length) P.push('<b>관공서.</b> ' + gk.map(function (k4) { return k4 + ' ' + S.F.gov[k4]; }).join(' · ') + ' — 공무원 점심과 민원인 낮 유입이 있다. 시청·구청·법원·세무서 같은 큰 곳일수록 크다. <small>(OSM·공식 관공서 자리)</small>'); }
+    // ④ 돈이 어디서 도나
+    var sl = S.sales; if (sl && sl.amt) { var per = p && p.tot ? sl.amt / p.tot : null, t4 = '<b>돈.</b> 카드 매출 한 달 약 ' + won(sl.amt) + ' · 결제 ' + man(sl.cnt) + '건 → 결제 1건 평균 ' + Math.round(sl.amt * 1e4 / sl.cnt).toLocaleString() + '원. ';
+      if (per) { t4 += '주민 1명으로 나누면 월 ' + Math.round(per).toLocaleString() + '만 원(서울 동 중앙값 ' + ref.amtPerPopMed + '만 · 상위 20% 경계 ' + ref.amtPerPopP80 + '만) — ';
+        t4 += per >= ref.amtPerPopP80 ? '<b>주민 수에 비해 돈이 아주 많이 도는 동</b>이다. 이 돈의 대부분은 동 밖에서 온 사람이 쓴 것이다.' : per >= ref.amtPerPopMed ? '평균보다 돈이 많이 돈다 — 주민 지출에 바깥 손님 지출이 얹혀 있다.' : '평균보다 적다 — <b>주민 생활 지출 중심</b>인 동네 상권.'; }
+      var TR = S.F && S.F.trd; if (TR && TR.length) { var tot = sum(TR.map(function (x) { return x[3]; })), top = TR.slice().sort(function (a, b) { return b[3] - a[3]; });
+        t4 += ' 이 동에 걸친 상권 ' + TR.length + '곳의 최근 1년 매출 약 ' + won(tot) + ' 중 <b>' + esc(top[0][1]) + '</b>(' + esc(top[0][2]) + ') 한 곳이 ' + Math.round(pc(top[0][3], tot)) + '%' + (pc(top[0][3], tot) >= 70 ? ' — <b>이 동의 돈 이야기는 사실상 이 상권 이야기</b>다. 같은 동을 한 덩어리로 읽으면 이 상권의 장사를 동네 주택가에 붙이는 잘못을 한다.' : '.');
+        t4 += ' 상권별로: ' + top.map(function (x) { return esc(x[1]) + ' ' + won(x[3]) + '(' + (x[4] ? sgn(pc(x[3] - x[4], x[4])) + '%' : '-') + ' · ' + esc(x[5] || '') + ')'; }).join(' · ') + '. <small>(최근 1년 vs 처음 1년(2021~) · 지표 = 서울시 상권변화지표)</small>';
+        if (top[0] && pc(top[0][3], tot) >= 70) tags.push(top[0][1].replace(/\(.*\)/, '') + ' 상권이 돈의 ' + Math.round(pc(top[0][3], tot)) + '%'); }
+      P.push(t4);
+      // ⑤ 시간·요일
+      if (sl.tb && sl.tb.length === 6) { var TBN = ['0~6시', '6~11시', '11~14시', '14~17시', '17~21시', '21~24시'], perH = sl.tb.map(function (v, i) { return v / TBH[i] / 30.4; }), pk2 = perH.indexOf(Math.max.apply(null, perH)), lunch = perH[2], eve = perH[4];
+        var t5 = '<b>시간.</b> 시간당 매출이 가장 큰 때는 <b>' + TBN[pk2] + '</b>(시간당 약 ' + won(perH[pk2]) + '). 점심(11~14시) 시간당 ' + won(lunch) + ' · 저녁(17~21시) ' + won(eve) + ' · 밤(21~24시) ' + won(perH[5]) + ' · 새벽 ' + won(perH[0]) + ' — ';
+        t5 += eve > lunch * 1.2 ? '<b>저녁 장사가 중심</b>인 동.' : lunch > eve * 1.2 ? '<b>점심 장사가 중심</b>인 동(직장인).' : '점심과 저녁이 비슷하다.';
+        if (perH[5] > lunch) t5 += ' 밤 9시 뒤가 점심보다 크다 — 술자리 상권.';
+        if (sl.dw && sl.dw.length === 7) { var DW = ['월', '화', '수', '목', '금', '토', '일'], mxD = sl.dw.indexOf(Math.max.apply(null, sl.dw)), mnD = sl.dw.indexOf(Math.min.apply(null, sl.dw)), we = pc(sl.dw[5] + sl.dw[6], sum(sl.dw)), rw = ref.dw ? ref.dw[5] + ref.dw[6] : null;
+          t5 += ' 요일: 가장 큰 날 ' + DW[mxD] + '(' + won(sl.dw[mxD]) + '), 가장 작은 날 ' + DW[mnD] + '(' + won(sl.dw[mnD]) + ') — ' + DW[mxD] + '요일이 ' + DW[mnD] + '요일의 ' + f1(sl.dw[mxD] / sl.dw[mnD]) + '배. 토·일 비중 ' + f1(we) + '%' + (rw ? '(서울 평균 ' + f1(rw) + '%)' : '') + (rw && we < rw - 3 ? ' — 주말 장사가 약하다.' : rw && we > rw + 3 ? ' — 주말 장사가 강하다.' : '.'); }
+        if (eve > lunch * 1.2) tags.push('저녁 상권'); else if (lunch > eve * 1.2) tags.push('점심 상권');
+        P.push(t5); } }
+    // ⑥ 물가를 걷은 추이
+    var X = S.X, Q = S.quarters; if (X && X.tr && Q && X.tr.length > 4 && CPI) { var tr = X.tr, n0 = 0, nL = tr.length - 1, ser = tr.map(function (r) { return r[0]; }), pkI = ser.indexOf(Math.max.apply(null, ser)), ci = function (q, j) { var c = CPI.q[q]; return c && c[S.sido] ? c[S.sido][j] : null; };
+      var c0 = ci(Q[n0], 0), cL = ci(Q[nL], 0) || ci(CPI.last.slice(0, 4) + String(Math.ceil(+CPI.last.slice(4) / 3)), 0), cP = ci(Q[pkI], 0);
+      var t6 = '<b>추이(물가를 걷고).</b> 카드 매출(한 달 기준)은 ' + qLab(Q[n0]) + ' ' + won(ser[n0]) + ' → 고점 ' + qLab(Q[pkI]) + ' ' + won(ser[pkI]) + ' → 지금(' + qLab(Q[nL]) + ') ' + won(ser[nL]) + '. ';
+      var nom = pc(ser[nL] - ser[n0], ser[n0]); t6 += '처음보다 명목 ' + sgn(nom) + '%';
+      if (c0 && cL) { var real = (ser[nL] / cL) / (ser[n0] / c0) * 100 - 100; t6 += ', 같은 기간 소비자물가(' + S.sido + ' 총지수)는 ' + sgn(pc(cL - c0, c0), 1) + '% — 물가만큼 올랐다면 ' + won(ser[n0] * cL / c0) + '이어야 하니 <b>실질 ' + sgn(real) + '%</b>'; }
+      t6 += '. 고점보다는 명목 ' + sgn(pc(ser[nL] - ser[pkI], ser[pkI])) + '%' + (cP && cL ? '(실질 ' + sgn((ser[nL] / cL) / (ser[pkI] / cP) * 100 - 100) + '%)' : '') + '.';
+      if (String(Q[n0]).slice(0, 4) === '2021') t6 += ' <small>(2021년 초는 영업 제한기라 바닥이다 — 그 대비 배율은 성장이라기보다 회복이다. 고점과 지금을 견주는 쪽이 더 정확하다.)</small>';
+      var bs = tr.map(function (r) { return r[7] || 0; }); if (sum(bs) > 0) { var bp = bs.indexOf(Math.max.apply(null, bs)), e0 = ci(Q[n0], 1), eL = ci(Q[nL], 1) || ci(CPI.last.slice(0, 4) + String(Math.ceil(+CPI.last.slice(4) / 3)), 1), eP = ci(Q[bp], 1);
+        t6 += ' 주점·노래방류는 ' + won(bs[n0]) + ' → 고점 ' + won(bs[bp]) + '(' + qLab(Q[bp]) + ') → 지금 ' + won(bs[nL]) + ' — 고점보다 명목 ' + sgn(pc(bs[nL] - bs[bp], bs[bp])) + '%' + (eP && eL ? ', 외식 물가로 걷으면 ' + sgn((bs[nL] / eL) / (bs[bp] / eP) * 100 - 100) + '%' : '') + '.'; }
+      var nt = tr.map(function (r) { return r[6] || 0; }); if (sum(nt) > 0) { var np = nt.indexOf(Math.max.apply(null, nt)); t6 += ' 밤(21~24시) 매출도 고점 ' + won(nt[np]) + ' → 지금 ' + won(nt[nL]) + '(' + sgn(pc(nt[nL] - nt[np], nt[np])) + '%).'; }
+      t6 += ' <small>(소비자물가: ' + esc(CPI.source) + ' · 최신 ' + CPI.last.slice(0, 4) + '년 ' + +CPI.last.slice(4) + '월)</small>';
+      var dPk = pc(ser[nL] - ser[pkI], ser[pkI]), tag6 = dPk <= -5 ? '매출이 고점보다 ' + Math.round(-dPk) + '% 아래' : pc(ser[nL] - ser[n0], ser[n0]) >= 10 ? '매출이 커지는 중' : '매출 큰 변화 없음'; tags.push(tag6); P.push(t6); }
+    // ⑦ 업종별 손님 — 주민인가 바깥 손님인가
+    if (X && X.ind && X.ind.length && p && p.tot) { var A2 = p.age, T2 = sum(A2), res2039 = pc(A2[2] + A2[3], T2), res60 = pc(A2[6] + A2[7] + A2[8] + A2[9], T2), TBN2 = ['새벽', '아침', '점심', '오후', '저녁', '밤'];
+      var top7 = X.ind.slice().sort(function (a, b) { return b[1] - a[1]; }).slice(0, 6), allA = sum(X.ind.map(function (r) { return r[1]; }));
+      var t7 = '<b>업종별 손님.</b> 결제한 사람의 나이를 주민 나이와 겹쳐 보면 그 장사가 동네 사람 장사인지 바깥 손님 장사인지 갈린다(주민 20·30대 ' + f1(res2039) + '% · 60세 이상 ' + f1(res60) + '%). ';
+      t7 += top7.map(function (r) { var ag = r.slice(9, 15), at = sum(ag) || 1, y = pc(ag[1] + ag[2], at), o6 = pc(ag[5], at), tb = r.slice(3, 9), pkb = tb.indexOf(Math.max.apply(null, tb)), shb = pc(tb[pkb], sum(tb));
+        var who = y - res2039 >= 15 ? '<b>바깥 젊은 손님</b> 장사' : o6 >= res60 && o6 >= 30 ? '<b>동네 어르신</b> 장사' : '주민과 비슷한 손님'; return esc(r[0]) + '(월 ' + won(r[1]) + ' · ' + Math.round(pc(r[1], allA)) + '%) — 20·30대 ' + Math.round(y) + '%, 60세 이상 ' + Math.round(o6) + '%, ' + TBN2[pkb] + ' ' + Math.round(shb) + '% → ' + who; }).join('; ') + '.';
+      var bars = X.ind.filter(function (r) { return isBar(r[0]); }); if (bars.length) { var bA = sum(bars.map(function (r) { return r[1]; })), bC = sum(bars.map(function (r) { return r[2]; })), nightA = sum(bars.map(function (r) { return r[3] + r[8]; }));
+        t7 += ' 주점·유흥 결제는 한 달 ' + man(bC) + '건, 건당 약 ' + Math.round(bA * 1e4 / (bC || 1)).toLocaleString() + '원 — 한 잔 값이 아니라 <b>테이블 객단가</b>다. 밤(21~6시)이 금액의 ' + Math.round(pc(nightA, bA)) + '%.'; }
+      t7 += ' <small>(기준: 결제 20·30대가 주민보다 15%p↑면 바깥 젊은 손님 · 60세 이상 결제가 30%↑이고 주민 비중 이상이면 동네 어르신 — 앱 기준 · 결제 연령은 개인 카드만)</small>';
+      P.push(t7); }
+    // ⑧ 가게 수와 돈
+    if (S.F && S.F.st && S.F.st.length > 2) { var st = S.F.st, a0 = st[0], aL = st[st.length - 1], op = sum(st.map(function (x) { return x[2]; })) / st.length, cl = sum(st.map(function (x) { return x[3]; })) / st.length, chg = pc(aL[1] - a0[1], a0[1]);
+      var t8 = '<b>가게 수.</b> 상권분석 점포(업종 합) ' + qLab(a0[0]) + ' ' + a0[1].toLocaleString() + '곳 → ' + qLab(aL[0]) + ' ' + aL[1].toLocaleString() + '곳(' + sgn(chg) + '%) · 분기마다 평균 개업 ' + Math.round(op) + ' · 폐업 ' + Math.round(cl) + '곳. ';
+      if (S.F.ix && S.F.ix.length) { var ix = S.F.ix[S.F.ix.length - 1], nm = S.Fm && S.Fm.ix_names ? S.Fm.ix_names[ix[1]] || ix[1] : ix[1]; t8 += '상권변화지표 <b>' + esc(nm) + '</b>(' + qLab(ix[0]) + ' · 운영 평균 ' + ix[2] + '개월 · 폐업까지 평균 ' + ix[3] + '개월). '; }
+      if (X && X.tr && X.tr.length > 4) { var sN = pc(X.tr[X.tr.length - 1][0] - X.tr[0][0], X.tr[0][0]); t8 += Math.abs(chg) < 5 && sN > 15 ? '가게 수는 거의 그대로인데 카드 금액은 ' + sgn(sN) + '% — <b>가게가 늘어서가 아니라 한 가게가 버는 돈이 커졌다</b>(물가 몫 포함).' : chg > 10 && sN < chg ? '가게는 ' + sgn(chg) + '% 늘었는데 금액은 ' + sgn(sN) + '% — 가게당 매출은 얇아졌다.' : ''; }
+      P.push(t8); }
+    // ⑨ 사업체 10년
+    if (S.F && S.F.bz && S.F.bz.length > 2) { var bz = S.F.bz, b20 = bz.filter(function (x) { return x[0] === '2020'; })[0], bL = bz[bz.length - 1];
+      var t9 = '<b>사업체 10년.</b> ' + bz[0][0] + '년 ' + bz[0][1].toLocaleString() + '곳';
+      if (b20) t9 += ' · 2020년 ' + b20[1].toLocaleString() + '곳 → ' + bL[0] + '년 ' + bL[1].toLocaleString() + '곳(' + sgn(pc(bL[1] - b20[1], b20[1])) + '%) · 종사자 ' + (b20[2] || 0).toLocaleString() + ' → ' + (bL[2] || 0).toLocaleString() + '명(' + sgn(pc((bL[2] || 0) - (b20[2] || 1), b20[2] || 1)) + '%). 2019→2020년에 크게 뛴 것은 통계청 조사 방식이 바뀐 탓이라 그 앞과 견주지 않는다';
+      if (S.F.bzi && S.F.bzi.length) { var g3 = S.F.bzi.filter(function (x) { return x[1] > 20; }).map(function (x) { return [x[0], x[1], x[2], pc(x[2] - x[1], x[1])]; }).sort(function (a, b) { return b[3] - a[3]; });
+        if (g3.length) t9 += '. ' + (S.F.bziy ? S.F.bziy[0] + '→' + S.F.bziy[1] + '년 ' : '') + '가장 많이 늘어난 업종: ' + g3.slice(0, 3).map(function (x) { return esc(x[0]) + ' ' + x[1] + '→' + x[2] + '(' + sgn(x[3]) + '%)'; }).join(' · ') + (g3[g3.length - 1][3] < 0 ? ' / 줄어든 업종: ' + esc(g3[g3.length - 1][0]) + ' ' + sgn(g3[g3.length - 1][3]) + '%' : ''); }
+      t9 += '. <small>(통계청 전국사업체조사 · ' + esc((S.Fm && S.Fm.bzsrc) || 'KOSIS') + ')</small>'; P.push(t9); }
+    if (!P.length) return '<p class="desc">이 동은 풀어 읽을 자료가 부족하다.</p>';
+    var head = '<div class="story"><p class="sline"><b>한 줄로 — ' + esc(S.name) + ':</b> ' + esc(tags.filter(Boolean).join(' · ') || '자료가 적다') + '.</p>' + P.map(function (x) { return '<p>' + x + '</p>'; }).join('');
+    head += '<p class="snot"><b>데이터가 말하지 않는 것.</b> 카드 매출은 서울시 추정(현금·배달앱 일부 빠짐) · 왜 늘고 줄었는지(원인)는 이 자료에 없다 — 전국 흐름·물가·상권 이동은 따로 확인해야 한다 · 생활인구는 체류 인원이지 방문자 수가 아니다 · 범죄·사고 건수는 이 문단에 넣지 않았다(관서 통계 층에서 본다). 문장 속 판단 기준(○배·±%p)은 앱이 정한 설계값이다.</p></div>';
+    return head;
+  }
+  function storyText(el) { return el ? el.innerText : ''; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-story]'); if (!b) return; var box = document.getElementById('storyBox'); if (!box || !sel || !sel.it || !sel.it.d) return;
+    if (b.getAttribute('data-story') === 'copy') { if (navigator.clipboard) navigator.clipboard.writeText(storyText(box)).then(function () { b.textContent = '✅ 복사됨'; }); return; }
+    box.innerHTML = '<p class="desc">자료를 모으는 중…</p>'; var d = sel.it.d;
+    storyData(d).then(function (S) { if (!document.getElementById('storyBox')) return; document.getElementById('storyBox').innerHTML = storyHtml(S) + '<div class="lg-btns"><button data-story="copy">📋 이 글 복사</button></div>'; })
+      .catch(function (er) { box.innerHTML = '<p class="desc">자료를 받지 못했다(' + esc(er && er.message || er) + ')</p>'; }); });
   function radOpen(c) {
     rentLoad(); sLoadIdx(); var el = $('m2dRad'); el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('radon');
     $('m2dBiz') && $('m2dBiz').classList.remove('on'); document.body.classList.remove('bizon');

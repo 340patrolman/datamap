@@ -496,7 +496,8 @@
     if (!LK.its) return Promise.reject(new Error('ITS 키 없음'));
     if (itsQuota() >= itsMax()) return Promise.reject(new Error(itsTier() === 'op' ? '이 기기에서 이번 달 ITS 9,500건을 다 썼다' : '이 기기에서 이번 달 ITS ' + itsMax() + '건을 다 썼다(개발키 월 100건) — 운영키(월 10,000건) 승인 뒤 「운영키」를 누른다'));
     itsQuota(1);
-    return fetch('https://openapi.its.go.kr:9443/' + path + '?apiKey=' + encodeURIComponent(LK.its) + q + '&getType=json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    return fetch('https://openapi.its.go.kr:9443/' + path + '?apiKey=' + encodeURIComponent(LK.its) + q + '&getType=json').then(function (r) { if (r.ok) return r.json();
+      return r.json().catch(function () { return {}; }).then(function (j) { var h = j && j.header; throw new Error(h && h.resultMsg ? h.resultMsg + ' (' + h.resultCode + ')' : 'HTTP ' + r.status); }); });
   }
   function hhmm(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function gridGo(key, url, cur) {   // 화면을 칸으로 나눠 가운데 좌표 여럿을 한 번에(Open-Meteo) — 10분마다 또는 화면을 크게 옮기면

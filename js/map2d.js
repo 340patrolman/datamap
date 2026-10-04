@@ -14,7 +14,8 @@
   // 층 = [키, 이름, 기본 켜짐, 갈래, 위 줄 단추]. 위 줄에는 자주 쓰는 것만, 나머지는 「☰ 모든 층」 판에서(v0.10.57 · 소유자 「파출소·지구대에서 써도 좋을 만큼 — 찾을 수 있는 것 싹 다」)
   var LAYERS = [
     ['dong', '🏘 행정동', true, '기본', 1], ['road', '🛣 도로', true, '기본', 1], ['base', '🗺 바탕(물·녹지·철도)', true, '기본', 0], ['vw', '🛰 위성·일반 지도(브이월드 · 인터넷)', false, '기본', 1], ['bld', '🏢 건물', true, '기본', 0], ['sub', '🚇 지하철역', true, '기본', 0], ['exit', '🚪 지하철 출입구', false, '기본', 0],
-    ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1],
+    ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
+    ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
     ['acc', '🚗 교차로 사고(2019~)', true, '교통안전', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통안전', 1], ['fatal10', '🕯 사망사고 10년', false, '교통안전', 0], ['fatal', '🕯 사망사고', false, '교통안전', 0], ['hot', '⚠ 사고다발지', false, '교통안전', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통안전', 1],
     ['risk', '🟥 사고위험지역', false, '교통안전', 0], ['sz', '🏫 어린이보호구역', false, '교통안전', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통안전', 0], ['cam', '📷 단속 카메라', false, '교통안전', 0], ['spd', '🚥 도로 소통(받은 때)', false, '교통안전', 0], ['sig', '🚦 신호 주기', false, '교통안전', 0], ['sigx', '🔢 신호 교차로 번호', false, '교통안전', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '사람·흐름', 1], ['rent', '💰 상가 임대료·공실률', false, '사람·흐름', 0], ['szone', '🏬 소진공 주요상권(서울·경기)', false, '사람·흐름', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '사람·흐름', 1], ['crowd', '📡 실시간 인파·카드', false, '사람·흐름', 1], ['live', '👥 생활인구(지금)', false, '사람·흐름', 1], ['sales', '💳 카드 매출(시간대)', false, '사람·흐름', 1], ['bus', '🚌 버스 승차·하차', false, '사람·흐름', 1], ['subr', '🚇 지하철 승차·하차', false, '사람·흐름', 0], ['vol', '🚙 교통량', false, '사람·흐름', 0], ['bike', '🚲 따릉이', false, '사람·흐름', 0],
@@ -154,6 +155,8 @@
     if (on.glamp && view.s >= 0.06) { var vl = viewLL(); rIdx().forEach(function (g) { if (RLOADL[g.gu] || !(g.bytes || {}).lamp) return; var x = g.box; if (x[2] < vl[0] || x[0] > vl[2] || x[3] < vl[1] || x[1] > vl[3]) return; lpLoad(g.gu); }); }
     if (view.s >= 0.03 && SAFE_KEYS.some(function (k) { return on[k]; })) { var vs2 = viewLL(); rIdx().forEach(function (g) { if (RLOADS[g.gu] || !(g.bytes || {}).safety) return; var x = g.box; if (x[2] < vs2[0] || x[0] > vs2[2] || x[3] < vs2[1] || x[1] > vs2[3]) return; sfLoad(g.gu); }); }
     if ((on.bus && view.s > 0.07) || (on.subr && view.s >= 0.02)) { var vx = viewLL(); rIdx().forEach(function (g) { if (RLOADX[g.gu] || !(g.bytes || {}).transit) return; var x = g.box; if (x[2] < vx[0] || x[0] > vx[2] || x[3] < vx[1] || x[1] > vx[3]) return; xLoad(g.gu); }); }
+    if (on.lspd && spdSpan()) { var vs3 = viewLL(); rIdx().forEach(function (g) { if (RLOADS[g.gu] || !(g.bytes || {}).itsl) return; var x = g.box; if (x[2] < vs3[0] || x[0] > vs3[2] || x[3] < vs3[1] || x[1] > vs3[3]) return; slLoad(g.gu); }); }
+    if (on.lcc && view.s >= 0.003) { var vc3 = viewLL(); rIdx().forEach(function (g) { if (RLOADC[g.gu] || !(g.bytes || {}).itscctv) return; var x = g.box; if (x[2] < vc3[0] || x[0] > vc3[2] || x[3] < vc3[1] || x[1] > vc3[3]) return; ccLoad(g.gu); }); }
     if (on.jgg && view.s >= 0.03) { var vj2 = viewLL(); rIdx().forEach(function (g) { if (RLOADQ[g.gu] || !(g.bytes || {}).jgg) return; var x = g.box; if (x[2] < vj2[0] || x[0] > vj2[2] || x[3] < vj2[1] || x[1] > vj2[3]) return; qLoad(g.gu); }); }
     if (on.szone && view.s >= 0.012) { var vz = viewLL(); rIdx().forEach(function (g) { if (RLOADZ[g.gu] || !(g.bytes || {}).szone) return; var x = g.box; if (x[2] < vz[0] || x[0] > vz[2] || x[3] < vz[1] || x[1] > vz[3]) return; zLoad(g.gu); }); }
     if (on.trd && view.s >= 0.02) { var vg = viewLL(); rIdx().forEach(function (g) { if (RLOADG[g.gu] || !(g.bytes || {}).ggtrd) return; var x = g.box; if (x[2] < vg[0] || x[0] > vg[2] || x[3] < vg[1] || x[1] > vg[3]) return; gLoad(g.gu); }); }
@@ -178,6 +181,21 @@
   }
   var RLOADQ = {}, JGG = [], JGGM = 'dens';   // v1.4.0 통계청 SGIS 집계구
   var JGGMS = { pop: ['👥 인구', '#7c3aed'], dens: ['🏙 인구 밀도(명/ha)', '#6d28d9'], hh: ['🏠 가구', '#2563eb'], fam: ['👪 평균 가구원', '#0891b2'], house: ['🏢 주택', '#0d9488'], corp: ['🏪 사업체', '#b45309'], wrk: ['👔 종사자', '#c2410c'], job: ['⚖ 종사자 ÷ 인구', '#be123c'] };
+  var RLOADS = {}, ITSL = [], RLOADC = {}, CCB = [], CCLIVE = null;   // v1.7.0 ITS 도로 선 · CCTV 목록(구운 것)
+  function spdSpan() { var v = viewLL(); return v[2] - v[0] <= 0.16 && v[3] - v[1] <= 0.16; }
+  function slLoad(gu) {
+    if (RLOADS[gu]) return; RLOADS[gu] = 1;
+    fetch('data/r/' + gu + '/itsl.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+      j.items.forEach(function (t) { var c = t[4], x = 0, y = 0, pts = [], b = [1e9, 1e9, -1e9, -1e9];
+        for (var k = 0; k < c.length; k += 2) { x += c[k]; y += c[k + 1]; var q = P(x / 1e5, y / 1e5); pts.push(q); if (q[0] < b[0]) b[0] = q[0]; if (q[1] < b[1]) b[1] = q[1]; if (q[0] > b[2]) b[2] = q[0]; if (q[1] > b[3]) b[3] = q[1]; }
+        ITSL.push({ id: t[0], rk: t[1], nm: t[2], ms: t[3], pts: pts, bb: b }); });
+      if (!ITSL.src) ITSL.src = j.source; RLOADS[gu] = 3; draw(); }).catch(function () { RLOADS[gu] = 2; });
+  }
+  function ccLoad(gu) {
+    if (RLOADC[gu]) return; RLOADC[gu] = 1;
+    fetch('data/r/' + gu + '/itscctv.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+      j.items.forEach(function (t) { CCB.push(t); }); CCB.src = j.source; CCB.at = j.at; RLOADC[gu] = 3; draw(); }).catch(function () { RLOADC[gu] = 2; });
+  }
   function qLoad(gu) {
     if (RLOADQ[gu]) return; RLOADQ[gu] = 1;
     fetch('data/r/' + gu + '/jgg.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
@@ -467,42 +485,134 @@
     var h = location.hash.replace(/[#&]itskey=[A-Za-z0-9-]+/, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h[0] === '#' ? h : '#' + h) : '')); } catch (e) {} on.lev = true; })();
   var LBOX = [126.3, 36.85, 127.9, 38.35];   // 서울·경기
   function lkSet(k, name) { var v = prompt(name + ' 인증키를 붙여 넣으세요. 이 기기에만 저장됩니다(저장소·다른 기기로 안 감). 비우면 지웁니다.', LK[k] || ''); if (v == null) return;
-    v = v.replace(/\s+/g, ''); if (v) LK[k] = v; else delete LK[k]; try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {} LIVE.ev = null; liveGo(); draw(); }
-  function itsQuota(add) { var d = new Date(), t = d.getFullYear() * 1e4 + (d.getMonth() + 1) * 100 + d.getDate(), q; try { q = JSON.parse(localStorage.getItem('tg_map2d_itsn') || '{}') || {}; } catch (e) { q = {}; }
-    if (q.d !== t) q = { d: t, n: 0 }; if (add) { q.n++; try { localStorage.setItem('tg_map2d_itsn', JSON.stringify(q)); } catch (e) {} } return q.n; }
-  var ITS_MAX = 90;   // 개발키 하루 100건 — 10건은 남겨 둔다
+    v = v.replace(/\s+/g, ''); if (v) LK[k] = v; else delete LK[k]; try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {} LIVE.ev = null; LIVE.sp = null; liveGo(); draw(); }
+  // ITS 호출 한도 — 개발키 = 한 달 100건 · 운영키 = 한 달 10,000건(코워크가 2026-10-04 상향 신청 · 관리자 승인 뒤). 이 기기에서 부른 것만 센다(다른 기기·PC 도구가 쓴 것은 모른다).
+  function itsTier() { return LK.itst === 'op' ? 'op' : 'dev'; }
+  function itsPer() { var d = new Date(); return 'm' + (d.getFullYear() * 100 + d.getMonth() + 1); }
+  function itsMax() { return itsTier() === 'op' ? 9500 : 90; }
+  function itsQuota(add) { var pp = itsPer(), q; try { q = JSON.parse(localStorage.getItem('tg_map2d_itsn') || '{}') || {}; } catch (e) { q = {}; }
+    if (q.p !== pp) q = { p: pp, n: 0 }; if (add) { q.n++; try { localStorage.setItem('tg_map2d_itsn', JSON.stringify(q)); } catch (e) {} } return q.n; }
+  function itsGet(path, q) {
+    if (!LK.its) return Promise.reject(new Error('ITS 키 없음'));
+    if (itsQuota() >= itsMax()) return Promise.reject(new Error(itsTier() === 'op' ? '이 기기에서 이번 달 ITS 9,500건을 다 썼다' : '이 기기에서 이번 달 ITS ' + itsMax() + '건을 다 썼다(개발키 월 100건) — 운영키(월 10,000건) 승인 뒤 「운영키」를 누른다'));
+    itsQuota(1);
+    return fetch('https://openapi.its.go.kr:9443/' + path + '?apiKey=' + encodeURIComponent(LK.its) + q + '&getType=json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
   function hhmm(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
-  function liveGo() {
-    if (document.hidden) return; var now = Date.now();
-    if (on.lev && LK.its && !(LIVE.ev && LIVE.ev.busy) && (!LIVE.ev || now - LIVE.ev.at > 5 * 60000)) {
-      if (itsQuota() >= ITS_MAX) { LIVE.ev = { at: now, items: (LIVE.ev || {}).items || [], err: '오늘 ITS 호출 ' + ITS_MAX + '건을 다 썼다(개발키 하루 100건) — 내일 다시' }; }
-      else { var prev = LIVE.ev; LIVE.ev = { at: now, busy: 1, items: (prev || {}).items || [] }; itsQuota(1);
-        fetch('https://openapi.its.go.kr:9443/eventInfo?apiKey=' + encodeURIComponent(LK.its) + '&type=all&eventType=all&minX=' + LBOX[0] + '&maxX=' + LBOX[2] + '&minY=' + LBOX[1] + '&maxY=' + LBOX[3] + '&getType=json')
-          .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-          .then(function (j) { var b = j && j.body; if (!b || !b.items) throw new Error((j && j.header && j.header.resultMsg) || '빈 응답');
-            LIVE.ev = { at: Date.now(), items: b.items.filter(function (e) { return isFinite(+e.coordX) && isFinite(+e.coordY) && +e.coordX > 120; }) }; draw(); })
-          .catch(function (e) { LIVE.ev = { at: Date.now(), items: (prev || {}).items || [], err: '받지 못함(' + (e && e.message || e) + ') — 키·인터넷 확인' }; draw(); }); }
+  function gridGo(key, url, cur) {   // 화면을 칸으로 나눠 가운데 좌표 여럿을 한 번에(Open-Meteo) — 10분마다 또는 화면을 크게 옮기면
+    var v = viewLL(), cx = (v[0] + v[2]) / 2, cy = (v[1] + v[3]) / 2, sx = v[2] - v[0], sy = v[3] - v[1], w = LIVE[key], now = Date.now();
+    if (w && (w.busy || !(now - w.at > 10 * 60000 || Math.abs(cx - w.c[0]) > w.s[0] * 0.3 || Math.abs(cy - w.c[1]) > w.s[1] * 0.3 || sx / w.s[0] > 1.8 || sx / w.s[0] < 0.55))) return;
+    var n = sx < 0.03 ? 2 : sx < 0.12 ? 3 : 4, la = [], lo = [];
+    for (var i = 0; i < n; i++) for (var k = 0; k < n + 1; k++) { la.push((v[1] + sy * (i + 0.5) / n).toFixed(4)); lo.push((v[0] + sx * (k + 0.5) / (n + 1)).toFixed(4)); }
+    LIVE[key] = { at: now, busy: 1, c: [cx, cy], s: [sx, sy], pts: (w || {}).pts || [] };
+    fetch(url + '?latitude=' + la.join(',') + '&longitude=' + lo.join(',') + '&current=' + cur + '&timezone=Asia%2FSeoul')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { j = Array.isArray(j) ? j : [j]; LIVE[key] = { at: Date.now(), c: [cx, cy], s: [sx, sy], pts: j.map(function (o, q) { return { lat: +la[q], lon: +lo[q], c: o.current || {} }; }) }; draw(); })
+      .catch(function (e) { LIVE[key] = { at: Date.now(), c: [cx, cy], s: [sx, sy], pts: (w || {}).pts || [], err: '받지 못함(' + (e && e.message || e) + ')' }; draw(); });
+  }
+  function liveGo(force) {
+    if (document.hidden) return; var now = Date.now(), op = itsTier() === 'op';
+    // 🚧 돌발 — 지도를 열 때(층을 켤 때) 한 번 · 「🔄 다시 받기」 · 운영키면 5분마다
+    if (on.lev && LK.its && !(LIVE.ev && LIVE.ev.busy) && (force === 'ev' || !LIVE.ev || (op && now - LIVE.ev.at > 5 * 60000))) {
+      var prev = LIVE.ev; LIVE.ev = { at: now, busy: 1, items: (prev || {}).items || [] };
+      itsGet('eventInfo', '&type=all&eventType=all&minX=' + LBOX[0] + '&maxX=' + LBOX[2] + '&minY=' + LBOX[1] + '&maxY=' + LBOX[3])
+        .then(function (j) { var b = j && j.body; if (!b || !b.items) throw new Error((j && j.header && j.header.resultMsg) || '빈 응답');
+          LIVE.ev = { at: Date.now(), items: b.items.filter(function (e) { return isFinite(+e.coordX) && isFinite(+e.coordY) && +e.coordX > 120; }) }; draw(); })
+        .catch(function (e) { LIVE.ev = { at: Date.now(), items: (prev || {}).items || [], err: '받지 못함(' + (e && e.message || e) + ')' }; draw(); });
     }
-    if (on.lwx && !(LIVE.wx && LIVE.wx.busy)) {
-      var v = viewLL(), cx = (v[0] + v[2]) / 2, cy = (v[1] + v[3]) / 2, sx = v[2] - v[0], sy = v[3] - v[1], w = LIVE.wx;
-      if (!w || now - w.at > 10 * 60000 || Math.abs(cx - w.c[0]) > w.s[0] * 0.3 || Math.abs(cy - w.c[1]) > w.s[1] * 0.3 || sx / w.s[0] > 1.8 || sx / w.s[0] < 0.55) {
-        var n = sx < 0.03 ? 2 : sx < 0.12 ? 3 : 4, la = [], lo = [];
-        for (var i = 0; i < n; i++) for (var k = 0; k < n + 1; k++) { la.push((v[1] + sy * (i + 0.5) / n).toFixed(4)); lo.push((v[0] + sx * (k + 0.5) / (n + 1)).toFixed(4)); }
-        LIVE.wx = { at: now, busy: 1, c: [cx, cy], s: [sx, sy], pts: (w || {}).pts || [] };
-        fetch('https://api.open-meteo.com/v1/forecast?latitude=' + la.join(',') + '&longitude=' + lo.join(',') + '&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,cloud_cover&wind_speed_unit=ms&timezone=Asia%2FSeoul')
-          .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-          .then(function (j) { j = Array.isArray(j) ? j : [j]; LIVE.wx = { at: Date.now(), c: [cx, cy], s: [sx, sy], pts: j.map(function (o, q) { return { lat: +la[q], lon: +lo[q], c: o.current || {}, el: o.elevation }; }) }; draw(); })
-          .catch(function (e) { LIVE.wx = { at: Date.now(), c: [cx, cy], s: [sx, sy], pts: (w || {}).pts || [], err: '받지 못함(' + (e && e.message || e) + ')' }; draw(); });
+    // 🚦 소통 — 지금 화면(사방 25% 더)만 · 열 때 한 번 · 받은 범위를 벗어나면: 운영키 = 저절로(3분 간격) · 개발키 = 「🔄 이 화면 소통 받기」
+    if (on.lspd && LK.its && spdSpan() && !(LIVE.sp && LIVE.sp.busy)) {
+      var v = viewLL(), sp = LIVE.sp, inside = sp && sp.box && v[0] >= sp.box[0] && v[1] >= sp.box[1] && v[2] <= sp.box[2] && v[3] <= sp.box[3];
+      if (force === 'sp' || !sp || (op && now - sp.at > 3 * 60000 && (!inside || now - sp.at > 5 * 60000))) {
+        var dx = (v[2] - v[0]) * 0.25, dy = (v[3] - v[1]) * 0.25, bx = [v[0] - dx, v[1] - dy, v[2] + dx, v[3] + dy].map(function (x) { return +x.toFixed(4); }), ps = sp;
+        LIVE.sp = { at: now, busy: 1, box: bx, m: (ps || {}).m || {} };
+        itsGet('trafficInfo', '&type=all&drcType=all&minX=' + bx[0] + '&maxX=' + bx[2] + '&minY=' + bx[1] + '&maxY=' + bx[3])
+          .then(function (j) { var b = j && j.body; if (!b || !b.items) throw new Error((j && j.header && j.header.resultMsg) || '빈 응답');
+            var m = {}; b.items.forEach(function (x) { m[x.linkId] = [+x.speed, +x.travelTime, x.createdDate]; }); LIVE.sp = { at: Date.now(), box: bx, m: m, n: b.items.length }; draw(); })
+          .catch(function (e) { LIVE.sp = { at: Date.now(), box: bx, m: (ps || {}).m || {}, err: '받지 못함(' + (e && e.message || e) + ')' }; draw(); });
       }
     }
+    if (on.lwx) gridGo('wx', 'https://api.open-meteo.com/v1/forecast', 'temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,cloud_cover&wind_speed_unit=ms');
+    if (on.lair) gridGo('air', 'https://air-quality-api.open-meteo.com/v1/air-quality', 'pm10,pm2_5,uv_index');
+    if (on.lrad && !(LIVE.rad && LIVE.rad.busy) && (!LIVE.rad || now - LIVE.rad.at > 10 * 60000)) {
+      var pr = LIVE.rad; LIVE.rad = { at: now, busy: 1, f: (pr || {}).f, pf: (pr || {}).f };
+      fetch('https://api.rainviewer.com/public/weather-maps.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (j) { var ps2 = (j.radar && j.radar.past) || [], l = ps2[ps2.length - 1]; LIVE.rad = { at: Date.now(), f: l ? { u: j.host + l.path, t: l.time * 1000 } : null, pf: (pr || {}).f }; draw(); })
+        .catch(function (e) { LIVE.rad = { at: Date.now(), f: (pr || {}).f, err: '받지 못함(' + (e && e.message || e) + ')' }; draw(); });
+    }
   }
-  function liveSoon() { if (!on.lev && !on.lwx) return; clearTimeout(LIVEW); LIVEW = setTimeout(liveGo, 1200); }
-  setInterval(function () { if (on.lev || on.lwx) liveGo(); }, 60000);
+  function liveOn() { return on.lev || on.lwx || on.lspd || on.lair || on.lrad; }
+  function liveSoon() { if (!liveOn()) return; clearTimeout(LIVEW); LIVEW = setTimeout(liveGo, 1200); }
+  setInterval(function () { if (liveOn()) liveGo(); if (HLS && !document.getElementById('ccv')) { try { HLS.destroy(); } catch (e) {} HLS = null; } }, 60000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) liveSoon(); });
+  // 🌧 레이더 — RainViewer 조각(무료 판은 7단까지 · 한 칸 약 1km) · 우리 평면에 조각 모서리를 옮겨 그린다(브이월드와 같은 법)
+  var RADT = {};
+  function radTile(u, z, x, y) { var k = u + '/' + z + '/' + x + '/' + y, t = RADT[k]; if (t) return t.ok ? t : null;
+    var ks = Object.keys(RADT); if (ks.length > 300) ks.slice(0, 100).forEach(function (q) { delete RADT[q]; });
+    t = RADT[k] = { im: new Image(), ok: false }; t.im.onload = function () { t.ok = true; if (!VWQ) VWQ = requestAnimationFrame(function () { VWQ = 0; draw(); }); };
+    t.im.src = u + '/256/' + z + '/' + x + '/' + y + '/2/1_1.png'; return null; }
+  function drawRad() {
+    var f = LIVE.rad && LIVE.rad.f; if (!on.lrad || !f) return; var pf = LIVE.rad.pf, W = cv.clientWidth, H = cv.clientHeight, a = M(0, 0), b = M(W, H);
+    var lonA = a[0] / KX + LON0, lonB = b[0] / KX + LON0, latA = LAT0 - a[1] / KY, latB = LAT0 - b[1] / KY;
+    var z = Math.round(Math.log(156543.03 * Math.cos(LAT0 * Math.PI / 180) * view.s) / Math.LN2); z = Math.max(3, Math.min(7, z));
+    var x0 = Math.floor(vwLx(lonA, z)), x1 = Math.floor(vwLx(lonB, z)), y0 = Math.floor(vwLy(latA, z)), y1 = Math.floor(vwLy(latB, z));
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) > 60) return; ctx.save(); ctx.globalAlpha = 0.62; ctx.imageSmoothingEnabled = true;
+    for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) { var p0 = S(P(vwLon(x, z), vwLat(y, z))), p1 = S(P(vwLon(x + 1, z), vwLat(y + 1, z))), t = radTile(f.u, z, x, y);
+      if (!t && pf && pf.u !== f.u) t = RADT[pf.u + '/' + z + '/' + x + '/' + y]; if (t && t.ok) ctx.drawImage(t.im, p0[0], p0[1], p1[0] - p0[0] + 0.6, p1[1] - p0[1] + 0.6); }
+    ctx.restore();
+  }
+  // 🚦 소통 색 — 앱 기준(서울시 교통정보의 원활·서행·정체 구분을 본뜸): 고속·도시고속 40·70km/h · 그 밖 15·30km/h
+  function spdCol(v, rk) { var a = rk <= 2 ? 40 : 15, b = rk <= 2 ? 70 : 30; return v < a ? '#dc2626' : v < b ? '#f59e0b' : '#16a34a'; }
+  var RKN = ['', '고속국도', '도시고속도로', '일반국도', '특별·광역시도', '국가지원지방도', '지방도', '시군도'];
+  function drawSpd() {
+    if (!on.lspd || !LIVE.sp || !LIVE.sp.m || !ITSL.length) return; var m = LIVE.sp.m, a = M(-20, -20), b = M(cv.clientWidth + 20, cv.clientHeight + 20), wd = view.s > 0.1 ? 4 : view.s > 0.04 ? 3 : 2, off = wd * 0.8;
+    ITSL.forEach(function (L) { var v = m[L.id]; if (!v) return; var bb = L.bb; if (bb[2] < a[0] || bb[0] > b[0] || bb[3] < a[1] || bb[1] > b[1]) return;
+      var sp = L.pts.map(S), n = sp.length; ctx.beginPath();
+      for (var i = 0; i < n; i++) { var p0 = sp[Math.max(0, i - 1)], p1 = sp[Math.min(n - 1, i + 1)], dx = p1[0] - p0[0], dy = p1[1] - p0[1], d = Math.hypot(dx, dy) || 1, ox = -dy / d * off, oy = dx / d * off;
+        if (i) ctx.lineTo(sp[i][0] + ox, sp[i][1] + oy); else ctx.moveTo(sp[i][0] + ox, sp[i][1] + oy); }
+      ctx.lineWidth = wd; ctx.lineCap = 'round'; ctx.strokeStyle = spdCol(v[0], L.rk); ctx.stroke();
+      var mid = sp[n >> 1]; hit.push({ x: mid[0], y: mid[1], r: 7, it: { kind: 'lspd', L: L, v: v } }); });
+  }
+  // 📹 CCTV — 구운 목록(또는 「🔄 목록 새로 받기」로 받은 것) · 누르면 카드에서 영상(HLS) — 사파리는 그대로, 크롬 등은 hls.js(같은 사이트 js/vendor · 그때만 읽음)
+  var HLS = null, HLSP = null;
+  function ccList() { return CCLIVE || CCB; }
+  function hlsLoad() { if (window.Hls) return Promise.resolve(); if (HLSP) return HLSP;
+    HLSP = new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = 'js/vendor/hls.light.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return HLSP; }
+  function ccPlay(url) {
+    var v = document.getElementById('ccv'); if (!v) return; if (HLS) { try { HLS.destroy(); } catch (e) {} HLS = null; }
+    var bad = function () { var m = document.getElementById('ccm'); if (m) m.innerHTML = '영상을 열지 못했다 — 목록이 오래되었거나 그 카메라가 쉬는 중일 수 있다. <button data-ccref="1">🔄 목록 새로 받기(ITS 2건)</button>'; };
+    v.addEventListener('error', bad);
+    v.addEventListener('playing', function () { var m = document.getElementById('ccm'); if (m) m.textContent = '● 실시간 · 소리 없음 · 몇 초 늦을 수 있다'; });
+    if (v.canPlayType('application/vnd.apple.mpegurl')) { v.src = url; v.play().catch(function () {}); return; }
+    hlsLoad().then(function () { if (!window.Hls || !Hls.isSupported() || !document.getElementById('ccv')) { bad(); return; }
+      HLS = new Hls({ maxBufferLength: 10 }); HLS.on(Hls.Events.ERROR, function (e, d) { if (d && d.fatal) bad(); }); HLS.loadSource(url); HLS.attachMedia(v); v.play().catch(function () {}); }).catch(bad);
+  }
+  function ccRefresh() {
+    var out = [], k = 0, fail = '';
+    ['its', 'ex'].forEach(function (typ) { itsGet('cctvInfo', '&type=' + typ + '&cctvType=4&minX=' + LBOX[0] + '&maxX=' + LBOX[2] + '&minY=' + LBOX[1] + '&maxY=' + LBOX[3])
+      .then(function (j) { ((j.response || {}).data || []).forEach(function (x) { if (/^https:/.test(x.cctvurl || '')) out.push([(x.cctvname || '').trim(), +x.coordx, +x.coordy, x.cctvurl, typ]); }); })
+      .catch(function (e) { fail = (e && e.message) || String(e); })
+      .then(function () { if (++k < 2) return; if (out.length) { CCLIVE = out; CCLIVE.at = hhmm(Date.now()) + ' 새로 받음'; } else alert('CCTV 목록을 받지 못했다 — ' + (fail || '빈 응답')); show(null); draw(); }); });
+  }
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-ccref]')) ccRefresh(); });
+  function drawCc() {
+    if (!on.lcc) return; var L = ccList(), W0 = cv.clientWidth, H0 = cv.clientHeight, r = view.s > 0.02 ? 7 : 5;
+    L.forEach(function (t) { var s0 = S(P(t[1], t[2])); if (s0[0] < -10 || s0[1] < -10 || s0[0] > W0 + 10 || s0[1] > H0 + 10) return;
+      ctx.beginPath(); ctx.arc(s0[0], s0[1], r, 0, Math.PI * 2); ctx.fillStyle = t[4] === 'ex' ? '#0f766e' : '#1d4ed8'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+      if (r > 6) { ctx.fillStyle = '#fff'; ctx.fillRect(s0[0] - 3, s0[1] - 2, 5, 4); ctx.beginPath(); ctx.moveTo(s0[0] + 2, s0[1]); ctx.lineTo(s0[0] + 4.5, s0[1] - 2); ctx.lineTo(s0[0] + 4.5, s0[1] + 2); ctx.fill(); }
+      hit.push({ x: s0[0], y: s0[1], r: 11, it: { kind: 'lcc', t: t } }); });
+  }
+  function pmGrade(v, small) { if (v == null) return null; var c = small ? [15, 35, 75] : [30, 80, 150]; return v <= c[0] ? 0 : v <= c[1] ? 1 : v <= c[2] ? 2 : 3; }
+  var PMG = [['좋음', '#2563eb'], ['보통', '#16a34a'], ['나쁨', '#f59e0b'], ['매우나쁨', '#dc2626']];
   var EVC = { '교통사고': ['#dc2626', '💥'], '공사': ['#ea580c', '🚧'], '기타돌발': ['#7c3aed', '⚠'], '재난': ['#0f172a', '🌊'], '기상': ['#0284c7', '🌧'], '행사': ['#0d9488', '🎪'] };
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
+    drawRad(); drawSpd(); drawCc();
+    if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
+      var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
+      ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, s0[0], s0[1] + 0.5); hit.push({ x: s0[0], y: s0[1], r: 13, it: { kind: 'lair', o: o } }); });
     if (on.lwx && LIVE.wx && LIVE.wx.pts) LIVE.wx.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.temperature_2m == null) return;
       var t = wmo(c.weather_code, c.cloud_cover)[0] + ' ' + Math.round(c.temperature_2m) + '°' + (c.precipitation > 0 ? ' ' + c.precipitation + 'mm' : ''); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = ctx.measureText(t).width + 12;
       ctx.fillStyle = dark ? 'rgba(15,22,36,.85)' : 'rgba(255,255,255,.92)'; ctx.strokeStyle = c.precipitation > 0 ? '#0284c7' : (dark ? '#64748b' : '#94a3b8'); ctx.lineWidth = c.precipitation > 0 ? 2 : 1;
@@ -526,11 +636,29 @@
     h += row('강수(최근)', (c.precipitation != null ? c.precipitation + 'mm' : '-')) + row('바람', (c.wind_speed_10m != null ? c.wind_speed_10m + 'm/s' : '-') + (c.wind_direction_10m != null ? ' · ' + dirs[Math.round(c.wind_direction_10m / 45) % 8] + '풍' : '')) + row('습도', c.relative_humidity_2m != null ? c.relative_humidity_2m + '%' : '-');
     h += row('받은 시각', hhmm(LIVE.wx.at) + ' <em>(10분마다 · 지도를 크게 옮기면 다시)</em>');
     return h + '<p class="desc">하늘 낱말은 구름 양으로 가른다(20·50·80% — 앱 기준). 관측소에서 잰 값이 아니라 기상 모형이 그 자리(격자 약 1~2km)에 낸 현재값이다. 화면을 ' + (LIVE.wx.pts.length) + '칸으로 나눠 가운데 값을 찍는다.</p>' + src('Open-Meteo(open-meteo.com) 현재 기상 API — CC BY 4.0 · 키 없음 · 이 폰이 직접 받음 · 저장하지 않음'); }
+  function spdCard(it) { var L = it.L, v = it.v;
+    var h = '<h3>🚦 ' + esc(L.nm || '(이름 없는 길)') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(RKN[L.rk] || '') + '</small></h3>';
+    h += row('지금 속도', '<b style="color:' + spdCol(v[0], L.rk) + '">' + v[0] + 'km/h</b>' + (L.ms ? ' · 제한 ' + L.ms + 'km/h' : '')) + row('이 구간 지나는 시간', (v[1] ? Math.round(v[1]) + '초' : '-')) + row('ITS 기준 시각', esc(ymdhm(v[2]))) + row('받은 시각', hhmm(LIVE.sp.at) + ' <em>(열 때 한 번 · 「🔄 이 화면 소통 받기」)</em>');
+    return h + '<p class="desc">선은 달리는 방향의 오른쪽에 그린다(같은 길 두 방향이 나란히). 색은 앱 기준 — 고속·도시고속은 40·70km/h, 그 밖은 15·30km/h 로 정체·서행·원활을 가른다. 링크 ' + esc(L.id) + '.</p>' + src('국가교통정보센터(ITS) 교통소통정보 OpenAPI(실시간 · 이 폰이 직접 받음 · 저장 안 함) · 도로 선 = ' + (ITSL.src || 'ITS 표준노드링크')); }
+  function ccCard(it) { var t = it.t; setTimeout(function () { ccPlay(t[3]); }, 0);
+    var h = '<h3>📹 ' + esc(t[0]) + '</h3><video id="ccv" controls muted playsinline autoplay style="width:100%;max-height:42vh;background:#000;border-radius:8px"></video><p id="ccm" class="desc">불러오는 중… (소리 없음 · 몇 초 늦을 수 있다)</p>';
+    h += row('구분', t[4] === 'ex' ? '고속도로(한국도로공사)' : '국도·기타(ITS)') + row('목록', esc(CCLIVE ? CCLIVE.at : (CCB.at || '') + ' 구움') + ' <button data-ccref="1">🔄 목록 새로 받기(ITS 2건)</button>');
+    return h + src((CCB.src || '국가교통정보센터(ITS) CCTV 정보 OpenAPI') + ' · 영상은 열 때만 받고 저장하지 않는다'); }
+  function airCard(it) { var o = it.o, c = o.c, g1 = pmGrade(c.pm10, 0), g2 = pmGrade(c.pm2_5, 1);
+    var h = '<h3>😷 지금 미세먼지 <small style="font-weight:400;color:var(--ink2)">' + o.lat.toFixed(3) + ', ' + o.lon.toFixed(3) + '</small></h3>';
+    h += row('초미세먼지(PM2.5)', c.pm2_5 != null ? Math.round(c.pm2_5) + '㎍/㎥ · <b style="color:' + PMG[g2][1] + '">' + PMG[g2][0] + '</b>' : '-') + row('미세먼지(PM10)', c.pm10 != null ? Math.round(c.pm10) + '㎍/㎥ · <b style="color:' + PMG[g1][1] + '">' + PMG[g1][0] + '</b>' : '-') + row('자외선 지수', c.uv_index != null ? c.uv_index : '-');
+    h += row('받은 시각', hhmm(LIVE.air.at) + ' <em>(10분마다)</em>');
+    return h + '<p class="desc">등급은 환경부 기준(PM2.5 15·35·75 · PM10 30·80·150㎍/㎥). 값은 측정소가 잰 것이 아니라 유럽 CAMS 대기 모형이 그 자리에 낸 현재값이라 측정소(에어코리아)와 다를 수 있다.</p>' + src('Open-Meteo 대기질 API(CAMS) — 키 없음 · 이 폰이 직접 받음 · 저장하지 않음'); }
   function liveLegend() { var b = [];
-    if (on.lev) { var e = LIVE.ev; b.push(Object.keys(EVC).slice(0, 3).map(function (k) { return li(EVC[k][0], EVC[k][1] + ' ' + k); }).join(''));
+    if (on.lev || on.lspd || on.lcc) b.push('<div class="lg-btns"><button data-lkey="its">🔑 ITS 키' + (LK.its ? ' 바꾸기' : ' 넣기') + '</button><button data-itst="dev" class="' + (itsTier() === 'dev' ? 'on' : '') + '">개발키(월 100)</button><button data-itst="op" class="' + (itsTier() === 'op' ? 'on' : '') + '">운영키(월 10,000)</button></div><small class="lg-n">ITS 호출 이번 달 ' + itsQuota() + '/' + itsMax() + '(이 기기) · 개발키는 지도를 열 때 한 번 받고 「🔄」로 다시 · 운영키면 저절로</small>');
+    if (on.lspd) { var sp = LIVE.sp, vv = viewLL(), inb = sp && sp.box && vv[0] >= sp.box[0] && vv[1] >= sp.box[1] && vv[2] <= sp.box[2] && vv[3] <= sp.box[3];
+      b.push('<b>🚦 소통</b> ' + li('#16a34a', '원활') + li('#f59e0b', '서행') + li('#dc2626', '정체') + '<small class="lg-n">' + (!spdSpan() ? '<b>더 확대하면(화면 가로 약 14km 안) 받는다</b>' : sp && sp.err ? '<b style="color:#b91c1c">' + esc(sp.err) + '</b>' : sp && !sp.busy ? (sp.n || 0) + '구간 · ' + hhmm(sp.at) + ' 받음' + (inb ? '' : ' · <b>지금 화면은 받은 범위 밖</b>') : LK.its ? '받는 중' : 'ITS 키 필요') + '</small><div class="lg-btns"><button data-lre="sp">🔄 이 화면 소통 받기(ITS 1건)</button></div>'); }
+    if (on.lcc) b.push('<b>📹 CCTV</b> ' + li('#1d4ed8', '국도·기타') + li('#0f766e', '고속도로') + '<small class="lg-n">' + ccList().length + '대 · 목록 ' + esc(CCLIVE ? CCLIVE.at : (CCB.at || '…') + ' 구움') + ' · 누르면 영상(ITS 호출 없음)</small>');
+    if (on.lrad) { var rd = LIVE.rad; b.push('<b>🌧 레이더</b><small class="lg-n">' + (rd && rd.err ? '<b style="color:#b91c1c">' + esc(rd.err) + '</b>' : rd && rd.f ? hhmm(rd.f.t) + ' 관측 · 10분마다 · 파랑(약함) → 노랑·빨강(강함)' : '받는 중') + ' · RainViewer(rainviewer.com) 레이더 합성 · 무료 판은 7단 확대까지(한 칸 약 1km)</small>'); }
+    if (on.lair) { var ar = LIVE.air; b.push('<b>😷 미세먼지</b> ' + PMG.map(function (g) { return li(g[1], g[0]); }).join('') + '<small class="lg-n">' + (ar && ar.err ? '<b style="color:#b91c1c">' + esc(ar.err) + '</b>' : ar && !ar.busy ? ar.pts.length + '칸 · ' + hhmm(ar.at) + ' 받음' : '받는 중') + ' · 숫자 = 초미세먼지(PM2.5 ㎍/㎥) · 색 = PM2.5·PM10 중 나쁜 쪽 환경부 등급 · CAMS 모형값(측정소 아님)</small>'); }
+    if (on.lev) { var e = LIVE.ev; b.push('<b>🚧 돌발</b> ' + Object.keys(EVC).slice(0, 3).map(function (k) { return li(EVC[k][0], EVC[k][1] + ' ' + k); }).join(''));
       b.push(!LK.its ? '<small class="lg-n" style="color:#b91c1c">ITS 키가 아직 없다 — 「🔑 ITS 키」에 국가교통정보센터 인증키를 넣으면 이 기기에서 보인다</small>'
-        : '<small class="lg-n">' + (e && e.err ? '<b style="color:#b91c1c">' + esc(e.err) + '</b> · ' : '') + (e && !e.busy ? '서울·경기 ' + (e.items || []).length + '건 · ' + hhmm(e.at) + ' 받음 · ' : '받는 중 · ') + '오늘 ITS 호출 ' + itsQuota() + '/' + ITS_MAX + '</small>');
-      b.push('<div class="lg-btns"><button data-lkey="its">🔑 ITS 키' + (LK.its ? ' 바꾸기' : ' 넣기') + '</button></div>'); }
+        : '<small class="lg-n">' + (e && e.err ? '<b style="color:#b91c1c">' + esc(e.err) + '</b> · ' : '') + (e && !e.busy ? '서울·경기 ' + (e.items || []).length + '건 · ' + hhmm(e.at) + ' 받음' : '받는 중') + '</small><div class="lg-btns"><button data-lre="ev">🔄 돌발 다시 받기(ITS 1건)</button></div>'); }
     if (on.lwx) { var w = LIVE.wx; b.push('<small class="lg-n">🌦 지금 날씨 — ' + (w && w.err ? '<b style="color:#b91c1c">' + esc(w.err) + '</b>' : w && !w.busy ? w.pts.length + '칸 · ' + hhmm(w.at) + ' 받음' : '받는 중') + ' · 파란 테 = 비·눈이 오는 칸 · Open-Meteo 모형값</small>'); }
     return b.length ? ['📡 실시간(켠 동안만 받음 · 저장 안 함)', b.join('')] : null; }
   function draw() {
@@ -760,6 +888,9 @@
     } else if (it.kind === 'rent') { h = rentCard(it.it);
     } else if (it.kind === 'store') { var so = it.s, C3 = SIDX ? SIDX.cls[so.c] : null; h = '<h3>🏬 ' + esc(so.n) + '</h3>' + (C3 ? row('업종', esc(C3[1] + ' › ' + C3[3] + ' › ' + C3[4])) : '') + (so.f ? row('층', esc(so.f) + '층') : '') + (RAD.c ? row('반경 가운데에서', Math.round(Math.hypot(so.p[0] - RAD.c[0], so.p[1] - RAD.c[1])) + 'm') : '') + '<p class="desc">등록된 상가 정보다 — 영업 중인지·매출은 이 자료에 없다.</p>' + src(SIDX ? SIDX.source + ' · 기준 ' + SIDX.stdrYm : '');
     } else if (it.kind === 'lev') { h = levCard(it);
+    } else if (it.kind === 'lspd') { h = spdCard(it);
+    } else if (it.kind === 'lcc') { h = ccCard(it);
+    } else if (it.kind === 'lair') { h = airCard(it);
     } else if (it.kind === 'lwx') { h = lwxCard(it);
     } else if (it.kind === 'jgg') { h = jggCard(it);
     } else if (it.kind === 'szone') { h = szCard(it);
@@ -1766,7 +1897,7 @@
     el.innerHTML = '<div class="lgh"><b>🗂 범례</b><button id="m2dLegX" aria-label="범례 닫기">닫기</button></div>' + (g.join('') || '<small>켠 층이 없다</small>');
     $('m2dLegX').onclick = function () { legOpen(false); };
   }
-  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-vwkey]'); if (b) { vwSetKey(); return; } b = e.target.closest('[data-lkey]'); if (b) { lkSet(b.getAttribute('data-lkey'), '국가교통정보센터(ITS)'); return; } b = e.target.closest('[data-vwm]'); if (b) { VWM = b.getAttribute('data-vwm'); try { localStorage.setItem('tg_map2d_vw', VWM); } catch (e2) {} draw(); return; } b = e.target.closest('[data-jggm]'); if (b) { JGGM = b.getAttribute('data-jggm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); } });
+  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-vwkey]'); if (b) { vwSetKey(); return; } b = e.target.closest('[data-lkey]'); if (b) { lkSet(b.getAttribute('data-lkey'), '국가교통정보센터(ITS)'); return; } b = e.target.closest('[data-lre]'); if (b) { liveGo(b.getAttribute('data-lre')); legend(); return; } b = e.target.closest('[data-itst]'); if (b) { LK.itst = b.getAttribute('data-itst'); try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e2) {} legend(); return; } b = e.target.closest('[data-vwm]'); if (b) { VWM = b.getAttribute('data-vwm'); try { localStorage.setItem('tg_map2d_vw', VWM); } catch (e2) {} draw(); return; } b = e.target.closest('[data-jggm]'); if (b) { JGGM = b.getAttribute('data-jggm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); } });
     $('m2dLeg').addEventListener('change', function (e) { var t = e.target; if (t.hasAttribute('data-trdi')) { TRDI = t.value; draw(); } else if (t.hasAttribute('data-a10y')) { A10Y = t.value ? +t.value : null; draw(); } }); }
   function legOpen(v) { if (v && window.innerWidth < 760 && $('m2dCard').classList.contains('on')) $('m2dCard').classList.remove('on');
     document.body.classList.toggle('legon', v); try { localStorage.setItem('tg_map2d_leg', v ? '1' : '0'); } catch (e) {} if (v) legend(); }

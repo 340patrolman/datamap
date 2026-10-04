@@ -13,7 +13,7 @@
   var D = {}, hit = [], sel = null;
   // 층 = [키, 이름, 기본 켜짐, 갈래, 위 줄 단추]. 위 줄에는 자주 쓰는 것만, 나머지는 「☰ 모든 층」 판에서(v0.10.57 · 소유자 「파출소·지구대에서 써도 좋을 만큼 — 찾을 수 있는 것 싹 다」)
   var LAYERS = [
-    ['dong', '🏘 행정동', true, '기본', 1], ['road', '🛣 도로', true, '기본', 1], ['base', '🗺 바탕(물·녹지·철도)', true, '기본', 0], ['bld', '🏢 건물', true, '기본', 0], ['sub', '🚇 지하철역', true, '기본', 0], ['exit', '🚪 지하철 출입구', false, '기본', 0],
+    ['dong', '🏘 행정동', true, '기본', 1], ['road', '🛣 도로', true, '기본', 1], ['base', '🗺 바탕(물·녹지·철도)', true, '기본', 0], ['vw', '🛰 위성·일반 지도(브이월드 · 인터넷)', false, '기본', 1], ['bld', '🏢 건물', true, '기본', 0], ['sub', '🚇 지하철역', true, '기본', 0], ['exit', '🚪 지하철 출입구', false, '기본', 0],
     ['acc', '🚗 교차로 사고(2019~)', true, '교통안전', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통안전', 1], ['fatal10', '🕯 사망사고 10년', false, '교통안전', 0], ['fatal', '🕯 사망사고', false, '교통안전', 0], ['hot', '⚠ 사고다발지', false, '교통안전', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통안전', 1],
     ['risk', '🟥 사고위험지역', false, '교통안전', 0], ['sz', '🏫 어린이보호구역', false, '교통안전', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통안전', 0], ['cam', '📷 단속 카메라', false, '교통안전', 0], ['spd', '🚥 도로 소통(받은 때)', false, '교통안전', 0], ['sig', '🚦 신호 주기', false, '교통안전', 0], ['sigx', '🔢 신호 교차로 번호', false, '교통안전', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '사람·흐름', 1], ['rent', '💰 상가 임대료·공실률', false, '사람·흐름', 0], ['szone', '🏬 소진공 주요상권(서울·경기)', false, '사람·흐름', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '사람·흐름', 1], ['crowd', '📡 실시간 인파·카드', false, '사람·흐름', 1], ['live', '👥 생활인구(지금)', false, '사람·흐름', 1], ['sales', '💳 카드 매출(시간대)', false, '사람·흐름', 1], ['bus', '🚌 버스 승차·하차', false, '사람·흐름', 1], ['subr', '🚇 지하철 승차·하차', false, '사람·흐름', 0], ['vol', '🚙 교통량', false, '사람·흐름', 0], ['bike', '🚲 따릉이', false, '사람·흐름', 0],
@@ -412,12 +412,59 @@
   function zk() { return Math.max(0.55, Math.min(1.35, view.s / 0.3)); }
   function dot(q, r, fill, stroke, item) { var s = S(q); if (s[0] < -40 || s[1] < -40 || s[0] > cv.clientWidth + 40 || s[1] > cv.clientHeight + 40) return; r = r * zk(); ctx.beginPath(); ctx.arc(s[0], s[1], r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.lineWidth = 1.5; ctx.strokeStyle = stroke; ctx.stroke(); } if (item) hit.push({ x: s[0], y: s[1], r: Math.max(r, 9), it: item }); }
   function label(q, text, size, color, bg) { var s = S(q); ctx.font = 'bold ' + size + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; if (bg) { var w = ctx.measureText(text).width; ctx.fillStyle = bg; ctx.fillRect(s[0] - w / 2 - 3, s[1] - size / 2 - 2, w + 6, size + 4); } ctx.fillStyle = color; ctx.fillText(text, s[0], s[1]); }
+  // ---------- 🛰 브이월드 배경지도(v1.5.0) — 켠 사람만 api.vworld.kr 에서 256px 조각을 받는다 · 끄면 통신 0 ----------
+  // 키는 저장소에 없다. 기기마다 「🔑 키 넣기」 또는 주소 #vwkey=… 로 한 번 넣으면 그 기기에만 남는다(tg_map2d_vwkey).
+  var VWKEY = '', VWT = {}, VWN = 0, VWQ = 0, VWBAD = 0, VWOK = 0, VWM = 'Satellite';
+  var VWMS = { Satellite: '🛰 위성', Hybrid: '🛰 위성+이름', Base: '🗺 일반', gray: '◻ 회색', midnight: '🌙 야간' };
+  try { var vw0 = localStorage.getItem('tg_map2d_vw'); if (vw0 && VWMS[vw0]) VWM = vw0; VWKEY = localStorage.getItem('tg_map2d_vwkey') || ''; } catch (e) {}
+  (function () { var m = /[#&]vwkey=([A-Za-z0-9-]{8,80})/.exec(location.hash); if (!m) return; VWKEY = m[1]; try { localStorage.setItem('tg_map2d_vwkey', VWKEY); } catch (e) {}
+    var h = location.hash.replace(/[#&]vwkey=[A-Za-z0-9-]+/, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h[0] === '#' ? h : '#' + h) : '')); } catch (e) {} on.vw = true; })();
+  function vwSetKey() { var k = prompt('브이월드 인증키를 붙여 넣으세요(vworld.kr → 마이페이지 → 인증키 관리). 이 기기에만 저장됩니다. 비우면 지웁니다.', VWKEY || ''); if (k == null) return;
+    VWKEY = (k || '').replace(/\s+/g, ''); VWT = {}; VWBAD = VWOK = 0; try { if (VWKEY) localStorage.setItem('tg_map2d_vwkey', VWKEY); else localStorage.removeItem('tg_map2d_vwkey'); } catch (e) {} draw(); }
+  function vwLx(lon, z) { return (lon + 180) / 360 * Math.pow(2, z); }
+  function vwLy(lat, z) { var r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z); }
+  function vwLon(x, z) { return x / Math.pow(2, z) * 360 - 180; }
+  function vwLat(y, z) { var n = Math.PI * (1 - 2 * y / Math.pow(2, z)); return Math.atan((Math.exp(n) - Math.exp(-n)) / 2) * 180 / Math.PI; }
+  function vwTile(lay, z, x, y) {
+    var k = lay + '/' + z + '/' + y + '/' + x, t = VWT[k];
+    if (t) { t.u = ++VWN; return t.ok ? t : null; }
+    var ks = Object.keys(VWT); if (ks.length > 500) ks.sort(function (a, b) { return VWT[a].u - VWT[b].u; }).slice(0, 150).forEach(function (q) { delete VWT[q]; });
+    t = VWT[k] = { im: new Image(), ok: false, u: ++VWN };
+    t.im.onload = function () { t.ok = true; VWOK++; if (!VWQ) VWQ = requestAnimationFrame(function () { VWQ = 0; draw(); }); };
+    t.im.onerror = function () { t.bad = 1; VWBAD++; if (VWBAD === 4 && !VWOK && document.body.classList.contains('legon')) legend(); };
+    t.im.src = 'https://api.vworld.kr/req/wmts/1.0.0/' + VWKEY + '/' + lay + '/' + z + '/' + y + '/' + x + '.' + (lay === 'Satellite' ? 'jpeg' : 'png');
+    return null;
+  }
+  function drawVw() {
+    if (!on.vw || !VWKEY) return false;
+    var W = cv.clientWidth, H = cv.clientHeight, a = M(0, 0), b = M(W, H);
+    var lonA = a[0] / KX + LON0, lonB = b[0] / KX + LON0, latA = LAT0 - a[1] / KY, latB = LAT0 - b[1] / KY;
+    var z = Math.round(Math.log(156543.03 * Math.cos(LAT0 * Math.PI / 180) * view.s * Math.min(2, DPR)) / Math.LN2); z = Math.max(7, Math.min(19, z));
+    (VWM === 'Hybrid' ? ['Satellite', 'Hybrid'] : [VWM]).forEach(function (lay) {
+      var x0 = Math.floor(vwLx(lonA, z)), x1 = Math.floor(vwLx(lonB, z)), y0 = Math.floor(vwLy(latA, z)), y1 = Math.floor(vwLy(latB, z));
+      if ((x1 - x0 + 1) * (y1 - y0 + 1) > 160) return;
+      for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) {
+        var p0 = S(P(vwLon(x, z), vwLat(y, z))), p1 = S(P(vwLon(x + 1, z), vwLat(y + 1, z))), w = p1[0] - p0[0] + 0.6, h = p1[1] - p0[1] + 0.6, t = vwTile(lay, z, x, y);
+        if (t) { ctx.drawImage(t.im, p0[0], p0[1], w, h); continue; }
+        if (lay === 'Hybrid') continue;
+        for (var dz = 1; dz <= 5; dz++) { var tk = VWT[lay + '/' + (z - dz) + '/' + (y >> dz) + '/' + (x >> dz)]; if (tk && tk.ok) { var n = 1 << dz, sw = 256 / n; ctx.drawImage(tk.im, (x - ((x >> dz) << dz)) * sw, (y - ((y >> dz) << dz)) * sw, sw, sw, p0[0], p0[1], w, h); break; } }
+      }
+    });
+    if (VWOK) { ctx.font = '10px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(4, 56, 118, 15); ctx.fillStyle = '#1f2937'; ctx.fillText('배경 © 브이월드(국토교통부)', 7, 58); }
+    return true;
+  }
+  function vwLegend() { if (!on.vw) return null;
+    var msg = !VWKEY ? '<small class="lg-n" style="color:#b91c1c">키가 아직 없다 — 「🔑 키 넣기」에 브이월드 인증키를 넣으면 이 기기에서 보인다(저장소·다른 기기로는 안 간다)</small>'
+      : (VWBAD >= 4 && !VWOK) ? '<small class="lg-n" style="color:#b91c1c">조각을 못 받았다 — 인터넷·키 확인. 키는 340patrolman.github.io 에만 묶여 있어 다른 주소(PC 시험 등)에서는 안 열린다</small>' : '';
+    return ['🛰 배경지도 — 브이월드', '<div class="lg-btns">' + Object.keys(VWMS).map(function (k) { return '<button data-vwm="' + k + '" class="' + (k === VWM ? 'on' : '') + '">' + VWMS[k] + '</button>'; }).join('') + '<button data-vwkey="1">🔑 ' + (VWKEY ? '키 바꾸기' : '키 넣기') + '</button></div>' + msg +
+      '<small class="lg-n">국토교통부 브이월드(vworld.kr) 배경지도 · 위성 = 항공사진 · 인터넷이 있을 때만 보인다(끄면 통신 0) · 위성 위에서는 행정동 색을 옅게 · 「🗺 바탕」·「🏢 건물」을 끄면 사진이 더 잘 보인다</small>']; }
   function draw() {
     var needW = Math.round(cv.clientWidth * DPR), needH = Math.round(cv.clientHeight * DPR);
     if (cv.width !== needW || cv.height !== needH) { cv.width = needW; cv.height = needH; }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0); hit = []; viewWatch();
     var W = cv.clientWidth, H = cv.clientHeight, dark = document.documentElement.classList.contains('dark');
     var BASE = on.base && OSM; ctx.fillStyle = dark ? '#0f1624' : (BASE ? '#f2efe8' : '#eef2f6'); ctx.fillRect(0, 0, W, H);
+    var VW = drawVw();
     var ymd = pickDate(), RVIS = RDONG.filter(inViewBox);
     // 이웃 구의 동(회색 · 점선 경계) — 그 구의 지역 자료를 받았으면 그쪽이 그린다
     NEAR.forEach(function (d) { if (RGUN[d.gu]) return;
@@ -431,10 +478,10 @@
         var lv = on.live ? liveNow(d) : null;
         if (lv) { var t = Math.min(1, lv.n / (lv.max || 1)); ctx.fillStyle = 'rgba(' + Math.round(255 - 40 * t) + ',' + Math.round(230 - 170 * t) + ',' + Math.round(150 - 110 * t) + ',' + (dark ? .55 : .75) + ')'; ctx.fill('evenodd'); }
         else if (on.sales && salesNow(d)) { var sn = salesNow(d); ctx.fillStyle = 'rgba(' + Math.round(237 - 120 * sn.t) + ',' + Math.round(233 - 180 * sn.t) + ',' + Math.round(254 - 40 * sn.t) + ',' + (dark ? .5 : .8) + ')'; ctx.fill('evenodd'); }
-        else if (on.dong) { var hl3 = sel && sel.it.kind === 'dong' && sel.it.d === d; ctx.fillStyle = dark ? 'rgba(90,120,170,' + (hl3 ? '.45' : BASE ? '.08' : '.18') + ')' : (hl3 ? '#fde68a' : PAL[k % PAL.length]); if (BASE && !hl3 && !dark) ctx.globalAlpha = 0.3; ctx.fill('evenodd'); ctx.globalAlpha = 1; }
+        else if (on.dong) { var hl3 = sel && sel.it.kind === 'dong' && sel.it.d === d; ctx.fillStyle = dark ? 'rgba(90,120,170,' + (hl3 ? '.45' : BASE ? '.08' : '.18') + ')' : (hl3 ? '#fde68a' : PAL[k % PAL.length]); if (VW && !hl3) ctx.globalAlpha = 0.14; else if (BASE && !hl3 && !dark) ctx.globalAlpha = 0.3; ctx.fill('evenodd'); ctx.globalAlpha = 1; }
         if (!BASE) { ctx.lineWidth = (on.dong ? 1.6 : 0.8) * (d.rg ? 0.7 : 1); ctx.strokeStyle = dark ? 'rgba(160,190,230,.6)' : 'rgba(40,60,90,.45)'; ctx.stroke(); } });
     });
-    if (BASE) { drawBaseAreas(dark); DONG.concat(RVIS).forEach(function (d) { d.polys.forEach(function (Pg) { ctx.beginPath(); Pg.forEach(function (r) { r.forEach(function (q, n) { var s = S(q); if (n) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); ctx.closePath(); });
+    if (BASE) { if (!VW) drawBaseAreas(dark); DONG.concat(RVIS).forEach(function (d) { d.polys.forEach(function (Pg) { ctx.beginPath(); Pg.forEach(function (r) { r.forEach(function (q, n) { var s = S(q); if (n) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); ctx.closePath(); });
       ctx.lineWidth = (on.dong ? 1.8 : 0.8) * (d.rg ? 0.65 : 1); ctx.setLineDash(on.dong ? [] : [4, 4]); ctx.strokeStyle = dark ? 'rgba(167,139,250,.65)' : 'rgba(109,40,217,.45)'; ctx.stroke(); ctx.setLineDash([]); }); }); }
     // 구 경계(서초·동작·관악·강남)
     GU.forEach(function (g) { path(g.pts); ctx.lineWidth = 2.4; ctx.setLineDash([8, 5]); ctx.strokeStyle = dark ? '#9fb3d1' : '#475569'; ctx.stroke(); ctx.setLineDash([]); });
@@ -1612,6 +1659,7 @@
     if (on.sales) { var a = 1e18, b = 0; allDong().forEach(function (d) { var sn = salesNow(d); if (sn) { a = Math.min(a, sn.perH); b = Math.max(b, sn.perH); } }); if (b) G('💳 카드 매출 ' + esc(D.flow.sales.tb[bandOf(hh)]), grad('rgb(237,233,254)', 'rgb(117,53,214)', won(a), won(b)) + '<small class="lg-n">시간당 추정 매출(하루 평균) · 동을 누르면 업종·연령</small>'); }
     if (typeof trdLegend === 'function') { var tl = trdLegend(); if (tl) G(tl[0], tl[1]); }
     var jl = jggLegend(); if (jl) G(jl[0], jl[1]);
+    var vl = vwLegend(); if (vl) G(vl[0], vl[1]);
     if (on.szone) G('🏬 소진공 주요상권', li('#b45309', '주황 점선 = 소상공인시장진흥공단이 정한 주요상권 경계(2024.1 · 서울 176 · 경기 281)', 'line') + '<small class="lg-n">누르면 영역 안 등록 점포 · 업종 · 1층 비율</small>');
     if (typeof a10Legend === 'function') { var al = a10Legend(); if (al) G(al[0], al[1]); }
     if (on.bus || on.subr) G('🚌🚇 ' + hh + '시 승하차', li('rgba(37,99,235,.8)', '타는 사람 많음(떠나는 곳)') + li('rgba(234,88,12,.8)', '내리는 사람 많음(모여드는 곳)') + li('rgba(13,148,136,.8)', '비슷') + '<small class="lg-n">원 크기 = 그 시각 승차+하차(하루 평균) · 지하철 옆 숫자 = 그 시각 승하차</small>');
@@ -1639,7 +1687,7 @@
     el.innerHTML = '<div class="lgh"><b>🗂 범례</b><button id="m2dLegX" aria-label="범례 닫기">닫기</button></div>' + (g.join('') || '<small>켠 층이 없다</small>');
     $('m2dLegX').onclick = function () { legOpen(false); };
   }
-  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-jggm]'); if (b) { JGGM = b.getAttribute('data-jggm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); } });
+  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-vwkey]'); if (b) { vwSetKey(); return; } b = e.target.closest('[data-vwm]'); if (b) { VWM = b.getAttribute('data-vwm'); try { localStorage.setItem('tg_map2d_vw', VWM); } catch (e2) {} draw(); return; } b = e.target.closest('[data-jggm]'); if (b) { JGGM = b.getAttribute('data-jggm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); } });
     $('m2dLeg').addEventListener('change', function (e) { var t = e.target; if (t.hasAttribute('data-trdi')) { TRDI = t.value; draw(); } else if (t.hasAttribute('data-a10y')) { A10Y = t.value ? +t.value : null; draw(); } }); }
   function legOpen(v) { if (v && window.innerWidth < 760 && $('m2dCard').classList.contains('on')) $('m2dCard').classList.remove('on');
     document.body.classList.toggle('legon', v); try { localStorage.setItem('tg_map2d_leg', v ? '1' : '0'); } catch (e) {} if (v) legend(); }

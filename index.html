@@ -200,6 +200,13 @@
   #m2dBiz ol.bizl li i { float: right; font-style: normal; font-weight: 800; color: #fff; background: linear-gradient(90deg, #7c3aed var(--w), #c4b5fd var(--w)); border-radius: 6px; padding: 0 6px; min-width: 34px; text-align: center; }
   #m2dBiz ol.bizl small { color: var(--ink2); }
   #m2dBiz ol.bizl small.f { color: var(--ink); }
+  #m2dBiz .bizsum { font-size: 13px; line-height: 1.45; margin: 4px 0; }
+  #m2dBiz .bizscale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; margin: 5px 0 2px; }
+  #m2dBiz .bizscale i { height: 9px; border-radius: 3px; }
+  #m2dBiz .bizscale span { grid-column: span 1; font-size: 10.5px; color: var(--ink2); }
+  #m2dBiz .bizscale span:nth-of-type(2) { grid-column: span 3; text-align: center; }
+  #m2dBiz .bizscale span:last-child { text-align: right; }
+  @media (max-width: 759px) { #m2dBiz { max-height: 40vh; } #m2dRad { max-height: 42vh; } }
   #m2dPre button.biz { border-color: #7c3aed; color: #7c3aed; }
   #m2dRad { display: none; position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 7; max-height: 58vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; box-shadow: 0 6px 24px rgba(0,0,0,.18); font-size: 13px; }
   @media (min-width: 760px) { #m2dRad { right: auto; width: 400px; max-height: 64vh; } }
@@ -349,7 +356,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=1.0.1"></script>
+<script src="js/map2d.js?v=1.1.0"></script>
 <script>
   // 캔버스 자리 = 위 막대 아래부터 화면 끝까지(막대 높이가 기기·글자 크기마다 다르다)
   (function () {

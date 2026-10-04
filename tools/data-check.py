@@ -10,6 +10,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KB = os.path.dirname(ROOT)
 # [파일, 주기(일), 다시 굽는 법(auto = 키만 있으면 혼자 돈다 / hand = 사람·브라우저 단계가 있다), 명령·절차]
 SETS = [
+    ['data/r/11650/trdhl.json', 92, 'auto', '`py -3.12 -X utf8 tools/region/trdhl-bake.py fetch` → `build`(서울 골목상권 배후지 · 분기)'],
+    ['data/r/41111/ggtrd.json', 92, 'hand', '경기데이터드림 발달·골목상권 영역(시트) + TBGGESTDEVALLSTM 새 분기 → `tools/region/gg-trdar-bake.py`'],
     ['data/live-seocho.json', 0.5, 'auto', '작업 스케줄러 「SEOUL-PATROL 실시간 지도 갱신」(3시간마다) — 멈췄으면 `py -3.12 tools/live-refresh.py`'],
     ['data/flow-seocho.json', 31, 'auto', '`py -3.12 tools/flow-bake.py flow`(교통카드 다음 달 · 동 매출 다음 분기)'],
     ['data/pubdata-seocho.json', 31, 'auto', '`perl tools/map2d-build/build_pub.pl`(생활인구·지하철·버스·병의원·약국 — 원자료를 먼저 다시 받는다)'],

@@ -147,7 +147,9 @@
     if ((on.acc10 || on.fatal10) && view.s >= 0.012) { var va = viewLL(); rIdx().forEach(function (g) { if (RLOADA[g.gu] || !(g.bytes || {}).taas10) return; var x = g.box; if (x[2] < va[0] || x[0] > va[2] || x[3] < va[1] || x[1] > va[3]) return; aLoad(g.gu); }); }
     if (view.s >= 0.03 && SAFE_KEYS.some(function (k) { return on[k]; })) { var vs2 = viewLL(); rIdx().forEach(function (g) { if (RLOADS[g.gu] || !(g.bytes || {}).safety) return; var x = g.box; if (x[2] < vs2[0] || x[0] > vs2[2] || x[3] < vs2[1] || x[1] > vs2[3]) return; sfLoad(g.gu); }); }
     if ((on.bus && view.s > 0.07) || (on.subr && view.s >= 0.02)) { var vx = viewLL(); rIdx().forEach(function (g) { if (RLOADX[g.gu] || !(g.bytes || {}).transit) return; var x = g.box; if (x[2] < vx[0] || x[0] > vx[2] || x[3] < vx[1] || x[1] > vx[3]) return; xLoad(g.gu); }); }
-    if (on.trd && view.s >= 0.02) { var vt = viewLL(); rIdx().forEach(function (g) { if (RLOADT[g.gu] || !(g.bytes || {}).trdar) return; var x = g.box; if (x[2] < vt[0] || x[0] > vt[2] || x[3] < vt[1] || x[1] > vt[3]) return; tLoad(g.gu); }); }
+    if (on.trd && view.s >= 0.02) { var vg = viewLL(); rIdx().forEach(function (g) { if (RLOADG[g.gu] || !(g.bytes || {}).ggtrd) return; var x = g.box; if (x[2] < vg[0] || x[0] > vg[2] || x[3] < vg[1] || x[1] > vg[3]) return; gLoad(g.gu); }); }
+    if (on.trd && view.s >= 0.02) { var vh = viewLL(); rIdx().forEach(function (g) { if (RLOADH2[g.gu] || !(g.bytes || {}).trdhl) return; var x = g.box; if (x[2] < vh[0] || x[0] > vh[2] || x[3] < vh[1] || x[1] > vh[3]) return; hlLoad(g.gu); }); }
+    if ((on.trd || document.body.classList.contains('bizon')) && view.s >= 0.02) { var vt = viewLL(); rIdx().forEach(function (g) { if (RLOADT[g.gu] || !(g.bytes || {}).trdar) return; var x = g.box; if (x[2] < vt[0] || x[0] > vt[2] || x[3] < vt[1] || x[1] > vt[3]) return; tLoad(g.gu); }); }
     if (!(on.dong || on.live || on.sales) || view.s < 0.012) return; var v = viewLL();
     rIdx().forEach(function (g) { if (g.gu === '11650' || RLOAD[g.gu]) return; var x = g.box; if (x[2] < v[0] || x[0] > v[2] || x[3] < v[1] || x[1] > v[3]) return;
       rLoadGu(g.gu); });
@@ -165,7 +167,88 @@
     if (RX[g]) { d.x = RX[g].dong[d.k] || {}; return; }
     d.x = null; fetch('data/r/' + g + '/dongx.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { RX[g] = j; RDONG.forEach(function (q) { if (q.gcd === g && q.x === null) q.x = j.dong[q.k] || {}; }); if (sel && sel.it.d && sel.it.d.gcd === g) show(sel.it); }).catch(function () { d.x = {}; });
   }
-  var TCB = {};
+  var TCB = {}, RLOADG = {}, GGT = [], GGM = 'amt', RLOADH2 = {}, HL = {}, HLALL = false;
+  function hlLoad(gu) {   // v1.1.0 서울 골목상권 배후지(상권분석서비스 영역-상권배후지 OA-22159)
+    if (RLOADH2[gu] && RLOADH2[gu].then) return RLOADH2[gu]; if (RLOADH2[gu]) return Promise.resolve();
+    RLOADH2[gu] = fetch('data/r/' + gu + '/trdhl.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+      j.trdhl.forEach(function (t) { HL[t.cd] = { t: t, m: j, rings: t.rings.map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }) }; });
+      RLOADH2[gu] = 3; draw(); if (sel && sel.it.kind === 'trd' && HL[sel.it.x.t.cd]) show(sel.it); }).catch(function () { RLOADH2[gu] = 2; });
+    return RLOADH2[gu];
+  }
+  function drawHl(dark) {   // 고른 골목상권의 배후지(주황 점선) · 범례에서 「배후지 모두」
+    if (!on.trd) return; var cds = [];
+    if (HLALL) cds = Object.keys(HL); else if (sel && sel.it.kind === 'trd' && HL[sel.it.x.t.cd]) cds = [sel.it.x.t.cd];
+    cds.forEach(function (cd) { var H = HL[cd];
+      H.rings.forEach(function (r) { path(r); ctx.closePath(); ctx.fillStyle = dark ? 'rgba(251,146,60,.10)' : 'rgba(251,146,60,.12)'; ctx.fill(); ctx.lineWidth = 1.6; ctx.setLineDash([6, 4]); ctx.strokeStyle = '#ea580c'; ctx.stroke(); ctx.setLineDash([]); }); });
+  }
+  function hlRows(t) {   // 본체 ↔ 배후지 — 수요의 성격
+    var H = HL[t.cd]; if (!H) { var gq = (t.gu || '') ; if (gq && !RLOADH2[gq]) hlLoad(gq); return t.se === '골목상권' ? '<div class="dh">🏘 배후지</div>' + row('배후지', '<em>받는 중…</em>') : ''; }
+    var b = H.t, QS = H.m.qs || {}, qk = function (k) { var q = QS[k]; return q ? q.slice(0, 4) + '년 ' + q[4] + '분기' : ''; }, aptH = function (x) { return !x ? 0 : x.rep && x.rep[10] ? x.rep[10] : x.apt ? x.apt.slice(1, 6).reduce(function (a, v) { return a + v; }, 0) : 0; }, sum = function (ind, k) { return (ind || []).reduce(function (a, r) { return a + r[k]; }, 0); }, h = '<div class="dh">🏘 본체 ↔ 배후지 — 이 골목상권을 받치는 생활 구역</div>';
+    var a0 = sum(t.ind, 1), a1 = sum(b.ind, 1), wk0 = sum(t.ind, 17) + sum(t.ind, 18) + sum(t.ind, 19) + sum(t.ind, 20) + sum(t.ind, 21), we0 = sum(t.ind, 22) + sum(t.ind, 23);
+    h += '<table class="it"><tr><th></th><th>본체(상권)</th><th>배후지</th></tr>' +
+      '<tr><td>넓이</td><td>' + man(t.area) + '㎡</td><td>' + man(b.area) + '㎡</td></tr>' +
+      '<tr><td>카드 매출(한 달)</td><td>' + won(a0) + '</td><td>' + won(a1) + '</td></tr>' +
+      '<tr><td>점포</td><td>' + (t.stor || []).reduce(function (a, s2) { return a + s2[1]; }, 0) + '곳</td><td>' + (b.stor || []).reduce(function (a, s2) { return a + s2[1]; }, 0) + '곳</td></tr>' +
+      '<tr><td>상주인구</td><td>' + (t.rep ? man(t.rep[0]) : '-') + '</td><td>' + (b.rep ? man(b.rep[0]) : '-') + '</td></tr>' +
+      '<tr><td>가구(아파트)</td><td>' + (t.rep ? man(t.rep[9]) + '(' + (aptH(t) ? man(aptH(t)) : '-') + ')' : '-') + '</td><td>' + (b.rep ? man(b.rep[9]) + '(' + man(aptH(b)) + ')' : '-') + '</td></tr>' +
+      '<tr><td>하루 유동(평균)</td><td>' + (t.flp ? man(t.flp[0] / 91) : '-') + '</td><td>' + (b.flp ? man(b.flp[0] / 91) : '-') + '</td></tr>' +
+      '<tr><td>직장인구</td><td>' + (t.wrc ? man(t.wrc[0]) : '-') + '</td><td><em>자료 없음</em></td></tr></table>';
+    var W = t.wrc ? t.wrc[0] : 0, R = (b.rep ? b.rep[0] : 0) + (t.rep ? t.rep[0] : 0), wkp = pct(wk0, wk0 + we0);
+    var kind = !W && !R ? '판단 못 함' : W >= 2 * R ? '🏢 <b>직장 수요</b> — 직장인구가 상주인구의 두 배 넘음 · 평일 점심·회식 쪽' : R >= 2 * W ? '🏠 <b>주거 수요</b> — 배후지 가구가 받친다' + (b.rep && b.rep[9] ? ' · 아파트 가구 약 ' + Math.min(100, pct(aptH(b), b.rep[9])) + '%' : '') : '↔ <b>직장·주거 혼합</b>';
+    h += row('수요 성격', kind + ' <em>(본체 매출 평일 ' + wkp + '% · 주말 ' + (100 - wkp) + '% · 문턱 2배는 설계값)</em>');
+    if (b.rep) h += '<div class="cap">배후지 상주인구 연령대(명 · 10대 … 60세 이상)</div>' + bar(b.rep.slice(3, 9), '#ea580c', LB_AGE6) + row('배후지 가구', man(b.rep[9]) + ' · 아파트 약 ' + man(aptH(b)) + ' <em>(' + qk('rep') + ' · 아파트 가구는 아파트-배후지 면적별 가구 합 — 상주인구 자료의 아파트 칸이 비어 있다)</em>');
+    if (b.apt && b.apt[0]) { var A = b.apt; h += row('배후지 아파트', A[0] + '단지 · 평균 ' + A[13] + '㎡ · 평균 시가 ' + won(A[14]) + ' <em>(아파트-상권배후지 · ' + qk('apt') + ')</em>') +
+        '<div class="cap">배후지 아파트 시가별 가구(가구 · 1억 미만 … 6억 이상)</div>' + bar(A.slice(6, 13), '#f97316', ['1억↓', '1억', '2억', '3억', '4억', '5억', '6억↑']) +
+        '<div class="cap">배후지 아파트 면적별 가구(가구 · 66㎡ 미만 … 165㎡ 이상)</div>' + bar(A.slice(1, 6), '#fb923c', ['66↓', '66', '99', '132', '165↑']); }
+    if (b.ncm && b.ncm[0]) { var N = b.ncm, NL = ['식료품', '의류·신발', '생활용품', '의료', '교통', '여가', '문화', '교육', '유흥'];
+      h += row('배후지 소비', '지출 총액 ' + won(N[0]) + (N[10] ? ' · 월평균 소득 ' + won(N[10]) : '') + ' <em>(소비-상권배후지 · ' + qk('ncm') + ' — 그 뒤 분기는 비어 있다 · 자료 값 그대로)</em>') +
+        '<div class="cap">배후지 지출 갈래(원 · 식료품 … 유흥)</div>' + bar(N.slice(1, 10), '#c2410c', NL, 'w'); }
+    if (b.ind && b.ind.length) { var tops = b.ind.slice().sort(function (p2, q2) { return q2[1] - p2[1]; }).slice(0, 5);
+      h += row('배후지 매출 많은 업종', tops.map(function (r) { return esc(r[0]) + ' ' + won(r[1]); }).join(' · ')); }
+    if (b.stor && b.stor.length) h += row('배후지 점포', b.stor.reduce(function (a, s2) { return a + s2[1]; }, 0) + '곳 · 개업 ' + b.stor.reduce(function (a, s2) { return a + s2[3]; }, 0) + ' · 폐업 ' + b.stor.reduce(function (a, s2) { return a + s2[4]; }, 0));
+    return h + '<p class="desc">' + esc(H.m.note) + '</p>' + src(H.m.source);
+  }
+  function gLoad(gu, then) {   // v1.1.0 경기 상권 — 경기데이터드림 발달·골목상권 영역 + 업종별 추정매출(한 분기)
+    if (RLOADG[gu] === 3 || RLOADG[gu] === 2) { if (then) then(); return Promise.resolve(); } if (RLOADG[gu] && RLOADG[gu].then) return RLOADG[gu];
+    RLOADG[gu] = fetch('data/r/' + gu + '/ggtrd.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+      j.items.forEach(function (t) { var rings = t.rings.map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }); var r0 = rings[0], a = 0;
+        for (var i = 0, k = r0.length - 1; i < r0.length; k = i++) a += (r0[k][0] + r0[i][0]) * (r0[k][1] - r0[i][1]);
+        GGT.push({ t: t, rings: rings, c: P(t.lon, t.lat), area: Math.abs(a / 2), m: j }); });
+      RLOADG[gu] = 3; draw(); }).catch(function () { RLOADG[gu] = 2; });
+    return RLOADG[gu];
+  }
+  var GGMS = { amt: ['💰 분기 매출', '#0f766e'], atv: ['🧾 객단가(건당)', '#0d9488'], perstor: ['🏬 점포당 매출', '#115e59'], stor: ['🏪 점포 수', '#14b8a6'], dens: ['📍 점포 밀도', '#2dd4bf'] };
+  function ggVal(x, m) { var t = x.t, T = t.tot;
+    if (m === 'amt') return T ? T[0] : null; if (m === 'atv') return T && T[1] ? T[0] * 1e4 / T[1] : null;
+    if (m === 'perstor') return T && t.st ? T[0] / t.st : null; if (m === 'stor') return t.st || 0; if (m === 'dens') return x.area ? t.st / (x.area / 1e4) : 0; return null; }
+  function ggFmt(v, m) { return v == null ? '자료 없음' : m === 'amt' ? '분기 ' + won(v) : m === 'perstor' ? '점포당 분기 ' + won(v) : m === 'atv' ? Math.round(v).toLocaleString() + '원' : m === 'dens' ? v.toFixed(1) + '곳/ha' : Math.round(v) + '곳'; }
+  function drawGgt(dark) {
+    if (!on.trd || !GGT.length) return; var col = GGMS[GGM][1], vs = GGT.map(function (x) { return ggVal(x, GGM); }), mx = Math.max.apply(null, vs.filter(function (v) { return v != null; }).concat([1]));
+    GGT.forEach(function (x, k) { var v = vs[k], s0 = S(x.c); if (s0[0] < -400 || s0[1] < -400 || s0[0] > cv.clientWidth + 400 || s0[1] > cv.clientHeight + 400) return;
+      x.rings.forEach(function (r) { path(r); ctx.closePath(); ctx.fillStyle = v == null ? 'rgba(148,163,184,.18)' : hexA(col, 0.08 + 0.62 * Math.sqrt(v / mx)); ctx.fill(); ctx.lineWidth = x.t.k === 'dev' ? 2.2 : 1.1; ctx.strokeStyle = col; ctx.stroke(); });
+      hit.push({ x: s0[0], y: s0[1], r: 12, it: { kind: 'ggt', x: x } });
+      if (view.s > 0.11) { label(x.c, x.t.n, 11, '#fff', hexA(col, 0.85)); if (view.s > 0.2) label([x.c[0], x.c[1] + 16 / view.s], ggFmt(v, GGM), 10, dark ? '#e2e8f0' : '#1f2937', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.88)'); } });
+  }
+  function ggLegend() {
+    if (!on.trd || !GGT.length) return ''; var vs = GGT.map(function (x) { return ggVal(x, GGM); }).filter(function (v) { return v != null; });
+    return '<div class="lg-btns" style="margin-top:6px"><b style="font-size:12px">경기 상권</b> ' + Object.keys(GGMS).map(function (k) { return '<button data-ggm="' + k + '" class="' + (k === GGM ? 'on' : '') + '">' + GGMS[k][0] + '</button>'; }).join('') + '</div>' +
+      (vs.length ? grad('rgba(255,255,255,.4)', GGMS[GGM][1], ggFmt(Math.min.apply(null, vs), GGM), ggFmt(Math.max.apply(null, vs), GGM)) : '') + li('#0f766e', '청록 = 경기(발달 굵은 테 · 골목 가는 테 · 회색 = 매출 자료 없음)', 'line') + '<small class="lg-n">경기는 업종 이름이 한국표준산업분류(10차)라 서울의 업종 고르기·시간대·연령 기준이 없다 — 한 분기 값</small>';
+  }
+  function ggtCard(it) {
+    var x = it.x, t = x.t, M = x.m, T = t.tot, h = '<h3>🏪 ' + esc(t.n) + ' <small style="font-weight:400;color:var(--ink2)">경기 ' + (t.k === 'dev' ? '발달상권' : '골목상권') + '</small></h3>';
+    rentLoad();
+    h += '<div class="lg-btns"><button data-radhere="' + t.lon.toFixed(5) + ',' + t.lat.toFixed(5) + '">📐 여기서 반경 분석</button></div>';
+    h += row('자리', esc(t.dong) + ' · 넓이 약 ' + man(x.area) + '㎡') + row('점포', t.st + '곳 <em>(경기도시장상권진흥원 영역 자료)</em>');
+    if (T) { h += row('카드 매출(추정)', '<b>분기 ' + won(T[0]) + '</b> · 결제 ' + man(T[1]) + '건 <em>(' + esc(M.quarter.replace(' ', '년 ')) + '분기 · 자료 값 그대로)</em>') +
+        row('객단가', (T[1] ? Math.round(T[0] * 1e4 / T[1]).toLocaleString() : '-') + '원(건당 결제)') + (t.st ? row('점포당', '분기 ' + won(T[0] / t.st) + ' <em>(매출 ÷ 영역 점포 수)</em>') : '');
+      h += '<div class="cap">업종별 카드 매출(원 · 한 분기 · 매출 많은 업종 15 · 한국표준산업분류 10차 — 번호는 아래 목록)</div>' + bar(t.ind.map(function (r) { return r[1]; }), '#0f766e', t.ind.map(function (r, i) { return String(i + 1); }), 'w') +
+        '<div class="lst">' + t.ind.map(function (r, i) { return '<div><b>' + (i + 1) + '. ' + esc(r[0]) + '</b><span>' + won(r[1]) + ' · ' + man(r[2]) + '건 · 건당 ' + (r[2] ? Math.round(r[1] * 1e4 / r[2]).toLocaleString() : '-') + '원</span></div>'; }).join('') + '</div>'; }
+    else if (t.dup) h += row('카드 매출', '<em>같은 이름의 상권이 여럿이라 어느 영역의 매출인지 가릴 수 없어 붙이지 않았다</em>');
+    else h += row('카드 매출', '이 상권은 매출 자료가 없다');
+    if (t.indt && t.indt.length) h += row('주요 업종', esc(t.indt.join(' · ')) + ' <em>(영역 자료의 업종 목록)</em>');
+    h += rentRows(x.c, '임대료(가까운 표본)');
+    return h + '<p class="desc">' + esc(M.note) + '</p>' + src(M.source);
+  }
   function tLoad(gu, then) {   // v0.10.92 구의 상권(서울시 상권분석서비스) — 서초는 기존 trdar-seocho 를 이 파일(1년 전 매출·점포 포함)로 갈아 끼운다
     if (RLOADT[gu] === 3 || RLOADT[gu] === 2) { if (then) then(); return; } if (then) (TCB[gu] = TCB[gu] || []).push(then); if (RLOADT[gu]) return; RLOADT[gu] = 1;
     var fin = function () { var L = TCB[gu] || []; TCB[gu] = []; L.forEach(function (f) { f(); }); };
@@ -269,7 +352,7 @@
   function draw() {
     var needW = Math.round(cv.clientWidth * DPR), needH = Math.round(cv.clientHeight * DPR);
     if (cv.width !== needW || cv.height !== needH) { cv.width = needW; cv.height = needH; }
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); hit = [];
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); hit = []; viewWatch();
     var W = cv.clientWidth, H = cv.clientHeight, dark = document.documentElement.classList.contains('dark');
     var BASE = on.base && OSM; ctx.fillStyle = dark ? '#0f1624' : (BASE ? '#f2efe8' : '#eef2f6'); ctx.fillRect(0, 0, W, H);
     var ymd = pickDate(), RVIS = RDONG.filter(inViewBox);
@@ -329,7 +412,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawTrd(dark); drawRent(dark); drawBiz(dark); drawRad(dark); drawA10(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
+    drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawRad(dark); drawA10(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -490,6 +573,7 @@
     } else if (it.kind === 'bizpin') { bizGo(it.k); return;
     } else if (it.kind === 'rent') { h = rentCard(it.it);
     } else if (it.kind === 'store') { var so = it.s, C3 = SIDX ? SIDX.cls[so.c] : null; h = '<h3>🏬 ' + esc(so.n) + '</h3>' + (C3 ? row('업종', esc(C3[1] + ' › ' + C3[3] + ' › ' + C3[4])) : '') + (so.f ? row('층', esc(so.f) + '층') : '') + (RAD.c ? row('반경 가운데에서', Math.round(Math.hypot(so.p[0] - RAD.c[0], so.p[1] - RAD.c[1])) + 'm') : '') + '<p class="desc">등록된 상가 정보다 — 영업 중인지·매출은 이 자료에 없다.</p>' + src(SIDX ? SIDX.source + ' · 기준 ' + SIDX.stdrYm : '');
+    } else if (it.kind === 'ggt') { h = ggtCard(it);
     } else if (it.kind === 'trd') { h = trdCard(it);
     } else if (it.kind === 'season') { h = seasonCard(it);
     } else if (it.kind === 'safe') { h = safeCard(it);
@@ -1055,9 +1139,10 @@
   function trdFmt(v, m) { return m === 'sales' ? '시간당 ' + won(v) : m === 'bar' || m === 'amt' ? '한 달 ' + won(v) : m === 'perstor' ? '점포당 ' + won(v) : m === 'atv' ? Math.round(v).toLocaleString() + '원' : m === 'night' || m === 'young' || m === 'job' ? Math.round(v) + '%' : m === 'dens' ? v.toFixed(1) + '곳/ha' : m === 'flp' ? '시간당 약 ' + man(v) + '명' : m === 'wrc' ? man(v) + '명' : Math.round(v) + '곳'; }
   function trdMetricName() { return TRDMS[TRDM][0]; }
   function trdLegend() {
-    if (!on.trd || !TRD.length) return null; var vs = TRD.map(function (x) { return trdVal(x.t, TRDM); }), mx = Math.max.apply(null, vs), mn = Math.min.apply(null, vs);
+    if (!on.trd || (!TRD.length && !GGT.length)) return null; if (!TRD.length) return ['🏪 상권분석 — 경기', ggLegend()];
+    var vs = TRD.map(function (x) { return trdVal(x.t, TRDM); }), mx = Math.max.apply(null, vs), mn = Math.min.apply(null, vs);
     return ['🏪 상권분석 — ' + (TRDI ? TRDI + ' · ' : '') + TRDMS[TRDM][0], '<div class="lg-btns"><button data-bizopen="1">🏪 이 업종 창업 자리 찾기</button></div><div class="lg-btns"><select data-trdi aria-label="업종"><option value="">업종 전부</option>' + TRDIL.map(function (n) { return '<option' + (n === TRDI ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></div><div class="lg-btns">' + Object.keys(TRDMS).map(function (k) { return '<button data-trdm="' + k + '" class="' + (k === TRDM ? 'on' : '') + '">' + TRDMS[k][0] + '</button>'; }).join('') + '</div>' +
-      grad('rgba(255,255,255,.4)', TRDMS[TRDM][1], trdFmt(mn, TRDM), trdFmt(mx, TRDM)) + li('#64748b', '굵은 테 = 발달상권 · 가는 테 = 골목상권 · 점선 = 전통시장', 'line') + '<small class="lg-n">상권을 누르면 업종 × 연령 · 업종 × 시간대 표</small>'];
+      grad('rgba(255,255,255,.4)', TRDMS[TRDM][1], trdFmt(mn, TRDM), trdFmt(mx, TRDM)) + li('#64748b', '굵은 테 = 발달상권 · 가는 테 = 골목상권 · 점선 = 전통시장', 'line') + li('#ea580c', '주황 점선 = 골목상권의 배후지(누른 상권 · 서울)', 'line') + '<div class="lg-btns"><button data-hlall="1" class="' + (HLALL ? 'on' : '') + '">🏘 배후지 모두 보기</button></div><small class="lg-n">상권을 누르면 업종 × 연령 · 업종 × 시간대 표 · 골목상권은 본체 ↔ 배후지 비교</small>' + ggLegend()];
   }
   function hexA(c, a) { var n = parseInt(c.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
   function drawTrd(dark) {
@@ -1106,6 +1191,7 @@
       h += '<div class="cap">업종별 객단가 · 피크 · 점포(매출 많은 업종 8)</div>' + indCompare(t);
       h += barRows(ind, '이 상권');
       h += '<div class="cap">업종 × 연령(그 업종 매출 안 비중 % · 매출 많은 업종 8)</div>' + indTable(ind, 'age') + '<div class="cap">업종 × 시간대(그 업종 매출 안 비중 % · 테두리 = 지금)</div>' + indTable(ind, 'tb'); }
+    if (t.se === '골목상권') h += hlRows(t);
     else h += row('카드 매출', '이 상권은 매출 자료가 없다');
     if (t.flp) { var f = t.flp; h += row('유동인구', '분기 ' + man(f[0]) + '명 · 하루 약 ' + man(f[0] / 91) + ' · 남 ' + pct(f[1], f[0]) + '%') + '<div class="cap">시간대별 유동인구(명/시 · 하루 평균 · 0~6 … 21~24시)</div>' + bar([0, 1, 2, 3, 4, 5].map(function (i) { return f[9 + i] / TBH[i] / 91; }), '#0284c7', LB_TB6) + '<div class="cap">연령대별 유동인구(명 · 한 분기 합 · 10대 … 60세 이상)</div>' + bar(f.slice(3, 9), '#38bdf8', LB_AGE6); }
     if (t.wrc) h += row('직장인구', man(t.wrc[0]) + '명 · 20·30대 ' + pct(t.wrc[4] + t.wrc[5], t.wrc[0]) + '%');
@@ -1468,7 +1554,7 @@
     el.innerHTML = '<div class="lgh"><b>🗂 범례</b><button id="m2dLegX" aria-label="범례 닫기">닫기</button></div>' + (g.join('') || '<small>켠 층이 없다</small>');
     $('m2dLegX').onclick = function () { legOpen(false); };
   }
-  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); } });
+  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); } });
     $('m2dLeg').addEventListener('change', function (e) { var t = e.target; if (t.hasAttribute('data-trdi')) { TRDI = t.value; draw(); } else if (t.hasAttribute('data-a10y')) { A10Y = t.value ? +t.value : null; draw(); } }); }
   function legOpen(v) { if (v && window.innerWidth < 760 && $('m2dCard').classList.contains('on')) $('m2dCard').classList.remove('on');
     document.body.classList.toggle('legon', v); try { localStorage.setItem('tg_map2d_leg', v ? '1' : '0'); } catch (e) {} if (v) legend(); }
@@ -1574,6 +1660,7 @@
     TG.forEach(function (t) { if (t.name.indexOf(q) >= 0 || String(t.c) === q) c.push({ p: t.p, it: { kind: 'tgis', t: t }, k: 'tgis' }); });
     SPOTS.forEach(function (s2) { if (s2.name.indexOf(q) >= 0) { var rk = spotRank().indexOf(s2) + 1; c.push({ p: s2.p, it: { kind: 'spot', q: s2, rank: rk }, k: 'spot' }); } });
     TRD.forEach(function (x) { if (x.t.name.indexOf(q) >= 0) c.push({ p: x.c, it: { kind: 'trd', x: x }, k: 'trd' }); });
+    GGT.forEach(function (x) { if (x.t.n.indexOf(q) >= 0) c.push({ p: x.c, it: { kind: 'ggt', x: x }, k: 'trd' }); });
     if (!c.length && TRDIL.indexOf(q) >= 0) { TRDI = q; if (!on.trd) { on.trd = true; saveOn(); paintLayers(); } $('m2dFindMsg').textContent = '업종 「' + q + '」 — 상권을 그 업종 매출로 칠했다(범례에서 바꿈)'; draw(); return; }
     SAFE.forEach(function (L) { L[3].forEach(function (z) { var nm = FACL[L[0]] ? z.r[2] : L[0] === 'aed' ? z.r[2] : L[0] === 'wc2' || L[0] === 'srsvc' || L[0] === 'dem' || L[0] === 'tow' ? (L[0] === 'srsvc' ? z.r[3] : z.r[2]) : ''; if (nm && nm.indexOf(q) >= 0) c.push({ p: z.p, it: { kind: 'safe', L: L, q: z }, k: L[0] }); }); });
     LIVEP.forEach(function (L) { if (L.o.name.indexOf(q) >= 0) c.push({ p: L.c, it: { kind: 'crowd', L: L }, k: 'crowd' }); });
@@ -1589,7 +1676,20 @@
   // ---------- 🏪 창업 자리 찾기(v0.10.92 · 소유자 「상권분석은 그 부분만 따로 써도 어떤 업종을 어디에 열어 할 수 있을 만큼 제대로」) ----------
   //  고른 업종을 서울 상권 1,650곳(또는 고른 구 · 지금 화면)에서 견준다. 점수 = 항목마다 「그 업종이 있는 상권 안 백분위」의 가중 합(가중은 고르는 목적마다 — 설계값).
   //  지표는 전부 서울시 상권분석서비스 값이다(카드 추정 매출 · 점포 · 개업/폐업 · 1년 전 같은 분기 · 유동·직장·상주인구 · 상권변화지표). 임대료·권리금·공실·동선은 이 자료에 없다.
-  var BIZ = { idx: null, ind: null, code: '', mode: 'bal', area: 'all', res: [], top: 15, busy: false };
+  var BIZ = { idx: null, ind: null, code: '', mode: 'bal', area: 'view', res: [], top: 15, busy: false, list: window.innerWidth >= 760 };
+  var VW = { k: '', t: 0 };
+  function viewWatch() {   // v1.1.0 소유자 「지금 보고 있는 지도를 중심으로 우선」 — 화면을 옮기고 0.6초 멈추면 다시 센다
+    var k = Math.round(view.cx) + '|' + Math.round(view.cy) + '|' + view.s.toFixed(4) + '|' + cv.clientWidth + 'x' + cv.clientHeight; if (k === VW.k) return; VW.k = k; clearTimeout(VW.t);
+    VW.t = setTimeout(function () {
+      if (document.body.classList.contains('bizon') && BIZ.area === 'view' && BIZ.ind && !BIZ.busy) { bizCalc(); bizPaint(); draw(); }
+      if (document.body.classList.contains('radon') && RAD.follow && !RAD.busy) { var c = viewMid(); if (!RAD.c || Math.hypot(c[0] - RAD.c[0], c[1] - RAD.c[1]) > RAD.r * 0.08) { RAD.c = c; radRun(); } }
+    }, 600);
+  }
+  function viewMid() {   // 지도가 보이는 가운데 — 아래 판이 덮은 만큼 위로
+    var el = $('m2dRad'), hb = el && el.classList.contains('on') && !el.classList.contains('min') ? el.getBoundingClientRect().height : 0, top = $('m2dTop') ? $('m2dTop').getBoundingClientRect().bottom : 0;
+    return M(cv.clientWidth / 2, (top + (cv.clientHeight - hb)) / 2);
+  }
+  function scoreCol(v, a) { var C = v >= 85 ? [21, 128, 61] : v >= 70 ? [34, 197, 94] : v >= 55 ? [234, 179, 8] : v >= 40 ? [249, 115, 22] : [239, 68, 68]; return 'rgba(' + C.join(',') + ',' + (a == null ? 1 : a) + ')'; }
   var BIZW = { bal: ['⚖ 균형', { D: .22, G: .17, V: .18, C: .13, B: .18, R: .12 }], sales: ['💰 매출 큰 곳', { D: .4, Z: .3, B: .15, G: .15 }], safe: ['🛡 오래 버티는 곳', { V: .4, C: .2, D: .15, R: .15, G: .1 }],
     grow: ['📈 크는 곳', { G: .45, D: .25, B: .15, V: .15 }], gap: ['🆕 빈 자리', { P: .45, D: .2, B: .25, V: .1 }], rent: ['💸 임대료 대비', { Y: .45, D: .2, V: .15, B: .1, C: .1 }] };
   var BIZN = { D: '점포당 매출', Z: '시장 크기', C: '경쟁 적음', G: '1년 성장', V: '버티기', B: '배후 사람', P: '사람 대비 점포 적음', R: '임대료 낮음', Y: '점포당 매출 ÷ 임대료' };
@@ -1638,16 +1738,22 @@
   function bizPaint() {
     var el = $('m2dBiz'); if (!el.classList.contains('on')) return; var X = BIZ.idx, h = '<div class="lg-h"><b>🏪 창업 자리 찾기</b><span><button data-bx="min">▾ 접기</button> <button data-bx="x">닫기</button></span></div>';
     if (!X) { el.innerHTML = h; return; }
+    h += '<!--SUM-->'; var sumH = '';
     var gus = (D.ridx && D.ridx.gus || []).map(function (g) { return [g.gu, g.name]; });
     h += '<div class="bizrow"><label>업종 <select data-bz="ind">' + X.inds.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === BIZ.code ? ' selected' : '') + '>' + esc(c[1]) + ' · ' + c[2] + '곳</option>'; }).join('') + '</select></label>' +
-      '<label>어디서 <select data-bz="area"><option value="all">서울 전체</option><option value="view"' + (BIZ.area === 'view' ? ' selected' : '') + '>지금 화면</option>' + gus.map(function (g) { return '<option value="' + g[0] + '"' + (BIZ.area === g[0] ? ' selected' : '') + '>' + esc(g[1]) + '</option>'; }).join('') + '</select></label></div>';
+      '<label>어디서 <select data-bz="area"><option value="view"' + (BIZ.area === 'view' ? ' selected' : '') + '>🗺 지금 보는 지도</option><option value="all"' + (BIZ.area === 'all' ? ' selected' : '') + '>서울 전체</option>' + gus.map(function (g) { return '<option value="' + g[0] + '"' + (BIZ.area === g[0] ? ' selected' : '') + '>' + esc(g[1]) + '</option>'; }).join('') + '</select></label></div>';
     h += '<div class="lg-btns">' + Object.keys(BIZW).map(function (k) { return '<button data-bm="' + k + '" class="' + (k === BIZ.mode ? 'on' : '') + '">' + BIZW[k][0] + '</button>'; }).join('') + '</div>';
     var W = BIZW[BIZ.mode][1]; h += '<p class="lg-n">점수 = ' + Object.keys(W).map(function (k) { return BIZN[k] + ' ' + Math.round(W[k] * 100); }).join(' + ') + ' (그 업종이 있는 상권 안 백분위 · 가중은 설계값)' + (BIZ.mode === 'gap' ? ' — 「빈 자리」는 그 업종 점포가 없는 상권도 넣는다(수요는 사람 수로만 본다)' : '') + '</p>';
     if (BIZ.busy || !BIZ.ind) h += '<p class="lg-n">업종 자료를 받는 중…</p>';
     else { var R = BIZ.res.slice(0, BIZ.top);
-      h += '<ol class="bizl">' + R.map(function (x, k) { var m = x.m; return '<li data-bi="' + k + '"><b>' + (k + 1) + '. ' + esc(m[1]) + '</b> <small>' + esc(m[2]) + ' · ' + esc(guName(m[3])) + '</small> <i style="--w:' + x.score + '%">' + x.score + '</i><br><small>' +
+      sumH = '<div class="bizsum">' + (BIZ.area === 'view' ? '🗺 <b>지금 보는 지도</b> 안 상권 ' + BIZ.res.length + '곳' : '상권 ' + BIZ.res.length + '곳') + (R.length ? ' · 1위 <b>' + esc(R[0].m[1]) + '</b> ' + R[0].score + '점' + (R[1] ? ' · 2위 ' + esc(R[1].m[1]) + ' ' + R[1].score : '') + (R[2] ? ' · 3위 ' + esc(R[2].m[1]) + ' ' + R[2].score : '') : ' — 지도를 옮기거나 줄여 보세요') +
+        '<div class="bizscale"><i style="background:' + scoreCol(20) + '"></i><i style="background:' + scoreCol(45) + '"></i><i style="background:' + scoreCol(60) + '"></i><i style="background:' + scoreCol(75) + '"></i><i style="background:' + scoreCol(90) + '"></i><span>낮음</span><span>점수 → 지도 색</span><span>높음</span></div>' +
+        '<small class="lg-n">지도의 상권이 점수 색으로 칠해진다 — 지도를 옮기거나 확대하면 그 화면 안에서 다시 순위를 매긴다. 원을 누르면 그 상권 카드.</small>' +
+        '<button data-bx="list">' + (BIZ.list ? '▴ 목록 접기' : '📋 목록 보기(' + Math.min(BIZ.top, BIZ.res.length) + ')') + '</button></div>';
+      h = h.replace('<!--SUM-->', sumH);
+      if (BIZ.list) h += '<ol class="bizl">' + R.map(function (x, k) { var m = x.m; return '<li data-bi="' + k + '"><b>' + (k + 1) + '. ' + esc(m[1]) + '</b> <small>' + esc(m[2]) + ' · ' + esc(guName(m[3])) + '</small> <i style="--w:' + x.score + '%">' + x.score + '</i><br><small>' +
         ['D', 'G', 'C', 'V', 'B', 'R', 'Y'].filter(function (q) { return W[q] || q === 'D'; }).map(function (q) { return BIZN[q] + ' ' + ((q === 'G' && x.G == null) || ((q === 'R' || q === 'Y') && x.R == null) ? '-' : bizPct(x['p' + q])); }).join(' · ') + '</small><br><small class="f">' + esc(bizFacts(x)) + '</small></li>'; }).join('') + '</ol>';
-      h += '<div class="lg-btns">' + (BIZ.res.length > BIZ.top ? '<button data-bx="more">더 보기(' + BIZ.top + ' / ' + BIZ.res.length + ')</button>' : '') + '<button data-bx="map">🗺 상권 층을 이 업종으로</button></div>'; }
+      if (BIZ.list) h += '<div class="lg-btns">' + (BIZ.res.length > BIZ.top ? '<button data-bx="more">더 보기(' + BIZ.top + ' / ' + BIZ.res.length + ')</button>' : '') + '<button data-bx="map">🗺 상권 층을 이 업종으로</button></div>'; }
     h += '<small class="lg-n">' + esc(X.source) + ' · ' + esc(X.note) + '<br>⚠ 참고 지표다 — <b>임대료는 1.5km 안 부동산원 표본 상권(72곳) 평균일 뿐 그 자리 값이 아니다 · 권리금·보증금·개별 공실·유동 동선·상가 위치(1층·코너)는 이 자료에 없다</b>. 고른 상권은 현장에서 확인한다. 추정 매출은 카드 결제 기반(현금 제외)이고, 점포가 적은 상권은 값이 크게 흔들린다.</small>';
     el.innerHTML = h;
   }
@@ -1660,8 +1766,18 @@
     tLoad(m[3], function () { TRD.forEach(function (y) { if (TWANT && y.t.cd === TWANT.cd) { var it = { kind: 'trd', x: y, biz: TWANT.biz }; TWANT = null; var s2 = S(y.c); sel = { x: s2[0], y: s2[1], r: 12, it: it }; show(it); } }); draw(); });
     draw();
   }
-  function drawBiz(dark) {   // 고른 업종의 점수 — 상위는 번호 핀, 나머지는 옅은 점
-    if (!document.body.classList.contains('bizon') || !BIZ.res.length) return; var R = BIZ.res;
+  function drawBiz(dark) {   // v1.1.0 고른 업종의 점수 분포 — 상권 다각형을 점수 색으로 칠하고, 상권마다 점수 원 · 상위 3은 순위
+    if (!document.body.classList.contains('bizon') || !BIZ.res.length) return; var R = BIZ.res, byCd = {}, W0 = cv.clientWidth, H0 = cv.clientHeight;
+    TRD.forEach(function (x) { byCd[x.t.cd] = x; });
+    R.forEach(function (x) { var T = byCd[x.m[0]]; if (!T) return; var b = trdBB(T), a = S([b[0], b[2]]), z = S([b[1], b[3]]); if (z[0] < 0 || a[0] > W0 || a[1] < 0 || z[1] > H0) return;
+      T.rings.forEach(function (r) { path(r); ctx.closePath(); ctx.fillStyle = scoreCol(x.score, 0.42); ctx.fill(); ctx.lineWidth = 1.4; ctx.strokeStyle = scoreCol(x.score, 0.95); ctx.stroke(); }); });
+    var rr = Math.max(8, Math.min(15, 6 + view.s * 30));
+    for (var j = R.length - 1; j >= 0; j--) { var qj = P(R[j].m[4], R[j].m[5]), sj = S(qj); if (sj[0] < -20 || sj[1] < -20 || sj[0] > W0 + 20 || sj[1] > H0 + 20) continue;
+      ctx.beginPath(); ctx.arc(sj[0], sj[1], j < 3 ? rr + 3 : rr, 0, Math.PI * 2); ctx.fillStyle = scoreCol(R[j].score, 0.95); ctx.fill(); ctx.lineWidth = j < 3 ? 3 : 1.6; ctx.strokeStyle = j < 3 ? '#4c1d95' : '#fff'; ctx.stroke();
+      ctx.fillStyle = R[j].score >= 55 && R[j].score < 70 ? '#1f2937' : '#fff'; ctx.font = 'bold ' + (j < 3 ? 12 : 10.5) + 'px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(j < 3 ? (j + 1) + '위' : String(R[j].score), sj[0], sj[1]);
+      hit.push({ x: sj[0], y: sj[1], r: rr + 2, it: { kind: 'bizpin', k: j } });
+      if (j < 3 || view.s > 0.12) label([qj[0], qj[1] + (rr + 10) / view.s], R[j].m[1] + (j < 3 ? ' ' + R[j].score + '점' : ''), 10.5, dark ? '#ede9fe' : '#4c1d95', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.88)'); }
+    return;
     for (var i = R.length - 1; i >= BIZ.top; i--) { var q = P(R[i].m[4], R[i].m[5]), s2 = S(q); if (s2[0] < -10 || s2[1] < -10 || s2[0] > cv.clientWidth + 10 || s2[1] > cv.clientHeight + 10) continue; ctx.beginPath(); ctx.arc(s2[0], s2[1], 3, 0, Math.PI * 2); ctx.fillStyle = 'rgba(124,58,237,' + (0.15 + 0.6 * R[i].score / 100).toFixed(2) + ')'; ctx.fill(); }
     for (i = Math.min(BIZ.top, R.length) - 1; i >= 0; i--) { var q2 = P(R[i].m[4], R[i].m[5]), s3 = S(q2); ctx.beginPath(); ctx.arc(s3[0], s3[1], 11, 0, Math.PI * 2); ctx.fillStyle = i < 3 ? '#7c3aed' : '#a78bfa'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
       ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), s3[0], s3[1]); hit.push({ x: s3[0], y: s3[1], r: 12, it: { kind: 'bizpin', k: i } });
@@ -1674,6 +1790,7 @@
       if (x === 'x') { $('m2dBiz').classList.remove('on'); document.body.classList.remove('bizon'); draw(); return; }
       if (x === 'min') { e.stopPropagation(); $('m2dBiz').classList.toggle('min'); return; }
       if (x === 'more') { BIZ.top += 15; bizPaint(); draw(); return; }
+      if (x === 'list') { BIZ.list = !BIZ.list; bizPaint(); return; }
       if (x === 'map') { if (!on.trd) { on.trd = true; saveOn(); paintLayers(); } TRDI = BIZ.ind ? BIZ.ind.name : ''; TRDM = 'perstor'; document.body.classList.add('legon'); draw(); return; }
       var m2 = b.getAttribute('data-bm'); if (m2) { BIZ.mode = m2; bizCalc(); bizPaint(); draw(); return; }
       var k = b.getAttribute('data-bi'); if (k != null) bizGo(+k); });
@@ -1682,7 +1799,7 @@
   // ---------- 📐 반경 분석(v0.10.93 · 소유자 「상용 상권분석 프로그램만큼의 퍼포먼스」) ----------
   //  고른 자리에서 반경 300m·500m·1km — 점포(소상공인 상가정보 · 하나하나) · 경쟁점 · 추정 매출(걸친 상권을 겹친 넓이 비율로) · 생활인구·주민(걸친 동을 넓이 비율로) ·
   //  유동·직장 인구 · 지하철역 · 가까운 부동산원 임대료. 넓이 비율 = 반경 안을 격자로 찍어 센 것(근사 · 화면에 밝힌다).
-  var RAD = { c: null, r: 500, ind: '', sind: '', res: null, busy: false, pick: false }, SIDX = null, SIDXP = null, SPTS = {}, STNS = null;
+  var RAD = { c: null, r: 500, ind: '', sind: '', res: null, busy: false, pick: false, follow: false, heat: null }, SIDX = null, SIDXP = null, SPTS = {}, STNS = null;
   function sLoadIdx() { if (SIDXP) return SIDXP; SIDXP = fetch('data/r/stores-index.json').then(function (r) { return r.json(); }).then(function (j) { SIDX = j; }).catch(function () {}); return SIDXP; }
   function sLoad(gu) {
     if (SPTS[gu]) return SPTS[gu].p; var o = SPTS[gu] = { a: null };
@@ -1694,7 +1811,7 @@
   function radOpen(c) {
     rentLoad(); sLoadIdx(); var el = $('m2dRad'); el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('radon');
     $('m2dBiz') && $('m2dBiz').classList.remove('on'); document.body.classList.remove('bizon');
-    if (c) { RAD.c = c; RAD.pick = false; radRun(); } else if (!RAD.c) { RAD.pick = true; radPaint(); } else radPaint();
+    if (c) { RAD.c = c; RAD.pick = false; RAD.follow = false; radRun(); } else { RAD.c = viewMid(); RAD.pick = false; RAD.follow = true; radRun(); }
   }
   function radClose() { var el = $('m2dRad'); if (el) el.classList.remove('on'); document.body.classList.remove('radon'); RAD.pick = false; draw(); }
   function radRun() {
@@ -1703,7 +1820,7 @@
     var gus = rIdx().filter(function (g) { var b = g.box; return !(b[2] < bx[0] || b[0] > bx[2] || b[3] < bx[1] || b[1] > bx[3]); });
     var jobs = [sLoadIdx(), rentLoad()];
     if (!STNS) jobs.push(fetch('data/r/stations.json').then(function (x) { return x.json(); }).then(function (j) { STNS = j.items.map(function (s2) { return { n: s2[0], l: s2[1], p: P(s2[2], s2[3]) }; }); }).catch(function () { STNS = []; }));
-    gus.forEach(function (g) { jobs.push(sLoad(g.gu)); jobs.push(new Promise(function (res) { tLoad(g.gu, res); setTimeout(res, 20000); })); jobs.push(rLoadGu(g.gu)); if ((g.bytes || {}).transit) jobs.push(xLoad(g.gu)); if ((g.bytes || {}).safety) jobs.push(sfLoad(g.gu)); if ((g.bytes || {}).taas10) jobs.push(aLoad(g.gu)); });
+    gus.forEach(function (g) { jobs.push(sLoad(g.gu)); if ((g.bytes || {}).ggtrd) jobs.push(gLoad(g.gu)); if ((g.bytes || {}).trdar) jobs.push(new Promise(function (res) { tLoad(g.gu, res); setTimeout(res, 20000); })); jobs.push(rLoadGu(g.gu)); if ((g.bytes || {}).transit) jobs.push(xLoad(g.gu)); if ((g.bytes || {}).safety) jobs.push(sfLoad(g.gu)); if ((g.bytes || {}).taas10) jobs.push(aLoad(g.gu)); });
     Promise.all(jobs).then(function () { RAD.gus = gus; RAD.res = radCalc(gus); RAD.busy = false; radPaint(); draw(); });
   }
   function radCalc(gus) {
@@ -1713,8 +1830,9 @@
         o.byL[C3[1]] = (o.byL[C3[1]] || 0) + 1; o.byS[C3[4]] = (o.byS[C3[4]] || 0) + 1; if (RAD.ind && C3[4] === RAD.ind) o.comp.push({ s: st, d: Math.sqrt(d2) }); }); });
     o.comp.sort(function (a, b) { return a.d - b.d; });
     // 넓이 비율 — 반경 안 격자(한 변 r/16)
-    var step = r / 16, cell = step * step, smp = [], dc = new Map(), tc = new Map(), AD = allDong(); for (var x = -r + step / 2; x < r; x += step) for (var y = -r + step / 2; y < r; y += step) if (x * x + y * y <= r2) smp.push([c[0] + x, c[1] + y]);
+    var step = r / 16, cell = step * step, smp = [], dc = new Map(), tc = new Map(), gc = new Map(), AD = allDong(); for (var x = -r + step / 2; x < r; x += step) for (var y = -r + step / 2; y < r; y += step) if (x * x + y * y <= r2) smp.push([c[0] + x, c[1] + y]);
     smp.forEach(function (q) { var d = dongAtM(q); if (d) dc.set(d, (dc.get(d) || 0) + 1);
+      for (var k2 = 0; k2 < GGT.length; k2++) { var Y = GGT[k2], b2 = trdBB(Y); if (q[0] < b2[0] || q[0] > b2[1] || q[1] < b2[2] || q[1] > b2[3]) continue; if (Y.rings.some(function (rr) { return inRing(rr, q[0], q[1]); })) gc.set(Y, (gc.get(Y) || 0) + 1); }
       for (var k = 0; k < TRD.length; k++) { var X = TRD[k], b = trdBB(X); if (q[0] < b[0] || q[0] > b[1] || q[1] < b[2] || q[1] > b[3]) continue; if (X.rings.some(function (rr) { return inRing(rr, q[0], q[1]); })) tc.set(X, (tc.get(X) || 0) + 1); } });
     var h = nowH(), dt2 = new Date(pickDate() + 'T00:00'), we = dt2.getDay() === 0 || dt2.getDay() === 6, key = we ? 'we' : 'wd';
     o.pop = 0; o.age = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; o.live = []; for (var i = 0; i < 24; i++) o.live.push(0); o.dongs = [];
@@ -1730,6 +1848,10 @@
       (t.stor || []).forEach(function (st) { var B = o.bi[st[0]] || (o.bi[st[0]] = { amt: 0, cnt: 0, tb: [0, 0, 0, 0, 0, 0], ag: [0, 0, 0, 0, 0, 0], we: 0, st: 0, pa: 0, pa2: 0, ps: 0, op: 0, cl: 0 }); B.st += st[1] * w; B.op += st[3] * w; B.cl += st[4] * w; var ps = t.storp && t.storp[st[0]]; if (ps) B.ps += ps * w; });
       if (t.flp) o.flp += t.flp[0] / 91 * w; if (t.wrc) o.wrc += t.wrc[0] * w; });
     o.trd.sort(function (a, b) { return b[1] - a[1]; });
+    o.gg = { amt: 0, cnt: 0, st: 0, list: [], ind: {}, q: '' };
+    gc.forEach(function (n, Y) { var t = Y.t, w = Math.min(1, n * cell / (Y.area || 1)); o.gg.list.push([t.n, Math.round(w * 100), !!t.tot]); o.gg.st += (t.st || 0) * w; o.gg.q = Y.m.quarter;
+      if (t.tot) { o.gg.amt += t.tot[0] * w; o.gg.cnt += t.tot[1] * w; (t.ind || []).forEach(function (rr) { o.gg.ind[rr[0]] = (o.gg.ind[rr[0]] || 0) + rr[1] * w; }); } });
+    o.gg.list.sort(function (a, b) { return b[1] - a[1]; });
     o.stn = (STNS || []).map(function (s2) { return { s: s2, d: Math.hypot(s2.p[0] - c[0], s2.p[1] - c[1]) }; }).filter(function (q) { return q.d <= r; }).sort(function (a, b) { return a.d - b.d; });
     var seenN = {}; o.stn = o.stn.filter(function (q) { var k = seenN[q.s.n]; if (k) { if (k.ls.indexOf(q.s.l) < 0) k.ls.push(q.s.l); return false; } seenN[q.s.n] = { ls: [q.s.l] }; q.ls = seenN[q.s.n].ls; return true; });
     o.rent = rentNear(c, 1500);
@@ -1749,6 +1871,7 @@
       '점포 ' + o.n.toLocaleString() + '곳(' + (o.n / (Math.PI * o.r * o.r / 1e4)).toFixed(1) + '곳/ha) · ' + Object.keys(o.byL).sort(function (a, b) { return o.byL[b] - o.byL[a]; }).slice(0, 6).map(function (k) { return k + ' ' + o.byL[k]; }).join(' · '),
       RAD.ind ? '「' + RAD.ind + '」 ' + o.comp.length + '곳 · 가장 가까운 ' + (o.comp[0] ? Math.round(o.comp[0].d) + 'm' : '-') : '',
       '추정 카드 매출 한 달 약 ' + won(o.amt) + '(걸친 상권 ' + o.trd.length + '곳을 겹친 넓이 비율로)',
+      o.gg && o.gg.amt ? '경기 상권 카드 매출 분기 약 ' + won(o.gg.amt) + '(걸친 경기 상권 ' + o.gg.list.length + '곳 · ' + o.gg.q.replace(' ', '년 ') + '분기)' : '',
       RAD.sind && o.bi[RAD.sind] && o.bi[RAD.sind].st >= 0.5 ? '「' + RAD.sind + '」 한 달 약 ' + won(o.bi[RAD.sind].amt) + ' · 점포 약 ' + Math.round(o.bi[RAD.sind].st) + '곳 · 점포당 약 ' + won(o.bi[RAD.sind].amt / o.bi[RAD.sind].st) : '',
       '생활인구 ' + nowH() + '시 약 ' + Math.round(o.live[nowH()]).toLocaleString() + '명 · 주민 약 ' + Math.round(o.pop).toLocaleString() + '명 · 하루 유동 약 ' + Math.round(o.flp).toLocaleString() + ' · 직장 약 ' + Math.round(o.wrc).toLocaleString(),
       o.stn.length ? '지하철역 ' + o.stn.map(function (q) { return q.s.n + ' ' + Math.round(q.d) + 'm'; }).join(' · ') : '반경 안 지하철역 없음',
@@ -1761,10 +1884,11 @@
   function radPaint() {
     var el = $('m2dRad'); if (!el || !el.classList.contains('on')) return; var o = RAD.res, h = '<div class="lg-h"><b>📐 반경 분석</b><span><button data-rx="min">▾ 접기</button> <button data-rx="x">닫기</button></span></div>';
     h += '<div class="lg-btns">' + [300, 500, 1000].map(function (r) { return '<button data-rr="' + r + '" class="' + (RAD.r === r ? 'on' : '') + '">반경 ' + (r >= 1000 ? r / 1000 + 'km' : r + 'm') + '</button>'; }).join('') +
-      '<button data-rx="pick" class="' + (RAD.pick ? 'on' : '') + '">📍 지도에서 자리 고르기</button>' + (REP ? '<button data-rx="rep">' + (REP.here ? '📍 지금 위치' : '📋 보고 자리') + '</button>' : '') + '</div>';
+      '<button data-rx="follow" class="' + (RAD.follow ? 'on' : '') + '">🧭 지도 따라가기' + (RAD.follow ? ' 켜짐' : '') + '</button><button data-rx="pick" class="' + (RAD.pick ? 'on' : '') + '">📍 지도에서 자리 고르기</button>' + (REP ? '<button data-rx="rep">' + (REP.here ? '📍 지금 위치' : '📋 보고 자리') + '</button>' : '') + '</div>';
     if (SIDX) { var grp = {}; SIDX.cls.forEach(function (C3) { (grp[C3[1]] = grp[C3[1]] || []).push(C3[4]); });
       h += '<div class="bizrow"><label>경쟁 업종 <select data-rz="ind"><option value="">(고르지 않음)</option>' + Object.keys(grp).map(function (g) { return '<optgroup label="' + esc(g) + '">' + grp[g].sort().map(function (n) { return '<option' + (n === RAD.ind ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '</select></label></div>'; }
     if (RAD.pick) h += '<p class="lg-n"><b>지도를 눌러 분석할 자리를 고르세요.</b></p>';
+    else if (RAD.follow) h += '<p class="lg-n">🧭 <b>지금 보는 지도 가운데</b>를 분석한다 — 지도를 옮기고 손을 떼면 그 자리로 다시 센다. 반경 안 점포 분포는 지도에 색 칸으로(진할수록 많음 · 빨간 점 = 고른 경쟁 업종).</p>';
     if (RAD.busy) h += '<p class="lg-n">반경 안 자료를 모으는 중…</p>';
     else if (o && RAD.c) {
       var ha = Math.PI * o.r * o.r / 1e4, Lk = Object.keys(o.byL).sort(function (a, b) { return o.byL[b] - o.byL[a]; }), Sk = Object.keys(o.byS).sort(function (a, b) { return o.byS[b] - o.byS[a]; }).slice(0, 12);
@@ -1773,7 +1897,11 @@
       h += row('많은 업종', Sk.map(function (k) { return esc(k) + ' ' + o.byS[k]; }).join(' · '));
       if (RAD.ind) { var cp = o.comp; h += row('경쟁점 「' + esc(RAD.ind) + '」', cp.length + '곳' + (cp.length ? ' · 가장 가까운 곳 ' + Math.round(cp[0].d) + 'm · ' + (cp.length / ha).toFixed(2) + '곳/ha' : ' — 반경 안에 없음'));
         if (cp.length) h += '<ol class="comp">' + cp.slice(0, 25).map(function (q) { return '<li>' + esc(q.s.n) + ' <small>' + (q.s.f ? q.s.f + '층 · ' : '') + Math.round(q.d) + 'm</small></li>'; }).join('') + '</ol>' + (cp.length > 25 ? '<p class="lg-n">… 외 ' + (cp.length - 25) + '곳(지도에 빨간 점)</p>' : ''); }
-      h += row('추정 카드 매출', o.trd.length ? '한 달 약 ' + won(o.amt) + ' · 결제 약 ' + man(o.cnt) + '건 <em>(걸친 상권 ' + o.trd.length + '곳 × 겹친 넓이 비율 — 상권 밖 점포 매출은 빠진다)</em>' : '<em>반경에 걸친 상권이 없다(주거지 등)</em>');
+      h += row('추정 카드 매출', o.trd.length ? '한 달 약 ' + won(o.amt) + ' · 결제 약 ' + man(o.cnt) + '건 <em>(걸친 상권 ' + o.trd.length + '곳 × 겹친 넓이 비율 — 상권 밖 점포 매출은 빠진다)</em>' : o.gg && o.gg.list.length ? '<em>서울 상권 없음 — 아래 경기 상권</em>' : '<em>반경에 걸친 상권이 없다(주거지 등)</em>');
+      if (o.gg && o.gg.list.length) { var GI = Object.keys(o.gg.ind).sort(function (a, b) { return o.gg.ind[b] - o.gg.ind[a]; });
+        h += row('경기 상권 매출', (o.gg.amt ? '<b>분기 약 ' + won(o.gg.amt) + '</b> · 결제 약 ' + man(o.gg.cnt) + '건 · ' : '') + '점포 약 ' + Math.round(o.gg.st) + '곳 <em>(걸친 경기 상권 ' + o.gg.list.length + '곳 × 겹친 넓이 비율 · ' + esc(o.gg.q.replace(' ', '년 ')) + '분기 · 경기데이터드림)</em>') +
+          (GI.length ? row('경기 매출 많은 업종', GI.slice(0, 5).map(function (k) { return esc(k) + ' ' + won(o.gg.ind[k]); }).join(' · ')) : '') +
+          row('걸친 경기 상권', o.gg.list.slice(0, 6).map(function (d) { return esc(d[0]) + ' ' + d[1] + '%' + (d[2] ? '' : '(매출 없음)'); }).join(' · ')); }
       if (o.amt) { var ik = Object.keys(o.ind).sort(function (a, b) { return o.ind[b] - o.ind[a]; }).slice(0, 8);
         h += '<div class="cap">시간대별 시간당 카드 매출(원 · 하루 평균 · 반경 추정)</div>' + bar(o.tb.map(function (v, i) { return v / TBH[i] / 30.4; }), '#7c3aed', LB_TB6, 'w');
         h += '<div class="cap">연령대별 카드 매출(원 · 한 달 · 반경 추정)</div>' + bar(o.ag, '#a78bfa', LB_AGE6, 'w');
@@ -1821,7 +1949,15 @@
     ctx.beginPath(); ctx.arc(c[0], c[1], rr, 0, Math.PI * 2); ctx.fillStyle = 'rgba(14,165,233,.06)'; ctx.fill(); ctx.lineWidth = 2.5; ctx.setLineDash([8, 5]); ctx.strokeStyle = '#0284c7'; ctx.stroke(); ctx.setLineDash([]);
     ctx.beginPath(); ctx.arc(c[0], c[1], 6, 0, Math.PI * 2); ctx.fillStyle = '#0284c7'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
     var o = RAD.res; if (!o || RAD.busy || !SIDX) return; var r2 = RAD.r * RAD.r, CL = SIDX.cls, pal = { '음식': '#ea580c', '소매': '#2563eb', '과학·기술': '#0d9488', '시설관리·임대': '#64748b', '교육': '#16a34a', '보건의료': '#dc2626', '수리·개인': '#9333ea', '예술·스포츠': '#db2777', '숙박': '#a16207', '부동산': '#475569' };
-    if (view.s > 0.08) (RAD.gus || []).forEach(function (g) { var S2 = SPTS[g.gu]; if (!S2 || !S2.a) return; S2.a.forEach(function (st) { var dx = st.p[0] - RAD.c[0], dy = st.p[1] - RAD.c[1]; if (dx * dx + dy * dy > r2) return; var C3 = CL[st.c] || []; if (RAD.ind && C3[4] === RAD.ind) return; var s3 = S(st.p); ctx.fillStyle = pal[C3[1]] || '#94a3b8'; ctx.globalAlpha = 0.55; ctx.fillRect(s3[0] - 1.5, s3[1] - 1.5, 3, 3); ctx.globalAlpha = 1; }); });
+    if (!RAD.heat || RAD.heat.k !== RAD.c[0] + '|' + RAD.c[1] + '|' + RAD.r + '|' + RAD.ind + '|' + (RAD.gus || []).length) {   // 칸 = 반경/12 m
+      var cs = RAD.r / 12, cells = {}, mxc = 0; (RAD.gus || []).forEach(function (g) { var S2 = SPTS[g.gu]; if (!S2 || !S2.a) return; S2.a.forEach(function (st) { var dx = st.p[0] - RAD.c[0], dy = st.p[1] - RAD.c[1]; if (dx * dx + dy * dy > r2) return;
+        var kk = Math.floor(dx / cs) + ',' + Math.floor(dy / cs), C4 = CL[st.c] || [], e = cells[kk] || (cells[kk] = [0, 0]); e[0]++; if (RAD.ind && C4[4] === RAD.ind) e[1]++; mxc = Math.max(mxc, e[0]); }); });
+      RAD.heat = { k: RAD.c[0] + '|' + RAD.c[1] + '|' + RAD.r + '|' + RAD.ind + '|' + (RAD.gus || []).length, cs: cs, cells: cells, mx: mxc || 1 }; }
+    var HT = RAD.heat, csz = HT.cs * view.s; Object.keys(HT.cells).forEach(function (kk) { var e = HT.cells[kk], ij = kk.split(','), x0 = RAD.c[0] + (+ij[0]) * HT.cs, y0 = RAD.c[1] + (+ij[1]) * HT.cs, s0 = S([x0, y0]);
+      ctx.fillStyle = 'rgba(2,132,199,' + (0.08 + 0.55 * Math.sqrt(e[0] / HT.mx)).toFixed(2) + ')'; ctx.fillRect(s0[0], s0[1], csz + 0.5, csz + 0.5);
+      if (e[1]) { ctx.fillStyle = 'rgba(220,38,38,' + Math.min(0.85, 0.3 + 0.15 * e[1]).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(s0[0] + csz / 2, s0[1] + csz / 2, Math.max(3, Math.min(csz / 2, 3 + e[1] * 1.5)), 0, Math.PI * 2); ctx.fill(); }
+      if (csz > 26) { ctx.fillStyle = dark ? '#e0f2fe' : '#0c4a6e'; ctx.font = '10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e[1] ? e[0] + '·' + e[1] : String(e[0]), s0[0] + csz / 2, s0[1] + csz / 2); } });
+    if (view.s > 0.3) (RAD.gus || []).forEach(function (g) { var S2 = SPTS[g.gu]; if (!S2 || !S2.a) return; S2.a.forEach(function (st) { var dx = st.p[0] - RAD.c[0], dy = st.p[1] - RAD.c[1]; if (dx * dx + dy * dy > r2) return; var C3 = CL[st.c] || []; if (RAD.ind && C3[4] === RAD.ind) return; var s3 = S(st.p); ctx.fillStyle = pal[C3[1]] || '#94a3b8'; ctx.globalAlpha = 0.55; ctx.fillRect(s3[0] - 1.5, s3[1] - 1.5, 3, 3); ctx.globalAlpha = 1; }); });
     o.comp.forEach(function (q) { dot(q.s.p, 5, '#dc2626', '#fff', { kind: 'store', s: q.s }); });
   }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-radhere]'); if (!b) return; var a = b.getAttribute('data-radhere').split(','); var q = P(+a[0], +a[1]); view.cx = q[0]; view.cy = q[1]; view.s = Math.max(view.s, 0.25); radOpen(q); });
@@ -1830,7 +1966,8 @@
       var x = b.getAttribute('data-rx'), rr = b.getAttribute('data-rr');
       if (rr) { RAD.r = +rr; if (RAD.c) radRun(); else radPaint(); return; }
       if (x === 'x') return radClose(); if (x === 'min') { e.stopPropagation(); $('m2dRad').classList.toggle('min'); return; }
-      if (x === 'pick') { RAD.pick = !RAD.pick; radPaint(); return; }
+      if (x === 'pick') { RAD.pick = !RAD.pick; if (RAD.pick) RAD.follow = false; radPaint(); return; }
+      if (x === 'follow') { RAD.follow = !RAD.follow; if (RAD.follow) { RAD.pick = false; RAD.c = viewMid(); radRun(); } else radPaint(); return; }
       if (x === 'rep' && REP) { RAD.c = REP.p; radRun(); return; }
       if (x === 'copy') { var t = radText(); try { navigator.clipboard.writeText(t).then(function () { b.textContent = '✅ 복사했다'; }); } catch (e2) { prompt('복사', t); } return; }
       if (x === 'biz') { bizOpen(); return; } });

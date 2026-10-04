@@ -16,7 +16,7 @@
     ['dong', '🏘 행정동', true, '기본', 1], ['road', '🛣 도로', true, '기본', 1], ['base', '🗺 바탕(물·녹지·철도)', true, '기본', 0], ['bld', '🏢 건물', true, '기본', 0], ['sub', '🚇 지하철역', true, '기본', 0], ['exit', '🚪 지하철 출입구', false, '기본', 0],
     ['acc', '🚗 교차로 사고(2019~)', true, '교통안전', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통안전', 1], ['fatal10', '🕯 사망사고 10년', false, '교통안전', 0], ['fatal', '🕯 사망사고', false, '교통안전', 0], ['hot', '⚠ 사고다발지', false, '교통안전', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통안전', 1],
     ['risk', '🟥 사고위험지역', false, '교통안전', 0], ['sz', '🏫 어린이보호구역', false, '교통안전', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통안전', 0], ['cam', '📷 단속 카메라', false, '교통안전', 0], ['spd', '🚥 도로 소통(받은 때)', false, '교통안전', 0], ['sig', '🚦 신호 주기', false, '교통안전', 0], ['sigx', '🔢 신호 교차로 번호', false, '교통안전', 0],
-    ['trd', '🏪 상권분석(카드·유동·점포)', false, '사람·흐름', 1], ['rent', '💰 상가 임대료·공실률', false, '사람·흐름', 0], ['crowd', '📡 실시간 인파·카드', false, '사람·흐름', 1], ['live', '👥 생활인구(지금)', false, '사람·흐름', 1], ['sales', '💳 카드 매출(시간대)', false, '사람·흐름', 1], ['bus', '🚌 버스 승차·하차', false, '사람·흐름', 1], ['subr', '🚇 지하철 승차·하차', false, '사람·흐름', 0], ['vol', '🚙 교통량', false, '사람·흐름', 0], ['bike', '🚲 따릉이', false, '사람·흐름', 0],
+    ['trd', '🏪 상권분석(카드·유동·점포)', false, '사람·흐름', 1], ['rent', '💰 상가 임대료·공실률', false, '사람·흐름', 0], ['szone', '🏬 소진공 주요상권(서울·경기)', false, '사람·흐름', 0], ['crowd', '📡 실시간 인파·카드', false, '사람·흐름', 1], ['live', '👥 생활인구(지금)', false, '사람·흐름', 1], ['sales', '💳 카드 매출(시간대)', false, '사람·흐름', 1], ['bus', '🚌 버스 승차·하차', false, '사람·흐름', 1], ['subr', '🚇 지하철 승차·하차', false, '사람·흐름', 0], ['vol', '🚙 교통량', false, '사람·흐름', 0], ['bike', '🚲 따릉이', false, '사람·흐름', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
     ['bar', '🍺 주점(밤 순찰)', false, '치안·안전', 0], ['play', '🎤 노래방·PC방', false, '치안·안전', 0], ['inn', '🏨 숙박', false, '치안·안전', 0], ['heat', '🥵 무더위쉼터', false, '치안·안전', 0], ['cold', '🥶 한파쉼터', false, '치안·안전', 0], ['hyd', '🧯 소화전', false, '치안·안전', 0], ['wc', '🚻 화장실', false, '치안·안전', 0],
     ['school', '🏫 학교', false, '생활', 0], ['kids', '🧸 유치원·어린이집', false, '생활', 0], ['pg', '🛝 놀이터', false, '생활', 0], ['park', '🌳 공원', false, '생활', 0], ['welf', '🧓 복지시설', false, '생활', 0], ['kyr', '🧓 경로당(서울시)', false, '생활', 0], ['cc', '👶 어린이집(서울시)', false, '생활', 0], ['kg', '🎒 유치원(교육청)', false, '생활', 0], ['aca', '📚 입시·교과학원', false, '생활', 0], ['edu', '🏫 학교(초·중·고·대학)', false, '생활', 0], ['govr', '🏛 관공서(서울·경기)', false, '생활', 0],
@@ -147,6 +147,7 @@
     if ((on.acc10 || on.fatal10) && view.s >= 0.012) { var va = viewLL(); rIdx().forEach(function (g) { if (RLOADA[g.gu] || !(g.bytes || {}).taas10) return; var x = g.box; if (x[2] < va[0] || x[0] > va[2] || x[3] < va[1] || x[1] > va[3]) return; aLoad(g.gu); }); }
     if (view.s >= 0.03 && SAFE_KEYS.some(function (k) { return on[k]; })) { var vs2 = viewLL(); rIdx().forEach(function (g) { if (RLOADS[g.gu] || !(g.bytes || {}).safety) return; var x = g.box; if (x[2] < vs2[0] || x[0] > vs2[2] || x[3] < vs2[1] || x[1] > vs2[3]) return; sfLoad(g.gu); }); }
     if ((on.bus && view.s > 0.07) || (on.subr && view.s >= 0.02)) { var vx = viewLL(); rIdx().forEach(function (g) { if (RLOADX[g.gu] || !(g.bytes || {}).transit) return; var x = g.box; if (x[2] < vx[0] || x[0] > vx[2] || x[3] < vx[1] || x[1] > vx[3]) return; xLoad(g.gu); }); }
+    if (on.szone && view.s >= 0.012) { var vz = viewLL(); rIdx().forEach(function (g) { if (RLOADZ[g.gu] || !(g.bytes || {}).szone) return; var x = g.box; if (x[2] < vz[0] || x[0] > vz[2] || x[3] < vz[1] || x[1] > vz[3]) return; zLoad(g.gu); }); }
     if (on.trd && view.s >= 0.02) { var vg = viewLL(); rIdx().forEach(function (g) { if (RLOADG[g.gu] || !(g.bytes || {}).ggtrd) return; var x = g.box; if (x[2] < vg[0] || x[0] > vg[2] || x[3] < vg[1] || x[1] > vg[3]) return; gLoad(g.gu); }); }
     if (on.trd && view.s >= 0.02) { var vh = viewLL(); rIdx().forEach(function (g) { if (RLOADH2[g.gu] || !(g.bytes || {}).trdhl) return; var x = g.box; if (x[2] < vh[0] || x[0] > vh[2] || x[3] < vh[1] || x[1] > vh[3]) return; hlLoad(g.gu); }); }
     if ((on.trd || document.body.classList.contains('bizon')) && view.s >= 0.02) { var vt = viewLL(); rIdx().forEach(function (g) { if (RLOADT[g.gu] || !(g.bytes || {}).trdar) return; var x = g.box; if (x[2] < vt[0] || x[0] > vt[2] || x[3] < vt[1] || x[1] > vt[3]) return; tLoad(g.gu); }); }
@@ -166,6 +167,30 @@
     if (!d.rg || d.x !== undefined) return; var g = d.gcd;
     if (RX[g]) { d.x = RX[g].dong[d.k] || {}; return; }
     d.x = null; fetch('data/r/' + g + '/dongx.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { RX[g] = j; RDONG.forEach(function (q) { if (q.gcd === g && q.x === null) q.x = j.dong[q.k] || {}; }); if (sel && sel.it.d && sel.it.d.gcd === g) show(sel.it); }).catch(function () { d.x = {}; });
+  }
+  var RLOADZ = {}, SZ = [];
+  function zLoad(gu) {   // v1.2.0 소진공 주요상권(공식 오픈 API storeZoneInAdmi · 서울 176 · 경기 281)
+    if (RLOADZ[gu]) return; RLOADZ[gu] = 1;
+    fetch('data/r/' + gu + '/szone.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+      j.items.forEach(function (t) { SZ.push({ t: t, m: j, c: P(t.lon, t.lat), rings: t.rings.map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }) }); }); RLOADZ[gu] = 3; draw(); }).catch(function () { RLOADZ[gu] = 2; });
+  }
+  function drawSz(dark) {
+    if (!on.szone || !SZ.length) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, col = '#b45309';
+    SZ.forEach(function (x) { var s0 = S(x.c); if (s0[0] < -500 || s0[1] < -500 || s0[0] > W0 + 500 || s0[1] > H0 + 500) return;
+      x.rings.forEach(function (r) { path(r); ctx.closePath(); ctx.fillStyle = dark ? 'rgba(217,119,6,.16)' : 'rgba(217,119,6,.13)'; ctx.fill(); ctx.lineWidth = 1.8; ctx.setLineDash([2, 3]); ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]); });
+      hit.push({ x: s0[0], y: s0[1], r: 12, it: { kind: 'szone', x: x } });
+      if (view.s > 0.06) label(x.c, x.t.n, 10.5, '#fff', 'rgba(180,83,9,.85)'); if (view.s > 0.2) label([x.c[0], x.c[1] + 15 / view.s], '점포 ' + x.t.st.toLocaleString(), 10, dark ? '#fde68a' : '#78350f', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.88)'); });
+  }
+  function szCard(it) {
+    var x = it.x, t = x.t, h = '<h3>🏬 ' + esc(t.n) + ' <small style="font-weight:400;color:var(--ink2)">소진공 주요상권</small></h3>';
+    rentLoad();
+    h += '<div class="lg-btns"><button data-radhere="' + t.lon.toFixed(5) + ',' + t.lat.toFixed(5) + '">📐 여기서 반경 분석</button></div>';
+    h += row('자리', esc(t.sgg) + ' ' + esc(t.dong) + ' · 넓이 ' + man(t.area) + '㎡ · 상권번호 ' + esc(t.no)) + row('영역 기준', esc(t.dt) + ' <em>(소진공 · 그 뒤 변동 없음)</em>');
+    var ha = t.area / 1e4; h += row('등록 점포', t.st.toLocaleString() + '곳' + (ha ? ' · ' + (t.st / ha).toFixed(1) + '곳/ha' : '') + (t.f1[1] ? ' · 1층 ' + pct(t.f1[0], t.f1[1]) + '% <em>(층이 적힌 ' + t.f1[1].toLocaleString() + '곳 중)</em>' : ''));
+    if (t.L.length) h += '<div class="cap">업종 대분류별 등록 점포(곳 · 영역 안)</div>' + bar(t.L.map(function (q) { return q[1]; }), '#d97706', t.L.map(function (q) { return q[0].slice(0, 2); }));
+    if (t.S.length) h += row('많은 업종', t.S.map(function (q) { return esc(q[0]) + ' ' + q[1]; }).join(' · '));
+    h += rentRows(x.c, '임대료(가까운 표본)');
+    return h + '<p class="desc">' + esc(x.m.note) + '</p>' + src(x.m.source);
   }
   var TCB = {}, RLOADG = {}, GGT = [], GGM = 'amt', RLOADH2 = {}, HL = {}, HLALL = false;
   function hlLoad(gu) {   // v1.1.0 서울 골목상권 배후지(상권분석서비스 영역-상권배후지 OA-22159)
@@ -412,7 +437,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawRad(dark); drawA10(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
+    drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawRad(dark); drawA10(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -573,6 +598,7 @@
     } else if (it.kind === 'bizpin') { bizGo(it.k); return;
     } else if (it.kind === 'rent') { h = rentCard(it.it);
     } else if (it.kind === 'store') { var so = it.s, C3 = SIDX ? SIDX.cls[so.c] : null; h = '<h3>🏬 ' + esc(so.n) + '</h3>' + (C3 ? row('업종', esc(C3[1] + ' › ' + C3[3] + ' › ' + C3[4])) : '') + (so.f ? row('층', esc(so.f) + '층') : '') + (RAD.c ? row('반경 가운데에서', Math.round(Math.hypot(so.p[0] - RAD.c[0], so.p[1] - RAD.c[1])) + 'm') : '') + '<p class="desc">등록된 상가 정보다 — 영업 중인지·매출은 이 자료에 없다.</p>' + src(SIDX ? SIDX.source + ' · 기준 ' + SIDX.stdrYm : '');
+    } else if (it.kind === 'szone') { h = szCard(it);
     } else if (it.kind === 'ggt') { h = ggtCard(it);
     } else if (it.kind === 'trd') { h = trdCard(it);
     } else if (it.kind === 'season') { h = seasonCard(it);
@@ -1055,7 +1081,7 @@
   var PRESETS = [
     ['traffic', '🚦 교통근무', ['acc', 'cam', 'sig', 'spd', 'vol', 'sz', 'risk', 'bus']],
     ['night', '🌙 야간순찰', ['trd', 'bar', 'play', 'inn', 'er', 'pol', 'drunk', 'srcctv', 'srbell', 'srsvc']],
-    ['shop', '🏪 상권분석', ['trd', 'rent', 'bus', 'subr', 'live']],
+    ['shop', '🏪 상권분석', ['trd', 'szone', 'rent', 'bus', 'subr', 'live']],
     ['acc10', '🚗 사고 10년', ['acc10', 'fatal10', 'hot10', 'jct', 'cam', 'sz']],
     ['crowd', '🎪 행사·인파', ['evt', 'crowd', 'live', 'subr', 'bus', 'spot']],
     ['jur', '🚓 관할·관서', ['jur', 'pol', 'tgis', 'fire', 'er']],
@@ -1528,6 +1554,7 @@
     if (on.live) { var mx = 0, mn = 1e9; allDong().forEach(function (d) { var lv = liveNow(d); if (lv) { mx = Math.max(mx, lv.n); mn = Math.min(mn, lv.n); } }); if (mx) G('👥 생활인구 ' + hh + '시', grad('rgb(255,230,150)', 'rgb(215,60,40)', man(mn) + '명', man(mx) + '명') + '<small class="lg-n">동 안의 숫자 = 그 시각 평균 체류 인구</small>'); }
     if (on.sales) { var a = 1e18, b = 0; allDong().forEach(function (d) { var sn = salesNow(d); if (sn) { a = Math.min(a, sn.perH); b = Math.max(b, sn.perH); } }); if (b) G('💳 카드 매출 ' + esc(D.flow.sales.tb[bandOf(hh)]), grad('rgb(237,233,254)', 'rgb(117,53,214)', won(a), won(b)) + '<small class="lg-n">시간당 추정 매출(하루 평균) · 동을 누르면 업종·연령</small>'); }
     if (typeof trdLegend === 'function') { var tl = trdLegend(); if (tl) G(tl[0], tl[1]); }
+    if (on.szone) G('🏬 소진공 주요상권', li('#b45309', '주황 점선 = 소상공인시장진흥공단이 정한 주요상권 경계(2024.1 · 서울 176 · 경기 281)', 'line') + '<small class="lg-n">누르면 영역 안 등록 점포 · 업종 · 1층 비율</small>');
     if (typeof a10Legend === 'function') { var al = a10Legend(); if (al) G(al[0], al[1]); }
     if (on.bus || on.subr) G('🚌🚇 ' + hh + '시 승하차', li('rgba(37,99,235,.8)', '타는 사람 많음(떠나는 곳)') + li('rgba(234,88,12,.8)', '내리는 사람 많음(모여드는 곳)') + li('rgba(13,148,136,.8)', '비슷') + '<small class="lg-n">원 크기 = 그 시각 승차+하차(하루 평균) · 지하철 옆 숫자 = 그 시각 승하차</small>');
     if (on.crowd) G('📡 실시간 인파', li(LVC['여유'], '여유') + li(LVC['보통'], '보통') + li(LVC['약간 붐빔'], '약간 붐빔') + li(LVC['붐빔'], '붐빔') + li('#64748b', '실선 지금 · 긴 점선 예측 · 회색 점선 받은 때', 'dash') + '<small class="lg-n">받은 시각 ' + esc(String((D.livep || {}).baked || '')) + '</small>');
@@ -1661,6 +1688,7 @@
     SPOTS.forEach(function (s2) { if (s2.name.indexOf(q) >= 0) { var rk = spotRank().indexOf(s2) + 1; c.push({ p: s2.p, it: { kind: 'spot', q: s2, rank: rk }, k: 'spot' }); } });
     TRD.forEach(function (x) { if (x.t.name.indexOf(q) >= 0) c.push({ p: x.c, it: { kind: 'trd', x: x }, k: 'trd' }); });
     GGT.forEach(function (x) { if (x.t.n.indexOf(q) >= 0) c.push({ p: x.c, it: { kind: 'ggt', x: x }, k: 'trd' }); });
+    SZ.forEach(function (x) { if (x.t.n.indexOf(q) >= 0) c.push({ p: x.c, it: { kind: 'szone', x: x }, k: 'szone' }); });
     if (!c.length && TRDIL.indexOf(q) >= 0) { TRDI = q; if (!on.trd) { on.trd = true; saveOn(); paintLayers(); } $('m2dFindMsg').textContent = '업종 「' + q + '」 — 상권을 그 업종 매출로 칠했다(범례에서 바꿈)'; draw(); return; }
     SAFE.forEach(function (L) { L[3].forEach(function (z) { var nm = FACL[L[0]] ? z.r[2] : L[0] === 'aed' ? z.r[2] : L[0] === 'wc2' || L[0] === 'srsvc' || L[0] === 'dem' || L[0] === 'tow' ? (L[0] === 'srsvc' ? z.r[3] : z.r[2]) : ''; if (nm && nm.indexOf(q) >= 0) c.push({ p: z.p, it: { kind: 'safe', L: L, q: z }, k: L[0] }); }); });
     LIVEP.forEach(function (L) { if (L.o.name.indexOf(q) >= 0) c.push({ p: L.c, it: { kind: 'crowd', L: L }, k: 'crowd' }); });

@@ -15,6 +15,7 @@
   var LAYERS = [
     ['dong', '🏘 행정동', true, '기본', 1], ['road', '🛣 도로', true, '기본', 1], ['base', '🗺 바탕(물·녹지·철도)', true, '기본', 0], ['vw', '🛰 위성·일반 지도(브이월드 · 인터넷)', false, '기본', 1], ['jcnm', '🏷 교차로·도로 이름(서울·경기 전부)', true, '기본', 1], ['bld', '🏢 건물', true, '기본', 0], ['sub', '🚇 지하철역', true, '기본', 0], ['exit', '🚪 지하철 출입구', false, '기본', 0],
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
+    ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
     ['acc', '🚗 교차로 사고(2019~)', true, '교통안전', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통안전', 1], ['fatal10', '🕯 사망사고 10년', false, '교통안전', 0], ['fatal', '🕯 사망사고', false, '교통안전', 0], ['hot', '⚠ 사고다발지', false, '교통안전', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통안전', 1],
     ['risk', '🟥 사고위험지역', false, '교통안전', 0], ['sz', '🏫 어린이보호구역', false, '교통안전', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통안전', 0], ['cam', '📷 단속 카메라', false, '교통안전', 0], ['spd', '🚥 도로 소통(받은 때)', false, '교통안전', 0], ['sig', '🚦 신호 주기', false, '교통안전', 0], ['sigx', '🔢 신호 교차로 번호', false, '교통안전', 0],
@@ -502,9 +503,11 @@
   try { LK = JSON.parse(localStorage.getItem('tg_map2d_keys') || '{}') || {}; } catch (e) {}
   (function () { var m = /[#&]itskey=([A-Za-z0-9-]{8,80})/.exec(location.hash); if (!m) return; LK.its = m[1]; try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {}
     var h = location.hash.replace(/[#&]itskey=[A-Za-z0-9-]+/, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h[0] === '#' ? h : '#' + h) : '')); } catch (e) {} on.lev = true; })();
+  (function () { var m = /[#&]dgkey=([A-Za-z0-9%+\/=_-]{20,200})/.exec(location.hash); if (!m) return; LK.dgk = decodeURIComponent(m[1]); try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {}
+    var h = location.hash.replace(/[#&]dgkey=[A-Za-z0-9%+\/=_-]+/, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h[0] === '#' ? h : '#' + h) : '')); } catch (e) {} })();
   var LBOX = [126.3, 36.85, 127.9, 38.35];   // 서울·경기
   function lkSet(k, name) { var v = prompt(name + ' 인증키를 붙여 넣으세요. 이 기기에만 저장됩니다(저장소·다른 기기로 안 감). 비우면 지웁니다.', LK[k] || ''); if (v == null) return;
-    v = v.replace(/\s+/g, ''); if (v) LK[k] = v; else delete LK[k]; try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {} LIVE.ev = null; LIVE.sp = null; liveGo(); draw(); }
+    v = v.replace(/\s+/g, ''); if (v) LK[k] = v; else delete LK[k]; try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {} LIVE.ev = null; LIVE.sp = null; LIVE.ak = null; LIVE.kma = null; LIVE.wrn = null; LIVE.eqk = null; LIVE.bs = null; liveGo(); draw(); }
   // ITS 호출 한도 — 개발키 = 한 달 100건 · 운영키 = 한 달 10,000건(코워크가 2026-10-04 상향 신청 · 관리자 승인 뒤). 이 기기에서 부른 것만 센다(다른 기기·PC 도구가 쓴 것은 모른다).
   function itsTier() { return LK.itst === 'op' ? 'op' : 'dev'; }
   function itsPer() { var d = new Date(); return 'm' + (d.getFullYear() * 100 + d.getMonth() + 1); }
@@ -554,6 +557,7 @@
     }
     if (on.lwx) gridGo('wx', 'https://api.open-meteo.com/v1/forecast', 'temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m,cloud_cover&wind_speed_unit=ms');
     if (on.lair) gridGo('air', 'https://air-quality-api.open-meteo.com/v1/air-quality', 'pm10,pm2_5,uv_index');
+    dgGo(now);
     if (on.lrad && !(LIVE.rad && LIVE.rad.busy) && (!LIVE.rad || now - LIVE.rad.at > 10 * 60000)) {
       var pr = LIVE.rad; LIVE.rad = { at: now, busy: 1, f: (pr || {}).f, pf: (pr || {}).f };
       fetch('https://api.rainviewer.com/public/weather-maps.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
@@ -561,9 +565,9 @@
         .catch(function (e) { LIVE.rad = { at: Date.now(), f: (pr || {}).f, err: '받지 못함(' + (e && e.message || e) + ')' }; draw(); });
     }
   }
-  function liveOn() { return on.lev || on.lwx || on.lspd || on.lair || on.lrad; }
+  function liveOn() { return on.lev || on.lwx || on.lspd || on.lair || on.lrad || on.lak || on.lkma || on.lbus; }
   function liveSoon() { if (!liveOn()) return; clearTimeout(LIVEW); LIVEW = setTimeout(liveGo, 1200); }
-  setInterval(function () { if (liveOn()) liveGo(); if (HLS && !document.getElementById('ccv')) { try { HLS.destroy(); } catch (e) {} HLS = null; } }, 60000);
+  setInterval(function () { if (liveOn()) liveGo(); if (BUSR && on.lbus && !document.hidden && Date.now() - BUSR.t0 < 15 * 60000 && BUSR.st) busPos(); if (HLS && !document.getElementById('ccv')) { try { HLS.destroy(); } catch (e) {} HLS = null; } }, 60000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) liveSoon(); });
   // 🌧 레이더 — RainViewer 조각(무료 판은 7단까지 · 한 칸 약 1km) · 우리 평면에 조각 모서리를 옮겨 그린다(브이월드와 같은 법)
   var RADT = {};
@@ -624,11 +628,125 @@
   }
   function pmGrade(v, small) { if (v == null) return null; var c = small ? [15, 35, 75] : [30, 80, 150]; return v <= c[0] ? 0 : v <= c[1] ? 1 : v <= c[2] ? 2 : 3; }
   var PMG = [['좋음', '#2563eb'], ['보통', '#16a34a'], ['나쁨', '#f59e0b'], ['매우나쁨', '#dc2626']];
+  // ---------- 공공데이터포털 실시간(v1.9.0) ----------
+  function dgGet(path, q) {
+    if (!LK.dgk) return Promise.reject(new Error('공공데이터포털 키 없음 — 범례 「🔑 공공데이터포털 키」'));
+    var k = LK.dgk.indexOf('%') >= 0 ? LK.dgk : encodeURIComponent(LK.dgk);
+    return fetch('https://apis.data.go.kr/' + path + '?serviceKey=' + k + q).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function (t) { try { return JSON.parse(t); } catch (e) { var m = /<returnAuthMsg>([^<]+)|<errMsg>([^<]+)|<resultMsg>([^<]+)/.exec(t); throw new Error(m ? (m[1] || m[2] || m[3]) : '응답이 JSON 이 아님'); } });
+  }
+  function dfsGrid(lat, lon) {   // 기상청 동네예보 격자(Lambert · 5km) — 기상청 공개 변환식
+    var RE = 6371.00877 / 5, D2R = Math.PI / 180, s1 = 30 * D2R, s2 = 60 * D2R, ol = 126 * D2R, oa = 38 * D2R;
+    var sn = Math.log(Math.cos(s1) / Math.cos(s2)) / Math.log(Math.tan(Math.PI * 0.25 + s2 * 0.5) / Math.tan(Math.PI * 0.25 + s1 * 0.5)), sf = Math.pow(Math.tan(Math.PI * 0.25 + s1 * 0.5), sn) * Math.cos(s1) / sn, ro = RE * sf / Math.pow(Math.tan(Math.PI * 0.25 + oa * 0.5), sn);
+    var ra = RE * sf / Math.pow(Math.tan(Math.PI * 0.25 + lat * D2R * 0.5), sn), th = lon * D2R - ol; if (th > Math.PI) th -= 2 * Math.PI; if (th < -Math.PI) th += 2 * Math.PI; th *= sn;
+    return [Math.floor(ra * Math.sin(th) + 43 + 0.5), Math.floor(ro - ra * Math.cos(th) + 136 + 0.5)];
+  }
+  function ymd(d) { return d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2); }
+  var AKS = null, AKSP = null, BSTOP = {}, BSC = [], BUSR = null;
+  function dgGo(now) {
+    if (!LK.dgk) return;
+    if (on.lak) {
+      if (!AKS && !AKSP) AKSP = fetch('data/airkorea-stations.json').then(function (r) { return r.json(); }).then(function (j) { AKS = j; draw(); }).catch(function () { AKSP = null; });
+      if (!(LIVE.ak && LIVE.ak.busy) && (!LIVE.ak || now - LIVE.ak.at > 20 * 60000)) { var pa = LIVE.ak; LIVE.ak = { at: now, busy: 1, m: (pa || {}).m || {} }; var m = {}, k2 = 0, er = '';
+        ['서울', '경기'].forEach(function (sd) { dgGet('B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty', '&returnType=json&numOfRows=200&pageNo=1&ver=1.0&sidoName=' + encodeURIComponent(sd))
+          .then(function (j) { (((j.response || {}).body || {}).items || []).forEach(function (x) { m[sd + '|' + x.stationName] = x; }); }).catch(function (e) { er = (e && e.message) || String(e); })
+          .then(function () { if (++k2 < 2) return; LIVE.ak = { at: Date.now(), m: Object.keys(m).length ? m : (pa || {}).m || {}, err: Object.keys(m).length ? '' : '받지 못함(' + er + ')' }; draw(); }); }); }
+    }
+    if (on.lkma) {
+      var v = viewLL(), g = dfsGrid((v[1] + v[3]) / 2, (v[0] + v[2]) / 2), kk = LIVE.kma;
+      if (!(kk && kk.busy) && (!kk || now - kk.at > 30 * 60000 || kk.g[0] !== g[0] || kk.g[1] !== g[1])) {
+        var d0 = new Date(now - 45 * 60000), bd = ymd(d0), bt = ('0' + d0.getHours()).slice(-2) + '00'; LIVE.kma = { at: now, busy: 1, g: g, v: (kk || {}).v };
+        dgGet('1360000/VilageFcstInfoService_2.0/getUltraSrtNcst', '&dataType=JSON&numOfRows=20&pageNo=1&base_date=' + bd + '&base_time=' + bt + '&nx=' + g[0] + '&ny=' + g[1])
+          .then(function (j) { var o = {}; ((((j.response || {}).body || {}).items || {}).item || []).forEach(function (x) { o[x.category] = x.obsrValue; }); if (!Object.keys(o).length) throw new Error(((j.response || {}).header || {}).resultMsg || '빈 응답'); LIVE.kma = { at: Date.now(), g: g, v: o, bt: bd.slice(4, 6) + '/' + bd.slice(6) + ' ' + bt.slice(0, 2) + ':00' }; draw(); })
+          .catch(function (e) { LIVE.kma = { at: Date.now(), g: g, v: (kk || {}).v, err: '받지 못함(' + ((e && e.message) || e) + ')' }; draw(); }); }
+      if (!(LIVE.wrn && LIVE.wrn.busy) && (!LIVE.wrn || now - LIVE.wrn.at > 10 * 60000)) { LIVE.wrn = { at: now, busy: 1 };
+        dgGet('1360000/WthrWrnInfoService/getPwnStatus', '&dataType=JSON&numOfRows=5&pageNo=1').then(function (j) { var it = (((((j.response || {}).body || {}).items || {}).item) || [])[0] || {}; LIVE.wrn = { at: Date.now(), t6: (it.t6 || '').trim(), t7: (it.t7 || '').trim(), tm: it.tmFc }; draw(); })
+          .catch(function (e) { LIVE.wrn = { at: Date.now(), err: '받지 못함(' + ((e && e.message) || e) + ')' }; draw(); }); }
+      if (!(LIVE.eqk && LIVE.eqk.busy) && (!LIVE.eqk || now - LIVE.eqk.at > 10 * 60000)) { LIVE.eqk = { at: now, busy: 1, items: [] };
+        dgGet('1360000/EqkInfoService/getEqkMsg', '&dataType=JSON&numOfRows=20&pageNo=1&fromTmFc=' + ymd(new Date(now - 3 * 864e5)) + '&toTmFc=' + ymd(new Date(now))).then(function (j) { LIVE.eqk = { at: Date.now(), items: (((((j.response || {}).body || {}).items || {}).item) || []) }; draw(); })
+          .catch(function (e) { LIVE.eqk = { at: Date.now(), items: [], err: /NO_DATA|없/.test((e && e.message) || '') ? '' : '받지 못함(' + ((e && e.message) || e) + ')' }; draw(); }); }
+    }
+    if (on.lbus && view.s >= 0.04 && !(LIVE.bs && LIVE.bs.busy)) {
+      var vb = viewLL(), cl = [(vb[0] + vb[2]) / 2, (vb[1] + vb[3]) / 2], cp = P(cl[0], cl[1]);
+      if (!BSC.some(function (c) { return Math.hypot(c[0] - cp[0], c[1] - cp[1]) < 300; })) { BSC.push(cp); if (BSC.length > 60) BSC.shift(); LIVE.bs = { at: now, busy: 1 };
+        dgGet('6410000/busstationservice/v2/getBusStationAroundListv2', '&x=' + cl[0].toFixed(6) + '&y=' + cl[1].toFixed(6) + '&format=json').then(function (j) {
+          ((((j.response || {}).msgBody || {}).busStationAroundList) || []).forEach(function (x) { BSTOP[x.stationId] = { id: x.stationId, nm: x.stationName, p: P(+x.x, +x.y), mob: (x.mobileNo || '').trim(), reg: x.regionName }; });
+          LIVE.bs = { at: Date.now() }; draw(); }).catch(function (e) { LIVE.bs = { at: Date.now(), err: '받지 못함(' + ((e && e.message) || e) + ')' }; draw(); }); }
+    }
+  }
+  function busRoute(id, nm) {
+    var keep = BUSR && BUSR.id === id ? BUSR.st : null; BUSR = { id: id, nm: nm, st: keep, v: [], at: 0, t0: Date.now() }; draw();
+    (keep ? Promise.resolve() : dgGet('6410000/busrouteservice/v2/getBusRouteStationListv2', '&routeId=' + id + '&format=json').then(function (j) {
+      BUSR.st = ((((j.response || {}).msgBody || {}).busRouteStationList) || []).map(function (x) { return { id: x.stationId, nm: x.stationName, p: P(+x.x, +x.y), seq: +x.stationSeq, turn: x.turnYn === 'Y' }; }).sort(function (a, b) { return a.seq - b.seq; }); }))
+      .then(busPos).catch(function (e) { if (BUSR) { BUSR.err = '받지 못함(' + ((e && e.message) || e) + ')'; draw(); } });
+  }
+  function busPos() { var R0 = BUSR; if (!R0 || !R0.st) return;
+    dgGet('6410000/buslocationservice/v2/getBusLocationListv2', '&routeId=' + R0.id + '&format=json').then(function (j) { if (BUSR !== R0) return;
+      R0.v = ((((j.response || {}).msgBody || {}).busLocationList) || []).map(function (x) { return { pl: x.plateNo, seq: +x.stationSeq, cr: +x.crowded, seat: +x.remainSeatCnt, low: +x.lowPlate, sid: x.stationId }; }); R0.at = Date.now(); R0.err = ''; draw(); })
+      .catch(function (e) { if (BUSR === R0) { R0.err = '받지 못함(' + ((e && e.message) || e) + ')'; draw(); } });
+  }
+  function bsArr(sid) { dgGet('6410000/busarrivalservice/v2/getBusArrivalListv2', '&stationId=' + sid + '&format=json').then(function (j) { var el = document.getElementById('bsarr'); if (!el) return;
+      var L = (((j.response || {}).msgBody || {}).busArrivalList) || []; if (!L.length) { el.textContent = '지금 오는 경기 버스가 없다(또는 서울 시내버스만 서는 정류장).'; return; }
+      L.sort(function (a, b) { return (a.predictTime1 === '' ? 999 : +a.predictTime1) - (b.predictTime1 === '' ? 999 : +b.predictTime1); });
+      el.innerHTML = L.map(function (b) { var CR = ['', '여유', '보통', '혼잡', '매우혼잡'];
+        return '<div class="r"><b>' + esc(b.routeName) + '</b><span>' + (b.predictTime1 !== '' ? '<b>' + b.predictTime1 + '분</b> · ' + b.locationNo1 + '정류장 전' : '-') + (+b.remainSeatCnt1 > 0 ? ' · 빈자리 ' + b.remainSeatCnt1 : '') + (CR[+b.crowded1] ? ' · ' + CR[+b.crowded1] : '') + (+b.lowPlate1 === 1 ? ' · 저상' : '') + (b.predictTime2 !== '' ? ' / 다음 ' + b.predictTime2 + '분' : '') + ' <em>→ ' + esc(b.routeDestName || '') + '</em> <button data-bsr="' + b.routeId + '|' + esc(String(b.routeName)) + '">🚌 위치</button></span></div>'; }).join(''); })
+    .catch(function (e) { var el = document.getElementById('bsarr'); if (el) el.textContent = '받지 못함(' + ((e && e.message) || e) + ')'; }); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-bsr]'); if (!b) return; var a = b.getAttribute('data-bsr').split('|'); busRoute(a[0], a[1]); show(null); });
+  function akGrade(x) { var a = pmGrade(+x.pm25Value, 1), b = pmGrade(+x.pm10Value, 0); a = isFinite(+x.pm25Value) && x.pm25Value !== '-' ? a : null; b = isFinite(+x.pm10Value) && x.pm10Value !== '-' ? b : null; return a == null && b == null ? null : Math.max(a == null ? 0 : a, b == null ? 0 : b); }
+  function drawAk() {
+    if (!on.lak || !AKS || !LIVE.ak || !LIVE.ak.m) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, r = view.s > 0.01 ? 11 : 7;
+    AKS.items.forEach(function (t) { var x = LIVE.ak.m[t[3] + '|' + t[0]], s0 = S(P(t[1], t[2])); if (s0[0] < -20 || s0[1] < -20 || s0[0] > W0 + 20 || s0[1] > H0 + 20) return;
+      var gr = x ? akGrade(x) : null; ctx.beginPath(); ctx.arc(s0[0], s0[1], r, 0, Math.PI * 2); ctx.fillStyle = gr == null ? '#94a3b8' : PMG[gr][1]; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+      if (r > 8) { ctx.fillStyle = '#fff'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(x && isFinite(+x.pm25Value) && x.pm25Value !== '-' ? x.pm25Value : '-', s0[0], s0[1] + 0.5); }
+      hit.push({ x: s0[0], y: s0[1], r: 13, it: { kind: 'lak', t: t, x: x } }); });
+  }
+  function drawBus(dark) {
+    if (!on.lbus) return; var W0 = cv.clientWidth, H0 = cv.clientHeight;
+    if (BUSR && BUSR.st && BUSR.st.length) { path(BUSR.st.map(function (q) { return q.p; })); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(234,88,12,.55)'; ctx.stroke();
+      var bySeq = {}; BUSR.st.forEach(function (q) { bySeq[q.seq] = q; });
+      BUSR.v.forEach(function (b, i) { var q = bySeq[b.seq]; if (!q) return; var s0 = S(q.p); s0 = [s0[0] + 8, s0[1] - 8];
+        ctx.fillStyle = '#ea580c'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - 11, s0[1] - 8, 22, 16, 4); else ctx.rect(s0[0] - 11, s0[1] - 8, 22, 16); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🚌', s0[0], s0[1] + 0.5);
+        hit.push({ x: s0[0], y: s0[1], r: 12, it: { kind: 'lbv', b: b, st: q } }); }); }
+    if (view.s < 0.04) return;
+    Object.keys(BSTOP).forEach(function (k) { var q = BSTOP[k], s0 = S(q.p); if (s0[0] < -10 || s0[1] < -10 || s0[0] > W0 + 10 || s0[1] > H0 + 10) return;
+      ctx.fillStyle = '#0d9488'; ctx.fillRect(s0[0] - 5, s0[1] - 5, 10, 10); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.strokeRect(s0[0] - 5, s0[1] - 5, 10, 10);
+      if (view.s > 0.7) label([q.p[0], q.p[1] - 14 / view.s], q.nm, 10, dark ? '#e2e8f0' : '#134e4a', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)');
+      hit.push({ x: s0[0], y: s0[1], r: 10, it: { kind: 'lbs', q: q } }); });
+  }
+  var PTYK = { '0': '없음', '1': '비', '2': '비/눈', '3': '눈', '5': '빗방울', '6': '빗방울눈날림', '7': '눈날림' };
+  function kmaWarn() { var w = LIVE.wrn; if (!w || !w.t6) return ''; var L = w.t6.split(/\r?\n/).map(function (x) { return x.replace(/^o\s*/, '').trim(); }).filter(function (x) { return x && /서울|경기/.test(x); }); return L.join(' · '); }
+  function drawKma(dark) {
+    if (!on.lkma) return; var k = LIVE.kma, wn = kmaWarn(), y = 54 + (on.vw && VWOK ? 20 : 0), W0 = cv.clientWidth;
+    if (k && k.v) { var v = k.v, t = '🌡 기상청 실황 ' + (v.T1H != null ? v.T1H + '°' : '-') + ' · 습도 ' + (v.REH || '-') + '% · 1시간 강수 ' + (v.RN1 || '0') + 'mm' + (v.PTY && v.PTY !== '0' ? ' · ' + (PTYK[v.PTY] || '') : '') + ' · 바람 ' + (v.WSD || '-') + 'm/s';
+      ctx.font = 'bold 11px system-ui, sans-serif'; var tw = Math.min(W0 - 16, ctx.measureText(t).width + 14); ctx.fillStyle = dark ? 'rgba(15,22,36,.88)' : 'rgba(255,255,255,.94)'; ctx.fillRect(8, y, tw, 20); ctx.strokeStyle = '#0369a1'; ctx.lineWidth = 1; ctx.strokeRect(8, y, tw, 20);
+      ctx.fillStyle = dark ? '#e0f2fe' : '#0c4a6e'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, 15, y + 10.5, tw - 12); hit.push({ x: 8 + tw / 2, y: y + 10, r: 14, it: { kind: 'lkma' } }); y += 24; }
+    if (wn) { var t2 = '⚠ 특보 발효 — ' + wn; ctx.font = 'bold 11px system-ui, sans-serif'; var tw2 = Math.min(W0 - 16, ctx.measureText(t2).width + 14); ctx.fillStyle = '#b91c1c'; ctx.fillRect(8, y, tw2, 20); ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t2, 15, y + 10.5, tw2 - 12); hit.push({ x: 8 + tw2 / 2, y: y + 10, r: 14, it: { kind: 'lkma' } }); }
+    ((LIVE.eqk || {}).items || []).forEach(function (q) { if (!(q.lat > 32 && q.lat < 39.5 && q.lon > 123 && q.lon < 132)) return; var s0 = S(P(+q.lon, +q.lat));
+      ctx.beginPath(); ctx.arc(s0[0], s0[1], 14, 0, Math.PI * 2); ctx.lineWidth = 3; ctx.strokeStyle = '#7c2d12'; ctx.stroke(); label([P(+q.lon, +q.lat)[0], P(+q.lon, +q.lat)[1] - 24 / view.s], '지진 M' + q.mt, 11, '#fff', 'rgba(124,45,18,.9)'); hit.push({ x: s0[0], y: s0[1], r: 16, it: { kind: 'leq', q: q } }); });
+  }
+  function akCard(it) { var t = it.t, x = it.x;
+    var h = '<h3>🟢 ' + esc(t[0]) + ' 측정소 <small style="font-weight:400;color:var(--ink2)">' + esc(t[3] + ' · ' + t[4]) + '</small></h3>';
+    if (!x) return h + '<p class="desc">이 측정소 값을 받지 못했다(점검 중이거나 목록 이름이 다름).</p>' + src(AKS.source);
+    var gv = function (v, sm) { var g = pmGrade(+v, sm); return isFinite(+v) && v !== '-' ? v + '㎍/㎥ · <b style="color:' + PMG[g][1] + '">' + PMG[g][0] + '</b>' : '<em>점검·자료 없음</em>'; };
+    h += row('초미세먼지(PM2.5)', gv(x.pm25Value, 1)) + row('미세먼지(PM10)', gv(x.pm10Value, 0)) + row('오존 · 이산화질소', esc((x.o3Value || '-') + 'ppm · ' + (x.no2Value || '-') + 'ppm')) + row('일산화탄소 · 아황산가스', esc((x.coValue || '-') + 'ppm · ' + (x.so2Value || '-') + 'ppm')) + row('통합대기환경지수', esc(x.khaiValue || '-')) + row('측정 시각', esc(x.dataTime || '-')) + row('주소', esc(t[5]));
+    return h + '<p class="desc">측정소에서 실제로 잰 1시간 값(에어코리아 실시간 · 확정 전 값). 등급 색은 환경부 기준(PM2.5 15·35·75 · PM10 30·80·150).</p>' + src('한국환경공단 에어코리아 대기오염정보·측정소정보(공공데이터포털) — 20분마다 · 이 폰이 직접 받음 · 저장 안 함'); }
+  function kmaCard() { var k = LIVE.kma || {}, v = k.v || {}, w = LIVE.wrn || {}, dirs = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
+    var h = '<h3>🌡 기상청 초단기실황 <small style="font-weight:400;color:var(--ink2)">격자 ' + (k.g || []).join(',') + ' · ' + esc(k.bt || '') + '</small></h3>';
+    h += row('기온', v.T1H != null ? v.T1H + '°' : '-') + row('습도', v.REH != null ? v.REH + '%' : '-') + row('1시간 강수', (v.RN1 || '0') + 'mm' + (v.PTY && v.PTY !== '0' ? ' · ' + esc(PTYK[v.PTY] || v.PTY) : '')) + row('바람', (v.WSD || '-') + 'm/s' + (v.VEC != null ? ' · ' + dirs[Math.round(+v.VEC / 45) % 8] + '풍' : ''));
+    h += row('특보(지금 발효)', w.t6 ? esc(w.t6).replace(/\n/g, '<br>') : (w.err ? esc(w.err) : '-')) + (w.t7 ? row('예비특보', esc(w.t7).replace(/\n/g, '<br>')) : '') + row('특보 발표', esc(w.tm || '-'));
+    var eq = ((LIVE.eqk || {}).items || []); h += row('지진(3일)', eq.length ? eq.map(function (q) { return esc(String(q.tmEqk).replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d).*/, '$2/$3 $4:$5') + ' M' + q.mt + ' ' + q.loc); }).join('<br>') : '없음');
+    return h + '<p class="desc">실황 = 기상청이 관측을 그 5km 격자에 맞춘 값(지도 가운데 격자 · 30분마다 · 매시 40분쯤 나옴). 특보는 전국 발효 현황 글 그대로 — 지도 위 붉은 띠는 그중 서울·경기가 든 줄만.</p>' + src('기상청 단기예보(초단기실황)·기상특보·지진정보 조회서비스(공공데이터포털) — 이 폰이 직접 받음 · 저장 안 함'); }
+  function bsCard(it) { var q = it.q; setTimeout(function () { bsArr(q.id); }, 0);
+    return '<h3>🚏 ' + esc(q.nm) + ' <small style="font-weight:400;color:var(--ink2)">' + esc((q.reg || '') + (q.mob ? ' · ' + q.mob : '')) + '</small></h3><div id="bsarr" class="desc">도착 정보 받는 중…</div>' + src('경기도 버스도착정보·정류소 조회(공공데이터포털) — 실시간 · 이 폰이 직접 받음 · 저장 안 함 · ⚠ 서울 시내버스는 없다(서울시 API 는 https 가 없어 이 지도에서 못 부른다)'); }
+  function bvCard(it) { var b = it.b, CR = ['', '여유', '보통', '혼잡', '매우혼잡'];
+    return '<h3>🚌 ' + esc(BUSR ? BUSR.nm : '') + '번 <small style="font-weight:400;color:var(--ink2)">' + esc(b.pl || '') + '</small></h3>' + row('지금 정류장', esc(it.st.nm) + ' (' + b.seq + '번째)') + row('빈자리 · 혼잡', (b.seat >= 0 ? b.seat + '석' : '-') + (CR[b.cr] ? ' · ' + CR[b.cr] : '')) + row('저상', b.low === 1 ? '예' : '아니오') + row('받은 시각', BUSR && BUSR.at ? hhmm(BUSR.at) + ' <em>(1분마다 · 15분 뒤 멈춤)</em>' : '-') + '<p class="desc">버스 자리는 「지금 지난 정류장」으로 온다 — 그 정류장 옆에 그린다(정류장 사이 어디쯤인지는 자료에 없음).</p>' + src('경기도 버스위치정보·버스노선 조회(공공데이터포털)'); }
+  function eqCard(it) { var q = it.q; return '<h3>🌏 지진 M' + esc(q.mt) + '</h3>' + row('시각', esc(String(q.tmEqk))) + row('위치', esc(q.loc)) + row('깊이', esc(q.dep) + 'km') + row('영향', esc(q.rem || '-')) + src('기상청 지진정보 조회서비스'); }
   var EVC = { '교통사고': ['#dc2626', '💥'], '공사': ['#ea580c', '🚧'], '기타돌발': ['#7c3aed', '⚠'], '재난': ['#0f172a', '🌊'], '기상': ['#0284c7', '🌧'], '행사': ['#0d9488', '🎪'] };
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
-    drawRad(); drawSpd(); drawCc();
+    drawRad(); drawSpd(); drawCc(); drawAk(); drawBus(dark);
     if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
       var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
       ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
@@ -675,6 +793,10 @@
       b.push('<b>🚦 소통</b> ' + li('#16a34a', '원활') + li('#f59e0b', '서행') + li('#dc2626', '정체') + '<small class="lg-n">' + (!spdSpan() ? '<b>더 확대하면(화면 가로 약 14km 안) 받는다</b>' : sp && sp.err ? '<b style="color:#b91c1c">' + esc(sp.err) + '</b>' : sp && !sp.busy ? (sp.n || 0) + '구간 · ' + hhmm(sp.at) + ' 받음' + (inb ? '' : ' · <b>지금 화면은 받은 범위 밖</b>') : LK.its ? '받는 중' : 'ITS 키 필요') + '</small><div class="lg-btns"><button data-lre="sp">🔄 이 화면 소통 받기(ITS 1건)</button></div>'); }
     if (on.lcc) b.push('<b>📹 CCTV</b> ' + li('#1d4ed8', '국도·기타') + li('#0f766e', '고속도로') + '<small class="lg-n">' + ccList().length + '대 · 목록 ' + esc(CCLIVE ? CCLIVE.at : (CCB.at || '…') + ' 구움') + ' · 누르면 영상(ITS 호출 없음)</small>');
     if (on.lrad) { var rd = LIVE.rad; b.push('<b>🌧 레이더</b><small class="lg-n">' + (rd && rd.err ? '<b style="color:#b91c1c">' + esc(rd.err) + '</b>' : rd && rd.f ? hhmm(rd.f.t) + ' 관측 · 10분마다 · 파랑(약함) → 노랑·빨강(강함)' : '받는 중') + ' · RainViewer(rainviewer.com) 레이더 합성 · 무료 판은 7단 확대까지(한 칸 약 1km)</small>'); }
+    if (on.lak || on.lkma || on.lbus) b.push('<div class="lg-btns"><button data-lkey="dgk">🔑 공공데이터포털 키' + (LK.dgk ? ' 바꾸기' : ' 넣기') + '</button></div>' + (LK.dgk ? '' : '<small class="lg-n" style="color:#b91c1c">에어코리아·기상청·경기 버스는 공공데이터포털(data.go.kr) 일반 인증키가 있어야 한다 — 이 기기에만 저장</small>'));
+    if (on.lak) { var ak = LIVE.ak; b.push('<b>🟢 측정소</b> ' + PMG.map(function (g) { return li(g[1], g[0]); }).join('') + li('#94a3b8', '점검·없음') + '<small class="lg-n">' + (ak && ak.err ? '<b style="color:#b91c1c">' + esc(ak.err) + '</b>' : ak && !ak.busy ? Object.keys(ak.m).length + '곳 · ' + hhmm(ak.at) + ' 받음 · 20분마다' : '받는 중') + ' · 숫자 = PM2.5 실측(㎍/㎥) · 서울·경기 168곳</small>'); }
+    if (on.lkma) { var km = LIVE.kma, wr = LIVE.wrn; b.push('<b>🌡 기상청</b><small class="lg-n">' + (km && km.err ? '<b style="color:#b91c1c">' + esc(km.err) + '</b>' : km && km.v ? '실황 ' + esc(km.bt || '') + ' · 지도 가운데 격자' : '받는 중') + ' · 특보 ' + (wr && wr.err ? esc(wr.err) : kmaWarn() ? '<b style="color:#b91c1c">서울·경기 발효 있음</b>' : wr && !wr.busy ? '서울·경기 없음' : '…') + ' · 지진 3일 ' + (((LIVE.eqk || {}).items || []).length) + '건 · 윗줄 띠를 누르면 자세히</small>'); }
+    if (on.lbus) { var bs = LIVE.bs; b.push('<b>🚌 경기 버스</b> ' + li('#0d9488', '정류장', 'box') + li('#ea580c', '고른 노선 버스') + '<small class="lg-n">' + (view.s < 0.04 ? '<b>더 확대하면 화면 가운데 둘레 정류장을 받는다</b>' : bs && bs.err ? '<b style="color:#b91c1c">' + esc(bs.err) + '</b>' : '정류장 ' + Object.keys(BSTOP).length + '곳 받음') + (BUSR ? ' · 노선 ' + esc(BUSR.nm) + ' 버스 ' + BUSR.v.length + '대' + (BUSR.err ? ' <b style="color:#b91c1c">' + esc(BUSR.err) + '</b>' : '') + ' <button data-busx="1">노선 지우기</button>' : '') + ' · 정류장을 누르면 도착 · 「🚌 위치」로 그 노선 버스 · ⚠ 서울 시내버스는 없음</small>'); }
     if (on.lair) { var ar = LIVE.air; b.push('<b>😷 미세먼지</b> ' + PMG.map(function (g) { return li(g[1], g[0]); }).join('') + '<small class="lg-n">' + (ar && ar.err ? '<b style="color:#b91c1c">' + esc(ar.err) + '</b>' : ar && !ar.busy ? ar.pts.length + '칸 · ' + hhmm(ar.at) + ' 받음' : '받는 중') + ' · 숫자 = 초미세먼지(PM2.5 ㎍/㎥) · 색 = PM2.5·PM10 중 나쁜 쪽 환경부 등급 · CAMS 모형값(측정소 아님)</small>'); }
     if (on.lev) { var e = LIVE.ev; b.push('<b>🚧 돌발</b> ' + Object.keys(EVC).slice(0, 3).map(function (k) { return li(EVC[k][0], EVC[k][1] + ' ' + k); }).join(''));
       b.push(!LK.its ? '<small class="lg-n" style="color:#b91c1c">ITS 키가 아직 없다 — 「🔑 ITS 키」에 국가교통정보센터 인증키를 넣으면 이 기기에서 보인다</small>'
@@ -754,7 +876,7 @@
         dot(P(r.lon, r.lat), 7, '#ef4444', '#fff', { kind: 'rally', r: r });
       });
     }
-    drawLive(dark); liveSoon();
+    drawLive(dark); drawKma(dark); liveSoon();
     if (REP) { var rs = S(REP.p); ctx.beginPath(); ctx.arc(rs[0], rs[1], 14, 0, Math.PI * 2); ctx.lineWidth = 4; ctx.strokeStyle = '#dc2626'; ctx.stroke(); ctx.beginPath(); ctx.arc(rs[0], rs[1], 4, 0, Math.PI * 2); ctx.fillStyle = '#dc2626'; ctx.fill();
       label([REP.p[0], REP.p[1] - 26 / view.s], REP.here ? '📍 지금 위치' : '📋 보고 자리', 12, '#fff', REP.here ? 'rgba(29,78,216,.92)' : 'rgba(185,28,28,.9)'); hit.push({ x: rs[0], y: rs[1], r: 16, it: { kind: 'report' } }); }
     if (sel) { ctx.beginPath(); ctx.arc(sel.x, sel.y, sel.r + 5, 0, Math.PI * 2); ctx.lineWidth = 3; ctx.strokeStyle = '#facc15'; ctx.stroke(); }
@@ -907,6 +1029,11 @@
     } else if (it.kind === 'bizpin') { bizGo(it.k); return;
     } else if (it.kind === 'rent') { h = rentCard(it.it);
     } else if (it.kind === 'store') { var so = it.s, C3 = SIDX ? SIDX.cls[so.c] : null; h = '<h3>🏬 ' + esc(so.n) + '</h3>' + (C3 ? row('업종', esc(C3[1] + ' › ' + C3[3] + ' › ' + C3[4])) : '') + (so.f ? row('층', esc(so.f) + '층') : '') + (RAD.c ? row('반경 가운데에서', Math.round(Math.hypot(so.p[0] - RAD.c[0], so.p[1] - RAD.c[1])) + 'm') : '') + '<p class="desc">등록된 상가 정보다 — 영업 중인지·매출은 이 자료에 없다.</p>' + src(SIDX ? SIDX.source + ' · 기준 ' + SIDX.stdrYm : '');
+    } else if (it.kind === 'lak') { h = akCard(it);
+    } else if (it.kind === 'lkma') { h = kmaCard();
+    } else if (it.kind === 'leq') { h = eqCard(it);
+    } else if (it.kind === 'lbs') { h = bsCard(it);
+    } else if (it.kind === 'lbv') { h = bvCard(it);
     } else if (it.kind === 'jcnm') { h = jnCard(it);
     } else if (it.kind === 'rdnm') { h = rdCard(it);
     } else if (it.kind === 'lev') { h = levCard(it);
@@ -1935,7 +2062,7 @@
     el.innerHTML = '<div class="lgh"><b>🗂 범례</b><button id="m2dLegX" aria-label="범례 닫기">닫기</button></div>' + (g.join('') || '<small>켠 층이 없다</small>');
     $('m2dLegX').onclick = function () { legOpen(false); };
   }
-  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-vwkey]'); if (b) { vwSetKey(); return; } b = e.target.closest('[data-lkey]'); if (b) { lkSet(b.getAttribute('data-lkey'), '국가교통정보센터(ITS)'); return; } b = e.target.closest('[data-lre]'); if (b) { liveGo(b.getAttribute('data-lre')); legend(); return; } b = e.target.closest('[data-itst]'); if (b) { LK.itst = b.getAttribute('data-itst'); try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e2) {} legend(); return; } b = e.target.closest('[data-vwm]'); if (b) { VWM = b.getAttribute('data-vwm'); try { localStorage.setItem('tg_map2d_vw', VWM); } catch (e2) {} draw(); return; } b = e.target.closest('[data-jggm]'); if (b) { JGGM = b.getAttribute('data-jggm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); } });
+  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-vwkey]'); if (b) { vwSetKey(); return; } b = e.target.closest('[data-lkey]'); if (b) { var lk0 = b.getAttribute('data-lkey'); lkSet(lk0, lk0 === 'dgk' ? '공공데이터포털(data.go.kr) 일반' : '국가교통정보센터(ITS)'); return; } b = e.target.closest('[data-busx]'); if (b) { BUSR = null; draw(); legend(); return; } b = e.target.closest('[data-lre]'); if (b) { liveGo(b.getAttribute('data-lre')); legend(); return; } b = e.target.closest('[data-itst]'); if (b) { LK.itst = b.getAttribute('data-itst'); try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e2) {} legend(); return; } b = e.target.closest('[data-vwm]'); if (b) { VWM = b.getAttribute('data-vwm'); try { localStorage.setItem('tg_map2d_vw', VWM); } catch (e2) {} draw(); return; } b = e.target.closest('[data-jggm]'); if (b) { JGGM = b.getAttribute('data-jggm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); } });
     $('m2dLeg').addEventListener('change', function (e) { var t = e.target; if (t.hasAttribute('data-trdi')) { TRDI = t.value; draw(); } else if (t.hasAttribute('data-a10y')) { A10Y = t.value ? +t.value : null; draw(); } }); }
   function legOpen(v) { if (v && window.innerWidth < 760 && $('m2dCard').classList.contains('on')) $('m2dCard').classList.remove('on');
     document.body.classList.toggle('legon', v); try { localStorage.setItem('tg_map2d_leg', v ? '1' : '0'); } catch (e) {} if (v) legend(); }

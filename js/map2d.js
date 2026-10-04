@@ -2662,8 +2662,10 @@
   function jgP(gu) { if (JGGL[gu]) return JGGL[gu]; JGGL[gu] = fetch('data/r/' + gu + '/jgg.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { j.items.forEach(function (t) { var r0 = t[2][0], sx = 0, sy = 0; r0.forEach(function (q) { sx += q[0]; sy += q[1]; }); JGGA.push({ t: t, c: P(sx / r0.length, sy / r0.length), gu: gu }); }); JGGL[gu].done = 1; }).catch(function () { JGGL[gu].done = 1; }); return JGGL[gu]; }
   // ---------- 📝 이 동 풀어 읽기(v2.1.0 · 소유자 「동별·읍별로 데이터가 알려주는 만큼 구체적이고 세세하게 · 데이터를 충분히 풀어서 설명해야 이해도가 높아진다」) ----------
   //  화면의 숫자를 규칙으로 읽어 문단으로 쓴다(지어내는 문장 없음 · 기준은 문단 끝에) — 원인 단정·전국 맥락은 자료에 없어서 쓰지 않는다.
-  var SDJ = {}, CPI = null, CPIP = null;
-  function sdLoad(gu) { if (SDJ[gu]) return SDJ[gu]; SDJ[gu] = Promise.all([fetch('data/r/' + gu + '/dong.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fetch('data/r/' + gu + '/dongx.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fLoad(gu), jgP(gu)]).then(function (a) { return { dong: a[0], x: a[1] }; }); return SDJ[gu]; }
+  var SDJ = {}, CPI = null, CPIP = null, GTAX = null;
+  fetch('data/gu-tax.json').then(function (r) { return r.json(); }).then(function (j) { GTAX = j; }).catch(function () {});
+  fetch('data/r/11650/dong.json').then(function (r) { return r.json(); }).then(function (j) { var go = function () { if (!DONG.length) return setTimeout(go, 500); j.dong.forEach(function (q) { var d = DONG.filter(function (x) { return x.name === q.name; })[0]; if (d && q.pop) { d.pop = q.pop; d.popAsOf = j.source && j.source['주민']; } }); }; go(); }).catch(function () {});   // v2.2.0 서초 기본 동도 지역 파일의 최신 주민등록(달마다 굽는 쪽)
+  function sdLoad(gu) { if (SDJ[gu]) return SDJ[gu]; SDJ[gu] = Promise.all([fetch('data/r/' + gu + '/dong.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fetch('data/r/' + gu + '/dongx.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fLoad(gu), jgP(gu), fetch('data/r/' + gu + '/dongw.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })]).then(function (a) { return { dong: a[0], x: a[1], w: a[4] }; }); return SDJ[gu]; }
   function cpiLoad() { if (CPIP) return CPIP; CPIP = fetch('data/cpi.json').then(function (r) { return r.json(); }).then(function (j) { CPI = j; return j; }).catch(function () { return null; }); return CPIP; }
   function qLab(q) { q = String(q); return q.slice(2, 4) + '년 ' + q.slice(4) + '분기'; }
   function sgn(x, d) { return (x >= 0 ? '+' : '') + (d ? x.toFixed(d) : Math.round(x)) ; }
@@ -2673,7 +2675,7 @@
       var Dg = a[0].dong, Xg = a[0].x, row0 = Dg && Dg.dong.filter(function (q) { return d.k ? q.k === d.k : q.name === d.name; })[0] || {};
       var k = row0.k || d.k, F = RFAC[gu] && RFAC[gu].dong ? RFAC[gu].dong[k] || null : null; if (!F && RFAC[gu] && RFAC[gu].dong) for (var kk in RFAC[gu].dong) if (RFAC[gu].dong[kk].name === (row0.name || d.name)) { F = RFAC[gu].dong[kk]; break; } var X = Xg && Xg.dong ? Xg.dong[k] || null : null;
       var w = 0, c = 0, n = 0; JGGA.forEach(function (q) { if (q.gu === gu && q.t[1] === (row0.name || d.name)) { n++; w += q.t[9] || 0; c += q.t[8] || 0; } });
-      return { gu: gu, sido: sidoOf(gu), name: row0.name || d.name, guName: (Dg && Dg.name) || d.gu || '', pop: row0.pop || d.pop, live: row0.live || d.live || liveArr(d), sales: row0.sales || d.sales || salesOf(d), X: X, quarters: Xg && Xg.quarters, F: F, Fm: RFAC[gu], wrk: n ? w : null, corp: n ? c : null };
+      var Wg = a[0].w; return { W: Wg && Wg.dong ? Wg.dong[k] || null : null, Wm: Wg, GT: GTAX && GTAX.gu[gu] || null, GTm: GTAX, gu: gu, sido: sidoOf(gu), name: row0.name || d.name, guName: (Dg && Dg.name) || d.gu || '', pop: row0.pop || d.pop, live: row0.live || d.live || liveArr(d), sales: row0.sales || d.sales || salesOf(d), X: X, quarters: Xg && Xg.quarters, F: F, Fm: RFAC[gu], wrk: n ? w : null, corp: n ? c : null };
     });
   }
   function storyHtml(S) {
@@ -2702,8 +2704,23 @@
     // ③ 일하는 사람
     if (S.wrk != null && p && p.tot) { var r3 = S.wrk / p.tot, rr = ref.wrkPerPop, t3 = '<b>일하는 사람.</b> 이 동 집계구를 합치면 사업체 ' + Math.round(S.corp).toLocaleString() + '곳 · 종사자 ' + Math.round(S.wrk).toLocaleString() + '명 — 주민의 ' + f1(r3) + '배' + (rr ? '(' + S.sido + ' 평균 ' + rr + '배)' : '') + '. ';
       t3 += r3 >= 2 ? '<b>일터형</b> — 낮에 일하러 오는 사람이 사는 사람보다 훨씬 많다. 평일 점심·퇴근길 장사.' : r3 >= 0.8 ? '<b>주거·일터 섞임</b> — 점심 손님(직장인)과 저녁 손님(주민)이 둘 다 있다.' : '<b>주거형</b> — 일터가 적어 낮 장사보다 저녁·주말 장사.';
-      t3 += ' <small>(통계청 SGIS 집계구 2023 · 기준: 종사자÷주민 2배↑ 일터형 · 0.8배↓ 주거형 — 앱 기준)</small>'; tags.push(r3 >= 2 ? '일터' : r3 >= 0.8 ? '주거·일터 섞임' : '주거지'); P.push(t3); }
+      if (S.W && S.W.wrc && S.W.wrc[0]) { var wa = S.W.wrc[3], wt = sum(wa) || 1, WAG = ['10대', '20대', '30대', '40대', '50대', '60대 이상'], wm = wa.indexOf(Math.max.apply(null, wa)); t3 += ' 서울시 직장인구(' + qLab(S.Wm.quarters.wrc) + ')로 보면 이 동에서 일하는 사람 ' + Math.round(S.W.wrc[0]).toLocaleString() + '명은 ' + WAG.map(function (n0, i) { return n0 + ' ' + Math.round(wa[i] / wt * 100) + '%'; }).join(' · ') + ' · 남 ' + Math.round(S.W.wrc[1] / S.W.wrc[0] * 100) + '% — 점심 손님은 <b>' + WAG[wm] + '</b>가 가장 많다.'; }
+      t3 += ' <small>(통계청 SGIS 집계구 2023 · 서울시 상권분석 직장인구 · 기준: 종사자÷주민 2배↑ 일터형 · 0.8배↓ 주거형 — 앱 기준)</small>'; tags.push(r3 >= 2 ? '일터' : r3 >= 0.8 ? '주거·일터 섞임' : '주거지'); P.push(t3); }
     if (S.F && S.F.gov) { var gk = Object.keys(S.F.gov); if (gk.length) P.push('<b>관공서.</b> ' + gk.map(function (k4) { return k4 + ' ' + S.F.gov[k4]; }).join(' · ') + ' — 공무원 점심과 민원인 낮 유입이 있다. 시청·구청·법원·세무서 같은 큰 곳일수록 크다. <small>(OSM·공식 관공서 자리)</small>'); }
+    // ③-2 지갑(구매력) — 동 = 공동주택 시세·평형 · 구 = 국세청(구 평균 — 나누지 않는다)
+    var WP = []; if (S.W && S.W.apt && sum(S.W.apt[2]) > 0) { var ap = S.W.apt, hh = sum(ap[2]), aa = sum(ap[1]) || 1, six = ap[2][6] / hh * 100, rw = ref.w || {}, ARN = ['66㎡ 미만', '66~99㎡', '99~132㎡', '132~165㎡', '165㎡ 이상'];
+      var tw = '<b>지갑(사는 사람의 자산).</b> 이 동 공동주택 ' + Math.round(ap[0]) + '단지 · ' + Math.round(hh).toLocaleString() + '가구 — 평형: ' + ARN.map(function (n0, i) { return n0 + ' ' + Math.round(ap[1][i] / aa * 100) + '%'; }).join(' · ') + ' · 평균 ' + ap[3] + '㎡. 시세 6억 이상 가구 <b>' + f1(six) + '%</b>' + (rw.six_med != null ? '(서울 동 중앙값 ' + rw.six_med + '% · 상위 20% 경계 ' + rw.six_p80 + '%)' : '') + ', 평균 시세 <b>' + won(ap[4]) + '</b>' + (rw.mktc_med ? '(서울 동 중앙값 ' + won(rw.mktc_med) + ' · 상위 20% ' + won(rw.mktc_p80) + ')' : '') + ' — ';
+      var hi = rw.mktc_p80 && ap[4] >= rw.mktc_p80, mid = rw.mktc_med && ap[4] >= rw.mktc_med; tw += hi ? '<b>서울에서 집값이 높은 쪽(상위 20%)</b>이라 주민 자산 구매력이 크다.' : mid ? '서울 동 가운데 중간보다 높다.' : '서울 동 가운데 중간보다 낮다(소형·저가 공동주택이 많다).';
+      tw += ' 같은 가구 수라도 20평대와 40평대는 다른 시장이다 — 평형 구성이 손님층의 크기를 말해 준다. <small>(서울시 상권분석서비스 아파트-행정동 ' + qLab(S.Wm.quarters.apt) + ' · 서울신용보증재단 추정 시세 · 단지·가구 수는 이 자료가 시세를 잡은 곳만이라 실제 세대 수보다 적을 수 있다(소규모 공동주택 포함 · 단독·다가구 빠짐) — 비율과 시세 수준으로 읽는다)</small>';
+      WP.push(tw); tags.push(hi ? '집값 상위 20% 동' : mid ? '집값 중간 이상' : '집값 중간 이하'); }
+    if (S.GT && (S.GT.wage || S.GT.inc)) { var G2 = S.GT, gn = S.guName || '이 구', tg = '<b>구 지갑(참고 · 구 평균 — 이 동에 나누지 않는다).</b> ' + esc(gn) + ' ';
+      if (G2.wage) tg += '근로자 1인당 총급여 <b>' + won(G2.wage[0]) + '</b>(' + S.GTm.years.wage + '년 · 주소지 기준 · ' + (S.sido === '서울' ? '서울 25개 구' : '경기 시군구') + ' 중 ' + G2.wageR[0] + '위)';
+      if (G2.inc) tg += ' · 종합소득 신고자 1인당 종합소득금액 <b>' + won(G2.inc[0]) + '</b>(' + S.GTm.years.inc + '년 · ' + G2.incR[0] + '위)';
+      if (G2.jbs && G2.jbs[1] != null) tg += ' · 종합부동산세 주택분 ' + won(G2.jbs[1] * 100) + '(' + S.GTm.years.jbs + '년)';
+      tg += '. 이 숫자는 구 전체 평균이라 동마다 다르다(반포와 방배가 섞인다). <small>(국세청 국세통계 KOSIS 133 · 종부세는 공제를 넘는 사람만 세서 중간 자산이 빠진다 · 재산세 총액·차량·학력은 동 구매력을 왜곡해 넣지 않았다)</small>';
+      if (S.W && S.W.apt && sl0(S) && ref.amtPerPopMed && rw0(ref, S)) tg += ' 집값은 서울 위쪽인데 주민 1인당 카드 매출은 중앙값 아래다 — <b>이 동 주민의 소비는 동 밖(큰 상권)에서 이뤄질 가능성이 크다</b>(어디로 가는지는 이 자료에 없다 · 추론).';
+      WP.push(tg); }
+    WP.forEach(function (x) { P.push(x); });
     // ④ 돈이 어디서 도나
     var sl = S.sales; if (sl && sl.amt) { var per = p && p.tot ? sl.amt / p.tot : null, t4 = '<b>돈.</b> 카드 매출 한 달 약 ' + won(sl.amt) + ' · 결제 ' + man(sl.cnt) + '건 → 결제 1건 평균 ' + Math.round(sl.amt * 1e4 / sl.cnt).toLocaleString() + '원. ';
       if (per) { t4 += '주민 1명으로 나누면 월 ' + Math.round(per).toLocaleString() + '만 원(서울 동 중앙값 ' + ref.amtPerPopMed + '만 · 상위 20% 경계 ' + ref.amtPerPopP80 + '만) — ';
@@ -2763,6 +2780,8 @@
     head += '<p class="snot"><b>데이터가 말하지 않는 것.</b> 카드 매출은 서울시 추정(현금·배달앱 일부 빠짐) · 왜 늘고 줄었는지(원인)는 이 자료에 없다 — 전국 흐름·물가·상권 이동은 따로 확인해야 한다 · 생활인구는 체류 인원이지 방문자 수가 아니다 · 범죄·사고 건수는 이 문단에 넣지 않았다(관서 통계 층에서 본다). 문장 속 판단 기준(○배·±%p)은 앱이 정한 설계값이다.</p></div>';
     return head;
   }
+  function sl0(S) { return S.sales && S.sales.amt && S.pop && S.pop.tot && S.sales.amt / S.pop.tot < ((AREF && AREF.ref[S.sido] || {}).amtPerPopMed || 0); }
+  function rw0(ref, S) { return ref.w && ref.w.mktc_med && S.W.apt[4] >= ref.w.mktc_med; }
   function storyText(el) { return el ? el.innerText : ''; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-story]'); if (!b) return; var box = document.getElementById('storyBox'); if (!box || !sel || !sel.it || !sel.it.d) return;
     if (b.getAttribute('data-story') === 'copy') { if (navigator.clipboard) navigator.clipboard.writeText(storyText(box)).then(function () { b.textContent = '✅ 복사됨'; }); return; }

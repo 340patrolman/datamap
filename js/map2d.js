@@ -242,7 +242,8 @@
     h += row('넓이', (a >= 1 ? a.toFixed(1) + 'ha' : Math.round(t[3]).toLocaleString() + '㎡')) + row('인구', t[4] == null ? '자료 없음' : t[4].toLocaleString() + '명' + (a ? ' · ' + Math.round(t[4] / a).toLocaleString() + '명/ha' : '')) +
       row('가구', t[5] == null ? '자료 없음' : t[5].toLocaleString() + '가구' + (t[6] ? ' · 평균 ' + t[6] + '명' : '')) + row('주택', t[7] == null ? '자료 없음' : t[7].toLocaleString() + '호') +
       row('사업체 · 종사자', (t[8] == null ? '-' : t[8].toLocaleString() + '곳') + ' · ' + (t[9] == null ? '-' : t[9].toLocaleString() + '명') + (t[9] != null && t[4] ? ' <em>(종사자가 인구의 ' + (t[9] / t[4]).toFixed(t[9] < t[4] ? 2 : 1) + '배 — ' + (t[9] > 2 * t[4] ? '낮에 사람이 몰리는 일터' : t[4] > 2 * t[9] ? '주거지' : '주거·일터 섞임') + ')</em>' : ''));
-    h += '<div class="lg-btns"><button data-radhere="' + (x.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - x.c[1] / KY).toFixed(5) + '">📐 여기서 반경 분석</button></div>';
+    h += talk({ sido: sidoOf(M.gu), pop: t[4], wrk: t[9], corp: t[8] });
+    h += '<div class="lg-btns"><button data-radhere="' + (x.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - x.c[1] / KY).toFixed(5) + '">📐 여기서 반경 분석</button><button data-pnlhere="' + (x.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - x.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div>';
     return h + '<p class="desc">' + esc(M.note) + '</p>' + src(M.source);
   }
   var RLOADZ = {}, SZ = [];
@@ -1057,6 +1058,7 @@
       var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + r.from + '~' + r.to)) + row('자리', esc(r.p)) + row('신고 인원', (r.n || '-') + '명 <em>(신고값)</em>') + (r.approx ? row('자리 표시', '<em>근사</em> — ' + esc(r.note)) : '');
       h += src('서울경찰청 「오늘의 주요집회」 · 주최자는 담지 않았다');
     }
+    if (it.kind === 'dong' && it.d && it.d.c) { h += talkDong(it.d) + '<div class="lg-btns"><button data-pnlhere="' + (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div>'; }
     card.innerHTML = '<button class="x" id="m2dX">닫기</button>' + h; card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
   }
@@ -2137,14 +2139,15 @@
       LAYERS.slice().sort(function (a, b) { return (on[b[0]] ? 2 : b[4] ? 1 : 0) - (on[a[0]] ? 2 : a[4] ? 1 : 0); }).map(function (l) { return '<button data-k="' + l[0] + '" class="' + (on[l[0]] ? 'on' : '') + '">' + l[1] + '</button>'; }).join('');
     var pn = $('m2dPanel'); if (!pn) return;
     var G = []; LAYERS.forEach(function (l) { if (G.indexOf(l[3]) < 0) G.push(l[3]); });
-    pn.innerHTML = '<div class="ph"><b>☰ 모든 층</b><button class="x" data-close="1">닫기</button></div>' + G.map(function (g) {
-      return '<div class="pg"><div class="pgt">' + esc(g) + '</div>' + LAYERS.filter(function (l) { return l[3] === g; }).map(function (l) { return '<button data-k="' + l[0] + '" class="' + (on[l[0]] ? 'on' : '') + '">' + l[1] + '</button>'; }).join('') + '</div>';
+    pn.innerHTML = '<div class="ph"><b>☰ 모든 층</b><button data-lh="1" class="' + (LHON ? 'on' : '') + '">❓ 설명 ' + (LHON ? '접기' : '보기') + '</button><button class="x" data-close="1">닫기</button></div>' + (LHON ? '<p class="lhn">층 이름을 누르면 켜고 끈다. 회색 글은 그 층이 무엇인지 · 어디서 온 자료인지 · 어떻게 쓰는지.</p>' : '') + G.map(function (g) {
+      return '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g) + '</div>' + LAYERS.filter(function (l) { return l[3] === g; }).map(function (l) { var bt = '<button data-k="' + l[0] + '" class="' + (on[l[0]] ? 'on' : '') + '">' + l[1] + '</button>'; return LHON ? '<div class="lhi">' + bt + (LHELP[l[0]] ? '<small>' + esc(LHELP[l[0]]) + '</small>' : '') + '</div>' : bt; }).join('') + '</div>';
     }).join('') + '<div class="pg"><button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button></div>';
     paintPre();
   }
   function toggle(k) { on[k] = !on[k]; if (k === 'bld' && on[k]) loadBld(); saveOn(); paintLayers(); draw(); }
   function onLayerClick(e) {
     var b = e.target.closest('button'); if (!b) return; var pn = $('m2dPanel');
+    if (b.getAttribute('data-lh')) { LHON = !LHON; try { localStorage.setItem('tg_map2d_lh', LHON ? '1' : '0'); } catch (e2) {} paintLayers(); return; }
     if (b.getAttribute('data-all')) { pn.classList.toggle('on'); return; }
     if (b.getAttribute('data-close')) { pn.classList.remove('on'); return; }
     if (b.getAttribute('data-none')) { layersNone(); return; }
@@ -2250,7 +2253,7 @@
       '<br><small>' + esc(bizFacts(x)) + '</small></div>';
   }
   function bizPaint() {
-    var el = $('m2dBiz'); if (!el.classList.contains('on')) return; var X = BIZ.idx, h = '<div class="lg-h"><b>🏪 창업 자리 찾기</b><span><button data-bx="min">▾ 접기</button> <button data-bx="x">닫기</button></span></div>';
+    var el = $('m2dBiz'); if (!el.classList.contains('on')) return; var X = BIZ.idx, h = '<div class="lg-h"><b>🏪 창업 자리 찾기</b><span><button data-bx="pnl">💰 손익 계산</button> <button data-bx="min">▾ 접기</button> <button data-bx="x">닫기</button></span></div>';
     if (!X) { el.innerHTML = h; return; }
     h += '<!--SUM-->'; var sumH = '';
     var gus = (D.ridx && D.ridx.gus || []).map(function (g) { return [g.gu, g.name]; });
@@ -2301,7 +2304,7 @@
   if ($('m2dBiz')) {
     $('m2dBiz').addEventListener('click', function (e) { var b = e.target.closest('[data-bx],[data-bm],[data-bi]'); if (!b) { if ($('m2dBiz').classList.contains('min')) $('m2dBiz').classList.remove('min'); return; }
       var x = b.getAttribute('data-bx');
-      if (x === 'x') { $('m2dBiz').classList.remove('on'); document.body.classList.remove('bizon'); draw(); return; }
+      if (x === 'pnl') { pnlOpen(viewMid()); return; } if (x === 'x') { $('m2dBiz').classList.remove('on'); document.body.classList.remove('bizon'); draw(); return; }
       if (x === 'min') { e.stopPropagation(); $('m2dBiz').classList.toggle('min'); return; }
       if (x === 'more') { BIZ.top += 15; bizPaint(); draw(); return; }
       if (x === 'list') { BIZ.list = !BIZ.list; bizPaint(); return; }
@@ -2322,6 +2325,341 @@
   }
   function polyA(polys) { var a = 0; polys.forEach(function (Pg) { Pg.forEach(function (r, i) { var s2 = 0; for (var k = 0, j = r.length - 1; k < r.length; j = k++) s2 += r[j][0] * r[k][1] - r[k][0] * r[j][1]; a += (i ? -1 : 1) * Math.abs(s2) / 2; }); }); return a; }
   function trdBB(x) { if (!x.bb) { var b = [1e9, -1e9, 1e9, -1e9]; x.rings.forEach(function (r) { r.forEach(function (q) { b[0] = Math.min(b[0], q[0]); b[1] = Math.max(b[1], q[0]); b[2] = Math.min(b[2], q[1]); b[3] = Math.max(b[3], q[1]); }); }); x.bb = b; } return x.bb; }
+  // ---------- ❓ 층 설명(v2.0.0 · 소유자 「많은 레이어가 있어 이제는 친절한 설명이 필요해」) — 무엇을 · 어디서 · 어떻게 쓰나 ----------
+  var LHELP = {
+    dong: '행정동 경계. 동을 누르면 주민 연령·생활인구·카드 매출과 「🗣 이 자리 읽기」 해설이 나온다.',
+    road: '도로(OSM). 굵기·색 = 도로 등급(고속·간선·보조·골목). 확대하면 도로 이름이 나온다.',
+    base: '바탕 지도 — 물·공원·숲·철도·건물 덩어리(OSM). 지도를 읽기 쉽게 하는 배경.',
+    vw: '국토교통부 브이월드 위성사진·일반 지도를 밑에 깐다. 인터넷이 있을 때만 · 처음 한 번 기기에 키를 넣는다(범례 🔑).',
+    jcnm: '서울·경기 교차로 2.5만 곳과 도로 이름(국가교통정보센터 표준노드링크). 누르면 그 교차로에서 만나는 도로. 「찾기」에 교차로·도로 이름을 넣어도 된다.',
+    bld: '건물 윤곽(OSM). 많이 확대해야 나온다.',
+    sub: '지하철역 자리.',
+    exit: '지하철 출입구 번호(OSM).',
+    lev: '지금 고속도로·국도·시군도의 공사·사고·통제(국가교통정보센터). 켤 때 한 번 받고 범례 🔄 로 다시 · ITS 키 필요.',
+    lspd: '지금 도로 속도를 원활(초록)·서행(노랑)·정체(빨강)로 칠한다(ITS 실시간). 화면 가로 약 14km 안까지 확대해야 받는다 · ITS 키 필요.',
+    lcc: '국도·고속도로 교통 CCTV 1,801대. 점을 누르면 카드에서 실시간 영상이 나온다(ITS 호출 없음).',
+    lak: '에어코리아 측정소 168곳이 지금 잰 미세먼지. 원 안 숫자 = 초미세먼지(㎍/㎥), 색 = 환경부 등급 · 공공데이터포털 키 필요.',
+    lkma: '기상청 초단기실황(지도 가운데) · 서울·경기 특보(붉은 띠) · 최근 3일 지진 · 공공데이터포털 키 필요.',
+    lbus: '경기 버스 — 확대하면 정류장이 나오고, 누르면 몇 분 뒤 오는지, 「🚌 위치」로 그 노선 버스가 지도에. 서울 시내버스는 없다(서울시 API 가 https 를 안 받음).',
+    lwx: '지금 날씨(기온·하늘·강수)를 화면 칸마다(Open-Meteo 모형값 · 키 없음).',
+    lrad: '비구름 레이더(RainViewer · 한 칸 약 1km). 비가 올 때만 색이 칠해진다.',
+    lair: '지금 미세먼지를 화면 칸마다(Open-Meteo 대기질 모형값 · 측정소 값과 다를 수 있다).',
+    acc: '교차로별 교통사고 건수(2019~ · TAAS). 원이 클수록 사고가 많다 — 누르면 유형·시간대.',
+    acc10: '10년 교통사고를 100m 칸으로(TAAS). 사고가 몰린 칸이 진하다.',
+    fatal10: '10년 사망사고 자리(TAAS).',
+    fatal: '사망사고 자리(최근 · TAAS).',
+    hot: '도로교통공단이 정한 사고다발지(보행자·자전거·어린이 등 갈래별).',
+    drunk: '음주운전 사고 다발지(도로교통공단).',
+    risk: '사고위험지역(도로교통공단 분석).',
+    sz: '어린이보호구역(스쿨존) — 30km/h 구역.',
+    szh: '어린이보호구역 안 어린이 사고.',
+    cam: '무인 교통단속 카메라(과속·신호).',
+    spd: '서울시 도로 소통(받은 때 한 장 · 실시간 아님). 실시간은 「🚦 지금 도로 소통」.',
+    sig: '신호 주기(받은 교차로만).',
+    sigx: '신호 교차로 번호(경찰청 신호 자료).',
+    trd: '서울시 상권분석 — 상권마다 카드 추정 매출·유동·점포·개폐업. 범례에서 업종·보기를 고른다. 「🏪 창업 자리 찾기」·「📐 반경 분석」·「💰 손익 계산」의 바탕 자료.',
+    rent: '한국부동산원 상가 임대료(㎡당)·공실률 표본 지점. 매물 1건 월세가 아니라 그 상권 평균이다.',
+    szone: '소상공인시장진흥공단이 정한 주요상권(서울·경기) 영역과 점포 수.',
+    jgg: '통계청 집계구(약 500명 단위) 인구·가구·주택·사업체·종사자. 「종사자÷인구」로 일터형·주거형을 가른다.',
+    crowd: '서울시 실시간 도시데이터(주요 120곳 인파·카드) — 받은 때 한 장.',
+    live: '생활인구 — 그 시각 그 동 안에 있는 사람(서울시·KT 통신 추정). 위 시간 막대로 시각을 바꾼다.',
+    sales: '동별 카드 매출(시간대) — 서울시 추정매출.',
+    bus: '버스 정류장 시간대 승차·하차(하루 평균).',
+    subr: '지하철역 시간대 승차·하차(하루 평균).',
+    vol: '도로 교통량 측정 지점(서울시).',
+    bike: '따릉이 대여소.',
+    pol: '경찰서·지구대·파출소.', fire: '소방서·안전센터.', er: '응급실 있는 병원.', hosp: '병원·의원.', phar: '약국.',
+    bar: '주점 — 밤 순찰 참고.', play: '노래방·PC방.', inn: '숙박업소.', heat: '무더위쉼터.', cold: '한파쉼터.', hyd: '소화전.', wc: '화장실(OSM).',
+    school: '학교(OSM).', kids: '유치원·어린이집(OSM).', pg: '놀이터.', park: '공원.', welf: '복지시설.', kyr: '경로당(서울시).', cc: '어린이집(서울시).', kg: '유치원(교육청).', aca: '입시·교과 학원.', edu: '학교(초·중·고·대 · 공식).',
+    govr: '관공서(시청·구청·주민센터·세무서·법원·경찰·소방 등 · 서울·경기). 큰 관공서 둘레는 점심 수요와 민원인 낮 유입이 있다.',
+    gov: '관공서·주민센터(OSM).', lib: '도서관.', post: '우체국.', bank: '은행·ATM.', conv: '편의점.', fuel: '주유소.', ev: '전기차 충전.', pk: '주차장(OSM).',
+    jur: '경찰서 관할 경계(서초·방배 — 반포동은 현장 기준).',
+    srcctv: '안심귀갓길 CCTV(서울시).', srbell: '안심벨(비상벨).', srlamp: '안심귀갓길 보안등.', sr112: '112 위치 신고 안내 표지.', srsvc: '안심 서비스·아동안전지킴이집 등.',
+    aed: '자동심장충격기(서울·경기).', fw: '소방용수시설(서울시).', pkcctv: '불법 주정차 단속 CCTV.', tow: '견인차량 보관소.', wc2: '공중화장실(서울·경기 공식).',
+    gpark: '주차장(경기 공식).', gev: '전기차 충전소(경기).', ger: '응급의료기관(경기).', gfest: '문화축제(경기).', glamp: '보안등(경기 29만 개 · 많이 확대해야 나온다).',
+    box: '안심택배함.', dem: '치매안심센터.', tgis: 'T-GIS 신호 교차로(서울시 · 종속 신호 포함).',
+    spot: '길목 — 지금 시각 버스·지하철 하차가 많은 곳(숫자 = 순위). 순찰·단속 자리 고르기용.',
+    spota: '길목 다발지(참고).', hot10: '사고다발지 10년(2016~2025) 겹친 자리.', jct: '교차로별 10년 사고(서울·경기) — 가장 가까운 교차로 하나에 모은 값.',
+    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', her: '국가유산(문화재).',
+    flt: '침수 흔적(2010~2025).', flr: '침수 이력이 있는 도로.', und: '침수 이력 지하차도.', ice: '제설함 — 결빙 우려 자리.', hcab: '도로 열선 설치 길.', advb: '제설 전진기지.',
+    pbtn: '보행자 작동 신호기(누름 버튼).'
+  };
+  var LHON = false;
+  try { LHON = localStorage.getItem('tg_map2d_lh') === '1'; } catch (e) {}
+  // ---------- 🗣 자동 해설(v2.0.0 · 소유자 「인구분포가 나오면 데이터에 따른 설명 — 모르고 넘어갈 수 있으니」) ----------
+  //  숫자를 앱 기준으로 읽어 문장으로 — 기준(몇 배·몇 %p)을 같이 적는다. 「그래서 어떤 장사」 쪽은 일반론이라 그렇게 밝힌다.
+  var AREF = null; fetch('data/area-ref.json').then(function (r) { return r.json(); }).then(function (j) { AREF = j; }).catch(function () {});
+  function sidoOf(gu) { return String(gu || '').indexOf('41') === 0 ? '경기' : '서울'; }
+  function talk(S) {
+    var L = [], ref = AREF && AREF.ref[S.sido || '서울'] || null, rn = S.sido || '서울', f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); };
+    if (S.wrk != null && S.pop > 50) { var r = S.wrk / S.pop, rr = ref && ref.wrkPerPop;
+      L.push(r >= 2 ? '👔 <b>일터형</b> — 일하러 오는 사람(종사자 ' + Math.round(S.wrk).toLocaleString() + '명)이 사는 사람의 <b>' + f1(r) + '배</b>' + (rr ? '(' + rn + ' 평균 ' + rr + '배)' : '') + '. 평일 점심(11~14시)과 퇴근길이 승부이고, 주말·밤에는 손님이 빠진다.'
+        : r >= 0.8 ? '🏙 <b>주거·일터 섞임</b> — 종사자가 주민의 ' + f1(r) + '배' + (rr ? '(' + rn + ' 평균 ' + rr + '배)' : '') + '. 점심과 저녁 손님이 둘 다 있다.'
+        : '🏠 <b>주거형</b> — 종사자가 주민의 ' + f1(r) + '배뿐' + (rr ? '(' + rn + ' 평균 ' + rr + '배)' : '') + '. 저녁·주말·배달 수요가 중심이고, 평일 낮은 조용한 편이다.'); }
+    if (S.corp > 0 && S.wrk > 0) L.push('🏢 사업체 ' + Math.round(S.corp).toLocaleString() + '곳 · 종사자 ' + Math.round(S.wrk).toLocaleString() + '명 — 이 사람들이 낮 동안의 잠재 손님이다(그중 몇 명이 밖에서 사 먹는지는 자료에 없다).');
+    if (S.gov && S.gov.n) L.push('🏛 관공서 ' + S.gov.n + '곳(' + Object.keys(S.gov.c).sort(function (a, b) { return S.gov.c[b] - S.gov.c[a]; }).map(function (k) { return k + ' ' + S.gov.c[k]; }).join(' · ') + ') — 공무원 점심과 민원인 낮 유입이 있다. 시청·구청·법원·세무서처럼 큰 곳일수록 크다.');
+    if (S.age && S.pop > 50) { var a = S.age, T = a.reduce(function (x, y) { return x + y; }, 0) || 1, y2030 = (a[2] + a[3]) / T * 100, o60 = (a[6] + a[7] + a[8] + a[9]) / T * 100, k19 = (a[0] + a[1]) / T * 100;
+      var R2 = ref && ref.age ? ref.age[2] + ref.age[3] : null, R6 = ref && ref.age ? ref.age[6] + ref.age[7] + ref.age[8] + ref.age[9] : null, R1 = ref && ref.age ? ref.age[0] + ref.age[1] : null, dv = function (v, r0) { return r0 == null ? '' : ' (' + rn + ' 평균 ' + f1(r0) + '% · ' + (v - r0 >= 0 ? '+' : '') + f1(v - r0) + '%p)'; };
+      L.push('👥 주민 20·30대 <b>' + f1(y2030) + '%</b>' + dv(y2030, R2) + ' · 60세 이상 <b>' + f1(o60) + '%</b>' + dv(o60, R6) + ' · 19세 이하 ' + f1(k19) + '%' + dv(k19, R1) + '.');
+      if (R2 != null && y2030 - R2 >= 5) L.push('　→ 젊은 층이 많다: 카페·간편식·배달·저녁 술자리 쪽이 맞는 편 <em>(일반론)</em>');
+      if (R6 != null && o60 - R6 >= 5) L.push('　→ 어르신이 많다: 낮 손님 비중이 크고 값에 민감, 일찍 닫는 동네일 수 있다 <em>(일반론)</em>');
+      if (R1 != null && k19 - R1 >= 4) L.push('　→ 아이 있는 집이 많다: 가족 외식·학원가 간식·주말 장사 쪽 <em>(일반론)</em>'); }
+    if (S.live && S.live.wd) { var W = S.live.wd, dn = (W[11] + W[12] + W[13] + W[14]) / 4 / (((W[0] + W[1] + W[2] + W[3] + W[4]) / 5) || 1), rd = ref && ref.liveDayNight, pk = 0; for (var i = 1; i < 24; i++) if (W[i] > W[pk]) pk = i;
+      L.push('🕐 평일 생활인구는 <b>' + pk + '시</b>에 가장 많고, 낮(11~14시)이 새벽의 <b>' + f1(dn) + '배</b>' + (rd ? '(서울 평균 ' + rd + '배)' : '') + ' — ' + (dn >= (rd || 1.07) * 1.25 ? '서울 평균보다 낮에 사람이 더 몰려드는 곳.' : dn <= (rd || 1.07) * 0.85 ? '낮에 사람이 빠져나가는 곳(출근해 나가는 주거지).' : '서울 평균과 비슷하다.'));
+      if (S.live.we) { var sw = S.live.we.reduce(function (x, y) { return x + y; }, 0) / (W.reduce(function (x, y) { return x + y; }, 0) || 1); if (sw < 0.9) L.push('　주말 생활인구가 평일의 ' + Math.round(sw * 100) + '% — 주말에 비는 곳(사무실 쪽).'); else if (sw > 1.08) L.push('　주말 생활인구가 평일의 ' + Math.round(sw * 100) + '% — 주말에 더 붐빈다(나들이·쇼핑).'); } }
+    if (S.tb && S.tb.some(function (v) { return v; })) { var tt = S.tb.reduce(function (x, y) { return x + y; }, 0) || 1, sh = S.tb.map(function (v) { return v / tt * 100; }), TBN = ['새벽(0~6시)', '아침(6~11시)', '점심(11~14시)', '오후(14~17시)', '저녁(17~21시)', '밤(21~24시)'], RT = ref && ref.tb, best = -1, bd = -99;
+      for (var j = 0; j < 6; j++) { var d0 = RT ? sh[j] - RT[j] : 0; if (d0 > bd) { bd = d0; best = j; } }
+      L.push('💳 카드 매출은 ' + TBN.map(function (n, k) { return n.split('(')[0] + ' ' + f1(sh[k]) + '%'; }).join(' · ') + (RT && bd >= 3 ? ' — <b>' + TBN[best] + '</b> 비중이 서울 평균(' + RT[best] + '%)보다 ' + f1(bd) + '%p 높다: 그 시간대 상권이다.' : '.')); }
+    if (S.dw && S.dw.some(function (v) { return v; })) { var dt = S.dw.reduce(function (x, y) { return x + y; }, 0) || 1, wk = (S.dw[5] + S.dw[6]) / dt * 100, RW = ref && ref.dw ? ref.dw[5] + ref.dw[6] : null;
+      L.push('📅 토·일 매출 비중 <b>' + f1(wk) + '%</b>' + (RW ? '(서울 평균 ' + f1(RW) + '%)' : '') + (RW && wk - RW <= -5 ? ' — 주말 장사가 약하다(평일 직장인 상권).' : RW && wk - RW >= 5 ? ' — 주말 장사가 강하다.' : '.')); }
+    if (S.ag && S.ag.some(function (v) { return v; })) { var at = S.ag.reduce(function (x, y) { return x + y; }, 0) || 1, AGN = ['10대', '20대', '30대', '40대', '50대', '60대 이상'], am = 0; for (var q = 1; q < 6; q++) if (S.ag[q] > S.ag[am]) am = q;
+      L.push('🧾 카드로 돈을 쓰는 사람은 <b>' + AGN[am] + '</b>' + (/[상]$/.test(AGN[am]) ? '이' : '가') + ' 가장 많다(' + f1(S.ag[am] / at * 100) + '%) — 주민 연령과 다르면 밖에서 와서 쓰는 사람이 많다는 뜻.'); }
+    if (!L.length) return '';
+    return '<div class="talk"><b>🗣 이 자리 읽기</b>' + L.map(function (x) { return '<div>' + x + '</div>'; }).join('') + '<small>기준(앱): 종사자÷주민 2배↑ 일터형 · 0.8배↓ 주거형 · 연령은 ' + rn + ' 평균과 ±5%p · 매출 시간대는 서울 평균과 +3%p. 「→」 줄은 경영 일반론이지 통계가 아니다. 평균은 이 지도에 구운 주민등록·생활인구·서울시 추정매출·SGIS 집계구로 다시 계산(area-ref.json).</small></div>';
+  }
+  function talkDong(d) { var gu = d.gcd || (d.rg && d.rg.gu) || '11650', x = salesOf(d) || d.sales, S = { sido: sidoOf(gu), age: d.pop && d.pop.age, pop: d.pop && d.pop.tot, live: d.live, tb: x && x.tb, dw: x && x.dw };
+    if (!S.live) { var la = liveArr(d); if (la) S.live = la; }
+    if (JGGL[gu] && JGGL[gu].done) { var w = 0, c = 0, n = 0; JGGA.forEach(function (q) { if (q.gu === gu && q.t[1] === d.name) { n++; w += q.t[9] || 0; c += q.t[8] || 0; } }); if (n) { S.wrk = w; S.corp = c; } }
+    else jgP(gu).then(function () { if (sel && sel.it && sel.it.d === d) show(sel.it); });
+    return talk(S); }
+  // ---------- 💰 손익 계산(v2.0.0) — 계약서 숫자(확정) · 공공 자료 · 업종 평균(KREI·실태조사)을 한 장에 ----------
+  var BZ = { tpl: null, krei: null, bench: null, rates: null }, BZP = null;
+  var PNL = { k: 'hansik', c: null, v: {}, res: null, ready: false, wait: false };
+  function bzLoad() { if (BZP) return BZP;
+    BZP = Promise.all(['data/biz-templates.json', 'data/biz-krei.json', 'data/biz-bench.json', 'data/biz-rates.json'].map(function (u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(u); return r.json(); }); }))
+      .then(function (a) { BZ.tpl = a[0]; BZ.krei = a[1]; BZ.bench = a[2]; BZ.rates = a[3]; return BZ; }).catch(function (e) { BZP = null; throw e; }); return BZP; }
+  function kr(t, row) { var T = BZ.krei && BZ.krei.tables[t]; return T && T.rows[row] || null; }
+  function krAvg(t, row) { var r = kr(t, row); return r ? r[r.length - 1] : null; }
+  function tplOf(k) { return BZ.tpl.items.filter(function (x) { return x.k === k; })[0] || BZ.tpl.items[0]; }
+  function rv(k) { var v = BZ.rates[k]; return Array.isArray(v) ? v[0] : v; }
+  function empRate() { return rv('pension') + rv('health') * (1 + rv('ltc_of_health')) + rv('emp_ui') + rv('emp_stable') + rv('ind') + rv('commute'); }
+  function cardRate(yearMan) { var C = BZ.rates.card; for (var i = 0; i < C.length; i++) if (yearMan <= C[i][0]) return C[i][1]; return null; }
+  var PF = [   // [키, 이름, 단위, 설명] — 입력칸 차례
+    ['dep', '보증금', '만 원', '계약서의 보증금.'], ['rent', '월세', '만 원/월', '부가세 뺀 월세.'], ['mgmt', '관리비', '만 원/월', '건물 관리비(전기·가스·수도는 아래 기타 비용률에 들어 있다).'],
+    ['prem', '권리금', '만 원', '앞 가게에 준 돈. 나갈 때 돌려받을 수 있을지 모르니 비용으로 나눠 갚는다고 본다.'], ['inv', '시설·인테리어 투자', '만 원', '인테리어·주방·집기 등 개업 투자.'], ['mon', '투자 회수 기간', '개월', '권리금·투자를 몇 달에 나눠 갚을지. 숙박·음식점 5년 생존율이 27%라 5년(60개월) 안에 갚는 것이 안전하다는 뜻으로 기본 60.'],
+    ['conv', '보증금 기회비용', '%/년', '보증금을 은행에 두었으면 받을 이자. 기본 = 한국은행 기준금리. 법정 전환율 상한(연 12% 또는 기준금리×4.5 중 낮은 것)까지 바꿔 볼 수 있다.'],
+    ['area', '면적', '㎡', '전용 면적(3.3㎡ = 1평).'], ['seats', '좌석', '석', '앉을 자리 수.'], ['turns', '하루 회전 한계', '회', '좌석이 하루에 몇 번 찰 수 있나 — 물리 상한 계산용(가정 · 기본은 업종 평균 손님 ÷ 좌석).'],
+    ['hours', '영업시간', '시간/일', '문 여는 시간.'], ['days', '영업일', '일/월', '한 달에 문 여는 날.'], ['price', '객단가', '원', '손님 1명(배달·포장은 1건)이 내는 돈.'], ['cust', '하루 손님', '명', '홀·배달·포장을 다 합친 하루 손님(주문) 수 — 이 값이 매출을 정한다. 모르면 비워 두고 손익분기 손님 수를 본다.'],
+    ['food', '재료비율', '%', '매출 중 식재료·주류 구입비.'], ['other', '기타 비용률', '%', '전기·가스·수도·소모품·수선 등 기타 비용 ÷ 매출.'], ['dlv', '배달 매출 비중', '%', '전체 매출 중 배달 몫.'], ['to', '포장 매출 비중', '%', '전체 매출 중 테이크아웃 몫 — 홀 좌석을 안 쓰는 매출이라 물리 상한 계산에 쓴다.'], ['dlvfee', '배달 비용률', '% (배달 매출 대비)', '배달앱 수수료·광고·배달대행비 ÷ 배달 매출.'],
+    ['staffN', '직원 수', '명', '사장·무급 가족을 뺀 고용 인원.'], ['staffH', '직원 1명 주 근무', '시간/주', '주 15시간 이상이면 주휴수당·퇴직금이 생긴다.'], ['wage', '직원 시급', '원', '기본 = 2026년 최저임금.'],
+    ['own', '사장 인원', '명', '일하는 사장(부부면 2).'], ['ownH', '사장 하루 일하는 시간', '시간/일', '기본 = 영업시간(문 열 때 늘 있는 경우).'], ['fam', '무급 가족 일손', '명', '월급 안 받는 가족. 사장 시급 계산 때 사람 수에 넣는다.']
+  ];
+  function pnlDefaults(k) {
+    var t = tplOf(k), R = t.krei, v = {}, sal = krAvg('sales', R), dd = krAvg('days', R) || 27.7, ch = kr('channel', R);
+    v.rent = krAvg('rent', R); v.dep = krAvg('deposit', R); v.prem = 0; v.inv = Math.round(krAvg('invest', R) || 0); v.mon = 60; v.conv = (rv('base_rate') * 100);
+    v.mgmt = 0; v.area = krAvg('area', R); v.seats = Math.round(krAvg('seats', R) || 0) || null; v.hours = krAvg('hours', R); v.days = dd; v.price = krAvg('price', R);
+    v.cust = sal && v.price ? Math.round(sal * 1e4 / 12 / dd / v.price) : null;
+    v.turns = v.seats && v.cust ? Math.max(0.5, Math.round(v.cust * (ch ? ch[1] / 100 : 1) / v.seats * 10) / 10) : null;
+    v.food = sal ? Math.round(krAvg('food', R) / sal * 1000) / 10 : null; v.other = sal ? Math.round((krAvg('other', R) + krAvg('tax', R)) / sal * 1000) / 10 : null;
+    v.dlv = ch ? ch[2] : 0; v.to = ch ? ch[3] : 0; var dc = (krAvg('dlvapp_cost', R) || 0) + (krAvg('dlvagent_cost', R) || 0), dshare = (kr('dlvapp', R) || [0, 0])[1] / 100;
+    v.dlvfee = sal && ch && ch[2] > 0 && dc ? Math.min(60, Math.round(dc * 12 / 1e4 * (dshare || 1) / (sal * ch[2] / 100) * 1000) / 10) : 0;
+    var wg = krAvg('wage', R), mw = rv('min_wage'), W = 52 / 12, hEq = wg ? wg * 1e4 / 12 / (mw * (1 + empRate())) : 0;
+    v.wage = mw; if (hEq > 0) { v.staffN = Math.max(1, Math.round(hEq / W / 1.2 / 40 + 0.4)); v.staffH = Math.round(Math.min(40, hEq / W / 1.2 / v.staffN)); } else { v.staffN = 0; v.staffH = 0; }
+    v.own = 1; v.ownH = v.hours; v.fam = 0;
+    Object.keys(v).forEach(function (x) { if (typeof v[x] === 'number') v[x] = Math.round(v[x] * 10) / 10; });
+    return v;
+  }
+  var PSRC = { rent: 'KREI 표20', dep: 'KREI 표19', inv: 'KREI 표31', area: 'KREI 표12', seats: 'KREI 표29', hours: 'KREI 표24', days: 'KREI 표25', price: 'KREI 표67', cust: 'KREI 표95 매출 ÷ 객단가 ÷ 영업일', food: 'KREI 표97÷95', other: 'KREI 표100+103÷95', dlv: 'KREI 표58', to: 'KREI 표58', dlvfee: 'KREI 표51·54÷배달 매출', staffN: 'KREI 표98 인건비를 최저시급 시간으로', staffH: '같은 환산', wage: '2026 최저임금', conv: '기준금리', mon: '가정(5년)', turns: '평균 손님÷좌석(가정)', ownH: '영업시간', own: '가정', fam: '가정', prem: '0(직접)', mgmt: '0(직접)' };
+  function pnlCalc(v) {
+    var W = 52 / 12, n = function (x) { return +x || 0; }, er = empRate(), o = {};
+    o.convRent = n(v.rent) + n(v.dep) * n(v.conv) / 100 / 12; o.amort = (n(v.prem) + n(v.inv)) / Math.max(1, n(v.mon));
+    var sh = n(v.staffH), hrs = sh * W + (sh >= 15 ? sh / 40 * 8 * W : 0); o.staffPay = hrs * n(v.wage) / 1e4; o.staffOne = o.staffPay * (1 + er + (sh >= 15 ? 1 / 12 : 0)); o.staff = n(v.staffN) * o.staffOne; o.staffHrs = hrs;
+    o.fixed = o.convRent + n(v.mgmt) + o.amort + o.staff;
+    o.salesQ = v.cust ? n(v.price) * n(v.cust) * n(v.days) / 1e4 : null;
+    var guess = o.salesQ || o.fixed * 4; o.card = cardRate(guess * 12); if (o.card == null) o.card = 0.02;
+    o.yu = tplOf(PNL.k).yuheung ? rv('yuheung_tax') * 1.3 : 0;
+    o.varRate = n(v.food) / 100 + n(v.other) / 100 + o.card * 1.1 + n(v.dlv) / 100 * n(v.dlvfee) / 100 + o.yu; o.cm = 1 - o.varRate;
+    o.bep = o.cm > 0 ? o.fixed / o.cm : null; o.ownHrs = (n(v.own) + n(v.fam)) * n(v.ownH) * n(v.days); o.mwLine = o.cm > 0 ? (o.fixed + rv('min_wage') * n(v.own) * n(v.ownH) * n(v.days) / 1e4) / o.cm : null;
+    var dayRev = n(v.price) * n(v.days) / 1e4; o.bepCust = o.bep && dayRev ? o.bep / dayRev : null; o.mwCust = o.mwLine && dayRev ? o.mwLine / dayRev : null;
+    o.cap = n(v.seats) && n(v.turns) ? n(v.seats) * n(v.turns) * n(v.price) * n(v.days) / 1e4 / Math.max(0.1, 1 - n(v.dlv) / 100 - n(v.to) / 100) : null;
+    o.at = function (s) { var p = s * o.cm - o.fixed; return { sales: s, profit: p, hourly: o.ownHrs ? p * 1e4 / o.ownHrs : null, rentPct: s ? o.convRent / s * 100 : null }; };
+    if (o.salesQ != null) o.q = o.at(o.salesQ);
+    o.five = n(v.staffN) >= 5; o.er = er;
+    return o;
+  }
+  function wn(x) { return x == null || !isFinite(x) ? '-' : (Math.abs(x) >= 10000 ? (x / 10000).toFixed(2).replace(/\.?0+$/, '') + '억' : Math.round(x).toLocaleString() + '만') + ' 원'; }
+  function pnlOpen(c) {
+    var el = $('m2dPnl'); if (!el) return; el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon');
+    ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
+    if (c) PNL.c = c; el.innerHTML = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">업종 자료를 받는 중…</p>';
+    bzLoad().then(function () { if (!PNL.ready) { PNL.v = pnlDefaults(PNL.k); PNL.ready = true; } pnlForm(); pnlGather(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">자료를 받지 못했다(' + esc(e && e.message || e) + ')</p>'; });
+  }
+  function pnlGather() {
+    if (!PNL.c) { PNL.res = null; pnlOut(); return; }
+    var t = tplOf(PNL.k); PNL.wait = true; pnlOut(); RAD.c = PNL.c; RAD.r = 500; RAD.ind = ''; RAD.sind = t.seoul || ''; radRun();
+    var tk = setInterval(function () { if (RAD.busy) return; clearInterval(tk); PNL.res = RAD.res; PNL.wait = false; pnlOut(); }, 300);
+  }
+  function pnlForm() {
+    var el = $('m2dPnl'), t = tplOf(PNL.k), G = {};
+    BZ.tpl.items.forEach(function (x) { (G[x.g] = G[x.g] || []).push(x); });
+    var h = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
+    h += '<div class="bizrow"><label>업종 <select data-pz="k">' + Object.keys(G).map(function (g) { return '<optgroup label="' + esc(g) + '">' + G[g].map(function (x) { return '<option value="' + x.k + '"' + (x.k === PNL.k ? ' selected' : '') + '>' + esc(x.n) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '</select></label></div>';
+    h += '<div class="lg-btns"><button data-px="here">📍 지금 화면 가운데를 자리로</button><button data-px="reset">↺ 업종 평균으로 되돌리기</button><button data-px="copy">📋 글로 복사</button><button data-px="xlsx">📥 엑셀(수식 그대로)</button></div>';
+    h += '<p class="lg-n">' + (t.tip ? '💡 ' + esc(t.tip) + ' ' : '') + '영업 종류: ' + esc(t.lic || '-') + '. 회색 글씨는 <b>업종 평균(KREI 2025 외식업체 경영실태조사)</b> 기본값 — 계약서·견적의 실제 숫자로 바꿔 쓴다.</p>';
+    h += '<details open><summary><b>① 내 가게 조건</b> <small>(숫자를 바꾸면 바로 다시 계산)</small></summary><div class="pform">' + PF.map(function (f) { var val = PNL.v[f[0]];
+      return '<label title="' + esc(f[3]) + '"><span>' + esc(f[1]) + ' <i>' + esc(f[2]) + '</i></span><input type="number" inputmode="decimal" step="any" data-pf="' + f[0] + '" value="' + (val == null ? '' : val) + '"><small>' + esc(PSRC[f[0]] || '') + '</small></label>'; }).join('') + '</div>';
+    h += '<details><summary>❓ 칸마다 뜻</summary><ul class="pexp">' + PF.map(function (f) { return '<li><b>' + esc(f[1]) + '</b> — ' + esc(f[3]) + '</li>'; }).join('') + '</ul></details></details>';
+    h += '<div id="pnlOut"></div>';
+    el.innerHTML = h; pnlOut();
+  }
+  function band(o, extra) {
+    var pts = [['손익분기', o.bep, '#dc2626'], ['사장 최저시급', o.mwLine, '#f59e0b'], ['내 예상', o.salesQ, '#111827'], ['물리 상한', o.cap, '#64748b']].concat(extra || []).filter(function (p) { return p[1] != null && isFinite(p[1]) && p[1] > 0; });
+    if (!pts.length || !o.bep) return ''; var mx = Math.max.apply(null, pts.map(function (p) { return p[1]; })) * 1.12;
+    return '<div class="pband"><div class="pbar"><i style="left:0;width:' + (o.bep / mx * 100) + '%;background:rgba(220,38,38,.18)"></i>' + (o.mwLine ? '<i style="left:' + (o.bep / mx * 100) + '%;width:' + ((o.mwLine - o.bep) / mx * 100) + '%;background:rgba(245,158,11,.18)"></i>' : '') + '<i style="left:' + ((o.mwLine || o.bep) / mx * 100) + '%;right:0;background:rgba(22,163,74,.14)"></i>' +
+      pts.map(function (p) { return '<b style="left:' + (p[1] / mx * 100) + '%;background:' + p[2] + '"></b>'; }).join('') + '</div><div class="pleg">' + pts.map(function (p) { return '<span><i style="background:' + p[2] + '"></i>' + esc(p[0]) + ' ' + wn(p[1]) + '</span>'; }).join('') + '</div>' +
+      '<small>빨강 = 고정비도 못 덮음 · 주황 = 고정비는 덮지만 사장 몫이 최저시급 아래 · 초록 = 사장이 최저시급 이상 가져감 (월 매출, 공급가)</small></div>';
+  }
+  function pnlOut() {
+    var el = $('pnlOut'); if (!el || !BZ.tpl) return; var v = PNL.v, t = tplOf(PNL.k), o = pnlCalc(v), R = t.krei, h = '', mw = rv('min_wage');
+    PNL.calc = o;
+    h += '<h4>② 결과 — 한 달</h4>';
+    var Q = o.q;
+    if (Q) h += '<div class="pbig ' + (Q.profit < 0 ? 'bad' : Q.hourly < mw ? 'mid' : 'good') + '">하루 손님 <b>' + v.cust + '명</b>이면 월 매출 <b>' + wn(o.salesQ) + '</b> → 사장 몫 <b>' + wn(Q.profit) + '</b>' + (Q.hourly != null ? ' · 사장 시급 환산 <b>' + Math.round(Q.hourly).toLocaleString() + '원</b> (최저시급의 ' + Math.round(Q.hourly / mw * 100) + '%)' : '') + '</div>';
+    h += '<div class="rcard">' + row('손익분기 매출', wn(o.bep) + (o.bepCust ? ' · 하루 손님 <b>' + Math.ceil(o.bepCust) + '명</b>' : '')) + row('사장 최저시급 선', wn(o.mwLine) + (o.mwCust ? ' · 하루 손님 <b>' + Math.ceil(o.mwCust) + '명</b>' : '') + ' <em>(사장 ' + v.own + '명 × 하루 ' + v.ownH + '시간 × ' + v.days + '일을 최저시급으로 쳐서 더한 매출)</em>') +
+      row('물리 상한', o.cap ? wn(o.cap) + ' <em>(좌석 ' + v.seats + ' × 회전 ' + v.turns + ' × 객단가 × 영업일' + (v.dlv > 0 || v.to > 0 ? ' ÷ 홀 매출 비중 ' + Math.round(100 - (+v.dlv || 0) - (+v.to || 0)) + '%' : '') + ')</em>' : '-') +
+      (o.salesQ && o.cap && o.salesQ > o.cap ? '<p class="lg-n" style="color:#b91c1c">⚠ 내 예상 매출이 물리 상한을 넘는다 — 손님 수나 회전 가정이 맞는지 다시 본다.</p>' : '') + '</div>';
+    h += band(o);
+    h += '<details><summary>🧮 비용 내역과 공식(펼치기)</summary><div class="rcard">' + row('환산 임대료', wn(o.convRent) + ' <em>= 월세 + 보증금 × ' + v.conv + '% ÷ 12</em>') + row('관리비', wn(+v.mgmt || 0)) + row('투자·권리금 상각', wn(o.amort) + ' <em>= (권리금 + 투자) ÷ ' + v.mon + '개월</em>') +
+      row('직원 인건비', wn(o.staff) + ' <em>= ' + v.staffN + '명 × (월 ' + Math.round(o.staffHrs) + '시간(주휴 포함) × ' + (+v.wage).toLocaleString() + '원) × (1 + 사업주 4대보험 ' + (o.er * 100).toFixed(2) + '%' + (v.staffH >= 15 ? ' + 퇴직적립 8.33%' : '') + ')</em>') +
+      row('고정비 합', '<b>' + wn(o.fixed) + '</b>') + row('매출에 비례하는 비용', (o.varRate * 100).toFixed(1) + '% <em>= 재료 ' + v.food + '% + 기타 ' + v.other + '% + 카드 ' + (o.card * 100).toFixed(2) + '%×1.1 + 배달 ' + v.dlv + '%×' + v.dlvfee + '%' + (o.yu ? ' + 개별소비세·교육세 ' + (o.yu * 100).toFixed(0) + '%' : '') + '</em>') +
+      row('손익분기 공식', '<em>고정비 ÷ (1 − 비례 비용률) = ' + wn(o.fixed) + ' ÷ ' + o.cm.toFixed(3) + '</em>') + row('카드 수수료', (o.card * 100).toFixed(2) + '% <em>(예상 연매출로 고른 우대수수료 — ' + esc(BZ.rates.card_note) + ')</em>') +
+      row('5인 규칙', o.five ? '<b style="color:#b91c1c">직원 5인 이상 — 연장·야간·휴일 가산 50%를 따로 더해야 한다(이 계산에 없음)</b>' : '직원 5인 미만 — 연장·야간·휴일 가산수당 없음(사장은 인원에 안 넣는다)') + '</div></details>';
+    if (o.bep) { var base = v.cust || o.mwCust || o.bepCust, rows = [0.6, 0.8, 1, 1.2, 1.5].map(function (m) { var c2 = Math.round(base * m), s = c2 * v.price * v.days / 1e4, a = o.at(s); return [c2, a]; });
+      h += '<details><summary>📊 손님 수가 바뀌면(민감도)</summary><table class="it"><tr><th>하루 손님</th><th>월 매출</th><th>사장 몫</th><th>사장 시급</th><th>임대료/매출</th></tr>' + rows.map(function (r) { var a = r[1]; return '<tr' + (a.profit < 0 ? ' class="bar"' : '') + '><td>' + r[0] + '명</td><td>' + wn(a.sales) + '</td><td>' + wn(a.profit) + '</td><td>' + (a.hourly != null ? Math.round(a.hourly).toLocaleString() + '원' : '-') + '</td><td>' + (a.rentPct != null ? a.rentPct.toFixed(1) + '%' : '-') + '</td></tr>'; }).join('') + '</table></details>'; }
+    h += '<h4>③ 이 자리 — 공공 자료</h4>';
+    if (!PNL.c) h += '<p class="lg-n">자리를 고르지 않았다 — 「📍 지금 화면 가운데를 자리로」를 누르거나 지도 카드의 「💰 여기서 손익」으로 연다.</p>';
+    else if (PNL.wait || !PNL.res) h += '<p class="lg-n">반경 500m 자료를 모으는 중…</p>';
+    else h += pnlPlace(o);
+    h += pnlBench();
+    h += '<p class="src">계산: 이 지도 — 공식은 위 「비용 내역」에 다 펼쳐 있다. 요율: ' + esc(BZ.rates.year + '년 고시(biz-rates.json)') + ' · 업종 평균: ' + esc(BZ.krei.source) + ' · ' + esc(BZ.bench.source) + ' · 경비율: 국세청 고시 제2025-6호. 매출은 공급가(부가세 뺀 값). 사장 몫에서 사장 본인 4대보험(지역 건보·연금)·종합소득세는 빼지 않았다.</p>';
+    el.innerHTML = h;
+  }
+  function jgAround(c, r) { var o = { pop: 0, hh: 0, wrk: 0, corp: 0, cells: [] }; JGGA.forEach(function (x) { var d = Math.hypot(x.c[0] - c[0], x.c[1] - c[1]); if (d > r) return; var t = x.t; o.pop += t[4] || 0; o.hh += t[5] || 0; o.corp += t[8] || 0; o.wrk += t[9] || 0; o.cells.push({ p: x.c, hh: t[5] || 0, pop: t[4] || 0 }); }); return o; }
+  function govAround(c, r) { var L = SAFE.filter(function (x) { return x[0] === 'govr'; })[0], o = { n: 0, c: {} }; if (!L) return o; L[3].forEach(function (q) { if (Math.hypot(q.p[0] - c[0], q.p[1] - c[1]) > r) return; o.n++; o.c[q.r[3]] = (o.c[q.r[3]] || 0) + 1; }); return o; }
+  function compAround(t, c, r) { var CL = SIDX ? SIDX.cls : [], L = []; if (!(t.small || t.mid) || !(t.small || []).length && !(t.mid || []).length) return null;
+    Object.keys(SPTS).forEach(function (gu) { var S2 = SPTS[gu]; if (!S2 || !S2.a) return; S2.a.forEach(function (st) { var C3 = CL[st.c]; if (!C3) return; if ((t.small || []).indexOf(C3[5]) < 0 && (t.mid || []).indexOf(C3[2]) < 0) return; var d = Math.hypot(st.p[0] - c[0], st.p[1] - c[1]); if (d <= r) L.push({ p: st.p, d: d, s: st }); }); });
+    return L.sort(function (a, b) { return a.d - b.d; }); }
+  function pnlPlace(o) {
+    var c = PNL.c, t = tplOf(PNL.k), R = PNL.res, v = PNL.v, h = '<div class="rcard">', sd = sidoOf((RAD.gus && RAD.gus[0] && RAD.gus[0].gu) || '11');
+    var comp = compAround(t, c, 500), comp1 = compAround(t, c, 1000);
+    h += row('같은 업종 점포', comp ? '반경 500m <b>' + comp.length + '곳</b> · 1km ' + comp1.length + '곳' + (comp.length ? ' · 가장 가까운 곳 ' + Math.round(comp[0].d) + 'm' : '') + ' <em>(소상공인 상가정보 ' + esc(R.ym || '') + ')</em>' : '<em>이 업종을 셀 상가 분류가 없다</em>');
+    var B = t.seoul && R.bi && R.bi[t.seoul];
+    if (B && B.st >= 0.5) { var ps = B.amt / B.st, pc = ps * 1e4 / (v.price || 1) / (v.days || 1);
+      h += row('이 자리 같은 업종 점포당 매출', '월 약 <b>' + wn(ps) + '</b> · 하루 손님 약 ' + Math.round(pc) + '명 상당 <em>(서울시 상권분석 카드 추정 · 반경에 걸친 상권 평균 · 현금 제외)</em>');
+      PNL.seoulPS = ps; } else PNL.seoulPS = null;
+    if (R.rent) { var my = v.area ? v.rent * 10 / v.area : null, sm = lastV(R.rent.it.s);
+      h += row('임대료 비교', '부동산원 표본(' + esc(R.rent.it.name) + ' · ' + R.rent.d + 'm) 소규모 상가 ㎡당 <b>' + sm + '천 원</b>' + (my ? ' · 내 월세 ㎡당 <b>' + my.toFixed(1) + '천 원</b>' + (sm && my > sm * 1.3 ? ' <em>— 표본보다 30% 넘게 비싸다</em>' : sm && my < sm * 0.7 ? ' <em>— 표본보다 싸다(자리·층·면적 차이일 수 있다)</em>' : '') : '')); }
+    var J = jgAround(c, 500), G = govAround(c, 500);
+    if (J.pop || J.wrk) h += row('배후(반경 500m)', '주민 ' + Math.round(J.pop).toLocaleString() + '명 · 가구 ' + Math.round(J.hh).toLocaleString() + ' · 사업체 ' + Math.round(J.corp).toLocaleString() + '곳 · 종사자 ' + Math.round(J.wrk).toLocaleString() + '명 <em>(SGIS 집계구 2023)</em>');
+    if (comp && J.cells.length && J.hh) { var lam = 2, my2 = 0;
+      J.cells.forEach(function (q) { var d0 = Math.max(30, Math.hypot(q.p[0] - c[0], q.p[1] - c[1])), a0 = 1 / Math.pow(d0, lam), s = a0; comp1.forEach(function (x) { s += 1 / Math.pow(Math.max(30, Math.hypot(q.p[0] - x.p[0], q.p[1] - x.p[1])), lam); }); my2 += q.hh * a0 / s; });
+      h += row('Huff 몫', '반경 500m 가구 ' + Math.round(J.hh).toLocaleString() + ' 중 약 <b>' + Math.round(my2).toLocaleString() + '가구</b>(' + (my2 / J.hh * 100).toFixed(1) + '%)가 이 가게 쪽으로 기운다 <em>(거리만으로 나눈 몫 · 같은 업종 1km 안 ' + comp1.length + '곳과 경쟁 · 크기·맛·값은 같다고 봄 · λ=' + lam + ')</em>'); }
+    h += '</div>';
+    h += band(PNL.calc, PNL.seoulPS ? [['이 자리 점포당(카드)', PNL.seoulPS, '#2563eb']] : []);
+    var S = { sido: sd, pop: J.pop || R.pop, wrk: J.wrk || null, corp: J.corp, gov: G, age: R.age, live: null, tb: R.tb, ag: R.ag };
+    if (R.live && R.live.some(function (x) { return x; })) S.live = R.we ? null : { wd: R.live };
+    var bw = R.bi && t.seoul && R.bi[t.seoul]; if (bw && bw.amt) S.dw = null;
+    h += talk(S);
+    return h;
+  }
+  function pnlBench() {
+    var t = tplOf(PNL.k), R = t.krei, h = '<h4>④ 이 업종 평균 — 알아 두기</h4><div class="rcard">', f = function (x, d) { return x == null ? '-' : (+x).toLocaleString(undefined, { maximumFractionDigits: d == null ? 1 : d }); };
+    var ns = kr('price', R); h += row('조사 표본', ns ? ns[0] + '곳 <em>(KREI 2025 · 전국)</em>' + (ns[0] < 60 ? ' <b style="color:#b45309">표본이 작아 평균이 흔들린다</b>' : '') : '-');
+    var sal = krAvg('sales', R), pf = krAvg('profit', R), ow = krAvg('owner', R);
+    h += row('연 매출 · 영업이익', f(sal, 0) + '만 원 · ' + f(pf, 0) + '만 원(' + (sal ? (pf / sal * 100).toFixed(1) : '-') + '%) <em>(KREI 표95·104)</em>') + row('대표자 인건비(연)', f(ow, 0) + '만 원 — 영업이익과 별도로 사장이 가져간 몫 <em>(표102)</em>');
+    h += row('국세청이 보는 소득률', (100 - t.nts[2]).toFixed(1) + '% <em>(단순경비율 ' + t.nts[2] + '% · 업종코드 ' + t.nts[0] + ' ' + esc(t.nts[1]) + ' · 소규모 사업자 추계 기준)</em>');
+    var hd = kr('holiday', R), dd = kr('days', R), hr = kr('hours', R);
+    h += row('일하는 시간', '하루 영업 ' + f(krAvg('hours', R)) + '시간(12시간 넘는 곳 ' + (hr ? hr[3] : '-') + '%) · 한 달 ' + f(krAvg('days', R)) + '일 · <b>정기 휴일 없음 ' + (hd ? hd[4] : '-') + '%</b> <em>(표24·25·26)</em>');
+    var ag = kr('cust_age', R), ch = kr('channel', R), dw = kr('dow', R);
+    if (ag) { var AG = ['20대 미만', '20대', '30대', '40대', '50대', '60대', '70대 이상'], mx = 1; for (var i = 2; i < 8; i++) if (ag[i] > ag[mx]) mx = i; h += row('주 손님', AG[mx - 1] + ' ' + ag[mx] + '% <em>(표63 · 중복응답)</em>'); }
+    if (ch) h += row('판매 방식', '홀 ' + ch[1] + '% · 배달 ' + ch[2] + '% · 포장 ' + ch[3] + '% <em>(표58)</em>');
+    if (dw) h += row('요일', '평일(월~목) ' + dw[1] + '% · 금~일 ' + dw[2] + '% <em>(표66)</em>');
+    var wk = kr('workers', R); if (wk) h += row('일하는 사람', '평균 ' + f(wk[wk.length - 1], 2) + '명(대표 포함 상용 ' + wk[1] + ' · 임시 ' + wk[2] + ' · 일용 ' + wk[3] + ' · 무급 가족 ' + wk[7] + ') <em>(표115)</em>');
+    h += row('개업 투자 · 권리금', f(krAvg('invest', R), 0) + '만 원(인테리어 ' + f(krAvg('interior', R), 0) + ') · 권리금 낸 곳 평균 ' + f(krAvg('premium', R), 0) + '만 원 <em>(표31·32·22)</em>');
+    var B = BZ.bench, sdn = { '서울': '서울특별시', '경기': '경기도' }[PNL.c && RAD.gus && RAD.gus[0] ? sidoOf(RAD.gus[0].gu) : ''] || '전국', pick = function (tbl) { var x = (B.sido[sdn] || {})['숙박 및 음식점업']; return x && x[tbl] ? [x[tbl], sdn + ' 숙박·음식점업'] : [(B.sido['전국'] || {})['음식점 및 주점업'] && B.sido['전국']['음식점 및 주점업'][tbl], '전국 음식점·주점업']; };
+    var pn = pick('pain'); if (pn[0]) { var top = Object.keys(pn[0]).filter(function (k) { return k !== '기업체 수'; }).sort(function (a, b) { return pn[0][b][0] - pn[0][a][0]; }).slice(0, 4); h += row('사장들이 꼽은 어려움', top.map(function (k) { return esc(k) + ' ' + pn[0][k][0] + '%'; }).join(' · ') + ' <em>(소상공인실태조사 ' + pn[0][top[0]][1] + ' · ' + pn[1] + ' · 복수응답)</em>'); }
+    var pl = pick('plan'); if (pl[0] && pl[0]['계속운영']) { h += row('앞으로 계획', ['계속운영', '사업전환', '폐업 및 은퇴', '폐업 후 임금근로자 희망'].filter(function (k) { return pl[0][k]; }).map(function (k) { return esc(k) + ' ' + pl[0][k][0] + '%'; }).join(' · ') + ' <em>(' + pl[1] + ')</em>'); }
+    var pr = pick('prep'); if (pr[0] && pr[0]['평균']) h += row('창업 준비 기간', '평균 ' + pr[0]['평균'][0] + '개월 · 3개월 미만 ' + ((pr[0]['3개월 미만'] || [0])[0]) + '% <em>(' + pr[1] + ')</em>');
+    var sv = B.surv && B.surv['숙박 및 음식점업']; if (sv) h += row('살아남는 비율', '1년 ' + sv['1년 생존율'] + '% · 3년 ' + sv['3년 생존율'] + '% · <b>5년 ' + sv['5년 생존율'] + '%</b> <em>(통계청 기업생멸행정통계 · 숙박·음식점업 신생기업 · 전 산업 5년 ' + (B.surv['전체'] || {})['5년 생존율'] + '%)</em>');
+    h += '</div><details open><summary><b>🧭 오래가는 가게가 계약 전에 하는 일</b> <small>(숫자는 위 통계 · 순서는 일반론)</small></summary><ol class="pexp">' +
+      '<li><b>손익분기 손님 수를 현장에서 세 본다</b> — 위 「하루 손님 ' + (PNL.calc && PNL.calc.bepCust ? Math.ceil(PNL.calc.bepCust) + '명' : 'N명') + '」을 같은 시간대 근처 같은 업종 가게 앞에서 평일·주말 하루씩 직접 센다. 이 지도의 카드 추정은 현금·배달을 빼서 실제보다 작거나 다를 수 있다.</li>' +
+      '<li><b>사장 시간도 비용으로 친다</b> — 이 업종 평균 영업 ' + f(krAvg('hours', R)) + '시간·월 ' + f(krAvg('days', R)) + '일. 사장 시급이 최저시급 아래면 남의 가게에서 일하는 것보다 못하다.</li>' +
+      '<li><b>임대료는 매출의 몇 %인가</b> — 민감도 표의 「임대료/매출」. 같은 업종 평균은 KREI 표99÷95 = ' + (krAvg('sales', R) ? (krAvg('rentcost', R) / krAvg('sales', R) * 100).toFixed(1) : '-') + '%. 이보다 높으면 손님이 평균보다 많아야 버틴다.</li>' +
+      '<li><b>경쟁과 배후를 같이 본다</b> — 같은 업종 점포 수와 Huff 몫, 그리고 「🗣 이 자리 읽기」의 일터형·주거형. 일터형에 저녁 장사 업종, 주거형에 점심 업종은 시간대가 엇갈린다.</li>' +
+      '<li><b>준비 기간을 충분히</b> — 실태조사 평균 준비 기간과 5년 생존율(숙박·음식점업 ' + (sv ? sv['5년 생존율'] + '%' : '-') + ')을 같이 본다. 3개월 미만으로 서둘러 연 곳이 적지 않다.</li>' +
+      '<li><b>권리금·투자는 몇 달에 갚나</b> — 회수 기간을 생존율보다 짧게 잡는다. 권리금은 나갈 때 못 받을 수 있다고 보고 계산했다.</li>' +
+      '<li><b>허가·용도를 먼저 확인</b> — 영업 종류(' + esc(t.lic || '-') + ')에 맞는 건물 용도·면적·시설 기준인지 구청 위생과·건축과에 계약 전에 묻는다' + (t.yuheung ? ' — 유흥주점은 특히 허가 제한이 많다' : '') + '.</li>' +
+      '<li><b>성실함은 기본</b> — 위 숫자는 평균이다. 같은 자리·같은 업종에서도 맛·친절·위생·꾸준함이 매출 차이를 만든다(통계로는 잴 수 없는 부분).</li></ol></details>';
+    return h;
+  }
+  function pnlText() { var v = PNL.v, o = PNL.calc, t = tplOf(PNL.k); if (!o) return '';
+    return ['[손익 계산] ' + t.n + (PNL.c ? ' · 위도 ' + (LAT0 - PNL.c[1] / KY).toFixed(5) + ', 경도 ' + (PNL.c[0] / KX + LON0).toFixed(5) : ''),
+      '조건: 보증금 ' + v.dep + '만 · 월세 ' + v.rent + '만 · 관리비 ' + v.mgmt + '만 · 권리금 ' + v.prem + '만 · 투자 ' + v.inv + '만(' + v.mon + '개월) · ' + v.area + '㎡ · 좌석 ' + v.seats + ' · 영업 ' + v.hours + '시간×' + v.days + '일 · 객단가 ' + v.price + '원 · 직원 ' + v.staffN + '명×주 ' + v.staffH + '시간',
+      '고정비 ' + wn(o.fixed) + '/월 · 매출 비례 비용 ' + (o.varRate * 100).toFixed(1) + '%',
+      '손익분기 ' + wn(o.bep) + '(하루 손님 ' + (o.bepCust ? Math.ceil(o.bepCust) : '-') + '명) · 사장 최저시급 선 ' + wn(o.mwLine) + '(하루 ' + (o.mwCust ? Math.ceil(o.mwCust) : '-') + '명) · 물리 상한 ' + wn(o.cap),
+      o.q ? '하루 손님 ' + v.cust + '명이면 월 매출 ' + wn(o.salesQ) + ' → 사장 몫 ' + wn(o.q.profit) + ' · 사장 시급 ' + (o.q.hourly != null ? Math.round(o.q.hourly).toLocaleString() + '원' : '-') : '',
+      '출처: 요율 ' + BZ.rates.year + '년 고시 · 업종 평균 KREI 2025 외식업체 경영실태조사 · 소상공인실태조사 · 국세청 경비율 — 데이터 압축지도 계산(추정)'].filter(Boolean).join('\n'); }
+  // ---------- 📥 엑셀 — 같은 공식을 수식째(엔진 하나 · 출구 둘) · 압축 없는 zip 을 직접 만든다(빌드 도구·외부 라이브러리 없음) ----------
+  function crc32(u8) { var c, t = crc32.t; if (!t) { t = crc32.t = []; for (var n = 0; n < 256; n++) { c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } }
+    c = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) c = t[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function zipStore(files) { var enc = new TextEncoder(), parts = [], cen = [], off = 0;
+    function u16(n) { return [n & 255, (n >>> 8) & 255]; } function u32(n) { return [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]; }
+    files.forEach(function (f) { var nm = enc.encode(f[0]), dt = enc.encode(f[1]), cr = crc32(dt);
+      var lh = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(cr), u32(dt.length), u32(dt.length), u16(nm.length), u16(0));
+      parts.push(new Uint8Array(lh), nm, dt);
+      cen.push([].concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(cr), u32(dt.length), u32(dt.length), u16(nm.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(off)), nm);
+      off += lh.length + nm.length + dt.length; });
+    var cs = 0; cen.forEach(function (x, i) { if (i % 2 === 0) { parts.push(new Uint8Array(x)); cs += x.length; } else { parts.push(x); cs += x.length; } });
+    parts.push(new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(cs), u32(off), u16(0)))); return new Blob(parts, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); }
+  function xe(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function sheetXml(rows) { return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="30" customWidth="1"/><col min="2" max="2" width="18" customWidth="1"/><col min="3" max="3" width="70" customWidth="1"/></cols><sheetData>' +
+    rows.map(function (r, i) { return '<row r="' + (i + 1) + '">' + r.map(function (c, j) { var ref = String.fromCharCode(65 + j) + (i + 1); if (c == null || c === '') return ''; if (typeof c === 'number') return '<c r="' + ref + '"><v>' + c + '</v></c>'; if (c.charAt(0) === '=') return '<c r="' + ref + '"><f>' + xe(c.slice(1)) + '</f></c>'; return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xe(c) + '</t></is></c>'; }).join('') + '</row>'; }).join('') + '</sheetData></worksheet>'; }
+  function pnlXlsx() {
+    var v = PNL.v, t = tplOf(PNL.k), o = PNL.calc, A = {}, rows = [['손익 계산 — ' + t.n, '', '노란 칸(B열 숫자)만 바꾸면 아래 수식이 다시 계산된다. 데이터 압축지도에서 내보냄 ' + new Date().toISOString().slice(0, 10)], ['항목', '값', '설명·근거']];
+    PF.forEach(function (f) { rows.push([f[1] + ' (' + f[2] + ')', v[f[0]] == null ? 0 : +v[f[0]], f[3] + (PSRC[f[0]] ? ' [기본값: ' + PSRC[f[0]] + ']' : '')]); A[f[0]] = 'B' + rows.length; });
+    rows.push(['', '', '']); rows.push(['요율(' + BZ.rates.year + ')', '', '']);
+    [['min_wage', '최저시급(원)'], ['pension', '국민연금 사업주'], ['health', '건강보험 사업주'], ['ltc_of_health', '장기요양(건보료 대비)'], ['emp_ui', '고용보험 실업 사업주'], ['emp_stable', '고용안정·직능'], ['ind', '산재(음식·숙박)'], ['commute', '출퇴근재해']].forEach(function (x) { rows.push([x[1], rv(x[0]), BZ.rates[x[0]][1]]); A[x[0]] = 'B' + rows.length; });
+    rows.push(['카드수수료(적용)', o.card, '예상 연매출로 고른 우대수수료']); A.card = 'B' + rows.length;
+    rows.push(['개별소비세+교육세', o.yu, o.yu ? '유흥주점 — 2차 출처 · 원문 미대조' : '해당 없음']); A.yu = 'B' + rows.length;
+    rows.push(['', '', '']); rows.push(['계산', '', '']);
+    var F = function (lbl, f, d) { rows.push([lbl, '=' + f, d]); return 'B' + rows.length; };
+    A.er = F('사업주 보험 합', A.pension + '+' + A.health + '*(1+' + A.ltc_of_health + ')+' + A.emp_ui + '+' + A.emp_stable + '+' + A.ind + '+' + A.commute, '연금+건강×(1+장기요양)+고용+고용안정+산재+출퇴근');
+    A.conv = F('환산 임대료(만 원)', A.rent + '+' + A.dep + '*' + A.conv + '/100/12', '월세 + 보증금×기회비용률÷12');
+    A.am = F('투자·권리금 상각(만 원)', '(' + A.prem + '+' + A.inv + ')/MAX(1,' + A.mon + ')', '');
+    A.sh = F('직원 1명 월 시간', A.staffH + '*52/12+IF(' + A.staffH + '>=15,' + A.staffH + '/40*8*52/12,0)', '주휴 포함');
+    A.st = F('직원 인건비(만 원)', A.staffN + '*' + A.sh + '*' + A.wage + '/10000*(1+' + A.er + '+IF(' + A.staffH + '>=15,1/12,0))', '× (1 + 사업주 보험 + 퇴직적립)');
+    A.fx = F('고정비(만 원)', A.conv + '+' + A.mgmt + '+' + A.am + '+' + A.st, '');
+    A.vr = F('매출 비례 비용률', A.food + '/100+' + A.other + '/100+' + A.card + '*1.1+' + A.dlv + '/100*' + A.dlvfee + '/100+' + A.yu, '재료+기타+카드×1.1+배달+개소세');
+    A.bep = F('손익분기 월매출(만 원)', 'IF(1-' + A.vr + '<=0,NA(),' + A.fx + '/(1-' + A.vr + '))', '고정비 ÷ (1 − 비례 비용률)');
+    F('손익분기 하루 손님', A.bep + '*10000/(' + A.price + '*' + A.days + ')', '');
+    A.mw = F('사장 최저시급 선 월매출(만 원)', '(' + A.fx + '+' + A.min_wage + '*' + A.own + '*' + A.ownH + '*' + A.days + '/10000)/(1-' + A.vr + ')', '');
+    F('사장 최저시급 선 하루 손님', A.mw + '*10000/(' + A.price + '*' + A.days + ')', '');
+    A.sq = F('내 예상 월매출(만 원)', A.price + '*' + A.cust + '*' + A.days + '/10000', '객단가×하루 손님×영업일');
+    A.pr = F('사장 몫(만 원)', A.sq + '*(1-' + A.vr + ')-' + A.fx, '사장 본인 4대보험·종소세 전');
+    F('사장 시급(원)', 'IF((' + A.own + '+' + A.fam + ')*' + A.ownH + '*' + A.days + '=0,NA(),' + A.pr + '*10000/((' + A.own + '+' + A.fam + ')*' + A.ownH + '*' + A.days + '))', '사장+무급 가족 시간으로 나눔');
+    F('임대료/매출', 'IF(' + A.sq + '=0,NA(),' + A.conv + '/' + A.sq + ')', '');
+    F('물리 상한 월매출(만 원)', A.seats + '*' + A.turns + '*' + A.price + '*' + A.days + '/10000', '좌석×회전×객단가×영업일(홀만)');
+    rows.push(['', '', '']); rows.push(['출처', '', BZ.krei.source + ' · ' + BZ.bench.source + ' · 국세청 고시 제2025-6호 · ' + BZ.rates.card_note]);
+    var bench = [['KREI 업종 평균 — ' + t.krei, '', '표 번호는 보고서 그대로'], ['항목', '평균', '표']];
+    [['price', '객단가(원)'], ['sales', '연 매출(만 원)'], ['food', '식재료비(만 원/년)'], ['wage', '고용인 인건비(만 원/년)'], ['rentcost', '임차료(만 원/년)'], ['owner', '대표자 인건비(만 원/년)'], ['profit', '영업이익(만 원/년)'], ['rent', '월세(만 원)'], ['deposit', '보증금(만 원)'], ['premium', '권리금(만 원)'], ['invest', '개업 투자(만 원)'], ['hours', '영업시간'], ['days', '영업일'], ['seats', '좌석'], ['area', '면적(㎡)'], ['cust', '하루 방문 고객']].forEach(function (x) { var T = BZ.krei.tables[x[0]]; bench.push([x[1], krAvg(x[0], t.krei), '표' + (T ? T.no : '')]); });
+    var wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="손익" sheetId="1" r:id="rId1"/><sheet name="업종평균" sheetId="2" r:id="rId2"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>';
+    var files = [['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', wb], ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/worksheets/sheet1.xml', sheetXml(rows)], ['xl/worksheets/sheet2.xml', sheetXml(bench)], ['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="맑은 고딕"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']];
+    var b = zipStore(files), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = '손익계산_' + t.n.replace(/[^\w가-힣]+/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  }
+  if ($('m2dPnl')) {
+    $('m2dPnl').addEventListener('click', function (e) { var b = e.target.closest('[data-px]'); if (!b) { if ($('m2dPnl').classList.contains('min') && !e.target.closest('input,select,summary')) $('m2dPnl').classList.remove('min'); return; } var x = b.getAttribute('data-px');
+      if (x === 'x') { $('m2dPnl').classList.remove('on'); document.body.classList.remove('pnlon'); draw(); return; } if (x === 'min') { e.stopPropagation(); $('m2dPnl').classList.toggle('min'); return; }
+      if (x === 'here') { PNL.c = viewMid(); pnlGather(); return; } if (x === 'reset') { PNL.v = pnlDefaults(PNL.k); pnlForm(); return; }
+      if (x === 'copy') { var tx = pnlText(); if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { b.textContent = '✅ 복사됨'; }); return; } if (x === 'xlsx') { pnlXlsx(); return; } });
+    $('m2dPnl').addEventListener('input', function (e) { var k = e.target.getAttribute('data-pf'); if (!k) return; var val = e.target.value; PNL.v[k] = val === '' ? null : +val; pnlOut(); });
+    $('m2dPnl').addEventListener('change', function (e) { if (e.target.getAttribute('data-pz') === 'k') { PNL.k = e.target.value; PNL.v = pnlDefaults(PNL.k); pnlForm(); if (PNL.c) pnlGather(); } });
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-pnlhere]'); if (!b) return; var a = b.getAttribute('data-pnlhere').split(','); pnlOpen(P(+a[0], +a[1])); });
+  var JGGA = [], JGGL = {};
+  function jgP(gu) { if (JGGL[gu]) return JGGL[gu]; JGGL[gu] = fetch('data/r/' + gu + '/jgg.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { j.items.forEach(function (t) { var r0 = t[2][0], sx = 0, sy = 0; r0.forEach(function (q) { sx += q[0]; sy += q[1]; }); JGGA.push({ t: t, c: P(sx / r0.length, sy / r0.length), gu: gu }); }); JGGL[gu].done = 1; }).catch(function () { JGGL[gu].done = 1; }); return JGGL[gu]; }
   function radOpen(c) {
     rentLoad(); sLoadIdx(); var el = $('m2dRad'); el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('radon');
     $('m2dBiz') && $('m2dBiz').classList.remove('on'); document.body.classList.remove('bizon');
@@ -2334,7 +2672,7 @@
     var gus = rIdx().filter(function (g) { var b = g.box; return !(b[2] < bx[0] || b[0] > bx[2] || b[3] < bx[1] || b[1] > bx[3]); });
     var jobs = [sLoadIdx(), rentLoad()];
     if (!STNS) jobs.push(fetch('data/r/stations.json').then(function (x) { return x.json(); }).then(function (j) { STNS = j.items.map(function (s2) { return { n: s2[0], l: s2[1], p: P(s2[2], s2[3]) }; }); }).catch(function () { STNS = []; }));
-    gus.forEach(function (g) { jobs.push(sLoad(g.gu)); if ((g.bytes || {}).ggtrd) jobs.push(gLoad(g.gu)); if ((g.bytes || {}).trdar) jobs.push(new Promise(function (res) { tLoad(g.gu, res); setTimeout(res, 20000); })); jobs.push(rLoadGu(g.gu)); if ((g.bytes || {}).transit) jobs.push(xLoad(g.gu)); if ((g.bytes || {}).safety) jobs.push(sfLoad(g.gu)); if ((g.bytes || {}).taas10) jobs.push(aLoad(g.gu)); });
+    gus.forEach(function (g) { jobs.push(sLoad(g.gu)); jobs.push(jgP(g.gu)); jobs.push(fLoad(g.gu)); if ((g.bytes || {}).ggtrd) jobs.push(gLoad(g.gu)); if ((g.bytes || {}).trdar) jobs.push(new Promise(function (res) { tLoad(g.gu, res); setTimeout(res, 20000); })); jobs.push(rLoadGu(g.gu)); if ((g.bytes || {}).transit) jobs.push(xLoad(g.gu)); if ((g.bytes || {}).safety) jobs.push(sfLoad(g.gu)); if ((g.bytes || {}).taas10) jobs.push(aLoad(g.gu)); });
     Promise.all(jobs).then(function () { RAD.gus = gus; RAD.res = radCalc(gus); RAD.busy = false; radPaint(); draw(); });
   }
   function radCalc(gus) {
@@ -2435,6 +2773,7 @@
             '<div class="cap">「' + esc(RAD.sind) + '」 연령대별 카드 매출(원 · 한 달 · 반경 추정)</div>' + bar(B.ag, '#a78bfa', LB_AGE6, 'w') +
             '<p class="lg-n">예상 매출 = 반경에 걸친 상권의 그 업종 카드 매출 × 겹친 넓이 비율 ÷ 같은 방식으로 센 점포 수(서울시 상권분석서비스 추정 · 현금 제외 · 상권 밖 점포는 빠짐). 실제 한 점포의 매출이 아니라 평균이다.</p>'; }
       }
+      var J0 = jgAround(RAD.c, RAD.r); h += talk({ sido: sidoOf(RAD.gus && RAD.gus[0] && RAD.gus[0].gu), pop: J0.pop || o.pop, wrk: J0.pop ? J0.wrk : null, corp: J0.corp, gov: govAround(RAD.c, RAD.r), age: o.age, live: o.we ? null : { wd: o.live }, tb: o.tb, ag: o.ag });
       h += row('생활인구 지금', Math.round(o.live[nowH()]).toLocaleString() + '명 <em>(' + (o.we ? '주말' : '평일') + ' ' + nowH() + '시 · 걸친 동 × 넓이 비율)</em>');
       h += '<div class="cap">시간대별 생활인구(명 · 반경 안 추정 · 0~23시 ' + (o.we ? '주말' : '평일') + ' 평균)</div>' + bar(o.live.map(Math.round), '#f97316');
       h += row('주민', '약 ' + Math.round(o.pop).toLocaleString() + '명 · 19세 이하 ' + pct(o.age[0] + o.age[1], o.pop) + '% · 20·30대 ' + pct(o.age[2] + o.age[3], o.pop) + '% · 60세 이상 ' + pct(o.age[6] + o.age[7] + o.age[8] + o.age[9], o.pop) + '%');
@@ -2453,7 +2792,7 @@
       h += rentRows(RAD.c, '임대료(가까운 표본)');
       h += row('걸친 동', o.dongs.slice(0, 6).map(function (d) { return esc(d[0]) + ' ' + d[1] + '%'; }).join(' · ') + ' <em>(동 넓이 중 반경 안 비율)</em>');
       if (o.trd.length) h += row('걸친 상권', o.trd.slice(0, 6).map(function (d) { return esc(d[0]) + ' ' + d[1] + '%'; }).join(' · '));
-      h += '<div class="lg-btns"><button data-rx="copy">📋 요약 복사</button><button data-rx="biz">🏪 이 업종 서울 다른 자리</button></div></div>';
+      h += '<div class="lg-btns"><button data-rx="pnl">💰 이 자리 손익 계산</button><button data-rx="copy">📋 요약 복사</button><button data-rx="biz">🏪 이 업종 서울 다른 자리</button></div></div>';
       h += '<small class="lg-n">넓이 비율은 반경 안을 격자로 찍어 센 근사다. 추정 매출은 카드 결제 기반(현금 제외) · 상권 밖 점포 매출은 빠진다. 임대료는 1.5km 안 부동산원 표본 상권 평균이다. 점포는 등록 정보라 문 닫은 곳이 섞일 수 있다. <b>한 점포 실제 매출·권리금·50m 단위 유동은 공공 자료에 없다.</b></small>';
     }
     el.innerHTML = h;
@@ -2479,7 +2818,7 @@
     $('m2dRad').addEventListener('click', function (e) { var b = e.target.closest('[data-rx],[data-rr]'); if (!b) { if ($('m2dRad').classList.contains('min')) $('m2dRad').classList.remove('min'); return; }
       var x = b.getAttribute('data-rx'), rr = b.getAttribute('data-rr');
       if (rr) { RAD.r = +rr; if (RAD.c) radRun(); else radPaint(); return; }
-      if (x === 'x') return radClose(); if (x === 'min') { e.stopPropagation(); $('m2dRad').classList.toggle('min'); return; }
+      if (x === 'pnl') { pnlOpen(RAD.c); return; } if (x === 'x') return radClose(); if (x === 'min') { e.stopPropagation(); $('m2dRad').classList.toggle('min'); return; }
       if (x === 'pick') { RAD.pick = !RAD.pick; if (RAD.pick) RAD.follow = false; radPaint(); return; }
       if (x === 'follow') { RAD.follow = !RAD.follow; if (RAD.follow) { RAD.pick = false; RAD.c = viewMid(); radRun(); } else radPaint(); return; }
       if (x === 'rep' && REP) { RAD.c = REP.p; radRun(); return; }

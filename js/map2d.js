@@ -23,7 +23,7 @@
     ['gov', '🏢 관공서·주민센터', false, '생활', 0], ['lib', '📚 도서관', false, '생활', 0], ['post', '📮 우체국', false, '생활', 0], ['bank', '🏦 은행·ATM', false, '생활', 0], ['conv', '🏪 편의점', false, '생활', 0],
     ['fuel', '⛽ 주유소', false, '생활', 0], ['ev', '🔌 전기차 충전', false, '생활', 0], ['pk', '🅿 주차장', false, '생활', 0],
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
-    ['aed', '❤️ AED', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '교통안전', 0], ['tow', '🛻 견인차량보관소', false, '교통안전', 0], ['wc2', '🚻 공중화장실(서울시)', false, '생활', 0], ['box', '📦 안심택배함', false, '생활', 0], ['dem', '🧠 치매안심센터', false, '치안·안전', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '교통안전', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '사람·흐름', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통안전', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통안전', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통안전', 0],
+    ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '교통안전', 0], ['tow', '🛻 견인차량보관소', false, '교통안전', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활', 0], ['gpark', '🅿 주차장(경기 공식)', false, '생활', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활', 0], ['dem', '🧠 치매안심센터', false, '치안·안전', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '교통안전', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '사람·흐름', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통안전', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통안전', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통안전', 0],
     ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0],
     ['flt', '🌊 침수 흔적(2010~2025)', false, '계절 위험', 0], ['flr', '🌧 침수 이력 도로', false, '계절 위험', 0], ['und', '🚇 지하차도(침수 이력)', false, '계절 위험', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '계절 위험', 0], ['hcab', '🔥 도로 열선 길', false, '계절 위험', 0], ['advb', '❄ 제설 전진기지', false, '계절 위험', 0],
@@ -71,7 +71,11 @@
   function rIdx() { return D.ridx && D.ridx.gus || []; }
   function viewLL() { var a = M(0, 0), b = M(cv.clientWidth, cv.clientHeight); return [a[0] / KX + LON0, LAT0 - b[1] / KY, b[0] / KX + LON0, LAT0 - a[1] / KY]; }
   // v0.10.95 단속 카메라 · 어린이보호구역 · 생활안전 시설(구마다 safety.json) — 서초는 기존 서초 파일이 우선(서초 구 파일은 안 받는다)
-  var RLOADS = {}, SAFE_KEYS = ['cam', 'sz', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'aed', 'fw', 'tow', 'wc2', 'box', 'dem'];
+  var RLOADS = {}, SAFE_KEYS = ['cam', 'sz', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'aed', 'fw', 'tow', 'wc2', 'box', 'dem', 'gpark', 'gev', 'ger', 'gfest'], RLOADL = {};
+  function lpLoad(gu) {   // v1.3.0 경기 보안등(29만) — 보안등 층을 켰을 때만 그 구의 lamp.json
+    if (RLOADL[gu]) return; RLOADL[gu] = 1; var L = SAFE.filter(function (x) { return x[0] === 'glamp'; })[0]; if (!L) { RLOADL[gu] = 0; return; }
+    fetch('data/r/' + gu + '/lamp.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { if (!L.src) L.src = j.source; j.pts.forEach(function (r) { L[3].push({ p: P(r[1], r[0]), r: r }); }); RLOADL[gu] = 3; draw(); }).catch(function () { RLOADL[gu] = 2; });
+  }
   function sfLoad(gu) {
     if (RLOADS[gu]) return RLOADS[gu]; if (gu === '11650') return (RLOADS[gu] = Promise.resolve()); if (!SAFE.length) return Promise.resolve();   // 서초 안전 파일(늦게 읽음)이 칸을 만든 뒤에
     RLOADS[gu] = fetch('data/r/' + gu + '/safety.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
@@ -81,6 +85,7 @@
       var I = j.items || {}, add = function (k, arr) { var L = SAFE.filter(function (x) { return x[0] === k; })[0]; if (!L || !arr) return; var hs = {}; L[3].forEach(function (q) { hs[key(q.r[0], q.r[1])] = 1; }); arr.forEach(function (r) { if (r[0] && r[1] && !hs[key(r[0], r[1])]) L[3].push({ p: P(r[1], r[0]), r: r }); }); };
       var it = I.srItem || []; add('srbell', it.filter(function (r) { return r[2] === '301'; })); add('srcctv', it.filter(function (r) { return r[2] === '302'; })); add('srlamp', it.filter(function (r) { return r[2] === '305'; }));
       add('sr112', it.filter(function (r) { return ['303', '304', '306', '307', '308'].indexOf(r[2]) >= 0; })); add('srsvc', I.srSvc); add('aed', I.aed); add('fw', I.fire); add('tow', I.tow); add('wc2', I.wc); add('box', I.box); add('dem', I.dem);
+      add('gpark', I.park); add('gev', I.ev); add('ger', I.er); add('gfest', I.fest); SRCX = Object.assign(SRCX, j.source || {});
       draw();
     }).catch(function () {}); return RLOADS[gu];
   }
@@ -145,6 +150,7 @@
     if (view.s >= 0.03 && FAC_KEYS.some(function (k) { return on[k]; })) { var vf = viewLL(); rIdx().forEach(function (g) { if (RLOADF[g.gu] || !(g.bytes || {}).fac) return; var x = g.box; if (x[2] < vf[0] || x[0] > vf[2] || x[3] < vf[1] || x[1] > vf[3]) return; fLoad(g.gu); }); }
     if (view.s >= 0.02 && SEA && SEA_KEYS.some(function (k) { return on[k]; })) { var ve = viewLL(); rIdx().forEach(function (g) { if (RLOADE[g.gu] || !(g.bytes || {}).season) return; var x = g.box; if (x[2] < ve[0] || x[0] > ve[2] || x[3] < ve[1] || x[1] > ve[3]) return; seaLoad(g.gu); }); }
     if ((on.acc10 || on.fatal10) && view.s >= 0.012) { var va = viewLL(); rIdx().forEach(function (g) { if (RLOADA[g.gu] || !(g.bytes || {}).taas10) return; var x = g.box; if (x[2] < va[0] || x[0] > va[2] || x[3] < va[1] || x[1] > va[3]) return; aLoad(g.gu); }); }
+    if (on.glamp && view.s >= 0.06) { var vl = viewLL(); rIdx().forEach(function (g) { if (RLOADL[g.gu] || !(g.bytes || {}).lamp) return; var x = g.box; if (x[2] < vl[0] || x[0] > vl[2] || x[3] < vl[1] || x[1] > vl[3]) return; lpLoad(g.gu); }); }
     if (view.s >= 0.03 && SAFE_KEYS.some(function (k) { return on[k]; })) { var vs2 = viewLL(); rIdx().forEach(function (g) { if (RLOADS[g.gu] || !(g.bytes || {}).safety) return; var x = g.box; if (x[2] < vs2[0] || x[0] > vs2[2] || x[3] < vs2[1] || x[1] > vs2[3]) return; sfLoad(g.gu); }); }
     if ((on.bus && view.s > 0.07) || (on.subr && view.s >= 0.02)) { var vx = viewLL(); rIdx().forEach(function (g) { if (RLOADX[g.gu] || !(g.bytes || {}).transit) return; var x = g.box; if (x[2] < vx[0] || x[0] > vx[2] || x[3] < vx[1] || x[1] > vx[3]) return; xLoad(g.gu); }); }
     if (on.szone && view.s >= 0.012) { var vz = viewLL(); rIdx().forEach(function (g) { if (RLOADZ[g.gu] || !(g.bytes || {}).szone) return; var x = g.box; if (x[2] < vz[0] || x[0] > vz[2] || x[3] < vz[1] || x[1] > vz[3]) return; zLoad(g.gu); }); }
@@ -1087,7 +1093,7 @@
     ['jur', '🚓 관할·관서', ['jur', 'pol', 'tgis', 'fire', 'er']],
     ['kids', '🧒 어린이', ['sz', 'szh', 'school', 'kids', 'pg']],
     ['gov', '🏛 관공서', ['govr']],
-    ['acc', '🚑 사고·응급', ['acc', 'fatal', 'hot10', 'er', 'aed', 'pol', 'fire', 'cam', 'tow']]
+    ['acc', '🚑 사고·응급', ['acc', 'fatal', 'hot10', 'er', 'ger', 'aed', 'pol', 'fire', 'cam', 'tow']]
   ];
   var KEEP = ['dong', 'road', 'base', 'bld', 'sub'];
   function preset(id) {
@@ -1390,7 +1396,7 @@
       li(hexA(A10MS[A10M][1], 0.8), '100m 칸 · 진할수록 많음(√) · 확대하면 숫자', 'box') + (on.fatal10 ? li('#111827', '사망사고(한 건씩)') : '') + '<small class="lg-n">' + (D.taas10 ? D.taas10.count.toLocaleString() + '건 · 개인정보 없음' : '') + '</small>'];
   }
   // ---------- 🛡 치안·생활안전 시설(v0.10.78 · 서울 열린데이터 — 서초구) ----------
-  var SAFE = [];   // [층 키, 이름, 색, 점들[{p, it}]]
+  var SAFE = [], SRCX = {};   // [층 키, 이름, 색, 점들[{p, it}]] · SRCX = 경기 구 파일이 가져온 출처(경기 생활시설)
   var SRC_C = { '301': '#dc2626', '302': '#1d4ed8', '303': '#64748b', '304': '#94a3b8', '305': '#f59e0b', '306': '#64748b', '307': '#7c3aed', '308': '#64748b' };
   function safePrep() {
     var Sx = D.safety; if (!Sx) return; var I = Sx.items, C = Sx.codes || {};
@@ -1404,7 +1410,8 @@
     add('fw', '🧯 소방용수(소화전 등)', '#ef4444', I.fire);
     add('pkcctv', '📸 불법주정차 단속 CCTV', '#0f766e', I.pkcctv);
     add('tow', '🛻 견인차량보관소', '#78350f', I.tow);
-    add('wc2', '🚻 공중화장실(서울시 목록)', '#0891b2', I.wc);
+    add('wc2', '🚻 공중화장실(서울·경기 공식 목록)', '#0891b2', I.wc);
+    add('gpark', '🅿 주차장(경기 공식)', '#2563eb', []); add('gev', '🔌 전기차 충전소(경기)', '#16a34a', []); add('ger', '🏥 응급의료기관(경기)', '#be123c', []); add('gfest', '🎪 문화축제(경기)', '#c026d3', []); add('glamp', '💡 보안등(경기)', '#eab308', []);
     add('box', '📦 안심택배함', '#a16207', I.box);
     add('dem', '🧠 치매안심센터', '#9333ea', I.dem);
   }
@@ -1467,7 +1474,7 @@
     if (!b) return; var si = seasonInfo();
     G(si.icon + ' 계절 위험 · ' + esc(si.name), b + '<small class="lg-n">침수흔적 2010~2025(' + Sd.years.join('·') + ') · 자연재해위험개선지구: ' + Sd.danger.map(function (d) { return esc(d.DSTRCT_NM + '(' + d.PSTN + ')'); }).join(', ') + '</small>'); }
   function drawSafe(dark) {
-    SAFE.forEach(function (L) { if (!on[L[0]]) return; var dense = L[3].length > 300, small = dense && view.s < 0.25; if (L[0] === 'fw' && view.s < 0.18) return;
+    SAFE.forEach(function (L) { if (!on[L[0]]) return; var dense = L[3].length > 300, small = dense && view.s < 0.25; if ((L[0] === 'fw' && view.s < 0.18) || (L[0] === 'glamp' && view.s < 0.1)) return;
       L[3].forEach(function (q) { var c = L[0] === 'govr' ? (GOVC[q.r[3]] || L[2]) : L[0].indexOf('sr') === 0 && L[0] !== 'srsvc' ? (SRC_C[q.r[2]] || L[2]) : L[2]; dot(q.p, small ? 2.4 : 4.2, c, small ? null : '#fff', small ? null : { kind: 'safe', L: L, q: q }); }); });
   }
   function facCard(it) {
@@ -1523,6 +1530,18 @@
       var vd = up >= 2 && !dn ? '📈 <b>살아나는 쪽</b>' : dn >= 2 && !up ? '📉 <b>줄어드는 쪽</b>' : up > dn ? '↗ 조금 살아나는 쪽' : dn > up ? '↘ 조금 줄어드는 쪽' : '➡ 큰 변화 없음';
       h += row('한 줄로', vd + ' <em>(매출 ±10% · 점포 ±3% · 지표를 함께 본 이 지도의 어림 — 판단 문턱은 설계값)</em>') + '<p class="desc">상권분석서비스는 <b>2021년부터</b>만 공개된다 — 그보다 앞 10년 상권 값은 이 자료에 없다. 어린이집(2016~)·유치원(2014~)은 더 길게 본다.</p>';
     }
+    if (x.bz && x.bz.length) {   // v1.3.0 동별 사업체 10년(KOSIS · 통계청 전국사업체조사)
+      var B0 = x.bz.filter(function (q) { return q[1] != null; }), b0 = B0[0], b1 = B0[B0.length - 1];
+      var bN = B0.filter(function (q) { return +q[0] >= 2020; }), n0 = bN[0];
+      if (b0 && b1) { var bc = n0 ? pctCh(n0[1], b1[1]) : pctCh(b0[1], b1[1]), wc = n0 ? pctCh(n0[2], b1[2]) : pctCh(b0[2], b1[2]);
+        h += '<div class="dh">🏢 사업체 10년 — 상권이 커지는가 줄어드는가(' + b0[0] + '~' + b1[0] + ')</div>' +
+          row('사업체', (n0 ? n0[1].toLocaleString() + '(2020) → <b>' : b0[1].toLocaleString() + ' → <b>') + b1[1].toLocaleString() + '곳</b> (' + b1[0] + ') <b>' + sgn(bc) + '</b> <em>· ' + b0[0] + '년 ' + b0[1].toLocaleString() + '곳</em>') + row('종사자', (n0 ? (n0[2] || 0).toLocaleString() + '(2020) → <b>' : (b0[2] || 0).toLocaleString() + ' → <b>') + (b1[2] || 0).toLocaleString() + '명</b> <b>' + sgn(wc) + '</b>') +
+          '<div class="cap">해마다 사업체 수(곳 · 통계청 전국사업체조사 · 동별 · ' + b0[0] + '~' + b1[0] + ')</div>' + bar(B0.map(function (q) { return q[1]; }), '#0f766e', B0.map(function (q) { return "'" + String(q[0]).slice(2); })) +
+          '<div class="cap">해마다 종사자 수(명)</div>' + bar(B0.map(function (q) { return q[2] || 0; }), '#14b8a6', B0.map(function (q) { return "'" + String(q[0]).slice(2); }));
+        if (x.bzi && x.bzi.length) h += '<div class="cap">업종 대분류별 사업체 ' + x.bziy[0] + ' → ' + x.bziy[1] + '(많은 업종 8)</div><div class="lst">' + x.bzi.slice(0, 8).map(function (t) { var c = pctCh(t[1], t[2]); return '<div><b>' + esc(t[0]) + '</b><span class="' + (c == null ? '' : c > 10 ? 'up' : c < -10 ? 'dn' : '') + '">' + (t[1] == null ? '-' : t[1].toLocaleString()) + ' → ' + (t[2] == null ? '-' : t[2].toLocaleString()) + ' ' + sgn(c) + '</span></div>'; }).join('') + '</div>';
+        h += row('한 줄로', (bc == null ? '➡ 판단 못 함' : bc > 10 ? '📈 <b>사업체가 늘어난 동</b>' : bc < -10 ? '📉 <b>사업체가 줄어든 동</b>' : '➡ 큰 변화 없음') + ' <em>(같은 조사 방식인 2020년부터 견줌 · ±10% · 설계값)</em>') +
+          '<p class="desc">통계청 전국사업체조사(종사자 1명 이상 모든 사업체 — 상가만이 아니라 사무실·공장·학교 등도 든다) · 해마다 그해 12월 31일 기준. <b>2020년부터 조사 방식이 행정자료 중심으로 바뀌어 사업체 수가 크게 뛴다</b> — 2019년 이전과 2020년 이후를 곧바로 견주지 말 것(그래서 늘었다·줄었다 판단은 2020년부터만 본다).</p>';
+        srcs.push(F.bzsrc); } }
     return h + src(srcs.filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(' · '));
   }
   function safeCard(it) {
@@ -1530,13 +1549,18 @@
     var k = it.L[0], r = it.q.r, Sx = D.safety, C = Sx.codes || {}, h = '<h3>' + esc(it.L[1]) + '</h3>', s = '';
     if (k.indexOf('sr') === 0 && k !== 'srsvc') { h += row('시설', esc((C.srItem || {})[r[2]] || r[2]) + (r[5] > 1 ? ' ' + r[5] + '개' : '')) + row('안심귀갓길', esc(r[3] + ' · ' + r[4])) + (r[6] ? row('비고', esc(r[6])) : '') + (r[7] ? row('관리', esc(r[7] + ' ' + (r[8] || ''))) : ''); s = Sx.source.srItem + ' · 코드: ' + C.srItemSrc; }
     else if (k === 'srsvc') { h += row('이름', esc(r[3])) + row('구분', esc((C.srSvc || {})[r[2]] || r[2])) + row('주소', esc(r[4])) + row('운영', esc(String(r[7] || '').replace('_', '~'))) + row('관리', esc(r[5] + ' ' + (r[6] || ''))); s = Sx.source.srSvc; }
-    else if (k === 'aed') { h += row('기관', esc(r[2])) + row('설치 자리', esc(r[3])) + row('주소', esc(r[4])) + (r[5] ? row('전화', esc(r[5])) : ''); s = Sx.source.aed; }
+    else if (k === 'aed') { h += row('기관', esc(r[2])) + row('설치 자리', esc(r[3])) + row('주소', esc(r[4])) + (r[5] ? row('전화', esc(r[5])) : ''); s = /^경기/.test(r[4] || '') ? SRCX.aed : Sx.source.aed; }
     else if (k === 'fw') { var st = typeof r[4] === 'string' ? [r[4], ''] : (Sx.items.fireSt || [])[r[4]] || []; h += row('종류 코드', esc(r[2])) + row('사용', r[3] ? '가능' : '<b>불가·점검</b>') + row('관할 소방서', esc((st[0] || '') + ' ' + (st[1] || ''))); s = Sx.source.fire; }
     else if (k === 'pkcctv') { h += row('단속 지점', esc(r[2])) + row('주소', esc(r[3])) + row('구분', esc(r[4])); s = Sx.source.pkcctv; }
     else if (k === 'tow') { h += row('이름', esc(r[2])) + row('주소', esc(r[3])) + row('전화', esc(r[4])) + row('보관', esc(r[5]) + '대') + '<p class="desc">' + esc(r[6]) + '</p>'; s = Sx.source.tow; }
-    else if (k === 'wc2') { h += row('이름', esc(r[2])) + row('주소', esc(r[3])) + row('구분', esc(r[4])) + row('개방', esc(r[5])) + row('남녀', esc(r[6])); s = Sx.source.wc; }
+    else if (k === 'wc2') { h += row('이름', esc(r[2])) + row('주소', esc(r[3])) + row('구분', esc(r[4])) + row('개방', esc(r[5])) + row('남녀', esc(r[6])); s = /^경기/.test(r[3] || '') ? SRCX.wc : Sx.source.wc; }
     else if (k === 'box') { h += row('자리', esc(r[2])) + row('주소', esc(r[3])); s = Sx.source.box; }
     else if (k === 'dem') { h += row('이름', esc(r[2])) + row('주소', esc(r[3])) + row('전화', esc(r[4])) + '<p class="desc">배회·실종 치매 어르신 발견 때 연락.</p>'; s = Sx.source.dem; }
+    else if (k === 'gpark') { h += row('이름', esc(r[2])) + row('주소', esc(r[3])) + row('구분', esc(r[4] + ' · ' + r[5])) + row('주차면', esc(r[6]) + '면') + row('평일 운영', esc(r[7])) + row('요금', esc(r[8])) + row('기준일', esc(r[9])); s = SRCX.park; }
+    else if (k === 'gev') { h += row('충전소', esc(r[2])) + row('주소', esc(r[3])) + row('운영', esc(r[4])) + row('충전기', esc(r[5])); s = SRCX.ev; }
+    else if (k === 'ger') { h += row('기관', esc(r[2])) + row('구분', esc(r[3])) + row('주소', esc(r[4])) + row('대표 전화', '<a href="tel:' + esc(r[5]) + '">' + esc(r[5]) + '</a>'); s = SRCX.er; }
+    else if (k === 'gfest') { h += row('축제', esc(r[2])) + row('장소', esc(r[3])) + row('기간', esc(r[4]) + ' ~ ' + esc(r[5])) + row('주최·주관', esc(r[6])) + (r[7] ? '<p class="desc">' + esc(r[7]) + '</p>' : '') + row('자료 기준', esc(r[8])); s = SRCX.fest; }
+    else if (k === 'glamp') { h += row('설치 연도', esc(r[2] || '-')) + row('설치 형태', esc(r[3] || '-')); s = it.L.src; }
     return h + src(s);
   }
   // ---------- 🗂 범례(v0.10.78 · 소유자 「색으로 구분만 되어 있으면 데이터 전달이 부실 — 범례로 확실하게」) ----------

@@ -1,3 +1,5 @@
+> **2026-10-04 이 문서는 별도 저장소 [340patrolman/datamap](https://github.com/340patrolman/datamap) 로 옮겼다**(사이트 https://340patrolman.github.io/datamap/ · 게임의 map2d.html 은 길잡이). 아래의 `map2d.html` 은 이 저장소의 `index.html`, 경로 `traffic-game/` 은 `datamap/` 으로 읽는다.
+
 # 🗜 데이터 압축지도 — 구성과 만드는 법 (다른 곳 요청이 오면 이대로 만든다)
 
 > 대상: 사람·AI 모두. 이 문서만 읽고 **다른 구·다른 관서용 지도를 같은 방식으로 굽고 띄울 수 있게** 적는다.

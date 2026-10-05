@@ -29,7 +29,7 @@ def g(p):
 
 def fetch(sidos=None):
     os.makedirs(OUT, exist_ok=True)
-    for sido in (sidos or ('11', '31')):   # SGIS 시도 코드(서울 11 · 경기 31 · 인천 23 …) — `fetch 23` 처럼 골라 받는다(v2.7.0)
+    for sido in (sidos or ('11', '31')):   # 전국: 21 22 23 24 25 26 29 31 32 33 34 35 36 37 38 39   # SGIS 시도 코드(서울 11 · 경기 31 · 인천 23 …) — `fetch 23` 처럼 골라 받는다(v2.7.0)
         for sg in g('/addr/stage.json?cd=%s' % sido).get('result') or []:
             for d in g('/addr/stage.json?cd=%s' % sg['cd']).get('result') or []:
                 fn = os.path.join(OUT, d['cd'] + '.json')

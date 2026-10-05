@@ -17,7 +17,7 @@
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
     ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
-    ['acc', '🚗 교차로 사고(2019~)', true, '교통안전', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통안전', 1], ['fatal10', '🕯 사망사고 10년', false, '교통안전', 0], ['fatal', '🕯 사망사고', false, '교통안전', 0], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '부동산·상권', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '부동산·상권', 1], ['live250', '👥 생활인구 250m(서울)', false, '사람·흐름', 1], ['g250', '🧊 250m 격자(국가표준)', false, '기본', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통안전', 1], ['hot', '⚠ 사고다발지', false, '교통안전', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통안전', 1],
+    ['acc', '🚗 교차로 사고(2019~)', true, '교통안전', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통안전', 1], ['fatal10', '🕯 사망사고 10년', false, '교통안전', 0], ['fatal', '🕯 사망사고', false, '교통안전', 0], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '부동산·상권', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '부동산·상권', 1], ['live250', '👥 생활인구 250m(서울)', false, '사람·흐름', 1], ['g250', '🧊 250m 격자(국가표준)', false, '기본', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통안전', 1], ['hot', '⚠ 사고다발지', false, '교통안전', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통안전', 1],
     ['risk', '🟥 사고위험지역', false, '교통안전', 0], ['sz', '🏫 어린이보호구역', false, '교통안전', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통안전', 0], ['cam', '📷 단속 카메라', false, '교통안전', 0], ['spd', '🚥 도로 소통(받은 때)', false, '교통안전', 0], ['sig', '🚦 신호 주기', false, '교통안전', 0], ['sigx', '🔢 신호 교차로 번호', false, '교통안전', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '사람·흐름', 1], ['rent', '💰 상가 임대료·공실률', false, '사람·흐름', 0], ['szone', '🏬 소진공 주요상권(서울·경기)', false, '사람·흐름', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '사람·흐름', 1], ['crowd', '📡 실시간 인파·카드', false, '사람·흐름', 1], ['live', '👥 생활인구(지금)', false, '사람·흐름', 1], ['sales', '💳 카드 매출(시간대)', false, '사람·흐름', 1], ['bus', '🚌 버스 승차·하차', false, '사람·흐름', 1], ['subr', '🚇 지하철 승차·하차', false, '사람·흐름', 0], ['vol', '🚙 교통량', false, '사람·흐름', 0], ['bike', '🚲 따릉이', false, '사람·흐름', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
@@ -888,7 +888,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
+    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -1001,6 +1001,8 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
+      h += polRows(d.k, d.c);
+      if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
     } else if (it.kind === 'node') {
       var n = it.n, st = it.st; h = '<h3>' + (n.real ? '🚦 ' : '✕ ') + esc(n.name) + '</h3>' + (it.rep ? row(REP.here ? '지금 위치' : '보고 자리', (REP.here ? '지금 위치에서 ' : 'T-Book 보고 자리에서 ') + it.rep + 'm') + repAround() + hereRows() : '') + row('도로', esc(n.pair.replace('×', ' × ')));
@@ -1042,6 +1044,9 @@
       h = '<h3>🚙 ' + esc(it.v.name) + '</h3>' + volRows(it.v) + src('서울시 교통량조사(VolInfo) · 평일은 2일 평균');
     } else if (it.kind === 'evt') {
       var e = it.e; h = '<h3>📅 ' + esc(e.t) + '</h3>' + row('갈래', esc(e.c)) + row('기간', esc(e.s + ' ~ ' + e.e)) + row('시간', esc(e.hour || '-')) + row('자리', esc(e.p)) + row('요금', esc(e.free || '-')) + src('서울시 문화행사 정보(공공누리 1유형)');
+    } else if (it.kind === 'pst') { h = pstCard(it.s);
+    } else if (it.kind === 'pbx') { h = pbxCard(it.b);
+    } else if (it.kind === 'frn') { h = frnCard(it.gu);
     } else if (it.kind === 'hmg' || it.kind === 'hmc') { h = homeCard(it);
     } else if (it.kind === 'g250' || it.kind === 'l250' || it.kind === 'rtc' || it.kind === 'rtg') { h = gridCard(it);
     } else if (it.kind === 'a10' || it.kind === 'f10') { h = a10Card(it);
@@ -1294,7 +1299,7 @@
   function visTiles() { if (!BIDX) return []; var W = cv.clientWidth, H = cv.clientHeight, a = M(0, 0), b = M(W, H), T = BIDX.size, out = [];
     for (var ix = Math.floor(Math.min(a[0], b[0]) / T); ix <= Math.floor(Math.max(a[0], b[0]) / T); ix++) for (var iz = Math.floor(Math.min(a[1], b[1]) / T); iz <= Math.floor(Math.max(a[1], b[1]) / T); iz++) { var k = ix + '_' + iz; if (BSET[k]) out.push(k); }
     return out; }
-  function tileUrl(k) { return 'data/base/t/' + k + '.json?b=' + encodeURIComponent(TBAKE); }
+  function tileUrl(k) { return (ONGH ? '/datamap-tiles/t/' : 'data/base/t/') + k + '.json?b=' + encodeURIComponent(TBAKE); }   // v2.8.0 전국 조각은 datamap-tiles 저장소
   var TQ = 0, TRAF = 0;
   function needTiles() { if (!BIDX || view.s < TILE_S) return; var vt = visTiles(); if (vt.length > 24) return;
     vt.forEach(function (k) { if (TILES[k] || TLOAD[k] || TQ >= 4) return; TLOAD[k] = 1; TQ++;
@@ -1330,7 +1335,7 @@
         c.match(u).then(function (hitR) { if (hitR && !/(^|\/)r\/|manifest/.test(u)) return; return c.add(u); }).catch(function () { fail++; }).then(function () { n++; msg('받는 중 ' + n + ' / ' + tot); next(); }); }
       next(); }); }
   function rFilesFor(G, full) {   // v0.10.91 고른 구의 행정동 자료(+ full 이면 둘레 3km 에 걸친 서울 구의 가벼운 자료) — 바탕 조각과 같은 보관함에(서비스워커가 통신 끊김 때 모든 보관함에서 꺼낸다)
-    var o = [], sgOf = function (g) { return SGG.filter(function (x) { return x.g.name === g.name || (g.sido === '41' && x.g.sido === '경기도' && g.name.indexOf(x.g.name) === 0); })[0]; };
+    var o = [], sgOf = function (g) { var sf = SIDO_FULL[g.sido]; return SGG.filter(function (x) { return x.g.sido === sf && (x.g.name === g.name || g.name.indexOf(x.g.name) === 0); })[0]; };   // v2.8.0 모든 시도 · 일반구는 시 경계로
     rIdx().forEach(function (g) { var B = g.bytes || {}, S2 = sgOf(g), me = S2 === G;
       if (!me) { if (!full || !S2) return;
         var near = S2.rings.some(function (r) { for (var i = 0; i < r.length; i += 4) if (distToRings(r[i], G.rings) <= DL_AROUND) return true; return false; }); if (!near) return; }
@@ -1339,7 +1344,7 @@
   function paintDl() { var el = $('m2dGetP'); if (!el || !el.classList.contains('on')) return; var done = dlDone(), h = '';
     h += '<div class="lg-h"><b>📥 지역 받기</b><button id="m2dGetX">닫기</button></div><p class="lg-n">화면에 보이는 곳은 저절로 받는다. 미리 받아 두면 <b>통신이 끊긴 곳에서도</b> 그 지역 지도가 열린다(고른 구·시 경계 밖 ' + (DL_AROUND / 1000) + 'km 둘레까지 함께).</p>';
     h += '<div class="lg-btns"><button data-dl="gps">📍 지금 위치 둘레 6km</button><button data-dl="view">🖥 지금 화면 둘레</button></div><div id="m2dGetMsg" class="lg-n"></div>';
-    var SIDO_F = { '11': '서울특별시', '41': '경기도', '28': '인천광역시' };   // v2.7.0 받은 권역만(regions.json)
+    var SIDO_F = SIDO_FULL;   // v2.8.0 전국 — 받은 권역만(regions.json)
     ((D.ridx && D.ridx.regions) || [{ sido: '11' }, { sido: '41' }]).map(function (r) { return SIDO_F[r.sido]; }).filter(Boolean).forEach(function (sd) { h += '<div class="lg"><b>' + sd + '</b><div class="dlg">' + SGG.filter(function (G) { return G.g.sido === sd; }).map(function (G) { var ks = tilesForRings(G.rings), d = done[G.g.name]; if (d && d.bake !== TBAKE) d = null;
       return '<button data-sg="' + esc(G.g.name) + '" class="' + (d ? 'on' : '') + '">' + (d ? '✓ ' : '') + esc(G.g.name) + ' <small>' + mb(tbytes(ks) + rFilesFor(G).reduce(function (a, x) { return a + x.b; }, 0)) + '</small></button>'; }).join('') + '</div></div>'; });
     var keys = Object.keys(done); h += '<div class="lg-btns"><button data-dl="clear">받은 지역 지우기' + (keys.length ? '(' + keys.length + ')' : '') + '</button></div><small class="lg-n">조각은 OSM 2026-10-03 기준(© OpenStreetMap contributors · ODbL) · 서울 구는 행정동 자료(주민·생활인구·카드 매출)도 함께 받는다 · 그 밖의 자료 층은 아직 서초 둘레</small>';
@@ -1767,6 +1772,8 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
+    h += polRows(d.k, d.c);
+    var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
     return h + src('경계: ' + R.source['경계'] + ' · 주민: ' + R.source['주민'] + (gg ? '' : ' · 생활인구: ' + R.source['생활인구']));
   }
   function dongIndRows(x) {   // 행정동 — 업종 × 연령 · 업종 × 시간대 · 주점·유흥
@@ -2288,7 +2295,7 @@
     ['all', '전체', null],
     ['traffic', '🚦 교통', ['road', 'jcnm', 'lspd', 'spd', 'lev', 'lcc', 'vol', 'sig', 'sigx', 'tgis', 'pbtn', 'cam', 'pkcctv', 'bus', 'lbus', 'sub', 'subr', 'exit', 'bike', 'pk', 'gpark', 'ev', 'gev', 'fuel', 'tow'], ['road', 'jcnm', 'lspd', 'cam', 'sig', 'bus', 'sub']],
     ['acc', '🚗 사고', ['acc', 'acc250', 'acc10', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'sz', 'szh', 'spot', 'spota'], ['acc10', 'fatal10', 'jct', 'hot10']],
-    ['safe', '🛡 치안·안전', ['jur', 'pol', 'fire', 'er', 'ger', 'aed', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'glamp', 'fw', 'hyd', 'box', 'bar', 'play', 'inn'], ['jur', 'pol', 'fire', 'er', 'srcctv', 'srbell']],
+    ['safe', '🛡 치안·안전', ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er', 'ger', 'aed', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'glamp', 'fw', 'hyd', 'box', 'bar', 'play', 'inn'], ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er']],
     ['estate', '🏢 부동산·상권', ['home', 'rtc', 'rent', 'trd', 'szone', 'sales', 'live250', 'jgg', 'bld', 'conv', 'bank', 'govr'], ['home', 'rtc', 'live250', 'rent', 'szone']],
     ['people', '👥 사람·인구', ['dong', 'live250', 'live', 'crowd', 'jgg', 'sales', 'evt', 'gfest', 'kids', 'cc', 'kg', 'kyr', 'school', 'edu', 'aca', 'welf', 'dem'], ['live250', 'jgg']],
     ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'pg', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'conv', 'bank'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
@@ -2342,6 +2349,62 @@
       '<small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 숫자 = 평당(전용 · 천만 원) · 단독·다가구는 지번이 가려져 칸에 없음</small>'];
   }
   function homeDong(k8) { for (var gu in HOMED) { var d = HOMED[gu].dong[k8]; if (d) return { v: d, m: HOMED[gu] }; } return null; }
+
+  // v2.8.0 🌏 외국인 자세히(시군구) — 국적·체류자격(영주 등)·연령×성별·체류기간·귀화 · 출처마다 기준일이 달라 더하지 않는다
+  var LB_AGE8 = ['0~9', '10대', '20대', '30대', '40대', '50대', '60대', '70~'], LB_STAY7 = ['1년↓', '1~2', '2~3', '3~4', '4~5', '5~10', '10년↑'];
+  function frnCard(gu) {
+    var F2 = FRN && FRN.gu[gu]; if (!F2) return '<h3>🌏 외국인 주민</h3><p class="desc">이 시군구는 자료가 없다(2024 뒤에 생긴 구 등).</p>';
+    var v = F2['2024'] || {}, Dt = FRN.detail || {}, h = '<h3>🌏 외국인 — ' + esc(guName(gu)) + ' <small>(' + esc(F2.src) + ')</small></h3>';
+    h += row('외국인 주민(행안부 2024)', (v.tot || 0).toLocaleString() + '명 · 총인구의 ' + (v.pop ? (v.tot / v.pop * 100).toFixed(1) : '-') + '% · 세대 ' + (v.hh || 0).toLocaleString());
+    h += row('한국국적 없음', (v.nf || 0).toLocaleString() + '명 — 근로자 ' + (v.work || 0).toLocaleString() + ' · 결혼이민 ' + (v.marr || 0).toLocaleString() + ' · 유학생 ' + (v.stud || 0).toLocaleString() + ' · 외국국적동포 ' + (v.kor || 0).toLocaleString() + ' · 기타 ' + (v.etc || 0).toLocaleString());
+    h += row('귀화(한국국적 취득)', (v.nat || 0).toLocaleString() + '명 — 혼인귀화 ' + (v.natm || 0).toLocaleString() + ' · 기타 ' + (v.nato || 0).toLocaleString()) + row('외국인주민 자녀', (v.kid || 0).toLocaleString() + '명');
+    if (F2.q) { var qk = Object.keys(F2.q), qs = qk.reduce(function (a, k) { return a + F2.q[k]; }, 0), pr = F2.q['영주(F-5)'] || 0;
+      h += row('영주권(F-5)', pr.toLocaleString() + '명' + (qs ? ' · 등록외국인(상위 자격 합)의 ' + Math.round(pr / qs * 100) + '%' : '')) + '<div class="cap">체류자격별 등록외국인(명 · ' + esc((Dt.q || '').replace(/^.*\(KOSIS[^·]*· /, '').replace(/\).*$/, '')) + ')</div>' + bar(qk.map(function (k) { return F2.q[k]; }), '#0e7490', qk.map(function (k) { return k.replace(/\(.*\)/, ''); })); }
+    if (F2.nat) h += '<div class="cap">국적별 등록외국인(명 · 상위 10 · 남/여)</div>' + bar(F2.nat.map(function (x) { return x[1]; }), '#7c3aed', F2.nat.map(function (x) { return x[0].replace('한국계중국인', '중국(동포)').replace('타이(태국)', '태국'); })) +
+      '<p class="desc">' + F2.nat.slice(0, 5).map(function (x) { return esc(x[0]) + ' ' + x[1].toLocaleString() + '(남 ' + x[2].toLocaleString() + ' · 여 ' + x[3].toLocaleString() + ')'; }).join(' · ') + '</p>';
+    if (F2.age && F2.age.mf) { var A2 = F2.age, tm = A2.mf.reduce(function (a, b) { return a + b; }, 0), tf = (A2.ff || []).reduce(function (a, b) { return a + b; }, 0);
+      h += '<div class="cap">연령별 외국인(한국국적 없음 · 남 ' + tm.toLocaleString() + ' · 2024)</div>' + bar(A2.mf, '#2563eb', LB_AGE8) + '<div class="cap">연령별 외국인(한국국적 없음 · 여 ' + tf.toLocaleString() + ')</div>' + bar(A2.ff || [], '#db2777', LB_AGE8);
+      if (A2.mn) h += '<div class="cap">연령별 귀화자(남 파랑 · 여 분홍 합 — 한국국적 취득)</div>' + bar(A2.mn.map(function (x, i) { return x + ((A2.fn || [])[i] || 0); }), '#64748b', LB_AGE8); }
+    if (F2.stay) { var ts = F2.stay.reduce(function (a, b) { return a + b; }, 0); h += row('머문 기간', '1년 미만 ' + pct(F2.stay[0], ts) + '% · 5년 이상 ' + pct(F2.stay[5] + F2.stay[6], ts) + '% <em>(장기 거주 비중)</em>') + '<div class="cap">체류기간별 외국인 주민(명 · 2024)</div>' + bar(F2.stay, '#0f766e', LB_STAY7); }
+    h += '<p class="desc"><b>단기체류(90일 이하 · 관광·단기방문)</b>는 시군구 공식 통계가 없다(법무부 단기체류외국인 현황은 전국 단위) — 서울은 250m 생활인구의 단기·장기체류 외국인으로 「그 시각 머무는 사람」을 볼 수 있다(따로 받을 자료). 등록외국인(법무부 · 연말)과 외국인주민(행안부 · 11월 1일)은 기준이 달라 더하지 않는다.</p>';
+    return h + src(FRN.source + ' · ' + [Dt.q, Dt.nat, Dt.age, Dt.stay].filter(Boolean).join(' · '));
+  }
+
+  // ---------- v2.8.0 🚓 전국 경찰서 관할(별표2 × 행정동) · 👮 지구대·파출소 자리 ----------
+  // T-Book 이 쓰는 jur 층(서초·방배 세밀 관할 · 반포 현장 기준)은 그대로 — 이 층은 전국을 행정동 단위로 근사한다
+  var POL2 = null, POL2P = null;
+  function polLoad() { if (POL2P) return POL2P; POL2P = fetch('data/police.json').then(function (r) { return r.json(); }).then(function (j) { POL2 = j; j.byI = {}; j.stations.forEach(function (s2) { j.byI[s2[0]] = s2; s2.p = s2[2] != null ? P(s2[3], s2[2]) : null; }); j.pbox.forEach(function (b) { b.p = P(b[4], b[3]); }); draw(); }).catch(function () { POL2 = null; }); return POL2P; }
+  function polCol(i) { var h = (i * 137.508) % 360; return 'hsl(' + h.toFixed(0) + ',62%,52%)'; }
+  function polLab(L) { var pr = String(L).split('~'), f = function (t) { return (t || '').split(',').filter(function (x) { return x !== ''; }).map(function (x) { return POL2.byI[+x]; }).filter(Boolean); }; return { main: f(pr[0]), extra: f(pr[1]) }; }   // 「21~6」 = 기본 21번 서 + 일부 번지 6번 서 · 「1,4」 = 두 서가 나눠 맡음
+  function polOf(k8) { if (!POL2 || !k8) return null; var L = POL2.labels[POL2.dong[k8]]; if (L == null) return null; var o = polLab(L), st = o.main; st.extra = o.extra; return st; }
+  function pboxNear(p) { if (!POL2) return null; var b = null, bd = 1e12; POL2.pbox.forEach(function (x) { var d = Math.hypot(x.p[0] - p[0], x.p[1] - p[1]); if (d < bd) { bd = d; b = x; } }); return b ? { b: b, d: bd } : null; }
+  function drawPolice(dark) {
+    if (!on.jurk && !on.pbox) return; if (!POL2) { polLoad(); return; } var W0 = cv.clientWidth, H0 = cv.clientHeight;
+    if (on.jurk) { var DL = (DONG || []).concat(RDONG || []);
+      var a0 = M(0, 0), a1 = M(W0, H0);
+      DL.forEach(function (d) { if (!d.k || !d.polys || !d.box || d.box[1] < a0[0] || d.box[0] > a1[0] || d.box[3] < a0[1] || d.box[2] > a1[1]) return; var st = polOf(d.k); if (!st || !st.length) return; var col = st.length > 1 ? 'rgba(100,116,139,.32)' : polCol(st[0][0]);
+        ctx.save(); ctx.globalAlpha = st.length > 1 ? 1 : 0.22; ctx.fillStyle = col; d.polys.forEach(function (Pg) { path(Pg[0]); ctx.fill(); }); ctx.restore(); });
+      if (view.s >= 0.004) POL2.stations.forEach(function (s2) { if (!s2.p) return; var q = S(s2.p); if (q[0] < -40 || q[1] < -40 || q[0] > W0 + 40 || q[1] > H0 + 40) return;
+        ctx.fillStyle = polCol(s2[0]); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.rect(q[0] - 6, q[1] - 6, 12, 12); ctx.fill(); ctx.stroke();
+        if (view.s >= 0.012) label([s2.p[0], s2.p[1] - 14 / view.s], s2[1].replace(/경찰서$/, '서'), 11, dark ? '#e2e8f0' : '#0f172a', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.88)');
+        hit.push({ x: q[0], y: q[1], r: 10, it: { kind: 'pst', s: s2 } }); }); }
+    if (on.pbox && view.s >= 0.02) POL2.pbox.forEach(function (b) { dot(b.p, b[1] ? 3.6 : 4.6, b[1] ? '#0284c7' : '#1d4ed8', '#fff', { kind: 'pbx', b: b }); });
+  }
+  function pstCard(s2) {
+    var nd = 0, mix = 0; Object.keys(POL2.dong).forEach(function (k) { var o = polLab(POL2.labels[POL2.dong[k]]); if (o.main.indexOf(s2) >= 0) { nd++; if (o.main.length > 1 || o.extra.length) mix++; } });
+    var bx = POL2.pbox.filter(function (b) { return b[6] === s2[0]; });
+    return '<h3>🚓 ' + esc(s2[1]) + '</h3>' + row('대표번호', s2[4] ? '<a href="tel:' + esc(s2[4]) + '">' + esc(s2[4]) + '</a>' : '<em>(청사 좌표·번호 원자료 없음)</em>') + row('시도청', esc(s2[5])) + row('관할 행정동', nd + '곳' + (mix ? ' (그중 ' + mix + '곳은 다른 서와 번지로 나눠 맡음 — 「경계」)' : '')) +
+      row('지구대·파출소', bx.length ? bx.length + '곳 — ' + bx.map(function (b) { return esc(b[0]) + (b[1] ? '파출소' : '지구대'); }).join(' · ') : '자료에 없음') +
+      '<p class="desc">관할은 「경찰청과 그 소속기관 직제 시행규칙」 별표2(2026.8.31 시행)를 행정동 경계에 붙인 <b>행정동 단위 근사</b>다 — 번지로 나뉜 동은 「경계」. 지구대·파출소 관할 경계는 공개 자료가 없다.</p>' + src(POL2.source);
+  }
+  function pbxCard(b) { var s2 = POL2.byI[b[6]];
+    return '<h3>👮 ' + esc(b[0]) + (b[1] ? ' 파출소' : ' 지구대') + '</h3>' + row('경찰서', esc(s2 ? s2[1] : b[2]) + (s2 ? ' · <a href="tel:' + esc(s2[4]) + '">' + esc(s2[4]) + '</a> <em>(서 대표번호)</em>' : '')) + row('주소', esc(b[5])) +
+      '<p class="desc">지구대·파출소 직통번호와 관할 경계는 공개 자료에 없다 — 대표번호는 경찰서 번호다. 자리는 주소를 브이월드로 좌표화한 것.</p>' + src(POL2.source); }
+  function polRows(k8, c) {   // 동 카드에 — 관할 경찰서 · 가장 가까운 지구대(근사)
+    if (!POL2) { polLoad(); return ''; } var st = polOf(k8), h = '';
+    if (st && st.length) h += row('관할 경찰서', st.map(function (s2) { return esc(s2[1]) + ' <a href="tel:' + esc(s2[4]) + '">' + esc(s2[4]) + '</a>'; }).join(' · ') + (st.length > 1 ? ' <em>(번지로 나눠 맡음 — 경계)</em>' : '') + (st.extra && st.extra.length ? ' <em>(일부 번지는 ' + st.extra.map(function (x) { return esc(x[1]); }).join('·') + ')</em>' : '') + ' <em>(별표2 · 행정동 단위)</em>');
+    var nb = c && pboxNear(c); if (nb) h += row('가까운 지구대·파출소', esc(nb.b[0]) + (nb.b[1] ? '파출소' : '지구대') + ' ' + (nb.d >= 1000 ? (nb.d / 1000).toFixed(1) + 'km' : Math.round(nb.d) + 'm') + ' <em>(동 가운데에서 · 관할이 아니라 거리 — 관할 경계는 비공개)</em>');
+    return h; }
 
   // ---------- 층 단추 · 찾기 ----------
   var lay = $('m2dLayers');
@@ -2563,6 +2626,8 @@
     acc: '교차로별 교통사고 건수(2019~ · TAAS). 원이 클수록 사고가 많다 — 누르면 유형·시간대.',
     acc10: '10년 교통사고를 100m 칸으로(TAAS). 사고가 몰린 칸이 진하다.',
     fatal10: '10년 사망사고 자리(TAAS).',
+    jurk: '전국 경찰서 관할 — 「경찰청과 그 소속기관 직제 시행규칙」 별표2(2026.8.31)를 행정동에 붙인 근사. 색 = 관할 경찰서 · 회색 = 두 서가 번지로 나눠 맡는 동(경계) · 네모 = 청사(누르면 대표번호·소속 지구대).',
+    pbox: '전국 지구대·파출소 2,047곳(경찰청 2025-12-31 주소 → 좌표). 관할 경계는 공개 자료가 없어 자리만 — 동 카드의 「가까운 지구대」는 거리 근사.',
     home: '국토부 아파트·오피스텔·연립다세대 실거래(매매 24개월·전월세 12개월). 250m 칸 색을 범례에서 고른다 — 아파트 매매 평당·전세 평당·전세가율·월세·오피스텔·연립다세대. 확대하면 단지마다 점. 평당 = 전용 기준 · 전세가율은 추정.',
     rtc: '국토부 상업업무용 부동산 매매 실거래(서울·경기 24개월). 250m 칸 색 = 집합건물 ㎡당 거래금액 중앙값, 확대하면 거래 한 건씩. 평당 = 전용 기준.',
     live250: '서울 생활인구를 250m 칸으로(서울시 · 한 주 평균 · 평일/주말 24시간 · 낮·밤 연령). 동 단위 생산이 2026-07 에 끝나 이것으로 바뀐다. 칸을 누르면 낮/밤·주말 해설.',
@@ -2610,7 +2675,8 @@
   // ---------- 🗣 자동 해설(v2.0.0 · 소유자 「인구분포가 나오면 데이터에 따른 설명 — 모르고 넘어갈 수 있으니」) ----------
   //  숫자를 앱 기준으로 읽어 문장으로 — 기준(몇 배·몇 %p)을 같이 적는다. 「그래서 어떤 장사」 쪽은 일반론이라 그렇게 밝힌다.
   var AREF = null; fetch('data/area-ref.json').then(function (r) { return r.json(); }).then(function (j) { AREF = j; }).catch(function () {});
-  var SIDO_S = { '11': '서울', '41': '경기', '28': '인천', '30': '대전', '36': '세종', '43': '충북', '44': '충남', '51': '강원', '26': '부산', '27': '대구', '31': '울산', '47': '경북', '48': '경남', '29': '광주', '46': '전남', '52': '전북', '50': '제주' };
+  var SIDO_S = { '12': '전남광주', '11': '서울', '41': '경기', '28': '인천', '30': '대전', '36': '세종', '43': '충북', '44': '충남', '51': '강원', '26': '부산', '27': '대구', '31': '울산', '47': '경북', '48': '경남', '29': '광주', '46': '전남', '52': '전북', '50': '제주' };
+  var SIDO_FULL = { '11': '서울특별시', '41': '경기도', '28': '인천광역시', '30': '대전광역시', '36': '세종특별자치시', '43': '충청북도', '44': '충청남도', '51': '강원특별자치도', '26': '부산광역시', '27': '대구광역시', '31': '울산광역시', '47': '경상북도', '48': '경상남도', '12': '전남광주통합특별시', '52': '전북특별자치도', '50': '제주특별자치도' };
   function sidoOf(gu) { return SIDO_S[String(gu || '11650').slice(0, 2)] || '서울'; }   // v2.7.0 인천부터 — 종전엔 경기가 아니면 모두 「서울」
   function talk(S) {
     var L = [], ref = AREF && AREF.ref[S.sido || '서울'] || null, rn = S.sido || '서울', f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); };
@@ -2887,6 +2953,18 @@
   var SDJ = {}, CPI = null, CPIP = null, GTAX = null, GCEN = null;
   fetch('data/gu-tax.json').then(function (r) { return r.json(); }).then(function (j) { GTAX = j; }).catch(function () {});
   fetch('data/gu-census.json').then(function (r) { return r.json(); }).then(function (j) { GCEN = j; }).catch(function () {});
+  // v2.8.0 🌏 외국인주민(행안부 · 시군구 · 거주 3개월 넘게) — 서울 생활인구의 체류 외국인과 정의가 달라 합치지 않는다(설계서 4장)
+  var FRN = null; fetch('data/foreign.json').then(function (r) { return r.json(); }).then(function (j) { FRN = j; var sd = {}; Object.keys(j.gu).forEach(function (k) { var v = j.gu[k]['2024']; if (!v || !v.pop || /시 전체/.test(j.gu[k].src)) return; var s2 = k.slice(0, 2); sd[s2] = sd[s2] || [0, 0]; sd[s2][0] += v.tot || 0; sd[s2][1] += v.pop; }); FRN.sd = sd; }).catch(function () {});
+  function frnPara(gu) { var F2 = FRN && FRN.gu[gu]; if (!F2 || !F2['2024']) return ''; var v = F2['2024'], o = F2['2019'], sd = FRN.sd && FRN.sd[String(gu).slice(0, 2)], sh = v.pop ? v.tot / v.pop * 100 : null, ssh = sd && sd[1] ? sd[0] / sd[1] * 100 : null;
+    var parts = [['외국인근로자', v.work], ['결혼이민자', v.marr], ['유학생', v.stud], ['외국국적동포', v.kor], ['기타 외국인', v.etc], ['귀화(한국국적 취득)', v.nat], ['외국인주민 자녀', v.kid]].filter(function (q) { return q[1]; }).sort(function (a, b) { return b[1] - a[1]; });
+    var t = '<b>외국인 주민(구 · ' + esc(F2.src) + ').</b> ' + (v.tot || 0).toLocaleString() + '명' + (sh != null ? '(주민의 ' + sh.toFixed(1) + '%' + (ssh != null ? ' · ' + sidoOf(gu) + ' 평균 ' + ssh.toFixed(1) + '%' : '') + ')' : '') + ' — ' + parts.slice(0, 4).map(function (q) { return q[0] + ' ' + q[1].toLocaleString(); }).join(' · ');
+    if (o && o.tot) { var ch = (v.tot - o.tot) / o.tot * 100; t += ' · 2019년 ' + o.tot.toLocaleString() + '명보다 ' + (ch >= 0 ? '+' : '') + ch.toFixed(0) + '%'; }
+    if (F2.nat && F2.nat.length) t += ' · 국적은 ' + F2.nat.slice(0, 3).map(function (x) { return x[0] + ' ' + x[1].toLocaleString(); }).join('·') + '(법무부 등록외국인)';
+    if (F2.q && F2.q['영주(F-5)']) t += ' · 영주권 ' + F2.q['영주(F-5)'].toLocaleString() + '명';
+    if (F2.stay) { var ts2 = F2.stay.reduce(function (a, b) { return a + b; }, 0); if (ts2) t += ' · 5년 넘게 산 사람 ' + Math.round((F2.stay[5] + F2.stay[6]) / ts2 * 100) + '%'; }
+    if (sh != null && ssh != null && sh >= ssh * 1.5) t += ' — 외국인 주민 비율이 시도 평균의 ' + (sh / ssh).toFixed(1) + '배: 외국어 안내·국적별 가게 수요가 있을 수 있다(추론).';
+    else t += '.';
+    return t + ' <small>(행정안전부 지방자치단체 외국인주민 현황 2024.11.1 · KOSIS 110 · 3개월 넘게 사는 사람 — 그 시각 머무는 사람(생활인구)과 다르다 · 구 전체 값이라 동마다 다르다)</small>'; }
   rGet('11650', 'dong.json').then(function (j) { var go = function () { if (!DONG.length) return setTimeout(go, 500); j.dong.forEach(function (q) { var d = DONG.filter(function (x) { return x.name === q.name; })[0]; if (d && !d.k && q.k) d.k = q.k; if (d && q.pop) { d.pop = q.pop; d.popAsOf = j.source && j.source['주민']; } }); }; go(); }).catch(function () {});   // v2.2.0 서초 기본 동도 지역 파일의 최신 주민등록(달마다 굽는 쪽) · v2.5.0 서초 동에도 8자리 코드(d.k — 이름 열쇠 대신 코드로 맞추는 첫걸음)
   function sdLoad(gu) { if (SDJ[gu]) return SDJ[gu]; SDJ[gu] = Promise.all([rGet(gu, 'dong.json').catch(function () { return null; }), rGet(gu, 'dongx.json').catch(function () { return null; }), fLoad(gu), jgP(gu), rGet(gu, 'dongw.json').catch(function () { return null; }), sLoad(gu), sLoadIdx(), rGet(gu, 'ggdong.json').catch(function () { return null; }), hmLoad(gu)]).then(function (a) { return { dong: a[0], x: a[1], w: a[4], gg: a[7] }; }); return SDJ[gu]; }
   function cpiLoad() { if (CPIP) return CPIP; CPIP = fetch('data/cpi.json').then(function (r) { return r.json(); }).then(function (j) { CPI = j; return j; }).catch(function () { return null; }); return CPIP; }
@@ -2958,6 +3036,7 @@
         var ax = HV.a, gj = gm('a', 6); if (ax && ax[6] != null && gj != null) hp += ax[6] >= gj + 8 ? ' 전세가율이 구 안 동들보다 높다 — 세입자·실수요가 많고 집값에 거품이 덜한 쪽(추론).' : ax[6] <= gj - 8 ? ' 전세가율이 구 안 동들보다 낮다 — 자가·투자 수요가 집값을 받치는 쪽(추론).' : '';
         if (ax && ax[4] && ax[2] && ax[4] > ax[2]) hp += ' 아파트도 월세 계약이 전세보다 많다 — 매달 나가는 돈이 큰 가구가 많다(추론).';
         hp += ' <small>(국토부 실거래 · 매매 24개월·전월세 12개월 · 지번 좌표로 행정동을 가름 · 평당 = 전용 기준 · 전세가율 = 전세 ㎡당 중앙값 ÷ 매매 ㎡당 중앙값(추정) · 몇 건뿐이면 한 건이 값을 정한다)</small>'; WP.push(hp); } }
+    var fp = frnPara(S.gu); if (fp) WP.push(fp);
     WP.forEach(function (x) { P.push(x); });
     // 경기 — 경기데이터드림 동 단위 유동인구·카드(서울 자료가 없는 자리)
     if (S.GG && S.GG.flow && p && p.tot) { var fy = Object.keys(S.GG.flow).sort(), fl = S.GG.flow[fy[fy.length - 1]], WDN = { MON: '월', TUE: '화', WED: '수', THU: '목', FRI: '금', SAT: '토', SUN: '일' }, wdA = ['MON', 'TUE', 'WED', 'THU', 'FRI'].map(function (w) { return fl[w] || 0; }), weA = ['SAT', 'SUN'].map(function (w) { return fl[w] || 0; });
@@ -3204,6 +3283,7 @@
     if (view.s > 0.3) (RAD.gus || []).forEach(function (g) { var S2 = SPTS[g.gu]; if (!S2 || !S2.a) return; S2.a.forEach(function (st) { var dx = st.p[0] - RAD.c[0], dy = st.p[1] - RAD.c[1]; if (dx * dx + dy * dy > r2) return; var C3 = CL[st.c] || []; if (RAD.ind && C3[4] === RAD.ind) return; var s3 = S(st.p); ctx.fillStyle = pal[C3[1]] || '#94a3b8'; ctx.globalAlpha = 0.55; ctx.fillRect(s3[0] - 1.5, s3[1] - 1.5, 3, 3); ctx.globalAlpha = 1; }); });
     o.comp.forEach(function (q) { dot(q.s.p, 5, '#dc2626', '#fff', { kind: 'store', s: q.s }); });
   }
+  document.addEventListener('click', function (e) { var bf = e.target.closest('[data-frn]'); if (bf) { show({ kind: 'frn', gu: bf.getAttribute('data-frn') }); return; } });
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-radhere]'); if (!b) return; var a = b.getAttribute('data-radhere').split(','); var q = P(+a[0], +a[1]); view.cx = q[0]; view.cy = q[1]; view.s = Math.max(view.s, 0.25); radOpen(q); });
   if ($('m2dRad')) {
     $('m2dRad').addEventListener('click', function (e) { var b = e.target.closest('[data-rx],[data-rr]'); if (!b) { if ($('m2dRad').classList.contains('min')) $('m2dRad').classList.remove('min'); return; }

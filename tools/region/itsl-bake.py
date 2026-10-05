@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SRC = sys.argv[1] if len(sys.argv) > 1 else 'C:/Users/knpth/regionwork/nl/MOCT_LINK.shp'
 VER = sys.argv[2] if len(sys.argv) > 2 else '2026-09-14'   # 받은 NODELINKDATA 판 날짜
 RANK = {'101': 1, '102': 2, '103': 3, '104': 4, '105': 5, '106': 6, '107': 7}
-BOX = (126.3, 36.85, 127.9, 38.35)
+BOX = (124.5, 33.0, 131.95, 38.7)   # v2.8.0 전국(종전 수도권 126.3~127.9 · 36.85~38.35)
 
 def enc(cs):   # 선 = [경도×1e5, 위도×1e5, 그다음은 앞 점과의 차이 …] 정수 — 지도가 풀어 쓴다
     o, px, py = [], 0, 0

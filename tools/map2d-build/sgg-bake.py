@@ -12,10 +12,10 @@ for l in open(os.path.join(KB, '13_관할경계', '원자료', 'hjd20260701.geoj
     try: f = json.loads(l.strip().rstrip(','))
     except Exception: continue
     pr = f['properties']
-    if pr['sido'] not in ('11', '41', '28'): continue
+    if pr['sido'] in ('99',): continue   # v2.8.0 전국(종전 서울·경기·인천만)
     nm = pr['sggnm']
     # 경기 일반구는 시로 묶는다(수원시장안구 → 수원시) · 화면에는 시 이름
-    if pr['sido'] == '41':
+    if True:   # v2.8.0 모든 도의 일반구를 시로(청주·천안·전주·포항·창원 …)
         import re
         m = re.match(r'^(\S+?시)\S*구$', nm)
         if m: nm = m.group(1)
@@ -36,6 +36,6 @@ for (sd, nm), gs in sorted(G.items()):
     out.append({'sido': sd, 'name': nm, 'c': [round(c.x, 5), round(c.y, 5)], 'box': [round(x0), round(z0), round(x1), round(z1)], 'rings': rings})
 d = {'schema': 'tg-sgg/1', 'source': '통계청 SGIS 행정동 경계(가공 vuski/admdongkor ver20260701 · 공공누리 1유형) — 행정동을 시·군·구로 합침 · 경기 일반구는 시로', 'coords': 'wgs84 [lon, lat] · box = 평면 m', 'sgg': out}
 s = json.dumps(d, ensure_ascii=False, separators=(',', ':'))
-open(os.path.join(KB, 'traffic-game', 'data', 'base', 'sgg.json'), 'w', encoding='utf-8', newline='\n').write(s)
+open(os.path.join(KB, 'datamap', 'data', 'base', 'sgg.json'), 'w', encoding='utf-8', newline='\n').write(s)
 import collections
 print(len(out), collections.Counter(o['sido'] for o in out), len(s.encode()))

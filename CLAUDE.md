@@ -16,6 +16,7 @@
 
 ## 이어서 할 일(2026-10-04 기준)
 * **다음 차례는 `NEXT.md`**(A 기다리는 것 · B 확인할 것 · C 다듬기 · D 인천·강원·충남·충북·대전·세종 넓히기 — 소유자 2026-10-04 「나중에」).
+* v2.8.0 **전국 17개 시도 256개 시군구**(광주·전남 = 전남광주통합특별시 12) · 권역 저장소 8개(seoul·gyeonggi·incheon·chungcheong·gangwon·gyeongsang·jeolla·jeju) + `datamap-tiles`(전국 바탕 조각) · 🌏 외국인 자세히(체류자격·국적·연령×성별·체류기간) · 🚓 전국 경찰서 관할(jurk)·👮 지구대·파출소(pbox) · 브이월드 주소 하루 한도(OVER_REQUEST_LIMIT) — 남은 지번은 날마다.
 * v2.6.0~v2.7.0 지역 자료 = 권역 저장소(`340patrolman/datamap-data-seoul·gyeonggi·incheon` · `tools/region/publish-data.py push <시도…>` · 기록 없는 커밋 하나) · 지도는 `data/regions.json` → 권역 `manifest.json` → `r/<구>/<층>.json`(rU/rGet) · `data/r/<구>/` 는 이제 로컬 빌드 출력(git 밖) · 시도 목록 `tools/region/regcfg.py` · 인천 시범(MAP2D v2.7.0).
 * v2.5.0 🏠 주택 실거래 8종(평당·전세가율 · 250m 칸·단지·동 · 지번 좌표 13만은 날마다 이어서) · 점 자료 250m 칸 집계 · 「이 칸 한눈에」 · 반경 생활인구 250m · 이름 겹침 결함 넷(레이더 안 그려짐 등) 고침.
 * v2.4.0 Phase 1 착수 — 250m 국가표준격자 뼈대(175,650칸 · grid250.py) · 법정동→행정동 표(b2a.json) · 서울 생활인구 250m(live250) · 상업업무용 매매 실거래(rtc · 지번 좌표 · 격자 중앙값) · 테마 탭 · 구 지갑에 2020 총조사 점유형태·학력. 아파트 등 주택 실거래는 data.go.kr 활용신청 필요(403).

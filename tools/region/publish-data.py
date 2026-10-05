@@ -10,7 +10,7 @@
 import json, os, sys, shutil, subprocess, time
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.dirname(ROOT); R = os.path.join(ROOT, 'data', 'r'); OWNER = '340patrolman'
-REG = {'11': ('서울', 'seoul'), '41': ('경기', 'gyeonggi'), '28': ('인천', 'incheon'), '51': ('강원', 'gangwon'), '30': ('대전', 'chungcheong'), '36': ('세종', 'chungcheong'),
+REG = {'12': ('전남광주', 'jeolla'), '11': ('서울', 'seoul'), '41': ('경기', 'gyeonggi'), '28': ('인천', 'incheon'), '51': ('강원', 'gangwon'), '30': ('대전', 'chungcheong'), '36': ('세종', 'chungcheong'),
        '43': ('충북', 'chungcheong'), '44': ('충남', 'chungcheong'), '26': ('부산', 'gyeongsang'), '27': ('대구', 'gyeongsang'), '31': ('울산', 'gyeongsang'), '47': ('경북', 'gyeongsang'),
        '48': ('경남', 'gyeongsang'), '29': ('광주', 'jeolla'), '46': ('전남', 'jeolla'), '52': ('전북', 'jeolla'), '50': ('제주', 'jeju')}
 
@@ -92,5 +92,31 @@ def push(sidos):
             subprocess.run(['gh', 'api', '-X', 'POST', 'repos/%s/%s/pages' % (OWNER, repo), '-f', 'source[branch]=main', '-f', 'source[path]=/'], capture_output=True)
         print('올림', repo, name, len(gus), '구', round(tot / 1048576, 1), 'MB')
 
+def tiles():   # v2.8.0 바탕 조각(data/base/t/ · 전국 1,996장 136MB) → datamap-tiles 저장소 · 목록·개관·시군구는 지도 저장소에 남김
+    repo = 'datamap-tiles'; d = os.path.join(KB, repo); src = os.path.join(ROOT, 'data', 'base', 't')
+    if subprocess.run(['gh', 'repo', 'view', OWNER + '/' + repo], capture_output=True).returncode:
+        subprocess.run(['gh', 'repo', 'create', OWNER + '/' + repo, '--public', '--description', '데이터 압축지도 바탕 지도 조각(OpenStreetMap · ODbL) — 지도 앱이 읽는 자료 · 검색 차단'], check=True); new = True
+    else: new = False
+    if not os.path.isdir(os.path.join(d, '.git')):
+        os.makedirs(d, exist_ok=True); git(d, 'init', '-q'); git(d, 'remote', 'add', 'origin', 'https://github.com/%s/%s.git' % (OWNER, repo)); git(d, 'config', 'core.autocrlf', 'false')
+        for kk in ('user.name', 'user.email'):
+            v = git(ROOT, 'config', kk, check=False).strip()
+            if v: git(d, 'config', kk, v)
+    for x in os.listdir(d):
+        if x == '.git': continue
+        p = os.path.join(d, x); shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
+    shutil.copytree(src, os.path.join(d, 't')); shutil.copy(os.path.join(ROOT, 'data', 'base', 'index.json'), os.path.join(d, 'index.json'))
+    open(os.path.join(d, 'README.md'), 'w', encoding='utf-8', newline='\n').write('# datamap-tiles\n\n데이터 압축지도(https://340patrolman.github.io/datamap/) 바탕 지도 8km 조각 — © OpenStreetMap contributors (ODbL) · Geofabrik south-korea · 교차로 이름 일부 서울 C-ITS. 사람이 볼 페이지가 아니다(검색 차단). 기록을 쌓지 않는 커밋 하나로 갈아 끼운다.\n')
+    open(os.path.join(d, 'robots.txt'), 'w', encoding='utf-8', newline='\n').write('User-agent: *\nDisallow: /\n')
+    open(os.path.join(d, 'index.html'), 'w', encoding='utf-8', newline='\n').write('<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>datamap-tiles</title><p>데이터 압축지도 바탕 조각 — <a href="https://340patrolman.github.io/datamap/">지도</a></p>')
+    open(os.path.join(d, '.nojekyll'), 'w').close()
+    git(d, 'checkout', '-q', '--orphan', 'tmp_pub'); git(d, 'add', '-A')
+    n = len(os.listdir(src)); b = sum(os.path.getsize(os.path.join(src, f)) for f in os.listdir(src))
+    git(d, 'commit', '-q', '-m', '바탕 조각 %d장 %s (%.0fMB · 기록을 쌓지 않는 커밋 하나)\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' % (n, time.strftime('%Y-%m-%d'), b / 1048576))
+    git(d, 'branch', '-D', 'main', check=False); git(d, 'branch', '-m', 'main'); git(d, 'push', '-q', '-f', 'origin', 'main')
+    if new or subprocess.run(['gh', 'api', 'repos/%s/%s/pages' % (OWNER, repo)], capture_output=True).returncode:
+        subprocess.run(['gh', 'api', '-X', 'POST', 'repos/%s/%s/pages' % (OWNER, repo), '-f', 'source[branch]=main', '-f', 'source[path]=/'], capture_output=True)
+    print('올림', repo, n, '장', round(b / 1048576, 1), 'MB')
+
 if __name__ == '__main__':
-    manifest() if sys.argv[1] == 'manifest' else push(sys.argv[2:])
+    {'manifest': lambda: manifest(), 'tiles': tiles}.get(sys.argv[1], lambda: push(sys.argv[2:]))()

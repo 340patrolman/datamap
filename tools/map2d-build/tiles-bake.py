@@ -13,9 +13,9 @@ from shapely import wkb as swkb
 
 KB = r'C:\Users\knpth\Desktop\지식베이스'
 PBF = r'C:\Users\knpth\osmwork\kr.pbf'   # ⚠ libosmium 은 한글 경로를 못 연다(Windows) — 영문 경로에 둔다
-OUTD = os.path.join(KB, 'traffic-game', 'data', 'base')
+OUTD = os.path.join(KB, 'datamap', 'data', 'base')   # v2.8.0 지도 저장소의 로컬 빌드 폴더(조각 t/ 는 datamap-tiles 저장소로 내보낸다)
 TS = 8000                                   # 조각 한 변(m)
-LON0, LON1, LAT0, LAT1 = 126.36, 127.86, 36.89, 38.29   # 서울·경기(+인천 본토) 둘레
+LON0, LON1, LAT0, LAT1 = 124.5, 131.95, 33.0, 38.7   # v2.8.0 전국(제주·울릉·독도·서해 섬까지) — 종전 수도권 126.36~127.86 · 36.89~38.29
 def P(lon, lat): return ((lon - 127.01) * 88800, -(lat - 37.49) * 111000)
 X0, Z0 = P(LON0, LAT1); X1, Z1 = P(LON1, LAT0)
 
@@ -23,7 +23,7 @@ RC = {'motorway': 'm', 'trunk': 'm', 'primary': 'p', 'secondary': 's', 'tertiary
       'motorway_link': 'l', 'trunk_link': 'l', 'primary_link': 'l', 'secondary_link': 'l', 'tertiary_link': 'l', 'service': 'v',
       'pedestrian': 'f', 'footway': 'f', 'cycleway': 'c', 'path': 'f', 'steps': 'f'}
 TOL = {'m': 1.5, 'p': 1.5, 's': 1.5, 't': 1.5, 'r': 1.5, 'l': 1.5, 'v': 2, 'f': 2.5, 'c': 2, 'rail': 3, 'ww': 2, 'water': 2.5, 'green': 3, 'pk': 2}
-OVTOL = {'m': 25, 'p': 25, 'rail': 40, 'ww': 25, 'water': 30, 'green': 90}
+OVTOL = {'m': 40, 'p': 40, 'rail': 60, 'ww': 50, 'water': 60, 'green': 200}   # v2.8.0 전국 개관을 가볍게(종전 25·25·40·25·30·90 — 전국이면 ov 4.5MB)
 OVL = {'m': [], 'p': [], 'rail': [], 'ww': []}   # 개관 선은 모아 두었다가 끝에 이어 붙인다(linemerge)
 def GREEN(t):
     v = t.get('leisure')
@@ -104,9 +104,9 @@ def add_area(kind, gk, nm, pg):
             elif kind == 'pk': T.pk.append(rr)
     A = pg.area
     if kind == 'water' and (A > 200000 or (nm and re.search(r'(강|천|저수지|호수?)$', nm) and A > 30000)):
-        for rr in rings_of(pg, OVTOL['water'], 5000): OV.water.append([OV.ni(nm), rr])
+        for rr in rings_of(pg, OVTOL['water'], 200000): OV.water.append([OV.ni(nm), rr])
     if kind == 'green' and gk in ('forest', 'wood') and A > 4000000:
-        for rr in rings_of(pg, OVTOL['green'], 1000000): OV.green.append([OV.ni(nm), gk, rr])
+        for rr in rings_of(pg, OVTOL['green'], 5000000): OV.green.append([OV.ni(nm), gk, rr])
 
 def to_xy_line(locs): return [P(l.lon, l.lat) for l in locs]
 wkbf = osmium.geom.WKBFactory()
@@ -190,7 +190,7 @@ for cls in ('m', 'p', 'ww', 'rail'):
         mg = linemerge(gs)
         for L in lines(mg):
             a = enc(list(L.simplify(OVTOL[cls]).coords))
-            if len(a) < 4 or L.length < (300 if cls != 'rail' else 500): continue
+            if len(a) < 4 or L.length < (300 if cls in ('m', 'p') else 1500 if cls == 'ww' else 500): continue
             if cls in ('m', 'p'): OV.roads.setdefault(cls, []).append([OV.ni(nm), 0] + a)
             elif cls == 'ww': OV.ww.append([OV.ni(nm), 1, 0] + a)
             else: OV.rail.append([-1, 0, 0] + a)

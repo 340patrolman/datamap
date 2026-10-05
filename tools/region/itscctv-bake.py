@@ -8,7 +8,7 @@
 import json, os, sys, time, urllib.request, importlib.util, collections
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.join(os.path.dirname(ROOT), '07_API키'); OUT = os.path.join(KB, 'out', 'its')
-BOX = (126.3, 36.85, 127.9, 38.35)
+BOX = (124.5, 33.0, 131.95, 38.7)   # v2.8.0 전국(종전 수도권 126.3~127.9 · 36.85~38.35)
 
 def fetch():
     os.makedirs(OUT, exist_ok=True)

@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = sys.argv[1] if len(sys.argv) > 1 else 'C:/Users/knpth/regionwork/nl'
 VER = sys.argv[2] if len(sys.argv) > 2 else '2026-09-14'
-BOX = (126.3, 36.85, 127.9, 38.35)
+BOX = (124.5, 33.0, 131.95, 38.7)   # v2.8.0 전국(종전 수도권 126.3~127.9 · 36.85~38.35)
 RANK = {'101': 1, '102': 2, '103': 3, '104': 4, '105': 5, '106': 6, '107': 7}
 NT = {'101': 1, '104': 4, '106': 6}
 BAD = re.compile(r'(\d+(-\d+)?\s*$)|속성변화점|최소노드배치점|^\s*$')

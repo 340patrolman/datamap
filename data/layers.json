@@ -290,6 +290,32 @@
 "paid_ok": false
 },
 {
+"key": "jurk",
+"name": "🚓 경찰서 관할(전국 · 행정동)",
+"group": "치안·안전",
+"default": false,
+"file": "police.json(dong)",
+"kind": "poly",
+"scope": "national",
+"src": "경찰청 직제 시행규칙 별표2(국가법령정보) × 행정동 · 경찰청 지구대 파출소 주소 현황(공공데이터포털)",
+"license": "확인 필요",
+"estimate": true,
+"paid_ok": false
+},
+{
+"key": "pbox",
+"name": "👮 지구대·파출소(전국)",
+"group": "치안·안전",
+"default": false,
+"file": "police.json(pbox)",
+"kind": "point",
+"scope": "national",
+"src": "경찰청 직제 시행규칙 별표2(국가법령정보) × 행정동 · 경찰청 지구대 파출소 주소 현황(공공데이터포털)",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "rtc",
 "name": "🏢 상가·업무 매매 실거래(250m)",
 "group": "부동산·상권",
@@ -314,6 +340,19 @@
 "license": "공공누리 1유형(출처표시 · 상업적 이용·변경 가능 — 데이터셋 화면 2026-10-05 확인)",
 "estimate": false,
 "paid_ok": true
+},
+{
+"key": "fl250",
+"name": "🌏 지금 머무는 외국인 250m(서울)",
+"group": "사람·흐름",
+"default": false,
+"file": "forn250.json",
+"kind": "grid",
+"scope": "seoul",
+"src": "서울 열린데이터광장",
+"license": "확인 필요(데이터셋마다 — 대부분 공공누리 1유형)",
+"estimate": false,
+"paid_ok": false
 },
 {
 "key": "g250",

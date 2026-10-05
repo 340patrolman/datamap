@@ -8,7 +8,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 # 층 → (지역 파일 r/<구>/… 또는 서초 바탕 파일, 종류 point·grid·poly·line·live, 범위 national·seoul·gyeonggi·seoul+gg·seocho, 출처 계열, 추정)
 T = {
  'dong': ('dong.json · dong-seocho.json', 'poly', 'seoul+gg', 'mois', 0), 'live': ('dong.json(live)', 'poly', 'seoul', 'seoul', 0), 'sales': ('dong.json(sales)', 'poly', 'seoul', 'seoul', 1),
- 'live250': ('live250.json', 'grid', 'seoul', 'seoul250', 0), 'g250': ('grid.json', 'grid', 'seoul+gg', 'sgis', 0), 'acc250': ('taas250.json', 'grid', 'seoul+gg', 'taas', 0),
+ 'live250': ('live250.json', 'grid', 'seoul', 'seoul250', 0), 'fl250': ('forn250.json', 'grid', 'seoul', 'seoul', 0), 'jurk': ('police.json(dong)', 'poly', 'national', 'police', 1), 'pbox': ('police.json(pbox)', 'point', 'national', 'police', 0), 'g250': ('grid.json', 'grid', 'seoul+gg', 'sgis', 0), 'acc250': ('taas250.json', 'grid', 'seoul+gg', 'taas', 0),
  'acc10': ('taas10.json', 'grid', 'seoul+gg', 'taas', 0), 'fatal10': ('taas10.json(fatal)', 'point', 'seoul+gg', 'taas', 0), 'fatal': ('taas10.json(fatal)', 'point', 'seoul+gg', 'taas', 0),
  'jct': ('jct.json', 'point', 'seoul+gg', 'taas', 1), 'hot10': ('hot10.json', 'point', 'seoul+gg', 'koroad', 0), 'acc': ('taas-nodes-seocho.json', 'point', 'seocho', 'taas', 1),
  'home': ('home.json', 'grid', 'seoul+gg', 'molit', 1), 'rtc': ('rtms.json', 'grid', 'seoul+gg', 'molit', 0), 'rent': ('rent.json', 'point', 'seoul+gg', 'reb', 0),
@@ -28,7 +28,7 @@ SRC = {'mois': ('행정안전부 주민등록 인구통계', '확인 필요'), '
        'sgis': ('통계청 SGIS(경계 가공 vuski/admdongkor)', 'CC BY 4.0(admdongkor) · SGIS 통계는 확인 필요'), 'taas': ('도로교통공단 TAAS', '확인 필요'), 'koroad': ('도로교통공단 오픈API', '확인 필요'),
        'molit': ('국토교통부 실거래가(공공데이터포털)', '확인 필요'), 'reb': ('한국부동산원', '확인 필요'), 'sbiz': ('소상공인시장진흥공단', '확인 필요'), 'its': ('국가교통정보센터 ITS', '확인 필요'),
        'openmeteo': ('Open-Meteo', 'CC BY 4.0(Open-Meteo 자료 — 원문 확인 필요)'), 'rainviewer': ('RainViewer', '확인 필요'), 'datagokr': ('공공데이터포털 OpenAPI', '확인 필요'), 'vworld': ('국토교통부 브이월드', '확인 필요(이용약관)'),
-       'osm': ('OpenStreetMap', 'ODbL(© OpenStreetMap contributors)'), 'mixed': ('공공데이터포털·서울시·경기도·교육청·OSM 섞임', '확인 필요'), 'ggdata': ('경기데이터드림', '확인 필요')}
+       'osm': ('OpenStreetMap', 'ODbL(© OpenStreetMap contributors)'), 'mixed': ('공공데이터포털·서울시·경기도·교육청·OSM 섞임', '확인 필요'), 'ggdata': ('경기데이터드림', '확인 필요'), 'police': ('경찰청 직제 시행규칙 별표2(국가법령정보) × 행정동 · 경찰청 지구대 파출소 주소 현황(공공데이터포털)', '확인 필요')}
 def main():
     s = open(os.path.join(ROOT, 'js', 'map2d.js'), encoding='utf-8').read(); i = s.index('var LAYERS = ['); j = s.index('];', i)
     L = re.findall(r"\['([a-z0-9]+)', '([^']*)', (true|false), '([^']*)', (\d)\]", s[i:j]); out = []; miss = []

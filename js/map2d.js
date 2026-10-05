@@ -17,7 +17,7 @@
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
     ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
-    ['acc', '🚗 교차로 사고(2019~)', true, '교통안전', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통안전', 1], ['fatal10', '🕯 사망사고 10년', false, '교통안전', 0], ['fatal', '🕯 사망사고', false, '교통안전', 0], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '부동산·상권', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '부동산·상권', 1], ['live250', '👥 생활인구 250m(서울)', false, '사람·흐름', 1], ['g250', '🧊 250m 격자(국가표준)', false, '기본', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통안전', 1], ['hot', '⚠ 사고다발지', false, '교통안전', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통안전', 1],
+    ['acc', '🚗 교차로 사고(2019~)', true, '교통안전', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통안전', 1], ['fatal10', '🕯 사망사고 10년', false, '교통안전', 0], ['fatal', '🕯 사망사고', false, '교통안전', 0], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '부동산·상권', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '부동산·상권', 1], ['live250', '👥 생활인구 250m(서울)', false, '사람·흐름', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '사람·흐름', 1], ['g250', '🧊 250m 격자(국가표준)', false, '기본', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통안전', 1], ['hot', '⚠ 사고다발지', false, '교통안전', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통안전', 1],
     ['risk', '🟥 사고위험지역', false, '교통안전', 0], ['sz', '🏫 어린이보호구역', false, '교통안전', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통안전', 0], ['cam', '📷 단속 카메라', false, '교통안전', 0], ['spd', '🚥 도로 소통(받은 때)', false, '교통안전', 0], ['sig', '🚦 신호 주기', false, '교통안전', 0], ['sigx', '🔢 신호 교차로 번호', false, '교통안전', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '사람·흐름', 1], ['rent', '💰 상가 임대료·공실률', false, '사람·흐름', 0], ['szone', '🏬 소진공 주요상권(서울·경기)', false, '사람·흐름', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '사람·흐름', 1], ['crowd', '📡 실시간 인파·카드', false, '사람·흐름', 1], ['live', '👥 생활인구(지금)', false, '사람·흐름', 1], ['sales', '💳 카드 매출(시간대)', false, '사람·흐름', 1], ['bus', '🚌 버스 승차·하차', false, '사람·흐름', 1], ['subr', '🚇 지하철 승차·하차', false, '사람·흐름', 0], ['vol', '🚙 교통량', false, '사람·흐름', 0], ['bike', '🚲 따릉이', false, '사람·흐름', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
@@ -1048,7 +1048,7 @@
     } else if (it.kind === 'pbx') { h = pbxCard(it.b);
     } else if (it.kind === 'frn') { h = frnCard(it.gu);
     } else if (it.kind === 'hmg' || it.kind === 'hmc') { h = homeCard(it);
-    } else if (it.kind === 'g250' || it.kind === 'l250' || it.kind === 'rtc' || it.kind === 'rtg') { h = gridCard(it);
+    } else if (it.kind === 'g250' || it.kind === 'l250' || it.kind === 'f250' || it.kind === 'rtc' || it.kind === 'rtg') { h = gridCard(it);
     } else if (it.kind === 'a10' || it.kind === 'f10') { h = a10Card(it);
     } else if (it.kind === 'bizpin') { bizGo(it.k); return;
     } else if (it.kind === 'rent') { h = rentCard(it.it);
@@ -2167,7 +2167,7 @@
 
   // ---------- v2.4.0 🧊 250m 국가표준격자(전국 확장 설계서 Phase 1) — 칸 뼈대 · 서울 생활인구 250m · 상업업무용 매매 실거래 ----------
   // 격자 = 국가지점번호식 250m(EPSG:5179) · 칸 가운데 위경도는 구운 grid.json 에 있다(앱은 투영 계산을 하지 않는다) · 칸은 250m 정사각으로 그린다(UTM-K 회전은 서울에서 0.5도 안팎이라 무시)
-  var GRID = {}, GRIDN = {}, A250 = [], A250K = {}, PT250 = {}, RLOADPT = {}, RLOADA2 = {}, RLOADGR = {}, L250 = {}, RLOADL2 = {}, RT = [], RTG = {}, RLOADRT = {};
+  var GRID = {}, GRIDN = {}, A250 = [], A250K = {}, PT250 = {}, RLOADPT = {}, RLOADA2 = {}, RLOADGR = {}, L250 = {}, RLOADL2 = {}, RT = [], RTG = {}, RLOADRT = {}, F250 = {}, RLOADF2 = {};
   function grLoad(gu) {
     if (RLOADGR[gu]) return RLOADGR[gu];
     RLOADGR[gu] = rGet(gu, 'grid.json').then(function (j) {
@@ -2178,6 +2178,13 @@
     RLOADL2[gu] = grLoad(gu).then(function () { return rGet(gu, 'live250.json'); }).then(function (j) {
       Object.keys(j.cells).forEach(function (k) { var x = j.cells[k]; x.m = j; L250[k] = x; }); draw(); }).catch(function () {}); return RLOADL2[gu];
   }
+  function f2Load(gu) {   // v2.9.0 🌏 서울 250m 지금 머무는 외국인(장기 L · 단기 T)
+    if (RLOADF2[gu]) return RLOADF2[gu];
+    RLOADF2[gu] = grLoad(gu).then(function () { return rGet(gu, 'forn250.json'); }).then(function (j) {
+      Object.keys(j.cells).forEach(function (k) { var x = j.cells[k]; x.m = j; F250[k] = x; }); draw(); }).catch(function () {}); return RLOADF2[gu];
+  }
+  function f2At(x, h, we) { var a = 0; ['L', 'T'].forEach(function (q) { if (x[q]) a += (we ? x[q].we : x[q].wd)[h]; }); return a; }
+  function f2Now(x) { return f2At(x, nowH(), isWe()); }
   function rtLoad(gu) {
     if (RLOADRT[gu]) return RLOADRT[gu];
     RLOADRT[gu] = grLoad(gu).then(function () { return rGet(gu, 'rtms.json'); }).then(function (j) {
@@ -2194,9 +2201,9 @@
     RLOADPT[gu] = rGet(gu, 'pts250.json').then(function (j) { Object.keys(j.cells).forEach(function (k) { PT250[k] = j.cells[k]; }); PT250._m = j; if (sel && sel.it && sel.it.kind === 'g250') show(sel.it); }).catch(function () {}); return RLOADPT[gu];
   }
   function gridNeed() {
-    if (!(on.g250 || on.live250 || on.rtc || on.acc250 || on.home) || view.s < 0.012) return; var v = viewLL();
+    if (!(on.g250 || on.live250 || on.fl250 || on.rtc || on.acc250 || on.home) || view.s < 0.012) return; var v = viewLL();
     rIdx().forEach(function (g) { var x = g.box, B = g.bytes || {}; if (x[2] < v[0] || x[0] > v[2] || x[3] < v[1] || x[1] > v[3]) return;
-      if (on.acc250 && B.taas250) a2Load(g.gu); if (on.g250 && view.s >= 0.05) { if (B.pts250) ptLoad(g.gu); if (B.live250) l2Load(g.gu); if (B.taas250) a2Load(g.gu); if (B.home) hmLoad(g.gu); if (B.rtms) rtLoad(g.gu); } if (on.home && B.home) hmLoad(g.gu); if (on.g250 && B.grid) grLoad(g.gu); if (on.live250 && B.live250) l2Load(g.gu); if (on.rtc && B.rtms) rtLoad(g.gu); });
+      if (on.acc250 && B.taas250) a2Load(g.gu); if (on.g250 && view.s >= 0.05) { if (B.pts250) ptLoad(g.gu); if (B.live250) l2Load(g.gu); if (B.forn250) f2Load(g.gu); if (B.taas250) a2Load(g.gu); if (B.home) hmLoad(g.gu); if (B.rtms) rtLoad(g.gu); } if (on.home && B.home) hmLoad(g.gu); if (on.g250 && B.grid) grLoad(g.gu); if (on.live250 && B.live250) l2Load(g.gu); if (on.fl250 && B.forn250) f2Load(g.gu); if (on.rtc && B.rtms) rtLoad(g.gu); });
   }
   function isWe() { var d = new Date().getDay(); return d === 0 || d === 6; }
   function l2Now(x) { return (isWe() ? x.we : x.wd)[nowH()]; }
@@ -2213,6 +2220,11 @@
         ctx.fillStyle = 'rgba(124,58,237,' + (0.08 + 0.62 * t).toFixed(3) + ')'; ctx.fillRect(r[0], r[1], r[2], r[3]);
         if (r[2] > 34) { ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = t > 0.55 ? '#fff' : (dark ? '#e2e8f0' : '#1e1b4b'); ctx.fillText(vs[i] >= 1000 ? (vs[i] / 1000).toFixed(1) + '천' : String(vs[i]), r[0] + r[2] / 2, r[1] + r[3] / 2); }
         hit.push({ x: r[0] + r[2] / 2, y: r[1] + r[3] / 2, r: Math.max(6, r[2] * 0.71), it: { kind: 'l250', c: k } }); }); }
+    if (on.fl250) { var fk = Object.keys(F250).filter(function (k) { return GRID[k]; }), fv = fk.map(function (k) { return f2Now(F250[k]); }), fm = Math.max.apply(null, fv.concat([1]));
+      fk.forEach(function (k, i) { var r = sq(GRID[k].p, 125); if (!inView(r, W0, H0) || !fv[i]) return; var t = Math.sqrt(fv[i] / fm);
+        ctx.fillStyle = 'rgba(13,148,136,' + (0.08 + 0.64 * t).toFixed(3) + ')'; ctx.fillRect(r[0], r[1], r[2], r[3]);
+        if (r[2] > 34) { ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = t > 0.55 ? '#fff' : (dark ? '#e2e8f0' : '#134e4a'); ctx.fillText(fv[i] >= 1000 ? (fv[i] / 1000).toFixed(1) + '천' : String(Math.round(fv[i])), r[0] + r[2] / 2, r[1] + r[3] / 2); }
+        hit.push({ x: r[0] + r[2] / 2, y: r[1] + r[3] / 2, r: Math.max(6, r[2] * 0.71), it: { kind: 'f250', c: k } }); }); }
     if (on.rtc) { var gk = Object.keys(RTG).filter(function (k) { return GRID[k]; }), meds = gk.map(function (k) { return RTG[k].med; }).sort(function (a, b) { return a - b; }), p90 = meds[Math.floor(meds.length * 0.9)] || 1;
       gk.forEach(function (k) { var r = sq(GRID[k].p, 125); if (!inView(r, W0, H0)) return; var t = Math.min(1, RTG[k].med / p90);
         ctx.fillStyle = 'rgba(29,78,216,' + (0.10 + 0.5 * t).toFixed(3) + ')'; ctx.fillRect(r[0], r[1], r[2], r[3]); ctx.strokeStyle = 'rgba(30,58,138,.6)'; ctx.lineWidth = 1; ctx.strokeRect(r[0], r[1], r[2], r[3]);
@@ -2220,7 +2232,7 @@
       if (view.s >= 0.12) RT.forEach(function (x) { if (x.p) dot(x.p, 3.6, '#1e3a8a', '#fff', { kind: 'rtc', x: x }); }); }
     if (on.g250 && view.s >= 0.05) { ctx.strokeStyle = dark ? 'rgba(148,163,184,.45)' : 'rgba(30,41,59,.28)'; ctx.lineWidth = 0.8;
       Object.keys(GRID).forEach(function (k) { var r = sq(GRID[k].p, 125); if (!inView(r, W0, H0)) return; ctx.strokeRect(r[0], r[1], r[2], r[3]);
-        if (!on.live250 && !on.rtc) hit.push({ x: r[0] + r[2] / 2, y: r[1] + r[3] / 2, r: Math.max(6, r[2] * 0.71), it: { kind: 'g250', c: k } });
+        if (!on.live250 && !on.fl250 && !on.rtc) hit.push({ x: r[0] + r[2] / 2, y: r[1] + r[3] / 2, r: Math.max(6, r[2] * 0.71), it: { kind: 'g250', c: k } });
         if (r[2] > 90) { ctx.font = '9px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = dark ? '#94a3b8' : '#475569'; ctx.fillText(k, r[0] + 3, r[1] + 3); } }); }
   }
   function dongNm(k8) { if (GRIDN[k8]) return GRIDN[k8]; var d = RDONG.filter(function (q) { return q.k === k8; })[0]; return d ? d.name : k8; }
@@ -2230,6 +2242,7 @@
     var k = it.c || (it.x && it.x.t[10]), h = '';
     if (it.kind === 'g250') { var h0 = '<h3>🧊 이 250m 칸 한눈에 — ' + esc(k) + '</h3>' + row('걸친 행정동(넓이)', gDongs(k)), L2 = L250[k], A2 = A250K[k], T2 = PT250[k], H2 = HOMEG[k], R2 = RTG[k];
       if (L2) h0 += row('👥 사람(서울 · 한 주 평균)', '평일 14시 ' + L2.wd[14].toLocaleString() + '명 · 새벽 3시 ' + L2.wd[3].toLocaleString() + ' · 주말 14시 ' + L2.we[14].toLocaleString());
+      var F3 = F250[k]; if (F3) h0 += row('🌏 머무는 외국인(서울)', '평일 14시 ' + Math.round(f2At(F3, 14, 0)).toLocaleString() + '명 · 새벽 3시 ' + Math.round(f2At(F3, 3, 0)).toLocaleString() + ' <em>(장기+단기 · 통신 추정)</em>');
       if (A2) { var c2 = A2.c, t10 = c2.slice(2, 12).reduce(function (a, b) { return a + b; }, 0); h0 += row('🚗 사고 10년', t10 + '건 · 사망 ' + c2[12] + ' · 중상 ' + c2[13] + ' · 보행자 피해 ' + c2[14] + ' · 밤 ' + pct(c2[18], t10) + '%'); }
       if (T2) { if (T2.fat) h0 += row('🕯 사망사고', T2.fat + '건 · 사망 ' + T2.dead + '명(2016~2025)');
         if (T2.st) h0 += row('🏪 가게', T2.st + '곳' + (T2.stb ? ' — ' + Object.keys(T2.stb).map(function (q) { return esc(q) + ' ' + T2.stb[q]; }).join(' · ') : ''));
@@ -2247,6 +2260,13 @@
         '<div class="cap">평일 하루 평균 시간대별 생활인구(명 · 0~23시)</div>' + bar(wd, '#7c3aed', LB_H24) + '<div class="cap">주말 하루 평균(명)</div>' + bar(we, '#a78bfa', LB_H24) +
         '<div class="cap">연령 구성 — 평일 낮 11~14시(%)</div>' + bar(x.ad, '#7c3aed', AG) + '<div class="cap">연령 구성 — 평일 밤 0~4시(%) · 밤이 많으면 사는 사람, 낮이 많으면 일하러·놀러 온 사람</div>' + bar(x.an, '#334155', AG);
       var TL = l250Talk(x); return h + (TL.length ? '<div class="talk"><b>🗣 이 칸 읽기</b>' + TL.map(function (q) { return '<div>' + q + '</div>'; }).join('') + '<small>기준(앱): 낮(11~14시)÷새벽(1~3시) 1.6배↑ 들어오는 칸 · 0.8배↓ 주거 칸 · 주말÷평일 ±15~20% · 20·30대 45%↑ · 밤 60대↑ 30%↑</small></div>' : '') + '<p class="desc">' + esc(M2.note) + '</p>' + src(M2.source); }
+    if (it.kind === 'f250') { var y = F250[k], M3 = y.m, Lg = y.L, Tm = y.T, nm1 = function (q) { return q.replace('기타', '기타(그 밖 국적)'); };
+      h = '<h3>🌏 지금 머무는 외국인 250m — ' + esc(k) + '</h3>' + row('걸친 행정동(넓이)', gDongs(k)) + row('지금(' + (isWe() ? '주말' : '평일') + ' ' + nowH() + '시)', Math.round(f2Now(y)).toLocaleString() + '명 — 장기 ' + Math.round(Lg ? (isWe() ? Lg.we : Lg.wd)[nowH()] : 0).toLocaleString() + ' · 단기 ' + Math.round(Tm ? (isWe() ? Tm.we : Tm.wd)[nowH()] : 0).toLocaleString());
+      [['L', '장기체류(91일 이상 — 일·공부·결혼·동포 등)', '#0f766e', '#5eead4'], ['T', '단기체류(90일 이하 — 관광·출장·방문)', '#c2410c', '#fdba74']].forEach(function (q) { var z = y[q[0]]; if (!z) { h += row(q[1].replace(/\(.*$/, ''), '이 칸은 3명 이하(비식별)라 0'); return; }
+        var pk = z.wd.indexOf(Math.max.apply(null, z.wd)); h += row(q[1], '평일 가장 많을 때 ' + pk + '시 ' + Math.round(z.wd[pk]).toLocaleString() + '명 · 새벽 3시 ' + Math.round(z.wd[3]).toLocaleString() + ' · 주말 14시 ' + Math.round(z.we[14]).toLocaleString()) +
+          '<div class="cap">' + q[1].replace(/\(.*$/, '') + ' — 평일 시간대별(명 · 0~23시)</div>' + bar(z.wd, q[2], LB_H24) + '<div class="cap">주말(명)</div>' + bar(z.we, q[3], LB_H24) +
+          (z.nat.length ? '<div class="cap">' + q[1].replace(/\(.*$/, '') + ' — 국적 상위(명 · 한 주 모든 시각 평균)</div>' + bar(z.nat.map(function (n) { return n[1]; }), q[2], z.nat.map(function (n) { return nm1(n[0]); })) : ''); });
+      return h + '<p class="desc">' + esc(M3.note) + ' · 국적은 자료에 따로 칸이 있는 나라만(장기 20 · 단기 18) — 나머지는 「기타」.</p>' + src(M3.source); }
     var list = it.kind === 'rtc' ? [it.x] : RT.filter(function (q) { return q.t[10] === k; });
     var m = (list[0] || {}).m || (RTG[k] || {}).m; if (!m) return '<h3>🏢 실거래</h3><p class="desc">자료를 받는 중</p>';
     var jp = list.filter(function (q) { return q.t[2] === 0 && q.t[4]; }).map(function (q) { return q.t[6] / q.t[4]; }).sort(function (a, b) { return a - b; });
@@ -2271,6 +2291,7 @@
   function gridLegend() {
     var o = [];
     if (on.live250) o.push(['👥 생활인구 250m ' + (isWe() ? '주말 ' : '평일 ') + nowH() + '시', li('rgba(124,58,237,.7)', '진할수록 많음(√) · 확대하면 숫자', 'box') + '<small class="lg-n">서울만 · 서울시 250M격자 생활인구 2026-09-07~13 한 주 평균 · 내국인</small>']);
+    if (on.fl250) o.push(['🌏 머무는 외국인 250m ' + (isWe() ? '주말 ' : '평일 ') + nowH() + '시', li('rgba(13,148,136,.7)', '장기+단기 체류(진할수록 많음 · √) · 확대하면 숫자', 'box') + '<small class="lg-n">서울만 · 서울시 250M격자 생활인구(장기·단기체류 외국인) 2026-09-07~13 한 주 평균 · 통신 자료 추정</small>']);
     if (on.rtc) o.push(['🏢 상가·업무 매매 실거래', li('rgba(29,78,216,.55)', '250m 칸 = 집합건물 ㎡당 거래금액 중앙값(진할수록 비쌈)', 'box') + li('#1e3a8a', '집합건물 거래(확대하면)') + '<small class="lg-n">국토부 상업업무용 매매 · 서울·경기 24개월 · 평당 = 전용 기준</small>']);
     if (on.g250) o.push(['🧊 250m 격자', li('#475569', '국가지점번호식 250m 칸(확대하면 선)', 'line') + '<small class="lg-n">서울·경기 17.6만 칸 · 칸을 누르면 걸친 행정동</small>']);
     return o;
@@ -2297,7 +2318,7 @@
     ['acc', '🚗 사고', ['acc', 'acc250', 'acc10', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'sz', 'szh', 'spot', 'spota'], ['acc10', 'fatal10', 'jct', 'hot10']],
     ['safe', '🛡 치안·안전', ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er', 'ger', 'aed', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'glamp', 'fw', 'hyd', 'box', 'bar', 'play', 'inn'], ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er']],
     ['estate', '🏢 부동산·상권', ['home', 'rtc', 'rent', 'trd', 'szone', 'sales', 'live250', 'jgg', 'bld', 'conv', 'bank', 'govr'], ['home', 'rtc', 'live250', 'rent', 'szone']],
-    ['people', '👥 사람·인구', ['dong', 'live250', 'live', 'crowd', 'jgg', 'sales', 'evt', 'gfest', 'kids', 'cc', 'kg', 'kyr', 'school', 'edu', 'aca', 'welf', 'dem'], ['live250', 'jgg']],
+    ['people', '👥 사람·인구', ['dong', 'live250', 'fl250', 'live', 'crowd', 'jgg', 'sales', 'evt', 'gfest', 'kids', 'cc', 'kg', 'kyr', 'school', 'edu', 'aca', 'welf', 'dem'], ['live250', 'jgg']],
     ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'pg', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'conv', 'bank'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
     ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
     ['live', '📡 실시간', ['lev', 'lspd', 'lcc', 'lak', 'lkma', 'lbus', 'lwx', 'lair', 'lrad', 'crowd'], ['lev', 'lspd', 'lcc', 'lwx', 'lrad']],
@@ -2366,7 +2387,7 @@
       h += '<div class="cap">연령별 외국인(한국국적 없음 · 남 ' + tm.toLocaleString() + ' · 2024)</div>' + bar(A2.mf, '#2563eb', LB_AGE8) + '<div class="cap">연령별 외국인(한국국적 없음 · 여 ' + tf.toLocaleString() + ')</div>' + bar(A2.ff || [], '#db2777', LB_AGE8);
       if (A2.mn) h += '<div class="cap">연령별 귀화자(남 파랑 · 여 분홍 합 — 한국국적 취득)</div>' + bar(A2.mn.map(function (x, i) { return x + ((A2.fn || [])[i] || 0); }), '#64748b', LB_AGE8); }
     if (F2.stay) { var ts = F2.stay.reduce(function (a, b) { return a + b; }, 0); h += row('머문 기간', '1년 미만 ' + pct(F2.stay[0], ts) + '% · 5년 이상 ' + pct(F2.stay[5] + F2.stay[6], ts) + '% <em>(장기 거주 비중)</em>') + '<div class="cap">체류기간별 외국인 주민(명 · 2024)</div>' + bar(F2.stay, '#0f766e', LB_STAY7); }
-    h += '<p class="desc"><b>단기체류(90일 이하 · 관광·단기방문)</b>는 시군구 공식 통계가 없다(법무부 단기체류외국인 현황은 전국 단위) — 서울은 250m 생활인구의 단기·장기체류 외국인으로 「그 시각 머무는 사람」을 볼 수 있다(따로 받을 자료). 등록외국인(법무부 · 연말)과 외국인주민(행안부 · 11월 1일)은 기준이 달라 더하지 않는다.</p>';
+    h += '<p class="desc"><b>단기체류(90일 이하 · 관광·단기방문)</b>는 시군구 공식 통계가 없다(법무부 단기체류외국인 현황은 전국 단위) — 서울은 <b>🌏 지금 머무는 외국인 250m</b> 층(서울시 생활인구 장기·단기체류)으로 「그 시각 그 칸에 머무는 사람」과 국적을 볼 수 있다. 등록외국인(법무부 · 연말)과 외국인주민(행안부 · 11월 1일)은 기준이 달라 더하지 않는다.</p>';
     return h + src(FRN.source + ' · ' + [Dt.q, Dt.nat, Dt.age, Dt.stay].filter(Boolean).join(' · '));
   }
 
@@ -2630,6 +2651,7 @@
     pbox: '전국 지구대·파출소 2,047곳(경찰청 2025-12-31 주소 → 좌표). 관할 경계는 공개 자료가 없어 자리만 — 동 카드의 「가까운 지구대」는 거리 근사.',
     home: '국토부 아파트·오피스텔·연립다세대 실거래(매매 24개월·전월세 12개월). 250m 칸 색을 범례에서 고른다 — 아파트 매매 평당·전세 평당·전세가율·월세·오피스텔·연립다세대. 확대하면 단지마다 점. 평당 = 전용 기준 · 전세가율은 추정.',
     rtc: '국토부 상업업무용 부동산 매매 실거래(서울·경기 24개월). 250m 칸 색 = 집합건물 ㎡당 거래금액 중앙값, 확대하면 거래 한 건씩. 평당 = 전용 기준.',
+    fl250: '서울 250m 칸마다 그 시각 머무는 외국인(서울시 생활인구 — 장기체류 91일 이상 · 단기체류 90일 이하 관광·방문 · 통신 자료 추정 · 한 주 평균). 칸을 누르면 장기·단기 시간대와 국적 상위. 행안부 외국인주민·법무부 등록외국인과 정의가 달라 더하지 않는다.',
     live250: '서울 생활인구를 250m 칸으로(서울시 · 한 주 평균 · 평일/주말 24시간 · 낮·밤 연령). 동 단위 생산이 2026-07 에 끝나 이것으로 바뀐다. 칸을 누르면 낮/밤·주말 해설.',
     acc250: 'TAAS 교통사고 10년(2016~2025 · 서울·경기 88.7만 건)을 250m 국가표준격자 칸으로 — 칸 번호 하나로 모아 같은 칸이 겹치지 않는다. 색 기준(전체·사망중상·보행자…)·해 고르기는 사고 10년 층과 같다.',
     g250: '국가지점번호식 250m 격자 선(EPSG:5179). 칸을 누르면 「이 칸 한눈에」 — 걸친 행정동·사람·사고·가게·시설·대중교통·집값을 한 카드에. 전국 확장의 기본 단위.',

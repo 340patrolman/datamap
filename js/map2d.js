@@ -19,7 +19,7 @@
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
     ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
-    ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
+    ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
     ['risk', '🟥 사고위험지역', false, '교통사고', 0], ['sz', '🏫 어린이보호구역', false, '교통사고', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통사고', 0], ['cam', '📷 단속 카메라', false, '도로·교통', 0], ['spd', '🚥 도로 소통(받은 때)', false, '도로·교통', 0], ['sig', '🚦 신호 주기', false, '도로·교통', 0], ['sigx', '🔢 신호 교차로 번호', false, '도로·교통', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '소비·상권', 1], ['rent', '💰 상가 임대료·공실률', false, '소비·상권', 0], ['szone', '🏬 소진공 주요상권(서울·경기)', false, '소비·상권', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '인구 구성', 1], ['crowd', '📡 실시간 인파·카드', false, '이동·동선', 1], ['live', '👥 생활인구(지금)', false, '인구 구성', 1], ['sales', '💳 카드 매출(시간대)', false, '소비·상권', 1], ['bus', '🚌 버스 승차·하차', false, '이동·동선', 1], ['subr', '🚇 지하철 승차·하차', false, '이동·동선', 0], ['vol', '🚙 교통량', false, '이동·동선', 0], ['bike', '🚲 따릉이', false, '이동·동선', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
@@ -890,7 +890,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
+    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -935,6 +935,7 @@
     if (RAD.pick && document.body.classList.contains('radon')) { RAD.c = M(x, y); RAD.pick = false; radRun(); return; }
     var best = null, bd = 1e9;
     hit.forEach(function (h) { var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < bd) { bd = d; best = h; } });
+    if (!best && on.ri) { var r0 = riAtM(M(x, y)); if (r0) { var sr = S(r0.p); best = { x: sr[0], y: sr[1], r: 6, it: { kind: 'ri', r: r0 } }; } }
     if (!best && on.jur) { var j0 = jurAtM(M(x, y)); if (j0) { var sj = S(j0.c); best = { x: sj[0], y: sj[1], r: 6, it: { kind: 'jur', J: j0 } }; } }
     if (!best) { var d0 = dongAtM(M(x, y)); if (d0) { var s = S(d0.c); best = { x: s[0], y: s[1], r: 6, it: { kind: 'dong', d: d0 } }; } }
     if (!best) { var d1 = nearAtM(M(x, y)); if (d1) { var s1 = S(d1.c); best = { x: s1[0], y: s1[1], r: 6, it: { kind: 'near', d: d1 } }; } }
@@ -1047,6 +1048,7 @@
       h = '<h3>🚙 ' + esc(it.v.name) + '</h3>' + volRows(it.v) + src('서울시 교통량조사(VolInfo) · 평일은 2일 평균');
     } else if (it.kind === 'evt') {
       var e = it.e; h = '<h3>📅 ' + esc(e.t) + '</h3>' + row('갈래', esc(e.c)) + row('기간', esc(e.s + ' ~ ' + e.e)) + row('시간', esc(e.hour || '-')) + row('자리', esc(e.p)) + row('요금', esc(e.free || '-')) + src('서울시 문화행사 정보(공공누리 1유형)');
+    } else if (it.kind === 'ri') { h = riCard(it.r);
     } else if (it.kind === 'pst') { h = pstCard(it.s);
     } else if (it.kind === 'pbx') { h = pbxCard(it.b);
     } else if (it.kind === 'frn') { h = frnCard(it.gu);
@@ -2140,7 +2142,8 @@
     var m = /[#&]lat=(-?[\d.]+)/.exec(location.hash), n = /[#&]lon=(-?[\d.]+)/.exec(location.hash);
     if (!m || !n) return false;
     var lat = +m[1], lon = +n[1];
-    if (!isFinite(lat) || !isFinite(lon) || lat < 37.395 || lat > 37.535 || lon < 126.935 || lon > 127.135) return false;
+    if (!isFinite(lat) || !isFinite(lon) || lat < 33.0 || lat > 38.7 || lon < 124.5 || lon > 131.95) return false;   // v2.11.0 전국(종전 서초 상자 — T-Book 주소는 그대로 됨)
+    if (lat < 37.395 || lat > 37.535 || lon < 126.935 || lon > 127.135) { var q0 = P(lon, lat); view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 1500); view.cx = q0[0]; view.cy = q0[1]; draw(); return true; }   // 서초 밖 = 그 자리로 옮기기만(「보고 자리」 카드는 서초 자료 기준이라 띄우지 않는다)
     REP = { p: P(lon, lat), here: /[#&]here=1(?!\d)/.test(location.hash) };   // here=1 = T-Book 홈 「📍 지금 위치」(v0.10.77) — 아니면 최초보고 「보고 자리」
     view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 500); view.cx = REP.p[0]; view.cy = REP.p[1] + cv.clientHeight * 0.22 / view.s;   // 아래 카드에 가리지 않게 표시를 위쪽에   // 반경 약 500m
     if (on.bld && view.s > 0.12) loadBld();
@@ -2321,7 +2324,7 @@
   // v2.10.0 테마 다시 묶음(소유자 2026-10-05 「인구 구성이 기본 · 이동 · 교통 … 합리적인 묶음으로」) — 그 지역을 아는 차례: 사람 → 움직임 → 돈 → 집 → 길 → 사고 → 치안 → 돌봄 → 생활 · 층 키는 그대로
   var THEMES = [
     ['all', '전체', null],
-    ['people', '👥 인구 구성', ['dong', 'jgg', 'live250', 'live', 'fl250', 'crowd'], ['dong', 'jgg', 'live250']],
+    ['people', '👥 인구 구성', ['dong', 'jgg', 'live250', 'live', 'fl250', 'crowd', 'ri'], ['dong', 'jgg', 'live250']],
     ['move', '🚶 이동·동선', ['live250', 'bus', 'subr', 'sub', 'exit', 'bike', 'lbus', 'spot', 'crowd', 'vol', 'evt', 'gfest'], ['bus', 'subr', 'sub', 'live250']],
     ['spend', '💳 소비·상권', ['sales', 'trd', 'szone', 'rent', 'crowd', 'rtc', 'conv', 'bank', 'bar', 'play', 'inn'], ['sales', 'trd', 'szone']],
     ['estate', '🏠 주거·부동산', ['home', 'rtc', 'rent', 'jgg', 'bld'], ['home', 'rtc']],
@@ -2332,7 +2335,7 @@
     ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'conv', 'bank', 'box'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
     ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
     ['live', '📡 실시간', ['lev', 'lspd', 'lcc', 'lak', 'lkma', 'lbus', 'lwx', 'lair', 'lrad', 'crowd'], ['lev', 'lspd', 'lcc', 'lwx', 'lrad']],
-    ['map', '🗺 바탕·격자', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm', 'g250'], ['g250']]
+    ['map', '🗺 바탕·격자', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm', 'g250', 'ri'], ['g250']]
   ];
   var GORD = ['바탕', '인구 구성', '이동·동선', '소비·상권', '주거·부동산', '도로·교통', '교통사고', '치안·안전', '교육·돌봄', '생활시설', '행사·역사', '날씨·계절', '실시간'];
   var THEME = 'all'; try { THEME = localStorage.getItem('tg_map2d_theme') || 'all'; } catch (e) {}
@@ -2410,6 +2413,29 @@
   function polLab(L) { var pr = String(L).split('~'), f = function (t) { return (t || '').split(',').filter(function (x) { return x !== ''; }).map(function (x) { return POL2.byI[+x]; }).filter(Boolean); }; return { main: f(pr[0]), extra: f(pr[1]) }; }   // 「21~6」 = 기본 21번 서 + 일부 번지 6번 서 · 「1,4」 = 두 서가 나눠 맡음
   function polOf(k8) { if (!POL2 || !k8) return null; var L = POL2.labels[POL2.dong[k8]]; if (L == null) return null; var o = polLab(L), st = o.main; st.extra = o.extra; return st; }
   function pboxNear(p) { if (!POL2) return null; var b = null, bd = 1e12; POL2.pbox.forEach(function (x) { var d = dTrue(x.p, p); if (d < bd) { bd = d; b = x; } }); return b ? { b: b, d: bd } : null; }
+  // ---------- v2.11.0 🌾 리(里) 경계 — 리마다 가게·사고 수(점을 세는 그릇 · 리 인구 통계는 비공개) ----------
+  var RIS = [], RLOADRI = {}, RIM = {};
+  function riLoad(gu) {
+    if (RLOADRI[gu]) return RLOADRI[gu];
+    RLOADRI[gu] = rGet(gu, 'ri.json').then(function (j) { RIM[gu] = j;
+      j.ri.forEach(function (x) { var b = [1e12, -1e12, 1e12, -1e12]; x.polys = x.polys.map(function (pg) { return pg.map(function (rg) { return rg.map(function (q) { var p = P(q[0], q[1]); if (p[0] < b[0]) b[0] = p[0]; if (p[0] > b[1]) b[1] = p[0]; if (p[1] < b[2]) b[2] = p[1]; if (p[1] > b[3]) b[3] = p[1]; return p; }); }); }); x.box = b; x.p = P(x.c[0], x.c[1]); x.gu = gu; x.m = j; RIS.push(x); });
+      draw(); }).catch(function () {}); return RLOADRI[gu];
+  }
+  function riAtM(m) { for (var i = 0; i < RIS.length; i++) if (inPoly(RIS[i], m)) return RIS[i]; return null; }
+  function drawRi(dark) {
+    if (!on.ri || view.s < 0.004) return; var v = viewLL();
+    rIdx().forEach(function (g) { var x = g.box, B = g.bytes || {}; if (B.ri && !(x[2] < v[0] || x[0] > v[2] || x[3] < v[1] || x[1] > v[3])) riLoad(g.gu); });
+    var a0 = M(0, 0), a1 = M(cv.clientWidth, cv.clientHeight), vis = RIS.filter(function (r) { return !(r.box[1] < a0[0] || r.box[0] > a1[0] || r.box[3] < a0[1] || r.box[2] > a1[1]); }), mx = 1;
+    vis.forEach(function (r) { if (r.st > mx) mx = r.st; });
+    vis.forEach(function (r) { var t = Math.sqrt(r.st / mx); ctx.fillStyle = 'rgba(101,163,13,' + (0.04 + 0.32 * t).toFixed(3) + ')'; ctx.strokeStyle = dark ? 'rgba(190,242,100,.85)' : 'rgba(77,124,15,.9)'; ctx.lineWidth = 1.6;
+      r.polys.forEach(function (pg) { path(pg[0]); ctx.fill(); ctx.stroke(); }); });
+    if (view.s >= 0.008) vis.forEach(function (r) { label(r.p, r.name.split(' ').pop(), 11, dark ? '#d9f99d' : '#365314', dark ? 'rgba(15,22,36,.6)' : 'rgba(255,255,255,.7)'); });
+  }
+  function riCard(r) {
+    return '<h3>🌾 ' + esc(r.name) + ' <small>(' + esc(guName(r.gu)) + ' · 법정리 ' + esc(r.k) + ')</small></h3>' + row('가게(상가업소)', r.st.toLocaleString() + '곳' + (r.st ? ' — ' + Object.keys(r.stb).map(function (q) { return esc(q) + ' ' + r.stb[q]; }).join(' · ') : '')) +
+      row('교통사고 10년', r.acc.toLocaleString() + '건 · 사망자 ' + r.dead + ' · 중상자 ' + r.ser + ' <em>(2016~2025 · 100m 칸 가운데가 든 리 — 근사)</em>') + row('사망사고', r.fat + '건') +
+      '<p class="desc">' + esc(r.m.note) + '</p>' + src(r.m.source);
+  }
   function drawPolice(dark) {
     if (!on.jurk && !on.pbox) return; if (!POL2) { polLoad(); return; } var W0 = cv.clientWidth, H0 = cv.clientHeight;
     if (on.jurk) { var DL = (DONG || []).concat(RDONG || []);
@@ -2670,6 +2696,7 @@
     pbox: '전국 지구대·파출소 2,047곳(경찰청 2025-12-31 주소 → 좌표). 관할 경계는 공개 자료가 없어 자리만 — 동 카드의 「가까운 지구대」는 거리 근사.',
     home: '국토부 아파트·오피스텔·연립다세대 실거래(매매 24개월·전월세 12개월). 250m 칸 색을 범례에서 고른다 — 아파트 매매 평당·전세 평당·전세가율·월세·오피스텔·연립다세대. 확대하면 단지마다 점. 평당 = 전용 기준 · 전세가율은 추정.',
     rtc: '국토부 상업업무용 부동산 매매 실거래(서울·경기 24개월). 250m 칸 색 = 집합건물 ㎡당 거래금액 중앙값, 확대하면 거래 한 건씩. 평당 = 전용 기준.',
+    ri: '읍·면의 리(里) 경계(브이월드 법정리 약 1.5만 · 147개 시군구). 리 단위 인구·카드 통계는 공개되지 않아 리마다 가게 수·사고 10년·사망사고만 이 지도의 점으로 센다. 리를 누르면 숫자.',
     fl250: '서울 250m 칸마다 그 시각 머무는 외국인(서울시 생활인구 — 장기체류 91일 이상 · 단기체류 90일 이하 관광·방문 · 통신 자료 추정 · 한 주 평균). 칸을 누르면 장기·단기 시간대와 국적 상위. 행안부 외국인주민·법무부 등록외국인과 정의가 달라 더하지 않는다.',
     live250: '서울 생활인구를 250m 칸으로(서울시 · 한 주 평균 · 평일/주말 24시간 · 낮·밤 연령). 동 단위 생산이 2026-07 에 끝나 이것으로 바뀐다. 칸을 누르면 낮/밤·주말 해설.',
     acc250: 'TAAS 교통사고 10년(2016~2025 · 서울·경기 88.7만 건)을 250m 국가표준격자 칸으로 — 칸 번호 하나로 모아 같은 칸이 겹치지 않는다. 색 기준(전체·사망중상·보행자…)·해 고르기는 사고 10년 층과 같다.',

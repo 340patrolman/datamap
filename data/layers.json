@@ -382,6 +382,20 @@
 "paid_ok": false
 },
 {
+"key": "ri",
+"name": "🌾 리(里) 경계 · 가게·사고",
+"group": "바탕",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "g250",
 "name": "🧊 250m 격자(국가표준)",
 "group": "바탕",

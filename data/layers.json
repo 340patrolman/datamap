@@ -6,7 +6,7 @@
 {
 "key": "dong",
 "name": "🏘 행정동",
-"group": "기본",
+"group": "바탕",
 "default": true,
 "file": "dong.json · dong-seocho.json",
 "kind": "poly",
@@ -19,7 +19,7 @@
 {
 "key": "road",
 "name": "🛣 도로",
-"group": "기본",
+"group": "바탕",
 "default": true,
 "file": "base/t",
 "kind": "line",
@@ -32,7 +32,7 @@
 {
 "key": "base",
 "name": "🗺 바탕(물·녹지·철도)",
-"group": "기본",
+"group": "바탕",
 "default": true,
 "file": "base/t",
 "kind": "poly",
@@ -45,7 +45,7 @@
 {
 "key": "vw",
 "name": "🛰 위성·일반 지도(브이월드 · 인터넷)",
-"group": "기본",
+"group": "바탕",
 "default": false,
 "file": "브이월드 WMTS",
 "kind": "live",
@@ -58,7 +58,7 @@
 {
 "key": "jcnm",
 "name": "🏷 교차로·도로 이름(서울·경기 전부)",
-"group": "기본",
+"group": "바탕",
 "default": true,
 "file": "jcnm.json",
 "kind": "point",
@@ -71,7 +71,7 @@
 {
 "key": "bld",
 "name": "🏢 건물",
-"group": "기본",
+"group": "바탕",
 "default": true,
 "file": "maps/seocho-full-buildings.json",
 "kind": "poly",
@@ -84,7 +84,7 @@
 {
 "key": "sub",
 "name": "🚇 지하철역",
-"group": "기본",
+"group": "바탕",
 "default": true,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -97,7 +97,7 @@
 {
 "key": "exit",
 "name": "🚪 지하철 출입구",
-"group": "기본",
+"group": "바탕",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -227,7 +227,7 @@
 {
 "key": "acc",
 "name": "🚗 교차로 사고(2019~)",
-"group": "교통안전",
+"group": "교통사고",
 "default": true,
 "file": "taas-nodes-seocho.json",
 "kind": "point",
@@ -240,7 +240,7 @@
 {
 "key": "acc10",
 "name": "🚗 사고 10년(100m 칸)",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "taas10.json",
 "kind": "grid",
@@ -253,7 +253,7 @@
 {
 "key": "fatal10",
 "name": "🕯 사망사고 10년",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "taas10.json(fatal)",
 "kind": "point",
@@ -266,7 +266,7 @@
 {
 "key": "fatal",
 "name": "🕯 사망사고",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "taas10.json(fatal)",
 "kind": "point",
@@ -279,7 +279,7 @@
 {
 "key": "home",
 "name": "🏠 주택 실거래 — 평당·전세가율(250m)",
-"group": "부동산·상권",
+"group": "주거·부동산",
 "default": false,
 "file": "home.json",
 "kind": "grid",
@@ -318,7 +318,7 @@
 {
 "key": "rtc",
 "name": "🏢 상가·업무 매매 실거래(250m)",
-"group": "부동산·상권",
+"group": "주거·부동산",
 "default": false,
 "file": "rtms.json",
 "kind": "grid",
@@ -331,7 +331,7 @@
 {
 "key": "live250",
 "name": "👥 생활인구 250m(서울)",
-"group": "사람·흐름",
+"group": "인구 구성",
 "default": false,
 "file": "live250.json",
 "kind": "grid",
@@ -344,7 +344,7 @@
 {
 "key": "fl250",
 "name": "🌏 지금 머무는 외국인 250m(서울)",
-"group": "사람·흐름",
+"group": "인구 구성",
 "default": false,
 "file": "forn250.json",
 "kind": "grid",
@@ -357,7 +357,7 @@
 {
 "key": "g250",
 "name": "🧊 250m 격자(국가표준)",
-"group": "기본",
+"group": "바탕",
 "default": false,
 "file": "grid.json",
 "kind": "grid",
@@ -370,7 +370,7 @@
 {
 "key": "acc250",
 "name": "🚗 사고 10년(250m 격자)",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "taas250.json",
 "kind": "grid",
@@ -383,7 +383,7 @@
 {
 "key": "hot",
 "name": "⚠ 사고다발지",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -396,7 +396,7 @@
 {
 "key": "drunk",
 "name": "🍺 음주 사고 다발지",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -409,7 +409,7 @@
 {
 "key": "risk",
 "name": "🟥 사고위험지역",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -422,7 +422,7 @@
 {
 "key": "sz",
 "name": "🏫 어린이보호구역",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "safety.json",
 "kind": "point",
@@ -435,7 +435,7 @@
 {
 "key": "szh",
 "name": "🧒 보호구역 어린이 사고",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -448,7 +448,7 @@
 {
 "key": "cam",
 "name": "📷 단속 카메라",
-"group": "교통안전",
+"group": "도로·교통",
 "default": false,
 "file": "safety.json",
 "kind": "point",
@@ -461,7 +461,7 @@
 {
 "key": "spd",
 "name": "🚥 도로 소통(받은 때)",
-"group": "교통안전",
+"group": "도로·교통",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -474,7 +474,7 @@
 {
 "key": "sig",
 "name": "🚦 신호 주기",
-"group": "교통안전",
+"group": "도로·교통",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -487,7 +487,7 @@
 {
 "key": "sigx",
 "name": "🔢 신호 교차로 번호",
-"group": "교통안전",
+"group": "도로·교통",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -500,7 +500,7 @@
 {
 "key": "trd",
 "name": "🏪 상권분석(카드·유동·점포)",
-"group": "사람·흐름",
+"group": "소비·상권",
 "default": false,
 "file": "trdar.json · ggtrd.json",
 "kind": "poly",
@@ -513,7 +513,7 @@
 {
 "key": "rent",
 "name": "💰 상가 임대료·공실률",
-"group": "사람·흐름",
+"group": "소비·상권",
 "default": false,
 "file": "rent.json",
 "kind": "point",
@@ -526,7 +526,7 @@
 {
 "key": "szone",
 "name": "🏬 소진공 주요상권(서울·경기)",
-"group": "사람·흐름",
+"group": "소비·상권",
 "default": false,
 "file": "szone.json",
 "kind": "poly",
@@ -539,7 +539,7 @@
 {
 "key": "jgg",
 "name": "🧩 집계구 인구·가구·사업체(SGIS)",
-"group": "사람·흐름",
+"group": "인구 구성",
 "default": false,
 "file": "jgg.json",
 "kind": "poly",
@@ -552,7 +552,7 @@
 {
 "key": "crowd",
 "name": "📡 실시간 인파·카드",
-"group": "사람·흐름",
+"group": "이동·동선",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -565,7 +565,7 @@
 {
 "key": "live",
 "name": "👥 생활인구(지금)",
-"group": "사람·흐름",
+"group": "인구 구성",
 "default": false,
 "file": "dong.json(live)",
 "kind": "poly",
@@ -578,7 +578,7 @@
 {
 "key": "sales",
 "name": "💳 카드 매출(시간대)",
-"group": "사람·흐름",
+"group": "소비·상권",
 "default": false,
 "file": "dong.json(sales)",
 "kind": "poly",
@@ -591,7 +591,7 @@
 {
 "key": "bus",
 "name": "🚌 버스 승차·하차",
-"group": "사람·흐름",
+"group": "이동·동선",
 "default": false,
 "file": "transit.json",
 "kind": "point",
@@ -604,7 +604,7 @@
 {
 "key": "subr",
 "name": "🚇 지하철 승차·하차",
-"group": "사람·흐름",
+"group": "이동·동선",
 "default": false,
 "file": "transit.json",
 "kind": "point",
@@ -617,7 +617,7 @@
 {
 "key": "vol",
 "name": "🚙 교통량",
-"group": "사람·흐름",
+"group": "이동·동선",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -630,7 +630,7 @@
 {
 "key": "bike",
 "name": "🚲 따릉이",
-"group": "사람·흐름",
+"group": "이동·동선",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -799,7 +799,7 @@
 {
 "key": "school",
 "name": "🏫 학교",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -812,7 +812,7 @@
 {
 "key": "kids",
 "name": "🧸 유치원·어린이집",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -825,7 +825,7 @@
 {
 "key": "pg",
 "name": "🛝 놀이터",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -838,7 +838,7 @@
 {
 "key": "park",
 "name": "🌳 공원",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -851,7 +851,7 @@
 {
 "key": "welf",
 "name": "🧓 복지시설",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -864,7 +864,7 @@
 {
 "key": "kyr",
 "name": "🧓 경로당(서울시)",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "fac.json(kyr)",
 "kind": "point",
@@ -877,7 +877,7 @@
 {
 "key": "cc",
 "name": "👶 어린이집(서울시)",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "fac.json(cc)",
 "kind": "point",
@@ -890,7 +890,7 @@
 {
 "key": "kg",
 "name": "🎒 유치원(교육청)",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "fac.json(kg)",
 "kind": "point",
@@ -903,7 +903,7 @@
 {
 "key": "aca",
 "name": "📚 입시·교과학원",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "fac.json(aca)",
 "kind": "point",
@@ -916,7 +916,7 @@
 {
 "key": "edu",
 "name": "🏫 학교(초·중·고·대학)",
-"group": "생활",
+"group": "교육·돌봄",
 "default": false,
 "file": "fac.json(edu)",
 "kind": "point",
@@ -929,7 +929,7 @@
 {
 "key": "govr",
 "name": "🏛 관공서(서울·경기)",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "fac.json(gov)",
 "kind": "point",
@@ -942,7 +942,7 @@
 {
 "key": "gov",
 "name": "🏢 관공서·주민센터",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -955,7 +955,7 @@
 {
 "key": "lib",
 "name": "📚 도서관",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -968,7 +968,7 @@
 {
 "key": "post",
 "name": "📮 우체국",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -981,7 +981,7 @@
 {
 "key": "bank",
 "name": "🏦 은행·ATM",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -994,7 +994,7 @@
 {
 "key": "conv",
 "name": "🏪 편의점",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -1007,7 +1007,7 @@
 {
 "key": "fuel",
 "name": "⛽ 주유소",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -1020,7 +1020,7 @@
 {
 "key": "ev",
 "name": "🔌 전기차 충전",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -1033,7 +1033,7 @@
 {
 "key": "pk",
 "name": "🅿 주차장",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -1150,7 +1150,7 @@
 {
 "key": "pkcctv",
 "name": "📸 불법주정차 단속 CCTV",
-"group": "교통안전",
+"group": "도로·교통",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -1163,7 +1163,7 @@
 {
 "key": "tow",
 "name": "🛻 견인차량보관소",
-"group": "교통안전",
+"group": "도로·교통",
 "default": false,
 "file": "safety.json",
 "kind": "point",
@@ -1176,7 +1176,7 @@
 {
 "key": "wc2",
 "name": "🚻 공중화장실(서울·경기)",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "safety.json",
 "kind": "point",
@@ -1189,7 +1189,7 @@
 {
 "key": "gpark",
 "name": "🅿 주차장(경기 공식)",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "safety.json · lamp.json",
 "kind": "point",
@@ -1202,7 +1202,7 @@
 {
 "key": "gev",
 "name": "🔌 전기차 충전소(경기)",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "safety.json · lamp.json",
 "kind": "point",
@@ -1254,7 +1254,7 @@
 {
 "key": "box",
 "name": "📦 안심택배함",
-"group": "생활",
+"group": "생활시설",
 "default": false,
 "file": "safety.json",
 "kind": "point",
@@ -1267,7 +1267,7 @@
 {
 "key": "dem",
 "name": "🧠 치매안심센터",
-"group": "치안·안전",
+"group": "교육·돌봄",
 "default": false,
 "file": "safety.json",
 "kind": "point",
@@ -1280,7 +1280,7 @@
 {
 "key": "tgis",
 "name": "🚥 T-GIS 신호 교차로",
-"group": "교통안전",
+"group": "도로·교통",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -1293,7 +1293,7 @@
 {
 "key": "spot",
 "name": "🎯 길목 — 이 시각 하차",
-"group": "사람·흐름",
+"group": "이동·동선",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -1306,7 +1306,7 @@
 {
 "key": "spota",
 "name": "🗂 길목 다발지(참고)",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",
@@ -1319,7 +1319,7 @@
 {
 "key": "hot10",
 "name": "🗂 다발지 10년(2016~2025)",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "hot10.json",
 "kind": "point",
@@ -1332,7 +1332,7 @@
 {
 "key": "jct",
 "name": "🚦 교차로 사고 10년(서울·경기)",
-"group": "교통안전",
+"group": "교통사고",
 "default": false,
 "file": "jct.json",
 "kind": "point",
@@ -1371,7 +1371,7 @@
 {
 "key": "flt",
 "name": "🌊 침수 흔적(2010~2025)",
-"group": "계절 위험",
+"group": "날씨·계절",
 "default": false,
 "file": "season.json · season-seocho.json",
 "kind": "point",
@@ -1384,7 +1384,7 @@
 {
 "key": "flr",
 "name": "🌧 침수 이력 도로",
-"group": "계절 위험",
+"group": "날씨·계절",
 "default": false,
 "file": "season.json · season-seocho.json",
 "kind": "point",
@@ -1397,7 +1397,7 @@
 {
 "key": "und",
 "name": "🚇 지하차도(침수 이력)",
-"group": "계절 위험",
+"group": "날씨·계절",
 "default": false,
 "file": "season.json · season-seocho.json",
 "kind": "point",
@@ -1410,7 +1410,7 @@
 {
 "key": "ice",
 "name": "🧊 제설함(결빙 우려 자리)",
-"group": "계절 위험",
+"group": "날씨·계절",
 "default": false,
 "file": "season.json · season-seocho.json",
 "kind": "point",
@@ -1423,7 +1423,7 @@
 {
 "key": "hcab",
 "name": "🔥 도로 열선 길",
-"group": "계절 위험",
+"group": "날씨·계절",
 "default": false,
 "file": "season.json · season-seocho.json",
 "kind": "point",
@@ -1436,7 +1436,7 @@
 {
 "key": "advb",
 "name": "❄ 제설 전진기지",
-"group": "계절 위험",
+"group": "날씨·계절",
 "default": false,
 "file": "season.json · season-seocho.json",
 "kind": "point",
@@ -1449,7 +1449,7 @@
 {
 "key": "pbtn",
 "name": "🚸 보행자작동신호기",
-"group": "교통안전",
+"group": "도로·교통",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
 "kind": "point",

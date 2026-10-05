@@ -8,7 +8,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 # 층 → (지역 파일 r/<구>/… 또는 서초 바탕 파일, 종류 point·grid·poly·line·live, 범위 national·seoul·gyeonggi·seoul+gg·seocho, 출처 계열, 추정)
 T = {
  'dong': ('dong.json · dong-seocho.json', 'poly', 'seoul+gg', 'mois', 0), 'live': ('dong.json(live)', 'poly', 'seoul', 'seoul', 0), 'sales': ('dong.json(sales)', 'poly', 'seoul', 'seoul', 1),
- 'live250': ('live250.json', 'grid', 'seoul', 'seoul250', 0), 'fl250': ('forn250.json', 'grid', 'seoul', 'seoul', 0), 'jurk': ('police.json(dong)', 'poly', 'national', 'police', 1), 'pbox': ('police.json(pbox)', 'point', 'national', 'police', 0), 'g250': ('grid.json', 'grid', 'seoul+gg', 'sgis', 0), 'acc250': ('taas250.json', 'grid', 'seoul+gg', 'taas', 0),
+ 'live250': ('live250.json', 'grid', 'seoul', 'seoul250', 0), 'profile': ('profile.json', 'table', 'national', 'mixed', 1), 'fl250': ('forn250.json', 'grid', 'seoul', 'seoul', 0), 'jurk': ('police.json(dong)', 'poly', 'national', 'police', 1), 'pbox': ('police.json(pbox)', 'point', 'national', 'police', 0), 'g250': ('grid.json', 'grid', 'seoul+gg', 'sgis', 0), 'acc250': ('taas250.json', 'grid', 'seoul+gg', 'taas', 0),
  'acc10': ('taas10.json', 'grid', 'seoul+gg', 'taas', 0), 'fatal10': ('taas10.json(fatal)', 'point', 'seoul+gg', 'taas', 0), 'fatal': ('taas10.json(fatal)', 'point', 'seoul+gg', 'taas', 0),
  'jct': ('jct.json', 'point', 'seoul+gg', 'taas', 1), 'hot10': ('hot10.json', 'point', 'seoul+gg', 'koroad', 0), 'acc': ('taas-nodes-seocho.json', 'point', 'seocho', 'taas', 1),
  'home': ('home.json', 'grid', 'seoul+gg', 'molit', 1), 'rtc': ('rtms.json', 'grid', 'seoul+gg', 'molit', 0), 'rent': ('rent.json', 'point', 'seoul+gg', 'reb', 0),

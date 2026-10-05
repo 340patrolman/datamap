@@ -65,25 +65,28 @@ def geocode():
                 for r in json.load(open(fn, encoding='utf-8')):
                     a = addr(g, r)
                     if a and a not in geo: pri[a] += 1
-    want = [a for a, _ in pri.most_common()]; print('좌표 찾을 지번', len(want), '이미', len(geo), flush=True); k = 0; stop = 0
-    for a in want:
+    want = [a for a, _ in pri.most_common()]; print('좌표 찾을 지번', len(want), '이미', len(geo), flush=True)
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    lock = threading.Lock(); st = {'k': 0, 'bad': 0, 'stop': False}
+    def one(a):   # 브이월드 주소 좌표 한 건 — 일꾼 6개가 나눠 부른다(v2.5.0 · 한 줄씩이면 13만 곳에 하루가 걸렸다)
+        if st['stop']: return
         q = {'service': 'address', 'request': 'getcoord', 'version': '2.0', 'crs': 'epsg:4326', 'address': a, 'refine': 'true', 'simple': 'false', 'format': 'json', 'type': 'parcel', 'key': vk}
-        try:
-            j = json.loads(get('https://api.vworld.kr/req/address?' + urllib.parse.urlencode(q)))['response']
+        try: j = json.loads(get('https://api.vworld.kr/req/address?' + urllib.parse.urlencode(q)))['response']
+        except Exception as e: return
+        with lock:
             if j.get('status') == 'OK':
-                st = j['refined']['structure']; pt = j['result']['point']
-                geo[a] = [round(float(pt['y']), 6), round(float(pt['x']), 6), st.get('level4LC', '')[:10], st.get('level4A', ''), st.get('level4AC', '')[:10]]
+                stt = j['refined']['structure']; pt = j['result']['point']
+                geo[a] = [round(float(pt['y']), 6), round(float(pt['x']), 6), stt.get('level4LC', '')[:10], stt.get('level4A', ''), stt.get('level4AC', '')[:10]]
             elif j.get('status') == 'NOT_FOUND': geo[a] = None
             else:
-                print('geo 멈춤', j.get('status'), j.get('error'), flush=True); stop += 1
-                if stop >= 3: break
-                time.sleep(10); continue
-        except Exception as e:
-            print('geo 오류', e, flush=True); continue
-        k += 1
-        if k % 500 == 0: json.dump(geo, open(GEO, 'w', encoding='utf-8'), ensure_ascii=False); print('geo', k, flush=True)
-        time.sleep(0.03)
-    json.dump(geo, open(GEO, 'w', encoding='utf-8'), ensure_ascii=False); print('geo 끝', k, '전체', len(geo), flush=True)
+                st['bad'] += 1; print('geo 멈춤?', j.get('status'), j.get('error'), flush=True)
+                if st['bad'] >= 20: st['stop'] = True
+                return
+            st['k'] += 1
+            if st['k'] % 2000 == 0: json.dump(geo, open(GEO, 'w', encoding='utf-8'), ensure_ascii=False); print('geo', st['k'], flush=True)
+    with ThreadPoolExecutor(6) as ex: list(ex.map(one, want))
+    json.dump(geo, open(GEO, 'w', encoding='utf-8'), ensure_ascii=False); print('geo 끝', st['k'], '전체', len(geo), '멈춤' if st['stop'] else '', flush=True)
 
 def num(s):
     try: return float(str(s).replace(',', ''))

@@ -185,16 +185,21 @@
   var JGGMS = { pop: ['👥 인구', '#7c3aed'], dens: ['🏙 인구 밀도(명/ha)', '#6d28d9'], hh: ['🏠 가구', '#2563eb'], fam: ['👪 평균 가구원', '#0891b2'], house: ['🏢 주택', '#0d9488'], corp: ['🏪 사업체', '#b45309'], wrk: ['👔 종사자', '#c2410c'], job: ['⚖ 종사자 ÷ 인구', '#be123c'] };
   var RLOADN = {}, JCN = [], RDN = [], JIDX = null, JIDXP = null;   // v1.8.0 교차로·도로 이름
   var JTY = { 1: '교차로', 4: '도로시설(교량·터널·지하차도 끝)', 6: 'IC·연결로' };
+  // v2.5.0 교차로 이름 두 출처(ITS 표준노드링크 · 바탕 OSM/C-ITS)가 같은 자리를 다르게 부를 때(예: 발안IC사거리 ↔ 발안IC삼거리) — 이름 층이 켜져 있으면 ITS 교차로 80m 안의 바탕 이름은 그리지 않고, 카드에 「다른 이름」으로 밝힌다(소유자 신고 2026-10-05)
+  var JH = {};
+  function itsNear(p) { var x = Math.floor(p[0] / 100), y = Math.floor(p[1] / 100); for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { var L2 = JH[(x + dx) + ',' + (y + dy)]; if (L2) for (var i = 0; i < L2.length; i++) if (Math.hypot(L2[i].p[0] - p[0], L2[i].p[1] - p[1]) <= 80) return L2[i]; } return null; }
+  function osmNear(p, name) { var o = []; JLAB.forEach(function (L) { if (Math.hypot(L.p[0] - p[0], L.p[1] - p[1]) <= 80 && L.name.replace(/\s/g, '') !== name.replace(/\s/g, '') && o.indexOf(L.name) < 0) o.push(L.name); }); return o; }
   function jnLoad(gu) {
     if (RLOADN[gu]) return; RLOADN[gu] = 1;
     fetch('data/r/' + gu + '/jcnm.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
-      j.j.forEach(function (t) { JCN.push({ t: t, p: P(t[1], t[2]), m: j }); }); JCN.sort(function (a, b) { return (a.t[3] === 6 ? 0 : 1) - (b.t[3] === 6 ? 0 : 1) || a.t[4] - b.t[4]; });
+      j.j.forEach(function (t) { var J = { t: t, p: P(t[1], t[2]), m: j }; JCN.push(J); if (t[3] === 1) { var hk = Math.floor(J.p[0] / 100) + ',' + Math.floor(J.p[1] / 100); (JH[hk] = JH[hk] || []).push(J); } }); JCN.sort(function (a, b) { return (a.t[3] === 6 ? 0 : 1) - (b.t[3] === 6 ? 0 : 1) || a.t[4] - b.t[4]; });
       j.r.forEach(function (t) { RDN.push({ t: t, p: P(t[1], t[2]), a: -t[3] * Math.PI / 180 }); }); RDN.sort(function (a, b) { return a.t[4] - b.t[4]; });
       if (!JCN.src) { JCN.src = j.source; JCN.note = j.note; } RLOADN[gu] = 3; draw(); }).catch(function () { RLOADN[gu] = 2; });
   }
   function jnCard(it) { var t = it.t;
     var h = '<h3>🏷 ' + esc(t[0]) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(JTY[t[3]] || '') + '</small></h3>';
     h += row('만나는 도로', t[5] ? esc(t[5]).replace(/·/g, ' · ') : '<em>(이름 있는 도로 없음)</em>') + row('가장 큰 도로', esc(RKN[t[4]] || '-')) + row('자리', t[2].toFixed(5) + ', ' + t[1].toFixed(5));
+    var on2 = osmNear(P(t[1], t[2]), t[0]); if (on2.length) h += row('다른 이름', esc(on2.join(' · ')) + ' <em>(바탕 지도 OSM·서울 C-ITS 이름 — 같은 자리를 다르게 부른다 · 현장 이름을 알면 알려 주세요)</em>');
     h += '<div class="lg-btns"><button data-radhere="' + t[1].toFixed(5) + ',' + t[2].toFixed(5) + '">📐 여기서 반경 분석</button></div>';
     return h + '<p class="desc">' + esc(JCN.note || '교차로 이름은 표준노드링크를 만드는 기관이 붙인 이름이다 — 이름난 교차로가 아니면 가까운 건물·학교 이름이 붙어 있다.') + '</p>' + src(JCN.src || '국가교통정보센터(ITS) 전국 표준노드링크'); }
   function rdCard(it) { var t = it.t;
@@ -1375,7 +1380,7 @@
       ctx.font = (L.k === 'g' ? '600 ' : 'italic 700 ') + (L.k === 'w' ? 15 : 12) + 'px system-ui, sans-serif'; var tw = ctx.measureText(L.name).width; if (!free(q[0] - tw / 2, q[1] - 9, tw, 18)) return; seen['w' + L.name] = 1;
       ctx.save(); ctx.translate(q[0], q[1]); if (L.ang) { var a = L.ang; if (a > Math.PI / 2) a -= Math.PI; if (a < -Math.PI / 2) a += Math.PI; ctx.rotate(a); } ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.lineWidth = 3; ctx.strokeStyle = dark ? 'rgba(15,22,36,.8)' : 'rgba(255,255,255,.85)'; ctx.strokeText(L.name, 0, 0); ctx.fillStyle = L.k === 'g' ? (dark ? '#86efac' : '#166534') : (dark ? '#7dd3fc' : '#1d5f99'); ctx.fillText(L.name, 0, 0); ctx.restore(); });
-    JLAB.forEach(function (L) { if (!on.road || s < (L.major ? 0.12 : 0.2)) return; var q = S(L.p); if (q[0] < -40 || q[0] > W + 40 || q[1] < -20 || q[1] > H + 20) return;
+    JLAB.forEach(function (L) { if (!on.road || s < (L.major ? 0.12 : 0.2)) return; if (on.jcnm && itsNear(L.p)) return; var q = S(L.p); if (q[0] < -40 || q[0] > W + 40 || q[1] < -20 || q[1] > H + 20) return;
       ctx.font = '700 11px system-ui, sans-serif'; var tw = ctx.measureText(L.name).width; if (!free(q[0] - tw / 2 - 4, q[1] - 19, tw + 8, 15)) return; seen['j' + L.name.replace(/\s/g, '')] = 1;
       ctx.beginPath(); ctx.arc(q[0], q[1], 2.6, 0, Math.PI * 2); ctx.fillStyle = dark ? '#fde68a' : '#334155'; ctx.fill();
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = dark ? 'rgba(15,22,36,.9)' : 'rgba(255,255,255,.95)'; ctx.strokeText(L.name, q[0], q[1] - 11); ctx.fillStyle = dark ? '#fef3c7' : (L.major ? '#7c2d12' : '#334155'); ctx.fillText(L.name, q[0], q[1] - 11); });

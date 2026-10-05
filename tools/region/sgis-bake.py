@@ -27,9 +27,9 @@ def g(p):
         except Exception as e: print('retry', str(e)[:80], flush=True); time.sleep(3)
     return {}
 
-def fetch():
+def fetch(sidos=None):
     os.makedirs(OUT, exist_ok=True)
-    for sido in ('11', '31'):
+    for sido in (sidos or ('11', '31')):   # SGIS 시도 코드(서울 11 · 경기 31 · 인천 23 …) — `fetch 23` 처럼 골라 받는다(v2.7.0)
         for sg in g('/addr/stage.json?cd=%s' % sido).get('result') or []:
             for d in g('/addr/stage.json?cd=%s' % sg['cd']).get('result') or []:
                 fn = os.path.join(OUT, d['cd'] + '.json')
@@ -98,4 +98,4 @@ def build():
     print('items', sum(len(v) for v in G.values()), 'bnd without stats', nost, 'stats without bnd', nob, 'gus', len(gb), 'bytes', sum(gb.values()), dict(bys))
 
 if __name__ == '__main__':
-    fetch() if sys.argv[1:] == ['fetch'] else build()
+    fetch(sys.argv[2:] or None) if sys.argv[1:2] == ['fetch'] else build()

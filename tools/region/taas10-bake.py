@@ -18,7 +18,7 @@ def gu_finder(region=None):   # v0.10.102 구 칸이 빈 원자료(경기 — �
     sp = importlib.util.spec_from_file_location('db', os.path.join(ROOT, 'tools', 'region', 'dong-bake.py')); DB = importlib.util.module_from_spec(sp); sp.loader.exec_module(DB)
     feats, _ = DB.seoul_gus(); gs = [shape(f['geometry']) for f in feats]; tr2 = STRtree(gs)
     # v2.3.1 그 시도 경계 밖(바닷가·이웃 시도) 사고는 3km 안 가장 가까운 그 시도 구에 붙인다 — 거리는 UTM-K(m)
-    pre = {'경기': '41', '서울': '11'}.get(region); to5179 = Transformer.from_crs('EPSG:4326', 'EPSG:5179', always_xy=True).transform
+    pre = {'경기': '41', '서울': '11', '인천': '28'}.get(region); to5179 = Transformer.from_crs('EPSG:4326', 'EPSG:5179', always_xy=True).transform
     rg = [(feats[i]['properties']['sgg'], stf(to5179, g)) for i, g in enumerate(gs) if pre and feats[i]['properties']['sgg'][:2] == pre]
     def f(lon, lat, x=None, y=None):
         q = Point(lon, lat)
@@ -62,7 +62,7 @@ def main():
     print('고유키로 거른 중복 — 칸', dupC, '· 사망사고', dupF)
     print('어느 구에도 못 붙인 사망사고(경계에서 %dm 넘게 떨어짐)' % NEAR_M, len(lostF), lostF)
     rp = os.path.join(ROOT, 'data', 'r', 'index.json'); IX = json.load(open(rp, encoding='utf-8')); gb = {}
-    keep = {'경기': '41', '서울': '11'}.get(region)
+    keep = {'경기': '41', '서울': '11', '인천': '28'}.get(region)
     for gu, v in list(G.items()):
         if keep and gu[:2] != keep: print('다른 시도 구 — 쓰지 않음', gu, len(v['cells']), len(v['fatal'])); del G[gu]   # v0.10.102 사고: 경기 원자료 중 서울 경계 안 칸이 서울 구 파일을 덮어썼다 — 그 시도 구만 쓴다(v2.3.1 부터 그런 칸은 gu_finder 가 3km 안 그 시도 구로 보낸다)
     for gu, v in G.items():

@@ -11,6 +11,7 @@ import json, os, sys, time, urllib.request, urllib.parse, re, statistics, collec
 import xml.etree.ElementTree as ET
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.join(os.path.dirname(ROOT), '07_API키'); OUT = os.path.join(KB, 'out', 'rtms')
+sp0 = importlib.util.spec_from_file_location('rc', os.path.join(ROOT, 'tools', 'region', 'regcfg.py')); RC = importlib.util.module_from_spec(sp0); sp0.loader.exec_module(RC)   # 시도 이름(v2.7.0)
 sp = importlib.util.spec_from_file_location('g250', os.path.join(ROOT, 'tools', 'region', 'grid250.py')); G = importlib.util.module_from_spec(sp); sp.loader.exec_module(G)
 END = (2026, 8); NM = 24
 def months():
@@ -60,7 +61,7 @@ def geocode(vk, IX):
     gp = os.path.join(OUT, 'geo.json'); geo = json.load(open(gp, encoding='utf-8')) if os.path.exists(gp) else {}
     want = set()
     for g in IX['gus']:
-        sd = '서울특별시' if g['gu'][:2] == '11' else '경기도'
+        sd = RC.NAME[g['gu'][:2]]
         for ym in months():
             fn = os.path.join(OUT, 'nrg_%s_%s.json' % (g['gu'], ym))
             if not os.path.exists(fn): continue
@@ -92,7 +93,7 @@ def build():
     geo = json.load(open(os.path.join(OUT, 'geo.json'), encoding='utf-8'))
     tot = collections.Counter(); gb = {}; m2a = collections.defaultdict(collections.Counter)
     for g in IX['gus']:
-        sd = '서울특별시' if g['gu'][:2] == '11' else '경기도'
+        sd = RC.NAME[g['gu'][:2]]
         uses = []; umds = []; items = []; cells = collections.defaultdict(list)
         for ym in months():
             fn = os.path.join(OUT, 'nrg_%s_%s.json' % (g['gu'], ym))

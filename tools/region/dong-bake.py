@@ -16,6 +16,7 @@ LPZ = os.path.join(KB, 'out', 'LOCAL_PEOPLE_DONG_202607.zip')
 spec = importlib.util.spec_from_file_location('fb', os.path.join(ROOT, 'tools', 'flow-bake.py')); fb = importlib.util.module_from_spec(spec); spec.loader.exec_module(fb)
 spec2 = importlib.util.spec_from_file_location('tb', os.path.join(ROOT, 'tools', 'trdar-bake.py')); tb = importlib.util.module_from_spec(spec2); spec2.loader.exec_module(tb)
 seoul = fb.seoul
+spec3 = importlib.util.spec_from_file_location('rc', os.path.join(ROOT, 'tools', 'region', 'regcfg.py')); RC = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(RC)
 TB = ['00_06', '06_11', '11_14', '14_17', '17_21', '21_24']; DW = ['MON', 'TUES', 'WED', 'THUR', 'FRI', 'SAT', 'SUN']
 BARS = {'호프-간이주점', '일반유흥주점', '노래방', '유흥주점', '단란주점'}   # trend-bake 와 같은 묶음
 M = 1e4
@@ -34,7 +35,7 @@ def jput(name, o):
 
 def seoul_gus():
     g = json.load(open(HJD, encoding='utf-8'))
-    feats = [f for f in g['features'] if f['properties']['adm_cd2'][:2] in ('11', '41')]   # v0.10.99 경기도 더함(주민·경계만 — 생활인구·카드 매출은 서울 자료)
+    feats = [f for f in g['features'] if f['properties']['adm_cd2'][:2] in RC.SIDOS]   # v2.7.0 시도 목록 = regcfg.py(서울·경기·인천 …)   # v0.10.99 경기도 더함(주민·경계만 — 생활인구·카드 매출은 서울 자료)
     gus = {}
     for f in feats: gus.setdefault(f['properties']['sgg'], f['properties']['sggnm'])
     return feats, gus

@@ -16,7 +16,7 @@ def main():
     R = json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))
     byName = {}
     for x in R['gus']:
-        sd = '서울' if x['gu'].startswith('11') else '경기'; byName[(sd, nz(x['name']))] = x['gu']
+        sd = {'11': '서울', '41': '경기', '28': '인천'}[x['gu'][:2]]; byName[(sd, nz(x['name']))] = x['gu']   # v2.7.0 인천
     out = collections.defaultdict(dict); yrs = {}
     for tbl, key in T:
         meta = g('https://kosis.kr/openapi/statisticsData.do?method=getMeta&type=ITM&apiKey=%s&orgId=133&tblId=%s&format=json&jsonVD=Y' % (k, tbl))
@@ -29,7 +29,7 @@ def main():
         rows = g(u); yrs[key] = max(r['PRD_DE'] for r in rows); V = collections.defaultdict(dict)
         for r in rows:
             a = r['C1']; p = par.get(a); sd = nm.get(p, '') if p else ''
-            if sd not in ('서울', '경기'): continue
+            if sd not in ('서울', '경기', '인천'): continue
             gu = byName.get((sd, nz(r['C1_NM'])))
             if not gu:   # 경기 시(구 없이) — 그 시의 모든 구에 같은 값
                 cand = [v for (s2, n2), v in byName.items() if s2 == sd and n2.startswith(nz(r['C1_NM']))]
@@ -45,7 +45,7 @@ def main():
                 if n and a2: out[gc]['inc'] = [round(a2 * 1e6 / n / 1e4), int(n)]
             else:
                 out[gc]['jbs'] = [d.get(('합계', '종합부동산세 결정세액 현황')), d.get(('주택분', '종합부동산세 결정세액 현황'))]
-    for sd in ('11', '41'):   # 순위(서울 25개 구 · 경기 시군구)
+    for sd in ('11', '41', '28'):   # 순위(서울 25개 구 · 경기 시군구 · 인천 구·군)
         for key in ('wage', 'inc'):
             L = sorted([(v[key][0], gc) for gc, v in out.items() if gc.startswith(sd) and key in v], reverse=True); seen = []
             for rank, (val, gc) in enumerate(L): out[gc][key + 'R'] = [rank + 1, len(L)]

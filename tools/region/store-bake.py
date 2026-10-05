@@ -12,7 +12,8 @@ K = json.load(open(os.path.join(KB, 'keys.json'), encoding='utf-8-sig'))['data_g
 API = 'https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInDong'
 GUS = ['11110', '11140', '11170', '11200', '11215', '11230', '11260', '11290', '11305', '11320', '11350', '11380', '11410', '11440', '11470', '11500', '11530', '11545', '11560', '11590', '11620', '11650', '11680', '11710', '11740']
 GG = ['41111', '41113', '41115', '41117', '41131', '41133', '41135', '41150', '41171', '41173', '41192', '41194', '41196', '41210', '41220', '41250', '41271', '41273', '41281', '41285', '41287', '41290', '41310', '41360', '41370', '41390', '41410', '41430', '41450', '41461', '41463', '41465', '41480', '41500', '41550', '41570', '41591', '41593', '41595', '41597', '41610', '41630', '41650', '41670', '41800', '41820', '41830']   # v0.10.99 경기
-GUS = GUS + GG
+INC = ['28110', '28140', '28177', '28185', '28200', '28237', '28245', '28260', '28710', '28720', '28125', '28155', '28275', '28290']   # v2.7.0 인천 — 2026-07 구 개편 전 코드(중구·동구·서구)와 새 코드 둘 다 받고, 구울 때 좌표로 새 구에 나눈다
+GUS = GUS + GG + INC
 KX, KY = 88800, 111000   # 서울 위도 평면 근사(지도와 같은 값)
 
 def page(gu, n):
@@ -29,7 +30,10 @@ def fetch():
     for gu in GUS:
         fn = os.path.join(OUT, 'stores_%s.json' % gu)
         if os.path.exists(fn): continue
-        j = page(gu, 1); tot = j['body']['totalCount']; ym = j['header'].get('stdrYm'); items = j['body']['items']
+        j = page(gu, 1)
+        if 'totalCount' not in (j.get('body') or {}):   # 그 코드에 자료 없음(예: 인천 새 구 코드 — 202606 자료는 옛 코드)
+            print('자료 없음', gu, json.dumps(j.get('header'), ensure_ascii=False)[:160], flush=True); json.dump({'gu': gu, 'stdrYm': '', 'total': 0, 'rows': []}, open(fn, 'w', encoding='utf-8')); continue
+        tot = j['body']['totalCount']; ym = j['header'].get('stdrYm'); items = j['body']['items']
         for n in range(2, tot // 1000 + 2):
             items += page(gu, n)['body']['items']; time.sleep(0.2)
         rows = [[s['bizesId'], s['bizesNm'], s.get('brchNm') or '', s['indsLclsCd'], s['indsLclsNm'], s['indsMclsCd'], s['indsMclsNm'], s['indsSclsCd'], s['indsSclsNm'],
@@ -44,7 +48,26 @@ def build():
         fn = os.path.join(OUT, 'stores_%s.json' % gu)
         if not os.path.exists(fn): print('없음', gu); continue
         data[gu] = json.load(open(fn, encoding='utf-8'))
+        if not data[gu]['rows']: data.pop(gu); continue
         for r in data[gu]['rows']: cls.setdefault(r[7], [r[3], r[4], r[5], r[6], r[8]])
+    inc = [g for g in list(data) if g[:2] == '28']
+    if inc:   # 인천은 점마다 좌표로 새 구(제물포·영종·서해·검단 …)에 — 같은 점포(bizesId)가 옛·새 코드에 겹쳐 오면 한 번만
+        import importlib.util
+        from shapely.geometry import shape, Point
+        from shapely.strtree import STRtree
+        sp = importlib.util.spec_from_file_location('db', os.path.join(ROOT, 'tools', 'region', 'dong-bake.py')); DB = importlib.util.module_from_spec(sp); sp.loader.exec_module(DB)
+        fs = [f for f in DB.seoul_gus()[0] if f['properties']['sido'] == '28']; gs = [shape(f['geometry']) for f in fs]; tr = STRtree(gs)
+        new = {}; seen = set(); lost = 0
+        for g in inc:
+            d = data.pop(g)
+            for r in d['rows']:
+                if r[0] in seen or not r[9] or not r[10]: continue
+                seen.add(r[0]); q = Point(r[9], r[10]); hit = None
+                for i in tr.query(q):
+                    if gs[i].contains(q): hit = fs[i]['properties']['sgg']; break
+                if not hit: lost += 1; continue
+                new.setdefault(hit, {'gu': hit, 'stdrYm': d['stdrYm'], 'rows': []})['rows'].append(r)
+        data.update(new); print('인천 점포 새 구로', {k: len(v['rows']) for k, v in new.items()}, '경계 밖', lost)
     codes = sorted(cls); ix = {c: i for i, c in enumerate(codes)}
     os.makedirs(os.path.join(ROOT, 'data', 'r'), exist_ok=True)
     idx = []

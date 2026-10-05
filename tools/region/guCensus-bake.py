@@ -40,12 +40,12 @@ def main():
         if len(a) == 5: by[(sido_of.get(a[:2], ''), n)] = a
     out = {}; miss = []
     for g in IX['gus']:
-        sd = '서울특별시' if g['gu'][:2] == '11' else '경기도'; name = g['name']
+        sd = {'11': '서울특별시', '41': '경기도', '28': '인천광역시'}[g['gu'][:2]]; name = g['name']
         cand = [name, name.replace(' ', ''), re.sub(r'^(\S+시)\s*\S+구$', r'\1', name)]
         a = None
         for c in cand:
             if (sd, c) in by: a = by[(sd, c)]; break
-        if not a: miss.append(name); continue
+        if not a: miss.append(name); continue   # 인천 새 구(2026-07 제물포·영종·서해·검단)는 2020 총조사에 없다 — 지어내지 않고 뺀다
         t = T[a]; hh = t.get('T10') or 1; e = E.get(a, {})
         p25 = e.get('T10', 0) - e.get('T90', 0)   # 6세 이상 중 25세 이상만 더했으므로 T10 = 25세 이상 합
         out[g['gu']] = {'src': nm[a] if nm[a].replace(' ', '') == name.replace(' ', '') else nm[a] + '(시 전체)', 'hh': int(hh),
@@ -53,7 +53,7 @@ def main():
                         'wolse': round((t.get('T13', 0) + t.get('T14', 0) + t.get('T15', 0)) / hh * 100, 1), 'free': round(t.get('T16', 0) / hh * 100, 1),
                         'uni4': round((e.get('T61', 0) + e.get('T71', 0) + e.get('T81', 0)) / (e.get('T10') or 1) * 100, 1) if e else None,
                         'col2': round(e.get('T51', 0) / (e.get('T10') or 1) * 100, 1) if e else None}
-    for sd, a in (('서울', '11'), ('경기', '31')):
+    for sd, a in (('서울', '11'), ('경기', '31'), ('인천', '23')):
         t = T.get(a) or {}; hh = t.get('T10') or 1; e = E.get(a, {})
         out['_' + sd] = {'own': round(t.get('T11', 0) / hh * 100, 1), 'jeonse': round(t.get('T12', 0) / hh * 100, 1), 'wolse': round((t.get('T13', 0) + t.get('T14', 0) + t.get('T15', 0)) / hh * 100, 1),
                          'uni4': round((e.get('T61', 0) + e.get('T71', 0) + e.get('T81', 0)) / (e.get('T10') or 1) * 100, 1) if e else None}

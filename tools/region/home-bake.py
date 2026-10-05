@@ -9,6 +9,7 @@ import json, os, sys, time, urllib.request, urllib.parse, re, statistics, collec
 import xml.etree.ElementTree as ET
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.join(os.path.dirname(ROOT), '07_API키'); OUT = os.path.join(KB, 'out', 'home'); GEO = os.path.join(KB, 'out', 'rtms', 'geo.json')
+sp0 = importlib.util.spec_from_file_location('rc', os.path.join(ROOT, 'tools', 'region', 'regcfg.py')); RC = importlib.util.module_from_spec(sp0); sp0.loader.exec_module(RC)   # 시도 이름(v2.7.0)
 sp = importlib.util.spec_from_file_location('g250', os.path.join(ROOT, 'tools', 'region', 'grid250.py')); G = importlib.util.module_from_spec(sp); sp.loader.exec_module(G)
 END = (2026, 8)
 SVC = {'AptTrade': 24, 'OffiTrade': 24, 'RHTrade': 24, 'SHTrade': 24, 'AptRent': 12, 'OffiRent': 12, 'RHRent': 12, 'SHRent': 12}
@@ -50,13 +51,14 @@ def fetch(only=None):
 def addr(g, r):
     j = r.get('jibun', '')
     if not j or '*' in j: return None
-    return '%s %s %s %s' % ('서울특별시' if g['gu'][:2] == '11' else '경기도', gu_name(g), r.get('umdNm', ''), j)
+    return '%s %s %s %s' % (RC.NAME[g['gu'][:2]], gu_name(g), r.get('umdNm', ''), j)
 
-def geocode():
+def geocode(only=None):   # only = 시도 코드 목록(예: ['28']) — 그 시도 지번만(v2.7.0 인천 시범)
     vk = keys()['vworld']; IX = json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))
     geo = json.load(open(GEO, encoding='utf-8')) if os.path.exists(GEO) else {}
     pri = collections.Counter()   # 거래가 많은 지번부터(하루 한도에 걸려도 중요한 자리가 먼저)
     for g in IX['gus']:
+        if only and g['gu'][:2] not in only: continue
         for svc, n in SVC.items():
             if svc.startswith('SH'): continue
             for ym in months(n):
@@ -69,7 +71,7 @@ def geocode():
     import threading
     from concurrent.futures import ThreadPoolExecutor
     lock = threading.Lock(); st = {'k': 0, 'bad': 0, 'stop': False}
-    def one(a):   # 브이월드 주소 좌표 한 건 — 일꾼 16개가 나눠 부른다(v2.5.0 · 한 줄씩이면 13만 곳에 하루가 걸렸다)
+    def one(a):   # 브이월드 주소 좌표 한 건 — 일꾼 4개가 나눠 부른다(16개는 브이월드가 502·연결 끊김)(v2.5.0 · 한 줄씩이면 13만 곳에 하루가 걸렸다)
         if st['stop']: return
         q = {'service': 'address', 'request': 'getcoord', 'version': '2.0', 'crs': 'epsg:4326', 'address': a, 'refine': 'true', 'simple': 'false', 'format': 'json', 'type': 'parcel', 'key': vk}
         try: j = json.loads(get('https://api.vworld.kr/req/address?' + urllib.parse.urlencode(q)))['response']
@@ -85,7 +87,7 @@ def geocode():
                 return
             st['k'] += 1
             if st['k'] % 2000 == 0: json.dump(geo, open(GEO, 'w', encoding='utf-8'), ensure_ascii=False); print('geo', st['k'], flush=True)
-    with ThreadPoolExecutor(16) as ex: list(ex.map(one, want))
+    with ThreadPoolExecutor(4) as ex: list(ex.map(one, want))
     json.dump(geo, open(GEO, 'w', encoding='utf-8'), ensure_ascii=False); print('geo 끝', st['k'], '전체', len(geo), '멈춤' if st['stop'] else '', flush=True)
 
 def num(s):
@@ -170,4 +172,4 @@ def build():
     print(dict(tot), '구', len(gb), '바이트', sum(gb.values()))
 
 if __name__ == '__main__':
-    fetch(sys.argv[2:]) if sys.argv[1] == 'fetch' else {'geo': geocode, 'build': build}[sys.argv[1]]()   # fetch AptRent … = 그 서비스만(서비스마다 한도가 따로라 나눠 동시에)
+    fetch(sys.argv[2:]) if sys.argv[1] == 'fetch' else geocode(sys.argv[2:] or None) if sys.argv[1] == 'geo' else build()   # fetch AptRent … = 그 서비스만(서비스마다 한도가 따로라 나눠 동시에)

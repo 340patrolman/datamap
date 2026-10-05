@@ -6,7 +6,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 def main():
     R = {}
-    for sd, pre in (('서울', '11'), ('경기', '41')):
+    for sd, pre in (('서울', '11'), ('경기', '41'), ('인천', '28')):   # v2.7.0 인천
         app = []; age = [0] * 10; tot = 0; tb = [0] * 6; dw = [0] * 7; amt = 0; wd = [0] * 24; we = [0] * 24; jp = jw = jh = 0; nd = 0; ns = 0
         for fn in glob.glob(os.path.join(ROOT, 'data', 'r', pre + '*', 'dong.json')):
             for d in json.load(open(fn, encoding='utf-8'))['dong']:

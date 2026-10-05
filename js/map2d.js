@@ -1339,7 +1339,8 @@
   function paintDl() { var el = $('m2dGetP'); if (!el || !el.classList.contains('on')) return; var done = dlDone(), h = '';
     h += '<div class="lg-h"><b>📥 지역 받기</b><button id="m2dGetX">닫기</button></div><p class="lg-n">화면에 보이는 곳은 저절로 받는다. 미리 받아 두면 <b>통신이 끊긴 곳에서도</b> 그 지역 지도가 열린다(고른 구·시 경계 밖 ' + (DL_AROUND / 1000) + 'km 둘레까지 함께).</p>';
     h += '<div class="lg-btns"><button data-dl="gps">📍 지금 위치 둘레 6km</button><button data-dl="view">🖥 지금 화면 둘레</button></div><div id="m2dGetMsg" class="lg-n"></div>';
-    ['서울특별시', '경기도'].forEach(function (sd) { h += '<div class="lg"><b>' + sd + '</b><div class="dlg">' + SGG.filter(function (G) { return G.g.sido === sd; }).map(function (G) { var ks = tilesForRings(G.rings), d = done[G.g.name]; if (d && d.bake !== TBAKE) d = null;
+    var SIDO_F = { '11': '서울특별시', '41': '경기도', '28': '인천광역시' };   // v2.7.0 받은 권역만(regions.json)
+    ((D.ridx && D.ridx.regions) || [{ sido: '11' }, { sido: '41' }]).map(function (r) { return SIDO_F[r.sido]; }).filter(Boolean).forEach(function (sd) { h += '<div class="lg"><b>' + sd + '</b><div class="dlg">' + SGG.filter(function (G) { return G.g.sido === sd; }).map(function (G) { var ks = tilesForRings(G.rings), d = done[G.g.name]; if (d && d.bake !== TBAKE) d = null;
       return '<button data-sg="' + esc(G.g.name) + '" class="' + (d ? 'on' : '') + '">' + (d ? '✓ ' : '') + esc(G.g.name) + ' <small>' + mb(tbytes(ks) + rFilesFor(G).reduce(function (a, x) { return a + x.b; }, 0)) + '</small></button>'; }).join('') + '</div></div>'; });
     var keys = Object.keys(done); h += '<div class="lg-btns"><button data-dl="clear">받은 지역 지우기' + (keys.length ? '(' + keys.length + ')' : '') + '</button></div><small class="lg-n">조각은 OSM 2026-10-03 기준(© OpenStreetMap contributors · ODbL) · 서울 구는 행정동 자료(주민·생활인구·카드 매출)도 함께 받는다 · 그 밖의 자료 층은 아직 서초 둘레</small>';
     el.innerHTML = h; }
@@ -1726,7 +1727,7 @@
     var h = '<h3>💰 ' + esc(it.name) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.grp) + ' · 부동산원 표본 상권</small></h3>' + row('대표 자리', esc(it.how) + ' <em>(상권 경계는 공개되지 않는다)</em>');
     [['s', '소규모 상가'], ['m', '중대형 상가'], ['c', '집합 상가']].forEach(function (k) { if (it[k[0]]) h += row(k[1], lastV(it[k[0]]) + '천원/㎡ · 33㎡(10평)이면 월 약 ' + Math.round(lastV(it[k[0]]) * 3.3) + '만원') + '<div class="cap">' + k[1] + ' 임대료 분기별(천원/㎡ · 한 달 · 전용+공용 면적)</div>' + bar(it[k[0]].map(function (v) { return v || 0; }), '#b45309', L); });
     [['vs', '소규모 상가'], ['vm', '중대형 상가']].forEach(function (k) { if (it[k[0]]) h += '<div class="cap">' + k[1] + ' 공실률 분기별(% · 빈 점포 면적 비율)</div>' + bar(it[k[0]].map(function (v) { return v || 0; }), '#64748b', L); });
-    var SD = it.sido === '경기' ? '경기' : '서울', A = RENT.agg[SD]; if (A && A.m) h += row(SD + ' 평균', '중대형 ' + lastV(A.m) + '천원/㎡ · 공실 ' + lastV(A.vm) + '% · 소규모 ' + lastV(A.s) + '천원/㎡ · 공실 ' + lastV(A.vs) + '%');
+    var SD = it.sido === '경기' ? '경기' : it.sido === '서울' ? '서울' : it.sido, A = RENT.agg[SD]; if (A && A.m) h += row(SD + ' 평균', '중대형 ' + lastV(A.m) + '천원/㎡ · 공실 ' + lastV(A.vm) + '% · 소규모 ' + lastV(A.s) + '천원/㎡ · 공실 ' + lastV(A.vs) + '%');
     h += '<div class="lg-btns"><button data-radhere="' + it.lon + ',' + it.lat + '">📐 여기서 반경 분석</button></div>';
     return h + '<p class="desc">' + esc(RENT.note) + '</p>' + src(RENT.source);
   }
@@ -1760,8 +1761,9 @@
       h += '<p class="desc">이 동은 옛 ' + esc(d.old.name) + '에서 나뉘었다 — 생활인구(2026.7)·카드 매출 원자료가 옛 동 하나로만 있어 아래는 <b>옛 ' + esc(d.old.name) + ' 전체</b> 값이다(나눠 지어내지 않는다).</p>';
       var lo = liveNow(o); if (lo) h += row('옛 ' + esc(d.old.name) + ' 생활인구', lo.n.toLocaleString() + '명 <em>(' + lo.h + '시)</em>') + '<div class="cap">옛 ' + esc(d.old.name) + ' 시간대별 생활인구(명 · 0~23시 ' + (lo.we ? '주말' : '평일') + ' 평균)</div>' + bar(lo.arr, '#fdba74');
       h += salesRows(o); }
-    var gg = String(d.gcd).slice(0, 2) === '41';
-    if (gg) h += '<p class="desc">경기도 동 — 생활인구·카드 매출(상권분석)은 <b>서울시 자료</b>라 경기에는 없다. 주민 연령·남녀·관할·안전 시설·점포·학원·어린이집(경기도 자료)·유치원·학교는 있다.</p>';
+    var sd2 = String(d.gcd).slice(0, 2), gg = sd2 !== '11';   // gg = 서울 밖(서울시 자료가 없는 곳)
+    if (sd2 === '41') h += '<p class="desc">경기도 동 — 생활인구·카드 매출(상권분석)은 <b>서울시 자료</b>라 경기에는 없다. 주민 연령·남녀·관할·안전 시설·점포·학원·어린이집(경기도 자료)·유치원·학교는 있다.</p>';
+    else if (gg) h += '<p class="desc">' + esc(sidoOf(d.gcd)) + ' 동 — 이 지역은 <b>전국 공통 자료</b>만 있다(주민 연령·남녀·상가·실거래·사고·집계구·교차로 이름). 생활인구·카드 매출(서울시)·경기데이터드림 자료는 그 지역에만 있어 여기에는 없다.</p>';
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
@@ -2608,7 +2610,8 @@
   // ---------- 🗣 자동 해설(v2.0.0 · 소유자 「인구분포가 나오면 데이터에 따른 설명 — 모르고 넘어갈 수 있으니」) ----------
   //  숫자를 앱 기준으로 읽어 문장으로 — 기준(몇 배·몇 %p)을 같이 적는다. 「그래서 어떤 장사」 쪽은 일반론이라 그렇게 밝힌다.
   var AREF = null; fetch('data/area-ref.json').then(function (r) { return r.json(); }).then(function (j) { AREF = j; }).catch(function () {});
-  function sidoOf(gu) { return String(gu || '').indexOf('41') === 0 ? '경기' : '서울'; }
+  var SIDO_S = { '11': '서울', '41': '경기', '28': '인천', '30': '대전', '36': '세종', '43': '충북', '44': '충남', '51': '강원', '26': '부산', '27': '대구', '31': '울산', '47': '경북', '48': '경남', '29': '광주', '46': '전남', '52': '전북', '50': '제주' };
+  function sidoOf(gu) { return SIDO_S[String(gu || '11650').slice(0, 2)] || '서울'; }   // v2.7.0 인천부터 — 종전엔 경기가 아니면 모두 「서울」
   function talk(S) {
     var L = [], ref = AREF && AREF.ref[S.sido || '서울'] || null, rn = S.sido || '서울', f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); };
     if (S.wrk != null && S.pop > 50) { var r = S.wrk / S.pop, rr = ref && ref.wrkPerPop;
@@ -2937,11 +2940,11 @@
       tw += ' 같은 가구 수라도 20평대와 40평대는 다른 시장이다 — 평형 구성이 손님층의 크기를 말해 준다. <small>(서울시 상권분석서비스 아파트-행정동 ' + qLab1(S.Wm.quarters.apt) + ' · 서울신용보증재단 추정 시세 · 단지·가구 수는 이 자료가 시세를 잡은 곳만이라 실제 세대 수보다 적을 수 있다(소규모 공동주택 포함 · 단독·다가구 빠짐) — 비율과 시세 수준으로 읽는다)</small>';
       WP.push(tw); tags.push(hi ? '집값 상위 20% 동' : mid ? '집값 중간 이상' : '집값 중간 이하'); }
     if (S.GT && (S.GT.wage || S.GT.inc)) { var G2 = S.GT, gn = S.guName || '이 구', tg = '<b>구 지갑(참고 · 구 평균 — 이 동에 나누지 않는다).</b> ' + esc(gn) + ' ';
-      if (G2.wage) tg += '근로자 1인당 총급여 <b>' + won(G2.wage[0]) + '</b>(' + S.GTm.years.wage + '년 · 주소지 기준 · ' + (S.sido === '서울' ? '서울 25개 구' : '경기 시군구') + ' 중 ' + G2.wageR[0] + '위)';
+      if (G2.wage) tg += '근로자 1인당 총급여 <b>' + won(G2.wage[0]) + '</b>(' + S.GTm.years.wage + '년 · 주소지 기준 · ' + (S.sido === '서울' ? '서울 25개 구' : S.sido + ' 시군구') + ' 중 ' + G2.wageR[0] + '위)';
       if (G2.inc) tg += ' · 종합소득 신고자 1인당 종합소득금액 <b>' + won(G2.inc[0]) + '</b>(' + S.GTm.years.inc + '년 · ' + G2.incR[0] + '위)';
       if (G2.jbs && G2.jbs[1] != null) tg += ' · 종합부동산세 주택분 ' + won(G2.jbs[1] * 100) + '(' + S.GTm.years.jbs + '년)';
-      if (S.GC) { var C2 = S.GC, CA = S.GCa['_' + (S.sido === '서울' ? '서울' : '경기')] || {};
-        tg += ' · 2020 인구주택총조사(' + esc(C2.src) + '): 사는 집이 <b>자기집 ' + C2.own + '%</b> · 전세 ' + C2.jeonse + '% · 월세 ' + C2.wolse + '%(' + (S.sido === '서울' ? '서울' : '경기') + ' 평균 자기집 ' + CA.own + '% · 월세 ' + CA.wolse + '%)' + (C2.uni4 != null ? ' · 25세 이상 4년제 대학 졸업 이상 <b>' + C2.uni4 + '%</b>(평균 ' + CA.uni4 + '%)' : '');
+      if (S.GC) { var C2 = S.GC, CA = S.GCa['_' + S.sido] || {};
+        tg += ' · 2020 인구주택총조사(' + esc(C2.src) + '): 사는 집이 <b>자기집 ' + C2.own + '%</b> · 전세 ' + C2.jeonse + '% · 월세 ' + C2.wolse + '%(' + S.sido + ' 평균 자기집 ' + CA.own + '% · 월세 ' + CA.wolse + '%)' + (C2.uni4 != null ? ' · 25세 이상 4년제 대학 졸업 이상 <b>' + C2.uni4 + '%</b>(평균 ' + CA.uni4 + '%)' : '');
         if (C2.wolse >= (CA.wolse || 99) + 5) tg += ' — 월세 사는 집이 많다: 젊은 1~2인 가구·이동이 잦은 동네일 가능성(구 평균 · 추론)';
         else if (C2.own >= (CA.own || 99) + 8) tg += ' — 자기집이 많다: 오래 사는 가구·자산 쪽(구 평균 · 추론)'; }
       tg += '. 이 숫자는 구(시) 전체 평균이라 그 안의 동네마다 다르다 — 부자 동네와 아닌 동네가 섞인 값이다. <small>(국세청 국세통계 KOSIS 133 · 종부세는 공제를 넘는 사람만 세서 중간 자산이 빠진다 · 점유형태·학력 = 통계청 2020 총조사 시군구(KOSIS DT_1PE2002·DT_1PM2001 · 동 단위 공식 값 없음 · 경기 일반구·화성·부천 새 구는 시 전체) · 차량 보유는 시군구 공식 표를 찾지 못해 넣지 않았다)</small>';

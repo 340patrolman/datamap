@@ -8,7 +8,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 # 층 → (지역 파일 r/<구>/… 또는 서초 바탕 파일, 종류 point·grid·poly·line·live, 범위 national·seoul·gyeonggi·seoul+gg·seocho, 출처 계열, 추정)
 T = {
  'dong': ('dong.json · dong-seocho.json', 'poly', 'seoul+gg', 'mois', 0), 'live': ('dong.json(live)', 'poly', 'seoul', 'seoul', 0), 'sales': ('dong.json(sales)', 'poly', 'seoul', 'seoul', 1),
- 'live250': ('live250.json', 'grid', 'seoul', 'seoul250', 0), 'crowd': ('서울시 실시간 도시데이터(받은 때)', 'point', 'seoul', 'seoul', 0), 'profile': ('profile.json', 'table', 'national', 'mixed', 1), 'fl250': ('forn250.json', 'grid', 'seoul', 'seoul250f', 0), 'usgg': ('base/sgg.json + profile.json', 'poly', 'national', 'sgis', 0), 'upb': ('police.json + profile.json', 'poly', 'national', 'police', 1), 'jurk': ('police.json(dong)', 'poly', 'national', 'police', 1), 'pbox': ('police.json(pbox)', 'point', 'national', 'police', 0), 'g250': ('grid.json', 'grid', 'seoul+gg', 'sgis', 0), 'acc250': ('taas250.json', 'grid', 'seoul+gg', 'taas', 0),
+ 'live250': ('live250.json', 'grid', 'seoul', 'seoul250', 0), 'crowd': ('서울시 실시간 도시데이터(받은 때)', 'point', 'seoul', 'seoul', 0), 'profile': ('profile.json', 'table', 'national', 'mixed', 1), 'fl250': ('forn250.json', 'grid', 'seoul', 'seoul250f', 0), 'usgg': ('base/sgg.json + profile.json', 'poly', 'national', 'sgis', 0), 'rnet': ('base/rn/*.json + itsl.json', 'line', 'national', 'its', 0), 'volp': ('traffic-vol-seoul.json', 'point', 'seoul', 'seoulvol', 0), 'exv': ('traffic-ex.json', 'point', 'national', 'exco', 0), 'upb': ('police.json + profile.json', 'poly', 'national', 'police', 1), 'jurk': ('police.json(dong)', 'poly', 'national', 'police', 1), 'pbox': ('police.json(pbox)', 'point', 'national', 'police', 0), 'g250': ('grid.json', 'grid', 'seoul+gg', 'sgis', 0), 'acc250': ('taas250.json', 'grid', 'seoul+gg', 'taas', 0),
  'acc10': ('taas10.json', 'grid', 'seoul+gg', 'taas', 0), 'fatal10': ('taas10.json(fatal)', 'point', 'seoul+gg', 'taas', 0), 'fatal': ('taas10.json(fatal)', 'point', 'seoul+gg', 'taas', 0),
  'jct': ('jct.json', 'point', 'seoul+gg', 'taas', 1), 'hot10': ('hot10.json', 'point', 'seoul+gg', 'koroad', 0), 'acc': ('taas-nodes-seocho.json', 'point', 'seocho', 'taas', 1),
  'home': ('home.json', 'grid', 'seoul+gg', 'molit', 1), 'rtc': ('rtms.json', 'grid', 'seoul+gg', 'molit', 0), 'rent': ('rent.json', 'point', 'seoul+gg', 'reb', 0),
@@ -25,6 +25,8 @@ for k in ['gpark', 'gev', 'ger', 'gfest', 'glamp']: T.setdefault(k, ('safety.jso
 for k in ['flt', 'flr', 'und', 'ice', 'hcab', 'advb']: T.setdefault(k, ('season.json · season-seocho.json', 'point', 'seoul', 'seoul', 0))
 SRC = {'mois': ('행정안전부 주민등록 인구통계', '확인 필요'), 'seoul': ('서울 열린데이터광장', '확인 필요(데이터셋마다 — 대부분 공공누리 1유형)'),
        'seoul250': ('서울 열린데이터광장 OA-22784', '공공누리 1유형(출처표시 · 상업적 이용·변경 가능 — 데이터셋 화면 2026-10-05 확인)'),
+       'seoulvol': ('서울시 교통량조사(서울 열린데이터광장 SpotInfo · VolInfo)', '공공누리 1유형(출처표시 — traffic-vol-seocho.json 기록)'),
+       'exco': ('한국도로공사 고속도로 공공데이터 포털 OpenAPI', '확인 필요'),
        'seoul250f': ('서울 열린데이터광장 OA-22785(장기)·OA-22786(단기) 외국인 생활인구 250m', '공공누리 1유형(출처표시 · 상업적 이용·변경 가능 — 데이터셋 화면 2026-10-06 확인)'),
        'sgis': ('통계청 SGIS(경계 가공 vuski/admdongkor)', 'CC BY 4.0(admdongkor) · SGIS 통계는 확인 필요'), 'taas': ('도로교통공단 TAAS', '확인 필요'), 'koroad': ('도로교통공단 오픈API', '확인 필요'),
        'molit': ('국토교통부 실거래가(공공데이터포털)', '확인 필요'), 'reb': ('한국부동산원', '확인 필요'), 'sbiz': ('소상공인시장진흥공단', '확인 필요'), 'its': ('국가교통정보센터 ITS', '확인 필요'),

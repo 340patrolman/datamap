@@ -410,6 +410,48 @@
 "paid_ok": true
 },
 {
+"key": "rnet",
+"name": "🛣 도로망 등급(전국 · 국도·지방도·시군도)",
+"group": "도로·교통",
+"default": false,
+"file": "base/rn/*.json + itsl.json",
+"kind": "line",
+"scope": "national",
+"cover": "전국",
+"src": "국가교통정보센터 ITS",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
+"key": "volp",
+"name": "🚙 시간대 교통량(서울 조사 지점)",
+"group": "도로·교통",
+"default": false,
+"file": "traffic-vol-seoul.json",
+"kind": "point",
+"scope": "seoul",
+"cover": "서울",
+"src": "서울시 교통량조사(서울 열린데이터광장 SpotInfo · VolInfo)",
+"license": "공공누리 1유형(출처표시 — traffic-vol-seocho.json 기록)",
+"estimate": false,
+"paid_ok": true
+},
+{
+"key": "exv",
+"name": "🛣 고속도로 영업소 교통량(전국)",
+"group": "도로·교통",
+"default": false,
+"file": "traffic-ex.json",
+"kind": "point",
+"scope": "national",
+"cover": "전국",
+"src": "한국도로공사 고속도로 공공데이터 포털 OpenAPI",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "upb",
 "name": "👮 지구대·파출소 관할(근사)",
 "group": "치안·안전",

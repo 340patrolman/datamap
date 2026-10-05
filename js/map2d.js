@@ -2447,10 +2447,18 @@
     var pn = $('m2dPanel'); if (!pn) return;
     var G = [], TK = themeKeys(THEME); LAYERS.forEach(function (l) { if (G.indexOf(l[3]) < 0) G.push(l[3]); }); G.sort(function (a, b) { var x = GORD.indexOf(a), y = GORD.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
     pn.innerHTML = '<div class="ph"><b>☰ 모든 층</b><button data-lh="1" class="' + (LHON ? 'on' : '') + '">❓ 설명 ' + (LHON ? '접기' : '보기') + '</button><button class="x" data-close="1">닫기</button></div>' + (LHON ? '<p class="lhn">층 이름을 누르면 켜고 끈다. 회색 글은 그 층이 무엇인지 · 어디서 온 자료인지 · 어떻게 쓰는지.</p>' : '') + '<div class="thm">' + THEMES.map(function (t) { var n = t[2] ? themeKeys(t[0]).filter(function (k) { return on[k]; }).length : 0; return '<button data-th="' + t[0] + '" class="' + (THEME === t[0] ? 'on' : '') + '">' + t[1] + (n ? ' <b>' + n + '</b>' : '') + '</button>'; }).join('') + '</div>' +
-      (TK ? '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(THEMES.filter(function (x) { return x[0] === THEME; })[0][1]) + ' — 이 주제의 층</div>' + TK.map(function (k) { var l = LAYERS.filter(function (q) { return q[0] === k; })[0], bt = '<button data-k="' + k + '" class="' + (on[k] ? 'on' : '') + '">' + l[1] + '</button>'; return LHON ? '<div class="lhi">' + bt + (LHELP[k] ? '<small>' + esc(LHELP[k]) + '</small>' : '') + '</div>' : bt; }).join('') + '</div><div class="pg"><button data-thon="1">이 주제 기본만 켜기</button><button data-thoff="1">이 주제 끄기</button></div>' : '') + (TK ? [] : G).map(function (g) {
-      return '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g) + '</div>' + LAYERS.filter(function (l) { return l[3] === g; }).map(function (l) { var bt = '<button data-k="' + l[0] + '" class="' + (on[l[0]] ? 'on' : '') + '">' + l[1] + '</button>'; return LHON ? '<div class="lhi">' + bt + (LHELP[l[0]] ? '<small>' + esc(LHELP[l[0]]) + '</small>' : '') + '</div>' : bt; }).join('') + '</div>';
+      (TK ? '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(THEMES.filter(function (x) { return x[0] === THEME; })[0][1]) + ' — 이 주제의 층</div>' + TK.map(function (k) { var l = LAYERS.filter(function (q) { return q[0] === k; })[0], bt = '<button data-k="' + k + '" class="' + (on[k] ? 'on' : '') + '">' + l[1] + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(k) + '</div>' : bt; }).join('') + '</div><div class="pg"><button data-thon="1">이 주제 기본만 켜기</button><button data-thoff="1">이 주제 끄기</button></div>' : '') + (TK ? [] : G).map(function (g) {
+      return '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g) + '</div>' + LAYERS.filter(function (l) { return l[3] === g; }).map(function (l) { var bt = '<button data-k="' + l[0] + '" class="' + (on[l[0]] ? 'on' : '') + '">' + l[1] + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(l[0]) + '</div>' : bt; }).join('') + '</div>';
     }).join('') + '<div class="pg"><button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button></div>';
     paintPre();
+  }
+  // v2.10.0 층 설명에 범위·출처·이용허락·추정 여부(data/layers.json — 굽는 도구가 실제 파일에서 센다)
+  var LMETA = null, LMETAP = null;
+  function lhTxt(k) {
+    if (!LMETA && !LMETAP) LMETAP = fetch('data/layers.json').then(function (r) { return r.json(); }).then(function (j) { LMETA = {}; j.layers.forEach(function (x) { LMETA[x.key] = x; }); if (LHON) paintLayers(); }).catch(function () { LMETA = {}; });
+    var m = LMETA && LMETA[k], t = LHELP[k] ? esc(LHELP[k]) : '';
+    if (m) t += (t ? '<br>' : '') + '<i class="lm">📎 ' + esc(m.cover || '') + ' · ' + esc(m.src) + (m.estimate ? ' · 추정 포함' : '') + ' · 이용허락 ' + esc(m.license) + '</i>';
+    return t ? '<small>' + t + '</small>' : '';
   }
   function toggle(k) { on[k] = !on[k]; if (k === 'bld' && on[k]) loadBld(); saveOn(); paintLayers(); draw(); }
   function onLayerClick(e) {

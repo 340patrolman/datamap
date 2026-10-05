@@ -19,7 +19,7 @@ def gu_finder(region=None):   # v0.10.102 구 칸이 빈 원자료(경기 — �
     feats, _ = DB.seoul_gus(); gs = [shape(f['geometry']) for f in feats]; tr2 = STRtree(gs)
     # v2.3.1 그 시도 경계 밖(바닷가·이웃 시도) 사고는 3km 안 가장 가까운 그 시도 구에 붙인다 — 거리는 UTM-K(m)
     pre = {'경기': '41', '서울': '11', '인천': '28'}.get(region); to5179 = Transformer.from_crs('EPSG:4326', 'EPSG:5179', always_xy=True).transform
-    rg = [(feats[i]['properties']['sgg'], stf(to5179, g)) for i, g in enumerate(gs) if pre and feats[i]['properties']['sgg'][:2] == pre]
+    rg = [(feats[i]['properties']['sgg'], stf(to5179, g)) for i, g in enumerate(gs) if (feats[i]['properties']['sgg'][:2] == pre if pre else True)]   # v2.10.0 「전국」도 가장 가까운 구에(부산 신항 매립지 사망사고 29건이 행정동 경계 밖이라 빠졌었다)
     def f(lon, lat, x=None, y=None):
         q = Point(lon, lat)
         for i in tr2.query(q):

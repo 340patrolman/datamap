@@ -52,7 +52,7 @@
 
   // ---------- 자료 읽기 ----------
   var FILES = { ridx: 'data/r/index.json', pstat: 'data/police-stats.json', season: 'data/season-seocho.json', pbtn: 'data/pedbtn-seocho.json', enf: 'data/enforce-seocho.json', dong: 'data/dong-seocho.json', pop: 'data/pop-seocho.json', roads: 'data/maps/seocho-full-roads.json', full: 'data/maps/seocho-full.json',
-    base: 'data/maps/seocho.json', gu: 'data/maps/seoul-districts.json', acc: 'data/taas-nodes-seocho.json', fatal: 'data/taas-fatal-seocho.json', hot: 'data/taas.json',
+    base: 'data/maps/seocho.json', gu: 'data/maps/seoul-districts.json', acc: 'data/taas-nodes-seocho.json', hot: 'data/taas.json',
     cam: 'data/cameras-seocho.json', sig: 'data/signal-tod-seocho.json', evt: 'data/events-seocho.json', vol: 'data/traffic-vol-seocho.json', her: 'data/heritage-seocho.json',
     near: 'data/dong-near.json', xing: 'data/intersections-seocho.json', pub: 'data/pubdata-seocho.json', police: 'data/police-seocho.json', sz: 'data/schoolzone-seocho.json', st: 'data/stores-seocho.json',
     jur: 'data/jur-seocho.json', tgis: 'data/tgis-seocho.json', spot: 'data/spot-seocho.json',
@@ -119,7 +119,7 @@
   function aLoad(gu) {
     if (gu === '11650') return Promise.resolve(); if (RLOADA[gu]) return RLOADA[gu];
     RLOADA[gu] = fetch('data/r/' + gu + '/taas10.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
-      j.cells.forEach(function (c) { A10.push({ c: c, p: P(c[1], c[0]), m: j }); }); j.fatal.forEach(function (f) { F10.push({ f: f, p: P(f[17], f[16]), m: j }); }); draw();
+      j.cells.forEach(function (c) { a10Add(c, j); }); j.fatal.forEach(function (f) { F10.push({ f: f, p: P(f[17], f[16]), m: j }); }); draw();
     }).catch(function () {}); return RLOADA[gu];
   }
   // v0.10.98 계절 위험 서울(구마다 season.json · 서초 둘레 상자 밖만) — 서초 판(LATE)이 SEA 를 만든 뒤에 붙인다
@@ -152,11 +152,11 @@
     if ((on.jct || on.hot10) && view.s >= 0.025) { var vj = viewLL(); rIdx().forEach(function (g) { var x = g.box; if (x[2] < vj[0] || x[0] > vj[2] || x[3] < vj[1] || x[1] > vj[3]) return; var B = g.bytes || {}; if (on.jct && B.jct && !RLOADJ[g.gu]) jLoad(g.gu); if (on.hot10 && B.hot10 && !RLOADH[g.gu]) hLoad(g.gu); }); }
     if (view.s >= 0.03 && FAC_KEYS.some(function (k) { return on[k]; })) { var vf = viewLL(); rIdx().forEach(function (g) { if (RLOADF[g.gu] || !(g.bytes || {}).fac) return; var x = g.box; if (x[2] < vf[0] || x[0] > vf[2] || x[3] < vf[1] || x[1] > vf[3]) return; fLoad(g.gu); }); }
     if (view.s >= 0.02 && SEA && SEA_KEYS.some(function (k) { return on[k]; })) { var ve = viewLL(); rIdx().forEach(function (g) { if (RLOADE[g.gu] || !(g.bytes || {}).season) return; var x = g.box; if (x[2] < ve[0] || x[0] > ve[2] || x[3] < ve[1] || x[1] > ve[3]) return; seaLoad(g.gu); }); }
-    if ((on.acc10 || on.fatal10) && view.s >= 0.012) { var va = viewLL(); rIdx().forEach(function (g) { if (RLOADA[g.gu] || !(g.bytes || {}).taas10) return; var x = g.box; if (x[2] < va[0] || x[0] > va[2] || x[3] < va[1] || x[1] > va[3]) return; aLoad(g.gu); }); }
+    if ((on.acc10 || on.fatal10 || on.fatal) && view.s >= 0.012) { var va = viewLL(); rIdx().forEach(function (g) { if (RLOADA[g.gu] || !(g.bytes || {}).taas10) return; var x = g.box; if (x[2] < va[0] || x[0] > va[2] || x[3] < va[1] || x[1] > va[3]) return; aLoad(g.gu); }); }
     if (on.glamp && view.s >= 0.06) { var vl = viewLL(); rIdx().forEach(function (g) { if (RLOADL[g.gu] || !(g.bytes || {}).lamp) return; var x = g.box; if (x[2] < vl[0] || x[0] > vl[2] || x[3] < vl[1] || x[1] > vl[3]) return; lpLoad(g.gu); }); }
     if (view.s >= 0.03 && SAFE_KEYS.some(function (k) { return on[k]; })) { var vs2 = viewLL(); rIdx().forEach(function (g) { if (RLOADS[g.gu] || !(g.bytes || {}).safety) return; var x = g.box; if (x[2] < vs2[0] || x[0] > vs2[2] || x[3] < vs2[1] || x[1] > vs2[3]) return; sfLoad(g.gu); }); }
     if ((on.bus && view.s > 0.07) || (on.subr && view.s >= 0.02)) { var vx = viewLL(); rIdx().forEach(function (g) { if (RLOADX[g.gu] || !(g.bytes || {}).transit) return; var x = g.box; if (x[2] < vx[0] || x[0] > vx[2] || x[3] < vx[1] || x[1] > vx[3]) return; xLoad(g.gu); }); }
-    if (on.lspd && spdSpan()) { var vs3 = viewLL(); rIdx().forEach(function (g) { if (RLOADS[g.gu] || !(g.bytes || {}).itsl) return; var x = g.box; if (x[2] < vs3[0] || x[0] > vs3[2] || x[3] < vs3[1] || x[1] > vs3[3]) return; slLoad(g.gu); }); }
+    if (on.lspd && spdSpan()) { var vs3 = viewLL(); rIdx().forEach(function (g) { if (RLOADI[g.gu] || !(g.bytes || {}).itsl) return; var x = g.box; if (x[2] < vs3[0] || x[0] > vs3[2] || x[3] < vs3[1] || x[1] > vs3[3]) return; slLoad(g.gu); }); }
     if (on.lcc && view.s >= 0.003) { var vc3 = viewLL(); rIdx().forEach(function (g) { if (RLOADC[g.gu] || !(g.bytes || {}).itscctv) return; var x = g.box; if (x[2] < vc3[0] || x[0] > vc3[2] || x[3] < vc3[1] || x[1] > vc3[3]) return; ccLoad(g.gu); }); }
     if (on.jcnm && view.s >= 0.02) { var vn3 = viewLL(); rIdx().forEach(function (g) { if (RLOADN[g.gu] || !(g.bytes || {}).jcnm) return; var x = g.box; if (x[2] < vn3[0] || x[0] > vn3[2] || x[3] < vn3[1] || x[1] > vn3[3]) return; jnLoad(g.gu); }); }
     if (on.jgg && view.s >= 0.03) { var vj2 = viewLL(); rIdx().forEach(function (g) { if (RLOADQ[g.gu] || !(g.bytes || {}).jgg) return; var x = g.box; if (x[2] < vj2[0] || x[0] > vj2[2] || x[3] < vj2[1] || x[1] > vj2[3]) return; qLoad(g.gu); }); }
@@ -201,15 +201,15 @@
     return '<h3>🛣 ' + esc(t[0]) + '</h3>' + row('도로 등급', esc(RKN[t[4]] || '-')) + (it.g ? row('시군구', esc(it.g)) : '') + '<p class="desc">도로 이름은 표준노드링크 구간(링크)의 도로명이다 — 「…길」은 그 대로에서 갈라진 작은 길.</p>' + src(JCN.src || '국가교통정보센터(ITS) 전국 표준노드링크'); }
   function jidxLoad() { if (JIDX) return Promise.resolve(JIDX); if (JIDXP) return JIDXP;
     JIDXP = fetch('data/r/jcnm-idx.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { JIDX = j; return j; }).catch(function () { JIDXP = null; return null; }); return JIDXP; }
-  var RLOADS = {}, ITSL = [], RLOADC = {}, CCB = [], CCLIVE = null;   // v1.7.0 ITS 도로 선 · CCTV 목록(구운 것)
+  var RLOADI = {}, ITSL = [], RLOADC = {}, CCB = [], CCLIVE = null;   // v1.7.0 ITS 도로 선(v2.3.1 RLOADS → RLOADI — 안전 파일 RLOADS 와 이름이 겹쳐 한쪽을 받으면 다른 쪽을 안 받았다) · CCTV 목록(구운 것)
   function spdSpan() { var v = viewLL(); return v[2] - v[0] <= 0.16 && v[3] - v[1] <= 0.16; }
   function slLoad(gu) {
-    if (RLOADS[gu]) return; RLOADS[gu] = 1;
+    if (RLOADI[gu]) return; RLOADI[gu] = 1;
     fetch('data/r/' + gu + '/itsl.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
       j.items.forEach(function (t) { var c = t[4], x = 0, y = 0, pts = [], b = [1e9, 1e9, -1e9, -1e9];
         for (var k = 0; k < c.length; k += 2) { x += c[k]; y += c[k + 1]; var q = P(x / 1e5, y / 1e5); pts.push(q); if (q[0] < b[0]) b[0] = q[0]; if (q[1] < b[1]) b[1] = q[1]; if (q[0] > b[2]) b[2] = q[0]; if (q[1] > b[3]) b[3] = q[1]; }
         ITSL.push({ id: t[0], rk: t[1], nm: t[2], ms: t[3], pts: pts, bb: b }); });
-      if (!ITSL.src) ITSL.src = j.source; RLOADS[gu] = 3; draw(); }).catch(function () { RLOADS[gu] = 2; });
+      if (!ITSL.src) ITSL.src = j.source; RLOADI[gu] = 3; draw(); }).catch(function () { RLOADI[gu] = 2; });
   }
   function ccLoad(gu) {
     if (RLOADC[gu]) return; RLOADC[gu] = 1;
@@ -854,7 +854,8 @@
       if (view.s > 0.13) label([n.p[0], n.p[1] - 22 / view.s], n.name, 11.5, dark ? '#fef3c7' : '#0f172a', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.85)');
     });
     // 사망사고 사례(한 건씩 — 기본 지도 아핀을 거꾸로 풀어 실제 자리로)
-    if (on.fatal && D.fatal) D.fatal.cases.forEach(function (c) { var ll = baseLL(c.gx, c.gz); if (ll) dot(P(ll[0], ll[1]), 5, '#111827', '#f87171', { kind: 'fatal', c: c }); });
+    // v2.3.1 「🕯 사망사고」(최근 2020~2025)는 사망사고 10년(F10) 자료 한 벌에서 그린다 — 옛 taas-fatal-seocho.json(55건)이 F10 의 같은 사고라 두 층을 켜면 한 사고가 두 점이었다 · 10년 층이 켜져 있으면 그쪽이 그린다
+    if (on.fatal && !on.fatal10 && F10.length) F10.forEach(function (x) { if (x.f[0] >= 2020) dot(x.p, 5.5, '#111827', '#fca5a5', { kind: 'f10', x: x }); });
     if (on.hot && D.hot) (D.hot.layers || []).forEach(function (L) { (L.items || []).forEach(function (it) { if (it.lo && it.la) dot(P(it.lo, it.la), 7, 'rgba(250,204,21,.8)', '#a16207', { kind: 'hot', it: it, L: L }); }); });
     // 🏫 어린이보호구역(v0.10.65 · 전국어린이보호구역표준데이터) — 자리는 대상 시설의 점(구역 경계선은 자료에 없다)
     var SZC = { '초등학교': '#eab308', '유치원': '#f97316', '어린이집': '#fb923c', '특수학교': '#a855f7', '외국인학교': '#0ea5e9', '학원': '#84cc16' };
@@ -999,10 +1000,6 @@
       var v = D.vol && D.vol.spots ? D.vol.spots.filter(function (x) { return x.node && x.node[0] === n.i && x.node[1] === n.j; })[0] : null;
       if (v) h += volRows(v);
       h += src((n.measured ? '교차점: OSM 두 도로의 모든 선분이 만나는 자리(2026-09-28 실측) · 이름: OSM 신호·교차로 이름' : '교차점: OSM 도로 중심선이 만나는 자리') + ' · 행정동: 반경 50m 안 걸친 동 모두');
-    } else if (it.kind === 'fatal') {
-      var c = it.c; h = '<h3>🕯 사망사고 — ' + c.y + '년 ' + c.m + '월</h3>' + row('때', c.dow + '요일 ' + c.tz + ' ' + c.hh + '시') + row('유형', esc(c.typeH + ' · ' + c.typeM)) + row('법규위반', esc(c.viol)) +
-        row('가해 / 피해', esc(c.wr + ' / ' + c.dm)) + row('날씨·노면', esc(c.wx + ' · ' + c.rdse)) + row('사상', '사망 ' + c.dead + ' · 중상 ' + c.ser + ' · 경상 ' + c.sli);
-      h += src('TAAS 사망사고(2020~2025) · 날짜는 연·월까지만 · 개인정보 없음');
     } else if (it.kind === 'hot') {
       var t = it.it; h = '<h3>⚠ ' + esc(t.name) + '</h3>' + row('갈래', esc(it.L.name || '')) + row('사고', (t.total || '-') + '건 · 사망 ' + (t.death || 0) + ' · 중상 ' + (t.serious || 0)) + row('공표', esc(t.year || '')) + src('TAAS 사고다발지 공표자료');
     } else if (it.kind === 'sz') {
@@ -1808,9 +1805,14 @@
     D.cam.items.forEach(function (c) { var r = camCalc(c); if (!r || r.no || r.few || r.ch == null) return; n++; if (r.ch < r.ach - 0.1) more++; else if (r.ch > r.ach + 0.1) less++; });
     return '<small class="lg-n">설치 전후 사고를 견줄 수 있는 카메라 ' + n + '대 — 서초 전체보다 더 줄어든 곳 ' + more + ' · 덜 줄거나 는 곳 ' + less + ' · 비슷 ' + (n - more - less) + '(참고 지표 · 카드에 자세히)</small>'; }
   var A10 = [], F10 = [], A10M = 'all', A10Y = null;   // A10Y = 그 해만(null = 10년 전부)
+  // v2.3.1 같은 100m 칸이 두 구 파일에 있으면(법정동이 다른 사고 — 서울 1,802칸·서울/경기 경계) 한 칸으로 더한다 — 겹쳐 그려 같은 칸이 두 번 보였다 · 건수는 더하고 주 법규위반·유형은 건수가 큰 쪽
+  var A10K = {};
+  function a10Add(c, m) { var k = c[0] + ',' + c[1], x = A10K[k];
+    if (!x) { x = A10K[k] = { c: c, p: P(c[1], c[0]), m: m }; A10.push(x); return; }
+    if (!x.mm) x.mm = [{ c: x.c, m: x.m }]; x.mm.push({ c: c, m: m }); var n = x.c.slice(); for (var i = 2; i <= 22; i++) n[i] += c[i]; if (c[24] > n[24]) { n[23] = c[23]; n[24] = c[24]; n[25] = c[25]; } x.c = n; }
   var A10MS = { all: ['전체 사고', '#ea580c'], sev: ['사망·중상자', '#b91c1c'], ped: ['보행자 피해', '#2563eb'], two: ['자전거·PM·이륜', '#16a34a'], night: ['밤(20~6시)', '#1e3a8a'] };
   function a10Prep() { var T = D.taas10; if (!T) return; var kA = A10.filter(function (x) { return x.m; }), kF = F10.filter(function (x) { return x.m; });   // 먼저 온 구 파일은 남긴다
-    A10 = T.cells.map(function (c) { return { c: c, p: P(c[1], c[0]) }; }).concat(kA); F10 = T.fatal.map(function (f) { return { f: f, p: P(f[17], f[16]) }; }).concat(kF);
+    A10 = []; A10K = {}; T.cells.forEach(function (c) { a10Add(c, null); }); kA.forEach(function (x) { (x.mm || [x]).forEach(function (q) { a10Add(q.c, q.m); }); }); F10 = T.fatal.map(function (f) { return { f: f, p: P(f[17], f[16]) }; }).concat(kF);
     // 교차로 집계를 2019년부터(v0.10.82 · 소유자 「사고 데이터 2019년부터」) — 칸을 585m 안 가장 가까운 실제 교차로에 배정(23~25 집계와 같은 규칙)
     NODES.forEach(function (n) { n.y10 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; n.d10 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; n.ped = 0; n.sev = 0; });
     function near(p) { var b = null, bd = 585; NODES.forEach(function (n) { if (!n.real) return; var d = Math.hypot(n.p[0] - p[0], n.p[1] - p[1]); if (d < bd) { bd = d; b = n; } }); return b; }
@@ -1841,7 +1843,7 @@
       row('날씨·노면', esc(dic('w', f[8]) + ' · ' + dic('s', f[9]))) + row('가해 / 피해', esc(dic('k', f[10]) + ' / ' + dic('k', f[11]))) + row('사상', '사망 ' + f[12] + ' · 중상 ' + f[13] + ' · 경상 ' + f[14] + (f[15] ? ' · 부상신고 ' + f[15] : '')) + '<p class="desc">' + esc(T.note) + '</p>' + src(T.source); }
     var c = it.x.c, tot = c.slice(2, 12).reduce(function (a, b) { return a + b; }, 0), ys = []; for (var y = 2016; y <= 2025; y++) ys.push(y);
     return '<h3>🚗 사고 10년 — 이 100m 칸</h3>' + row('2016~2025', tot + '건 · 사망 ' + c[12] + ' · 중상 ' + c[13]) + row('누가', '보행자 피해 ' + c[14] + ' · 자전거 ' + c[15] + ' · PM ' + c[16] + ' · 이륜·원동기 가해 ' + c[17]) +
-      row('주 법규위반', esc(dic('v', c[23])) + ' ' + c[24] + '건') + row('주 유형', esc(dic('t', c[25]))) + row('밤(20~6시)', c[18] + '건 (' + pct(c[18], tot) + '%)') +
+      row('주 법규위반', esc(dic('v', c[23])) + ' ' + c[24] + '건') + row('주 유형', esc(dic('t', c[25]))) + row('밤(20~6시)', c[18] + '건 (' + pct(c[18], tot) + '%)') + (it.x.mm ? row('자료', it.x.mm.length + '개 구 파일의 같은 칸을 더함 — 사고가 난 법정동이 서로 다른 구') : '') +
       '<div class="cap">해마다 교통사고 건수(건 · 2016~2025 · 이 100m 칸)</div>' + bar(c.slice(2, 12), '#ea580c', LB_Y16) + '<div class="cap">시간대별 교통사고 건수(건 · 10년 합 · 0~6 · 6~12 · 12~18 · 18~24시)</div>' + bar(c.slice(19, 23), '#1e3a8a', LB_TB4) + '<p class="desc">' + esc(T.note) + '</p>' + src(T.source);
   }
   function a10Legend() {
@@ -2046,7 +2048,7 @@
       JUR.filter(function (J) { return J.z.near; }).map(function (J) { return li(JUR_C[J.z.id] ? JUR_C[J.z.id][1] : '#64748b', J.z.name.replace('서울', '') + '(별표2 · 행정동 근사)', 'box'); }).join('') + '<small class="lg-n">경계·청사를 누르면 단속 5개 해·112 출동·5대 범죄</small>');
     if (on.acc) G('🚗 교차로 사고 ' + (A10.length ? '2019~2025' : '2023~25'), li('rgba(234,88,12,.6)', '원 크기 = √사고 건수 · 아래 숫자 = 건수·사망') + li('rgba(220,38,38,.7)', '사망 포함') + '<small class="lg-n">585m 안 사고를 가장 가까운 교차로에 배정(근사) · 카드에 해마다 막대</small>');
     if (on.hot10) G('🗂 다발지 10년', Object.keys(H10C).map(function (k) { return li(H10C[k], k); }).join('') + '<small class="lg-n">원 크기 = 뽑힌 횟수 · 아래 숫자 = 횟수·해</small>');
-    if (on.fatal) G('🕯 사망사고', li('#111827', '한 건씩(2020~2025)'));
+    if (on.fatal) G('🕯 사망사고', li('#111827', '한 건씩(2020~2025)') + '<small class="lg-n">' + (on.fatal10 ? '「사망사고 10년」과 같은 자료라 10년 층이 그린다(한 사고 한 점)' : '「사망사고 10년」 자료의 최근 6년') + '</small>');
     if (on.hot) G('⚠ 사고다발지', li('rgba(250,204,21,.9)', 'TAAS 공표 다발지'));
     if (on.drunk || on.risk) G('🟥 구역', (on.drunk ? li('rgba(126,34,206,.5)', '음주 사고 다발지', 'box') : '') + (on.risk ? li('rgba(185,28,28,.5)', '사고위험지역', 'box') : ''));
     if (on.sz) G('🏫 어린이보호구역', li('#eab308', '초등학교') + li('#f97316', '유치원') + li('#fb923c', '어린이집') + li('#a855f7', '특수학교'));
@@ -2347,7 +2349,7 @@
     acc: '교차로별 교통사고 건수(2019~ · TAAS). 원이 클수록 사고가 많다 — 누르면 유형·시간대.',
     acc10: '10년 교통사고를 100m 칸으로(TAAS). 사고가 몰린 칸이 진하다.',
     fatal10: '10년 사망사고 자리(TAAS).',
-    fatal: '사망사고 자리(최근 · TAAS).',
+    fatal: '사망사고 자리(2020~2025 · TAAS) — 「사망사고 10년」과 같은 자료의 최근 6년이다. 둘 다 켜도 한 사고는 한 점.',
     hot: '도로교통공단이 정한 사고다발지(보행자·자전거·어린이 등 갈래별).',
     drunk: '음주운전 사고 다발지(도로교통공단).',
     risk: '사고위험지역(도로교통공단 분석).',

@@ -69,7 +69,7 @@ def geocode():
     import threading
     from concurrent.futures import ThreadPoolExecutor
     lock = threading.Lock(); st = {'k': 0, 'bad': 0, 'stop': False}
-    def one(a):   # 브이월드 주소 좌표 한 건 — 일꾼 6개가 나눠 부른다(v2.5.0 · 한 줄씩이면 13만 곳에 하루가 걸렸다)
+    def one(a):   # 브이월드 주소 좌표 한 건 — 일꾼 16개가 나눠 부른다(v2.5.0 · 한 줄씩이면 13만 곳에 하루가 걸렸다)
         if st['stop']: return
         q = {'service': 'address', 'request': 'getcoord', 'version': '2.0', 'crs': 'epsg:4326', 'address': a, 'refine': 'true', 'simple': 'false', 'format': 'json', 'type': 'parcel', 'key': vk}
         try: j = json.loads(get('https://api.vworld.kr/req/address?' + urllib.parse.urlencode(q)))['response']
@@ -85,7 +85,7 @@ def geocode():
                 return
             st['k'] += 1
             if st['k'] % 2000 == 0: json.dump(geo, open(GEO, 'w', encoding='utf-8'), ensure_ascii=False); print('geo', st['k'], flush=True)
-    with ThreadPoolExecutor(6) as ex: list(ex.map(one, want))
+    with ThreadPoolExecutor(16) as ex: list(ex.map(one, want))
     json.dump(geo, open(GEO, 'w', encoding='utf-8'), ensure_ascii=False); print('geo 끝', st['k'], '전체', len(geo), '멈춤' if st['stop'] else '', flush=True)
 
 def num(s):

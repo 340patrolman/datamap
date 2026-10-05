@@ -1,0 +1,32 @@
+{
+ "schema": "tg-regions/1",
+ "note": "권역 → 자료 저장소(https://340patrolman.github.io/<repo>/) · 지도는 manifest.json 을 읽고 화면에 걸린 구의 r/<구>/<층>.json 을 받는다",
+ "regions": [
+  {
+   "sido": "11",
+   "name": "서울",
+   "repo": "datamap-data-seoul",
+   "box": [
+    126.7647,
+    37.429,
+    127.1835,
+    37.7011
+   ],
+   "gus": 25,
+   "bytes": 92175616
+  },
+  {
+   "sido": "41",
+   "name": "경기",
+   "repo": "datamap-data-gyeonggi",
+   "box": [
+    126.3797,
+    36.8935,
+    127.8495,
+    38.292
+   ],
+   "gus": 47,
+   "bytes": 120418655
+  }
+ ]
+}

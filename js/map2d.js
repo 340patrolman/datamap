@@ -51,13 +51,27 @@
   hashLayers();
 
   // ---------- 자료 읽기 ----------
-  var FILES = { ridx: 'data/r/index.json', pstat: 'data/police-stats.json', season: 'data/season-seocho.json', pbtn: 'data/pedbtn-seocho.json', enf: 'data/enforce-seocho.json', dong: 'data/dong-seocho.json', pop: 'data/pop-seocho.json', roads: 'data/maps/seocho-full-roads.json', full: 'data/maps/seocho-full.json',
+  var FILES = { ridx: 'data/regions.json', pstat: 'data/police-stats.json', season: 'data/season-seocho.json', pbtn: 'data/pedbtn-seocho.json', enf: 'data/enforce-seocho.json', dong: 'data/dong-seocho.json', pop: 'data/pop-seocho.json', roads: 'data/maps/seocho-full-roads.json', full: 'data/maps/seocho-full.json',
     base: 'data/maps/seocho.json', gu: 'data/maps/seoul-districts.json', acc: 'data/taas-nodes-seocho.json', hot: 'data/taas.json',
     cam: 'data/cameras-seocho.json', sig: 'data/signal-tod-seocho.json', evt: 'data/events-seocho.json', vol: 'data/traffic-vol-seocho.json', her: 'data/heritage-seocho.json',
     near: 'data/dong-near.json', xing: 'data/intersections-seocho.json', pub: 'data/pubdata-seocho.json', police: 'data/police-seocho.json', sz: 'data/schoolzone-seocho.json', st: 'data/stores-seocho.json',
     jur: 'data/jur-seocho.json', tgis: 'data/tgis-seocho.json', spot: 'data/spot-seocho.json',
     bidx: 'data/base/index.json', ov: 'data/base/ov.json', sgg: 'data/base/sgg.json', flow: 'data/flow-seocho.json', livep: 'data/live-seocho.json', trend: 'data/trend-seocho.json', hot10: 'data/hot10-seocho.json', trdar: 'data/trdar-seocho.json', safety: 'data/safety-seocho.json', taas10: 'data/taas10-seocho.json' };
-  function get(k) { return fetch(FILES[k]).then(function (r) { return r.json(); }).then(function (j) { D[k] = j; }).catch(function () { D[k] = null; }); }
+  // v2.6.0 지역 자료 받기 하나로(전국 확장 S1·S2) — 권역마다 따로 둔 자료 저장소(340patrolman.github.io/datamap-data-…/)에서 받는다 · 같은 파일은 한 번만 받고(글로 보관 · 쓰는 곳마다 새로 풀어 서로 건드리지 않음) · 없음(404)과 실패를 가른다
+  // 이 PC(localhost)에서는 지금처럼 data/r/ 를 쓴다 · 권역 목록 = data/regions.json · 권역마다 manifest.json(시군구 → 층 바이트·상자·동 이름)
+  var RBASE = {}, RGETT = {}, RMISS = {}, RMANU = [], ONGH = /github\.io$/.test(location.hostname);
+  function rU(gu, f) { return (RBASE[String(gu).slice(0, 2)] || 'data/') + 'r/' + gu + '/' + f; }
+  function rGet(gu, f) { var k = gu + '/' + f;
+    if (!RGETT[k]) { RGETT[k] = fetch(rU(gu, f)).then(function (r) { if (!r.ok) { if (r.status === 404) RMISS[k] = 1; throw new Error(r.status === 404 ? 'none' : 'fail'); } return r.text(); });
+      RGETT[k].catch(function (e) { if (!e || e.message !== 'none') delete RGETT[k]; }); }
+    return RGETT[k].then(function (t) { return JSON.parse(t); }); }
+  function regionsLoad() {
+    return fetch('data/regions.json').then(function (r) { return r.json(); }).then(function (RG) { var parts = [], layers = {};
+      return Promise.all(RG.regions.map(function (g, i) { if (ONGH) RBASE[g.sido] = '/' + g.repo + '/'; var u = ONGH ? '/' + g.repo + '/manifest.json' : 'data/r/manifest-' + g.sido + '.json'; RMANU.push(u);
+        return fetch(u).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (m) { parts[i] = m.gus || []; Object.keys(m.layers || {}).forEach(function (k) { layers[k] = m.layers[k]; }); }).catch(function () { parts[i] = []; }); }))
+        .then(function () { D.ridx = { gus: [].concat.apply([], parts), layers: layers, regions: RG.regions }; }); }).catch(function () { D.ridx = null; });
+  }
+  function get(k) { if (k === 'ridx') return regionsLoad(); return fetch(FILES[k]).then(function (r) { return r.json(); }).then(function (j) { D[k] = j; }).catch(function () { D[k] = null; }); }
   var LATE = ['livep', 'trend', 'hot10', 'trdar', 'safety', 'taas10', 'enf', 'season', 'pbtn', 'pstat'];   // v0.10.80 무거운 자료(상권·안전시설·사고 10년·추이)는 첫 그림 뒤에 읽는다 — 지도가 먼저 뜬다
   Promise.all(Object.keys(FILES).filter(function (k) { return LATE.indexOf(k) < 0; }).map(get)).then(function () { setTimeout(gpsHere, 0); prep(); pubPrep(); extraPrep(); basePrep(); sggPrep(); flowPrep(); fit(); if (on.bld && view.s > 0.12) loadBld(); draw(); applyHash(); $('m2dLoad').style.display = 'none'; paintTime(); summary();
     Promise.all(LATE.map(get)).then(function () { livePrep(); trdPrep(); safePrep(); a10Prep(); seasonPrep(); paintPre(); summary(); draw(); if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }); });
@@ -77,11 +91,11 @@
   var RLOADS = {}, SAFE_KEYS = ['cam', 'sz', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'aed', 'fw', 'tow', 'wc2', 'box', 'dem', 'gpark', 'gev', 'ger', 'gfest'], RLOADL = {};
   function lpLoad(gu) {   // v1.3.0 경기 보안등(29만) — 보안등 층을 켰을 때만 그 구의 lamp.json
     if (RLOADL[gu]) return; RLOADL[gu] = 1; var L = SAFE.filter(function (x) { return x[0] === 'glamp'; })[0]; if (!L) { RLOADL[gu] = 0; return; }
-    fetch('data/r/' + gu + '/lamp.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { if (!L.src) L.src = j.source; j.pts.forEach(function (r) { L[3].push({ p: P(r[1], r[0]), r: r }); }); RLOADL[gu] = 3; draw(); }).catch(function () { RLOADL[gu] = 2; });
+    rGet(gu, 'lamp.json').then(function (j) { if (!L.src) L.src = j.source; j.pts.forEach(function (r) { L[3].push({ p: P(r[1], r[0]), r: r }); }); RLOADL[gu] = 3; draw(); }).catch(function () { RLOADL[gu] = 2; });
   }
   function sfLoad(gu) {
     if (RLOADS[gu]) return RLOADS[gu]; if (gu === '11650') return (RLOADS[gu] = Promise.resolve()); if (!SAFE.length) return Promise.resolve();   // 서초 안전 파일(늦게 읽음)이 칸을 만든 뒤에
-    RLOADS[gu] = fetch('data/r/' + gu + '/safety.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADS[gu] = rGet(gu, 'safety.json').then(function (j) {
       var key = function (a, b) { return a + '|' + b; };
       if (!D.cam) D.cam = { items: [], source: j.source.cam }; var hc = {}; D.cam.items.forEach(function (c) { hc[key(c.lat, c.lon)] = 1; }); j.cam.forEach(function (c) { if (!hc[key(c.lat, c.lon)]) D.cam.items.push(c); });
       if (!D.sz) D.sz = { zones: [], hot: [], source: { zones: j.source.sz } }; var hz = {}; D.sz.zones.forEach(function (z) { hz[key(z.name, z.lat)] = 1; }); j.sz.forEach(function (z) { if (!hz[key(z.name, z.lat)]) D.sz.zones.push(z); });
@@ -98,7 +112,7 @@
   var FACL = { kyr: ['🧓 경로당(서울시)', '#b45309'], cc: ['👶 어린이집(서울시)', '#db2777'], kg: ['🎒 유치원(교육청)', '#d97706'], aca: ['📚 입시·교과학원', '#2563eb'], edu: ['🏫 학교(초·중·고·대학)', '#0f766e'], govr: ['🏛 관공서(서울·경기)', '#1d4ed8'] };
   function facL(k) { var L = SAFE.filter(function (x) { return x[0] === k; })[0]; if (!L) { L = [k, FACL[k][0], FACL[k][1], [], 0]; SAFE.push(L); POLL.push([k, FACL[k][0], FACL[k][1], FACL[k][0]]); } return L; }
   function fLoad(gu, then) {
-    if (!RLOADF[gu]) RLOADF[gu] = fetch('data/r/' + gu + '/fac.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { RFAC[gu] = j;
+    if (!RLOADF[gu]) RLOADF[gu] = rGet(gu, 'fac.json').then(function (j) { RFAC[gu] = j;
       FAC_KEYS.forEach(function (k) { var L = facL(k); (j.pts[k === 'govr' ? 'gov' : k] || []).forEach(function (r) { L[3].push({ p: P(r[1], r[0]), r: r, m: j }); }); }); draw(); }).catch(function () { RFAC[gu] = { dong: {}, pts: {}, source: {} }; });
     if (then) RLOADF[gu].then(then); return RLOADF[gu];
   }
@@ -106,19 +120,19 @@
   var RLOADJ = {}, JCT = [], RLOADH = {};
   function jLoad(gu) {
     if (RLOADJ[gu]) return RLOADJ[gu];
-    RLOADJ[gu] = fetch('data/r/' + gu + '/jct.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADJ[gu] = rGet(gu, 'jct.json').then(function (j) {
       j.items.forEach(function (r) { var t = 0; r[3].forEach(function (v) { t += v; }); JCT.push({ p: [r[1], r[2]], r: r, t: t, m: j }); }); JCT.sort(function (a, b) { return a.t - b.t; }); draw(); }).catch(function () {}); return RLOADJ[gu];
   }
   function hLoad(gu) {
     if (gu === '11650' || RLOADH[gu]) return RLOADH[gu] || Promise.resolve(); if (!D.hot10) return Promise.resolve();   // 서초 파일(늦게 읽음)이 먼저
-    RLOADH[gu] = fetch('data/r/' + gu + '/hot10.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADH[gu] = rGet(gu, 'hot10.json').then(function (j) {
       j.spots.forEach(function (g) { g.m = j; D.hot10.spots.push(g); }); draw(); }).catch(function () {}); return RLOADH[gu];
   }
   // v0.10.96 TAAS 사고 10년(구마다 taas10.json · 서초 taas10-seocho 와 같은 꼴) — 서초는 기존 파일이 우선
   var RLOADA = {};
   function aLoad(gu) {
     if (gu === '11650') return Promise.resolve(); if (RLOADA[gu]) return RLOADA[gu];
-    RLOADA[gu] = fetch('data/r/' + gu + '/taas10.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADA[gu] = rGet(gu, 'taas10.json').then(function (j) {
       j.cells.forEach(function (c) { a10Add(c, j); }); j.fatal.forEach(function (f) { F10.push({ f: f, p: P(f[17], f[16]), m: j }); }); draw();
     }).catch(function () {}); return RLOADA[gu];
   }
@@ -127,7 +141,7 @@
   function bbOf(pts) { var b = [1e9, -1e9, 1e9, -1e9]; pts.forEach(function (q) { b[0] = Math.min(b[0], q[0]); b[1] = Math.max(b[1], q[0]); b[2] = Math.min(b[2], q[1]); b[3] = Math.max(b[3], q[1]); }); return b; }
   function seaLoad(gu) {
     if (RLOADE[gu]) return RLOADE[gu]; if (!SEA) return Promise.resolve();
-    RLOADE[gu] = fetch('data/r/' + gu + '/season.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADE[gu] = rGet(gu, 'season.json').then(function (j) {
       j.traces.forEach(function (t) { SEA.tr.push({ p: [t[0], t[1]], t: t, m: j }); });
       j.floodRoads.forEach(function (r) { var pts = dec2(r, 6); SEA.fr.push({ r: r, pts: pts, bb: bbOf(pts), m: j }); });
       j.under.forEach(function (u) { SEA.un.push({ p: [u[2], u[3]], u: u, m: j }); });
@@ -140,7 +154,7 @@
   var RLOADX = {};
   function xLoad(gu) {   // v0.10.94 버스·지하철 승하차(구마다) — 서초 정류장·역이 이미 있으면 건너뛴다
     if (RLOADX[gu]) return RLOADX[gu];
-    RLOADX[gu] = fetch('data/r/' + gu + '/transit.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADX[gu] = rGet(gu, 'transit.json').then(function (j) {
       if (!PUB) return; var hb = {}, hs = {}; PUB.bus.forEach(function (q) { hb[q.o.id] = 1; }); PUB.subr.forEach(function (q) { hs[q.name] = 1; });
       j.bus.forEach(function (b) { if (hb[b[0]]) return; var on2 = b[4], off2 = b[5], day = on2.concat(off2).reduce(function (a, c) { return a + c; }, 0), tot = on2.map(function (v, i) { return v + off2[i]; });
         FLOW.bus[b[0]] = [on2, off2]; PUB.bus.push({ name: b[1], p: P(b[2], b[3]), o: { id: b[0], name: b[1], lon: b[2], lat: b[3], day: day, h: tot, peak: tot.indexOf(Math.max.apply(null, tot)), rg: j } }); });
@@ -179,7 +193,7 @@
   function rExt(d) {   // 업종 줄·분기 추이 — 카드를 열 때만
     if (!d.rg || d.x !== undefined) return; var g = d.gcd;
     if (RX[g]) { d.x = RX[g].dong[d.k] || {}; return; }
-    d.x = null; fetch('data/r/' + g + '/dongx.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { RX[g] = j; RDONG.forEach(function (q) { if (q.gcd === g && q.x === null) q.x = j.dong[q.k] || {}; }); if (sel && sel.it.d && sel.it.d.gcd === g) show(sel.it); }).catch(function () { d.x = {}; });
+    d.x = null; rGet(g, 'dongx.json').then(function (j) { RX[g] = j; RDONG.forEach(function (q) { if (q.gcd === g && q.x === null) q.x = j.dong[q.k] || {}; }); if (sel && sel.it.d && sel.it.d.gcd === g) show(sel.it); }).catch(function () { d.x = {}; });
   }
   var RLOADQ = {}, JGG = [], JGGM = 'dens';   // v1.4.0 통계청 SGIS 집계구
   var JGGMS = { pop: ['👥 인구', '#7c3aed'], dens: ['🏙 인구 밀도(명/ha)', '#6d28d9'], hh: ['🏠 가구', '#2563eb'], fam: ['👪 평균 가구원', '#0891b2'], house: ['🏢 주택', '#0d9488'], corp: ['🏪 사업체', '#b45309'], wrk: ['👔 종사자', '#c2410c'], job: ['⚖ 종사자 ÷ 인구', '#be123c'] };
@@ -191,7 +205,7 @@
   function osmNear(p, name) { var o = []; JLAB.forEach(function (L) { if (Math.hypot(L.p[0] - p[0], L.p[1] - p[1]) <= 80 && L.name.replace(/\s/g, '') !== name.replace(/\s/g, '') && o.indexOf(L.name) < 0) o.push(L.name); }); return o; }
   function jnLoad(gu) {
     if (RLOADN[gu]) return; RLOADN[gu] = 1;
-    fetch('data/r/' + gu + '/jcnm.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    rGet(gu, 'jcnm.json').then(function (j) {
       j.j.forEach(function (t) { var J = { t: t, p: P(t[1], t[2]), m: j }; JCN.push(J); if (t[3] === 1) { var hk = Math.floor(J.p[0] / 100) + ',' + Math.floor(J.p[1] / 100); (JH[hk] = JH[hk] || []).push(J); } }); JCN.sort(function (a, b) { return (a.t[3] === 6 ? 0 : 1) - (b.t[3] === 6 ? 0 : 1) || a.t[4] - b.t[4]; });
       j.r.forEach(function (t) { RDN.push({ t: t, p: P(t[1], t[2]), a: -t[3] * Math.PI / 180 }); }); RDN.sort(function (a, b) { return a.t[4] - b.t[4]; });
       if (!JCN.src) { JCN.src = j.source; JCN.note = j.note; } RLOADN[gu] = 3; draw(); }).catch(function () { RLOADN[gu] = 2; });
@@ -210,7 +224,7 @@
   function spdSpan() { var v = viewLL(); return v[2] - v[0] <= 0.16 && v[3] - v[1] <= 0.16; }
   function slLoad(gu) {
     if (RLOADI[gu]) return; RLOADI[gu] = 1;
-    fetch('data/r/' + gu + '/itsl.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    rGet(gu, 'itsl.json').then(function (j) {
       j.items.forEach(function (t) { var c = t[4], x = 0, y = 0, pts = [], b = [1e9, 1e9, -1e9, -1e9];
         for (var k = 0; k < c.length; k += 2) { x += c[k]; y += c[k + 1]; var q = P(x / 1e5, y / 1e5); pts.push(q); if (q[0] < b[0]) b[0] = q[0]; if (q[1] < b[1]) b[1] = q[1]; if (q[0] > b[2]) b[2] = q[0]; if (q[1] > b[3]) b[3] = q[1]; }
         ITSL.push({ id: t[0], rk: t[1], nm: t[2], ms: t[3], pts: pts, bb: b }); });
@@ -218,12 +232,12 @@
   }
   function ccLoad(gu) {
     if (RLOADC[gu]) return; RLOADC[gu] = 1;
-    fetch('data/r/' + gu + '/itscctv.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    rGet(gu, 'itscctv.json').then(function (j) {
       j.items.forEach(function (t) { CCB.push(t); }); CCB.src = j.source; CCB.at = j.at; RLOADC[gu] = 3; draw(); }).catch(function () { RLOADC[gu] = 2; });
   }
   function qLoad(gu) {
     if (RLOADQ[gu]) return; RLOADQ[gu] = 1;
-    fetch('data/r/' + gu + '/jgg.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    rGet(gu, 'jgg.json').then(function (j) {
       j.items.forEach(function (t) { var rings = t[2].map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }), r0 = rings[0], sx = 0, sy = 0; r0.forEach(function (q) { sx += q[0]; sy += q[1]; }); JGG.push({ t: t, m: j, rings: rings, c: [sx / r0.length, sy / r0.length] }); });
       RLOADQ[gu] = 3; draw(); }).catch(function () { RLOADQ[gu] = 2; });
   }
@@ -254,7 +268,7 @@
   var RLOADZ = {}, SZ = [];
   function zLoad(gu) {   // v1.2.0 소진공 주요상권(공식 오픈 API storeZoneInAdmi · 서울 176 · 경기 281)
     if (RLOADZ[gu]) return; RLOADZ[gu] = 1;
-    fetch('data/r/' + gu + '/szone.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    rGet(gu, 'szone.json').then(function (j) {
       j.items.forEach(function (t) { SZ.push({ t: t, m: j, c: P(t.lon, t.lat), rings: t.rings.map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }) }); }); RLOADZ[gu] = 3; draw(); }).catch(function () { RLOADZ[gu] = 2; });
   }
   function drawSz(dark) {
@@ -278,7 +292,7 @@
   var TCB = {}, RLOADG = {}, GGT = [], GGM = 'amt', RLOADH2 = {}, HL = {}, HLALL = false;
   function hlLoad(gu) {   // v1.1.0 서울 골목상권 배후지(상권분석서비스 영역-상권배후지 OA-22159)
     if (RLOADH2[gu] && RLOADH2[gu].then) return RLOADH2[gu]; if (RLOADH2[gu]) return Promise.resolve();
-    RLOADH2[gu] = fetch('data/r/' + gu + '/trdhl.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADH2[gu] = rGet(gu, 'trdhl.json').then(function (j) {
       j.trdhl.forEach(function (t) { HL[t.cd] = { t: t, m: j, rings: t.rings.map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }) }; });
       RLOADH2[gu] = 3; draw(); if (sel && sel.it.kind === 'trd' && HL[sel.it.x.t.cd]) show(sel.it); }).catch(function () { RLOADH2[gu] = 2; });
     return RLOADH2[gu];
@@ -318,7 +332,7 @@
   }
   function gLoad(gu, then) {   // v1.1.0 경기 상권 — 경기데이터드림 발달·골목상권 영역 + 업종별 추정매출(한 분기)
     if (RLOADG[gu] === 3 || RLOADG[gu] === 2) { if (then) then(); return Promise.resolve(); } if (RLOADG[gu] && RLOADG[gu].then) return RLOADG[gu];
-    RLOADG[gu] = fetch('data/r/' + gu + '/ggtrd.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADG[gu] = rGet(gu, 'ggtrd.json').then(function (j) {
       j.items.forEach(function (t) { var rings = t.rings.map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }); var r0 = rings[0], a = 0;
         for (var i = 0, k = r0.length - 1; i < r0.length; k = i++) a += (r0[k][0] + r0[i][0]) * (r0[k][1] - r0[i][1]);
         GGT.push({ t: t, rings: rings, c: P(t.lon, t.lat), area: Math.abs(a / 2), m: j }); });
@@ -360,11 +374,11 @@
   function tLoad(gu, then) {   // v0.10.92 구의 상권(서울시 상권분석서비스) — 서초는 기존 trdar-seocho 를 이 파일(1년 전 매출·점포 포함)로 갈아 끼운다
     if (RLOADT[gu] === 3 || RLOADT[gu] === 2) { if (then) then(); return; } if (then) (TCB[gu] = TCB[gu] || []).push(then); if (RLOADT[gu]) return; RLOADT[gu] = 1;
     var fin = function () { var L = TCB[gu] || []; TCB[gu] = []; L.forEach(function (f) { f(); }); };
-    fetch('data/r/' + gu + '/trdar.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { tAdd(j); RLOADT[gu] = 3; fin(); draw(); }).catch(function () { RLOADT[gu] = 2; fin(); });
+    rGet(gu, 'trdar.json').then(function (j) { tAdd(j); RLOADT[gu] = 3; fin(); draw(); }).catch(function () { RLOADT[gu] = 2; fin(); });
   }
   function rLoadGu(gu) {   // 행정동 지역 파일 하나 — 약속으로(반경 분석이 기다린다)
     if (gu === '11650') return Promise.resolve(); if (RLOAD[gu] && RLOAD[gu].then) return RLOAD[gu]; if (RLOAD[gu]) return Promise.resolve();
-    RLOAD[gu] = fetch('data/r/' + gu + '/dong.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { rAdd(j); draw(); }).catch(function () { RLOAD[gu] = 2; }); return RLOAD[gu];
+    RLOAD[gu] = rGet(gu, 'dong.json').then(function (j) { rAdd(j); draw(); }).catch(function () { RLOAD[gu] = 2; }); return RLOAD[gu];
   }
   function tAdd(j) {
     var by = {}; TRD.forEach(function (x, i) { by[x.t.cd] = i; });
@@ -1313,15 +1327,15 @@
     ext = ext || []; var all = ks.slice(), n = 0, fail = 0, eb = ext.reduce(function (a, x) { return a + x.b; }, 0), q = ks.map(tileUrl).concat(ext.map(function (x) { return x.u; })), tot = q.length;
     caches.open('tg-tiles').then(function (c) {
       function next() { var u = q.shift(); if (!u) { DLBUSY = false; var o = dlDone(); o[name] = { n: all.length, b: tbytes(all) + eb, d: new Date().toISOString().slice(0, 10), bake: TBAKE, r: ext.length }; dlSave(o); paintDl(); msg('✅ ' + name + ' — 조각 ' + all.length + '개' + (ext.length ? ' + 행정동 자료 ' + ext.length + '개' : '') + '(' + mb(tbytes(all) + eb) + ') 받음' + (fail ? ' · 실패 ' + fail : '') + ' · 통신이 끊겨도 열린다'); return; }
-        c.match(u).then(function (hitR) { if (hitR && u.indexOf('/data/r/') < 0 && u.indexOf('data/r/') !== 0) return; return c.add(u); }).catch(function () { fail++; }).then(function () { n++; msg('받는 중 ' + n + ' / ' + tot); next(); }); }
+        c.match(u).then(function (hitR) { if (hitR && !/(^|\/)r\/|manifest/.test(u)) return; return c.add(u); }).catch(function () { fail++; }).then(function () { n++; msg('받는 중 ' + n + ' / ' + tot); next(); }); }
       next(); }); }
   function rFilesFor(G, full) {   // v0.10.91 고른 구의 행정동 자료(+ full 이면 둘레 3km 에 걸친 서울 구의 가벼운 자료) — 바탕 조각과 같은 보관함에(서비스워커가 통신 끊김 때 모든 보관함에서 꺼낸다)
     var o = [], sgOf = function (g) { return SGG.filter(function (x) { return x.g.name === g.name || (g.sido === '41' && x.g.sido === '경기도' && g.name.indexOf(x.g.name) === 0); })[0]; };
     rIdx().forEach(function (g) { var B = g.bytes || {}, S2 = sgOf(g), me = S2 === G;
       if (!me) { if (!full || !S2) return;
         var near = S2.rings.some(function (r) { for (var i = 0; i < r.length; i += 4) if (distToRings(r[i], G.rings) <= DL_AROUND) return true; return false; }); if (!near) return; }
-      o.push({ u: 'data/r/' + g.gu + '/dong.json', b: B.dong || 0 }); if (me) ['dongx', 'trdar', 'stores', 'transit', 'safety', 'taas10', 'season'].forEach(function (k) { if (B[k]) o.push({ u: 'data/r/' + g.gu + '/' + k + '.json', b: B[k] }); }); });
-    if (o.length) o.unshift({ u: 'data/r/index.json', b: 20000 }); return o; }
+      o.push({ u: rU(g.gu, 'dong.json'), b: B.dong || 0 }); if (me) ['dongx', 'trdar', 'stores', 'transit', 'safety', 'taas10', 'season'].forEach(function (k) { if (B[k]) o.push({ u: rU(g.gu, k + '.json'), b: B[k] }); }); });
+    if (o.length) RMANU.forEach(function (u) { o.unshift({ u: u, b: 20000 }); }); return o; }
   function paintDl() { var el = $('m2dGetP'); if (!el || !el.classList.contains('on')) return; var done = dlDone(), h = '';
     h += '<div class="lg-h"><b>📥 지역 받기</b><button id="m2dGetX">닫기</button></div><p class="lg-n">화면에 보이는 곳은 저절로 받는다. 미리 받아 두면 <b>통신이 끊긴 곳에서도</b> 그 지역 지도가 열린다(고른 구·시 경계 밖 ' + (DL_AROUND / 1000) + 'km 둘레까지 함께).</p>';
     h += '<div class="lg-btns"><button data-dl="gps">📍 지금 위치 둘레 6km</button><button data-dl="view">🖥 지금 화면 둘레</button></div><div id="m2dGetMsg" class="lg-n"></div>';
@@ -2147,28 +2161,28 @@
   var GRID = {}, GRIDN = {}, A250 = [], A250K = {}, PT250 = {}, RLOADPT = {}, RLOADA2 = {}, RLOADGR = {}, L250 = {}, RLOADL2 = {}, RT = [], RTG = {}, RLOADRT = {};
   function grLoad(gu) {
     if (RLOADGR[gu]) return RLOADGR[gu];
-    RLOADGR[gu] = fetch('data/r/' + gu + '/grid.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADGR[gu] = rGet(gu, 'grid.json').then(function (j) {
       j.cells.forEach(function (c) { var k = []; for (var i = 4; i + 1 < c.length; i += 2) k.push([c[i], c[i + 1]]); GRID[c[0]] = { c: c[0], gu: gu, p: P(c[2], c[1]), land: c[3], k: k }; }); Object.keys(j.names || {}).forEach(function (q) { GRIDN[q] = j.names[q]; }); draw(); }).catch(function () {}); return RLOADGR[gu];
   }
   function l2Load(gu) {
     if (RLOADL2[gu]) return RLOADL2[gu];
-    RLOADL2[gu] = grLoad(gu).then(function () { return fetch('data/r/' + gu + '/live250.json'); }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADL2[gu] = grLoad(gu).then(function () { return rGet(gu, 'live250.json'); }).then(function (j) {
       Object.keys(j.cells).forEach(function (k) { var x = j.cells[k]; x.m = j; L250[k] = x; }); draw(); }).catch(function () {}); return RLOADL2[gu];
   }
   function rtLoad(gu) {
     if (RLOADRT[gu]) return RLOADRT[gu];
-    RLOADRT[gu] = grLoad(gu).then(function () { return fetch('data/r/' + gu + '/rtms.json'); }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADRT[gu] = grLoad(gu).then(function () { return rGet(gu, 'rtms.json'); }).then(function (j) {
       j.items.forEach(function (t) { RT.push({ t: t, m: j, p: t[7] ? P(t[8], t[7]) : null }); });
       Object.keys(j.grid).forEach(function (k) { RTG[k] = { n: j.grid[k][0], med: j.grid[k][1], m: j }; }); draw(); }).catch(function () {}); return RLOADRT[gu];
   }
   function a2Load(gu) {
     if (RLOADA2[gu]) return RLOADA2[gu];
-    RLOADA2[gu] = fetch('data/r/' + gu + '/taas250.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADA2[gu] = rGet(gu, 'taas250.json').then(function (j) {
       j.dic = j.dic || (D.taas10 && D.taas10.dic); j.dow = j.dow || (D.taas10 && D.taas10.dow); Object.keys(j.cells).forEach(function (k) { var c = j.cells[k], x = { k: k, c: c, p: P(c[1], c[0]), m: j }; A250.push(x); A250K[k] = x; }); draw(); }).catch(function () {}); return RLOADA2[gu];
   }
   function ptLoad(gu) {
     if (RLOADPT[gu]) return RLOADPT[gu];
-    RLOADPT[gu] = fetch('data/r/' + gu + '/pts250.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { Object.keys(j.cells).forEach(function (k) { PT250[k] = j.cells[k]; }); PT250._m = j; if (sel && sel.it && sel.it.kind === 'g250') show(sel.it); }).catch(function () {}); return RLOADPT[gu];
+    RLOADPT[gu] = rGet(gu, 'pts250.json').then(function (j) { Object.keys(j.cells).forEach(function (k) { PT250[k] = j.cells[k]; }); PT250._m = j; if (sel && sel.it && sel.it.kind === 'g250') show(sel.it); }).catch(function () {}); return RLOADPT[gu];
   }
   function gridNeed() {
     if (!(on.g250 || on.live250 || on.rtc || on.acc250 || on.home) || view.s < 0.012) return; var v = viewLL();
@@ -2290,7 +2304,7 @@
   var HTY = ['아파트', '오피스텔', '연립다세대'], HTC = ['#b91c1c', '#9333ea', '#92400e'];
   function hmLoad(gu) {
     if (RLOADHM[gu]) return RLOADHM[gu];
-    RLOADHM[gu] = grLoad(gu).then(function () { return fetch('data/r/' + gu + '/home.json'); }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    RLOADHM[gu] = grLoad(gu).then(function () { return rGet(gu, 'home.json'); }).then(function (j) {
       HOMED[gu] = j; Object.keys(j.cx).forEach(function (k) { var c = j.cx[k]; HCX.push({ c: c, p: c[3] ? P(c[4], c[3]) : null, m: j }); });
       Object.keys(j.grid).forEach(function (k) { HOMEG[k] = { v: j.grid[k], m: j }; }); draw(); }).catch(function () {}); return RLOADHM[gu];
   }
@@ -2520,7 +2534,7 @@
   function sLoadIdx() { if (SIDXP) return SIDXP; SIDXP = fetch('data/r/stores-index.json').then(function (r) { return r.json(); }).then(function (j) { SIDX = j; }).catch(function () {}); return SIDXP; }
   function sLoad(gu) {
     if (SPTS[gu]) return SPTS[gu].p; var o = SPTS[gu] = { a: null };
-    o.p = fetch('data/r/' + gu + '/stores.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { var O = j.o, K = j.k; o.ym = j.stdrYm; o.a = j.pts.map(function (q) { return { p: P(O[0] + q[0] / K[0], O[1] + q[1] / K[1]), c: q[2], f: q[3], n: q[4] }; }); }).catch(function () { o.a = []; });
+    o.p = rGet(gu, 'stores.json').then(function (j) { var O = j.o, K = j.k; o.ym = j.stdrYm; o.a = j.pts.map(function (q) { return { p: P(O[0] + q[0] / K[0], O[1] + q[1] / K[1]), c: q[2], f: q[3], n: q[4] }; }); }).catch(function () { o.a = []; });
     return o.p;
   }
   function polyA(polys) { var a = 0; polys.forEach(function (Pg) { Pg.forEach(function (r, i) { var s2 = 0; for (var k = 0, j = r.length - 1; k < r.length; j = k++) s2 += r[j][0] * r[k][1] - r[k][0] * r[j][1]; a += (i ? -1 : 1) * Math.abs(s2) / 2; }); }); return a; }
@@ -2864,14 +2878,14 @@
   }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-pnlhere]'); if (!b) return; var a = b.getAttribute('data-pnlhere').split(','); pnlOpen(P(+a[0], +a[1])); });
   var JGGA = [], JGGL = {};
-  function jgP(gu) { if (JGGL[gu]) return JGGL[gu]; JGGL[gu] = fetch('data/r/' + gu + '/jgg.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { j.items.forEach(function (t) { var r0 = t[2][0], sx = 0, sy = 0; r0.forEach(function (q) { sx += q[0]; sy += q[1]; }); JGGA.push({ t: t, c: P(sx / r0.length, sy / r0.length), gu: gu }); }); JGGL[gu].done = 1; }).catch(function () { JGGL[gu].done = 1; }); return JGGL[gu]; }
+  function jgP(gu) { if (JGGL[gu]) return JGGL[gu]; JGGL[gu] = rGet(gu, 'jgg.json').then(function (j) { j.items.forEach(function (t) { var r0 = t[2][0], sx = 0, sy = 0; r0.forEach(function (q) { sx += q[0]; sy += q[1]; }); JGGA.push({ t: t, c: P(sx / r0.length, sy / r0.length), gu: gu }); }); JGGL[gu].done = 1; }).catch(function () { JGGL[gu].done = 1; }); return JGGL[gu]; }
   // ---------- 📝 이 동 풀어 읽기(v2.1.0 · 소유자 「동별·읍별로 데이터가 알려주는 만큼 구체적이고 세세하게 · 데이터를 충분히 풀어서 설명해야 이해도가 높아진다」) ----------
   //  화면의 숫자를 규칙으로 읽어 문단으로 쓴다(지어내는 문장 없음 · 기준은 문단 끝에) — 원인 단정·전국 맥락은 자료에 없어서 쓰지 않는다.
   var SDJ = {}, CPI = null, CPIP = null, GTAX = null, GCEN = null;
   fetch('data/gu-tax.json').then(function (r) { return r.json(); }).then(function (j) { GTAX = j; }).catch(function () {});
   fetch('data/gu-census.json').then(function (r) { return r.json(); }).then(function (j) { GCEN = j; }).catch(function () {});
-  fetch('data/r/11650/dong.json').then(function (r) { return r.json(); }).then(function (j) { var go = function () { if (!DONG.length) return setTimeout(go, 500); j.dong.forEach(function (q) { var d = DONG.filter(function (x) { return x.name === q.name; })[0]; if (d && !d.k && q.k) d.k = q.k; if (d && q.pop) { d.pop = q.pop; d.popAsOf = j.source && j.source['주민']; } }); }; go(); }).catch(function () {});   // v2.2.0 서초 기본 동도 지역 파일의 최신 주민등록(달마다 굽는 쪽) · v2.5.0 서초 동에도 8자리 코드(d.k — 이름 열쇠 대신 코드로 맞추는 첫걸음)
-  function sdLoad(gu) { if (SDJ[gu]) return SDJ[gu]; SDJ[gu] = Promise.all([fetch('data/r/' + gu + '/dong.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fetch('data/r/' + gu + '/dongx.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fLoad(gu), jgP(gu), fetch('data/r/' + gu + '/dongw.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), sLoad(gu), sLoadIdx(), fetch('data/r/' + gu + '/ggdong.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), hmLoad(gu)]).then(function (a) { return { dong: a[0], x: a[1], w: a[4], gg: a[7] }; }); return SDJ[gu]; }
+  rGet('11650', 'dong.json').then(function (j) { var go = function () { if (!DONG.length) return setTimeout(go, 500); j.dong.forEach(function (q) { var d = DONG.filter(function (x) { return x.name === q.name; })[0]; if (d && !d.k && q.k) d.k = q.k; if (d && q.pop) { d.pop = q.pop; d.popAsOf = j.source && j.source['주민']; } }); }; go(); }).catch(function () {});   // v2.2.0 서초 기본 동도 지역 파일의 최신 주민등록(달마다 굽는 쪽) · v2.5.0 서초 동에도 8자리 코드(d.k — 이름 열쇠 대신 코드로 맞추는 첫걸음)
+  function sdLoad(gu) { if (SDJ[gu]) return SDJ[gu]; SDJ[gu] = Promise.all([rGet(gu, 'dong.json').catch(function () { return null; }), rGet(gu, 'dongx.json').catch(function () { return null; }), fLoad(gu), jgP(gu), rGet(gu, 'dongw.json').catch(function () { return null; }), sLoad(gu), sLoadIdx(), rGet(gu, 'ggdong.json').catch(function () { return null; }), hmLoad(gu)]).then(function (a) { return { dong: a[0], x: a[1], w: a[4], gg: a[7] }; }); return SDJ[gu]; }
   function cpiLoad() { if (CPIP) return CPIP; CPIP = fetch('data/cpi.json').then(function (r) { return r.json(); }).then(function (j) { CPI = j; return j; }).catch(function () { return null; }); return CPIP; }
   // v2.5.0 qLab → qLab1 · sgn → sgn1 — 950·1956줄의 같은 이름 함수를 덮어 동 카드 분기 이름표·「%」가 깨졌다(v2.1.0~v2.4.0) · 새 이름은 모듈 안 grep 으로 겹침부터 확인
   function qLab1(q) { q = String(q); return q.slice(2, 4) + '년 ' + q.slice(4) + '분기'; }

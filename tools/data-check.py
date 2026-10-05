@@ -24,6 +24,8 @@ SETS = [
     ['data/airkorea-stations.json', 365, 'auto', '에어코리아 측정소 자리 — `tools/region/airkorea-bake.py fetch` → `build`(504 가 나면 다시)'],
     ['data/r/11650/live250.json', 31, 'auto', '서울 250m 생활인구 — `tools/region/live250-bake.py` 의 DAYS 를 최근 평범한 한 주(명절·연휴 피함)로 바꾸고 `fetch` → `build`'],
     ['data/r/11650/rtms.json', 31, 'auto', '상업업무용 매매 실거래 — `tools/region/rtms-bake.py` 의 END 를 지난달로 올리고 `fetch`(새 달·새 지번 좌표만 받음) → `build`'],
+    ['data/r/11650/home.json', 2, 'auto', '주택 실거래 — 지번 좌표가 다 찰 때까지 날마다 `tools/region/home-bake.py geo`(브이월드 하루 한도 · 거래 많은 지번부터) → `build` · 다 차면 주기를 31일로 · 새 달은 END 를 올리고 `fetch <서비스>` 8개 동시'],
+    ['data/r/11650/pts250.json', 92, 'auto', '점 자료 250m 칸 — 상가·안전·생활시설·정류장·사고 중 하나를 다시 구우면 `tools/region/pts250-bake.py`(3분)'],
     ['data/r/11650/taas250.json', 365, 'hand', 'TAAS 사고 250m — 앱 안 브라우저 TAAS GIS 화면에서 법정동 5자리 코드 × 해 × 등급으로 다시 모아(MAP2D.md v2.4.0 ⑧ · 새 해 자료가 열리면) 07_API키/out/region/taas250/raw_*.json → `tools/region/taas250-bake.py`'],
     ['data/r/11650/grid.json', 365, 'auto', '250m 격자 뼈대 — 행정동 경계(hjd)가 바뀌면 `tools/region/grid250.py`(약 5분) 다음 live250·rtms build'],
     ['data/b2a.json', 365, 'auto', '법정동→행정동 표 — 07_API키/out/b2a 를 비우고 `tools/region/b2a-bake.py`(브이월드 법정동 경계 · 행정구역 개편 때)'],

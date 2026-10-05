@@ -35,7 +35,8 @@ def one(t, y, sd, gg):
     json.dump(items, open(fn, 'w', encoding='utf-8'), ensure_ascii=False); time.sleep(0.2); return len(items)
 
 def fetch():
-    jobs = [(t, y, sd, '') for t in TYPES for y in YEARS for sd in ('11', '41')]   # guGun 을 비우면 시도 전체가 온다(6,640번 → 160번 · 서버가 요청 절반을 떨어뜨려 시군구마다는 10시간 넘게 걸렸다)
+    SD = sys.argv[2].split(',') if len(sys.argv) > 2 else ['11', '41']   # v2.14.0 전국 = 11,26,27,28,29,30,31,36,41,42,43,44,45,46,47,48,50,51,52,12(옛·새 코드 둘 다 — 같은 점은 build 가 거른다)
+    jobs = [(t, y, sd, '') for t in TYPES for y in YEARS for sd in SD]   # guGun 을 비우면 시도 전체가 온다(6,640번 → 160번 · 서버가 요청 절반을 떨어뜨려 시군구마다는 10시간 넘게 걸렸다)
     with ThreadPoolExecutor(2) as ex:   # 8개 동시에 부르면 서버가 이 PC 를 한동안 막는다(2026-10-04 · 21초 무응답)
         res = list(ex.map(lambda a: one(*a), jobs))
     print('jobs', len(jobs), 'items', sum(r for r in res if r > 0), 'fail', sum(1 for r in res if r < 0))

@@ -29,8 +29,8 @@ def main():
         for q in j['pts']: xs.append(O[0] + q[0] / K[0]); ys.append(O[1] + q[1] / K[1]); cs.append(q[2]); fs.append(str(q[3] or ''))
     xs, ys, cs = np.array(xs), np.array(ys), np.array(cs); print('stores', len(xs))
     G = collections.defaultdict(list); miss = 0
-    for sd in ('11', '41'):
-        for z in json.load(open(os.path.join(REG, 'szone', 'szone_%s.json' % sd), encoding='utf-8')):
+    for fz in sorted(glob.glob(os.path.join(REG, 'szone', 'szone_*.json'))):   # v2.14.0 전국(받아 둔 시도 전부)
+        for z in json.load(open(fz, encoding='utf-8')):
             g = wkt.loads(z['coords'])
             if not g.is_valid: g = g.buffer(0)
             c = g.representative_point(); p = where(c.x, c.y)
@@ -55,7 +55,7 @@ def main():
         gb[gu] = os.path.getsize(fn)
     for g2 in R['gus']:
         if g2['gu'] in gb: g2.setdefault('bytes', {})['szone'] = gb[g2['gu']]
-    R['layers']['szone'] = '소진공 주요상권 영역(서울·경기) + 영역 안 등록 점포'
+    R['layers']['szone'] = '소진공 주요상권 영역(전국) + 영역 안 등록 점포'
     json.dump(R, open(rp, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print('items', sum(len(v) for v in G.values()), 'miss', miss, 'gus', len(gb), 'bytes', sum(gb.values()))
 

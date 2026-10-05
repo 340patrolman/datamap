@@ -59,17 +59,17 @@
     bidx: 'data/base/index.json', ov: 'data/base/ov.json', sgg: 'data/base/sgg.json', flow: 'data/flow-seocho.json', livep: 'data/live-seocho.json', trend: 'data/trend-seocho.json', hot10: 'data/hot10-seocho.json', trdar: 'data/trdar-seocho.json', safety: 'data/safety-seocho.json', taas10: 'data/taas10-seocho.json' };
   // v2.6.0 지역 자료 받기 하나로(전국 확장 S1·S2) — 권역마다 따로 둔 자료 저장소(340patrolman.github.io/datamap-data-…/)에서 받는다 · 같은 파일은 한 번만 받고(글로 보관 · 쓰는 곳마다 새로 풀어 서로 건드리지 않음) · 없음(404)과 실패를 가른다
   // 이 PC(localhost)에서는 지금처럼 data/r/ 를 쓴다 · 권역 목록 = data/regions.json · 권역마다 manifest.json(시군구 → 층 바이트·상자·동 이름)
-  var RBASE = {}, RGETT = {}, RMISS = {}, RMANU = [], ONGH = /github\.io$/.test(location.hostname);
+  var RBASE = {}, RGETT = {}, RMISS = {}, RMANU = [], ONGH = /github\.io$/.test(location.hostname), REGR = null, REGP = new Promise(function (res) { REGR = res; });   // REGP = 권역 목록을 읽은 뒤(그 전에 부른 받기는 기다린다)
   function rU(gu, f) { return (RBASE[String(gu).slice(0, 2)] || 'data/') + 'r/' + gu + '/' + f; }
   function rGet(gu, f) { var k = gu + '/' + f;
-    if (!RGETT[k]) { RGETT[k] = fetch(rU(gu, f)).then(function (r) { if (!r.ok) { if (r.status === 404) RMISS[k] = 1; throw new Error(r.status === 404 ? 'none' : 'fail'); } return r.text(); });
+    if (!RGETT[k]) { RGETT[k] = REGP.then(function () { return fetch(rU(gu, f)); }).then(function (r) { if (!r.ok) { if (r.status === 404) RMISS[k] = 1; throw new Error(r.status === 404 ? 'none' : 'fail'); } return r.text(); });
       RGETT[k].catch(function (e) { if (!e || e.message !== 'none') delete RGETT[k]; }); }
     return RGETT[k].then(function (t) { return JSON.parse(t); }); }
   function regionsLoad() {
     return fetch('data/regions.json').then(function (r) { return r.json(); }).then(function (RG) { var parts = [], layers = {};
       return Promise.all(RG.regions.map(function (g, i) { if (ONGH) RBASE[g.sido] = '/' + g.repo + '/'; var u = ONGH ? '/' + g.repo + '/manifest.json' : 'data/r/manifest-' + g.sido + '.json'; RMANU.push(u);
         return fetch(u).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (m) { parts[i] = m.gus || []; Object.keys(m.layers || {}).forEach(function (k) { layers[k] = m.layers[k]; }); }).catch(function () { parts[i] = []; }); }))
-        .then(function () { D.ridx = { gus: [].concat.apply([], parts), layers: layers, regions: RG.regions }; }); }).catch(function () { D.ridx = null; });
+        .then(function () { D.ridx = { gus: [].concat.apply([], parts), layers: layers, regions: RG.regions }; REGR(); }); }).catch(function () { D.ridx = null; REGR(); });
   }
   function get(k) { if (k === 'ridx') return regionsLoad(); return fetch(FILES[k]).then(function (r) { return r.json(); }).then(function (j) { D[k] = j; }).catch(function () { D[k] = null; }); }
   var LATE = ['livep', 'trend', 'hot10', 'trdar', 'safety', 'taas10', 'enf', 'season', 'pbtn', 'pstat'];   // v0.10.80 무거운 자료(상권·안전시설·사고 10년·추이)는 첫 그림 뒤에 읽는다 — 지도가 먼저 뜬다

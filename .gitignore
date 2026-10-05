@@ -1,0 +1,5 @@
+
+# v2.6.1 지역 자료는 권역 저장소(datamap-data-*)로 — 이 폴더들은 로컬 빌드 출력(publish-data.py 가 내보낸다)
+data/r/[0-9][0-9][0-9][0-9][0-9]/
+data/r/index.json
+data/r/manifest-*.json

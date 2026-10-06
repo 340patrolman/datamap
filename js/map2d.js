@@ -2600,13 +2600,14 @@
   }
   function cmpHtml(A, Ap, pn) {
     if (!A.pop || !Ap.pop) return '';
-    var o60 = function (X) { var t = 0; for (var i = 6; i < 10; i++) t += X.age[i]; return t / X.pop * 100; }, f = function (v, n) { return (Math.round(v * Math.pow(10, n)) / Math.pow(10, n)).toLocaleString(); },
+    var o60 = function (X) { var t = 0; for (var i = 6; i < 10; i++) t += X.age[i]; return t / X.pop * 100; }, f = function (v, n) { return (Math.round(v * Math.pow(10, n)) / Math.pow(10, n)).toLocaleString(); }, vr = [],
       r = function (a, b) { return b ? ' <em>(' + f(a / b, 1) + '배)</em>' : ''; }, h = '';
-    h += row('60세 이상', f(o60(A), 1) + '% · ' + esc(pn) + ' ' + f(o60(Ap), 1) + '%' + r(o60(A), o60(Ap)));
+    vr.push(['👴 60세 이상(%)', o60(A), o60(Ap)]); if (A.acc && Ap.acc) vr.push(['사고(1천 명당·해마다)', A.acc / 10 / A.pop * 1000, Ap.acc / 10 / Ap.pop * 1000]); if (A.st && Ap.st) vr.push(['가게(1천 명당)', A.st / A.pop * 1000, Ap.st / Ap.pop * 1000]); if (A.hp && Ap.hp) vr.push(['종사자÷인구', A.emp / A.hp, Ap.emp / Ap.hp]);
+    h += row('👴 60세 이상', f(o60(A), 1) + '% · ' + esc(pn) + ' ' + f(o60(Ap), 1) + '%' + r(o60(A), o60(Ap)));
     if (A.acc && Ap.acc) h += row('사고(주민 1천 명당 · 해마다)', f(A.acc / 10 / A.pop * 1000, 1) + ' · ' + esc(pn) + ' ' + f(Ap.acc / 10 / Ap.pop * 1000, 1) + r(A.acc / A.pop, Ap.acc / Ap.pop));
     if (A.st && Ap.st) h += row('가게(주민 1천 명당)', f(A.st / A.pop * 1000, 1) + ' · ' + esc(pn) + ' ' + f(Ap.st / Ap.pop * 1000, 1) + r(A.st / A.pop, Ap.st / Ap.pop));
     if (A.hp && Ap.hp) h += row('종사자÷인구', f(A.emp / A.hp, 2) + ' · ' + esc(pn) + ' ' + f(Ap.emp / Ap.hp, 2));
-    return '<div class="cap">⚖ 윗단위(' + esc(pn) + ')와 비교 — 배 = 이 단위 ÷ 윗단위</div>' + h;
+    return '<div class="cap">⚖ 윗단위(' + esc(pn) + ')와 비교 — 배 = 이 단위 ÷ 윗단위</div>' + vzPair(vr.map(function (q) { return [q[0], q[1], q[2]]; }), ['이 단위', pn], { fmt: function (v) { return f(v, v < 10 ? 2 : 1); } }) + h;
   }
   function rankHtml(ds, title) {   // 아래 단위(동) 순위 — 누르면 그 동으로
     if (ds.length < 2) return ''; var one = function (lab, fn, unit) { var a = ds.map(function (d) { return [d, fn(d)]; }).filter(function (q) { return q[1] != null && isFinite(q[1]); }).sort(function (x, y) { return y[1] - x[1]; }).slice(0, 5);
@@ -2638,12 +2639,12 @@
     if (lv === 'dong' && d && d.k) { cur = { ds: function () { var j = AIP[d.k.slice(0, 5)]; return j && j.dong && j.dong[d.k] ? [j.dong[d.k]] : []; }, gus: [d.k.slice(0, 5)] }; }
     else if (it.kind === 'unit') { cur = { ds: function () { return unitDongs(it.u); }, gus: unitGus(it.u) }; kids = cur; kidTitle = it.u.t === 'sgg' ? '이 시군구 안 동 순위' : it.u.t === 'ps' ? '이 경찰서 관할 동 순위' : '이 지구대 구역 동 순위'; }
     if (!cur) return;
-    for (var i = li + 1; i < steps.length; i++) if (steps[i][2] && steps[i][2].kind === 'unit') { par = steps[i][2].u; parName = steps[i][1].replace(/^\S+ /, ''); break; }
-    var gus = cur.gus.concat(par ? unitGus(par) : []).filter(function (g, i, a) { return a.indexOf(g) === i; }), need = gus.filter(function (g) { return !AIP[g]; });
+    var pars = []; for (var i = li + 1; i < steps.length; i++) if (steps[i][2] && steps[i][2].kind === 'unit') pars.push([steps[i][2].u, steps[i][1].replace(/^\S+ /, '')]);
+    var gus = cur.gus.concat.apply(cur.gus, pars.map(function (q) { return unitGus(q[0]); })).filter(function (g, i, a) { return a.indexOf(g) === i; }), need = gus.filter(function (g) { return !AIP[g]; });
     bot.innerHTML = '<p class="desc">윗단위 비교·아래 단위 순위를 계산하는 중…</p>';
     Promise.all(need.map(profP)).then(function () { var b2 = $('m2dLadB'); if (!b2 || $('m2dCard').querySelector('#m2dLadB') !== b2) return;
       var A = unitAgg(cur.ds()), h = '';
-      if (par) { var Ap = unitAgg(unitDongs(par)); h += cmpHtml(A, Ap, parName); }
+      for (var pi = 0; pi < pars.length; pi++) { var Ap = unitAgg(unitDongs(pars[pi][0])); if (!Ap.pop || !A.pop || Math.abs(Ap.pop - A.pop) <= A.pop * 0.01) continue; h += cmpHtml(A, Ap, pars[pi][1]); break; }   // v2.45.0 윗단위가 이 동 하나뿐이면(지구대 구역 = 한 동) 1배만 나와 뜻이 없다 — 다음 윗단위로
       if (kids) h += rankHtml(kids.ds(), kidTitle);
       b2.innerHTML = h; });
   }
@@ -2909,7 +2910,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.44.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.45.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3103,8 +3104,16 @@
     var jm = ch ? String(ch.lndcgrCodeNm || '') : '', cat0 = kind === 'apt' ? 'apt' : kind === 'house' ? 'house' : /근린|업무|판매|숙박|교육연구/.test(bu) ? 'shop' : /^(전|답|과수원)/.test(jm) ? 'farm' : /임야/.test(jm) ? 'forest' : 'landAgg';
     taxOpen({ kind: kind, cat: cat0, pnu: f.pnu, addr: ad, gu: kind === 'apt' ? String(f.pnu).slice(0, 5) : null, umd: m ? m[1] : null, jibun: jb, land: jg && ar ? jg * ar : 0, jiga: jg, ar: ar }); });
   var PIEC = ['#2563eb', '#db2777', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2', '#dc2626', '#65a30d'];
+  // v2.45.0 나이는 어디서나 같은 얼굴·같은 색(소유자 「나이 같은 것은 색이나 얼굴로 쉽게」) — 👧 0~19 초록 · 🧑 20·30대 파랑 · 🧔 40·50대 보라 · 👴 60~79 주황 · 👵 80+ 빨강
+  var AGEF = [['👧', '0~19세', '#22c55e'], ['🧑', '20·30대', '#3b82f6'], ['🧔', '40·50대', '#8b5cf6'], ['👴', '60세 이상', '#f59e0b']];
+  function ageKeys(first) { return AGEF.map(function (q, i) { return [q[0] + ' ' + (i === 0 && first ? first : q[1]), q[2]]; }); }
+  function agePicto(g, lab) {   // 얼굴 10개 = 10% 씩(큰 나머지 순으로 반올림)
+    var t = g.reduce(function (a, b) { return a + (b || 0); }, 0) || 1, raw = g.map(function (v) { return (v || 0) / t * 10; }), n = raw.map(Math.floor), left = 10 - n.reduce(function (a, b) { return a + b; }, 0);
+    raw.map(function (v, i) { return [v - Math.floor(v), i]; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, left).forEach(function (q) { n[q[1]]++; });
+    var f = ''; n.forEach(function (c, i) { for (var k = 0; k < c; k++) f += '<span style="display:inline-block;width:22px;text-align:center;border-bottom:3px solid ' + AGEF[i][2] + '">' + AGEF[i][0] + '</span>'; });
+    return '<div class="vzr"><span class="vzl">' + esc(lab) + '</span><span style="font-size:15px;letter-spacing:0">' + f + '</span></div>'; }
   function pieAge(a) { if (!a || a.length < 8) return ''; var t = function (i, j) { var x = 0; for (var k = i; k <= j && k < a.length; k++) x += a[k] || 0; return x; };
-    return '<div class="cap">나이 구성</div>' + pie([['0~19세', t(0, 1), '#22c55e'], ['20~39세', t(2, 3), '#3b82f6'], ['40~59세', t(4, 5), '#8b5cf6'], ['60~79세', t(6, 7), '#f59e0b'], ['80세 이상', t(8, 9), '#dc2626']], 84); }
+    return '<div class="cap">나이 구성 — 얼굴 하나 = 10%</div>' + agePicto([t(0, 1), t(2, 3), t(4, 5), t(6, 9)], '') + pie([['👧 0~19세', t(0, 1), '#22c55e'], ['🧑 20~39세', t(2, 3), '#3b82f6'], ['🧔 40~59세', t(4, 5), '#8b5cf6'], ['👴 60~79세', t(6, 7), '#f59e0b'], ['👵 80세 이상', t(8, 9), '#dc2626']], 84); }
   function pieTop(o, n) { var ks = Object.keys(o || {}).sort(function (a, b) { return o[b] - o[a]; }), rest = 0; ks.slice(n).forEach(function (k) { rest += o[k]; });
     return pie(ks.slice(0, n).map(function (k, i) { return [k, o[k], PIEC[i % PIEC.length]]; }).concat(rest ? [['그 밖', rest, '#94a3b8']] : []), 84); }
   function pie(parts, size) {   // v2.39.0 원형(도넛) 그래프 — [[이름, 값, 색]] · 비율은 값에서 · 글로도 같이 적는다
@@ -3368,7 +3377,22 @@
   // ---------- v2.43.0 📊 설명 그래프 도우미(소유자 「일터·국민연금·생활업종 체온·이동·풀어 읽기를 설명할 때 그래프와 색으로」) ----------
   function vzH(items, opt) {   // 가로 막대 — [[이름, 값, 색]] · opt.unit · opt.title
     opt = opt || {}; var mx = Math.max.apply(null, items.map(function (x) { return Math.abs(x[1]); }).concat([1]));
-    return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + items.map(function (x) { return '<div class="vzr"><span class="vzl" title="' + esc(x[0]) + '">' + esc(x[0]) + '</span><span class="vzb"><i style="width:' + Math.max(1, Math.abs(x[1]) / mx * 100).toFixed(1) + '%;background:' + (x[2] || '#2563eb') + '"></i></span><b>' + Math.round(x[1]).toLocaleString() + (opt.unit || '') + '</b></div>'; }).join('') + '</div>'; }
+    return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + items.map(function (x) { return '<div class="vzr"><span class="vzl" title="' + esc(x[0]) + '">' + esc(x[0]) + '</span><span class="vzb"><i style="width:' + Math.max(1, Math.abs(x[1]) / mx * 100).toFixed(1) + '%;background:' + (x[2] || '#2563eb') + '"></i></span><b>' + (opt.fmt ? opt.fmt(x[1]) : Math.round(x[1]).toLocaleString() + (opt.unit || '')) + '</b></div>'; }).join('') + '</div>'; }
+  function vzPair(rows, names, opt) {   // v2.45.0 두 줄 막대 — rows [[이름, 이 값, 견줄 값]] · names [이 값 이름, 견줄 값 이름] · 위 = 진한 색 · 아래 = 옅은 회색
+    opt = opt || {}; var fm = opt.fmt || function (v) { return (Math.round(v * 10) / 10).toLocaleString(); }, mx = Math.max.apply(null, [].concat.apply([], rows.map(function (r) { return [Math.abs(r[1] || 0), Math.abs(r[2] || 0)]; })).concat([1e-9])), c = opt.color || '#2563eb';
+    return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + rows.map(function (r) { var hi = r[2] && r[1] / r[2] >= 1.5;
+      return '<div class="vzr"><span class="vzl" title="' + esc(r[0]) + '">' + esc(r[0]) + '</span><span class="vzb vzp"><i style="width:' + Math.max(1, (r[1] || 0) / mx * 100).toFixed(1) + '%;background:' + (hi ? '#dc2626' : c) + '"></i>' + (r[2] != null ? '<i style="width:' + Math.max(1, r[2] / mx * 100).toFixed(1) + '%;background:#94a3b8"></i>' : '') + '</span><b>' + fm(r[1] || 0) + (r[2] != null ? ' <small>/ ' + fm(r[2]) + '</small>' : '') + '</b></div>'; }).join('') +
+      '<div class="pleg"><span><i style="background:' + c + '"></i>' + esc(names[0]) + '</span><span><i style="background:#94a3b8"></i>' + esc(names[1]) + '</span>' + (opt.noHi ? '' : '<span><i style="background:#dc2626"></i>1.5배 넘음</span>') + '</div></div>'; }
+  function vzLineQ(series, labs, opt) {   // v2.45.0 분기·해마다 선 — [[이름, [값|null…], 색]] · labs = 가로 이름 · opt.fmt = 세로 눈금 글 · opt.mark = 표시할 칸 [i, 글]
+    opt = opt || {}; var W = 300, H = 104, L = 40, B = 16, n = labs.length, all = [].concat.apply([], series.map(function (x) { return x[1]; })).filter(function (v) { return v != null && isFinite(v); }), mx = Math.max.apply(null, all.concat([1])), mn = Math.min.apply(null, all.concat([mx])), fm = opt.fmt || shortN;
+    if (opt.zero) mn = Math.min(0, mn); var X = function (i) { return L + (n > 1 ? i / (n - 1) : 0.5) * (W - L - 8); }, Y = function (v) { return 5 + (1 - (v - mn) / ((mx - mn) || 1)) * (H - B - 6); };
+    var s2 = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + esc(opt.title || '추이') + '">';
+    [mn, mx].forEach(function (v) { s2 += '<line x1="' + L + '" x2="' + (W - 6) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" stroke="currentColor" opacity=".12"/><text x="' + (L - 3) + '" y="' + (Y(v) + 3).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="currentColor" opacity=".75">' + esc(fm(v)) + '</text>'; });
+    var stp = Math.max(1, Math.ceil(n / 6)); labs.forEach(function (lb, i) { if (i % stp && i !== n - 1) return; s2 += '<text x="' + X(i).toFixed(1) + '" y="' + (H - 3) + '" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">' + esc(lb) + '</text>'; });
+    (opt.mark || []).forEach(function (m) { s2 += '<line x1="' + X(m[0]).toFixed(1) + '" x2="' + X(m[0]).toFixed(1) + '" y1="5" y2="' + (H - B) + '" stroke="#ea580c" stroke-dasharray="3 2"/><text x="' + Math.min(W - 30, X(m[0]) + 2).toFixed(1) + '" y="12" font-size="8.5" fill="#ea580c">' + esc(m[1]) + '</text>'; });
+    series.forEach(function (x) { var seg = [], out = []; x[1].forEach(function (v, i) { if (v == null || !isFinite(v)) { if (seg.length) out.push(seg); seg = []; return; } seg.push(X(i).toFixed(1) + ',' + Y(v).toFixed(1)); }); if (seg.length) out.push(seg);
+      out.forEach(function (g) { s2 += g.length > 1 ? '<polyline fill="none" stroke="' + x[2] + '" stroke-width="2" ' + (x[3] ? 'stroke-dasharray="4 3" ' : '') + 'points="' + g.join(' ') + '"/>' : '<circle r="2.5" fill="' + x[2] + '" cx="' + g[0].split(',')[0] + '" cy="' + g[0].split(',')[1] + '"/>'; }); });
+    return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + s2 + '</svg><div class="pleg">' + series.map(function (x) { return '<span><i style="background:' + x[2] + '"></i>' + esc(x[0]) + '</span>'; }).join('') + '</div></div>'; }
   function vzDiv(items, opt) {   // 늘고 준 막대 — [[이름, %, 수]] · 가운데 0 · 는 쪽 빨강 · 준 쪽 파랑
     opt = opt || {}; var mx = Math.max.apply(null, items.map(function (x) { return Math.abs(x[1] || 0); }).concat([1]));
     return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + items.map(function (x) { var v = x[1] || 0, w = Math.abs(v) / mx * 50;
@@ -4143,6 +4167,14 @@
   fetch('data/gu-census.json').then(function (r) { return r.json(); }).then(function (j) { GCEN = j; }).catch(function () {});
   // v2.8.0 🌏 외국인주민(행안부 · 시군구 · 거주 3개월 넘게) — 서울 생활인구의 체류 외국인과 정의가 달라 합치지 않는다(설계서 4장)
   var FRN = null; fetch('data/foreign.json').then(function (r) { return r.json(); }).then(function (j) { FRN = j; var sd = {}; Object.keys(j.gu).forEach(function (k) { var v = j.gu[k]['2024']; if (!v || !v.pop || /시 전체/.test(j.gu[k].src)) return; var s2 = k.slice(0, 2); sd[s2] = sd[s2] || [0, 0]; sd[s2][0] += v.tot || 0; sd[s2][1] += v.pop; }); FRN.sd = sd; }).catch(function () {});
+  function frnVz(gu) { var F2 = FRN && FRN.gu[gu]; if (!F2 || !F2['2024']) return ''; var v = F2['2024'], o = F2['2019'], sd = FRN.sd && FRN.sd[String(gu).slice(0, 2)], h = '';
+    var parts = [['외국인근로자', v.work], ['결혼이민자', v.marr], ['유학생', v.stud], ['외국국적동포', v.kor], ['기타 외국인', v.etc], ['귀화', v.nat], ['외국인주민 자녀', v.kid]].filter(function (q) { return q[1]; });
+    if (parts.length) h += '<div class="vz"><div class="cap">🌏 외국인 주민 구성(명 · 구)</div>' + pie(parts.map(function (q, i) { return [q[0], q[1], PIEC[i % PIEC.length]]; }), 72) + '</div>';
+    if (F2.nat && F2.nat.length) h += vzH(F2.nat.slice(0, 6).map(function (x, i) { return [x[0], x[1], PIEC[i % PIEC.length]]; }), { title: '국적 많은 순(명 · 법무부 등록외국인)', unit: '명' });
+    var sh = v.pop ? v.tot / v.pop * 100 : null, ssh = sd && sd[1] ? sd[0] / sd[1] * 100 : null;
+    if (sh != null && ssh != null) h += vzH([['이 구', sh, '#dc2626'], [sidoOf(gu) + ' 평균', ssh, '#94a3b8']], { title: '주민 가운데 외국인(%)', fmt: function (x) { return x.toFixed(1) + '%'; } });
+    if (o && o.tot) h += vzH([['2019년', o.tot, '#94a3b8'], ['2024년', v.tot, '#0f766e']], { title: '외국인 주민 수 변화(명)', unit: '명' });
+    return h ? '<div class="vzg">' + h + '</div>' : ''; }
   function frnPara(gu) { var F2 = FRN && FRN.gu[gu]; if (!F2 || !F2['2024']) return ''; var v = F2['2024'], o = F2['2019'], sd = FRN.sd && FRN.sd[String(gu).slice(0, 2)], sh = v.pop ? v.tot / v.pop * 100 : null, ssh = sd && sd[1] ? sd[0] / sd[1] * 100 : null;
     var parts = [['외국인근로자', v.work], ['결혼이민자', v.marr], ['유학생', v.stud], ['외국국적동포', v.kor], ['기타 외국인', v.etc], ['귀화(한국국적 취득)', v.nat], ['외국인주민 자녀', v.kid]].filter(function (q) { return q[1]; }).sort(function (a, b) { return b[1] - a[1]; });
     var t = '<b>외국인 주민(구 · ' + esc(F2.src) + ').</b> ' + (v.tot || 0).toLocaleString() + '명' + (sh != null ? '(주민의 ' + sh.toFixed(1) + '%' + (ssh != null ? ' · ' + sidoOf(gu) + ' 평균 ' + ssh.toFixed(1) + '%' : '') + ')' : '') + ' — ' + parts.slice(0, 4).map(function (q) { return q[0] + ' ' + q[1].toLocaleString(); }).join(' · ');
@@ -4175,7 +4207,7 @@
     // ① 사는 사람
     if (p && p.tot) { var A = p.age, T = sum(A), s0 = pc(A[0], T), s2039 = pc(A[2] + A[3], T), s60 = pc(A[6] + A[7] + A[8] + A[9], T), s19 = pc(A[0] + A[1], T), RA = ref.age;
       var r60 = RA ? RA[6] + RA[7] + RA[8] + RA[9] : null, r2039 = RA ? RA[2] + RA[3] : null, r0 = RA ? RA[0] : null, t = '<b>사는 사람.</b> 주민 ' + p.tot.toLocaleString() + '명. ';
-      t += '0~9세 ' + A[0].toLocaleString() + '명(' + f1(s0) + '%' + (r0 != null ? ' · ' + S.sido + ' 평균 ' + r0 + '%' : '') + '), 20·30대 ' + f1(s2039) + '%' + (r2039 != null ? '(평균 ' + f1(r2039) + '%)' : '') + ', 60세 이상 ' + f1(s60) + '%' + (r60 != null ? '(평균 ' + f1(r60) + '%)' : '') + '. ';
+      t += '👶 0~9세 ' + A[0].toLocaleString() + '명(' + f1(s0) + '%' + (r0 != null ? ' · ' + S.sido + ' 평균 ' + r0 + '%' : '') + '), 🧑 20·30대 ' + f1(s2039) + '%' + (r2039 != null ? '(평균 ' + f1(r2039) + '%)' : '') + ', 👴 60세 이상 ' + f1(s60) + '%' + (r60 != null ? '(평균 ' + f1(r60) + '%)' : '') + '. ';
       var kind = r60 != null && s60 - r60 >= 3 ? '어르신 비중이 평균보다 높은 주거지' : r2039 != null && s2039 - r2039 >= 3 ? '젊은 층 비중이 평균보다 높은 동' : r0 != null && s0 - r0 >= 1 ? '아이 있는 집이 평균보다 많은 동' : '연령 구성이 ' + S.sido + ' 평균과 비슷한 동';
       t += '인구 구조만 보면 <b>' + kind + '</b>이다.';
       if (S.F && S.F.sex) { var m = S.F.sex[0], fm = S.F.sex[1], sr = m / fm * 100; t += ' 남 ' + m.toLocaleString() + ' · 여 ' + fm.toLocaleString() + '(여자 100명당 남자 ' + Math.round(sr) + '명)' + (sr >= 110 ? ' — <b>남자가 눈에 띄게 많다</b>: 공장·산업단지·건설 현장 근로자가 사는 동에서 흔한 모습이다(추론 · 일하는 사람 문단과 같이 본다).' : sr <= 88 ? ' — 여자가 더 많다: 어르신(여성이 오래 산다)이나 젊은 여성 1인 가구가 많은 동에서 흔하다(추론 · 연령과 같이 본다).' : '.'); }
@@ -4183,7 +4215,13 @@
         if (S.F.ccy && S.Fm && S.Fm.cyears) { var cy = S.F.ccy; t += ' 어린이집 수는 ' + S.Fm.cyears[0] + '년 ' + cy[0] + '곳 → 지금 ' + cy[cy.length - 1] + '곳.'; } }
       if (S.F && S.F.aca != null) t += ' 입시·교과 학원 ' + S.F.aca + '곳(학원 전체 ' + (S.F.acaAll || '-') + ')' + (s19 < 12 && S.F.aca > 20 ? ' — 학원 수는 이 동 아이 수와 따로 간다(다른 동 아이들이 온다)' : '') + '.';
       if (/[읍면]$/.test(S.name)) t += ' <small>(' + esc(S.name) + '은 여러 리(里)로 나뉘지만 주민·카드·유동인구 통계는 읍·면 단위까지만 공개된다 — 리마다 다른 사정은 이 숫자에 섞여 있다)</small>';
-      tags.push(r60 != null && s60 - r60 >= 3 ? '어르신 많은 주거지' : r2039 != null && s2039 - r2039 >= 3 ? '젊은 층 많음' : r0 != null && s0 - r0 >= 1 ? '아이 많음' : '연령은 ' + S.sido + ' 평균 수준'); P.push(t); }
+      tags.push(r60 != null && s60 - r60 >= 3 ? '어르신 많은 주거지' : r2039 != null && s2039 - r2039 >= 3 ? '젊은 층 많음' : r0 != null && s0 - r0 >= 1 ? '아이 많음' : '연령은 ' + S.sido + ' 평균 수준'); P.push(t);
+      var g4 = function (X) { return [X[0] + X[1], X[2] + X[3], X[4] + X[5], X[6] + X[7] + X[8] + X[9]]; };
+      P.push('<div class="vz"><div class="cap">나이 구성 — 얼굴 하나 = 10% · 이 동 vs ' + S.sido + ' 평균</div>' + agePicto(g4(A), S.name) + (RA ? agePicto(g4(RA), S.sido + ' 평균') : '') + '</div>' + vzStack([[S.name, g4(A), p.tot.toLocaleString() + '명']].concat(RA ? [[S.sido + ' 평균', g4(RA), '']] : []), ageKeys(), { title: '같은 것을 막대로(%)' }));
+      var v1 = (S.F && S.F.sex ? vzStack([['남 · 여', [S.F.sex[0], S.F.sex[1]], '']], [['🙋‍♂️ 남', '#2563eb'], ['🙋‍♀️ 여', '#db2777']], { title: '남녀(%)' }) : '') +
+        (S.F && S.F.cc && S.F.cc[1] ? vzH([['정원', S.F.cc[1], '#94a3b8'], ['지금 다니는 아이', S.F.cc[2] || 0, '#22c55e']], { title: '👶 어린이집 ' + S.F.cc[0] + '곳 — 정원 vs 지금(명)', unit: '명' }) : '') +
+        (S.F && S.F.ccy && S.Fm && S.Fm.cyears && S.F.ccy.length > 2 ? '<div class="vz"><div class="cap">어린이집 수 — 해마다(곳)</div>' + bar(S.F.ccy, '#22c55e', S.F.ccy.map(function (_, i) { return "'" + String(+S.Fm.cyears[0] + i).slice(2); })) + '</div>' : '');
+      if (v1) P.push('<div class="vzg">' + v1 + '</div>'); }
     // ② 머무는 사람
     var L = S.live; if (L && (L.wd || L.we) && p && p.tot) { var t2 = '<b>머무는 사람.</b> ', o = [];
       ['wd', 'we'].forEach(function (k2) { var a = L[k2]; if (!a) return; var mx = Math.max.apply(null, a), mn = Math.min.apply(null, a), pk = a.indexOf(mx), busy = []; a.forEach(function (v, i) { if (v >= mn + (mx - mn) * 0.7) busy.push(i); });
@@ -4199,34 +4237,44 @@
       t3 += r3 >= 2 ? '<b>일터형</b> — 낮에 일하러 오는 사람이 사는 사람보다 훨씬 많다. 평일 점심·퇴근길 장사.' : r3 >= 0.8 ? '<b>주거·일터 섞임</b> — 점심 손님(직장인)과 저녁 손님(주민)이 둘 다 있다.' : '<b>주거형</b> — 일터가 적어 낮 장사보다 저녁·주말 장사.';
       if (S.W && S.W.wrc && S.W.wrc[0]) { var wa = S.W.wrc[3], wt = sum(wa) || 1, WAG = ['10대', '20대', '30대', '40대', '50대', '60대 이상'], wm = wa.indexOf(Math.max.apply(null, wa)); t3 += ' 서울시 직장인구(' + qLab1(S.Wm.quarters.wrc) + ')로 보면 이 동에서 일하는 사람 ' + Math.round(S.W.wrc[0]).toLocaleString() + '명은 ' + WAG.map(function (n0, i) { return n0 + ' ' + Math.round(wa[i] / wt * 100) + '%'; }).join(' · ') + ' · 남 ' + Math.round(S.W.wrc[1] / S.W.wrc[0] * 100) + '% — 점심 손님은 <b>' + WAG[wm] + '</b>가 가장 많다.'; }
       t3 += ' <small>(통계청 SGIS 집계구 2023' + (S.W && S.W.wrc ? ' · 서울시 상권분석 직장인구' : '') + ' · 기준: 종사자÷주민 2배↑ 일터형 · 0.8배↓ 주거형 — 앱 기준)</small>'; tags.push(r3 >= 2 ? '일터' : r3 >= 0.8 ? '주거·일터 섞임' : '주거지'); P.push(t3);
-      P.push('<div class="vzg">' + vzH([['사는 사람(주민)', p.tot, '#7c3aed'], ['일하는 사람(종사자)', S.wrk, '#0f766e']], { title: '주민 vs 일하는 사람(명)', unit: '명' }) + (S.W && S.W.wrc && S.W.wrc[3] ? '<div class="vz"><div class="cap">이 동에서 일하는 사람 나이(서울 직장인구)</div>' + pie(['10대', '20대', '30대', '40대', '50대', '60대+'].map(function (n0, i) { return [n0, S.W.wrc[3][i] || 0, ['#22c55e', '#3b82f6', '#6366f1', '#8b5cf6', '#f59e0b', '#dc2626'][i]]; }), 72) + '</div>' : '') + '</div>'); }
-    if (S.F && S.F.gov) { var gk = Object.keys(S.F.gov); if (gk.length) P.push('<b>관공서.</b> ' + gk.map(function (k4) { return k4 + ' ' + S.F.gov[k4]; }).join(' · ') + ' — 공무원 점심과 민원인 낮 유입이 있다. 시청·구청·법원·세무서 같은 큰 곳일수록 크다. <small>(OSM·공식 관공서 자리)</small>'); }
+      P.push('<div class="vzg">' + vzH([['사는 사람(주민)', p.tot, '#7c3aed'], ['일하는 사람(종사자)', S.wrk, '#0f766e']], { title: '주민 vs 일하는 사람(명)', unit: '명' }) + (S.W && S.W.wrc && S.W.wrc[3] ? '<div class="vz"><div class="cap">이 동에서 일하는 사람 나이(서울 직장인구)</div>' + pie(['👧 10대', '🧑 20대', '🧑 30대', '🧔 40대', '🧔 50대', '👴 60대+'].map(function (n0, i) { return [n0, S.W.wrc[3][i] || 0, ['#22c55e', '#3b82f6', '#60a5fa', '#8b5cf6', '#a78bfa', '#f59e0b'][i]]; }), 72) + '</div>' : '') + '</div>'); }
+    if (S.F && S.F.gov) { var gk = Object.keys(S.F.gov); if (gk.length) P.push('<b>관공서.</b> ' + gk.map(function (k4) { return k4 + ' ' + S.F.gov[k4]; }).join(' · ') + ' — 공무원 점심과 민원인 낮 유입이 있다. 시청·구청·법원·세무서 같은 큰 곳일수록 크다. <small>(OSM·공식 관공서 자리)</small>'); if (gk.length > 1) P.push(vzH(gk.map(function (k4, i) { return [k4, S.F.gov[k4], PIEC[i % PIEC.length]]; }), { title: '🏛 관공서(곳)', unit: '곳' })); }
     // ③-2 지갑(구매력) — 동 = 공동주택 시세·평형 · 구 = 국세청(구 평균 — 나누지 않는다)
     var WP = []; if (S.W && S.W.apt && sum(S.W.apt[2]) > 0) { var ap = S.W.apt, hh = sum(ap[2]), aa = sum(ap[1]) || 1, six = ap[2][6] / hh * 100, rw = ref.w || {}, ARN = ['66㎡ 미만', '66~99㎡', '99~132㎡', '132~165㎡', '165㎡ 이상'];
       var tw = '<b>지갑(사는 사람의 자산).</b> 이 동 공동주택 ' + Math.round(ap[0]) + '단지 · ' + Math.round(hh).toLocaleString() + '가구 — 평형: ' + ARN.map(function (n0, i) { return n0 + ' ' + Math.round(ap[1][i] / aa * 100) + '%'; }).join(' · ') + ' · 평균 ' + ap[3] + '㎡. 시세 6억 이상 가구 <b>' + f1(six) + '%</b>' + (rw.six_med != null ? '(서울 동 중앙값 ' + rw.six_med + '% · 상위 20% 경계 ' + rw.six_p80 + '%)' : '') + ', 평균 시세 <b>' + won(ap[4]) + '</b>' + (rw.mktc_med ? '(서울 동 중앙값 ' + won(rw.mktc_med) + ' · 상위 20% ' + won(rw.mktc_p80) + ')' : '') + ' — ';
       var hi = rw.mktc_p80 && ap[4] >= rw.mktc_p80, mid = rw.mktc_med && ap[4] >= rw.mktc_med; tw += hi ? '<b>서울에서 집값이 높은 쪽(상위 20%)</b>이라 주민 자산 구매력이 크다.' : mid ? '서울 동 가운데 중간보다 높다.' : '서울 동 가운데 중간보다 낮다(소형·저가 공동주택이 많다).';
       tw += ' 같은 가구 수라도 20평대와 40평대는 다른 시장이다 — 평형 구성이 손님층의 크기를 말해 준다. <small>(서울시 상권분석서비스 아파트-행정동 ' + qLab1(S.Wm.quarters.apt) + ' · 서울신용보증재단 추정 시세 · 단지·가구 수는 이 자료가 시세를 잡은 곳만이라 실제 세대 수보다 적을 수 있다(소규모 공동주택 포함 · 단독·다가구 빠짐) — 비율과 시세 수준으로 읽는다)</small>';
-      WP.push(tw); WP.push('<div class="vz"><div class="cap">공동주택 평형 구성(가구 · 이 동)</div>' + pie(ARN.map(function (n0, i) { return [n0, ap[1][i] || 0, ['#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1e3a8a'][i]]; }), 72) + '</div>'); tags.push(hi ? '집값 상위 20% 동' : mid ? '집값 중간 이상' : '집값 중간 이하'); }
-    if (S.GT && (S.GT.wage || S.GT.inc)) { var G2 = S.GT, gn = S.guName || '이 구', tg = '<b>구 지갑(참고 · 구 평균 — 이 동에 나누지 않는다).</b> ' + esc(gn) + ' ';
+      WP.push(tw); WP.push('<div class="vzg"><div class="vz"><div class="cap">공동주택 평형 구성(가구 · 이 동)</div>' + pie(ARN.map(function (n0, i) { return [n0, ap[1][i] || 0, ['#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1e3a8a'][i]]; }), 72) + '</div>' +
+        (rw.mktc_med ? vzH([[S.name, ap[4], hi ? '#dc2626' : '#2563eb'], ['서울 동 중앙', rw.mktc_med, '#94a3b8'], ['상위 20% 경계', rw.mktc_p80, '#64748b']], { title: '공동주택 평균 시세', fmt: function (v) { return won(v); } }) : '') +
+        (rw.six_med != null ? vzH([[S.name, six, '#2563eb'], ['서울 동 중앙', rw.six_med, '#94a3b8'], ['상위 20% 경계', rw.six_p80, '#64748b']], { title: '시세 6억 이상 가구 비율(%)', unit: '%' }) : '') + '</div>'); tags.push(hi ? '집값 상위 20% 동' : mid ? '집값 중간 이상' : '집값 중간 이하'); }
+    if (S.GT && (S.GT.wage || S.GT.inc)) { var gv2 = '', G2 = S.GT, gn = S.guName || '이 구', tg = '<b>구 지갑(참고 · 구 평균 — 이 동에 나누지 않는다).</b> ' + esc(gn) + ' ';
       if (G2.wage) tg += '근로자 1인당 총급여 <b>' + won(G2.wage[0]) + '</b>(' + S.GTm.years.wage + '년 · 주소지 기준 · ' + (S.sido === '서울' ? '서울 25개 구' : S.sido + ' 시군구') + ' 중 ' + G2.wageR[0] + '위)';
       if (G2.inc) tg += ' · 종합소득 신고자 1인당 종합소득금액 <b>' + won(G2.inc[0]) + '</b>(' + S.GTm.years.inc + '년 · ' + G2.incR[0] + '위)';
       if (G2.jbs && G2.jbs[1] != null) tg += ' · 종합부동산세 주택분 ' + won(G2.jbs[1] * 100) + '(' + S.GTm.years.jbs + '년)';
       if (S.GC) { var C2 = S.GC, CA = S.GCa['_' + S.sido] || {};
         tg += ' · 2020 인구주택총조사(' + esc(C2.src) + '): 사는 집이 <b>자기집 ' + C2.own + '%</b> · 전세 ' + C2.jeonse + '% · 월세 ' + C2.wolse + '%(' + S.sido + ' 평균 자기집 ' + CA.own + '% · 월세 ' + CA.wolse + '%)' + (C2.uni4 != null ? ' · 25세 이상 4년제 대학 졸업 이상 <b>' + C2.uni4 + '%</b>(평균 ' + CA.uni4 + '%)' : '');
         if (C2.wolse >= (CA.wolse || 99) + 5) tg += ' — 월세 사는 집이 많다: 젊은 1~2인 가구·이동이 잦은 동네일 가능성(구 평균 · 추론)';
-        else if (C2.own >= (CA.own || 99) + 8) tg += ' — 자기집이 많다: 오래 사는 가구·자산 쪽(구 평균 · 추론)'; }
+        else if (C2.own >= (CA.own || 99) + 8) tg += ' — 자기집이 많다: 오래 사는 가구·자산 쪽(구 평균 · 추론)';
+        var ten = function (X) { return [X.own || 0, X.jeonse || 0, X.wolse || 0, X.free != null ? X.free : Math.max(0, 100 - (X.own || 0) - (X.jeonse || 0) - (X.wolse || 0))]; };
+        var gv2 = vzStack([[gn, ten(C2), '']].concat(CA.own != null ? [[S.sido + ' 평균', ten(CA), '']] : []), [['🏠 자기집', '#16a34a'], ['🔑 전세', '#2563eb'], ['💸 월세', '#f59e0b'], ['무상', '#94a3b8']], { title: '사는 집 — 자가·전세·월세(%, 2020 · 구)' });
+        if (C2.uni4 != null && CA.uni4 != null) gv2 += vzPair([['4년제 대학 졸업 이상', C2.uni4, CA.uni4]], [gn, S.sido + ' 평균'], { title: '🎓 25세 이상 학력(%)', fmt: function (v) { return v.toFixed(1) + '%'; } }); }
       tg += '. 이 숫자는 구(시) 전체 평균이라 그 안의 동네마다 다르다 — 부자 동네와 아닌 동네가 섞인 값이다. <small>(국세청 국세통계 KOSIS 133 · 종부세는 공제를 넘는 사람만 세서 중간 자산이 빠진다 · 점유형태·학력 = 통계청 2020 총조사 시군구(KOSIS DT_1PE2002·DT_1PM2001 · 동 단위 공식 값 없음 · 경기 일반구·화성·부천 새 구는 시 전체) · 차량 보유는 시군구 공식 표를 찾지 못해 넣지 않았다)</small>';
       if (S.W && S.W.apt && sl0(S) && ref.amtPerPopMed && rw0(ref, S)) tg += ' 집값은 서울 위쪽인데 주민 1인당 카드 매출은 중앙값 아래다 — <b>이 동 주민의 소비는 동 밖(큰 상권)에서 이뤄질 가능성이 크다</b>(어디로 가는지는 이 자료에 없다 · 추론).';
-      WP.push(tg); }
+      WP.push(tg); var gv3 = (typeof gv2 === 'string' ? gv2 : '');
+      if (G2.wage && G2.wageR) { var nG = S.sido === '서울' ? 25 : null; gv3 += vzH([['근로자 1인당 총급여', G2.wage[0], '#0f766e']].concat(G2.inc ? [['종합소득자 1인당 소득', G2.inc[0], '#7c3aed']] : []), { title: '💰 ' + gn + ' 1인당 소득(구 평균)' + (G2.wageR ? ' · 급여 ' + G2.wageR[0] + '위' + (nG ? '/' + nG : '') : ''), fmt: function (v) { return won(v); } }); }
+      if (gv3) WP.push('<div class="vzg">' + gv3 + '</div>'); }
     if (S.HMd) { var HV = S.HMd, gm = function (t, i) { var a2 = []; for (var q in S.HMg.dong) { var z = S.HMg.dong[q][t]; if (z && z[i] != null && z[i - 1] >= 3) a2.push(z[i]); } a2.sort(function (x, y) { return x - y; }); return a2.length >= 3 ? a2[Math.floor(a2.length / 2)] : null; };
       var hp = '<b>집값·전월세(실거래 · 이 동).</b> ', seg = [];
       [['a', '아파트'], ['o', '오피스텔'], ['r', '연립다세대']].forEach(function (q) { var x = HV[q[0]]; if (!x) return; var g1 = gm(q[0], 1);
         seg.push(q[1] + ' ' + (x[0] ? '매매 ' + x[0] + '건 평당 <b>' + pyeong(x[1]) + '</b>' + (g1 && x[0] >= 3 ? '(' + esc(S.guName || '구') + ' 동 중앙 ' + pyeong(g1) + ')' : '') : '매매 없음') + (x[2] ? ' · 전세 ' + x[2] + '건 평당 ' + pyeong(x[3]) : '') + (x[4] ? ' · 월세 ' + x[4] + '건 중앙 ' + x[5] + '만' : '') + (x[6] != null ? ' · 전세가율 ' + x[6] + '%' : '')); });
+      var hpv = [['a', '아파트'], ['o', '오피스텔'], ['r', '연립다세대']].filter(function (q) { return HV[q[0]] && HV[q[0]][0]; }).map(function (q) { var g1 = gm(q[0], 1); return [q[1] + ' 매매', HV[q[0]][1], HV[q[0]][0] >= 3 ? g1 : null]; });
+      var hpj = [['a', '아파트'], ['o', '오피스텔'], ['r', '연립다세대']].filter(function (q) { return HV[q[0]] && HV[q[0]][6] != null; }).map(function (q) { return [q[1], HV[q[0]][6], q[0] === 'a' ? '#2563eb' : q[0] === 'o' ? '#0891b2' : '#16a34a']; });
       if (seg.length) { hp += seg.join(' / ') + '.';
         var ax = HV.a, gj = gm('a', 6); if (ax && ax[6] != null && gj != null) hp += ax[6] >= gj + 8 ? ' 전세가율이 구 안 동들보다 높다 — 세입자·실수요가 많고 집값에 거품이 덜한 쪽(추론).' : ax[6] <= gj - 8 ? ' 전세가율이 구 안 동들보다 낮다 — 자가·투자 수요가 집값을 받치는 쪽(추론).' : '';
         if (ax && ax[4] && ax[2] && ax[4] > ax[2]) hp += ' 아파트도 월세 계약이 전세보다 많다 — 매달 나가는 돈이 큰 가구가 많다(추론).';
-        hp += ' <small>(국토부 실거래 · 매매 24개월·전월세 12개월 · 지번 좌표로 행정동을 가름 · 평당 = 전용 기준 · 전세가율 = 전세 ㎡당 중앙값 ÷ 매매 ㎡당 중앙값(추정) · 몇 건뿐이면 한 건이 값을 정한다)</small>'; WP.push(hp); } }
-    var fp = frnPara(S.gu); if (fp) WP.push(fp);
+        hp += ' <small>(국토부 실거래 · 매매 24개월·전월세 12개월 · 지번 좌표로 행정동을 가름 · 평당 = 전용 기준 · 전세가율 = 전세 ㎡당 중앙값 ÷ 매매 ㎡당 중앙값(추정) · 몇 건뿐이면 한 건이 값을 정한다)</small>'; WP.push(hp);
+        WP.push('<div class="vzg">' + (hpv.length ? vzPair(hpv, ['이 동', esc(S.guName || '구') + ' 동 중앙'], { title: '매매 평당 가격(만 원 · 전용 기준)', fmt: function (v) { return pyeong(v); }, noHi: true }) : '') + (hpj.length ? vzH(hpj, { title: '전세가율(%) — 높을수록 전세가 매매가에 붙어 있다', unit: '%' }) : '') + '</div>'); } }
+    var fp = frnPara(S.gu); if (fp) { WP.push(fp); var fv = frnVz(S.gu); if (fv) WP.push(fv); }
     WP.forEach(function (x) { P.push(x); });
     // 경기 — 경기데이터드림 동 단위 유동인구·카드(서울 자료가 없는 자리)
     if (S.GG && S.GG.flow && p && p.tot) { var fy = Object.keys(S.GG.flow).sort(), fl = S.GG.flow[fy[fy.length - 1]], WDN = { MON: '월', TUE: '화', WED: '수', THU: '목', FRI: '금', SAT: '토', SUN: '일' }, wdA = ['MON', 'TUE', 'WED', 'THU', 'FRI'].map(function (w) { return fl[w] || 0; }), weA = ['SAT', 'SUN'].map(function (w) { return fl[w] || 0; });
@@ -4247,7 +4295,8 @@
       if (nD) { var rows = Object.keys(inD).sort(function (a, b) { return inD[b] - inD[a]; }).slice(0, 7).map(function (k5) { var dp = inD[k5] / p.tot * 1000, gp = (inG[k5] || 0) / S.guPop * 1000; return [k5, inD[k5], dp, gp]; });
         var tg2 = '<b>가게 구성.</b> 이 동 안 상가 ' + nD.toLocaleString() + '곳(주민 1천 명당 ' + f1(nD / p.tot * 1000) + '곳). 업종별 주민 1천 명당(구 평균): ' + rows.map(function (r) { return esc(r[0]) + ' ' + r[1].toLocaleString() + '곳 ' + f1(r[2]) + '(' + f1(r[3]) + ')'; }).join(' · ') + '. ';
         var hot = rows.filter(function (r) { return r[3] > 0 && r[2] / r[3] >= 1.5 && r[1] >= 10; }); if (hot.length) tg2 += '<b>' + hot.map(function (r) { return esc(r[0]) + josa(r[0], '이', '가') + ' 구 평균의 ' + f1(r[2] / r[3]) + '배'; }).join(' · ') + '</b> — 주민 수보다 그 업종 가게가 몰려 있다(바깥 손님을 받는 곳이거나 경쟁이 센 곳). ';
-        tg2 += '<small>(소상공인시장진흥공단 상가(상권)정보 ' + esc(SPTS[S.gu].ym || '') + ' · 이 동 경계 안 점포 · 구 평균 = 구 전체 점포 ÷ 구 주민)</small>'; P.push(tg2); } }
+        tg2 += '<small>(소상공인시장진흥공단 상가(상권)정보 ' + esc(SPTS[S.gu].ym || '') + ' · 이 동 경계 안 점포 · 구 평균 = 구 전체 점포 ÷ 구 주민)</small>'; P.push(tg2);
+        P.push(vzPair(rows.map(function (r) { return [r[0], r[2], r[3]]; }), ['이 동', '구 평균'], { title: '업종별 가게 — 주민 1천 명당(곳)' })); } }
     // ④ 돈이 어디서 도나
     var sl = S.sales; if (sl && sl.amt) { var per = p && p.tot ? sl.amt / p.tot : null, t4 = '<b>돈.</b> 카드 매출 한 달 약 ' + won(sl.amt) + ' · 결제 ' + man(sl.cnt) + '건 → 결제 1건 평균 ' + Math.round(sl.amt * 1e4 / sl.cnt).toLocaleString() + '원. ';
       if (per) { t4 += '주민 1명으로 나누면 월 ' + Math.round(per).toLocaleString() + '만 원(서울 동 중앙값 ' + ref.amtPerPopMed + '만 · 상위 20% 경계 ' + ref.amtPerPopP80 + '만) — ';
@@ -4257,6 +4306,9 @@
         t4 += ' 상권별로: ' + top.map(function (x) { return esc(x[1]) + ' ' + won(x[3]) + '(' + (x[4] ? sgn1(pc(x[3] - x[4], x[4])) + '%' : '-') + ' · ' + esc(x[5] || '') + ')'; }).join(' · ') + '. <small>(최근 1년 vs 처음 1년(2021~) · 지표 = 서울시 상권변화지표)</small>';
         if (top[0] && pc(top[0][3], tot) >= 70) tags.push(top[0][1].replace(/\(.*\)/, '') + ' 상권이 돈의 ' + Math.round(pc(top[0][3], tot)) + '%'); }
       P.push(t4);
+      var vz4 = (per && ref.amtPerPopMed ? vzH([[S.name, per, '#dc2626'], [S.sido + ' 동 중앙', ref.amtPerPopMed, '#94a3b8'], ['상위 20% 경계', ref.amtPerPopP80, '#64748b']], { title: '주민 1명당 한 달 카드 매출(만 원)', unit: '만' }) : '') +
+        (TR && TR.length > 1 ? '<div class="vz"><div class="cap">이 동에 걸친 상권 — 최근 1년 매출 몫</div>' + pie(top.slice(0, 6).map(function (x, i) { return [x[1].replace(/\(.*\)/, ''), x[3], PIEC[i % PIEC.length]]; }), 76) + '</div>' : '');
+      if (vz4) P.push('<div class="vzg">' + vz4 + '</div>');
       // ⑤ 시간·요일
       if (sl.tb && sl.tb.length === 6) { var TBN = ['0~6시', '6~11시', '11~14시', '14~17시', '17~21시', '21~24시'], perH = sl.tb.map(function (v, i) { return v / TBH[i] / 30.4; }), pk2 = perH.indexOf(Math.max.apply(null, perH)), lunch = perH[2], eve = perH[4];
         var t5 = '<b>시간.</b> 시간당 매출이 가장 큰 때는 <b>' + TBN[pk2] + '</b>(시간당 약 ' + won(perH[pk2]) + '). 점심(11~14시) 시간당 ' + won(lunch) + ' · 저녁(17~21시) ' + won(eve) + ' · 밤(21~24시) ' + won(perH[5]) + ' · 새벽 ' + won(perH[0]) + ' — ';
@@ -4265,7 +4317,10 @@
         if (sl.dw && sl.dw.length === 7) { var DW = ['월', '화', '수', '목', '금', '토', '일'], mxD = sl.dw.indexOf(Math.max.apply(null, sl.dw)), mnD = sl.dw.indexOf(Math.min.apply(null, sl.dw)), we = pc(sl.dw[5] + sl.dw[6], sum(sl.dw)), rw = ref.dw ? ref.dw[5] + ref.dw[6] : null;
           t5 += ' 요일: 가장 큰 날 ' + DW[mxD] + '(' + won(sl.dw[mxD]) + '), 가장 작은 날 ' + DW[mnD] + '(' + won(sl.dw[mnD]) + ') — ' + DW[mxD] + '요일이 ' + DW[mnD] + '요일의 ' + f1(sl.dw[mxD] / sl.dw[mnD]) + '배. 토·일 비중 ' + f1(we) + '%' + (rw ? '(서울 평균 ' + f1(rw) + '%)' : '') + (rw && we < rw - 3 ? ' — 주말 장사가 약하다.' : rw && we > rw + 3 ? ' — 주말 장사가 강하다.' : '.'); }
         if (eve > lunch * 1.2) tags.push('저녁 상권'); else if (lunch > eve * 1.2) tags.push('점심 상권');
-        P.push(t5); } }
+        P.push(t5);
+        var DWN = ['월', '화', '수', '목', '금', '토', '일'];
+        P.push('<div class="vzg">' + vzH(TBN.map(function (n, i) { return [n, perH[i], i === pk2 ? '#dc2626' : i === 5 ? '#4338ca' : '#f59e0b']; }), { title: '시간대별 — 시간당 카드 매출', fmt: function (v) { return won(v); } }) +
+          (sl.dw && sl.dw.length === 7 ? vzH(DWN.map(function (n, i) { return [n + '요일', sl.dw[i], i >= 5 ? '#db2777' : '#2563eb']; }), { title: '요일별 — 한 달 카드 매출(주말 분홍)', fmt: function (v) { return won(v); } }) : '') + '</div>'); } }
     // ⑥ 물가를 걷은 추이
     var X = S.X, Q = S.quarters; if (X && X.tr && Q && X.tr.length > 4 && CPI) { var tr = X.tr, n0 = 0, nL = tr.length - 1, ser = tr.map(function (r) { return r[0]; }), pkI = ser.indexOf(Math.max.apply(null, ser)), ci = function (q, j) { var c = CPI.q[q]; return c && c[S.sido] ? c[S.sido][j] : null; };
       var c0 = ci(Q[n0], 0), cL = ci(Q[nL], 0) || ci(CPI.last.slice(0, 4) + String(Math.ceil(+CPI.last.slice(4) / 3)), 0), cP = ci(Q[pkI], 0);
@@ -4278,7 +4333,12 @@
         t6 += ' 주점·노래방류는 ' + won(bs[n0]) + ' → 고점 ' + won(bs[bp]) + '(' + qLab1(Q[bp]) + ') → 지금 ' + won(bs[nL]) + ' — 고점보다 명목 ' + sgn1(pc(bs[nL] - bs[bp], bs[bp])) + '%' + (eP && eL ? ', 외식 물가로 걷으면 ' + sgn1((bs[nL] / eL) / (bs[bp] / eP) * 100 - 100) + '%' : '') + '.'; }
       var nt = tr.map(function (r) { return r[6] || 0; }); if (sum(nt) > 0) { var np = nt.indexOf(Math.max.apply(null, nt)); t6 += ' 밤(21~24시) 매출도 고점 ' + won(nt[np]) + ' → 지금 ' + won(nt[nL]) + '(' + sgn1(pc(nt[nL] - nt[np], nt[np])) + '%).'; }
       t6 += ' <small>(소비자물가: ' + esc(CPI.source) + ' · 최신 ' + CPI.last.slice(0, 4) + '년 ' + +CPI.last.slice(4) + '월)</small>';
-      var dPk = pc(ser[nL] - ser[pkI], ser[pkI]), tag6 = dPk <= -5 ? '매출이 고점보다 ' + Math.round(-dPk) + '% 아래' : pc(ser[nL] - ser[n0], ser[n0]) >= 10 ? '매출이 커지는 중' : '매출 큰 변화 없음'; tags.push(tag6); P.push(t6); }
+      var dPk = pc(ser[nL] - ser[pkI], ser[pkI]), tag6 = dPk <= -5 ? '매출이 고점보다 ' + Math.round(-dPk) + '% 아래' : pc(ser[nL] - ser[n0], ser[n0]) >= 10 ? '매출이 커지는 중' : '매출 큰 변화 없음'; tags.push(tag6); P.push(t6);
+      var QL = Q.map(function (q) { return String(q).slice(2, 4) + '.' + String(q).slice(4); }), realS = c0 ? ser.map(function (v, i) { var c = ci(Q[i], 0); return c ? v * c0 / c : null; }) : null;
+      P.push(vzLineQ([['명목(그때 돈)', ser, '#2563eb']].concat(realS ? [['실질(' + qLab1(Q[n0]) + ' 물가로 걷음)', realS, '#16a34a', 1]] : []), QL, { title: '카드 매출 한 달 — 분기마다(억·만 원)', fmt: function (v) { return won(v); }, mark: [[pkI, '고점']] }));
+      var mnI = ser.indexOf(Math.min.apply(null, ser));
+      P.push(vzH([['고점 ' + qLab1(Q[pkI]), ser[pkI], '#dc2626'], ['바닥 ' + qLab1(Q[mnI]), ser[mnI], '#2563eb'], ['지금 ' + qLab1(Q[nL]), ser[nL], '#f59e0b']].concat(realS && realS[nL] != null ? [['지금(실질 · ' + qLab1(Q[n0]) + ' 물가)', realS[nL], '#16a34a']] : []), { title: '📈 매출이 클 때 · 적을 때 · 지금(한 달)', fmt: function (v) { return won(v); } }));
+      if (sum(bs) > 0) P.push(vzLineQ([['주점·노래방류', bs, '#7c3aed']].concat(sum(nt) > 0 ? [['밤(21~24시) 전체', nt, '#4338ca', 1]] : []), QL, { title: '밤 장사 — 분기마다', fmt: function (v) { return won(v); } })); }
     // ⑦ 업종별 손님 — 주민인가 바깥 손님인가
     if (X && X.ind && X.ind.length && p && p.tot) { var A2 = p.age, T2 = sum(A2), res2039 = pc(A2[2] + A2[3], T2), res60 = pc(A2[6] + A2[7] + A2[8] + A2[9], T2), TBN2 = ['새벽', '아침', '점심', '오후', '저녁', '밤'];
       var top7 = X.ind.slice().sort(function (a, b) { return b[1] - a[1]; }).slice(0, 6), allA = sum(X.ind.map(function (r) { return r[1]; }));
@@ -4287,14 +4347,19 @@
         var who = y - res2039 >= 15 ? '<b>바깥 젊은 손님</b> 장사' : o6 >= res60 && o6 >= 30 ? '<b>동네 어르신</b> 장사' : '주민과 비슷한 손님'; return esc(r[0]) + '(월 ' + won(r[1]) + ' · ' + Math.round(pc(r[1], allA)) + '%) — 20·30대 ' + Math.round(y) + '%, 60세 이상 ' + Math.round(o6) + '%, ' + TBN2[pkb] + ' ' + Math.round(shb) + '% → ' + who; }).join('; ') + '.';
       var bars = X.ind.filter(function (r) { return isBar(r[0]); }); if (bars.length) { var bA = sum(bars.map(function (r) { return r[1]; })), bC = sum(bars.map(function (r) { return r[2]; })), nightA = sum(bars.map(function (r) { return r[3] + r[8]; }));
         t7 += ' 주점·유흥 결제는 한 달 ' + man(bC) + '건, 건당 약 ' + Math.round(bA * 1e4 / (bC || 1)).toLocaleString() + '원 — 한 잔 값이 아니라 <b>테이블 객단가</b>다. 밤(21~6시)이 금액의 ' + Math.round(pc(nightA, bA)) + '%.'; }
+      var AGK = ageKeys('10대 이하');
+      var vz7 = vzStack([['주민(10대 = 0~19세)', [A2[0] + A2[1], A2[2] + A2[3], A2[4] + A2[5], A2[6] + A2[7] + A2[8] + A2[9]], '']].concat(top7.map(function (r) { var ag = r.slice(9, 15); return [r[0], [ag[0], ag[1] + ag[2], ag[3] + ag[4], ag[5]], won(r[1])]; })), AGK, { title: '업종별 결제한 사람 나이 — 맨 위 주민과 견준다(오른쪽 = 한 달 매출)' });
       t7 += ' <small>(기준: 결제 20·30대가 주민보다 15%p↑면 바깥 젊은 손님 · 60세 이상 결제가 30%↑이고 주민 비중 이상이면 동네 어르신 — 앱 기준 · 결제 연령은 개인 카드만)</small>';
-      P.push(t7); }
+      P.push(t7); P.push(vz7); }
     // ⑧ 가게 수와 돈
     if (S.F && S.F.st && S.F.st.length > 2) { var st = S.F.st, a0 = st[0], aL = st[st.length - 1], op = sum(st.map(function (x) { return x[2]; })) / st.length, cl = sum(st.map(function (x) { return x[3]; })) / st.length, chg = pc(aL[1] - a0[1], a0[1]);
       var t8 = '<b>가게 수.</b> 상권분석 점포(업종 합) ' + qLab1(a0[0]) + ' ' + a0[1].toLocaleString() + '곳 → ' + qLab1(aL[0]) + ' ' + aL[1].toLocaleString() + '곳(' + sgn1(chg) + '%) · 분기마다 평균 개업 ' + Math.round(op) + ' · 폐업 ' + Math.round(cl) + '곳. ';
       if (S.F.ix && S.F.ix.length) { var ix = S.F.ix[S.F.ix.length - 1], nm = S.Fm && S.Fm.ix_names ? S.Fm.ix_names[ix[1]] || ix[1] : ix[1]; t8 += '상권변화지표 <b>' + esc(nm) + '</b>(' + qLab1(ix[0]) + ' · 운영 평균 ' + ix[2] + '개월 · 폐업까지 평균 ' + ix[3] + '개월). '; }
       if (X && X.tr && X.tr.length > 4) { var sN = pc(X.tr[X.tr.length - 1][0] - X.tr[0][0], X.tr[0][0]); t8 += Math.abs(chg) < 5 && sN > 15 ? '가게 수는 거의 그대로인데 카드 금액은 ' + sgn1(sN) + '% — <b>가게가 늘어서가 아니라 한 가게가 버는 돈이 커졌다</b>(물가 몫 포함).' : chg > 10 && sN < chg ? '가게는 ' + sgn1(chg) + '% 늘었는데 금액은 ' + sgn1(sN) + '% — 가게당 매출은 얇아졌다.' : ''; }
-      P.push(t8); }
+      P.push(t8);
+      var SL = st.map(function (x) { return String(x[0]).slice(2, 4) + '.' + String(x[0]).slice(4); });
+      P.push('<div class="vzg">' + vzLineQ([['점포 수', st.map(function (x) { return x[1]; }), '#475569']], SL, { title: '점포 수 — 분기마다(곳)', fmt: function (v) { return Math.round(v).toLocaleString(); } }) +
+        vzLineQ([['개업', st.map(function (x) { return x[2]; }), '#16a34a'], ['폐업', st.map(function (x) { return x[3]; }), '#dc2626']], SL, { title: '개업·폐업 — 분기마다(곳)', fmt: function (v) { return Math.round(v).toLocaleString(); }, zero: 1 }) + '</div>'); }
     // ⑨ 사업체 10년
     if (S.F && S.F.bz && S.F.bz.length > 2) { var bz = S.F.bz, b20 = bz.filter(function (x) { return x[0] === '2020'; })[0], bL = bz[bz.length - 1];
       var t9 = '<b>사업체 10년.</b> ' + bz[0][0] + '년 ' + bz[0][1].toLocaleString() + '곳';
@@ -4303,7 +4368,8 @@
       if (S.F.bzi && S.F.bzi.length) { var g3 = S.F.bzi.filter(function (x) { return x[1] > 20; }).map(function (x) { return [x[0], x[1], x[2], pc(x[2] - x[1], x[1])]; }).sort(function (a, b) { return b[3] - a[3]; });
         if (g3.length) t9 += '. ' + (S.F.bziy ? S.F.bziy[0] + '→' + S.F.bziy[1] + '년 ' : '') + '가장 많이 늘어난 업종: ' + g3.slice(0, 3).map(function (x) { return esc(x[0]) + ' ' + x[1] + '→' + x[2] + '(' + sgn1(x[3]) + '%)'; }).join(' · ') + (g3[g3.length - 1][3] < 0 ? ' / 줄어든 업종: ' + esc(g3[g3.length - 1][0]) + ' ' + sgn1(g3[g3.length - 1][3]) + '%' : ''); }
       t9 += '. <small>(통계청 전국사업체조사 · ' + esc((S.Fm && S.Fm.bzsrc) || 'KOSIS') + ')</small>'; P.push(t9);
-      P.push('<div class="vz"><div class="cap">사업체 수 — 해마다(곳 · 2020 앞뒤는 조사 방식이 다르다)</div>' + bar(bz.map(function (x) { return x[1]; }), '#475569', bz.map(function (x) { return "'" + String(x[0]).slice(2); })) + '</div>'); }
+      P.push('<div class="vz"><div class="cap">사업체 수 — 해마다(곳 · 2020 앞뒤는 조사 방식이 다르다)</div>' + bar(bz.map(function (x) { return x[1]; }), '#475569', bz.map(function (x) { return "'" + String(x[0]).slice(2); })) + '</div>');
+      if (typeof g3 !== 'undefined' && g3 && g3.length > 1) P.push(vzDiv(g3.slice(0, 5).concat(g3.length > 7 ? g3.slice(-3) : []).filter(function (x, i, a) { return a.indexOf(x) === i; }).map(function (x) { return [x[0], x[3], x[2]]; }), { title: '업종별 사업체 — 늘고 준 비율' + (S.F.bziy ? '(' + S.F.bziy[0] + '→' + S.F.bziy[1] + '년 · 작은 숫자 = 지금 곳)' : '') })); }
     if (!P.length) return '<p class="desc">이 동은 풀어 읽을 자료가 부족하다.</p>';
     var head = '<div class="story"><p class="sline"><b>한 줄로 — ' + esc(S.name) + ':</b> ' + esc(tags.filter(Boolean).join(' · ') || '자료가 적다') + '.</p>' + P.map(function (x) { return /^<div/.test(x) ? x : '<p>' + x + '</p>'; }).join('');
     head += '<p class="snot"><b>데이터가 말하지 않는 것.</b> ' + (S.sido === '경기' ? '경기는 동 단위 시간대·연령별 카드 매출과 서울식 생활인구가 공개되지 않아 서울 동보다 문단이 적다 · 경기 카드 매출은 경기데이터드림 가공 자료라 서울과 금액을 견주지 않는다 · ' : '카드 매출은 서울시 추정(현금·배달앱 일부 빠짐) · ') + '왜 늘고 줄었는지(원인)는 이 자료에 없다 — 전국 흐름·물가·상권 이동은 따로 확인해야 한다 · 생활인구는 체류 인원이지 방문자 수가 아니다 · 범죄·사고 건수는 이 문단에 넣지 않았다(관서 통계 층에서 본다). 문장 속 판단 기준(○배·±%p)은 앱이 정한 설계값이다.</p></div>';
@@ -4650,8 +4716,24 @@
         (v[0] ? '<div class="vz"><div class="cap">사업장 구성(곳)</div>' + pie([['법인', v[5], '#2563eb'], ['개인 등', Math.max(0, v[0] - v[5]), '#94a3b8']], 72) + '</div>' : '') + '</div>';
       if (v[7] && v[7].length) h += vzH(v[7].map(function (q, i) { return [q[0], q[1], PIEC[i % PIEC.length]]; }), { title: '가입자 많은 업종(명)', unit: '명' });
       h += '<p class="cap">⚠ 상한 때문에 고소득 동은 보수가 낮게 나온다 · ⚠ 본사 일괄신고 사업장은 본사 동에 몰린다(강남·서초·여의도 과대) · ⚠ 공무원·사학·군인 연금 대상자는 빠진다</p>'; }
+    h += econNbrHtml(k8.slice(0, 5));
     var gk = econGuKey(k8.slice(0, 5)); if (gk) h += econGuHtml([gk], gk.replace(/^\S+\s/, ''));
     return h; }
+  // v2.45.0 이웃 구와 견주기(소유자 「국민연금 가입 사업장을 인근 관악·동작·강남·용산·송파와 비교」) — 같은 시도에서 경계 상자가 닿거나 가까운 구 6곳 · 구 값 = 그 구 행정동 합
+  var ECGS = null;
+  function econGuSum() { if (ECGS) return ECGS; ECGS = {}; Object.keys(ECD.dong).forEach(function (k) { var v = ECD.dong[k], g = k.slice(0, 5), o = ECGS[g] = ECGS[g] || [0, 0, 0, 0, 0, 0]; for (var i = 0; i < 6; i++) o[i] += v[i] || 0; });
+    var sd = {}; Object.keys(ECGS).forEach(function (g) { var o = sd[g.slice(0, 2)] = sd[g.slice(0, 2)] || [0, 0, 0, 0, 0, 0]; for (var i = 0; i < 6; i++) o[i] += ECGS[g][i]; }); ECGS._sd = sd; return ECGS; }
+  function econNbrHtml(gu) { var G = econGuSum(), all = rIdx(), me = all.filter(function (x) { return x.gu === gu; })[0], rt = ECR && ECR.pension ? ECR.pension[0] * 2 : null; if (!me || !me.box || !G[gu]) return '';
+    var b = me.box, cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2, gap = function (q) { var c = q.box, dx = Math.max(0, c[0] - b[2], b[0] - c[2]) * 88, dy = Math.max(0, c[1] - b[3], b[1] - c[3]) * 111, ex = ((c[0] + c[2]) / 2 - cx) * 88, ey = ((c[1] + c[3]) / 2 - cy) * 111; return Math.hypot(dx, dy) * 10 + Math.hypot(ex, ey); };
+    var nb = all.filter(function (q) { return q.gu !== gu && q.sido === me.sido && q.box && G[q.gu]; }).sort(function (x, y) { return gap(x) - gap(y); }).slice(0, 5), L = [me].concat(nb);
+    var nm = function (q) { return q.name.replace(/^\S+시 /, ''); }, col = function (q) { return q.gu === gu ? '#dc2626' : '#2563eb'; }, sd = G._sd[me.sido], h = '<div class="dh">🏢 이웃 구와 견주기 — 국민연금 가입 사업장(구 합 · ' + esc(ECD.ym) + ')</div>';
+    var byN = L.slice().sort(function (x, y) { return G[y.gu][1] - G[x.gu][1]; });
+    h += '<div class="vzg">' + vzH(byN.map(function (q) { return [nm(q), G[q.gu][1], col(q)]; }), { title: '가입 직장인(명 · 빨강 = 이 구)', fmt: function (v) { return shortN(v) + '명'; } });
+    if (rt) { var pay = function (g) { return g[1] ? g[2] / g[1] / rt / 1e4 : 0; }, byP = L.slice().sort(function (x, y) { return pay(G[y.gu]) - pay(G[x.gu]); });
+      h += vzH(byP.map(function (q) { return [nm(q), pay(G[q.gu]), col(q)]; }).concat(sd && sd[1] ? [[(SIDO_FULL[me.sido] || '시도') + ' 전체', pay(sd), '#94a3b8']] : []), { title: '1인당 월 보수 어림(만 원)', unit: '만' }); }
+    h += '</div>' + vzDiv(L.map(function (q) { var g = G[q.gu]; return [nm(q), g[1] ? (g[3] - g[4]) / g[1] * 100 : 0, g[3] - g[4]]; }).sort(function (x, y) { return y[1] - x[1]; }), { title: '이번 달 고용 순증 — 가입자 대비 %(작은 숫자 = 순증 명)' });
+    h += vzH(L.slice().sort(function (x, y) { var a = G[x.gu], c = G[y.gu]; return (c[0] ? c[5] / c[0] : 0) - (a[0] ? a[5] / a[0] : 0); }).map(function (q) { var g = G[q.gu]; return [nm(q), g[0] ? g[5] / g[0] * 100 : 0, col(q)]; }), { title: '사업장 가운데 법인 비율(%)', unit: '%' });
+    return h + '<p class="cap">이웃 = 같은 시도에서 경계가 닿거나 가까운 구 5곳(앱 기준) · 본사 일괄신고 사업장은 본사 구에 몰린다(강남·서초·영등포·중구 과대) · 보수는 상한 때문에 고소득 구일수록 낮게 잡힌다</p>'; }
   // ---------- v2.26.0 🛏 숙박시설(전국 · 지방행정인허가 다섯 업종) — tools/region/stay-bake.py → r/<구>/stay.json ----------
   var STY = [['🏨', '관광호텔', '#2563eb'], ['🎒', '호스텔', '#f59e0b'], ['🏖', '휴양콘도', '#0891b2'], ['🏯', '한옥체험', '#9a3412'], ['🏡', '관광펜션', '#16a34a'], ['🌾', '농어촌민박', '#65a30d'], ['🛌', '숙박업(여관·모텔 등)', '#7c3aed']];
   var STK = {}, RLOADST = {}, STYON = [1, 1, 1, 1, 1, 1, 1];

@@ -943,7 +943,7 @@
     var best = null, bd = 1e9;
     hit.forEach(function (h) { var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < bd) { bd = d; best = h; } });
     if (!best && on.rnet) { var rl = rnAt(x, y); if (rl) best = { x: x, y: y, r: 6, it: { kind: 'rnl', l: rl } }; }
-    if (!best && (on.upb || on.jurk || on.usgg)) { var mu = M(x, y), uu = unitAt(mu); if (uu) { var su = S(mu); best = { x: su[0], y: su[1], r: 6, it: { kind: 'unit', u: uu } }; } }
+    if (!best && (UNIT ? UNIT !== 'dong' : (on.upb || on.jurk || on.usgg))) { var mu = M(x, y), uu = unitAt(mu); if (uu) { var su = S(mu); best = { x: su[0], y: su[1], r: 6, it: { kind: 'unit', u: uu } }; } }
     if (!best && on.ri) { var r0 = riAtM(M(x, y)); if (r0) { var sr = S(r0.p); best = { x: sr[0], y: sr[1], r: 6, it: { kind: 'ri', r: r0 } }; } }
     if (!best && on.jur) { var j0 = jurAtM(M(x, y)); if (j0) { var sj = S(j0.c); best = { x: sj[0], y: sj[1], r: 6, it: { kind: 'jur', J: j0 } }; } }
     if (!best) { var d0 = dongAtM(M(x, y)); if (d0) { var s = S(d0.c); best = { x: s[0], y: s[1], r: 6, it: { kind: 'dong', d: d0 } }; } }
@@ -1581,7 +1581,8 @@
   function paintTime() {
     var h = nowH(), dt = new Date(pickDate() + 'T00:00'), we = dt.getDay() === 0 || dt.getDay() === 6, r = $('m2dHour'); if (!r) return;
     r.value = h; $('m2dHourT').innerHTML = h + '시<span class="wk"> · ' + (we ? '주말' : '평일') + '</span>' + (HOUR == null ? '' : ' ✎'); $('m2dNowBtn').classList.toggle('on', HOUR == null);
-    var db = $('m2dDateB'); if (db) { db.textContent = (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + '일월화수목금토'[dt.getDay()] + ')'; db.classList.toggle('we', we); }
+    var db = $('m2dDateB'); if (db) { db.textContent = '📅 ' + (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + '일월화수목금토'[dt.getDay()] + ')'; db.classList.toggle('we', we); }
+    var tb = $('m2dTimeB'); if (tb) { tb.textContent = HOUR == null ? '🕒 지금 ' + h + '시' : '🕒 ' + h + '시 보기'; tb.classList.toggle('set', HOUR != null); }
   }
   if ($('m2dHour')) {
     $('m2dHour').addEventListener('input', function () { setHour(+this.value); });
@@ -1605,7 +1606,7 @@
   function preset(id) {
     var P3 = PRESETS.filter(function (x) { return x[0] === id; })[0]; if (!P3) return;
     LAYERS.forEach(function (l) { if (KEEP.indexOf(l[0]) < 0) on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true;
-    P3[2].forEach(function (k) { if (k in on) on[k] = true; }); saveOn(); paintLayers(); paintPre(); sel = null; show(null); draw(); summary();
+    P3[2].forEach(function (k) { if (k in on) on[k] = true; }); unitKeep(); saveOn(); paintLayers(); paintPre(); sel = null; show(null); draw(); summary();
   }
   function paintPre() {
     var el = $('m2dPre'); if (!el) return; var si = seasonInfo(); PRESETS = PRESETS.filter(function (x) { return x[0] !== 'season'; }); PRESETS.unshift(['season', si.icon + ' 지금 계절 · ' + si.short, si.keys]);
@@ -1617,8 +1618,8 @@
   function preFit() { var el = $('m2dPre'); if (!el) return; el.classList.remove('two'); if (el.scrollWidth > el.clientWidth + 2) el.classList.add('two'); }
   window.addEventListener('resize', preFit);
   // v0.10.82 모두 끄기(행정동·도로·바탕만 남김) · 처음대로(층마다 기본값) — 근무별 줄과 「☰ 모든 층」 판이 같이 쓴다
-  function layersNone() { LAYERS.forEach(function (l) { on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; saveOn(); paintLayers(); paintPre(); sel = null; show(null); draw(); summary(); }
-  function layersReset() { LAYERS.forEach(function (l) { on[l[0]] = l[2]; }); saveOn(); paintLayers(); paintPre(); draw(); summary(); }
+  function layersNone() { LAYERS.forEach(function (l) { on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; unitKeep(); saveOn(); paintLayers(); paintPre(); sel = null; show(null); draw(); summary(); }
+  function layersReset() { LAYERS.forEach(function (l) { on[l[0]] = l[2]; }); unitKeep(); saveOn(); paintLayers(); paintPre(); draw(); summary(); }
   if ($('m2dPre')) { $('m2dPre').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var x = b.getAttribute('data-x'); if (x === 'biz') bizOpen(); else if (x === 'rad') radOpen(null); else if (x === 'none') layersNone(); else if (x === 'reset') layersReset(); else preset(b.getAttribute('data-p')); }); }
   var SUMT = [];
   function summary() {
@@ -2477,6 +2478,7 @@
     POL2.pbox.forEach(function (x, i) { if (ids.indexOf(x[6]) < 0) return; var d = dTrue(x.p, p); if (d < bd) { bd = d; b = i; } }); return b; }
   function sggAt(m) { for (var i = 0; i < SGG.length; i++) if (SGG[i].rings.some(function (r) { return inRing(r, m[0], m[1]); })) return i; return -1; }
   function unitAt(m) {
+    if (UNIT) return unitAtU(m);
     if ((on.upb || on.jurk) && POL2) { var d = dongAtM(m); if (d && d.k) { if (on.upb) { if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); if (d._pb != null) return { t: 'pb', id: d._pb }; }
         if (on.jurk) { var st = polOf(d.k); if (st && st.length) return { t: 'ps', id: st[0][0] }; } } }
     if (on.usgg) { var i = sggAt(m); if (i >= 0) return { t: 'sgg', id: i }; }
@@ -2779,14 +2781,10 @@
   var lay = $('m2dLayers');
   function paintLayers() {
     var nOn = LAYERS.filter(function (l) { return on[l[0]]; }).length; if ($('m2dLayN')) $('m2dLayN').textContent = nOn;
-    lay.innerHTML = '<button data-all="1" class="all">☰ 모든 층 <b>' + nOn + '</b></button>' +
+    lay.innerHTML = '<button data-all="1" class="all">🗂 모든 레이어 <b>' + nOn + '</b></button>' +
       LAYERS.slice().sort(function (a, b) { return (on[b[0]] ? 2 : b[4] ? 1 : 0) - (on[a[0]] ? 2 : a[4] ? 1 : 0); }).map(function (l) { return '<button data-k="' + l[0] + '" class="' + (on[l[0]] ? 'on' : '') + '">' + l[1] + '</button>'; }).join('');
     var pn = $('m2dPanel'); if (!pn) return;
-    var G = [], TK = themeKeys(THEME); LAYERS.forEach(function (l) { if (G.indexOf(l[3]) < 0) G.push(l[3]); }); G.sort(function (a, b) { var x = GORD.indexOf(a), y = GORD.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
-    pn.innerHTML = '<div class="ph"><b>☰ 모든 층</b><button data-lh="1" class="' + (LHON ? 'on' : '') + '">❓ 설명 ' + (LHON ? '접기' : '보기') + '</button><button class="x" data-close="1">닫기</button></div>' + (LHON ? '<p class="lhn">층 이름을 누르면 켜고 끈다. 회색 글은 그 층이 무엇인지 · 어디서 온 자료인지 · 어떻게 쓰는지.</p>' : '') + '<div class="thm">' + THEMES.map(function (t) { var n = t[2] ? themeKeys(t[0]).filter(function (k) { return on[k]; }).length : 0; return '<button data-th="' + t[0] + '" class="' + (THEME === t[0] ? 'on' : '') + '">' + t[1] + (n ? ' <b>' + n + '</b>' : '') + '</button>'; }).join('') + '</div>' +
-      (TK ? '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(THEMES.filter(function (x) { return x[0] === THEME; })[0][1]) + ' — 이 주제의 층</div>' + TK.map(function (k) { var l = LAYERS.filter(function (q) { return q[0] === k; })[0], bt = '<button data-k="' + k + '" class="' + (on[k] ? 'on' : '') + '">' + l[1] + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(k) + '</div>' : bt; }).join('') + '</div><div class="pg"><button data-thon="1">이 주제 기본만 켜기</button><button data-thoff="1">이 주제 끄기</button></div>' : '') + (TK ? [] : G).map(function (g) {
-      return '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g) + '</div>' + LAYERS.filter(function (l) { return l[3] === g; }).map(function (l) { var bt = '<button data-k="' + l[0] + '" class="' + (on[l[0]] ? 'on' : '') + '">' + l[1] + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(l[0]) + '</div>' : bt; }).join('') + '</div>';
-    }).join('') + '<div class="pg"><button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button></div>';
+    catPaint(pn, nOn);
     paintPre();
   }
   // v2.10.0 층 설명에 범위·출처·이용허락·추정 여부(data/layers.json — 굽는 도구가 실제 파일에서 센다)
@@ -2800,6 +2798,7 @@
   function toggle(k) { on[k] = !on[k]; if (k === 'bld' && on[k]) loadBld(); saveOn(); paintLayers(); draw(); }
   function onLayerClick(e) {
     var b = e.target.closest('button'); if (!b) return; var pn = $('m2dPanel');
+    if (catClick(b)) return;
     if (b.getAttribute('data-lh')) { LHON = !LHON; try { localStorage.setItem('tg_map2d_lh', LHON ? '1' : '0'); } catch (e2) {} paintLayers(); return; }
     if (b.getAttribute('data-all')) { pn.classList.toggle('on'); return; }
     if (b.getAttribute('data-close')) { pn.classList.remove('on'); return; }
@@ -3720,6 +3719,172 @@
   function pickDate() { var v = $('m2dDate') && $('m2dDate').value; return v || ymdOf(new Date()); }
   if ($('m2dDate')) { $('m2dDate').value = ymdOf(new Date()); $('m2dDate').addEventListener('change', function () { var wasSea = $('m2dPre') && $('m2dPre').querySelector('[data-p="season"].on'); sel = null; show(null); paintPre(); if (wasSea) preset('season'); draw(); paintTime(); summary(); }); }
   // v0.10.85 날짜를 바꾸면 계절 단추도 따라 바뀌고, 계절 단추가 켜져 있었으면 새 계절 층으로
-  try { var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'); if (mq && mq.matches) document.documentElement.classList.add('dark'); } catch (e) {}
-  window.TGMap2D = { preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
+
+  // ---------- v2.18.0 쓰기 쉽게(소유자 2026-10-06 「밤 낮 모드 · 층 → 레이어 · 네이버·카카오·미국 부동산 지도처럼 · 1단계 단위 → 2단계 인구 → 3단계 업무 대·중·소 분류」) ----------
+  // 레이어 키는 그대로(T-Book 주소 #ly= 그대로) — 묶음은 보여 주는 차례만 바꾼다 · 한 레이어가 여러 묶음에 들 수 있다
+  var CATS = [
+    ['people', '👥 인구·생활', [
+      ['pop', '👥 인구 구성', [['주민·가구', ['jgg', 'dong']], ['그 시각 머무는 사람', ['live', 'live250', 'lpop']], ['외국인', ['fdong', 'fl250', 'minbak', 'flodge']]], ['jgg', 'live250', 'lpop']],
+      ['move', '🚶 이동·동선', [['대중교통', ['bus', 'subr', 'sub', 'exit', 'bstop', 'msub', 'busd', 'lbus']], ['사람 흐름', ['crowd', 'spot', 'bike', 'evt', 'gfest']]], ['bus', 'subr', 'sub']],
+      ['life', '🏥 생활시설', [['의료', ['hosp', 'phar', 'er', 'ger', 'aed']], ['관공서', ['govr', 'gov', 'post', 'lib', 'dem', 'welf', 'kyr']], ['편의', ['conv', 'bank', 'box', 'wc', 'wc2', 'park', 'heat', 'cold', 'her']]], ['govr', 'hosp', 'phar']],
+      ['care', '🎒 교육·돌봄', [['학교', ['edu', 'school', 'aca']], ['어린이', ['kg', 'cc', 'kids', 'pg', 'sz']]], ['edu', 'kg', 'cc']]
+    ]],
+    ['police', '🚓 경찰업무', [
+      ['traf', '🚦 교통', [['교통사고', ['acc', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh']], ['신호·교차로', ['tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['도로·교통량', ['rnet', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
+      ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'play', 'inn', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
+      ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
+    ]],
+    ['biz', '💳 상권·부동산', [
+      ['spend', '💳 소비·상권', [['카드·매출', ['sales', 'crowd']], ['상권', ['trd', 'szone', 'rent']], ['가게', ['conv', 'bank', 'bar', 'play', 'inn']]], ['sales', 'trd', 'szone']],
+      ['estate', '🏠 주거·부동산', [['실거래', ['home', 'rtc']], ['집·건물', ['jgg', 'bld']]], ['home', 'rtc']]
+    ]],
+    ['wx', '⛅ 날씨·실시간', [
+      ['now', '🌦 지금 날씨', [['날씨', ['lwx', 'lair', 'lrad', 'lak', 'lkma']]], ['lwx', 'lair']],
+      ['season', '⛅ 계절 위험', [['비·침수', ['flt', 'flr', 'und']], ['눈·결빙', ['ice', 'hcab', 'advb']], ['더위·추위', ['heat', 'cold']]], ['flt', 'ice']],
+      ['live', '📡 실시간 교통', [['도로', ['lev', 'lspd', 'lcc', 'lbus']], ['인파', ['crowd']]], ['lev', 'lspd']]
+    ]],
+    ['base', '🗺 바탕', [
+      ['map', '🗺 바탕 지도', [['바탕', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm']], ['나눠 보기 경계', ['usgg', 'jurk', 'upb', 'ri']], ['격자', ['g250']], ['역사', ['her']]], []]
+    ]],
+    ['all', '전체', null]
+  ];
+  // 맨 위 빠른 칩(네이버 지도의 「음식점·카페」 줄처럼) = 자주 쓰는 중분류
+  var QCHIP = [['people', 'pop', '👥 인구'], ['police', 'traf', '🚦 교통'], ['police', 'local', '👮 지역경찰'], ['police', 'safety', '🛡 생활안전'], ['people', 'move', '🚶 이동'], ['biz', 'spend', '💳 상권'], ['biz', 'estate', '🏠 부동산'], ['wx', 'now', '🌦 날씨']];
+  var UNITS = [['dong', '🏘 읍면동'], ['sgg', '🗂 시군구'], ['ps', '🚓 경찰서'], ['pb', '👮 지구대']];
+  var UNIT = null, CTR = false, CAT = 'police', MID = 'traf', MODE = 'auto';
+  try { UNIT = localStorage.getItem('tg_map2d_unit') || null; CTR = localStorage.getItem('tg_map2d_ctr') === '1'; CAT = localStorage.getItem('tg_map2d_cat') || CAT; MID = localStorage.getItem('tg_map2d_mid') || MID; MODE = localStorage.getItem('tg_map2d_mode') || 'auto'; } catch (e) {}
+  if (UNIT && !UNITS.some(function (u) { return u[0] === UNIT; })) UNIT = null;
+  function catOf(id) { return CATS.filter(function (c) { return c[0] === id; })[0]; }
+  function catMid(c, id) { var C = catOf(c); return C && C[2] ? C[2].filter(function (m) { return m[0] === id; })[0] : null; }
+  function hasL(k) { return LAYERS.some(function (l) { return l[0] === k; }); }
+  function lname(k) { var l = LAYERS.filter(function (q) { return q[0] === k; })[0]; return l ? l[1] : k; }
+  function midKeys(m) { var o = []; m[2].forEach(function (g) { g[1].forEach(function (k) { if (hasL(k) && o.indexOf(k) < 0) o.push(k); }); }); return o; }
+  function midAct(m) { var d = m[3].filter(hasL); return d.length > 0 && d.every(function (k) { return on[k]; }); }
+  function unitKeep() { if (UNIT === 'sgg') on.usgg = true; else if (UNIT === 'ps') on.jurk = true; else if (UNIT === 'pb') on.upb = true; }
+  function unitAtU(m) {
+    if (UNIT === 'sgg') { var i = sggAt(m); return i >= 0 ? { t: 'sgg', id: i } : null; }
+    if (UNIT === 'ps' || UNIT === 'pb') { if (!POL2) { polLoad(); return null; } var d = dongAtM(m); if (!d || !d.k) return null;
+      if (UNIT === 'pb') { if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); if (d._pb != null) return { t: 'pb', id: d._pb }; }
+      var st = polOf(d.k); if (st && st.length) return { t: 'ps', id: st[0][0] }; }
+    return null; }
+  function unitSet(u) {   // 누르면 볼 단위 — 시군구 경계는 그 단위일 때만 · 경찰서·지구대 경계는 켜 준다(내용 레이어이기도 해서 끄지는 않는다)
+    UNIT = u; on.usgg = u === 'sgg'; if (u === 'ps') on.jurk = true; if (u === 'pb') on.upb = true; if (u === 'ps' || u === 'pb') polLoad();
+    try { localStorage.setItem('tg_map2d_unit', u); } catch (e) {} saveOn(); paintLayers(); sel = null; show(null); draw(); }
+  function ctrSet(f) { CTR = !!f; try { localStorage.setItem('tg_map2d_ctr', CTR ? '1' : '0'); } catch (e) {} ctrPaint(); paintLayers(); }
+  function midApply(c, id, only) {   // 그 중분류 기본 레이어만 켠다(only) / 켜져 있으면 끈다
+    var m = catMid(c, id); if (!m) return;
+    if (!only && midAct(m)) { m[3].forEach(function (k) { if (KEEP.indexOf(k) < 0) on[k] = false; }); }
+    else { LAYERS.forEach(function (l) { if (KEEP.indexOf(l[0]) < 0) on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; m[3].forEach(function (k) { if (hasL(k)) on[k] = true; }); }
+    unitKeep(); CAT = c; MID = id; try { localStorage.setItem('tg_map2d_cat', c); localStorage.setItem('tg_map2d_mid', id); } catch (e) {}
+    saveOn(); paintLayers(); sel = null; show(null); draw(); summary(); }
+  function catPaint(pn, nOn) {
+    if (!CATS) return;
+    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanB"></div><div class="pst"><div class="psec">⚡ 근무별 한 번에</div></div>'; var st = pn.querySelector('.pst');
+      if ($('m2dPre')) st.appendChild($('m2dPre')); var t2 = document.createElement('div'); t2.className = 'psec'; t2.textContent = '🕒 이 시각 한눈에'; st.appendChild(t2); if ($('m2dSum')) st.appendChild($('m2dSum'));
+      var ft = document.createElement('div'); ft.className = 'pg pft'; ft.innerHTML = '<button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button><button data-onb="1">❔ 처음 안내 다시</button>'; st.appendChild(ft); }
+    var C = catOf(CAT) || CATS[0], h = '<div class="ph"><b>🗂 레이어 <small>' + nOn + '개 켜짐</small></b><button data-lh="1" class="' + (LHON ? 'on' : '') + '">❓ 설명</button><button class="x" data-close="1">닫기</button></div>';
+    h += '<div class="unit"><span>지도를 누르면</span><div class="seg">' + UNITS.map(function (u) { return '<button data-unit="' + u[0] + '" class="' + ((UNIT || 'dong') === u[0] ? 'on' : '') + '">' + u[1] + '</button>'; }).join('') + '</div><button data-ctr="1" class="ctr' + (CTR ? ' on' : '') + '">📍 지도 가운데 기준 ' + (CTR ? '켬' : '끔') + '</button></div>';
+    h += '<div class="cat">' + CATS.map(function (c) { return '<button data-cat="' + c[0] + '" class="' + (C[0] === c[0] ? 'on' : '') + '">' + c[1] + '</button>'; }).join('') + '</div>';
+    if (LHON) h += '<p class="lhn">레이어 이름을 누르면 켜고 끈다. 회색 글은 그 레이어가 무엇인지 · 어디서 온 자료인지 · 어떻게 쓰는지.</p>';
+    function chip(k) { var bt = '<button data-k="' + k + '" class="lyr' + (on[k] ? ' on' : '') + '">' + lname(k) + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(k) + '</div>' : bt; }
+    if (!C[2]) {
+      var G = []; LAYERS.forEach(function (l) { if (G.indexOf(l[3]) < 0) G.push(l[3]); }); G.sort(function (a, b) { var x = GORD.indexOf(a), y = GORD.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
+      h += G.map(function (g) { return '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g) + '</div>' + LAYERS.filter(function (l) { return l[3] === g; }).map(function (l) { return chip(l[0]); }).join('') + '</div>'; }).join('');
+    } else {
+      var M0 = C[2].filter(function (m) { return m[0] === MID; })[0] || C[2][0];
+      if (C[2].length > 1) h += '<div class="mid">' + C[2].map(function (m) { var n = midKeys(m).filter(function (k) { return on[k]; }).length; return '<button data-mid="' + m[0] + '" class="' + (m === M0 ? 'on' : '') + '">' + m[1] + (n ? ' <b>' + n + '</b>' : '') + '</button>'; }).join('') + '</div>';
+      h += M0[2].map(function (g) { var ks = g[1].filter(hasL); if (!ks.length) return ''; return '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g[0]) + '</div>' + ks.map(chip).join('') + '</div>'; }).join('');
+      if (M0[3].length) h += '<div class="pg pact"><button data-mon="' + C[0] + '|' + M0[0] + '">✨ ' + esc(M0[1].replace(/^\S+ /, '')) + ' 기본만 켜기</button><button data-moff="' + C[0] + '|' + M0[0] + '">이 묶음 끄기</button></div>';
+    }
+    $('m2dPanB').innerHTML = h; qcPaint();
+  }
+  function catClick(b) {
+    var a;
+    if ((a = b.getAttribute('data-cat'))) { CAT = a; var C = catOf(a); if (C && C[2] && !C[2].some(function (m) { return m[0] === MID; })) MID = C[2][0][0]; try { localStorage.setItem('tg_map2d_cat', CAT); localStorage.setItem('tg_map2d_mid', MID); } catch (e) {} paintLayers(); return true; }
+    if ((a = b.getAttribute('data-mid'))) { MID = a; try { localStorage.setItem('tg_map2d_mid', MID); } catch (e) {} paintLayers(); return true; }
+    if ((a = b.getAttribute('data-mon'))) { a = a.split('|'); midApply(a[0], a[1], true); return true; }
+    if ((a = b.getAttribute('data-moff'))) { a = a.split('|'); var m = catMid(a[0], a[1]); if (m) { midKeys(m).forEach(function (k) { if (KEEP.indexOf(k) < 0) on[k] = false; }); unitKeep(); saveOn(); paintLayers(); draw(); summary(); } return true; }
+    if ((a = b.getAttribute('data-unit'))) { unitSet(a); return true; }
+    if (b.getAttribute('data-ctr')) { ctrSet(!CTR); return true; }
+    if (b.getAttribute('data-onb')) { $('m2dPanel').classList.remove('on'); onbOpen(); return true; }
+    return false; }
+  function qcPaint() { var el = $('m2dQC'); if (!el) return;
+    el.innerHTML = QCHIP.map(function (q) { var m = catMid(q[0], q[1]); return m ? '<button data-qc="' + q[0] + '|' + q[1] + '" class="' + (midAct(m) ? 'on' : '') + '">' + q[2] + '</button>' : ''; }).join(''); }
+  if ($('m2dQC')) $('m2dQC').addEventListener('click', function (e) { var b = e.target.closest('[data-qc]'); if (!b) return; var a = b.getAttribute('data-qc').split('|'); midApply(a[0], a[1], false); });
+  if ($('m2dTimeB')) $('m2dTimeB').onclick = function () { document.body.classList.toggle('timeon'); this.setAttribute('aria-expanded', document.body.classList.contains('timeon') ? 'true' : 'false'); };
+
+  // 지도 가운데 기준 — 십자 표시 · 지도를 옮기면 가운데 동(고른 단위)을 바로 보인다
+  var CROSS = document.createElement('div'); CROSS.id = 'm2dCross'; CROSS.setAttribute('aria-hidden', 'true'); document.body.appendChild(CROSS);
+  var CTRB = document.createElement('button'); CTRB.id = 'm2dCtrB'; CTRB.textContent = '📍 가운데 보기'; document.body.appendChild(CTRB);
+  var CTRAUTO = false, ctrT = null;
+  function ctrXY() { return [cv.clientWidth / 2, Math.round(cv.clientHeight * 0.4)]; }
+  function ctrPaint() { document.body.classList.toggle('ctron', CTR); var q = ctrXY(); CROSS.style.left = q[0] + 'px'; CROSS.style.top = (cv.offsetTop + q[1]) + 'px'; }
+  function ctrTap() {   // 가운데 = 점(가게·집계구)이 아니라 고른 단위(동·시군구·경찰서·지구대)
+    var q = ctrXY(), m = M(q[0], q[1]), it = null, at = m; CTRAUTO = true;
+    if (UNIT && UNIT !== 'dong') { var u = unitAtU(m); if (u) it = { kind: 'unit', u: u }; }
+    if (!it) { var d = dongAtM(m); if (d) { it = { kind: 'dong', d: d }; at = d.c; } else { var d1 = nearAtM(m); if (d1) { it = { kind: 'near', d: d1 }; at = d1.c; } } }
+    if (!it) { tap(q[0], q[1]); return; } TAPM = m; var sx = S(at); sel = { x: sx[0], y: sx[1], r: 6, it: it }; show(it); draw(); }
+  CTRB.onclick = ctrTap;
+  function ctrSoon() { if (!CTR || !CTRAUTO || !$('m2dCard').classList.contains('on')) return; clearTimeout(ctrT); ctrT = setTimeout(ctrTap, 450); }
+  var ctrV = null; cv.addEventListener('pointerdown', function () { ctrV = [view.cx, view.cy, view.s]; });
+  cv.addEventListener('pointerup', function () { if (ctrV && (ctrV[0] !== view.cx || ctrV[1] !== view.cy || ctrV[2] !== view.s)) ctrSoon(); });
+  cv.addEventListener('wheel', ctrSoon);
+  window.addEventListener('m2dresize', ctrPaint); window.addEventListener('resize', ctrPaint);
+
+  // 밤·낮 — 자동(기기 설정) → 낮 → 밤
+  var MQD = null; try { MQD = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'); } catch (e) {}
+  function dnApply() { var d = MODE === 'dark' || (MODE === 'auto' && MQD && MQD.matches); document.documentElement.classList.toggle('dark', !!d);
+    var b = $('m2dDN'); if (b) { b.textContent = MODE === 'auto' ? '🌓' : MODE === 'dark' ? '🌙' : '☀️'; b.setAttribute('aria-label', '화면 밝기 — 지금 ' + (MODE === 'auto' ? '자동(기기 설정)' : MODE === 'dark' ? '밤' : '낮')); b.title = b.getAttribute('aria-label'); }
+    var mt = document.querySelector('meta[name="theme-color"]'); if (mt) mt.setAttribute('content', d ? '#0f1624' : '#ffffff'); draw(); }
+  function toast(t) { var el = $('m2dToast'); if (!el) { el = document.createElement('div'); el.id = 'm2dToast'; el.setAttribute('role', 'status'); document.body.appendChild(el); } el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 1600); }
+  if ($('m2dDN')) $('m2dDN').onclick = function () { MODE = MODE === 'auto' ? 'light' : MODE === 'light' ? 'dark' : 'auto'; try { localStorage.setItem('tg_map2d_mode', MODE); } catch (e) {} dnApply(); toast(MODE === 'auto' ? '🌓 자동 — 기기 설정을 따른다' : MODE === 'dark' ? '🌙 밤 화면' : '☀️ 낮 화면'); };
+  if (MQD && MQD.addEventListener) MQD.addEventListener('change', function () { if (MODE === 'auto') dnApply(); });
+
+  // 처음 쓸 때 세 걸음 — ① 누르면 볼 단위 ② 기초 인구 ③ 업무(대분류 → 중분류)
+  var ONB = { step: 1, unit: 'dong', ctr: false, pop: ['jgg', 'live250', 'lpop'], mids: [] };
+  var POPK = [['jgg', '🧩 주민·가구·사업체', '집계구(동보다 작은 칸) 인구·가구·주택·사업체 — 전국'], ['live250', '👥 그 시각 생활인구', '250m 칸 · 서울 · 시간대별(통신 자료로 추정)'], ['lpop', '👥 인구감소지역 생활인구', '시군구 · 월별 · 체류 인구'], ['fdong', '🌏 외국인주민 비율', '읍면동 · 전국 · 근로자·결혼이민·유학생']];
+  function onbOpen() {
+    ONB.step = 1; ONB.unit = UNIT || 'dong'; ONB.ctr = CTR; ONB.mids = [];
+    var el = $('m2dOnb'); if (!el) { el = document.createElement('div'); el.id = 'm2dOnb'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', '처음 안내'); document.body.appendChild(el); el.addEventListener('click', onbClick); }
+    el.classList.add('on'); onbPaint(); }
+  function onbPaint() {
+    var el = $('m2dOnb'), st = ONB.step, h = '<div class="sh"><div class="dots">' + [1, 2, 3].map(function (i) { return '<i class="' + (i === st ? 'on' : i < st ? 'done' : '') + '"></i>'; }).join('') + '</div><span>' + st + ' / 3</span><button data-o="skip" class="lnk">건너뛰기</button></div>';
+    if (st === 1) {
+      h += '<h2>지도를 누르면 무엇을 볼까요?</h2><p class="sub">나중에 「🗂 레이어」 판 맨 위에서 언제든 바꿀 수 있습니다.</p><div class="opts">' +
+        [['dong', '🏘', '읍면동 단위', '동 하나씩 자세히 — 인구·가게·사고·이동'], ['sgg', '🗂', '시군구 단위', '구·시·군 전체를 한 장으로 — 동 순위·비교'], ['ctr', '📍', '지도 가운데 기준', '지도를 옮기면 십자(+) 아래 동을 바로 보여 줌']].map(function (o) {
+          var act = o[0] === 'ctr' ? ONB.ctr : (!ONB.ctr && ONB.unit === o[0]); return '<button data-o="u:' + o[0] + '" class="opt' + (act ? ' on' : '') + '"><em>' + o[1] + '</em><b>' + o[2] + '</b><small>' + o[3] + '</small></button>'; }).join('') + '</div>' +
+        '<div class="more"><span>경찰 단위로 보기</span><button data-o="u:ps" class="' + (ONB.unit === 'ps' && !ONB.ctr ? 'on' : '') + '">🚓 경찰서 관할</button><button data-o="u:pb" class="' + (ONB.unit === 'pb' && !ONB.ctr ? 'on' : '') + '">👮 지구대 구역(근사)</button></div>';
+    } else if (st === 2) {
+      h += '<h2>먼저 사람부터 — 기초 인구</h2><p class="sub">그 지역을 아는 첫걸음입니다. 동을 누르면 남녀·연령 피라미드와 가구·주택이 같이 나옵니다.</p><div class="opts chk">' +
+        POPK.map(function (o) { var act = ONB.pop.indexOf(o[0]) >= 0; return '<button data-o="p:' + o[0] + '" class="opt' + (act ? ' on' : '') + '" aria-pressed="' + act + '"><em>' + (act ? '✓' : '') + '</em><b>' + o[1] + '</b><small>' + o[2] + '</small></button>'; }).join('') + '</div>';
+    } else {
+      h += '<h2>어떤 일에 쓰시나요?</h2><p class="sub">큰 묶음 → 작은 묶음. 여러 개 골라도 됩니다(고른 것의 기본 레이어가 켜짐).</p>' +
+        CATS.filter(function (c) { return c[2] && c[0] !== 'base'; }).map(function (c) { return '<div class="grp"><b>' + c[1] + '</b><div>' + c[2].map(function (m) { var k = c[0] + '|' + m[0], act = ONB.mids.indexOf(k) >= 0; return '<button data-o="m:' + k + '" class="' + (act ? 'on' : '') + '" aria-pressed="' + act + '">' + m[1] + '</button>'; }).join('') + '</div></div>'; }).join('');
+    }
+    h += '<div class="nav">' + (st > 1 ? '<button data-o="prev">← 이전</button>' : '<span></span>') + '<button data-o="' + (st < 3 ? 'next' : 'done') + '" class="pri">' + (st < 3 ? '다음 →' : '지도 보기') + '</button></div>';
+    el.innerHTML = '<div class="sheet">' + h + '</div>'; }
+  function onbClick(e) {
+    if (e.target.id === 'm2dOnb') return; var b = e.target.closest('[data-o]'); if (!b) return; var o = b.getAttribute('data-o');
+    if (o === 'skip') { onbClose(); return; }
+    if (o === 'prev') { ONB.step--; onbPaint(); return; }
+    if (o === 'next') { ONB.step++; onbPaint(); return; }
+    if (o === 'done') { onbDone(); return; }
+    var v = o.slice(2);
+    if (o[0] === 'u') { if (v === 'ctr') { ONB.ctr = true; ONB.unit = 'dong'; } else { ONB.ctr = false; ONB.unit = v; } }
+    else if (o[0] === 'p') { var i = ONB.pop.indexOf(v); if (i >= 0) ONB.pop.splice(i, 1); else ONB.pop.push(v); }
+    else if (o[0] === 'm') { var j = ONB.mids.indexOf(v); if (j >= 0) ONB.mids.splice(j, 1); else ONB.mids.push(v); }
+    onbPaint(); }
+  function onbClose() { var el = $('m2dOnb'); if (el) el.classList.remove('on'); try { localStorage.setItem('tg_map2d_onb', '1'); } catch (e) {} }
+  function onbDone() {
+    LAYERS.forEach(function (l) { if (KEEP.indexOf(l[0]) < 0) on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true;
+    ONB.pop.forEach(function (k) { if (hasL(k)) on[k] = true; });
+    ONB.mids.forEach(function (k) { var a = k.split('|'), m = catMid(a[0], a[1]); if (m) m[3].forEach(function (q) { if (hasL(q)) on[q] = true; }); });
+    if (ONB.mids.length) { var a0 = ONB.mids[0].split('|'); CAT = a0[0]; MID = a0[1]; } else { CAT = 'people'; MID = 'pop'; }
+    try { localStorage.setItem('tg_map2d_cat', CAT); localStorage.setItem('tg_map2d_mid', MID); } catch (e) {}
+    CTR = ONB.ctr; try { localStorage.setItem('tg_map2d_ctr', CTR ? '1' : '0'); } catch (e) {}
+    onbClose(); unitSet(ONB.unit); ctrPaint(); summary();
+    toast(CTR ? '📍 지도를 옮기고 「가운데 보기」를 누르세요' : '지도에서 ' + (UNITS.filter(function (u) { return u[0] === UNIT; })[0] || ['', '동'])[1].replace(/^\S+ /, '') + '을(를) 누르세요'); }
+  paintLayers(); ctrPaint(); dnApply();
+  (function () { var hs = location.hash || ''; var seen = '1'; try { seen = localStorage.getItem('tg_map2d_onb'); } catch (e) {} if (!seen && !/(^|[#&])(lat|ly|here|gps)=/.test(hs)) setTimeout(onbOpen, 700); })();
+  window.TGMap2D = { onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
 })();

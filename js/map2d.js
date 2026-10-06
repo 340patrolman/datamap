@@ -46,11 +46,12 @@
   function hashLayers() {   // #ly=acc,sz,cam → 행정동·도로 + 그 층만 켠다. 모르는 키는 건너뛴다
     var hm = /[#&]h=(\d{1,2})(?!\d)/.exec(location.hash); HOUR = hm && +hm[1] < 24 ? +hm[1] : null;   // #h=22 — 길목 층이 볼 시각
     var m = /[#&]ly=([a-z0-9,]*)/.exec(location.hash); if (!m) return false;
-    var ks = m[1].split(',').filter(function (k) { return k in on; });
+    var ks = m[1].split(',').filter(function (k) { return k in on && k !== 'crowd'; });   // v2.34.0 소유자 「실시간 인파는 필요할 때만」 — T-Book 주소의 crowd 는 켜지 않는다(레이어 판·「🎪 행사·인파」로 켠다)
     LAYERS.forEach(function (l) { on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; on.bld = true;
     ks.forEach(function (k) { on[k] = true; }); HASHLY = true; return true;
   }
   hashLayers();
+  try { if (!localStorage.getItem('tg_map2d_crowd1')) { on.crowd = false; localStorage.setItem('tg_map2d_crowd1', '1'); saveOn(); } } catch (e) {}   // v2.34.0 이 기기에 「켜짐」으로 남은 인파를 한 번 끈다
 
   // ---------- 자료 읽기 ----------
   var FILES = { ridx: 'data/regions.json', pstat: 'data/police-stats.json', season: 'data/season-seocho.json', pbtn: 'data/pedbtn-seocho.json', enf: 'data/enforce-seocho.json', dong: 'data/dong-seocho.json', pop: 'data/pop-seocho.json', roads: 'data/maps/seocho-full-roads.json', full: 'data/maps/seocho-full.json',

@@ -3050,7 +3050,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.63.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.64.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4201,6 +4201,23 @@
   var SIDO_S = { '12': '전남광주', '11': '서울', '41': '경기', '28': '인천', '30': '대전', '36': '세종', '43': '충북', '44': '충남', '51': '강원', '26': '부산', '27': '대구', '31': '울산', '47': '경북', '48': '경남', '29': '광주', '46': '전남', '52': '전북', '50': '제주' };
   var SIDO_FULL = { '11': '서울특별시', '41': '경기도', '28': '인천광역시', '30': '대전광역시', '36': '세종특별자치시', '43': '충청북도', '44': '충청남도', '51': '강원특별자치도', '26': '부산광역시', '27': '대구광역시', '31': '울산광역시', '47': '경상북도', '48': '경상남도', '12': '전남광주통합특별시', '52': '전북특별자치도', '50': '제주특별자치도' };
   function sidoOf(gu) { return SIDO_S[String(gu || '11650').slice(0, 2)] || '서울'; }   // v2.7.0 인천부터 — 종전엔 경기가 아니면 모두 「서울」
+  function tkGauge(r, rr, rn) {   // v2.64.0 일터형·주거형 눈금 — 0 ~ 4배 · 주거형(0.8 아래) · 섞임 · 일터형(2 위)
+    var W = 300, M = 4, X = function (v) { return 8 + Math.min(v, M) / M * (W - 16); }, s2 = '<svg viewBox="0 0 ' + W + ' 54" width="100%" role="img" aria-label="일터형 주거형 눈금">';
+    s2 += '<rect x="' + X(0) + '" y="18" width="' + (X(0.8) - X(0)) + '" height="14" rx="3" fill="#bbf7d0"/><rect x="' + X(0.8) + '" y="18" width="' + (X(2) - X(0.8)) + '" height="14" fill="#fde68a"/><rect x="' + X(2) + '" y="18" width="' + (X(M) - X(2)) + '" height="14" rx="3" fill="#bfdbfe"/>';
+    s2 += '<text x="' + ((X(0) + X(0.8)) / 2) + '" y="28.5" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">🏠 주거형</text><text x="' + ((X(0.8) + X(2)) / 2) + '" y="28.5" text-anchor="middle" font-size="9" font-weight="700" fill="#92400e">🏙 섞임</text><text x="' + ((X(2) + X(M)) / 2) + '" y="28.5" text-anchor="middle" font-size="9" font-weight="700" fill="#1e40af">👔 일터형</text>';
+    [0, 0.8, 2, 3, 4].forEach(function (v) { s2 += '<text x="' + X(v) + '" y="44" text-anchor="middle" font-size="8" fill="currentColor" opacity=".6">' + (v === 4 ? '4배+' : v + '배') + '</text>'; });
+    if (rr) s2 += '<line x1="' + X(rr) + '" x2="' + X(rr) + '" y1="14" y2="36" stroke="#64748b" stroke-width="2" stroke-dasharray="3 2"/><text x="' + X(rr) + '" y="52" text-anchor="middle" font-size="8.5" fill="#64748b">' + esc(rn) + ' 평균 ' + rr + '</text>';
+    s2 += '<path d="M' + X(r) + ' 16 l-6 -9 h12 z" fill="#dc2626"/><text x="' + Math.max(30, Math.min(W - 30, X(r))) + '" y="6" text-anchor="middle" font-size="9.5" font-weight="800" fill="#dc2626">이 자리 ' + (Math.round(r * 10) / 10) + '배</text>';
+    return '<div class="vz wide"><div class="cap">👔 일하러 오는 사람 ÷ 사는 사람(종사자 ÷ 주민)</div>' + s2 + '</svg></div>'; }
+  function tkTiles(sh, RT, TBN) {   // 하루 6칸 — 진할수록 그 시간대 몫이 시도 평균보다 크다
+    var mx = 0; sh.forEach(function (v, k) { mx = Math.max(mx, Math.abs(v - (RT ? RT[k] : v))); }); mx = mx || 1;
+    return '<div class="vz wide"><div class="cap">💳 하루 중 언제 돈을 쓰나(카드 매출 몫 · 빨강 = 서울 평균보다 많음 · 파랑 = 적음)</div><div class="ttiles">' + sh.map(function (v, k) { var d = RT ? v - RT[k] : 0, a = Math.min(1, Math.abs(d) / mx), c = d >= 0 ? 'rgba(220,38,38,' + (0.12 + 0.6 * a).toFixed(2) + ')' : 'rgba(37,99,235,' + (0.12 + 0.5 * a).toFixed(2) + ')';
+      return '<span style="background:' + c + '"><small>' + esc(TBN[k].split('(')[0]) + '<br>' + esc((TBN[k].match(/\((.*)\)/) || [0, ''])[1]) + '</small><b>' + Math.round(v) + '%</b><i>' + (RT ? (d >= 0 ? '+' : '') + d.toFixed(1) + '%p' : '') + '</i></span>'; }).join('') + '</div></div>'; }
+  function tkGov(G) { var K = Object.keys(G.c).sort(function (a, b) { return G.c[b] - G.c[a]; }), IC = { '주민센터': '🏛', '우체국': '📮', '경찰': '👮', '소방': '🚒', '법원': '⚖', '검찰': '⚖', '등기소': '📜', '세무서': '🧾', '보건소': '🏥', '교육청': '🎓', '시청·구청': '🏢', '국가기관': '🏢' };
+    return '<div class="vz"><div class="cap">🏛 반경 안 관공서 ' + G.n + '곳 — 낮 손님(공무원·민원인)</div><div class="tchips">' + K.map(function (k) { return '<span>' + (IC[k] || '🏢') + ' ' + esc(k) + ' <b>' + G.c[k] + '</b></span>'; }).join('') + '</div></div>'; }
+  function tkAge(ag, age) {   // 카드 쓰는 사람 나이 vs 사는 사람 나이(6갈래)
+    var a6 = [age[0] + age[1], age[2], age[3], age[4], age[5], age[6] + age[7] + age[8] + age[9]], K = [['10대 이하', '#fbbf24'], ['20대', '#fb923c'], ['30대', '#f472b6'], ['40대', '#a78bfa'], ['50대', '#60a5fa'], ['60대+', '#64748b']];
+    return vzStack([['💳 카드 쓰는 사람', ag, ''], ['🏠 사는 사람', a6, '']], K, { title: '🧾 돈 쓰는 사람 나이 vs 사는 사람 나이(%) — 다르면 밖에서 오는 손님' }).replace('<div class="vz">', '<div class="vz wide">'); }
   function talk(S) {
     var L = [], ref = AREF && AREF.ref[S.sido || '서울'] || null, rn = S.sido || '서울', f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); };
     if (S.wrk != null && S.pop > 50) { var r = S.wrk / S.pop, rr = ref && ref.wrkPerPop;
@@ -4227,12 +4244,14 @@
       L.push('🧾 카드로 돈을 쓰는 사람은 <b>' + AGN[am] + '</b>' + (/[상]$/.test(AGN[am]) ? '이' : '가') + ' 가장 많다(' + f1(S.ag[am] / at * 100) + '%) — 주민 연령과 다르면 밖에서 와서 쓰는 사람이 많다는 뜻.'); }
     if (!L.length) return '';
     var VZ = [], pf = function (x) { return f1(x) + '%'; };   // v2.63.0 소유자 「글씨와 그래프 다이어그램으로 잘 표현」
-    if (S.wrk != null && S.pop > 50 && ref && ref.wrkPerPop) VZ.push(vzPair([['종사자 ÷ 주민', S.wrk / S.pop, ref.wrkPerPop]], ['이 자리', rn + ' 평균'], { title: '👔 일터인가 🏠 주거지인가(배 · 2배↑ 일터형 · 0.8배↓ 주거형)', fmt: function (x) { return f1(x) + '배'; }, color: '#2563eb' }));
+    if (S.wrk != null && S.pop > 50) VZ.push(tkGauge(S.wrk / S.pop, ref && ref.wrkPerPop, rn));
     if (S.age && S.pop > 50 && R2 != null) VZ.push(vzPair([['19세 이하', k19, R1], ['20·30대', y2030, R2], ['60세 이상', o60, R6]], ['이 자리 주민', rn + ' 평균'], { title: '👥 주민 나이(%)', fmt: pf, color: '#7c3aed', noHi: 1 }));
     if (S.live && S.live.wd && rd) VZ.push(vzPair([['낮 ÷ 새벽 생활인구', dn, rd]], ['이 자리', '서울 평균'], { title: '🕐 낮에 사람이 몰리는 정도(배)', fmt: function (x) { return f1(x) + '배'; }, color: '#f97316' }));
-    if (S.tb && S.tb.some(function (v) { return v; }) && RT) VZ.push(vzPair(TBN.map(function (n, k) { return [n.split('(')[0], sh[k], RT[k]]; }), ['이 자리 카드 매출', rn + ' 평균'], { title: '💳 언제 돈을 쓰나(시간대 몫 %)', fmt: pf, color: '#db2777', noHi: 1 }));
+    if (S.tb && S.tb.some(function (v) { return v; })) VZ.push(tkTiles(sh, RT, TBN));
+    if (S.gov && S.gov.n) VZ.push(tkGov(S.gov));
+    if (S.ag && S.ag.some(function (v) { return v; }) && S.age && S.age.length >= 10) VZ.push(tkAge(S.ag, S.age));
     if (S.dw && S.dw.some(function (v) { return v; }) && RW != null) VZ.push(vzPair([['토·일 매출 몫', wk, RW]], ['이 자리', rn + ' 평균'], { title: '📅 주말 장사', fmt: pf, color: '#0891b2', noHi: 1 }));
-    return '<div class="talk"><b>🗣 이 자리 읽기</b>' + (VZ.length ? '<div class="vzg">' + VZ.join('') + '</div>' : '') + L.map(function (x) { return '<div>' + x + '</div>'; }).join('') + '<small>기준(앱): 종사자÷주민 2배↑ 일터형 · 0.8배↓ 주거형 · 연령은 ' + rn + ' 평균과 ±5%p · 매출 시간대는 서울 평균과 +3%p. 「→」 줄은 경영 일반론이지 통계가 아니다. 평균은 이 지도에 구운 주민등록·생활인구·서울시 추정매출·SGIS 집계구로 다시 계산(area-ref.json).</small></div>';
+    return '<div class="talk"><b>🗣 이 자리 읽기</b>' + (VZ.length ? '<div class="vzg">' + VZ.join('') + '</div>' : '') + '<div class="tkl">' + L.map(function (x) { var m = x.match(/^(\s*[　→]*\s*)(\S+)\s/), ic = m && !/^[　→]/.test(x) ? m[2] : ''; return '<div class="tki' + (/^[　\s]*→/.test(x) ? ' sub' : '') + '">' + (ic ? '<span class="ic">' + ic + '</span><span>' + x.slice(m[0].length) + '</span>' : '<span>' + x + '</span>') + '</div>'; }).join('') + '</div><small>기준(앱): 종사자÷주민 2배↑ 일터형 · 0.8배↓ 주거형 · 연령은 ' + rn + ' 평균과 ±5%p · 매출 시간대는 서울 평균과 +3%p. 「→」 줄은 경영 일반론이지 통계가 아니다. 평균은 이 지도에 구운 주민등록·생활인구·서울시 추정매출·SGIS 집계구로 다시 계산(area-ref.json).</small></div>';
   }
   function talkDong(d) { var gu = d.gcd || (d.rg && d.rg.gu) || '11650', x = salesOf(d) || d.sales, S = { sido: sidoOf(gu), age: d.pop && d.pop.age, pop: d.pop && d.pop.tot, live: d.live, tb: x && x.tb, dw: x && x.dw };
     if (!S.live) { var la = liveArr(d); if (la) S.live = la; }

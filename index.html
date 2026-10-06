@@ -463,6 +463,10 @@
   #m2dCard { border: 0 !important; border-radius: 18px !important; box-shadow: var(--sh2) !important; }
   #m2dZoom button { border: 0 !important; box-shadow: var(--sh) !important; border-radius: 14px !important; }
   #m2dCard .r { border-top: 1px solid var(--line) !important; }
+  .vzg > .vz.wide { flex: 1 1 100%; }
+  .ttiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; } .ttiles span { display: flex; flex-direction: column; align-items: center; padding: 5px 2px; border-radius: 8px; text-align: center; } .ttiles small { font-size: 9.5px; line-height: 1.2; opacity: .85; } .ttiles b { font-size: 15px; font-weight: 900; } .ttiles i { font-style: normal; font-size: 9.5px; font-weight: 700; opacity: .8; }
+  .tchips { display: flex; flex-wrap: wrap; gap: 5px; } .tchips span { padding: 4px 9px; border-radius: 14px; background: var(--chip); border: 1px solid var(--line); font-size: 12px; } .tchips b { color: #dc2626; }
+  .tkl { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; } .tki { display: flex; gap: 8px; align-items: flex-start; padding: 7px 9px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid #7c3aed; font-size: 12.5px; line-height: 1.45; } .tki .ic { font-size: 19px; line-height: 1.1; flex: none; } .tki.sub { margin-left: 18px; border-left-color: #f59e0b; background: transparent; font-size: 12px; }
   .pfsum { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; font-size: 12.5px; font-weight: 800; } .pfsum span { padding: 3px 10px; border-radius: 12px; background: var(--chip); } .pfsum .g { background: #dcfce7; color: #166534; } .pfsum .y { background: #fef3c7; color: #92400e; } .pfsum .r { background: #fee2e2; color: #991b1b; }
   .pflow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; counter-reset: none; }
   .pflow li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 8px 9px 8px 9px; border-radius: 12px; border: 2px solid #cbd5e1; background: var(--panel); min-height: 92px; }
@@ -755,7 +759,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.63.0"></script>
+<script src="js/map2d.js?v=2.64.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

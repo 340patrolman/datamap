@@ -1129,7 +1129,7 @@
       (it.d.polys || []).forEach(function (pg) { var r = pg[0] || [], a = 0; for (var i = 0, k = r.length - 1; i < r.length; k = i++) a += (r[k][0] + r[i][0]) * (r[k][1] - r[i][1]); dA += Math.abs(a / 2); });
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
       h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1">📝 이 동 풀어 읽기</button></span></h3><div id="storyBox"></div>');
-      h += talkDong(it.d) + '<div class="lg-btns"><button data-pnlhere="' + dll + '">💰 여기서 손익 계산</button></div>'; }
+      h += talkDong(it.d) + '<div class="lg-btns"><button data-pnlhere="' + dll + '">💰 여기서 손익 계산</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '">🎒 학원·교습소 개업</button>' : '') + '</div>'; }
     card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
@@ -3048,7 +3048,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.61.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.62.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3410,7 +3410,7 @@
   //   법정 기준 = data/acad-rules.json(학원법·시행령·서울·경기 조례 원문 · 부가세 면세) · 기본값 = 소상공인실태조사 교육 서비스업 평균(연 매출 7,500만)을 맞춘 예시 — 내 값으로 고친다
   //   입력은 이 화면 메모리에만(AS.v) · 손익 판 #m2dPnl 을 같이 쓴다
   var AS = { on: false, v: null, k8: null }, ASR = null, ASRP = null;
-  var AS_KIND = [['study', '📚 보습·입시 교과', 0, '보습·논술'], ['lang', '🔤 외국어', 1, '실용 외국어'], ['art', '🎨 미술', 2, '미술'], ['music', '🎹 음악(피아노 외)', 3, '음악'], ['piano', '🎹 피아노', 3, '음악'], ['dance', '💃 무용', 5, '무용'], ['etc', '🎭 그 밖', 5, '그 밖 교습과정']];
+  var AS_KIND = [['study', '📚 보습·입시(수학·국어 등)', 0, '보습·논술'], ['lang', '🔤 외국어(영어 등)', 1, '실용 외국어'], ['art', '🎨 미술', 2, '미술'], ['music', '🎹 음악(피아노 외)', 3, '음악'], ['piano', '🎹 피아노', 3, '음악'], ['dance', '💃 무용', 5, '무용'], ['etc', '🎭 그 밖', 5, '그 밖 교습과정']];
   function asLoad() { if (ASRP) return ASRP; ASRP = Promise.all([neisLoad(), fetch('data/acad-rules.json').then(function (r) { return r.json(); }).then(function (j) { ASR = j; }), bzLoad(), acDLoad(), leaseLoad(), rentLoad()]); ASRP.catch(function () { ASRP = null; }); return ASRP; }
   function asDefaults(form) { var B = ASR.bench, mw = rv('min_wage') * 209 / 1e4;
     var Le = leaseOf('P. 교육 서비스업');
@@ -3419,7 +3419,7 @@
     var el = $('m2dPnl'); if (!el) return; TX.on = false; AS.on = true; AS.k8 = k8 || null;
     el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
     el.innerHTML = '<div class="lg-h"><b>🎒 학원·교습소 개업 시뮬레이션</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">법정 기준·실태조사 자료를 받는 중…</p>';
-    asLoad().then(function () { if (!AS.on) return; if (!AS.v) AS.v = asDefaults('tutor'); asForm(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">받지 못했다(' + esc(e && e.message || e) + ')</p>'; }); }
+    asLoad().then(function () { if (!AS.on) return; if (!AS.v) AS.v = asDefaults('tutor'); if (AS.pk) { AS.v.kind = AS.pk; AS.pk = null; } asForm(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">받지 못했다(' + esc(e && e.message || e) + ')</p>'; }); }
   function asSido() { var k = AS.k8; if (!k) { var d = dongAtM(viewMid()); k = d && d.k; } return k ? (k.slice(0, 2) === '11' ? '서울특별시' : k.slice(0, 2) === '41' ? '경기도' : null) : null; }
   function asKind(v) { return AS_KIND.filter(function (x) { return x[0] === v.kind; })[0] || AS_KIND[0]; }
   function asCalc(v0, form) {   // 한 달(만 원)
@@ -3455,7 +3455,7 @@
   function asIn(k, lab, unit, note) { var v = AS.v[k]; return '<label title="' + esc(note || '') + '"><span>' + esc(lab) + ' <i>' + esc(unit || '') + '</i></span><input type="number" inputmode="decimal" step="any" data-as="' + k + '" value="' + (v == null ? '' : v) + '"><small>' + esc(note || '') + '</small></label>'; }
   function asForm() {
     var el = $('m2dPnl'); if (!el || !AS.on) return; var v = AS.v, B = ASR.bench;
-    var h = '<div class="lg-h"><b>🎒 학원·교습소 개업 시뮬레이션</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
+    var h = '<div class="lg-h"><b>🎒 학원·교습소 개업 시뮬레이션</b><span><button data-astopnl="1">🍽 음식점·카페 손익</button> <button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
     h += '<div class="lg-btns"><button data-asf="tutor" class="' + (v.form === 'tutor' ? 'on' : '') + '">🏠 교습소(신고 · 1인 1과목)</button><button data-asf="academy" class="' + (v.form === 'academy' ? 'on' : '') + '">🏫 학원(등록 · 강사)</button></div>';
     h += '<div class="lg-btns">' + AS_KIND.map(function (x) { return '<button data-ask="' + x[0] + '" class="' + (v.kind === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>';
     h += '<div id="asOut"></div>' + '<h4>✍ 조건 <small style="font-weight:400;color:var(--ink2)">— 기본값은 실태조사 평균을 맞춘 예시 · 내 값으로 고친다 · 저장 안 함</small></h4><div class="pform">' +
@@ -3482,7 +3482,7 @@
     return '<div class="simc"><b style="font-size:12.5px">수강생 수에 따른 월 이익 — 선이 끝나는 곳 = 수용 한도</b>' + s2 + '<div class="pleg"><span><i style="background:#16a34a"></i>교습소(한도 ' + A.cap + '명 · 손익분기 ' + (A.bep == null ? '-' : A.bep + '명') + ')</span><span><i style="background:#2563eb"></i>학원(한도 ' + C.cap + '명 · 손익분기 ' + (C.bep == null ? '-' : C.bep + '명') + ')</span><span><i style="background:#ea580c"></i>지금 수강생</span></div></div>'; }
   function asOut() {
     var el = $('asOut'); if (!el || !AS.on) return; var v = AS.v, o = asCalc(v), B = ASR.bench, kd = asKind(v), h = '';
-    h += '<p class="pbig ' + (o.profit >= 0 ? 'good' : 'bad') + '">' + (v.form === 'tutor' ? '🏠 교습소' : '🏫 학원') + ' · ' + esc(kd[1]) + ' — 한 달 매출 <b>' + wn(o.rev) + '</b> · 비용 ' + wn(o.cost) + ' → 이익 <b style="font-size:16px">' + wn(o.profit) + '</b><br>사장 몫(4대·소득세 뒤) 약 <b>' + wn(o.take) + '</b> · 손익분기 수강생 <b>' + (o.bep == null ? '-' : o.bep + '명') + '</b> · 수용 한도 ' + o.cap + '명(한 번 ' + o.seat + '명)</p>';
+    h += '<p class="pbig ' + (o.profit >= 0 ? 'good' : 'bad') + '">' + (v.form === 'tutor' ? '🏠 교습소' : '🏫 학원') + ' · ' + esc(kd[1]) + ' — 한 달 매출 <b>' + wn(o.rev) + '</b> · 비용 ' + wn(o.cost) + ' → 이익 <b style="font-size:16px">' + wn(o.profit) + '</b><br>사장 몫(4대·소득세 뒤) 약 <b>' + wn(o.take) + '</b> · 손익분기 수강생 <b>' + (o.bep == null ? '-' : o.bep + '명') + '</b>' + (o.bep != null ? '(월 매출 ' + wn(o.bep * (+v.fee || 0)) + ')' : '') + ' · 수용 한도 ' + o.cap + '명(한 번 ' + o.seat + '명)</p>';
     h += '<div class="simc"><b style="font-size:12.5px">법정 기준 점검</b>' + o.ok.map(function (x) { return '<div style="font-size:12px;margin-top:3px">✅ ' + esc(x) + '</div>'; }).join('') + o.warn.map(function (x) { return '<div style="font-size:12px;margin-top:3px;color:#b91c1c">⚠ ' + esc(x) + '</div>'; }).join('') + '</div>';
     h += asCurve(v);
     var A = asCalc(v, 'tutor'), C = asCalc(v, 'academy');
@@ -3504,7 +3504,7 @@
     h += asCpa(o);
     el.innerHTML = h; }
   if ($('m2dPnl')) {
-    $('m2dPnl').addEventListener('click', function (e) { if (!AS.on) return; var fb = e.target.closest('[data-asfee]'); if (fb) { AS.v.fee = +fb.getAttribute('data-asfee'); asForm(); return; } var lb = e.target.closest('[data-lsa]'); if (lb) { leaseApply(AS.v, lb.getAttribute('data-lsa')); asForm(); return; } if (e.target.closest('[data-ascpa]')) { var tx = asCpaText(asCalc(AS.v)); if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { e.target.closest('[data-ascpa]').textContent = '✅ 복사됨'; }); return; } var b = e.target.closest('[data-asf],[data-ask]'); if (!b) return;
+    $('m2dPnl').addEventListener('click', function (e) { if (!AS.on) return; if (e.target.closest('[data-astopnl]')) { var cz = asPos(); AS.on = false; pnlOpen(cz); return; } var fb = e.target.closest('[data-asfee]'); if (fb) { AS.v.fee = +fb.getAttribute('data-asfee'); asForm(); return; } var lb = e.target.closest('[data-lsa]'); if (lb) { leaseApply(AS.v, lb.getAttribute('data-lsa')); asForm(); return; } if (e.target.closest('[data-ascpa]')) { var tx = asCpaText(asCalc(AS.v)); if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { e.target.closest('[data-ascpa]').textContent = '✅ 복사됨'; }); return; } var b = e.target.closest('[data-asf],[data-ask]'); if (!b) return;
       if (b.hasAttribute('data-asf')) { var f = b.getAttribute('data-asf'); if (f !== AS.v.form) { var keep = AS.v, nv = asDefaults(f); ['kind', 'n', 'fee', 'rent', 'mgmt', 'cm', 'cmOn', 'slots', 'days', 'per', 'card', 'dep', 'prem', 'premOn', 'inter', 'equip', 'mon', 'amOn'].forEach(function (k) { nv[k] = keep[k]; }); AS.v = nv; } asForm(); return; }
       AS.v.kind = b.getAttribute('data-ask'); asForm(); });
     $('m2dPnl').addEventListener('input', function (e) { if (!AS.on) return; var t = e.target, k = t.getAttribute('data-as'); if (!k) return; AS.v[k] = t.type === 'checkbox' ? t.checked : (t.value === '' ? null : +t.value); asOut(); });
@@ -4496,7 +4496,7 @@
     var el = $('m2dPnl'), t = tplOf(PNL.k), G = {};
     BZ.tpl.items.forEach(function (x) { (G[x.g] = G[x.g] || []).push(x); });
     var h = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
-    h += '<div class="bizrow"><label>업종 <select data-pz="k">' + Object.keys(G).map(function (g) { return '<optgroup label="' + esc(g) + '">' + G[g].map(function (x) { return '<option value="' + x.k + '"' + (x.k === PNL.k ? ' selected' : '') + '>' + esc(x.n) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '</select></label></div>';
+    h += '<div class="bizrow"><label>업종 <select data-pz="k">' + Object.keys(G).map(function (g) { return '<optgroup label="' + esc(g) + '">' + G[g].map(function (x) { return '<option value="' + x.k + '"' + (x.k === PNL.k ? ' selected' : '') + '>' + esc(x.n) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '<optgroup label="🎒 학원·교습소 — 고르면 학원 계산기로">' + AS_KIND.map(function (x) { return '<option value="as:' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</optgroup></select></label></div>';
     h += '<div class="lg-btns"><button data-px="local" class="on">📍 이 지역 값으로 채우기</button><button data-px="here">📍 지금 화면 가운데를 자리로</button><button data-px="reset">↺ 업종 평균으로 되돌리기</button><button data-px="ls-sido">🏬 임차를 이 시도 평균으로</button><button data-px="ls-up">🏬 임차를 음식점 평균으로</button><button data-px="ls-local">🏬 월세만 근처 상권 ㎡당으로</button><button data-px="copy">📋 글로 복사</button><button data-px="xlsx">📥 엑셀(수식 그대로)</button></div>';
     if (t.pending) h += '<p class="pbig bad">⏳ ' + esc(t.pending) + '</p>';
     h += '<p class="lg-n">' + (t.tip ? '💡 ' + esc(t.tip) + ' ' : '') + '영업 종류: ' + esc(t.lic || '-') + '. 회색 글씨는 <b>업종 평균(KREI 2025 외식업체 경영실태조사)</b> 기본값 — 계약서·견적의 실제 숫자로 바꿔 쓴다.</p>';
@@ -4689,7 +4689,7 @@
     $('m2dPnl').addEventListener('input', function (e) { var t = e.target, el = $('m2dPnl');
       if (t.getAttribute('data-py')) { var a = t.value === '' ? null : Math.round(+t.value * 3.305785 * 10) / 10; PNL.v.area = a; var am = el.querySelector('[data-pf="area"]'); if (am) am.value = a == null ? '' : a; pnlOut(); return; }
       var k = t.getAttribute('data-pf'); if (!k) return; var val = t.value; PNL.v[k] = val === '' ? null : +val; el.querySelectorAll('[data-pf="' + k + '"]').forEach(function (x) { if (x !== t) x.value = val; }); if (/^(open|close|brk|rest|prep)$/.test(k)) schSync(); if (t.type === 'range') simLab(); if (k === 'area') { var pyi = el.querySelector('[data-py]'); if (pyi) pyi.value = val === '' ? '' : Math.round(+val / 3.305785 * 10) / 10; } pnlOut(); });
-    $('m2dPnl').addEventListener('change', function (e) { if (e.target.getAttribute('data-pt') === 'useItem') { PNL.v.useItem = e.target.checked ? 1 : 0; pnlOut(); return; } if (e.target.getAttribute('data-pz') === 'brand') { brandApply(e.target.value); return; } if (e.target.getAttribute('data-pz') === 'k') { PNL.brand = ''; PNL.k = e.target.value; PNL.v = pnlDefaults(PNL.k); PNL.local = null; pnlForm(); if (PNL.c) pnlGather(); } });
+    $('m2dPnl').addEventListener('change', function (e) { if (e.target.getAttribute('data-pt') === 'useItem') { PNL.v.useItem = e.target.checked ? 1 : 0; pnlOut(); return; } if (e.target.getAttribute('data-pz') === 'brand') { brandApply(e.target.value); return; } if (e.target.getAttribute('data-pz') === 'k' && /^as:/.test(e.target.value)) { var dz = PNL.c ? dongAtM(PNL.c) : null; AS.pk = e.target.value.slice(3); e.target.value = PNL.k; asOpen(dz && dz.k); return; } if (e.target.getAttribute('data-pz') === 'k') { PNL.brand = ''; PNL.k = e.target.value; PNL.v = pnlDefaults(PNL.k); PNL.local = null; pnlForm(); if (PNL.c) pnlGather(); } });
   }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-pnlhere]'); if (!b) return; var a = b.getAttribute('data-pnlhere').split(','); pnlOpen(P(+a[0], +a[1])); });
   var JGGA = [], JGGL = {};

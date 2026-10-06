@@ -10,6 +10,17 @@
 <meta name="googlebot" content="noindex, nofollow">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
+<script>
+  // v2.21.0 확인코드 관문(소유자 지시 · T-Book 세션 요청 2026-10-06 「티북으로 들어오면 안 묻고, 따로 들어오면 확인코드를 묻는다」) — 울타리이지 금고가 아니다(자료 파일은 공개 저장소)
+  // 티북이 여는 주소 끝 tbk=… 이 있으면 통과·기억하고 주소에서 그 표시만 뗀다(복사한 주소로 새지 않게) · 코드는 평문으로 두지 않고 SHA-256 만 견준다 · 외부 통신 0
+  (function () {
+    var ok = false, H = location.hash || '', T = /[#&]tbk=796815f0c98a/;
+    try { ok = localStorage.getItem('tg_map2d_gate') === '1'; } catch (e) {}
+    if (T.test(H)) { ok = true; try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e) {}
+      var h = H.replace(T, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h.charAt(0) === '#' ? h : '#' + h) : '')); } catch (e) {} }
+    if (!ok) document.documentElement.classList.add('gated');
+  })();
+</script>
 <style>
   /* 이 페이지는 게임과 따로 돈다 — js/map2d.js 와 data/ 파일만 있으면 된다(three.js 없음 · 통신 0) */
   :root { --bg: #f3f5f8; --panel: #ffffff; --ink: #111827; --ink2: #4b5563; --line: #e2e7ee; --acc: #2563eb; --chip: #f3f5f8; --chipOn: #2563eb; --chipOnInk: #fff; --sh: 0 2px 10px rgba(15,23,42,.10); --sh2: 0 10px 34px rgba(15,23,42,.20); }
@@ -498,9 +509,18 @@
   #m2dReg .rgl button small { font-weight: 600; color: var(--ink2); font-size: 11px; margin-left: 2px; }
   #m2dReg .rgl button.all { border-color: var(--acc); color: var(--acc); }
   @media (max-width: 380px) { #m2dRegB { padding: 0 10px; font-size: 13px; } #m2dReg .seg button { font-size: 11.5px; } }
+  /* v2.21.0 확인코드 관문 */
+  #m2dGate { display: none; position: fixed; inset: 0; z-index: 50; background: var(--bg); align-items: center; justify-content: center; padding: 20px; }
+  :root.gated #m2dGate { display: flex; }
+  #m2dGate form { width: 100%; max-width: 340px; background: var(--panel); border-radius: 20px; box-shadow: var(--sh2); padding: 24px 20px; text-align: center; }
+  #m2dGate h1 { font-size: 19px; margin: 6px 0 4px; } #m2dGate p { font-size: 13px; color: var(--ink2); margin: 0 0 14px; line-height: 1.5; }
+  #m2dGate input { width: 100%; height: 48px; border: 1px solid var(--line); border-radius: 14px; background: var(--chip); color: var(--ink); font-size: 18px; text-align: center; letter-spacing: 2px; }
+  #m2dGate button { width: 100%; height: 48px; margin-top: 10px; border: 0; border-radius: 14px; background: var(--acc); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; }
+  #m2dGate .bad { color: #dc2626; font-weight: 700; min-height: 20px; margin: 8px 0 0; }
 </style>
 </head>
 <body>
+<div id="m2dGate" role="dialog" aria-modal="true" aria-labelledby="m2dGateT"><form id="m2dGateF" autocomplete="off"><div style="font-size:34px">🗺</div><h1 id="m2dGateT">데이터 압축지도</h1><p>경찰 동료용입니다.<br>확인코드를 넣어 주십시오.</p><input id="m2dGateI" type="password" inputmode="text" aria-label="확인코드" placeholder="확인코드"><button type="submit">들어가기</button><p class="bad" id="m2dGateM" aria-live="polite"></p></form></div>
 <div id="m2dTop">
   <!-- v2.18.0 네이버·카카오 지도처럼 — 맨 위 찾기 칸 · 밤낮 · 레이어 단추 / 그 아래 날짜·시각·빠른 칩 한 줄(옆으로 민다) / 시각 칩을 누르면 시각 막대 -->
   <div class="row1">
@@ -595,7 +615,20 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.20.0"></script>
+<script src="js/map2d.js?v=2.21.0"></script>
+<script>
+  (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
+    var f = document.getElementById('m2dGateF'); if (!f) return;
+    var HX = '3a1d43815df6e60d5f8673f05157b39f235d4893d17ecc36396bb1e3b047413b';
+    if (document.documentElement.classList.contains('gated')) setTimeout(function () { try { document.getElementById('m2dGateI').focus(); } catch (e) {} }, 200);
+    f.addEventListener('submit', function (e) { e.preventDefault(); var v = document.getElementById('m2dGateI').value.trim(), M = document.getElementById('m2dGateM');
+      if (!window.crypto || !crypto.subtle) { M.textContent = '이 브라우저에서는 확인할 수 없습니다(https 주소로 여십시오)'; return; }
+      crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)).then(function (b) { var h = Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+        if (h !== HX) { M.textContent = '확인코드가 맞지 않습니다'; return; }
+        try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); window.dispatchEvent(new Event('resize')); }); });
+  })();
+</script>
+
 <script>
   // 캔버스 자리 = 위 막대 아래부터 화면 끝까지(막대 높이가 기기·글자 크기마다 다르다)
   (function () {

@@ -1024,7 +1024,7 @@
     } else if (it.kind === 'node') {
       var n = it.n, st = it.st; h = '<h3>' + (n.real ? '🚦 ' : '✕ ') + esc(n.name) + '</h3>' + (it.rep ? row(REP.here ? '지금 위치' : '보고 자리', (REP.here ? '지금 위치에서 ' : 'T-Book 보고 자리에서 ') + it.rep + 'm') + repAround() + hereRows() : '') + row('도로', esc(n.pair.replace('×', ' × ')));
       if (!n.real) { h += row('실제', '두 도로가 만나지 않는다 — ' + esc(n.why || ('최단 ' + n.gap + 'm'))) + '<p class="desc">게임 지도(격자)에는 교차로가 있지만 실제 길에는 없다. 사고·신호 자료를 이 자리에 붙이지 않는다.</p>' + src('OpenStreetMap(ODbL) · 2026-09-28 · 두 도로의 모든 선분 사이 최단 거리');
-        card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + h; card.classList.add('on'); $('m2dX').onclick = function () { sel = null; show(null); draw(); }; return; }
+        card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + h + fbHtml(); card.classList.add('on'); $('m2dX').onclick = function () { sel = null; show(null); draw(); }; return; }
       h += row('신호 교차로', n.sig ? esc(n.sig.name) + ' <em>#' + esc(n.sig.no) + '</em>' : '<em>공개 신호 목록(C-ITS)에 없음</em>');
       if (n.nameSrc) h += row('이름', '<em>' + esc(n.nameSrc) + '</em>');
       if (n.dong) h += row('행정동', esc(n.dong.dong) + ((n.dong.also || []).length ? ' · ' + esc(n.dong.also.join('·')) + ' <em>경계</em>' : ''));
@@ -1119,7 +1119,7 @@
       h += src('서울경찰청 「오늘의 주요집회」 · 주최자는 담지 않았다');
     }
     if (it.kind === 'dong' && it.d && it.d.c) { h += talkDong(it.d) + '<div class="lg-btns"><button data-story="1">📝 이 동 풀어 읽기</button><button data-pnlhere="' + (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div><div id="storyBox"></div>'; }
-    card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>'; card.classList.add('on');
+    card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
@@ -2186,6 +2186,9 @@
     return h;
   }
   function applyHash() {
+    var vm = /[#&]v=(-?[\d.]+),(-?[\d.]+),(\d+)/.exec(location.hash);   // v2.44.0 💻 PC로 보내기 — 폰에서 보던 자리·넓이(반경 m)를 그대로 · &t= 누른 자리면 그 카드를 다시 연다 · 「보고 자리」 표시 없음
+    if (vm && +vm[1] > 33 && +vm[1] < 38.7 && +vm[2] > 124.5 && +vm[2] < 131.95) { var vq = P(+vm[2], +vm[1]); view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * Math.max(50, +vm[3])); view.cx = vq[0]; view.cy = vq[1]; if (on.bld && view.s > 0.12) loadBld(); draw();
+      var tm = /[#&]t=(-?[\d.]+),(-?[\d.]+)/.exec(location.hash); if (tm) { var tq = P(+tm[2], +tm[1]); setTimeout(function () { var ts = S(tq); tap(ts[0], ts[1]); }, 1500); } return true; }
     var m = /[#&]lat=(-?[\d.]+)/.exec(location.hash), n = /[#&]lon=(-?[\d.]+)/.exec(location.hash);
     if (!m || !n) return false;
     var lat = +m[1], lon = +n[1];
@@ -2906,7 +2909,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.43.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.44.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3382,6 +3385,46 @@
     [0, 6, 12, 18, 23].forEach(function (i) { s2 += '<text x="' + X(i).toFixed(1) + '" y="' + (H - 3) + '" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">' + i + '시</text>'; });
     series.forEach(function (x) { s2 += '<polyline fill="none" stroke="' + x[2] + '" stroke-width="2" points="' + x[1].map(function (v, i) { return X(i).toFixed(1) + ',' + Y(v).toFixed(1); }).join(' ') + '"/>'; });
     return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + s2 + '</svg><div class="pleg">' + series.map(function (x) { return '<span><i style="background:' + x[2] + '"></i>' + esc(x[0]) + '</span>'; }).join('') + '<span><i style="background:#ea580c"></i>지금 ' + hh + '시</span></div></div>'; }
+
+  // ---------- v2.44.0 📝 틀린 곳 알리기(시범 사용 · 서버 없음 — 보던 화면·숫자를 글로 모아 복사·공유) ----------
+  function fbHtml() { return '<div class="fbx"><div class="lg-btns"><button data-pc="1">💻 PC로 보내기</button><button data-fb="1">📝 틀린 곳·헷갈린 곳 알리기</button></div><div id="m2dFbF"></div></div>'; }
+  var FB_KIND = [['bad', '❌ 숫자·내용이 틀림'], ['hard', '🤔 헷갈림·찾기 어려움'], ['want', '➕ 이런 게 있으면 좋겠다']];
+  function fbForm(el) { el.innerHTML = '<div class="lg-btns">' + FB_KIND.map(function (k, i) { return '<button data-fbk="' + k[0] + '" class="' + (i === 0 ? 'on' : '') + '">' + k[1] + '</button>'; }).join('') + '</div><textarea id="m2dFbT" placeholder="무엇이 어떻게 다른지 · 현장에서 본 값 · 바라는 것 — 이름·전화 등 개인정보는 적지 마십시오"></textarea><div class="lg-btns"><button data-fbs="share">📤 보내기(카톡 등)</button><button data-fbs="copy">📋 글로 복사</button></div><small class="lg-n">이 글은 이 기기에서만 만들어진다 — 서버로 가지 않는다. 보내기를 누르면 폰 공유 창이 뜬다.</small>'; }
+  function fbText() { var c = $('m2dCard'), h3 = c && c.querySelector('h3'), k = (c && c.querySelector('[data-fbk].on') || {}).getAttribute ? c.querySelector('[data-fbk].on').getAttribute('data-fbk') : 'bad', kn = (FB_KIND.filter(function (x) { return x[0] === k; })[0] || FB_KIND[0])[1];
+    var v = (document.querySelector('script[src*="map2d.js"]') || {}).src || '', ver = (v.match(/v=([\d.]+)/) || [])[1] || '', m = TAPM || (view && [view.cx, view.cy]), ll = m ? [LAT0 - m[1] / KY, m[0] / KX + LON0] : null;
+    var body = c ? (c.innerText || '').replace(/📝 틀린 곳[\s\S]*$/, '').replace(/\n{2,}/g, '\n').slice(0, 900) : '';
+    var lay = LAYERS.filter(function (l) { return on[l[0]]; }).map(function (l) { return l[0]; }).join(',');
+    return '[데이터 압축지도 의견 — ' + kn + ']\n판 v' + ver + ' · ' + (function (d) { return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16).replace('T', ' '); })(new Date()) + (ll ? ' · 자리 ' + ll[0].toFixed(5) + ', ' + ll[1].toFixed(5) : '') + '\n화면: ' + (h3 ? h3.innerText : '-') + ' · 켠 레이어: ' + lay + '\n\n의견: ' + (($('m2dFbT') || {}).value || '(비어 있음)') + '\n\n--- 그때 보던 카드(앞부분) ---\n' + body; }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('#m2dCard [data-fb]'); if (b) { var el = $('m2dFbF'); if (el) { fbForm(el); var t = $('m2dFbT'); if (t) t.focus(); } return; }
+    b = e.target.closest('#m2dCard [data-fbk]'); if (b) { b.parentNode.querySelectorAll('[data-fbk]').forEach(function (x) { x.classList.toggle('on', x === b); }); return; }
+    b = e.target.closest('#m2dCard [data-fbs]'); if (!b) return; var tx = fbText();
+    if (b.getAttribute('data-fbs') === 'share' && navigator.share) { navigator.share({ title: '데이터 압축지도 의견', text: tx }).catch(function () {}); return; }
+    if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { b.textContent = '✅ 복사됨 — 카톡 등에 붙여 넣기'; }); });
+  (function () { var fb = document.createElement('button'); fb.id = 'm2dFbB'; fb.type = 'button'; fb.textContent = '📝 의견'; fb.setAttribute('aria-label', '틀린 곳 알리기');
+    fb.style.cssText = 'position:fixed;left:10px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:8;border:0;border-radius:18px;padding:8px 12px;background:#7c3aed;color:#fff;font-weight:800;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,.25);cursor:pointer';
+    fb.onclick = function () { var c = $('m2dCard'); if (!c || !c.classList.contains('on')) { sel = null; c.classList.remove('haslad'); c.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><h3>📝 시범 사용 의견</h3><p class="desc">지도를 쓰다 틀리거나 헷갈린 곳을 알려 주십시오. 카드를 연 채로 누르면 그 카드 내용이 같이 붙는다.</p>' + fbHtml(); c.classList.add('on'); $('m2dX').onclick = function () { show(null); }; }
+      var el = $('m2dFbF'); if (el) { fbForm(el); el.scrollIntoView({ block: 'center' }); } };
+    document.body.appendChild(fb); })();
+
+  // ---------- v2.44.0 💻 PC로 보내기 — 지금 보는 자리·층·누른 곳을 주소 하나로(#v=·&t=·&ly=) · 폰 공유(카톡 「나와의 채팅」 등)·내 메일·복사 · 서버 없음 ----------
+  function pcUrl() { var r = Math.round(Math.min(cv.clientWidth, cv.clientHeight) / 2 / view.s), c = [LAT0 - view.cy / KY, view.cx / KX + LON0], f = function (x) { return x.toFixed(5); };
+    var lay = LAYERS.filter(function (l) { return on[l[0]] && l[0] !== 'crowd'; }).map(function (l) { return l[0]; }).join(',');
+    var c2 = $('m2dCard'), t = TAPM && c2 && c2.classList.contains('on') ? '&t=' + f(LAT0 - TAPM[1] / KY) + ',' + f(TAPM[0] / KX + LON0) : '';
+    return location.origin + location.pathname + '#v=' + f(c[0]) + ',' + f(c[1]) + ',' + r + t + '&ly=' + lay; }
+  function pcTitle() { var h3 = document.querySelector('#m2dCard.on h3'); return '데이터 압축지도' + (h3 ? ' — ' + h3.innerText.slice(0, 40) : ''); }
+  function pcForm(el) { var ml = ''; try { ml = localStorage.getItem('tg_map2d_mail') || ''; } catch (e) {}
+    el.innerHTML = '<div class="simc"><b style="font-size:12.5px">💻 PC에서 이어 보기</b><p class="cap">지금 자리·넓이·켠 층' + (TAPM ? '·누른 곳(카드)' : '') + '이 주소 하나에 담긴다. PC에서 열면 같은 화면이 뜬다(처음 한 번은 확인코드를 묻는다).</p><div class="lg-btns"><button data-pcs="share">📤 공유(카톡 나와의 채팅 등)</button><button data-pcs="mail">📧 내 메일로' + (ml ? ' (' + esc(ml.replace(/^(.{2}).*(@.*)$/, '$1…$2')) + ')' : '') + '</button><button data-pcs="copy">📋 주소 복사</button>' + (ml ? '<button data-pcs="mailx">메일 주소 바꾸기</button>' : '') + '</div><small class="lg-n">메일 주소는 이 기기에만 남는다(보내는 것은 폰의 메일 앱) · 주소에는 위치·층 이름만 들어간다 — 확인코드·키·입력값은 안 들어간다.</small></div>'; }
+  function pcMail(ask) { var ml = ''; try { ml = localStorage.getItem('tg_map2d_mail') || ''; } catch (e) {}
+    if (ask || !ml) { var a = prompt('PC에서 받아 볼 내 메일 주소(이 기기에만 저장)', ml); if (a == null) return; ml = a.trim(); try { localStorage.setItem('tg_map2d_mail', ml); } catch (e) {} }
+    var c = $('m2dCard'), body = c && c.classList.contains('on') ? (c.innerText || '').replace(/💻 PC로[\s\S]*$/, '').replace(/\n{2,}/g, '\n').slice(0, 700) : '';
+    location.href = 'mailto:' + encodeURIComponent(ml) + '?subject=' + encodeURIComponent('[지도] ' + pcTitle()) + '&body=' + encodeURIComponent('PC에서 열기:\n' + pcUrl() + '\n\n--- 보던 카드(앞부분) ---\n' + body); }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('#m2dCard [data-pc]'); if (b) { var el = $('m2dFbF'); if (el) pcForm(el); return; }
+    b = e.target.closest('#m2dCard [data-pcs]'); if (!b) return; var k = b.getAttribute('data-pcs'), u = pcUrl();
+    if (k === 'share') { if (navigator.share) navigator.share({ title: pcTitle(), url: u }).catch(function () {}); else k = 'copy'; }
+    if (k === 'mail' || k === 'mailx') { pcMail(k === 'mailx'); if (k === 'mailx') pcForm($('m2dFbF')); return; }
+    if (k === 'copy' && navigator.clipboard) navigator.clipboard.writeText(u).then(function () { b.textContent = '✅ 복사됨'; }); });
 
   // ---------- 층 단추 · 찾기 ----------
   var lay = $('m2dLayers');
@@ -4998,7 +5041,7 @@
   if ($('m2dFindB')) $('m2dFindB').onclick = function () { var on2 = !document.body.classList.contains('findon'); document.body.classList.toggle('findon', on2); this.setAttribute('aria-expanded', on2 ? 'true' : 'false'); if (on2) setTimeout(function () { $('m2dFind').focus(); }, 30); };
   cv.addEventListener('pointerdown', function () { if (window.innerWidth < 760) regOpen(false); });
   paintLayers(); ctrPaint(); dnApply();
-  (function () { var hs = location.hash || ''; var seen = '1'; try { seen = localStorage.getItem('tg_map2d_onb'); } catch (e) {} if (seen || /(^|[#&])(lat|ly|here|gps)=/.test(hs)) return;
+  (function () { var hs = location.hash || ''; var seen = '1'; try { seen = localStorage.getItem('tg_map2d_onb'); } catch (e) {} if (seen || /(^|[#&])(lat|ly|here|gps|v)=/.test(hs)) return;
     if (document.documentElement.classList.contains('gated')) window.addEventListener('tggate', function () { setTimeout(onbOpen, 300); }); else setTimeout(onbOpen, 700); })();   // 처음 안내는 확인코드 관문 뒤에
   window.TGMap2D = { tax: function (o) { taxOpen(o); }, acsim: function (k) { asOpen(k); }, as: function () { return AS; }, ledg: function () { return LEDG; }, field: function () { return FIELD; }, ftc: function () { return FTC; }, pnl: function () { return PNL; }, pnlOpen: pnlOpen, rp: function () { return RP; }, rpFind: rpFind, rpLong: rpLong, stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
 })();

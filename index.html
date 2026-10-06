@@ -15,7 +15,7 @@
   // 티북이 여는 주소 끝 tbk=… 이 있으면 통과·기억하고 주소에서 그 표시만 뗀다(복사한 주소로 새지 않게) · 코드는 평문으로 두지 않고 SHA-256 만 견준다 · 외부 통신 0
   (function () {
     var ok = false, H = location.hash || '', T = /[#&]tbk=796815f0c98a/;
-    try { ok = localStorage.getItem('tg_map2d_gate') === '1'; } catch (e) {}
+    try { var gv = localStorage.getItem('tg_map2d_gate'); ok = gv === '1' || gv === 'p'; if (gv === 'p') document.documentElement.classList.add('pilot'); } catch (e) {}
     if (T.test(H)) { ok = true; try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e) {}
       var h = H.replace(T, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h.charAt(0) === '#' ? h : '#' + h) : '')); } catch (e) {} }
     if (!ok) document.documentElement.classList.add('gated');
@@ -617,10 +617,11 @@
   .pie { display: flex; align-items: center; gap: 10px; margin: 4px 0 6px; } .pie svg { flex: 0 0 auto; } .pie ul { list-style: none; margin: 0; padding: 0; font-size: 12px; line-height: 1.55; } .pie li i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; } .pie li b { font-variant-numeric: tabular-nums; }
   .vz { margin: 6px 0; } .vzg { display: flex; flex-wrap: wrap; gap: 4px 14px; } .vzg > .vz { flex: 1 1 140px; min-width: 0; } .vzr { display: flex; align-items: center; gap: 6px; font-size: 11.5px; margin-top: 3px; } .vzl { flex: 0 0 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .vzl small { color: var(--ink2); } .vzb { flex: 1; height: 13px; background: var(--chip); border-radius: 4px; position: relative; overflow: hidden; } .vzb i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 4px; } .vzd::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--ink2); opacity: .5; } .vzs { display: flex; } .vzs i { position: static; display: block; height: 100%; border-radius: 0; color: #fff; font-size: 9.5px; font-style: normal; text-align: center; line-height: 13px; overflow: hidden; } .vzr > b { flex: 0 0 auto; min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
   .vz .pleg { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; margin-top: 4px; } .vz .pleg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
+  #m2dCard .fbx { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; } #m2dCard .fbx textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: inherit; font-size: 13px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--chip); color: var(--ink); } #m2dFbB { display: none; } :root.pilot #m2dFbB { display: inline-flex; }
 </style>
 </head>
 <body>
-<div id="m2dGate" role="dialog" aria-modal="true" aria-labelledby="m2dGateT"><form id="m2dGateF" autocomplete="off"><div style="font-size:34px">🗺</div><h1 id="m2dGateT">데이터 압축지도</h1><p>경찰 동료용입니다.<br>확인코드를 넣어 주십시오.</p><input id="m2dGateI" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="확인코드" placeholder="확인코드 (한글+숫자)"><button type="submit">들어가기</button><p class="bad" id="m2dGateM" aria-live="polite"></p></form></div>
+<div id="m2dGate" role="dialog" aria-modal="true" aria-labelledby="m2dGateT"><form id="m2dGateF" autocomplete="off"><div style="font-size:34px">🗺</div><h1 id="m2dGateT">데이터 압축지도</h1><p>경찰 동료 · 시범 사용자용입니다.<br>받은 확인코드를 넣어 주십시오.</p><input id="m2dGateI" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="확인코드" placeholder="확인코드"><button type="submit">들어가기</button><p class="bad" id="m2dGateM" aria-live="polite"></p></form></div>
 <div id="m2dTop">
   <!-- v2.18.0 네이버·카카오 지도처럼 — 맨 위 찾기 칸 · 밤낮 · 레이어 단추 / 그 아래 날짜·시각·빠른 칩 한 줄(옆으로 민다) / 시각 칩을 누르면 시각 막대 -->
   <div class="row1">
@@ -715,11 +716,11 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.43.1"></script>
+<script src="js/map2d.js?v=2.44.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;
-    var HX = '3a1d43815df6e60d5f8673f05157b39f235d4893d17ecc36396bb1e3b047413b';
+    var HX = { '3a1d43815df6e60d5f8673f05157b39f235d4893d17ecc36396bb1e3b047413b': '1', '2dff97fedb7a49ea16554e962a4ce9ddb6eb97990c29a860f1022bae2662e0dc': 'p' };   // 코드 둘(2026-10-06 소유자) — 경찰 동료용 · 시범 사용자용 · 평문은 어디에도 두지 않는다
     if (document.documentElement.classList.contains('gated')) setTimeout(function () { try { document.getElementById('m2dGateI').focus(); } catch (e) {} }, 200);
     // 폰 자판은 비밀번호 칸에서 한글 조합을 막아 「ㄱㅛ34」처럼 낱자로 들어온다(2026-10-06 소유자 폰에서 안 들어가짐) → 일반 칸 + 낱자 모아 쓰기 + 빈칸 빼기
     var CH = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', JU = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
@@ -727,8 +728,8 @@
     f.addEventListener('submit', function (e) { e.preventDefault(); var raw = document.getElementById('m2dGateI').value || '', v = moa((raw.normalize ? raw.normalize('NFC') : raw).replace(/\s+/g, '')), M = document.getElementById('m2dGateM');
       if (!window.crypto || !crypto.subtle) { M.textContent = '이 브라우저에서는 확인할 수 없습니다(https 주소로 여십시오)'; return; }
       crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)).then(function (b) { var h = Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
-        if (h !== HX) { M.textContent = '확인코드가 맞지 않습니다'; return; }
-        try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); window.dispatchEvent(new Event('resize')); }); });
+        if (!HX[h]) { M.textContent = '확인코드가 맞지 않습니다'; return; }
+        try { localStorage.setItem('tg_map2d_gate', HX[h]); } catch (e2) {} if (HX[h] === 'p') document.documentElement.classList.add('pilot'); document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); window.dispatchEvent(new Event('resize')); }); });
   })();
 </script>
 

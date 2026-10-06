@@ -100,7 +100,7 @@ def build():
     TY = {'Apt': 0, 'Offi': 1, 'RH': 2}; NMK = {'Apt': 'aptNm', 'Offi': 'offiNm', 'RH': 'mhouseNm'}
     tot = collections.Counter(); gb = {}
     for g in IX['gus']:
-        umds = []; cx = {}; cell = collections.defaultdict(lambda: collections.defaultdict(list)); dong = collections.defaultdict(lambda: collections.defaultdict(list)); sh = collections.defaultdict(lambda: collections.defaultdict(list))
+        umds = []; cx = {}; deals = {}; cell = collections.defaultdict(lambda: collections.defaultdict(list)); dong = collections.defaultdict(lambda: collections.defaultdict(list)); sh = collections.defaultdict(lambda: collections.defaultdict(list))
         def U(u):
             if u not in umds: umds.append(u)
             return umds.index(u)
@@ -110,6 +110,10 @@ def build():
                 fn = os.path.join(OUT, '%s_%s_%s.json' % (svc, g['gu'], ym))
                 if not os.path.exists(fn): continue
                 for r in json.load(open(fn, encoding='utf-8')):
+                    if tr and typ != 'SH':   # v2.39.0 💰 세금 모의계산 — 유사매매사례 후보용 거래 한 건씩(연월·전용㎡·금액·해제 표시만 · 일자·층·동은 원자료에도 없다)
+                        dk = '%d|%s|%s|%s' % (TY[typ], r.get('umdNm') or '-', r.get('jibun', ''), r.get(NMK[typ]) or '')
+                        a0, m0 = num(r.get('excluUseAr')), num(r.get('dealAmount'))
+                        if a0 and m0: deals.setdefault(dk, []).append([int(r['dealYear']) * 100 + int(r['dealMonth']), round(a0 * 100), int(m0), 1 if r.get('cdealType') else 0])
                     if r.get('cdealType'): tot['해제'] += 1; continue
                     um = r.get('umdNm') or '-'
                     if typ == 'SH':   # 단독·다가구 — 법정동까지만
@@ -142,11 +146,11 @@ def build():
                         else: c['wo'].append(mr); c['wd'].append(dep)
                         tot['전월세'] += 1
                     tot['좌표' if c['lat'] else '좌표없음'] += 1
-        out = {}
+        out = {}; ck = {}
         for cid, c in cx.items():
             row = [c['t'], c['n'], c['u'], c['lat'], c['lon'], c['cell'], c['k8'], int(c['by']) if c['by'] else None,
                    [len(c['tr']), med(c['tr'])] + (c['last'] or [None, None, None]), [len(c['je']), med(c['je'])], [len(c['wo']), med(c['wo']), med(c['wd'])]]
-            if c['lat']: out[str(len(out))] = row   # 지도에 점을 찍을 수 있는 단지만 목록에 둔다(좌표 없는 것은 칸·동 집계에도 못 들어간다 — 좌표가 차면 다음 build 에 들어온다)
+            if c['lat']: ck[cid] = str(len(out)); out[ck[cid]] = row   # 지도에 점을 찍을 수 있는 단지만 목록에 둔다(좌표 없는 것은 칸·동 집계에도 못 들어간다 — 좌표가 차면 다음 build 에 들어온다)
             for key, bucket in ((c['cell'], cell), (c['k8'], dong)):
                 if not key: continue
                 b = bucket[key]; p = ('a' if c['t'] == 0 else 'o' if c['t'] == 1 else 'r')
@@ -163,10 +167,25 @@ def build():
                'note': '해제 거래 뺌 · 매수·매도 구분·중개사·일자·층·동 번호는 버림 · 평당 = ㎡당 × 3.3058(전용 기준) · 전세가율 = 같은 자리 전세 ㎡당 중앙값 ÷ 매매 ㎡당 중앙값(같은 집끼리가 아니다 — 추정) · 전세 = 월세 0 인 계약 · 단독·다가구는 지번이 가려져 법정동 단위',
                'umds': umds, 'cx': out, 'grid': {k: agg(v) for k, v in cell.items()}, 'dong': {k: agg(v) for k, v in dong.items()},
                'sh': {str(k): [len(v['t']), med(v['t']), len(v['j']), med(v['j']), len(v['w']), med(v['w'])] for k, v in sh.items()}}
+        if deals:   # 단지 = [종류, 이름, 법정동(umds), 지번, home.json cx 번호 또는 null] · d = [단지 자리, 연월, 전용㎡×100, 금액(만 원), 해제 1]
+            dc, dd = [], []
+            for dk in sorted(deals):
+                t0, um, jb, nm = dk.split('|', 3); t0 = int(t0); ui = U(um)
+                k0 = ck.get('%d|%s|%s' % (t0, um, jb))
+                dc.append([t0, nm, ui, jb, k0]); ii = len(dc) - 1
+                for x in sorted(deals[dk]): dd.append([ii] + x)
+            dj = {'schema': 'tg-deals/1', 'gu': g['gu'], 'umds': umds, 'source': '국토교통부 실거래가(공공데이터포털 · 아파트·오피스텔·연립다세대 매매 %s~%s)' % (months(24)[0], months(24)[-1]),
+                  'fields': 'c = [0 아파트·1 오피스텔·2 연립다세대, 단지 이름, 법정동(umds 자리), 지번, home.json cx 번호] · d = [c 자리, 연월, 전용㎡×100, 금액(만 원), 해제 1]',
+                  'note': '💰 세금 모의계산의 유사매매사례 후보용 · 매수·매도·중개·일자·층·동 번호는 원자료에서 받지 않았다(평가기간 경계 달은 「일자 확인 필요」)', 'c': dc, 'd': dd}
+            pd = os.path.join(ROOT, 'data', 'r', g['gu'], 'deals.json')
+            json.dump(dj, open(pd, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':')); gb.setdefault('_deals', {})[g['gu']] = os.path.getsize(pd)
         pth = os.path.join(ROOT, 'data', 'r', g['gu'], 'home.json')
         json.dump(doc, open(pth, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':')); gb[g['gu']] = os.path.getsize(pth)
+    DB = gb.pop('_deals', {})
     for g in IX['gus']:
         if g['gu'] in gb: g.setdefault('bytes', {})['home'] = gb[g['gu']]
+        if g['gu'] in DB: g.setdefault('bytes', {})['deals'] = DB[g['gu']]
+    IX['layers']['deals'] = '공동주택 매매 한 건씩(세금 모의계산 유사매매사례 후보 · 연월·면적·금액)'
     IX['layers']['home'] = '주택 실거래(아파트·오피스텔·연립다세대 · 250m 칸·단지 · 평당·전세가율)'
     json.dump(IX, open(os.path.join(ROOT, 'data', 'r', 'index.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print(dict(tot), '구', len(gb), '바이트', sum(gb.values()))

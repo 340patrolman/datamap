@@ -60,6 +60,8 @@ def push(sidos):
     regs = {x['sido']: x for x in manifest()}
     repos = {}
     for sd in sidos: repos.setdefault(regs[sd]['repo'], []).append(sd)
+    for repo in repos:   # v2.39.0 한 저장소에 시도가 여럿(충청·경상·전라)이면 늘 다 같이 — 하나만 올리면 고아 커밋이 나머지 시도를 지운다(2026-10-06 공시지가 큐에서 실제로 일어남)
+        repos[repo] = sorted(x for x in regs if regs[x]['repo'] == repo)
     for repo, sds in repos.items():
         d = os.path.join(KB, repo)
         ex = subprocess.run(['gh', 'repo', 'view', OWNER + '/' + repo], capture_output=True, text=True).returncode == 0

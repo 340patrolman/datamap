@@ -254,6 +254,7 @@
   @media (max-width: 759px) { #m2dBiz { max-height: 40vh; } #m2dRad { max-height: 42vh; } }
   @media (max-width: 759px) { #m2dBiz { max-height: 40vh; } #m2dPnl { max-height: 42vh; } }
   #m2dPre button.biz { border-color: #7c3aed; color: #7c3aed; }
+  #m2dPre button.my { border-color: #ca8a04; color: #a16207; } #m2dPre button.my.on { background: #ca8a04; border-color: #ca8a04; color: #fff; }
   #m2dRad { display: none; position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 7; max-height: 58vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; box-shadow: 0 6px 24px rgba(0,0,0,.18); font-size: 13px; }
   #m2dPnl { display: none; position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 7; max-height: 58vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; box-shadow: 0 6px 24px rgba(0,0,0,.18); font-size: 13px; }
   @media (min-width: 760px) { #m2dRad { right: auto; width: 400px; max-height: 64vh; } }
@@ -717,7 +718,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.45.0"></script>
+<script src="js/map2d.js?v=2.46.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

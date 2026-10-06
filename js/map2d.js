@@ -76,7 +76,7 @@
   }
   function get(k) { if (k === 'ridx') return regionsLoad(); return fetch(FILES[k]).then(function (r) { return r.json(); }).then(function (j) { D[k] = j; }).catch(function () { D[k] = null; }); }
   var LATE = ['livep', 'trend', 'hot10', 'trdar', 'safety', 'taas10', 'enf', 'season', 'pbtn', 'pstat'];   // v0.10.80 무거운 자료(상권·안전시설·사고 10년·추이)는 첫 그림 뒤에 읽는다 — 지도가 먼저 뜬다
-  Promise.all(Object.keys(FILES).filter(function (k) { return LATE.indexOf(k) < 0; }).map(get)).then(function () { setTimeout(gpsHere, 0); prep(); pubPrep(); extraPrep(); basePrep(); sggPrep(); flowPrep(); fit(); if (on.bld && view.s > 0.12) loadBld(); draw(); applyHash(); $('m2dLoad').style.display = 'none'; paintTime(); summary();
+  Promise.all(Object.keys(FILES).filter(function (k) { return LATE.indexOf(k) < 0; }).map(get)).then(function () { setTimeout(gpsHere, 0); prep(); pubPrep(); extraPrep(); basePrep(); sggPrep(); flowPrep(); fit(); if (on.bld && view.s > 0.12) loadBld(); draw(); applyHash(); myStart(); $('m2dLoad').style.display = 'none'; paintTime(); summary();
     Promise.all(LATE.map(get)).then(function () { livePrep(); trdPrep(); safePrep(); a10Prep(); seasonPrep(); paintPre(); summary(); draw(); if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }); });
   function loadBld() {   // 건물 593KB — 켤 때만
     if (D.bld !== undefined) return;
@@ -1017,7 +1017,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
-      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k);
+      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1623,7 +1623,7 @@
   }
   function paintPre() {
     var el = $('m2dPre'); if (!el) return; var si = seasonInfo(); PRESETS = PRESETS.filter(function (x) { return x[0] !== 'season'; }); PRESETS.unshift(['season', si.icon + ' 지금 계절 · ' + si.short, si.keys]);
-    el.innerHTML = '<button data-x="none" class="ctl">모두 끄기</button><button data-x="reset" class="ctl">처음대로</button><button data-x="biz" class="ctl biz">🏪 창업 자리 찾기</button><button data-x="rad" class="ctl biz">📐 반경 분석</button>' + PRESETS.map(function (x) { var act = LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); return '<button data-p="' + x[0] + '" class="' + (act ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') +
+    el.innerHTML = '<button data-x="none" class="ctl">모두 끄기</button><button data-x="reset" class="ctl">처음대로</button>' + (MY || []).map(function (m, i) { return '<button data-my="' + i + '" class="my' + (myAct(m) ? ' on' : '') + '" title="' + esc(m.ly.length + '개 레이어' + (m.v ? ' · 자리 포함' : '')) + '">' + (i === MYST ? '🏠 ' : '⭐ ') + esc(m.n) + '</button>'; }).join('') + '<button data-x="mysave" class="ctl my">＋ 지금 보기 저장</button>' + (MY && MY.length ? '<button data-x="mymgr" class="ctl">⚙ 내 보기</button>' : '') + '<button data-x="biz" class="ctl biz">🏪 창업 자리 찾기</button><button data-x="rad" class="ctl biz">📐 반경 분석</button>' + PRESETS.map(function (x) { var act = LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); return '<button data-p="' + x[0] + '" class="' + (act ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') +
       '';
     var pc = $('m2dPreC'); if (pc) pc.innerHTML = '<details id="m2dPreCD" class="prec"' + (PRECO ? ' open' : '') + '><summary>📋 묶음마다 켜는 레이어 — 어떻게 짜였나</summary>' + PRESETS.map(function (x) { return '<div><button data-p="' + x[0] + '" class="pk">' + x[1] + '</button> → ' + x[2].filter(hasL).map(function (k) { return esc(lname(k)); }).join(' · ') + (PRENOTE[x[0]] ? '<br><small>' + PRENOTE[x[0]] + '</small>' : '') + '</div>'; }).join('') + '<p class="lhn">묶음을 누르면 행정동·도로·바탕만 남기고 나머지는 끈 뒤 이 레이어들을 켠다 · 「처음대로」 = 레이어마다 처음 값 · 「모두 끄기」 = 바탕만</p></details>';
     preFit();
@@ -1634,7 +1634,7 @@
   // v0.10.82 모두 끄기(행정동·도로·바탕만 남김) · 처음대로(층마다 기본값) — 근무별 줄과 「☰ 모든 층」 판이 같이 쓴다
   function layersNone() { LAYERS.forEach(function (l) { on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; unitKeep(); saveOn(); paintLayers(); paintPre(); sel = null; show(null); draw(); summary(); }
   function layersReset() { LAYERS.forEach(function (l) { on[l[0]] = l[2]; }); unitKeep(); saveOn(); paintLayers(); paintPre(); draw(); summary(); }
-  if ($('m2dPre')) { $('m2dPre').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var x = b.getAttribute('data-x'); if (x === 'biz') bizOpen(); else if (x === 'rad') radOpen(null); else if (x === 'none') layersNone(); else if (x === 'reset') layersReset(); else preset(b.getAttribute('data-p')); }); }
+  if ($('m2dPre')) { $('m2dPre').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var x = b.getAttribute('data-x'), mi = b.getAttribute('data-my'); if (mi != null) { myApply(+mi, true); return; } if (x === 'mysave') { mySave(); return; } if (x === 'mymgr') { myMgr(); return; } if (x === 'biz') bizOpen(); else if (x === 'rad') radOpen(null); else if (x === 'none') layersNone(); else if (x === 'reset') layersReset(); else preset(b.getAttribute('data-p')); }); }
   var SUMT = [];
   function summary() {
     var el = $('m2dSum'); if (!el || !DONG.length) return; var h = nowH(), out = [], it; SUMT = [];
@@ -1813,7 +1813,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
-    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k);
+    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + (GB.ggcard ? '<button data-ggc="' + esc(d.gcd) + '|' + esc(d.k) + '">💳 카드 소비 자세히(연령·성별·시간·업종)</button>' : '') + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -2740,7 +2740,9 @@
     h += '<div class="vzg"><div class="vz"><div class="cap">외국인주민 구성</div>' + pie([['한국국적 없음', f.nf || 0, '#0e7490'], ['귀화', f.n || 0, '#7c3aed'], ['자녀', f.c || 0, '#0369a1']], 72) + '</div><div class="vz"><div class="cap">한국국적 없는 사람 유형</div>' + pie([['근로자', f.w || 0, '#b45309'], ['결혼이민', f.m || 0, '#be185d'], ['유학생', f.s || 0, '#4338ca'], ['동포', f.k || 0, '#15803d'], ['기타', f.e || 0, '#94a3b8']], 72) + '</div></div>';
     if (f.mc) h += row('다문화가구원', n(f.mc[0]) + '명 — 한국인 배우자 ' + n(f.mc[1]) + ' · 결혼이민·귀화 ' + n(f.mc[2]) + ' · 자녀 ' + n(f.mc[3]) + ' · 기타 동거인 ' + n(f.mc[4]));
     if (!MBK[k8.slice(0, 5)]) mbLoad(k8.slice(0, 5));
-    var STg = STK[k8.slice(0, 5)]; if (!STg) stLoad(k8.slice(0, 5)); else if (STg.dong && STg.dong[k8]) { var sv = STg.dong[k8]; h += row('숙박시설(이 동)', sv.map(function (n, i) { return n ? esc(STY[i][1]) + ' ' + n : ''; }).filter(Boolean).join(' · ') + ' <em>(영업·휴업 · 지방행정인허가 2025-11)</em>'); }
+    var STg = STK[k8.slice(0, 5)]; if (!STg) stLoad(k8.slice(0, 5)); else if (STg.dong && STg.dong[k8]) { var sv = STg.dong[k8]; h += row('숙박시설(이 동)', sv.map(function (n, i) { return n ? esc(STY[i][1]) + ' ' + n : ''; }).filter(Boolean).join(' · ') + ' <em>(영업·휴업 · 지방행정인허가 2025-11)</em>');
+      var svG = STY.map(function () { return 0; }), nD = 0; Object.keys(STg.dong).forEach(function (q) { nD++; STg.dong[q].forEach(function (n, i) { svG[i] += n || 0; }); });
+      var svR = sv.map(function (n, i) { return n ? [STY[i][0] + ' ' + STY[i][1], n, nD ? svG[i] / nD : null] : null; }).filter(Boolean); if (svR.length) h += vzPair(svR, ['이 동', '구 안 동 평균'], { title: '🛌 숙박시설(곳) — 이 동 vs 구 안 동 평균', fmt: function (v) { return (Math.round(v * 10) / 10).toLocaleString(); } }); }
     var MBg = MBK[k8.slice(0, 5)]; if (MBg && MBg.dong && MBg.dong[k8]) h += row('외국인관광 도시민박(이 동)', MBg.dong[k8] + '곳 <em>(영업·휴업 · 행안부 인허가 2026-10)</em>');
     var JMg = jgJmDong(k8); if (JMg) h += jmRow(JMg, jgGroups());
     var JDg = jgDong(k8); if (JDg) h += row('공시지가(대지 ㎡당 중앙값)', '<b>' + wonM2(JDg[0]) + '원</b> · 평당 ' + wonM2(JDg[0] * 3.305785) + '원 · 대지 ' + JDg[1].toLocaleString() + '필지 <em>(' + esc(jgYear()) + '년 1월 1일 · 시세 아님)</em>');
@@ -2910,7 +2912,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.45.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.46.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3409,6 +3411,77 @@
     [0, 6, 12, 18, 23].forEach(function (i) { s2 += '<text x="' + X(i).toFixed(1) + '" y="' + (H - 3) + '" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">' + i + '시</text>'; });
     series.forEach(function (x) { s2 += '<polyline fill="none" stroke="' + x[2] + '" stroke-width="2" points="' + x[1].map(function (v, i) { return X(i).toFixed(1) + ',' + Y(v).toFixed(1); }).join(' ') + '"/>'; });
     return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + s2 + '</svg><div class="pleg">' + series.map(function (x) { return '<span><i style="background:' + x[2] + '"></i>' + esc(x[0]) + '</span>'; }).join('') + '<span><i style="background:#ea580c"></i>지금 ' + hh + '시</span></div></div>'; }
+
+  // ---------- v2.46.0 🏠 집안 구성(소유자 「동별 가구 구성원 · 세대당 몇 명 · 혼자 사는지 · 결혼했는지 · 이혼율 · 기초수급자 비율」) — data/house-dong.json · tools/region/house-bake.py ----------
+  var HSD = null, HSP = null;
+  function houseLoad() { if (HSP) return HSP; HSP = fetch('data/house-dong.json').then(function (r) { return r.json(); }).then(function (j) { HSD = j; var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.kind === 'dong') show(sel.it); }).catch(function () { HSD = { dong: {}, sd: {}, sg: {}, sgw: {} }; }); return HSP; }
+  var HHK = [['👤 1인', '#f59e0b'], ['👥 2인', '#22c55e'], ['3인', '#3b82f6'], ['4인', '#8b5cf6'], ['5인 이상', '#64748b']];
+  var ONEK = [['👧 0~19', '#22c55e'], ['🧑 20대', '#3b82f6'], ['🧑 30대', '#60a5fa'], ['🧔 40대', '#8b5cf6'], ['🧔 50~64', '#a78bfa'], ['👴 65~79', '#f59e0b'], ['👵 80+', '#dc2626']];
+  var MARK = [['미혼', '#3b82f6'], ['💍 배우자 있음', '#16a34a'], ['사별', '#94a3b8'], ['💔 이혼', '#dc2626']];
+  var HSMAR = null;
+  function houseMarAgg(sd) { if (!HSMAR) { HSMAR = {}; Object.keys(HSD.dong).forEach(function (k) { var m = HSD.dong[k].mar; if (!m) return; [k.slice(0, 2), k.slice(0, 5)].forEach(function (q) { var o = HSMAR[q] = HSMAR[q] || [0, 0, 0, 0, 0]; for (var i = 0; i < 5; i++) o[i] += m[i]; }); }); } return HSMAR[sd]; }
+  function guPopSum(gu) { var t = 0, n = 0; allDong().forEach(function (d) { if (d.k && d.k.slice(0, 5) === gu && d.pop && d.pop.tot) { t += d.pop.tot; n++; } }); return n ? t : null; }
+  function houseHtml(k8, pop, nm, story) { if (!HSD) { houseLoad(); return ''; } var v = HSD.dong[k8]; if (!v || !v.hh) return ''; var gu = k8.slice(0, 5), sd = k8.slice(0, 2), G = HSD.sg[gu], SDv = HSD.sd[sd], h = '', txt = [];
+    var f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); }, hh = v.hh, p1 = hh[1] / hh[0] * 100, g1 = G ? G.hh[1] / G.hh[0] * 100 : null, s1 = SDv ? SDv.hh[1] / SDv.hh[0] * 100 : null, sdn = SIDO_FULL[sd] || '시도';
+    h += '<div class="dh">🏠 집안 구성 <small style="font-weight:600;color:var(--ink2)">(주민등록 ' + esc(HSD.asof.hh) + ')</small></div>';
+    h += row('세대', '<b>' + hh[0].toLocaleString() + '세대</b>' + (pop ? ' · 세대당 <b>' + f1(pop / hh[0]) + '명</b>' : '') + ' · 👤 혼자 사는 세대 <b>' + f1(p1) + '%</b>' + (g1 != null ? ' <em>(구 ' + f1(g1) + '% · ' + esc(sdn) + ' ' + f1(s1) + '%)</em>' : ''));
+    txt.push('세대 ' + hh[0].toLocaleString() + (pop ? '(세대당 ' + f1(pop / hh[0]) + '명)' : '') + ' 가운데 혼자 사는 세대가 ' + f1(p1) + '%' + (s1 != null ? '(' + sdn + ' ' + f1(s1) + '%)' : '') + (s1 != null && p1 >= s1 + 8 ? ' — <b>혼자 사는 사람이 많은 동</b>' : s1 != null && p1 <= s1 - 8 ? ' — 가족 세대가 많은 동' : ''));
+    h += vzStack([[nm || '이 동', hh.slice(1), '']].concat(G ? [['구 전체', G.hh.slice(1), '']] : []).concat(SDv ? [[sdn, SDv.hh.slice(1), '']] : []), HHK, { title: '세대원 수 — 몇 명이 사는 집인가(%)' });
+    if (v.one) { var o = v.one, ot = o.reduce(function (a, b) { return a + b; }, 0) || 1, old = o[5] + o[6];
+      h += row('👴 혼자 사는 65세 이상', '<b>' + old.toLocaleString() + '명</b> · 1인 세대의 ' + f1(old / ot * 100) + '%' + (v.onesx ? ' · 남 ' + v.onesx[0].toLocaleString() + ' · 여 ' + v.onesx[1].toLocaleString() : '') + (SDv ? ' <em>(' + esc(sdn) + ' ' + f1((SDv.one[5] + SDv.one[6]) / (SDv.one.reduce(function (a, b) { return a + b; }, 0) || 1) * 100) + '%)</em>' : ''));
+      txt.push('혼자 사는 65세 이상 ' + old.toLocaleString() + '명(1인 세대의 ' + f1(old / ot * 100) + '%) — 폭염·한파·고독사 살핌 대상의 크기');
+      h += vzStack([['이 동 1인 세대', o, ot.toLocaleString() + '명']].concat(SDv ? [[sdn, SDv.one, '']] : []), ONEK, { title: '혼자 사는 사람 나이(%)' }); }
+    if (v.cen) { var ys = Object.keys(v.cen).sort(), r1 = ys.map(function (y) { var c = v.cen[y]; return c[0] ? c[1] / c[0] * 100 : null; });
+      h += vzLineQ([['1인가구 비율(%)', r1, '#f59e0b']], ys, { title: '1인가구 비율 — 해마다(통계청 일반가구 · 등록센서스)', fmt: function (x) { return f1(x) + '%'; } });
+      if (ys.length > 1) txt.push('통계청 1인가구는 ' + ys[0] + '년 ' + f1(r1[0]) + '% → ' + ys[ys.length - 1] + '년 ' + f1(r1[r1.length - 1]) + '%'); }
+    if (v.mar && v.mar[0]) { var m = v.mar, ms = houseMarAgg(sd), dv = m[4] / m[0] * 100;
+      h += row('혼인상태(15세 이상 · 2020)', '미혼 ' + f1(m[1] / m[0] * 100) + '% · 배우자 있음 ' + f1(m[2] / m[0] * 100) + '% · 사별 ' + f1(m[3] / m[0] * 100) + '% · <b>이혼 ' + f1(dv) + '%</b>' + (ms ? ' <em>(' + esc(sdn) + ' 이혼 ' + f1(ms[4] / ms[0] * 100) + '%)</em>' : ''));
+      h += vzStack([[nm || '이 동', m.slice(1), '']].concat(ms ? [[sdn, ms.slice(1), '']] : []), MARK, { title: '혼인상태 — 15세 이상 내국인(%, 2020 표본)' });
+      txt.push('15세 이상 가운데 이혼 상태 ' + f1(dv) + '%' + (ms ? '(' + sdn + ' ' + f1(ms[4] / ms[0] * 100) + '%)' : '') + ' · 미혼 ' + f1(m[1] / m[0] * 100) + '%(2020)'); }
+    if (v.div) { var dy = Object.keys(v.div).sort(), dl = dy[dy.length - 1];
+      h += vzLineQ([['💍 혼인', dy.map(function (y) { return v.div[y][0]; }), '#16a34a'], ['💔 이혼', dy.map(function (y) { return v.div[y][1]; }), '#dc2626']], dy.map(function (y) { return "'" + y.slice(2); }), { title: '혼인·이혼 신고 — 해마다(건 · 주소지)', fmt: function (x) { return Math.round(x).toLocaleString(); }, zero: 1 });
+      if (pop) { h += row('조이혼율(' + dl + ')', '주민 1천 명당 <b>' + f1(v.div[dl][1] / pop * 1000) + '건</b> <em>(그 해 이혼 신고 ÷ 지금 주민 · 혼인 ' + v.div[dl][0] + '건 · 이혼 ' + v.div[dl][1] + '건)</em>'); txt.push(dl + '년 이혼 신고 ' + v.div[dl][1] + '건(주민 1천 명당 ' + f1(v.div[dl][1] / pop * 1000) + ')'); } }
+    var gp = guPopSum(gu), sw = HSD.sgw[gu];
+    if (v.wel && pop) { var w = v.wel, wr = w[0] / pop * 100, gr = sw && gp ? sw[0] / gp * 100 : null;
+      h += row('기초생활수급자', '<b>' + w[0].toLocaleString() + '명 · 주민의 ' + f1(wr) + '%</b>' + (gr != null ? ' <em>(구 ' + f1(gr) + '% · ' + esc(HSD.asof.wel_sgg) + ')</em>' : '') + ' · 👴 65세 이상 ' + w[6].toLocaleString() + ' · 👧 18세 미만 ' + w[5].toLocaleString() + ' <em>(' + (v.welsrc === 'seoul' ? '서울 ' + esc(HSD.asof.wel_seoul) : '경기 ' + esc(v.welyy || '')) + ')</em>');
+      h += vzStack([['자격별', [w[1], w[2], w[3], w[4]], w[0].toLocaleString() + '명']], [['생계', '#dc2626'], ['의료', '#f59e0b'], ['주거', '#3b82f6'], ['교육', '#22c55e']], { title: '수급자 자격(가장 높은 급여 하나로 센다)' });
+      var mates = allDong().filter(function (d) { return d.k && d.k.slice(0, 5) === gu && d.pop && d.pop.tot && HSD.dong[d.k] && HSD.dong[d.k].wel; }).map(function (d) { return [d.name, HSD.dong[d.k].wel[0] / d.pop.tot * 100, d.k === k8 ? '#dc2626' : '#94a3b8']; }).sort(function (a, b) { return b[1] - a[1]; });
+      if (mates.length > 2) { var mi = mates.map(function (x) { return x[2]; }).indexOf('#dc2626'), cut = mates.slice(0, 8); if (mi >= 8) cut.push(mates[mi]); h += vzH(cut, { title: '구 안 동 수급률(%) — 빨강 = 이 동 · ' + (mi + 1) + '위 / ' + mates.length + '동', fmt: function (x) { return f1(x) + '%'; } }); }
+      txt.push('기초생활수급자 ' + w[0].toLocaleString() + '명(주민의 ' + f1(wr) + '%' + (gr != null ? ' · 구 ' + f1(gr) + '%' : '') + ', 65세 이상 ' + w[6].toLocaleString() + '명)'); }
+    else if (sw && gp) { h += row('기초생활수급자(구)', '<b>' + sw[0].toLocaleString() + '명 · 구 주민의 ' + f1(sw[0] / gp * 100) + '%</b> · ' + sw[1].toLocaleString() + '가구 <em>(' + esc(HSD.asof.wel_sgg) + ' · 동 단위 공개는 서울·경기만 — 구 값)</em>'); txt.push('기초생활수급자(구 전체) 주민의 ' + f1(sw[0] / gp * 100) + '%'); }
+    var src = '<p class="cap">' + esc(HSD.source) + ' · ' + esc(HSD.note) + '</p>';
+    if (story) return { t: '<b>집안 구성.</b> ' + txt.join(' · ') + '. 주민등록 「세대」는 통계청 「가구」와 다르다(같은 집이라도 주소를 따로 둔 경우). <small>(' + esc(HSD.source) + ')</small>', v: h.replace(/^<div class="dh">[\s\S]*?<\/div>/, '') };
+    return h + src; }
+  function houseRows(d) { if (!d || !d.k) return ''; return houseHtml(d.k, d.pop && d.pop.tot, d.name, false); }
+
+  // ---------- v2.46.0 ⭐ 내 보기(소유자 「처음에 정한 레이어를 저장 · 커스터마이즈」) — 켠 레이어(+ 원하면 자리·넓이)를 이름 붙여 저장 · 🏠 하나를 「시작 보기」로 정하면 주소에 #ly·#v 가 없을 때 그것으로 연다 · 이 기기에만(tg_map2d_my) ----------
+  var MY = [], MYST = -1;
+  try { MY = JSON.parse(localStorage.getItem('tg_map2d_my') || '[]') || []; MYST = +(localStorage.getItem('tg_map2d_mystart') || -1); } catch (e) { MY = []; }
+  function mySaveLS() { try { localStorage.setItem('tg_map2d_my', JSON.stringify(MY)); localStorage.setItem('tg_map2d_mystart', String(MYST)); } catch (e) {} }
+  function myKeys() { return LAYERS.filter(function (l) { return on[l[0]] && l[0] !== 'crowd'; }).map(function (l) { return l[0]; }); }
+  function myAct(m) { var b0 = function (x) { return ['dong', 'road', 'base'].indexOf(x) < 0; }, k = myKeys().filter(b0), L = m.ly.filter(b0); return k.length === L.length && L.every(function (x) { return on[x]; }); }
+  function myView() { var r = Math.round(Math.min(cv.clientWidth, cv.clientHeight) / 2 / view.s); return [+(LAT0 - view.cy / KY).toFixed(5), +(view.cx / KX + LON0).toFixed(5), r]; }
+  function mySave() { if (MY.length >= 12) { alert('내 보기는 12개까지 — ⚙ 내 보기에서 하나를 지우고 저장하십시오'); return; }
+    var n = prompt('이 보기 이름(예: 야간 순찰 · 상권 · 학교 앞)', '내 보기 ' + (MY.length + 1)); if (n == null) return; n = n.trim().slice(0, 16) || ('내 보기 ' + (MY.length + 1));
+    var withV = confirm('지금 보는 자리·넓이도 같이 저장할까요?\n확인 = 자리까지(누르면 이 자리로 옮김) · 취소 = 레이어만');
+    MY.push({ n: n, ly: myKeys(), v: withV ? myView() : null }); if (MY.length === 1 && MYST < 0 && confirm('「' + n + '」을 지도를 열 때 시작 보기(🏠)로 할까요?')) MYST = 0; mySaveLS(); paintPre(); }
+  function myApply(i, go) { var m = MY[i]; if (!m) return; LAYERS.forEach(function (l) { on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; m.ly.forEach(function (k) { if (k in on) on[k] = true; }); HASHLY = false;
+    if (go && m.v) { var q = P(m.v[1], m.v[0]); view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * Math.max(50, m.v[2])); view.cx = q[0]; view.cy = q[1]; }
+    if (on.bld && view.s > 0.12) loadBld(); unitKeep(); saveOn(); paintLayers(); paintPre(); draw(); summary(); }
+  function myStart() { if (MYST < 0 || !MY[MYST] || /(^|[#&])(lat|ly|v|here)=/.test(location.hash)) return; myApply(MYST, true); }
+  function myMgr() { var c = $('m2dCard'); sel = null; c.classList.remove('haslad');
+    var h = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><h3>⭐ 내 보기</h3><p class="desc">켠 레이어를 이름 붙여 저장한 것들 — 🏠 = 지도를 열 때 시작 보기(주소에 #ly·#v 가 붙어 열리면 그쪽이 먼저). 이 기기에만 저장된다.</p>';
+    h += MY.map(function (m, i) { return '<div class="simc"><b>' + (i === MYST ? '🏠 ' : '⭐ ') + esc(m.n) + '</b> <small>' + m.ly.length + '개 레이어' + (m.v ? ' · 자리 포함' : '') + '</small><div class="lg-btns"><button data-mym="go|' + i + '">▶ 열기</button><button data-mym="start|' + i + '">' + (i === MYST ? '🏠 시작 보기 해제' : '🏠 시작 보기로') + '</button><button data-mym="over|' + i + '">⟳ 지금 상태로 덮기</button><button data-mym="ren|' + i + '">✏ 이름</button>' + (i ? '<button data-mym="up|' + i + '">▲</button>' : '') + '<button data-mym="del|' + i + '">🗑</button></div><small class="lg-n">' + m.ly.map(function (k) { return esc(lname(k)); }).join(' · ') + '</small></div>'; }).join('');
+    h += '<div class="lg-btns"><button data-mym="new|0">＋ 지금 보기 저장</button></div>';
+    c.innerHTML = h; c.classList.add('on'); $('m2dX').onclick = function () { show(null); }; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('#m2dCard [data-mym]'); if (!b) return; var a = b.getAttribute('data-mym').split('|'), i = +a[1], m = MY[i];
+    if (a[0] === 'new') mySave(); else if (a[0] === 'go') { myApply(i, true); show(null); return; }
+    else if (a[0] === 'start') MYST = MYST === i ? -1 : i;
+    else if (a[0] === 'over' && m) { var wv = confirm('자리·넓이도 지금 것으로 덮을까요?(취소 = 레이어만)'); m.ly = myKeys(); if (wv) m.v = myView(); }
+    else if (a[0] === 'ren' && m) { var n = prompt('새 이름', m.n); if (n) m.n = n.trim().slice(0, 16); }
+    else if (a[0] === 'up' && i > 0) { MY.splice(i - 1, 0, MY.splice(i, 1)[0]); if (MYST === i) MYST = i - 1; else if (MYST === i - 1) MYST = i; }
+    else if (a[0] === 'del' && m && confirm('「' + m.n + '」을 지울까요?')) { MY.splice(i, 1); if (MYST === i) MYST = -1; else if (MYST > i) MYST--; }
+    mySaveLS(); paintPre(); myMgr(); });
 
   // ---------- v2.44.0 📝 틀린 곳 알리기(시범 사용 · 서버 없음 — 보던 화면·숫자를 글로 모아 복사·공유) ----------
   function fbHtml() { return '<div class="fbx"><div class="lg-btns"><button data-pc="1">💻 PC로 보내기</button><button data-fb="1">📝 틀린 곳·헷갈린 곳 알리기</button></div><div id="m2dFbF"></div></div>'; }
@@ -4193,7 +4266,7 @@
   function sgn1(x, d) { return (x >= 0 ? '+' : '') + (d ? x.toFixed(d) : Math.round(x)) ; }
   function storyData(d) {
     var gu = d.gcd || '11650';
-    return Promise.all([sdLoad(gu), cpiLoad()]).then(function (a) {
+    return Promise.all([sdLoad(gu), cpiLoad(), houseLoad()]).then(function (a) {
       var Dg = a[0].dong, Xg = a[0].x, row0 = Dg && Dg.dong.filter(function (q) { return d.k ? q.k === d.k : q.name === d.name; })[0] || {};
       var k = row0.k || d.k, F = RFAC[gu] && RFAC[gu].dong ? RFAC[gu].dong[k] || null : null; if (!F && RFAC[gu] && RFAC[gu].dong) for (var kk in RFAC[gu].dong) if (RFAC[gu].dong[kk].name === (row0.name || d.name)) { F = RFAC[gu].dong[kk]; break; } var X = Xg && Xg.dong ? Xg.dong[k] || null : null;
       var w = 0, c = 0, n = 0; JGGA.forEach(function (q) { if (q.gu === gu && q.t[1] === (row0.name || d.name)) { n++; w += q.t[9] || 0; c += q.t[8] || 0; } });
@@ -4222,6 +4295,7 @@
         (S.F && S.F.cc && S.F.cc[1] ? vzH([['정원', S.F.cc[1], '#94a3b8'], ['지금 다니는 아이', S.F.cc[2] || 0, '#22c55e']], { title: '👶 어린이집 ' + S.F.cc[0] + '곳 — 정원 vs 지금(명)', unit: '명' }) : '') +
         (S.F && S.F.ccy && S.Fm && S.Fm.cyears && S.F.ccy.length > 2 ? '<div class="vz"><div class="cap">어린이집 수 — 해마다(곳)</div>' + bar(S.F.ccy, '#22c55e', S.F.ccy.map(function (_, i) { return "'" + String(+S.Fm.cyears[0] + i).slice(2); })) + '</div>' : '');
       if (v1) P.push('<div class="vzg">' + v1 + '</div>'); }
+    if (S.d && S.d.k) { var HS0 = houseHtml(S.d.k, p && p.tot, S.name, true); if (HS0 && HS0.t) { P.push(HS0.t); P.push('<div class="vz">' + HS0.v + '</div>'); if (HSD.dong[S.d.k] && HSD.dong[S.d.k].hh) { var hp1 = HSD.dong[S.d.k].hh[1] / HSD.dong[S.d.k].hh[0] * 100; if (hp1 >= 45) tags.push('혼자 사는 세대 ' + Math.round(hp1) + '%'); } } }
     // ② 머무는 사람
     var L = S.live; if (L && (L.wd || L.we) && p && p.tot) { var t2 = '<b>머무는 사람.</b> ', o = [];
       ['wd', 'we'].forEach(function (k2) { var a = L[k2]; if (!a) return; var mx = Math.max.apply(null, a), mn = Math.min.apply(null, a), pk = a.indexOf(mx), busy = []; a.forEach(function (v, i) { if (v >= mn + (mx - mn) * 0.7) busy.push(i); });

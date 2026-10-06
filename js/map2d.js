@@ -2081,6 +2081,28 @@
     s2 += '<text x="182" y="186" text-anchor="middle" font-size="9" fill="currentColor">영업 중인 가게 평균 업력 →  짧다 | 길다</text><text x="12" y="92" text-anchor="middle" font-size="9" fill="currentColor" transform="rotate(-90 12 92)">닫은 가게 업력 ↓ 길다 | 짧다</text>';
     return '<div class="vz"><div class="cap">상권변화지표 — 지금 칸(📍)과 2021년부터 머문 분기 수</div>' + s2 + '</svg></div>'; }
 
+  // v2.54.0 소유자 「점포 개업·폐업 업종과 업종별 생존율·기간」 — 서울 상권분석 점포-행정동(업종 100개) · r/<구>/storind.json
+  var STI = {}, STIP = {};
+  function stiLoad(gu) { if (STIP[gu]) return STIP[gu]; STIP[gu] = rGet(gu, 'storind.json').then(function (j) { STI[gu] = j; }).catch(function () { STI[gu] = null; }).then(function () { var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.kind === 'dong') { var sb = document.getElementById('storyBox'); if (!sb || !sb.innerHTML.trim()) show(sel.it); } }); return STIP[gu]; }
+  function vzOpenClose(rows, opt) {   // 업종마다 개업(초록)·폐업(빨강) 막대 + 순증
+    opt = opt || {}; var mx = Math.max.apply(null, rows.map(function (r) { return Math.max(r[1], r[2]); }).concat([1]));
+    return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + rows.map(function (r) { var nt = r[1] - r[2];
+      return '<div class="vzr"><span class="vzl" title="' + esc(r[0]) + '">' + esc(r[0]) + '</span><span class="vzb vzp"><i style="width:' + Math.max(1, r[1] / mx * 100).toFixed(1) + '%;background:#16a34a"></i><i style="width:' + Math.max(1, r[2] / mx * 100).toFixed(1) + '%;background:#dc2626"></i></span><b style="color:' + (nt > 0 ? '#16a34a' : nt < 0 ? '#dc2626' : 'var(--ink2)') + '">' + r[1] + '/' + r[2] + ' <small>' + (nt > 0 ? '+' : '') + nt + '</small></b></div>'; }).join('') +
+      '<div class="pleg"><span><i style="background:#16a34a"></i>개업</span><span><i style="background:#dc2626"></i>폐업</span><span>오른쪽 = 개업/폐업 · 순증</span></div></div>'; }
+  function storIndHtml(k8) { var gu = k8.slice(0, 5); if (gu.slice(0, 2) !== '11') return ''; if (STI[gu] === undefined) { stiLoad(gu); return ''; } var J = STI[gu]; if (!J || !J.dong[k8]) return '';
+    var L = J.dong[k8], f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); }, h = '<div class="cap" style="margin-top:8px;font-weight:800">🏪 업종별 개업·폐업 · 버티는 기간</div>';
+    var act = L.filter(function (r) { return r[2] + r[3] > 0; }).sort(function (a, b) { return (b[2] + b[3]) - (a[2] + a[3]); }).slice(0, 12);
+    if (act.length) h += vzOpenClose(act.map(function (r) { return [r[0], r[2], r[3]]; }), { title: '최근 1년(' + qLab1(J.last4[0]) + '~' + qLab1(J.last4[3]) + ') 개업·폐업이 많은 업종' });
+    var yrs = ((+J.qL.slice(0, 4) - +J.q0.slice(0, 4)) * 4 + (+J.qL.slice(4) - +J.q0.slice(4)) + 1) / 4, avS = function (r) { return (r[1] + r[6]) / 2 || r[1]; }, yc = function (r) { return r[5] / yrs; };
+    var gT = 0, gC = 0; Object.keys(J.dong).forEach(function (q) { J.dong[q].forEach(function (r) { gT += avS(r); gC += yc(r); }); }); var dT = 0, dC = 0; L.forEach(function (r) { dT += avS(r); dC += yc(r); });
+    if (dT && dC) h += row('이 동 전체(' + yrs + '년 평균)', '한 해 폐업률 <b>' + f1(dC / dT * 100) + '%</b> · 평균 버티는 기간(어림) <b>' + f1(dT / dC) + '년</b>' + (gT && gC ? ' <em>(구 ' + f1(gC / gT * 100) + '% · ' + f1(gT / gC) + '년)</em>' : ''));
+    var sv = L.filter(function (r) { return r[1] >= 8; }).map(function (r) { var cr = yc(r) / avS(r); return [r[0], cr ? Math.min(30, 1 / cr) : 30, cr * 100, r[1]]; }).sort(function (a, b) { return b[1] - a[1]; });
+    if (sv.length >= 4) { var pick = sv.length > 12 ? sv.slice(0, 6).concat(sv.slice(-6)) : sv;
+      h += vzH(pick.map(function (r) { return [r[0] + ' (' + r[3] + '곳)', r[1], r[1] >= 10 ? '#16a34a' : r[1] >= 5 ? '#f59e0b' : '#dc2626']; }), { title: '업종별 평균 버티는 기간(어림 · 년 · ' + yrs + '년 동안의 폐업으로) — 위 = 오래 버팀 · 아래 = 빨리 닫음 · 점포 8곳 이상', fmt: function (x) { return x >= 30 ? '30년+' : f1(x) + '년'; } }); }
+    var gr = L.filter(function (r) { return r[6] >= 5 || r[1] >= 5; }).map(function (r) { return [r[0], r[6] ? (r[1] - r[6]) / r[6] * 100 : 100, r[1]]; }).sort(function (a, b) { return b[1] - a[1]; });
+    if (gr.length > 4) h += vzDiv(gr.slice(0, 5).concat(gr.slice(-5)).map(function (r) { return [r[0], Math.max(-100, Math.min(300, r[1])), r[2]]; }), { title: '업종별 점포 수 변화(' + qLab1(J.q0) + ' → ' + qLab1(J.qL) + ' · 많이 는 5 · 많이 준 5 · 작은 숫자 = 지금 곳)' });
+    return h + '<p class="cap">' + esc(J.source) + ' · 「평균 버티는 기간」 = 평균 점포 수 ÷ 한 해 평균 폐업 수(' + qLab1(J.q0) + '~' + qLab1(J.qL) + ' ' + yrs + '년 동안 · 가게가 들고 나는 흐름이 일정하다고 본 어림 · 설계값) — 개업한 가게를 끝까지 따라간 생존율은 아니다 · 그 동안 폐업이 0이면 30년+</p>'; }
+
   function facRows(gcd, nm, k8) {   // 동 카드 아래 「동 현황」 — 소유자 2026-10-04 「상권이 살아나는지 죽는지 · 남녀 · 경로당·어린이집·유치원·입시학원」
     var F = RFAC[gcd]; if (!F) { fLoad(gcd, function () { if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }); return '<p class="desc">동 현황(남녀·시설·상권 추이)을 읽는 중…</p>'; }
     var x = (k8 && F.dong[k8]) || null; if (!x) for (var kk in F.dong) if (F.dong[kk].name === nm) { x = F.dong[kk]; break; } if (!x) return facLite(F, k8, nm);
@@ -2120,6 +2142,7 @@
           '<div class="cap">분기마다 상권변화지표(' + x.ix[0][0].slice(0, 4) + '~' + last[0].slice(0, 4) + ')</div><div class="ixs">' + x.ix.map(function (q) { return '<i style="background:' + (IXC[q[1]] || '#ccc') + '" title="' + q[0].slice(0, 4) + '년 ' + q[0][4] + '분기 ' + esc(N[q[1]] || q[1]) + '"></i>'; }).join('') + '</div>' +
           '<div class="ixl"><span><i style="background:#16a34a"></i>상권확장 — 새로 연 점포가 버틴다</span><span><i style="background:#f59e0b"></i>다이나믹 — 많이 열고 많이 닫는다</span><span><i style="background:#94a3b8"></i>정체 — 오래된 점포가 그대로</span><span><i style="background:#dc2626"></i>상권축소 — 새로 연 곳이 빨리 닫는다</span></div>'; srcs.push(S['상권변화']); }
       if (x.ix && x.ix.length) h += vzQuad(x.ix[x.ix.length - 1][1], x.ix);
+      var kx = k8; if (!kx) for (var kq in F.dong) if (F.dong[kq].name === nm) { kx = kq; break; } if (kx) h += storIndHtml(kx);
       var up = (sales != null && sales > 10) + (stores != null && stores > 3) + (ixl === 'LH'), dn = (sales != null && sales < -10) + (stores != null && stores < -3) + (ixl === 'HL');
       var vd = up >= 2 && !dn ? '📈 <b>살아나는 쪽</b>' : dn >= 2 && !up ? '📉 <b>줄어드는 쪽</b>' : up > dn ? '↗ 조금 살아나는 쪽' : dn > up ? '↘ 조금 줄어드는 쪽' : '➡ 큰 변화 없음';
       h += row('한 줄로', vd + ' <em>(매출 ±10% · 점포 ±3% · 지표를 함께 본 이 지도의 어림 — 판단 문턱은 설계값)</em>') + '<p class="desc">상권분석서비스는 <b>2021년부터</b>만 공개된다 — 그보다 앞 10년 상권 값은 이 자료에 없다. 어린이집(2016~)·유치원(2014~)은 더 길게 본다.</p>';
@@ -2982,7 +3005,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.53.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.54.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }

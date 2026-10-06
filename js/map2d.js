@@ -1128,7 +1128,7 @@
     if (it.kind === 'dong' && it.d && it.d.c) { var dll = (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5), dA = 0;   // v2.61.0 소유자 「읍면동 오른쪽 옆에 상권분석 · 그 옆에 이 동 풀어 읽기 · 손익 계산은 그대로」
       (it.d.polys || []).forEach(function (pg) { var r = pg[0] || [], a = 0; for (var i = 0, k = r.length - 1; i < r.length; k = i++) a += (r[k][0] + r[i][0]) * (r[k][1] - r[i][1]); dA += Math.abs(a / 2); });
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
-      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1">📝 이 동 풀어 읽기</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>');
+      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>');
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
     card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
@@ -3050,7 +3050,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.67.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.67.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4990,7 +4990,7 @@
       t9 += '. <small>(' + esc(S.F.bzsrc || ('통계청 전국사업체조사 · ' + ((S.Fm && S.Fm.bzsrc) || 'KOSIS'))) + ')</small>'; P.push(t9);
       P.push('<div class="vz"><div class="cap">사업체 수 — 해마다(곳 · 2020 앞뒤는 조사 방식이 다르다)</div>' + bar(bz.map(function (x) { return x[1]; }), '#475569', bz.map(function (x) { return "'" + String(x[0]).slice(2); })) + '</div>');
       if (typeof g3 !== 'undefined' && g3 && g3.length > 1) P.push(vzDiv(g3.slice(0, 5).concat(g3.length > 7 ? g3.slice(-3) : []).filter(function (x, i, a) { return a.indexOf(x) === i; }).map(function (x) { return [x[0], x[3], x[2]]; }), { title: '업종별 사업체 — 늘고 준 비율' + (S.F.bziy ? '(' + S.F.bziy[0] + '→' + S.F.bziy[1] + '년 · 작은 숫자 = 지금 곳)' : '') })); }
-    if (!P.length) return '<p class="desc">이 동은 풀어 읽을 자료가 부족하다.</p>';
+    if (!P.length) return '<p class="desc">이 동은 설명할 자료가 부족하다.</p>';
     var head = '<div class="story"><p class="sline"><b>한 줄로 — ' + esc(S.name) + ':</b> ' + esc(tags.filter(Boolean).join(' · ') || '자료가 적다') + '.</p>' + (GL.length ? '<div class="glance"><div class="cap">📌 한눈에 — 빨강 = 평균보다 높다 · 파랑 = 낮다</div><div class="gl">' + GL.map(function (g) { var cl = g[4] == null ? '' : g[4] > 0.05 ? ' up' : g[4] < -0.05 ? ' dn' : ''; return '<div class="gt' + cl + '"><span class="gi">' + g[0] + '</span><b>' + esc(g[2]) + '</b><span class="gn">' + esc(g[1]) + '</span>' + (g[3] ? '<small>' + (cl === ' up' ? '▲ ' : cl === ' dn' ? '▼ ' : '') + esc(g[3]) + '</small>' : '') + '</div>'; }).join('') + '</div></div>' : '') + P.map(function (x) { return /^<div/.test(x) ? x : '<p>' + x + '</p>'; }).join('');
     head += '<p class="snot"><b>데이터가 말하지 않는 것.</b> ' + (S.sido === '경기' ? '경기는 동 단위 시간대·연령별 카드 매출과 서울식 생활인구가 공개되지 않아 서울 동보다 문단이 적다 · 경기 카드 매출은 경기데이터드림 가공 자료라 서울과 금액을 견주지 않는다 · ' : '카드 매출은 서울시 추정(현금·배달앱 일부 빠짐) · ') + '왜 늘고 줄었는지(원인)는 이 자료에 없다 — 전국 흐름·물가·상권 이동은 따로 확인해야 한다 · 생활인구는 체류 인원이지 방문자 수가 아니다 · 범죄·사고 건수는 이 문단에 넣지 않았다(관서 통계 층에서 본다). 문장 속 판단 기준(○배·±%p)은 앱이 정한 설계값이다.</p></div>';
     return head;

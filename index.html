@@ -647,6 +647,8 @@
   /* v2.49.3 가격 말풍선 */
   #m2dTip { display: none; position: fixed; z-index: 30; pointer-events: none; max-width: 280px; background: rgba(15,23,42,.94); color: #f8fafc; border-radius: 10px; padding: 7px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
   #m2dTip i { font-style: normal; color: #fcd34d; font-weight: 700; } #m2dTip small { color: #cbd5e1; } #m2dTip b { color: #fff; }
+  /* v2.54.1 막대 최고·최저 표시 */
+  .hl { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11.5px; font-weight: 800; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -745,7 +747,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.54.0"></script>
+<script src="js/map2d.js?v=2.54.1"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

@@ -970,10 +970,11 @@
     var mx = Math.max.apply(null, arr) || 1;
     if (arr.length === 24 && !lab) { var mn = Math.min.apply(null, arr), lv = arr.map(function (v) { return hourLv(v, mx, mn); }), hh = nowH();
       return vxRow(arr, hh) + '<div class="bars h24">' + arr.map(function (v, i) { return '<i title="' + i + '시 ' + Math.round(v).toLocaleString() + '" class="' + (i === hh ? 'n' : '') + '" style="height:' + Math.round(v / mx * 100) + '%;background:' + (lv[i] === 2 ? C_BUSY : lv[i] === 0 ? C_QUIET : (color || '#3b82f6')) + '"></i>'; }).join('') + '</div>' + hourAxis(lv) + hourKey(lv, color); }
-    var ok = lab && lab.length === arr.length;
+    var ok = lab && lab.length === arr.length, base = color || '#3b82f6', mnv = Math.min.apply(null, arr), imx = arr.indexOf(mx), imn = arr.length > 2 && mnv < mx ? arr.indexOf(mnv) : -1, nm = function (i) { return ok ? String(lab[i]).replace(/<[^>]+>/g, '').replace(/^'/, '') : String(i + 1); };
     return vxRow(arr, null, fmt) +
-      '<div class="bars">' + arr.map(function (v, i) { return '<i title="' + esc(ok ? String(lab[i]).replace(/<[^>]+>/g, '') : String(i)) + ' ' + shortN(v) + '" style="height:' + Math.round(v / mx * 100) + '%;background:' + (color || '#3b82f6') + '"></i>'; }).join('') + '</div>' +
-      (ok ? '<div class="lx">' + lab.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>' : ''); }
+      '<div class="bars">' + arr.map(function (v, i) { var t = mx > mnv ? (v - mnv) / (mx - mnv) : 1; return '<i title="' + esc(nm(i)) + ' ' + shortN(v) + '" style="height:' + Math.round(v / mx * 100) + '%;background:' + (i === imx && arr.length > 2 ? '#dc2626' : i === imn ? '#2563eb' : hexA(base.length === 7 ? base : '#3b82f6', (0.3 + 0.7 * t).toFixed(2))) + '"></i>'; }).join('') + '</div>' +
+      (ok ? '<div class="lx">' + lab.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>' : '') +
+      (arr.length > 2 ? '<div class="hl"><span style="color:#dc2626">▲ 최고 ' + esc(nm(imx)) + ' ' + (fmt === 'w' ? wonS(mx) : shortN(mx)) + '</span>' + (imn >= 0 ? '<span style="color:#2563eb">▼ 최저 ' + esc(nm(imn)) + ' ' + (fmt === 'w' ? wonS(mnv) : shortN(mnv)) + '</span>' : '') + '</div>' : ''); }
   // v0.10.86 막대 눈금 글자 — 소유자 「세로 막대에 몇 년도인지 숫자로 · 막대만 덜렁 있으니 이해하기 어렵다」
   // v0.10.87 막대 위 값 — 소유자 「모든 막대에 숫자 · 좁으면 작게 · 지저분하면 처음·끝·중요한 것만」: 12칸 이하면 전부, 넘으면 처음·끝·가장 큰 값(·지금 시각)
   function vxRow(arr, now, fmt) { var F = fmt === 'w' ? wonS : shortN; var n = arr.length, mx = -Infinity, im = 0; arr.forEach(function (v, i) { if (v > mx) { mx = v; im = i; } });
@@ -3005,7 +3006,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.54.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.54.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3472,6 +3473,8 @@
   // ---------- v2.43.0 📊 설명 그래프 도우미(소유자 「일터·국민연금·생활업종 체온·이동·풀어 읽기를 설명할 때 그래프와 색으로」) ----------
   function vzH(items, opt) {   // 가로 막대 — [[이름, 값, 색]] · opt.unit · opt.title
     opt = opt || {}; var mx = Math.max.apply(null, items.map(function (x) { return Math.abs(x[1]); }).concat([1]));
+    if (items.length >= 3 && items.every(function (x) { return (x[2] || '#2563eb') === (items[0][2] || '#2563eb'); })) { var vs = items.map(function (x) { return x[1]; }), hi = Math.max.apply(null, vs), lo = Math.min.apply(null, vs), b0 = items[0][2] || '#2563eb';
+      items = items.map(function (x) { var t = hi > lo ? (x[1] - lo) / (hi - lo) : 1; return [x[0], x[1], x[1] === hi ? '#dc2626' : x[1] === lo && hi > lo ? '#2563eb' : (b0.length === 7 ? hexA(b0, (0.3 + 0.7 * t).toFixed(2)) : b0)]; }); }
     return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + items.map(function (x) { return '<div class="vzr"><span class="vzl" title="' + esc(x[0]) + '">' + esc(x[0]) + '</span><span class="vzb"><i style="width:' + Math.max(1, Math.abs(x[1]) / mx * 100).toFixed(1) + '%;background:' + (x[2] || '#2563eb') + '"></i></span><b>' + (opt.fmt ? opt.fmt(x[1]) : Math.round(x[1]).toLocaleString() + (opt.unit || '')) + '</b></div>'; }).join('') + '</div>'; }
   function vzPair(rows, names, opt) {   // v2.45.0 두 줄 막대 — rows [[이름, 이 값, 견줄 값]] · names [이 값 이름, 견줄 값 이름] · 위 = 진한 색 · 아래 = 옅은 회색
     opt = opt || {}; var fm = opt.fmt || function (v) { return (Math.round(v * 10) / 10).toLocaleString(); }, mx = Math.max.apply(null, [].concat.apply([], rows.map(function (r) { return [Math.abs(r[1] || 0), Math.abs(r[2] || 0)]; })).concat([1e-9])), c = opt.color || '#2563eb';

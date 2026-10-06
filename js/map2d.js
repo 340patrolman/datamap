@@ -63,7 +63,8 @@
   // v2.6.0 지역 자료 받기 하나로(전국 확장 S1·S2) — 권역마다 따로 둔 자료 저장소(340patrolman.github.io/datamap-data-…/)에서 받는다 · 같은 파일은 한 번만 받고(글로 보관 · 쓰는 곳마다 새로 풀어 서로 건드리지 않음) · 없음(404)과 실패를 가른다
   // 이 PC(localhost)에서는 지금처럼 data/r/ 를 쓴다 · 권역 목록 = data/regions.json · 권역마다 manifest.json(시군구 → 층 바이트·상자·동 이름)
   var RBASE = {}, RGETT = {}, RMISS = {}, RMANU = [], ONGH = /github\.io$/.test(location.hostname), REGR = null, REGP = new Promise(function (res) { REGR = res; });   // REGP = 권역 목록을 읽은 뒤(그 전에 부른 받기는 기다린다)
-  function rU(gu, f) { return (RBASE[String(gu).slice(0, 2)] || 'data/') + 'r/' + gu + '/' + f; }
+  var RLOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !/[#&]remote=1/.test(location.hash);   // 미리보기(내 PC)에서는 아직 안 올린 로컬 빌드(data/r)를 읽는다
+  function rU(gu, f) { return (RLOCAL ? 'data/' : (RBASE[String(gu).slice(0, 2)] || 'data/')) + 'r/' + gu + '/' + f; }
   function rGet(gu, f) { var k = gu + '/' + f;
     if (!RGETT[k]) { RGETT[k] = REGP.then(function () { return fetch(rU(gu, f)); }).then(function (r) { if (!r.ok) { if (r.status === 404) RMISS[k] = 1; throw new Error(r.status === 404 ? 'none' : 'fail'); } return r.text(); });
       RGETT[k].catch(function (e) { if (!e || e.message !== 'none') delete RGETT[k]; }); }
@@ -2038,15 +2039,29 @@
     h += row('어린이집·유치원·경로당', '<em>' + esc((F.source || {})['비고'] || '이 시도 자료를 아직 못 받았다') + ' — 전국 자료를 찾는 중</em>');
     return h; }
 
+  // v2.50.0 소유자 「윗부분(지구대·경찰서·시군구)을 누르면 들어가는 현황에 어린이집·유치원이 나와야」 — 묶음 안 동들의 어린이집·유치원·집안 구성 합
+  function unitFacHtml(ds, gus, it) { var miss = gus.filter(function (g) { return !RFAC[g]; }); if (miss.length) { miss.forEach(function (g) { fLoad(g, function () { var c = $('m2dCard'); if (UCUR === it && c && c.classList.contains('on')) show(it); }); }); return '<p class="desc">어린이집·유치원 자료를 받는 중…</p>'; }
+    if (!HSD) houseLoad();
+    var cc = [0, 0, 0], kg = [0, 0, 0], rows = [], one = 0, hh = 0, old = 0, wel = 0, pop = 0;
+    ds.forEach(function (d) { var k = d['코드'], F = RFAC[String(k).slice(0, 5)], x = F && F.dong[k]; if (x) { if (x.cc) for (var i = 0; i < 3; i++) cc[i] += x.cc[i]; var kq = x.kgc || (x.kgy ? [x.kgy[x.kgy.length - 1], 0, 0] : x.kgN ? [x.kgN, 0, 0] : null); if (kq) for (var j = 0; j < 3; j++) kg[j] += kq[j]; rows.push([d['이름'], x.cc ? x.cc[0] : 0, kq ? kq[0] : 0]); }
+      var hv = HSD && HSD.dong[k]; if (hv && hv.hh) { hh += hv.hh[0]; one += hv.hh[1]; if (hv.one) old += hv.one[5] + hv.one[6]; if (hv.wel) wel += hv.wel[0]; } pop += d['주민'] ? d['주민']['계'] || 0 : 0; });
+    var h = '';
+    if (cc[0] || kg[0]) { h += row('👶 어린이집 · 🎒 유치원', '어린이집 <b>' + cc[0] + '곳</b>(정원 ' + cc[1].toLocaleString() + ' · 현원 ' + cc[2].toLocaleString() + ') · 유치원 <b>' + kg[0] + '곳</b>' + (kg[1] ? '(정원 ' + kg[1].toLocaleString() + ' · 원아 ' + kg[2].toLocaleString() + ')' : ''));
+      rows.sort(function (a, b) { return (b[1] + b[2]) - (a[1] + a[2]); });
+      if (rows.length > 1) h += vzStack(rows.slice(0, 12).map(function (r) { return [r[0], [r[1], r[2]], (r[1] + r[2]) + '곳']; }), [['👶 어린이집', '#22c55e'], ['🎒 유치원', '#3b82f6']], { title: '동마다 어린이집·유치원(곳 · 많은 순 12)' }); }
+    if (hh) h += row('🏠 집안 구성', '세대 ' + hh.toLocaleString() + ' · 혼자 사는 세대 <b>' + (one / hh * 100).toFixed(1) + '%</b> · 👴 혼자 사는 65세 이상 <b>' + old.toLocaleString() + '명</b>' + (wel && pop ? ' · 기초생활수급(서울·경기 동 합) ' + wel.toLocaleString() + '명(' + (wel / pop * 100).toFixed(1) + '%)' : ''));
+    return h; }
+
   function facRows(gcd, nm, k8) {   // 동 카드 아래 「동 현황」 — 소유자 2026-10-04 「상권이 살아나는지 죽는지 · 남녀 · 경로당·어린이집·유치원·입시학원」
     var F = RFAC[gcd]; if (!F) { fLoad(gcd, function () { if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }); return '<p class="desc">동 현황(남녀·시설·상권 추이)을 읽는 중…</p>'; }
     var x = (k8 && F.dong[k8]) || null; if (!x) for (var kk in F.dong) if (F.dong[kk].name === nm) { x = F.dong[kk]; break; } if (!x) return facLite(F, k8, nm);
     var S = F.source || {}, h = '<div class="dh">📋 동 현황</div>', srcs = [];
     if (x.sex) { var m = x.sex[0], f = x.sex[1]; h += row('남녀', '남 ' + m.toLocaleString() + '(' + Math.round(m / (m + f) * 100) + '%) · 여 ' + f.toLocaleString() + '(' + Math.round(f / (m + f) * 100) + '%) <em>· 여자 100명당 남자 ' + Math.round(m / f * 100) + '명</em>') +
       '<div class="cap">연령대별 남녀 인구(명 · 주민등록 2026년 9월 · 위가 나이 많음)</div>' + pyr(x.sex[2], x.sex[3]); srcs.push(S['남녀']); }
-    var fl = []; if (x.cc) fl.push('어린이집 ' + x.cc[0] + '곳(정원 ' + x.cc[1] + (x.cc[2] >= 0 ? ' · 현원 ' + x.cc[2] : '') + ')'); if (x.kgy) fl.push('유치원 ' + x.kgy[x.kgy.length - 1] + '곳'); else if (x.kgN) fl.push('유치원 ' + x.kgN + '곳'); else if (F.kyears || F.sido === '41') fl.push('유치원 0곳 <em>(' + (F.sido === '11' ? '서울시교육청 목록 기준 — 이 목록은 서초구가 21곳뿐이라 사립 유치원 일부가 빠져 있을 수 있다' : '목록 기준') + ')</em>');
+    var fl = []; if (x.cc) fl.push('어린이집 ' + x.cc[0] + '곳(정원 ' + x.cc[1] + (x.cc[2] >= 0 ? ' · 현원 ' + x.cc[2] : '') + ')'); if (x.kgc) fl.push('유치원 ' + x.kgc[0] + '곳(정원 ' + x.kgc[1] + ' · 원아 ' + x.kgc[2] + ')'); else if (F.natkg) fl.push('유치원 0곳 <em>(교육부 유치원알리미 2026년 1차 공시 · 국·공·사립 전체)</em>'); else if (x.kgy) fl.push('유치원 ' + x.kgy[x.kgy.length - 1] + '곳'); else if (x.kgN) fl.push('유치원 ' + x.kgN + '곳');
     var E = x.edu || {}; if (x.edu || x.sch) fl.push('초 ' + (E['초'] != null ? E['초'] : (x.sch || {}).e || 0) + ' · 중 ' + (E['중'] != null ? E['중'] : (x.sch || {}).m || 0) + ' · 고 ' + (E['고'] != null ? E['고'] : (x.sch || {}).h || 0) + (E['대학'] ? ' · 대학 ' + E['대학'] : '') + (E['기타'] ? ' · 특수·기타 ' + E['기타'] : '')); if (x.kyr) fl.push('경로당 ' + x.kyr + '곳'); if (x.aca != null || x.acaAll) fl.push('입시·교과학원 ' + (x.aca || 0) + '곳(학원 전체 ' + (x.acaAll || 0) + ')');
     if (fl.length) h += row('아이·어르신·교육', fl.join(' · ') + (F.sido === '41' ? ' <em>(경기: 경로당은 OSM 에 있는 곳만 · 유치원은 이름으로 자리를 잡은 곳만(경기 전체 1,771곳 중 ' + (F.kgNo || 0) + '곳은 자리를 못 잡아 빠짐) · 학교는 OSM·어린이보호구역 자료)</em>' : x.kyr && F.kyrNo ? ' <em>(경로당은 주소로 자리를 잡은 곳만 — 이 구 ' + F.kyrNo + '곳 빠짐)</em>' : ''));
+    if (x.cc || x.kgc) h += '<div class="vzg">' + vzH([['👶 어린이집 정원', x.cc ? x.cc[1] : 0, '#94a3b8'], ['👶 어린이집 다니는 아이', x.cc ? x.cc[2] : 0, '#22c55e'], ['🎒 유치원 정원', x.kgc ? x.kgc[1] : 0, '#cbd5e1'], ['🎒 유치원 원아', x.kgc ? x.kgc[2] : 0, '#3b82f6']].filter(function (q) { return q[1]; }), { title: '어린이집 ' + (x.cc ? x.cc[0] : 0) + '곳 · 유치원 ' + (x.kgc ? x.kgc[0] : 0) + '곳 — 정원과 지금 다니는 아이(명)', unit: '명' }) + '</div>';
     if (x.ccy && x.ccy.some(function (v) { return v; })) { var c0 = x.ccy[0], c1 = x.ccy[x.ccy.length - 1];
       h += row('어린이집 추이', F.cyears[0] + '년 ' + c0 + '곳 → ' + F.cyears[F.cyears.length - 1] + '년 ' + c1 + '곳 <b>' + sgn(pctCh(c0, c1)) + '</b>') + '<div class="cap">해마다 운영 중인 어린이집 수(곳 · 그해 말 · 인가일~폐지일로 셈 · ' + F.cyears[F.cyears.length - 1] + '년은 ' + (F.sido === '41' ? '자료 기준일 2025.7' : '지금') + ')</div>' + bar(x.ccy, '#db2777', F.cyears.map(function (y) { return "'" + String(y).slice(2); })); srcs.push(F.sido === '41' ? S['경기 어린이집'] : S['어린이집']); }
     if (x.kgy && x.kgy.some(function (v) { return v; })) { var g0 = x.kgy[0], g1 = x.kgy[x.kgy.length - 1];
@@ -2076,16 +2091,16 @@
     }
     if (x.bz && x.bz.length) {   // v1.3.0 동별 사업체 10년(KOSIS · 통계청 전국사업체조사)
       var B0 = x.bz.filter(function (q) { return q[1] != null; }), b0 = B0[0], b1 = B0[B0.length - 1];
-      var bN = B0.filter(function (q) { return +q[0] >= 2020; }), n0 = bN[0];
+      var EC = /경제총조사/.test(x.bzsrc || ''), bN = EC ? [] : B0.filter(function (q) { return +q[0] >= 2020; }), n0 = bN[0];
       if (b0 && b1) { var bc = n0 ? pctCh(n0[1], b1[1]) : pctCh(b0[1], b1[1]), wc = n0 ? pctCh(n0[2], b1[2]) : pctCh(b0[2], b1[2]);
-        h += '<div class="dh">🏢 사업체 10년 — 상권이 커지는가 줄어드는가(' + b0[0] + '~' + b1[0] + ')</div>' +
+        h += '<div class="dh">🏢 사업체 ' + (EC ? '5년(경제총조사)' : '10년') + ' — 상권이 커지는가 줄어드는가(' + b0[0] + '~' + b1[0] + ')</div>' + (EC && b1[3] ? row('매출액(' + b1[0] + ')', '<b>' + won(b1[3] * 100) + '</b>' + (b0[3] ? ' · ' + b0[0] + '년 ' + won(b0[3] * 100) + ' <b>' + sgn(pctCh(b0[3], b1[3])) + '</b>' : '') + ' <em>(이 동 사업체 매출 합 · 물가 반영 안 함)</em>') : '') +
           row('사업체', (n0 ? n0[1].toLocaleString() + '(2020) → <b>' : b0[1].toLocaleString() + ' → <b>') + b1[1].toLocaleString() + '곳</b> (' + b1[0] + ') <b>' + sgn(bc) + '</b> <em>· ' + b0[0] + '년 ' + b0[1].toLocaleString() + '곳</em>') + row('종사자', (n0 ? (n0[2] || 0).toLocaleString() + '(2020) → <b>' : (b0[2] || 0).toLocaleString() + ' → <b>') + (b1[2] || 0).toLocaleString() + '명</b> <b>' + sgn(wc) + '</b>') +
-          '<div class="cap">해마다 사업체 수(곳 · 통계청 전국사업체조사 · 동별 · ' + b0[0] + '~' + b1[0] + ')</div>' + bar(B0.map(function (q) { return q[1]; }), '#0f766e', B0.map(function (q) { return "'" + String(q[0]).slice(2); })) +
+          '<div class="cap">' + (EC ? '사업체 수(곳 · 통계청 경제총조사 · 5년마다)' : '해마다 사업체 수(곳 · 통계청 전국사업체조사 · 동별 · ' + b0[0] + '~' + b1[0] + ')') + '</div>' + bar(B0.map(function (q) { return q[1]; }), '#0f766e', B0.map(function (q) { return "'" + String(q[0]).slice(2); })) +
           '<div class="cap">해마다 종사자 수(명)</div>' + bar(B0.map(function (q) { return q[2] || 0; }), '#14b8a6', B0.map(function (q) { return "'" + String(q[0]).slice(2); }));
         if (x.bzi && x.bzi.length) h += '<div class="cap">업종 대분류별 사업체 ' + x.bziy[0] + ' → ' + x.bziy[1] + '(많은 업종 8)</div><div class="lst">' + x.bzi.slice(0, 8).map(function (t) { var c = pctCh(t[1], t[2]); return '<div><b>' + esc(t[0]) + '</b><span class="' + (c == null ? '' : c > 10 ? 'up' : c < -10 ? 'dn' : '') + '">' + (t[1] == null ? '-' : t[1].toLocaleString()) + ' → ' + (t[2] == null ? '-' : t[2].toLocaleString()) + ' ' + sgn(c) + '</span></div>'; }).join('') + '</div>';
-        h += row('한 줄로', (bc == null ? '➡ 판단 못 함' : bc > 10 ? '📈 <b>사업체가 늘어난 동</b>' : bc < -10 ? '📉 <b>사업체가 줄어든 동</b>' : '➡ 큰 변화 없음') + ' <em>(같은 조사 방식인 2020년부터 견줌 · ±10% · 설계값)</em>') +
-          '<p class="desc">통계청 전국사업체조사(종사자 1명 이상 모든 사업체 — 상가만이 아니라 사무실·공장·학교 등도 든다) · 해마다 그해 12월 31일 기준. <b>2020년부터 조사 방식이 행정자료 중심으로 바뀌어 사업체 수가 크게 뛴다</b> — 2019년 이전과 2020년 이후를 곧바로 견주지 말 것(그래서 늘었다·줄었다 판단은 2020년부터만 본다).</p>';
-        srcs.push(F.bzsrc); } }
+        h += row('한 줄로', (bc == null ? '➡ 판단 못 함' : bc > 10 ? '📈 <b>사업체가 늘어난 동</b>' : bc < -10 ? '📉 <b>사업체가 줄어든 동</b>' : '➡ 큰 변화 없음') + ' <em>(' + (EC ? '2015 → 2020 · ±10% · 설계값' : '같은 조사 방식인 2020년부터 견줌 · ±10% · 설계값') + ')</em>') +
+          (EC ? '<p class="desc">통계청 경제총조사(5년마다 · 모든 사업체 · 2025년 결과는 아직) — 해마다 값은 이 시도 동 단위로 공개되지 않는다. 서울·경기처럼 해마다 보려면 시군구가 KOSIS 에 따로 올린 표가 있어야 한다.</p>' : '<p class="desc">통계청 전국사업체조사(종사자 1명 이상 모든 사업체 — 상가만이 아니라 사무실·공장·학교 등도 든다) · 해마다 그해 12월 31일 기준. <b>2020년부터 조사 방식이 행정자료 중심으로 바뀌어 사업체 수가 크게 뛴다</b> — 2019년 이전과 2020년 이후를 곧바로 견주지 말 것(그래서 늘었다·줄었다 판단은 2020년부터만 본다).</p>');
+        srcs.push(x.bzsrc || F.bzsrc); } }
     return h + src(srcs.filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(' · '));
   }
   function safeCard(it) {
@@ -2572,6 +2587,7 @@
     if (A.acc) h += row('교통사고 10년', A.acc.toLocaleString() + '건(해마다 약 ' + Math.round(A.acc / 10).toLocaleString() + ') · 사망자 ' + A.dead + ' · 중상자 ' + A.ser.toLocaleString() + ' · 보행자 피해 ' + A.ped.toLocaleString()) + '<div class="cap">해마다 사고(2016~2025 · TAAS)</div>' + bar(A.accY, '#dc2626', ['16', '', '18', '', '20', '', '22', '', '24', '25']);
     if (A.bus || A.sub) h += row('대중교통 하루 승차', [A.bus ? '버스 ' + Math.round(A.bus).toLocaleString() + '명' : '', A.sub ? '지하철 ' + Math.round(A.sub).toLocaleString() + '명' : ''].filter(Boolean).join(' · ') + (A.bus ? '' : ' <em>(버스 승하차 자료 없음)</em>'));
     if (A.sales) h += row('카드 매출(서울 추정)', '약 ' + (A.sales / 1e4).toLocaleString(undefined, { maximumFractionDigits: 1 }) + '억 원 <em>(' + esc(A.salesQ) + ' 분기)</em>');
+    h += unitFacHtml(ds, gus, it);
     if (A.gg) h += row('카드 소비(경기)', '한 달 약 ' + (A.gg / 1e4).toLocaleString(undefined, { maximumFractionDigits: 1 }) + '억 원 <em>(' + esc(A.ggY) + ')</em>');
     if (u.t === 'sgg' && LPOP) { gus.forEach(function (g) { var L = LPOP.gu[g]; if (!L) return; var ms = Object.keys(L.m).sort(), lm = ms[ms.length - 1], v = L.m[lm];
         h += row('생활인구(' + lm.slice(0, 4) + '.' + lm.slice(4) + ' · ' + esc(L.kind) + '지역)', (v.tot || 0).toLocaleString() + '명' + (L.reg ? ' · <b>주민의 ' + (v.tot / L.reg).toFixed(1) + '배</b>' : '') + (v.m ? ' · 남 ' + v.m.toLocaleString() + ' · 여 ' + (v.f || 0).toLocaleString() : '')) +
@@ -2931,7 +2947,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.49.3'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.50.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4539,13 +4555,14 @@
       P.push('<div class="vzg">' + vzLineQ([['점포 수', st.map(function (x) { return x[1]; }), '#475569']], SL, { title: '점포 수 — 분기마다(곳)', fmt: function (v) { return Math.round(v).toLocaleString(); } }) +
         vzLineQ([['개업', st.map(function (x) { return x[2]; }), '#16a34a'], ['폐업', st.map(function (x) { return x[3]; }), '#dc2626']], SL, { title: '개업·폐업 — 분기마다(곳)', fmt: function (v) { return Math.round(v).toLocaleString(); }, zero: 1 }) + '</div>'); }
     // ⑨ 사업체 10년
-    if (S.F && S.F.bz && S.F.bz.length > 2) { var bz = S.F.bz, b20 = bz.filter(function (x) { return x[0] === '2020'; })[0], bL = bz[bz.length - 1];
+    if (S.F && S.F.bz && S.F.bz.length > 1) { var bz = S.F.bz, b20 = bz.filter(function (x) { return x[0] === '2020'; })[0], bL = bz[bz.length - 1];
       var t9 = '<b>사업체 10년.</b> ' + bz[0][0] + '년 ' + bz[0][1].toLocaleString() + '곳';
-      if (!b20 && bz.length > 1) t9 += ' → ' + bL[0] + '년 ' + bL[1].toLocaleString() + '곳(' + sgn1(pc(bL[1] - bz[0][1], bz[0][1])) + '%) — ' + (+bz[0][0] < 2020 && +bL[0] >= 2020 ? '2019→2020년 조사 방식이 바뀌어 늘어 보인다(그 앞과 뒤를 견주지 않는다)' : '같은 조사 방식 안의 비교');
-      if (b20) t9 += ' · 2020년 ' + b20[1].toLocaleString() + '곳 → ' + bL[0] + '년 ' + bL[1].toLocaleString() + '곳(' + sgn1(pc(bL[1] - b20[1], b20[1])) + '%) · 종사자 ' + (b20[2] || 0).toLocaleString() + ' → ' + (bL[2] || 0).toLocaleString() + '명(' + sgn1(pc((bL[2] || 0) - (b20[2] || 1), b20[2] || 1)) + '%). 2019→2020년에 크게 뛴 것은 통계청 조사 방식이 바뀐 탓이라 그 앞과 견주지 않는다';
+      if (!b20 && bz.length > 1 && !/경제총조사/.test(S.F.bzsrc || '')) t9 += ' → ' + bL[0] + '년 ' + bL[1].toLocaleString() + '곳(' + sgn1(pc(bL[1] - bz[0][1], bz[0][1])) + '%) — ' + (+bz[0][0] < 2020 && +bL[0] >= 2020 ? '2019→2020년 조사 방식이 바뀌어 늘어 보인다(그 앞과 뒤를 견주지 않는다)' : '같은 조사 방식 안의 비교');
+      if (/경제총조사/.test(S.F.bzsrc || '') && bL && bz[0] !== bL) t9 = '<b>사업체 5년(경제총조사).</b> ' + bz[0][0] + '년 ' + bz[0][1].toLocaleString() + '곳 → ' + bL[0] + '년 ' + bL[1].toLocaleString() + '곳(' + sgn1(pc(bL[1] - bz[0][1], bz[0][1])) + '%) · 종사자 ' + (bz[0][2] || 0).toLocaleString() + ' → ' + (bL[2] || 0).toLocaleString() + '명(' + sgn1(pc((bL[2] || 0) - (bz[0][2] || 1), bz[0][2] || 1)) + '%)' + (bL[3] ? ' · 매출 ' + won(bz[0][3] * 100) + ' → ' + won(bL[3] * 100) : '');
+      else if (b20) t9 += ' · 2020년 ' + b20[1].toLocaleString() + '곳 → ' + bL[0] + '년 ' + bL[1].toLocaleString() + '곳(' + sgn1(pc(bL[1] - b20[1], b20[1])) + '%) · 종사자 ' + (b20[2] || 0).toLocaleString() + ' → ' + (bL[2] || 0).toLocaleString() + '명(' + sgn1(pc((bL[2] || 0) - (b20[2] || 1), b20[2] || 1)) + '%). 2019→2020년에 크게 뛴 것은 통계청 조사 방식이 바뀐 탓이라 그 앞과 견주지 않는다';
       if (S.F.bzi && S.F.bzi.length) { var g3 = S.F.bzi.filter(function (x) { return x[1] > 20; }).map(function (x) { return [x[0], x[1], x[2], pc(x[2] - x[1], x[1])]; }).sort(function (a, b) { return b[3] - a[3]; });
         if (g3.length) t9 += '. ' + (S.F.bziy ? S.F.bziy[0] + '→' + S.F.bziy[1] + '년 ' : '') + '가장 많이 늘어난 업종: ' + g3.slice(0, 3).map(function (x) { return esc(x[0]) + ' ' + x[1] + '→' + x[2] + '(' + sgn1(x[3]) + '%)'; }).join(' · ') + (g3[g3.length - 1][3] < 0 ? ' / 줄어든 업종: ' + esc(g3[g3.length - 1][0]) + ' ' + sgn1(g3[g3.length - 1][3]) + '%' : ''); }
-      t9 += '. <small>(통계청 전국사업체조사 · ' + esc((S.Fm && S.Fm.bzsrc) || 'KOSIS') + ')</small>'; P.push(t9);
+      t9 += '. <small>(' + esc(S.F.bzsrc || ('통계청 전국사업체조사 · ' + ((S.Fm && S.Fm.bzsrc) || 'KOSIS'))) + ')</small>'; P.push(t9);
       P.push('<div class="vz"><div class="cap">사업체 수 — 해마다(곳 · 2020 앞뒤는 조사 방식이 다르다)</div>' + bar(bz.map(function (x) { return x[1]; }), '#475569', bz.map(function (x) { return "'" + String(x[0]).slice(2); })) + '</div>');
       if (typeof g3 !== 'undefined' && g3 && g3.length > 1) P.push(vzDiv(g3.slice(0, 5).concat(g3.length > 7 ? g3.slice(-3) : []).filter(function (x, i, a) { return a.indexOf(x) === i; }).map(function (x) { return [x[0], x[3], x[2]]; }), { title: '업종별 사업체 — 늘고 준 비율' + (S.F.bziy ? '(' + S.F.bziy[0] + '→' + S.F.bziy[1] + '년 · 작은 숫자 = 지금 곳)' : '') })); }
     if (!P.length) return '<p class="desc">이 동은 풀어 읽을 자료가 부족하다.</p>';

@@ -19,7 +19,7 @@
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
     ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
-    ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['jiga', '🟧 공시지가 지도(대지 ㎡당 · 250m·동)', false, '주거·부동산', 1], ['land', '📐 필지 — 공시지가·용도·건물(누르면 · 브이월드)', false, '주거·부동산', 1], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['lpop', '👥 생활인구(인구감소지역 · 시군구 월별)', false, '인구 구성', 1], ['fdong', '🌏 외국인주민 비율(읍면동 · 전국)', false, '인구 구성', 1], ['minbak', '🏡 외국인관광 도시민박', false, '인구 구성', 1], ['flodge', '🏨 관광숙박(서울 · 호텔·호스텔)', false, '인구 구성', 0], ['msub', '🚇 대구 도시철도 하차(월별)', false, '이동·동선', 0], ['busd', '🚌 인천 버스 정류장 승하차(일평균)', false, '이동·동선', 0], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['usgg', '🗂 시군구로 나눠 보기', false, '바탕', 1], ['rnet', '🛣 도로망 등급(전국 · 국도·지방도·시군도)', false, '도로·교통', 1], ['volp', '🚙 시간대 교통량(서울 조사 지점)', false, '도로·교통', 1], ['exv', '🛣 고속도로 영업소 교통량(전국)', false, '도로·교통', 1], ['upb', '👮 지구대·파출소 관할(근사)', false, '치안·안전', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
+    ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['jiga', '🟧 공시지가·지목 지도(대지 ㎡당 · 농지·임야 비율 · 250m·동)', false, '주거·부동산', 1], ['land', '📐 필지 — 공시지가·용도·건물(누르면 · 브이월드)', false, '주거·부동산', 1], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['lpop', '👥 생활인구(인구감소지역 · 시군구 월별)', false, '인구 구성', 1], ['fdong', '🌏 외국인주민 비율(읍면동 · 전국)', false, '인구 구성', 1], ['minbak', '🏡 외국인관광 도시민박', false, '인구 구성', 1], ['flodge', '🏨 관광숙박(서울 · 호텔·호스텔)', false, '인구 구성', 0], ['msub', '🚇 대구 도시철도 하차(월별)', false, '이동·동선', 0], ['busd', '🚌 인천 버스 정류장 승하차(일평균)', false, '이동·동선', 0], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['usgg', '🗂 시군구로 나눠 보기', false, '바탕', 1], ['rnet', '🛣 도로망 등급(전국 · 국도·지방도·시군도)', false, '도로·교통', 1], ['volp', '🚙 시간대 교통량(서울 조사 지점)', false, '도로·교통', 1], ['exv', '🛣 고속도로 영업소 교통량(전국)', false, '도로·교통', 1], ['upb', '👮 지구대·파출소 관할(근사)', false, '치안·안전', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
     ['risk', '🟥 사고위험지역', false, '교통사고', 0], ['sz', '🏫 어린이보호구역', false, '교통사고', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통사고', 0], ['cam', '📷 단속 카메라', false, '도로·교통', 0], ['spd', '🚥 도로 소통(받은 때)', false, '도로·교통', 0], ['sig', '🚦 신호 주기', false, '도로·교통', 0], ['sigx', '🔢 신호 교차로 번호', false, '도로·교통', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '소비·상권', 1], ['rent', '💰 상가 임대료·공실률', false, '소비·상권', 0], ['szone', '🏬 소진공 주요상권(전국)', false, '소비·상권', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '인구 구성', 1], ['crowd', '📡 실시간 인파·카드', false, '이동·동선', 1], ['live', '👥 생활인구(지금)', false, '인구 구성', 1], ['sales', '💳 카드 매출(시간대)', false, '소비·상권', 1], ['bus', '🚌 버스 승차·하차', false, '이동·동선', 1], ['subr', '🚇 지하철 승차·하차', false, '이동·동선', 0], ['vol', '🚙 교통량', false, '이동·동선', 0], ['bike', '🚲 따릉이', false, '이동·동선', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
@@ -2098,8 +2098,8 @@
     if (on.jcnm) G('🏷 교차로·도로 이름', li('#7c2d12', '큰길 교차로', 'dot') + li('#334155', '그 밖 교차로', 'dot') + li('#0f766e', 'IC·연결로', 'dot') + li('#6b21a8', '교량·터널 끝', 'dot') + li('#1e3a8a', '도로 이름(글자)', 'line') + '<small class="lg-n">국가교통정보센터 전국 표준노드링크(2026-09-14판) · 서울·경기 교차로 2.5만 곳 · 확대할수록 작은 교차로·길 이름까지 · 「찾기」에 교차로·도로 이름을 넣어도 된다</small>');
     if (on.road && OSM) G('🛣 도로', li('#f9c56b', '고속·도시고속', 'line') + li('#ffe08a', '주간선', 'line') + li('#fff2c2', '보조간선', 'line') + li('#ffffff', '집산·국지', 'line') + li('#a0a9b6', '보행', 'dash') + li('#22a35a', '자전거', 'dash') + li('#8b95a3', '지하차도(점선)', 'dash') + li('#334155', '교차로 이름(점)'));
     if (on.base && OSM) G('🗺 바탕', li('#a8d0f0', '물', 'box') + li('#cfe6bd', '공원·녹지', 'box') + li('#b9dba3', '숲', 'box') + li('#8b95a3', '철도', 'line') + li('#bab0a4', '건물', 'box'));
-    if (on.jiga) G('🟧 공시지가(대지 ㎡당 중앙값)', JGC.map(function (c, i) { return li(hexA(c, 0.75), JGL[i], 'box'); }).join('') + '<small class="lg-n">가까이 = 250m 칸 · 멀리 = 행정동 · ' + esc(jgYear() || '') + '년 1월 1일 · 세금·보상 기준값이지 시세가 아니다 · 받은 시군구 ' + Object.keys(JIGA).length + '</small>');
-    if (on.land) G('📐 필지(브이월드)', li('#f59e0b', '누른 필지', 'line') + li('#facc15', '지적선(많이 확대하면)', 'line') + '<div class="lg-btns"><button data-landuq="1" class="' + (LAND.uq ? 'on' : '') + '">🎨 용도지역 색 ' + (LAND.uq ? '끄기' : '켜기') + '</button><button data-vwkey="1">🔑 ' + (VWKEY ? '키 바꾸기' : '키 넣기') + '</button></div>' + (LAND.uq ? li('#fcd34d', '주거', 'box') + li('#f9a8d4', '상업', 'box') + li('#c4b5fd', '공업', 'box') + li('#86efac', '녹지·관리·농림', 'box') + '<small class="lg-n">색은 브이월드 도시계획 지도 그대로 · 빗금 = 지구·구역</small>' : '') + (VWKEY ? '' : '<small class="lg-n" style="color:#b91c1c">브이월드 키가 있어야 받는다 — 「🔑 키 넣기」(이 기기에만)</small>'));
+    if (on.jiga) G('🟧 공시지가·지목', '<div class="lg-btns">' + Object.keys(JGMS).map(function (k) { return '<button data-jgm="' + k + '" class="' + (k === JGM ? 'on' : '') + '">' + JGMS[k][0] + '</button>'; }).join('') + '</div>' + (JGM !== 'p' ? li(hexA(JGMS[JGM][2], 0.7), '진할수록 ' + JGMS[JGM][0].replace(/^\S+ /, '') + ' 높음(0→100%)', 'box') + '<small class="lg-n">지목 넓이 비율 — 필지를 대표점이 든 칸·동에 통째로 넣은 근사 · 지목 이름은 측량·지적법 그대로</small>' : JGC.map(function (c, i) { return li(hexA(c, 0.75), JGL[i], 'box'); }).join('') + '<small class="lg-n">가까이 = 250m 칸 · 멀리 = 행정동 · ' + esc(jgYear() || '') + '년 1월 1일 · 세금·보상 기준값이지 시세가 아니다 · 받은 시군구 ' + Object.keys(JIGA).length + '</small>'));
+    if (on.land) G('📐 필지(브이월드)', li('#f59e0b', '누른 필지', 'line') + li('#facc15', '지적선(많이 확대하면)', 'line') + '<div class="lg-btns"><button data-landuq="1" class="' + (LAND.uq ? 'on' : '') + '">🎨 용도지역 색 ' + (LAND.uq ? '끄기' : '켜기') + '</button><button data-vwkey="1">🔑 ' + (VWKEY ? '키 바꾸기' : '키 넣기') + '</button></div>' + (LAND.uq ? '<small class="lg-n">도시지역(주거·상업·공업·녹지) · 관리지역(계획·생산·보전) · 농림지역 · 자연환경보전지역 — 색은 국토교통부 브이월드 도시계획 지도 그대로(대략: 노랑·주황 주거 · 분홍 상업 · 보라 공업 · 연두·초록 녹지·관리·농림 · 빗금 = 지구·구역). <b>정확한 이름은 「📐 필지」로 눌러 「용도지역 · 토지이용계획」</b></small>' : '') + (VWKEY ? '' : '<small class="lg-n" style="color:#b91c1c">브이월드 키가 있어야 받는다 — 「🔑 키 넣기」(이 기기에만)</small>'));
     if (on.govr) G('🏛 관공서', Object.keys(GOVC).map(function (k) { return li(GOVC[k], k); }).join(''));
     if (on.dong) G('🏘 행정동', li('rgba(109,40,217,.6)', '행정동 경계', 'line') + li('#64748b', '이웃 구 동(점선)', 'dash') + li('#475569', '구 경계(굵은 점선)', 'dash'));
     if (on.live) { var mx = 0, mn = 1e9; allDong().forEach(function (d) { var lv = liveNow(d); if (lv) { mx = Math.max(mx, lv.n); mn = Math.min(mn, lv.n); } }); if (mx) G('👥 생활인구 ' + hh + '시', grad('rgb(255,230,150)', 'rgb(215,60,40)', man(mn) + '명', man(mx) + '명') + '<small class="lg-n">동 안의 숫자 = 그 시각 평균 체류 인구</small>'); }
@@ -2715,6 +2715,7 @@
     if (f.mc) h += row('다문화가구원', n(f.mc[0]) + '명 — 한국인 배우자 ' + n(f.mc[1]) + ' · 결혼이민·귀화 ' + n(f.mc[2]) + ' · 자녀 ' + n(f.mc[3]) + ' · 기타 동거인 ' + n(f.mc[4]));
     if (!MBK[k8.slice(0, 5)]) mbLoad(k8.slice(0, 5));
     var MBg = MBK[k8.slice(0, 5)]; if (MBg && MBg.dong && MBg.dong[k8]) h += row('외국인관광 도시민박(이 동)', MBg.dong[k8] + '곳 <em>(영업·휴업 · 행안부 인허가 2026-10)</em>');
+    var JMg = jgJmDong(k8); if (JMg) h += jmRow(JMg, jgGroups());
     var JDg = jgDong(k8); if (JDg) h += row('공시지가(대지 ㎡당 중앙값)', '<b>' + wonM2(JDg[0]) + '원</b> · 평당 ' + wonM2(JDg[0] * 3.305785) + '원 · 대지 ' + JDg[1].toLocaleString() + '필지 <em>(' + esc(jgYear()) + '년 1월 1일 · 시세 아님)</em>');
     if (FLODGE && FLODGE.dong[k8]) { var L = FLODGE.dong[k8]; h += row('외국인 관광숙박(서울)', Object.keys(L).map(function (q) { return esc(q || '기타') + ' ' + L[q]; }).join(' · ') + '곳 <em>(영업 중 · 투숙 인원은 비공개)</em>'); }
     return h;
@@ -2988,7 +2989,7 @@
   function trdBB(x) { if (!x.bb) { var b = [1e9, -1e9, 1e9, -1e9]; x.rings.forEach(function (r) { r.forEach(function (q) { b[0] = Math.min(b[0], q[0]); b[1] = Math.max(b[1], q[0]); b[2] = Math.min(b[2], q[1]); b[3] = Math.max(b[3], q[1]); }); }); x.bb = b; } return x.bb; }
   // ---------- ❓ 층 설명(v2.0.0 · 소유자 「많은 레이어가 있어 이제는 친절한 설명이 필요해」) — 무엇을 · 어디서 · 어떻게 쓰나 ----------
   var LHELP = {
-    jiga: '대지(지목 「대」) 필지의 ㎡당 개별공시지가 중앙값 — 250m 칸 색(가까이) · 행정동 색(멀리). 국토교통부 개별공시지가(브이월드 연속지적도 · 이용허락 제한 없음)를 이 지도가 칸·동으로 묶었다. 필지 하나는 「📐 필지」를 켜고 누른다. 공시지가는 세금·보상 기준값이지 시세가 아니다.',
+    jiga: '대지(지목 「대」) 필지의 ㎡당 개별공시지가 중앙값 — 250m 칸 색(가까이) · 행정동 색(멀리). 범례에서 「🌾 농지 · 🌳 임야 · 🏠 대지 · 🏭 공장 비율」로 바꾸면 지목(땅 쓰임) 넓이 비율을 칠한다. 국토교통부 개별공시지가(브이월드 연속지적도 · 이용허락 제한 없음)를 이 지도가 칸·동으로 묶었다. 필지 하나는 「📐 필지」를 켜고 누른다. 공시지가는 세금·보상 기준값이지 시세가 아니다.',
     land: '켜고 지도를 누르면 그 자리 필지 하나 — 지번·개별공시지가(1990년부터 해마다)·면적·지목·이용상황·도로접면·용도지역·지구(토지이용계획)·소유 구분·건물(용도·층·연면적·사용승인). 많이 확대하면 지적선, 범례에서 용도지역 색. 국토교통부 브이월드에서 그때 받는다(브이월드 키 · 이 기기에만) · 받은 값은 저장하지 않는다 · 공시지가는 시세가 아니다.',
     dong: '행정동 경계. 동을 누르면 주민 연령·생활인구·카드 매출과 「🗣 이 자리 읽기」 해설이 나온다.',
     road: '도로(OSM). 굵기·색 = 도로 등급(고속·간선·보조·골목). 확대하면 도로 이름이 나온다.',
@@ -3731,23 +3732,33 @@
 
 
   // ---------- v2.21.0 🟧 공시지가 지도(대지 ㎡당 중앙값 · 250m 칸·동) — tools/region/jiga-bake.py → r/<구>/jiga.json ----------
-  var JIGA = {}, JIGAG = {}, RLOADJG = {};
+  var JIGA = {}, JIGAG = {}, RLOADJG = {}, JIGJM = {}, JGM = 'p';
+  try { JGM = localStorage.getItem('tg_map2d_jgm') || 'p'; } catch (e) {}
+  var JGMS = { p: ['💰 공시지가', -1, '#7c3aed'], f: ['🌾 농지 비율', 1, '#65a30d'], w: ['🌳 임야 비율', 2, '#166534'], h: ['🏠 대지 비율', 0, '#c2410c'], i: ['🏭 공장·창고 비율', 3, '#475569'] };
+  function jmShare(v, gi) { var t = 0; v.forEach(function (x) { t += x; }); return t ? v[gi] / t : null; }
+  function jmRow(v, G) { if (!v) return ''; var t = 0; v.forEach(function (x) { t += x; }); if (!t) return ''; return row('땅 쓰임(지목 · 넓이)', v.map(function (x, i) { return [x, i]; }).filter(function (q) { return q[0] / t >= 0.01; }).sort(function (a, b) { return b[0] - a[0]; }).map(function (q) { return esc(G[q[1]].replace(/\(.*\)/, '')) + ' <b>' + Math.round(q[0] / t * 100) + '%</b>'; }).join(' · ') + ' <em>(지목 · 측량·지적법)</em>'); }
   var JGB = [0, 1e6, 3e6, 5e6, 1e7, 2e7, 4e7], JGC = ['#fef3c7', '#fde047', '#fb923c', '#ef4444', '#be123c', '#86198f', '#3b0764'], JGL = ['100만 원 미만', '100~300만', '300~500만', '500만~1천만', '1천~2천만', '2천~4천만', '4천만 이상'];
   function jgBin(v) { var i = 0; while (i < JGB.length - 1 && v >= JGB[i + 1]) i++; return i; }
-  function jgLoad(gu) { if (RLOADJG[gu]) return; RLOADJG[gu] = 1; grLoad(gu).then(function () { return rGet(gu, 'jiga.json'); }).then(function (j) { JIGA[gu] = j; Object.keys(j.grid).forEach(function (k) { if (!JIGAG[k] || JIGAG[k].v[1] < j.grid[k][1]) JIGAG[k] = { v: j.grid[k], m: j, n: (j.n && j.n.grid[k]) || 0 }; }); draw(); }).catch(function () { RLOADJG[gu] = 2; }); }
+  function jgLoad(gu) { if (RLOADJG[gu]) return; RLOADJG[gu] = 1; grLoad(gu).then(function () { return rGet(gu, 'jiga.json'); }).then(function (j) { JIGA[gu] = j; if (j.jm) Object.keys(j.jm.grid).forEach(function (k) { JIGJM[k] = j.jm.grid[k]; }); Object.keys(j.grid).forEach(function (k) { if (!JIGAG[k] || JIGAG[k].v[1] < j.grid[k][1]) JIGAG[k] = { v: j.grid[k], m: j, n: (j.n && j.n.grid[k]) || 0 }; }); draw(); }).catch(function () { RLOADJG[gu] = 2; }); }
   function jgDong(k8) { if (!k8) return null; var j = JIGA[k8.slice(0, 5)]; if (j && j.dong[k8]) return j.dong[k8]; for (var g in JIGA) if (JIGA[g].dong[k8]) return JIGA[g].dong[k8]; return null; }
+  function jgJmDong(k8) { var j = JIGA[k8.slice(0, 5)]; if (j && j.jm && j.jm.dong[k8]) return j.jm.dong[k8]; for (var g in JIGA) if (JIGA[g].jm && JIGA[g].jm.dong[k8]) return JIGA[g].jm.dong[k8]; return null; }
+  function jgGroups() { for (var g in JIGA) if (JIGA[g].jm) return JIGA[g].jm.groups; return ['대지', '농지', '임야', '공장·창고', '길·물', '그 밖']; }
   function jgYear() { for (var g in JIGA) return JIGA[g].year; return ''; }
   function drawJiga(dark) {
     if (!on.jiga) return; var v = viewLL(), W0 = cv.clientWidth, H0 = cv.clientHeight;
     rIdx().forEach(function (g) { var x = g.box; if (!(g.bytes || {}).jiga || x[2] < v[0] || x[0] > v[2] || x[3] < v[1] || x[1] > v[3]) return; jgLoad(g.gu); });
+    if (JGM !== 'p') { var MQ = JGMS[JGM]; if (view.s < 0.03) { allDong().forEach(function (d) { var jj = d.k && jgJmDong(d.k), sh = jj && jmShare(jj, MQ[1]); if (sh == null || !inViewBox(d)) return; ctx.fillStyle = hexA(MQ[2], 0.06 + 0.7 * sh); d.polys.forEach(function (pg) { path(pg[0]); ctx.closePath(); ctx.fill(); }); }); return; }
+      Object.keys(JIGJM).forEach(function (k) { if (!GRID[k]) return; var r = sq(GRID[k].p, 125); if (!inView(r, W0, H0)) return; var sh = jmShare(JIGJM[k], MQ[1]); if (sh == null) return; ctx.fillStyle = hexA(MQ[2], 0.06 + 0.7 * sh); ctx.fillRect(r[0], r[1], r[2], r[3]);
+        if (r[2] > 40 && sh >= 0.01) { ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = sh > 0.5 ? '#fff' : '#111827'; ctx.fillText(Math.round(sh * 100) + '%', r[0] + r[2] / 2, r[1] + r[3] / 2); }
+        hit.push({ x: r[0] + r[2] / 2, y: r[1] + r[3] / 2, r: Math.max(6, r[2] * 0.71), it: { kind: 'jgc', c: k } }); }); return; }
     if (view.s < 0.03) { allDong().forEach(function (d) { var jd = d.k && jgDong(d.k); if (!jd || !inViewBox(d)) return; ctx.fillStyle = hexA(JGC[jgBin(jd[0])], 0.55); d.polys.forEach(function (pg) { path(pg[0]); ctx.closePath(); ctx.fill(); }); }); return; }
     Object.keys(JIGAG).forEach(function (k) { if (!GRID[k]) return; var r = sq(GRID[k].p, 125); if (!inView(r, W0, H0)) return; var val = JIGAG[k].v[0], bi = jgBin(val);
       ctx.fillStyle = hexA(JGC[bi], 0.62); ctx.fillRect(r[0], r[1], r[2], r[3]);
       if (r[2] > 44) { ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = bi >= 3 ? '#fff' : '#111827'; ctx.fillText(val >= 1e8 ? (val / 1e8).toFixed(1) + '억' : Math.round(val / 1e4).toLocaleString() + '만', r[0] + r[2] / 2, r[1] + r[3] / 2); }
       hit.push({ x: r[0] + r[2] / 2, y: r[1] + r[3] / 2, r: Math.max(6, r[2] * 0.71), it: { kind: 'jgc', c: k } }); });
   }
-  function jgCard(it) { var g = JIGAG[it.c]; if (!g) return ''; var v = g.v;
-    return '<h3>🟧 공시지가 — 250m 칸 ' + esc(it.c) + '</h3>' + row('대지 ㎡당 중앙값', '<b>' + wonM2(v[0]) + '원</b> · 평당 ' + wonM2(v[0] * 3.305785) + '원') + row('가장 높은 대지', '㎡당 ' + wonM2(v[3]) + '원') +
+  function jgCard(it) { var g = JIGAG[it.c], jm = JIGJM[it.c], G0 = jgGroups(); if (!g) return jm ? '<h3>🟧 땅 쓰임 — 250m 칸 ' + esc(it.c) + '</h3>' + jmRow(jm, G0) + '<p class="desc">이 칸에는 대지가 없어 공시지가 중앙값이 없다.</p>' : ''; var v = g.v;
+    return '<h3>🟧 공시지가 — 250m 칸 ' + esc(it.c) + '</h3>' + jmRow(jm, G0) + row('대지 ㎡당 중앙값', '<b>' + wonM2(v[0]) + '원</b> · 평당 ' + wonM2(v[0] * 3.305785) + '원') + row('가장 높은 대지', '㎡당 ' + wonM2(v[3]) + '원') +
       row('필지', '대지 ' + v[1].toLocaleString() + '필지(' + Math.round(v[2]).toLocaleString() + '㎡)' + (g.n ? ' · 이 칸 모든 필지 ' + g.n.toLocaleString() : '')) + (GRID[it.c] ? row('걸친 행정동', gDongs(it.c)) : '') +
       '<p class="desc">중앙값 = 이 칸에 대표점이 든 대지(지목 「대」) 필지들의 ㎡당 공시지가를 줄 세운 가운데 값. 도로·하천·임야 등은 뺐다. 필지 하나하나는 「📐 필지」를 켜고 누른다.</p>' + src(g.m.source + ' · ' + g.m.note); }
   // ---------- v2.19.0 📐 필지(브이월드 · 누르면 그때 받기) — 소유자 2026-10-06 「토지이음 토지 자료와 공시지가 · 쉽게 다 찾아볼 수 있는 세상 하나뿐인 지도」 ----------
@@ -3770,13 +3781,14 @@
       it.rings = []; polys.forEach(function (pg) { pg.forEach(function (rg) { it.rings.push(rg.map(function (q) { return P(q[0], q[1]); })); }); }); LAND.g = it.rings; LAND.gp = it.f.pnu; draw();
       if (LCUR === it) show(it);
       var pnu = it.f.pnu;
+      var ll2 = landLL(it.m); vwJ('https://api.vworld.kr/req/address?service=address&request=getAddress&type=both&format=json&crs=epsg:4326&key=' + encodeURIComponent(VWKEY) + '&domain=' + vwDom() + '&point=' + ll2[0].toFixed(7) + ',' + ll2[1].toFixed(7)).then(function (j) { var r2 = j && j.response; it.ad = r2 && r2.status === 'OK' ? r2.result : []; if (LCUR === it && $('m2dCard').classList.contains('on')) show(it); }).catch(function () { it.ad = []; });
       return Promise.all([nedGet('getIndvdLandPriceAttr', pnu), nedGet('getLandCharacteristics', pnu), nedGet('getLandUseAttr', pnu), nedGet('getBuildingUse', pnu), nedGet('ladfrlList', pnu)]).then(function (a) { it.pr = a[0]; it.ch = a[1]; it.lu = a[2]; it.bd = a[3]; it.fr = a[4]; it.done = 1; });
     }).catch(function (e) { it.err = '브이월드에 닿지 못했다(' + e.message + ') · 인터넷·키를 확인'; }).then(function () { if (LCUR === it && $('m2dCard').classList.contains('on')) show(it); }); }
   var LCUR = null;
   function wonM2(v) { v = +v || 0; return v >= 1e10 ? Math.round(v / 1e8).toLocaleString() + '억' : v >= 1e8 ? (v / 1e8).toFixed(v >= 1e9 ? 1 : 2).replace(/\.?0+$/, '') + '억' : v >= 1e4 ? Math.round(v / 1e4).toLocaleString() + '만' : Math.round(v).toLocaleString(); }
   function landCard(it) {
     LCUR = it; var hd = '<h3>📐 ' + esc(it.f ? it.f.addr : '필지') + '</h3>';
-    var srcT = src('국토교통부 브이월드(연속지적도 · 개별공시지가 · 토지특성 · 토지이용계획 · 건축물 · 토지임야) — 누를 때 받고 저장하지 않는다 · 공시지가는 세금·보상 기준값이지 시세가 아니다');
+    var srcT = src('국토교통부 브이월드(연속지적도 · 개별공시지가 · 토지특성 · 토지이용계획 · 건축물 · 토지임야 · 주소 — 도로명주소는 행정안전부 자료) — 누를 때 받고 저장하지 않는다 · 공시지가는 세금·보상 기준값이지 시세가 아니다');
     if (!VWKEY) return hd + '<p class="desc">브이월드 인증키가 있어야 이 자리 필지를 받는다(vworld.kr → 마이페이지 → 인증키 · 이 기기에만 저장).</p><div class="lg-btns"><button data-vwkey="1">🔑 브이월드 키 넣기</button></div>' + srcT;
     if (it.err) return hd + '<p class="desc">⚠ ' + esc(it.err) + '</p>' + srcT;
     if (!it.f) { if (!it.q) it.q = landGet(it); return hd + '<p class="desc">브이월드에서 이 자리 필지를 받는 중…</p>' + srcT; }
@@ -3785,8 +3797,11 @@
     var py = {}; (it.pr || []).forEach(function (q) { if (+q.pblntfPclnd) py[q.stdrYear] = +q.pblntfPclnd; }); var ys = Object.keys(py).sort(), yl = ys[ys.length - 1], yp = ys[ys.length - 2];
     var ch1 = yl && yp && py[yp] ? (py[yl] / py[yp] - 1) * 100 : null, jy = f.gosi_year; if (yl && py[yl]) { jiga = py[yl]; jy = yl; }
     if (jiga) h += row('개별공시지가', '<b>㎡당 ' + wonM2(jiga) + '원</b> · 평당 ' + wonM2(jiga * 3.305785) + '원' + (jy ? ' <em>(' + esc(jy) + '년 1월 1일 기준)</em>' : '') + (ch1 != null ? ' · 한 해 전보다 <b style="color:' + (ch1 >= 0 ? '#dc2626' : '#2563eb') + '">' + (ch1 >= 0 ? '+' : '') + ch1.toFixed(1) + '%</b>' : ''));
-    var jck = cellAt(it.m), JGc = jck && JIGAG[jck]; if (JGc && jiga && f.jibun && /대$/.test(f.jibun)) h += row('이 250m 칸 대지 중앙값', wonM2(JGc.v[0]) + '원 — 이 필지는 그 <b>' + (jiga / JGc.v[0]).toFixed(2) + '배</b> <em>(' + esc(JGc.m.year) + '년)</em>');
+    var jck = cellAt(it.m), JGc = jck && JIGAG[jck]; var jsame = JGc && (py[JGc.m.year] || (String(f.gosi_year) === String(JGc.m.year) ? +f.jiga : 0)); if (JGc && jsame && f.jibun && /대$/.test(f.jibun)) h += row('이 250m 칸 대지 중앙값', wonM2(JGc.v[0]) + '원 — 같은 해(' + esc(JGc.m.year) + '년) 이 필지 ' + wonM2(jsame) + '원은 그 <b>' + (jsame / JGc.v[0]).toFixed(2) + '배</b>');
     if (ar) h += row('면적', Math.round(ar).toLocaleString() + '㎡ (' + Math.round(ar / 3.305785).toLocaleString() + '평)' + (jiga ? ' · 공시지가 × 면적 ≈ <b>' + wonM2(jiga * ar) + '원</b>' : ''));
+    var rd = (it.ad || []).filter(function (a) { return a.type === 'road'; })[0], pc = (it.ad || []).filter(function (a) { return a.type === 'parcel'; })[0];
+    if (rd) h += row('도로명주소', esc(rd.text) + (rd.zipcode ? ' <small style="color:var(--ink2)">(우 ' + esc(rd.zipcode) + ')</small>' : ''));
+    if (pc && pc.structure && pc.structure.level4A) h += row('행정동', esc(pc.structure.level4A) + (pc.structure.level4L ? ' <small style="color:var(--ink2)">(법정동 ' + esc(pc.structure.level4L) + ')</small>' : ''));
     h += row('지번 · 고유번호', esc(f.jibun || '') + ' <small style="color:var(--ink2)">PNU ' + esc(f.pnu) + '</small>');
     if (ch) { h += row('지목 · 이용상황', esc(ch.lndcgrCodeNm || '') + ' · ' + esc(ch.ladUseSittnNm || '')); h += row('용도지역', esc(ch.prposArea1Nm || '') + (ch.prposArea2Nm && ch.prposArea2Nm !== '지정되지않음' ? ' · ' + esc(ch.prposArea2Nm) : ''));
       h += row('땅 모양 · 길', esc([ch.tpgrphHgCodeNm, ch.tpgrphFrmCodeNm].filter(Boolean).join(' · ')) + (ch.roadSideCodeNm ? ' · 도로접면 ' + esc(ch.roadSideCodeNm) : '')); }
@@ -3814,6 +3829,7 @@
       var need = Math.max(1, 1.7 / view.s), cw = Math.round(W0 * need), chh = Math.round(H0 * need);   // 지적선은 1m 에 1.6px 넘게 그려 달라고 해야 나온다(브이월드 축척 문턱)
       if (view.s >= 0.5 && cw <= 2048 && chh <= 2048) wms('lp_pa_cbnd_bubun', 'lp_pa_cbnd_bubun_line', 'cad', cw, chh);
     }, 380); }
+  if ($('m2dLeg')) $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-jgm]'); if (!b) return; JGM = b.getAttribute('data-jgm'); try { localStorage.setItem('tg_map2d_jgm', JGM); } catch (e2) {} draw(); legend(); });
   if ($('m2dLeg')) $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-landuq]'); if (!b) return; LAND.uq = !LAND.uq; LAND.wk = ''; try { localStorage.setItem('tg_map2d_landuq', LAND.uq ? '1' : '0'); } catch (e2) {} draw(); legend(); });
   document.addEventListener('click', function (e) { var b = e.target.closest('#m2dCard [data-vwkey]'); if (!b) return; vwSetKey(); LAND.wk = ''; if (sel && sel.it && sel.it.kind === 'land') { sel.it.q = null; sel.it.err = null; show(sel.it); } });
   // ---------- v2.18.0 쓰기 쉽게(소유자 2026-10-06 「밤 낮 모드 · 층 → 레이어 · 네이버·카카오·미국 부동산 지도처럼 · 1단계 단위 → 2단계 인구 → 3단계 업무 대·중·소 분류」) ----------

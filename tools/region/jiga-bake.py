@@ -57,6 +57,15 @@ def fetch(gus):
         json.dump({'gu': gu, 'got': time.strftime('%Y-%m-%d'), 'fields': 'PNU·공시지가(원/㎡)·지목·면적(㎡ · EPSG:5179)·대표점 위도·경도·공시 연월', 'rows': rows}, open(fp, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
         print(gu, '필지', len(rows), '쪽', tot, round(time.time() - t0), '초', flush=True)
 
+JMG = ['대지', '농지(전·답·과수원·목장)', '임야', '공장·창고', '길·물(도로·철도·하천·구거·제방·유지)', '그 밖']
+def jmg(j):   # 지목 → 여섯 갈래(측량·지적 공간정보관리법 지목 이름 그대로)
+    if j == '대': return 0
+    if j in ('전', '답', '과', '목'): return 1
+    if j == '임': return 2
+    if j in ('장', '창'): return 3
+    if j in ('도', '철', '천', '구', '제', '유'): return 4
+    return 5
+
 def build(gus):
     g = json.load(open(HJD, encoding='utf-8')); F = [(shape(f['geometry']), f['properties']['adm_cd2'][:8], f['properties']['sgg']) for f in g['features']]; T = STRtree([x[0] for x in F])
     def dong(la, lo):
@@ -70,11 +79,14 @@ def build(gus):
         if not os.path.exists(fp) or gu not in known: continue
         rows = json.load(open(fp, encoding='utf-8'))['rows']
         cell = collections.defaultdict(list); dg = collections.defaultdict(list); yr = collections.Counter(); alln = collections.Counter(); alld = collections.Counter()
+        jmc = collections.defaultdict(lambda: [0] * 6); jmd = collections.defaultdict(lambda: [0] * 6)
         for r in rows:
             pnu, v, jm, ar, la, lo, ym = r
             c = G250.code_ll(la, lo); k8, sg = dong(la, lo); alln[c] += 1
             if sg != gu: k8 = None   # 동은 이 구 것만(경계 필지의 대표점이 이웃 구로 넘어간 것은 칸에만)
             if k8: alld[k8] += 1
+            gi = jmg(jm); jmc[c][gi] += ar
+            if k8: jmd[k8][gi] += ar
             if jm != '대' or not v: continue
             yr[ym[:4]] += 1; cell[c].append((v, ar))
             if k8: dg[k8].append((v, ar))
@@ -83,8 +95,9 @@ def build(gus):
         out = {'schema': 'tg-jiga/1', 'gu': gu, 'year': y,
                'source': '국토교통부 개별공시지가(브이월드 연속지적도 LP_PA_CBND_BUBUN · 공공데이터포털 15124014 「국토교통부_개별공시지가정보」 이용허락범위 제한 없음) · %s년 1월 1일 기준' % y,
                'note': '지목 「대」(대지) 필지만 · ㎡당 공시지가 중앙값(원) · 칸·동 = 필지 안 대표점이 든 곳 · 공시지가는 세금·보상 기준값이지 시세가 아니다',
-               'fields': 'grid/dong = {키: [대지 ㎡당 중앙값(원), 대지 필지 수, 대지 넓이 합(㎡), 가장 높은 ㎡당(원)]} · n = 칸·동마다 모든 필지 수',
-               'grid': {k: agg(v) for k, v in cell.items()}, 'dong': {k: agg(v) for k, v in dg.items()}, 'n': {'grid': dict(alln), 'dong': dict(alld)}}
+               'fields': 'grid/dong = {키: [대지 ㎡당 중앙값(원), 대지 필지 수, 대지 넓이 합(㎡), 가장 높은 ㎡당(원)]} · n = 칸·동마다 모든 필지 수 · jm = 칸·동마다 지목 여섯 갈래 넓이(㎡ · 필지가 대표점이 든 칸에 통째로)',
+               'grid': {k: agg(v) for k, v in cell.items()}, 'dong': {k: agg(v) for k, v in dg.items()}, 'n': {'grid': dict(alln), 'dong': dict(alld)},
+               'jm': {'groups': JMG, 'grid': {k: [round(x) for x in v] for k, v in jmc.items()}, 'dong': {k: [round(x) for x in v] for k, v in jmd.items()}}}
         op = os.path.join(R, gu, 'jiga.json'); os.makedirs(os.path.dirname(op), exist_ok=True)
         json.dump(out, open(op, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
         known[gu].setdefault('bytes', {})['jiga'] = os.path.getsize(op); tot += 1

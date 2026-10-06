@@ -272,7 +272,7 @@
       row('가구', t[5] == null ? '자료 없음' : t[5].toLocaleString() + '가구' + (t[6] ? ' · 평균 ' + t[6] + '명' : '')) + row('주택', t[7] == null ? '자료 없음' : t[7].toLocaleString() + '호') +
       row('사업체 · 종사자', (t[8] == null ? '-' : t[8].toLocaleString() + '곳') + ' · ' + (t[9] == null ? '-' : t[9].toLocaleString() + '명') + (t[9] != null && t[4] ? ' <em>(종사자가 인구의 ' + (t[9] / t[4]).toFixed(t[9] < t[4] ? 2 : 1) + '배 — ' + (t[9] > 2 * t[4] ? '낮에 사람이 몰리는 일터' : t[4] > 2 * t[9] ? '주거지' : '주거·일터 섞임') + ')</em>' : ''));
     h += talk({ sido: sidoOf(M.gu), pop: t[4], wrk: t[9], corp: t[8] });
-    h += '<div class="lg-btns"><button data-radhere="' + (x.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - x.c[1] / KY).toFixed(5) + '">📐 여기서 반경 분석</button><button data-pnlhere="' + (x.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - x.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div>';
+    h += '<div class="lg-btns"><button data-radhere="' + (x.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - x.c[1] / KY).toFixed(5) + '">📐 여기서 반경 분석</button><button data-pnlhere="' + (x.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - x.c[1] / KY).toFixed(5) + '">💰 여기서 개업 예상</button></div>';
     return h + '<p class="desc">' + esc(M.note) + '</p>' + src(M.source);
   }
   var RLOADZ = {}, SZ = [];
@@ -1128,8 +1128,8 @@
     if (it.kind === 'dong' && it.d && it.d.c) { var dll = (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5), dA = 0;   // v2.61.0 소유자 「읍면동 오른쪽 옆에 상권분석 · 그 옆에 이 동 풀어 읽기 · 손익 계산은 그대로」
       (it.d.polys || []).forEach(function (pg) { var r = pg[0] || [], a = 0; for (var i = 0, k = r.length - 1; i < r.length; k = i++) a += (r[k][0] + r[i][0]) * (r[k][1] - r[i][1]); dA += Math.abs(a / 2); });
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
-      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1">📝 이 동 풀어 읽기</button></span></h3><div id="storyBox"></div>');
-      h += talkDong(it.d) + '<div class="lg-btns"><button data-pnlhere="' + dll + '">💰 여기서 손익 계산</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '">🎒 학원·교습소 개업</button>' : '') + '</div>'; }
+      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1">📝 이 동 풀어 읽기</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>');
+      h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
     card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
@@ -3050,7 +3050,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.66.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.67.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3457,7 +3457,7 @@
   function asIn(k, lab, unit, note) { var v = AS.v[k]; return '<label title="' + esc(note || '') + '"><span>' + esc(lab) + ' <i>' + esc(unit || '') + '</i></span><input type="number" inputmode="decimal" step="any" data-as="' + k + '" value="' + (v == null ? '' : v) + '"><small>' + esc(note || '') + '</small></label>'; }
   function asForm() {
     var el = $('m2dPnl'); if (!el || !AS.on) return; var v = AS.v, B = ASR.bench;
-    var h = '<div class="lg-h"><b>🎒 학원·교습소 개업 시뮬레이션</b><span><button data-astopnl="1">🍽 음식점·카페 손익</button> <button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
+    var h = '<div class="lg-h"><b>🎒 학원·교습소 개업 시뮬레이션</b><span><button data-astopnl="1">💰 음식점·카페 개업 예상</button> <button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
     h += '<div class="lg-btns"><button data-asf="tutor" class="' + (v.form === 'tutor' ? 'on' : '') + '">🏠 교습소(신고 · 1인 1과목)</button><button data-asf="academy" class="' + (v.form === 'academy' ? 'on' : '') + '">🏫 학원(등록 · 강사)</button></div>';
     h += '<div class="lg-btns">' + AS_KIND.map(function (x) { return '<button data-ask="' + x[0] + '" class="' + (v.kind === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>';
     h += '<div id="asOut"></div>' + '<h4>✍ 조건 <small style="font-weight:400;color:var(--ink2)">— 기본값은 실태조사 평균을 맞춘 예시 · 내 값으로 고친다 · 저장 안 함</small></h4><div class="pform">' +
@@ -3968,7 +3968,7 @@
       '<br><small>' + esc(bizFacts(x)) + '</small></div>';
   }
   function bizPaint() {
-    var el = $('m2dBiz'); if (!el.classList.contains('on')) return; var X = BIZ.idx, h = '<div class="lg-h"><b>🏪 창업 자리 찾기</b><span><button data-bx="pnl">💰 손익 계산</button> <button data-bx="min">▾ 접기</button> <button data-bx="x">닫기</button></span></div>';
+    var el = $('m2dBiz'); if (!el.classList.contains('on')) return; var X = BIZ.idx, h = '<div class="lg-h"><b>🏪 창업 자리 찾기</b><span><button data-bx="pnl">💰 개업 예상</button> <button data-bx="min">▾ 접기</button> <button data-bx="x">닫기</button></span></div>';
     if (!X) { el.innerHTML = h; return; }
     h += '<div class="lg-btns"><button data-bx="seoul" class="on">서울 상권(' + X.trdar.filter(function (m) { return m && m[13]; }).length.toLocaleString() + ')</button><button data-bx="gg">경기 상권</button></div>';
     h += '<!--SUM-->'; var sumH = '';
@@ -4046,7 +4046,7 @@
     if (x.rn) f.push('임대료 ' + x.R + '천원/㎡(' + esc(x.rn.it.name) + ' ' + x.rn.d + 'm)');
     return f.join(' · '); }
   function ggzPaint() {
-    var el = $('m2dBiz'); if (!el.classList.contains('on')) return; var J = GZ.J, h = '<div class="lg-h"><b>🏪 창업 자리 찾기 — 경기</b><span><button data-bx="pnl">💰 손익 계산</button> <button data-bx="min">▾ 접기</button> <button data-bx="x">닫기</button></span></div>';
+    var el = $('m2dBiz'); if (!el.classList.contains('on')) return; var J = GZ.J, h = '<div class="lg-h"><b>🏪 창업 자리 찾기 — 경기</b><span><button data-bx="pnl">💰 개업 예상</button> <button data-bx="min">▾ 접기</button> <button data-bx="x">닫기</button></span></div>';
     h += '<div class="lg-btns"><button data-bx="seoul">서울 상권</button><button data-bx="gg" class="on">경기 상권(' + (J ? J.items.length.toLocaleString() : '') + ')</button></div>';
     if (!J) { el.innerHTML = h; return; }
     var cnt = J.inds.map(function (d, i) { var n = 0; J.items.forEach(function (it) { var a = it[9][i]; if (a && a[0]) n++; }); return n; }), gus = {}; J.items.forEach(function (it) { gus[it[2]] = 1; });
@@ -4061,7 +4061,7 @@
     if (BIZ.list) h += '<ol class="bizl">' + R.map(function (x, k) { var it = x.it, op = k === GZ.open;
       return '<li data-gi="' + k + '"' + (op ? ' style="outline:2px solid #7c3aed;border-radius:8px"' : '') + '><b>' + (k + 1) + '. ' + esc(it[0]) + '</b> <small>' + (it[1] === 'dev' ? '🏙 발달' : '🏘 골목') + ' · ' + esc(guName(it[2])) + ' ' + esc(x.dg ? x.dg[0] : '') + '</small> <i style="--w:' + x.score + '%">' + x.score + '</i><br><small>' +
         ['D', 'G', 'C', 'V', 'B', 'R', 'Y'].filter(function (q) { return W[q] || q === 'D'; }).map(function (q) { return GZN[q] + ' ' + ((q === 'G' && x.G == null) || ((q === 'R' || q === 'Y') && x.R == null) || (q === 'D' && x.D == null) ? '-' : bizPct(x['p' + q])); }).join(' · ') + '</small><br><small class="f">' + ggzFacts(x) + '</small>' +
-        (op ? '<div class="lg-btns"><button data-gp="' + k + '">💰 이 상권에서 손익 계산' + (GZ.J.inds[GZ.ii][6] ? '' : '(음식점 틀)') + '</button></div>' : '') + '</li>'; }).join('') + '</ol>';
+        (op ? '<div class="lg-btns"><button data-gp="' + k + '">💰 이 상권에서 개업 예상' + (GZ.J.inds[GZ.ii][6] ? '' : '(음식점 틀)') + '</button></div>' : '') + '</li>'; }).join('') + '</ol>';
     if (BIZ.list && GZ.res.length > GZ.top) h += '<div class="lg-btns"><button data-bx="more">더 보기(' + GZ.top + ' / ' + GZ.res.length + ')</button></div>';
     h += '<small class="lg-n">' + esc(J.source) + ' · ' + esc(J.note) + '<br>⚠ 참고 지표다 — 경기 추정매출은 도의 모델 추정값이고(기간이 자료에 없어 한 해 값으로 읽고 ÷ 12 — 확인 중) 공개분이 한 번뿐이라 상권 자체의 추이는 없다(성장은 동 카드 매출로 대신) · 상권마다 매출 상위 15 업종만 공개돼 작은 업종은 매출이 비어 있을 수 있다 · <b>임대료는 1.5km 안 부동산원 표본(경기 44곳)뿐</b> · 권리금·공실·동선·층은 이 자료에 없다. 고른 상권은 현장에서 확인한다.</small>';
     el.innerHTML = h;
@@ -4420,7 +4420,7 @@
   function pnlOpen(c) {
     var el = $('m2dPnl'); if (!el) return; el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); TX.on = false; AS.on = false;
     ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
-    if (c) PNL.c = c; el.innerHTML = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">업종 자료를 받는 중…</p>';
+    if (c) PNL.c = c; el.innerHTML = '<div class="lg-h"><b>💰 업종별 개업 예상</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">업종 자료를 받는 중…</p>';
     Promise.all([bzLoad(), leaseLoad()]).then(function () { if (!PNL.ready) { PNL.v = pnlDefaults(PNL.k); PNL.ready = true; } pnlForm(); pnlGather(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">자료를 받지 못했다(' + esc(e && e.message || e) + ')</p>'; });
   }
   function pnlGather() {
@@ -4536,7 +4536,7 @@
     if (TX.on || AS.on) return;
     var el = $('m2dPnl'), t = tplOf(PNL.k), G = {};
     BZ.tpl.items.forEach(function (x) { (G[x.g] = G[x.g] || []).push(x); });
-    var h = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
+    var h = '<div class="lg-h"><b>💰 업종별 개업 예상</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
     h += '<div class="bizrow"><label>업종 <select data-pz="k">' + Object.keys(G).map(function (g) { return '<optgroup label="' + esc(g) + '">' + G[g].map(function (x) { return '<option value="' + x.k + '"' + (x.k === PNL.k ? ' selected' : '') + '>' + esc(x.n) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '<optgroup label="🎒 학원·교습소 — 고르면 학원 계산기로">' + AS_KIND.map(function (x) { return '<option value="as:' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</optgroup></select></label></div>';
     h += '<div class="lg-btns"><button data-px="local" class="on">📍 이 지역 값으로 채우기</button><button data-px="here">📍 지금 화면 가운데를 자리로</button><button data-px="reset">↺ 업종 평균으로 되돌리기</button><button data-px="ls-sido">🏬 임차를 이 시도 평균으로</button><button data-px="ls-up">🏬 임차를 음식점 평균으로</button><button data-px="ls-local">🏬 월세만 근처 상권 ㎡당으로</button><button data-px="copy">📋 글로 복사</button><button data-px="xlsx">📥 엑셀(수식 그대로)</button></div>';
     if (t.pending) h += '<p class="pbig bad">⏳ ' + esc(t.pending) + '</p>';
@@ -5138,7 +5138,7 @@
       h += row('지하철역', o.stn.length ? o.stn.map(function (q) { return esc(q.s.n) + ' <small>' + esc(q.ls.join('·')) + ' · ' + Math.round(q.d) + 'm</small>'; }).join(' · ') : '반경 안에 없음');
       h += rentRows(RAD.c, '임대료(가까운 표본)');
       h += '<div class="vzg">' + vzPct(o.dongs.slice(0, 6).map(function (d) { return [d[0], d[1], '#0891b2']; }), { title: '걸친 동(동 넓이 중 반경 안 %)' }) + (o.trd.length ? vzPct(o.trd.slice(0, 6).map(function (d) { return [d[0], d[1], '#7c3aed']; }), { title: '걸친 상권(상권 넓이 중 반경 안 %)' }) : '') + '</div>';
-      h += '<div class="lg-btns"><button data-rx="pnl">💰 이 자리 손익 계산</button><button data-rx="copy">📋 요약 복사</button><button data-rx="biz">🏪 이 업종 서울 다른 자리</button></div></div>';
+      h += '<div class="lg-btns"><button data-rx="pnl">💰 이 자리 개업 예상</button><button data-rx="copy">📋 요약 복사</button><button data-rx="biz">🏪 이 업종 서울 다른 자리</button></div></div>';
       h += '<small class="lg-n">넓이 비율은 반경 안을 격자로 찍어 센 근사다. 추정 매출은 카드 결제 기반(현금 제외) · 상권 밖 점포 매출은 빠진다. 임대료는 1.5km 안 부동산원 표본 상권 평균이다. 점포는 등록 정보라 문 닫은 곳이 섞일 수 있다. <b>한 점포 실제 매출·권리금·50m 단위 유동은 공공 자료에 없다.</b></small>';
     }
     el.innerHTML = h;

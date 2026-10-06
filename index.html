@@ -488,7 +488,7 @@
   .pflow .pn { position: absolute; top: -8px; left: -6px; width: 20px; height: 20px; border-radius: 10px; background: #334155; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; } .pflow li.s-g .pn { background: #16a34a; } .pflow li.s-y .pn { background: #d97706; } .pflow li.s-r .pn { background: #dc2626; }
   .pflow .pi { font-size: 20px; line-height: 1; } .pflow b { font-size: 12.5px; } .pflow .pv { font-size: 16px; font-weight: 900; } .pflow li.s-g .pv { color: #15803d; } .pflow li.s-y .pv { color: #b45309; } .pflow li.s-r .pv { color: #b91c1c; } .pflow small { font-size: 11px; color: var(--ink2); line-height: 1.35; }
   .pflow li:not(:last-child)::after { content: '→'; position: absolute; right: -9px; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 900; color: #94a3b8; z-index: 1; }
-  #m2dCard h3 .dhb { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 8px; vertical-align: middle; } #m2dCard h3 .dhb button { height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid #7c3aed; background: #f5f3ff; color: #5b21b6; font-size: 12.5px; font-weight: 800; cursor: pointer; } #m2dCard h3 .dhb button + button { border-color: #0891b2; background: #ecfeff; color: #0e7490; } :root.dark #m2dCard h3 .dhb button { background: #2e1065; color: #ddd6fe; } :root.dark #m2dCard h3 .dhb button + button { background: #083344; color: #a5f3fc; }
+  #m2dCard h3 .dhb { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 8px; vertical-align: middle; } #m2dCard h3 .dhb button { height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid #7c3aed; background: #f5f3ff; color: #5b21b6; font-size: 12.5px; font-weight: 800; cursor: pointer; } #m2dCard h3 .dhb button + button { border-color: #0891b2; background: #ecfeff; color: #0e7490; } #m2dCard h3 .dhb button:nth-child(3) { border-color: #d97706; background: #fffbeb; color: #b45309; } #m2dCard h3 .dhb button:nth-child(4) { border-color: #16a34a; background: #f0fdf4; color: #15803d; } :root.dark #m2dCard h3 .dhb button { background: #2e1065; color: #ddd6fe; } :root.dark #m2dCard h3 .dhb button + button { background: #083344; color: #a5f3fc; } :root.dark #m2dCard h3 .dhb button:nth-child(3) { background: #451a03; color: #fde68a; } :root.dark #m2dCard h3 .dhb button:nth-child(4) { background: #052e16; color: #bbf7d0; }
   #m2dCard .lg-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } #m2dCard .lg-btns button { height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
   #m2dCard a.xl { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--acc); color: var(--acc); text-decoration: none; font-weight: 700; font-size: 13px; }
   @media (max-width: 430px) { #m2dFold { padding: 0 10px !important; } #m2dTop .row1 #m2dFind { font-size: 14px; } }
@@ -773,7 +773,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.66.0"></script>
+<script src="js/map2d.js?v=2.67.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

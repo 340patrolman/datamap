@@ -1019,7 +1019,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
-      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += dealRows(d);
+      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += bzsRows(d); h += dealRows(d);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1815,7 +1815,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
-    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += dealRows(d);
+    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += bzsRows(d); h += dealRows(d);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + (GB.ggcard ? '<button data-ggc="' + esc(d.gcd) + '|' + esc(d.k) + '">💳 카드 소비 자세히(연령·성별·시간·업종)</button>' : '') + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -3006,7 +3006,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.54.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.55.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3594,6 +3594,37 @@
       return { t: tx, v: h }; }
     return '<div class="dh">🔮 인구 5년·10년 뒤 — 따라가는 상권(추정)</div>' + h; }
   function popProjRows(d) { if (!d || !d.k || !d.pop || !d.pop.age) return ''; return popProjHtml(d.pop.age, d.k.slice(0, 5), d.name, false); }
+
+  // ---------- v2.55.0 🏪 업종별 개업·폐업·생존율 전국(지방행정 인허가 · r/<구>/biz.json · 통계청 신생기업 생존율 data/biz-official.json) ----------
+  var BZS = {}, BZSP = {}, BOFF = null, BOFFP = null;
+  function bzsLoad(gu) { if (!BOFFP) BOFFP = fetch('data/biz-official.json').then(function (r) { return r.json(); }).then(function (j) { BOFF = j; }).catch(function () { BOFF = null; });
+    if (BZSP[gu]) return BZSP[gu]; BZSP[gu] = Promise.all([rGet(gu, 'bizsv.json').then(function (j) { BZS[gu] = j; }).catch(function () { BZS[gu] = null; }), BOFFP]).then(function () { var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.kind === 'dong') { var sb = document.getElementById('storyBox'); if (!sb || !sb.innerHTML.trim()) show(sel.it); } }); return BZSP[gu]; }
+  var BIND = { '편의점': 'G', '미용실': 'S', '피부관리': 'S', '네일·메이크업': 'S', '세탁소': 'S', '노래방': 'R', 'PC방': 'R', '헬스장': 'R', '키즈카페': 'R' };
+  function vzSurv(rows, opt) {   // 업종마다 1·3·5년 생존율 막대 세 개
+    opt = opt || {}; var C3 = ['#86efac', '#22c55e', '#15803d'];
+    return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + rows.map(function (r) { return '<div class="vzr"><span class="vzl" title="' + esc(r[0]) + '">' + esc(r[0]) + '</span><span class="vzb" style="height:auto;background:none;display:flex;flex-direction:column;gap:1px">' + [r[1], r[2], r[3]].map(function (v, i) { return v == null ? '<i style="position:static;display:block;height:5px;width:0"></i>' : '<i style="position:static;display:block;height:5px;width:' + Math.max(1, v).toFixed(1) + '%;background:' + C3[i] + ';border-radius:3px"></i>'; }).join('') + '</span><b>' + [r[1], r[2], r[3]].map(function (v) { return v == null ? '-' : Math.round(v); }).join('·') + '%</b></div>'; }).join('') +
+      '<div class="pleg"><span><i style="background:#86efac"></i>1년</span><span><i style="background:#22c55e"></i>3년</span><span><i style="background:#15803d"></i>5년 생존(개업한 가게 중 그때까지 문 연 곳)</span></div></div>'; }
+  function bzsHtml(k8, nm, story) { var gu = k8.slice(0, 5); if (BZS[gu] === undefined) { bzsLoad(gu); return ''; } var J = BZS[gu]; if (!J || !J.dong[k8]) return ''; var X = J.dong[k8], N = J.years.length, b = 1 + 2 * N, f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); };
+    var GA = {}; Object.keys(J.dong).forEach(function (q) { var v = J.dong[q]; Object.keys(v).forEach(function (ci) { var t = GA[ci] = GA[ci] || v[ci].map(function () { return 0; }); v[ci].forEach(function (x, i) { t[i] += x; }); }); });
+    var sv = function (a, j) { return a[b + j * 2] ? a[b + j * 2 + 1] / a[b + j * 2] * 100 : null; };
+    var cats = Object.keys(X).map(function (ci) { var a = X[ci], g = GA[ci], useG = a[b + 2] < 5; return { n: J.cats[+ci], a: a, g: g, now: a[0], s: useG ? [sv(g, 0), sv(g, 1), sv(g, 2)] : [sv(a, 0), sv(a, 1), sv(a, 2)], gs: useG, life: a[b + 7] ? a[b + 6] / a[b + 7] / 365 : null, op: a.slice(1, 1 + N), cl: a.slice(1 + N, 1 + 2 * N) }; }).filter(function (c) { return c.now || c.op.some(function (v) { return v; }); });
+    if (!cats.length) return ''; cats.sort(function (p, q) { return q.now - p.now; });
+    var h = '';
+    var T = J.dong[k8], tot = function (ix) { var t = 0; Object.keys(T).forEach(function (ci) { t += T[ci][ix]; }); return t; }, opY = J.years.map(function (_, i) { return tot(1 + i); }), clY = J.years.map(function (_, i) { return tot(1 + N + i); }), nowT = tot(0);
+    var s3 = function (A) { var n = 0, a = 0; Object.keys(A).forEach(function (ci) { n += A[ci][b + 2]; a += A[ci][b + 3]; }); return n ? a / n * 100 : null; }, d3 = s3(T), g3 = s3(GA), sdn = SIDO_FULL[gu.slice(0, 2)] || '전국', OF = BOFF && BOFF.sido && (BOFF.sido[sdn] || BOFF.sido['전국']);
+    h += row('지금 영업 중(8개 인허가 업종)', '<b>' + nowT.toLocaleString() + '곳</b> · 개업한 가게 3년 생존 <b>' + (d3 != null ? f1(d3) + '%' : '-') + '</b>' + (g3 != null ? ' <em>(구 ' + f1(g3) + '%)</em>' : '') + (OF && OF.I ? ' · 통계청 숙박·음식점 신생기업 3년 생존 ' + OF.I.T03 + '%(' + esc(BOFF.year) + ')' : ''));
+    h += vzLineQ([['개업', opY, '#16a34a'], ['폐업', clY, '#dc2626']], J.years.map(function (y) { return "'" + String(y).slice(2); }), { title: '해마다 개업·폐업(곳 · ' + J.years[0] + '~' + J.years[N - 1] + ' · ' + J.years[N - 1] + '년은 ' + esc(J.asof) + '까지)', fmt: function (x) { return Math.round(x).toLocaleString(); }, zero: 1 });
+    var top = cats.slice(0, 12);
+    h += vzSurv(top.map(function (c) { return [c.n + (c.gs ? '(구)' : '') + ' ' + c.now, c.s[0], c.s[1], c.s[2]]; }), { title: '업종별 생존율 — 2016년부터 문 연 가게 가운데 1·3·5년 뒤 그대로 문 연 곳(%) · 이름 옆 = 지금 곳 · (구) = 이 동 사례가 적어 구 값' });
+    if (OF) h += '<p class="cap">견줄 공식 값 — 통계청 신생기업 생존율(' + esc(sdn) + ' · ' + esc(BOFF.year) + ' · 1·3·5년): ' + ['I', 'G', 'S', 'R'].filter(function (q) { return OF[q]; }).map(function (q) { return esc(BOFF.ind[q]) + ' ' + OF[q].T01 + '·' + OF[q].T03 + '·' + OF[q].T05 + '%'; }).join(' · ') + ' — 인허가 기준은 이보다 높게 나온다(폐업 신고가 늦거나 없는 가게 · 주인이 바뀌어도 같은 인허가가 이어지는 가게는 살아 있는 것으로 센다)</p>';
+    var r3 = cats.map(function (c) { var o = 0, cl = 0; for (var i = N - 4; i < N - 1; i++) { o += c.op[i]; cl += c.cl[i]; } return [c.n, o, cl]; }).filter(function (r) { return r[1] + r[2] > 0; }).sort(function (p, q) { return (q[1] + q[2]) - (p[1] + p[2]); }).slice(0, 10);
+    if (r3.length) h += vzOpenClose(r3, { title: '최근 3년(' + J.years[N - 4] + '~' + J.years[N - 2] + ') 업종별 개업·폐업' });
+    var lf = cats.filter(function (c) { return c.life && c.a[b + 7] >= 3; }).map(function (c) { return [c.n + ' (' + c.a[b + 7] + '곳)', c.life, '#7c3aed']; }).sort(function (p, q) { return q[1] - p[1]; });
+    if (lf.length >= 3) h += vzH(lf.slice(0, 10), { title: '문 닫은 가게는 평균 몇 년 버텼나(' + J.years[0] + '년 이후 폐업 · 년)', fmt: function (x) { return f1(x) + '년'; } });
+    h += '<p class="cap">' + esc(J.source) + ' · 기준일 ' + esc(J.asof) + ' · ' + esc(J.note) + ' · 1·3·5년은 대상 가게 무리(연 해)가 달라 5년이 3년보다 높게 나올 수 있다</p>';
+    if (story) return { t: '<b>가게 생존(인허가).</b> 음식점·카페·미용·노래방·PC방·헬스·세탁 등 8개 인허가 업종이 지금 ' + nowT.toLocaleString() + '곳. 2016년부터 문 연 가게 가운데 3년 뒤 그대로 문 연 곳 ' + (d3 != null ? f1(d3) + '%' : '-') + (g3 != null ? '(구 ' + f1(g3) + '%)' : '') + ' — 인허가 기준이라 통계청 사업자 생존율보다 높게 나온다.', v: h };
+    return '<div class="dh">🏪 업종별 개업·폐업·생존율 <small style="font-weight:600;color:var(--ink2)">(전국 인허가)</small></div>' + h; }
+  function bzsRows(d) { if (!d || !d.k) return ''; return bzsHtml(d.k, d.name, false); }
 
   // ---------- v2.46.0 🏠 집안 구성(소유자 「동별 가구 구성원 · 세대당 몇 명 · 혼자 사는지 · 결혼했는지 · 이혼율 · 기초수급자 비율」) — data/house-dong.json · tools/region/house-bake.py ----------
   var HSD = null, HSP = null;
@@ -4499,7 +4530,7 @@
   function sgn1(x, d) { return (x >= 0 ? '+' : '') + (d ? x.toFixed(d) : Math.round(x)) ; }
   function storyData(d) {
     var gu = d.gcd || '11650';
-    return Promise.all([sdLoad(gu), cpiLoad(), houseLoad(), dlLoad(gu), ppLoad()]).then(function (a) {
+    return Promise.all([sdLoad(gu), cpiLoad(), houseLoad(), dlLoad(gu), ppLoad(), bzsLoad(gu)]).then(function (a) {
       var Dg = a[0].dong, Xg = a[0].x, row0 = Dg && Dg.dong.filter(function (q) { return d.k ? q.k === d.k : q.name === d.name; })[0] || {};
       var k = row0.k || d.k, F = RFAC[gu] && RFAC[gu].dong ? RFAC[gu].dong[k] || null : null; if (!F && RFAC[gu] && RFAC[gu].dong) for (var kk in RFAC[gu].dong) if (RFAC[gu].dong[kk].name === (row0.name || d.name)) { F = RFAC[gu].dong[kk]; break; } var X = Xg && Xg.dong ? Xg.dong[k] || null : null;
       var w = 0, c = 0, n = 0; JGGA.forEach(function (q) { if (q.gu === gu && q.t[1] === (row0.name || d.name)) { n++; w += q.t[9] || 0; c += q.t[8] || 0; } });
@@ -4530,7 +4561,7 @@
         (S.F && S.F.cc && S.F.cc[1] ? vzH([['정원', S.F.cc[1], '#94a3b8'], ['지금 다니는 아이', S.F.cc[2] || 0, '#22c55e']], { title: '👶 어린이집 ' + S.F.cc[0] + '곳 — 정원 vs 지금(명)', unit: '명' }) : '') +
         (S.F && S.F.ccy && S.Fm && S.Fm.cyears && S.F.ccy.length > 2 ? '<div class="vz"><div class="cap">어린이집 수 — 해마다(곳)</div>' + bar(S.F.ccy, '#22c55e', S.F.ccy.map(function (_, i) { return "'" + String(+S.Fm.cyears[0] + i).slice(2); })) + '</div>' : '');
       if (v1) P.push('<div class="vzg">' + v1 + '</div>'); }
-    if (S.d && S.d.k) { var HS0 = houseHtml(S.d.k, p && p.tot, S.name, true); var HV0 = HSD && HSD.dong[S.d.k], HS1 = HSD && HSD.sd[S.d.k.slice(0, 2)]; if (HV0 && HV0.hh) { var q1 = HV0.hh[1] / HV0.hh[0] * 100, qs = HS1 ? HS1.hh[1] / HS1.hh[0] * 100 : null; GL.push(['👤', '혼자 사는 세대', f1(q1) + '%', qs != null ? S.sido + ' ' + f1(qs) + '%' : '', qs != null ? q1 - qs : null]); if (HV0.one) GL.push(['🧓', '혼자 사는 65세 이상', (HV0.one[5] + HV0.one[6]).toLocaleString() + '명', '1인 세대의 ' + f1((HV0.one[5] + HV0.one[6]) / (HV0.hh[1] || 1) * 100) + '%', null]); if (HV0.wel && p && p.tot) { var gp0 = HSD.sgw[S.d.k.slice(0, 5)], gpp = guPopSum(S.d.k.slice(0, 5)); if (HV0.cha) GL.push(['💡', '저소득(수급+차상위)', f1((HV0.wel[0] + HV0.cha[0]) / p.tot * 100) + '%', '수급 ' + f1(HV0.wel[0] / p.tot * 100) + ' · 차상위 ' + f1(HV0.cha[0] / p.tot * 100), null]); GL.push(['🧾', '기초생활수급', f1(HV0.wel[0] / p.tot * 100) + '%', gp0 && gpp ? '구 ' + f1(gp0[0] / gpp * 100) + '%' : '', gp0 && gpp ? HV0.wel[0] / p.tot * 100 - gp0[0] / gpp * 100 : null]); } } var PJ0 = p && p.age ? popProjHtml(p.age, S.d.k.slice(0, 5), S.name, true) : null; if (PJ0 && PJ0.t) { P.push(PJ0.t); P.push('<div class="vz">' + PJ0.v + '</div>'); } if (HS0 && HS0.t) { P.push(HS0.t); P.push('<div class="vz">' + HS0.v + '</div>'); if (HSD.dong[S.d.k] && HSD.dong[S.d.k].hh) { var hp1 = HSD.dong[S.d.k].hh[1] / HSD.dong[S.d.k].hh[0] * 100; if (hp1 >= 45) tags.push('혼자 사는 세대 ' + Math.round(hp1) + '%'); } } }
+    if (S.d && S.d.k) { var HS0 = houseHtml(S.d.k, p && p.tot, S.name, true); var HV0 = HSD && HSD.dong[S.d.k], HS1 = HSD && HSD.sd[S.d.k.slice(0, 2)]; if (HV0 && HV0.hh) { var q1 = HV0.hh[1] / HV0.hh[0] * 100, qs = HS1 ? HS1.hh[1] / HS1.hh[0] * 100 : null; GL.push(['👤', '혼자 사는 세대', f1(q1) + '%', qs != null ? S.sido + ' ' + f1(qs) + '%' : '', qs != null ? q1 - qs : null]); if (HV0.one) GL.push(['🧓', '혼자 사는 65세 이상', (HV0.one[5] + HV0.one[6]).toLocaleString() + '명', '1인 세대의 ' + f1((HV0.one[5] + HV0.one[6]) / (HV0.hh[1] || 1) * 100) + '%', null]); if (HV0.wel && p && p.tot) { var gp0 = HSD.sgw[S.d.k.slice(0, 5)], gpp = guPopSum(S.d.k.slice(0, 5)); if (HV0.cha) GL.push(['💡', '저소득(수급+차상위)', f1((HV0.wel[0] + HV0.cha[0]) / p.tot * 100) + '%', '수급 ' + f1(HV0.wel[0] / p.tot * 100) + ' · 차상위 ' + f1(HV0.cha[0] / p.tot * 100), null]); GL.push(['🧾', '기초생활수급', f1(HV0.wel[0] / p.tot * 100) + '%', gp0 && gpp ? '구 ' + f1(gp0[0] / gpp * 100) + '%' : '', gp0 && gpp ? HV0.wel[0] / p.tot * 100 - gp0[0] / gpp * 100 : null]); } } var BZ0 = bzsHtml(S.d.k, S.name, true); if (BZ0 && BZ0.t) { P.push(BZ0.t); P.push('<div class="vz">' + BZ0.v + '</div>'); } var PJ0 = p && p.age ? popProjHtml(p.age, S.d.k.slice(0, 5), S.name, true) : null; if (PJ0 && PJ0.t) { P.push(PJ0.t); P.push('<div class="vz">' + PJ0.v + '</div>'); } if (HS0 && HS0.t) { P.push(HS0.t); P.push('<div class="vz">' + HS0.v + '</div>'); if (HSD.dong[S.d.k] && HSD.dong[S.d.k].hh) { var hp1 = HSD.dong[S.d.k].hh[1] / HSD.dong[S.d.k].hh[0] * 100; if (hp1 >= 45) tags.push('혼자 사는 세대 ' + Math.round(hp1) + '%'); } } }
     // ② 머무는 사람
     var L = S.live; if (L && (L.wd || L.we) && p && p.tot) { var t2 = '<b>머무는 사람.</b> ', o = [];
       ['wd', 'we'].forEach(function (k2) { var a = L[k2]; if (!a) return; var mx = Math.max.apply(null, a), mn = Math.min.apply(null, a), pk = a.indexOf(mx), busy = []; a.forEach(function (v, i) { if (v >= mn + (mx - mn) * 0.7) busy.push(i); });

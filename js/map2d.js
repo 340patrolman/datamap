@@ -1018,7 +1018,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
-      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += dealRows(d);
+      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += dealRows(d);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1814,7 +1814,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
-    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += dealRows(d);
+    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += dealRows(d);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + (GB.ggcard ? '<button data-ggc="' + esc(d.gcd) + '|' + esc(d.k) + '">💳 카드 소비 자세히(연령·성별·시간·업종)</button>' : '') + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -2982,7 +2982,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.52.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.53.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3537,6 +3537,37 @@
     return h ? h + '<p class="cap">' + esc(T.source) + ' · 일반건물(통째 거래)은 지번이 가려져 법정동 단위 · 지분만 사고판 거래가 섞이면 최저가가 비정상으로 낮게 나올 수 있다 · 땅만 거래한 토지 매매 실거래는 활용신청이 막혀(포털 오류) 아직 없다</p>' : ''; }
 
   function dealRows(d) { if (!d || !d.k) return ''; return dealBandsHtml(d.k, d.name); }
+
+  // ---------- v2.53.0 🔮 인구 5년·10년 뒤(소유자 「인구예측 5년 뒤 10년 뒤 · 따라가는 상권도 유추 · 세상 제일 중요한 게 인구통계학」) ----------
+  //   동 단위 공식 추계는 없다 → 소지역 추계에서 흔히 쓰는 「코호트 변화율법(Hamilton-Perry)」 근사: 이 동의 지금 10세 계급 인구에 같은 시군구 통계청 추계의 10년 코호트 변화율(그 나이 무리가 10년 뒤 몇 배가 되나)을 곱한다
+  //   0~9세 = 이 동 지금 아이 수 × 시군구 「0~9세 ÷ 20·30대」 비율의 변화 × 이 동 20·30대의 변화 · 5년 뒤 = 지금과 10년 뒤의 계급별 기하 중간 · 변화율은 0.2~3배로 자른다(작은 동 튐 막기) — 모두 설계값
+  var POPP = null, POPPP = null;
+  function ppLoad() { if (POPPP) return POPPP; POPPP = fetch('data/popproj.json').then(function (r) { return r.json(); }).then(function (j) { POPP = j; var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.kind === 'dong') { var sb = document.getElementById('storyBox'); if (!sb || !sb.innerHTML.trim()) show(sel.it); } }).catch(function () { POPP = { gu: {} }; }); return POPPP; }
+  function pp10(a) { var o = []; for (var i = 0; i < 20; i += 2) o.push((a[i] || 0) + (a[i + 1] || 0)); return o; }
+  function ppProject(age, gu) { var G = POPP && POPP.gu[gu]; if (!G || !G.y['2026'] || !G.y['2036']) return null; var S0 = pp10(G.y['2026'].t), S1 = pp10(G.y['2036'].t), cl = function (r) { return Math.max(0.2, Math.min(3, r)); }, D = [];
+    for (var i = 1; i < 9; i++) D[i] = (age[i - 1] || 0) * cl(S0[i - 1] ? S1[i] / S0[i - 1] : 1);
+    D[9] = ((age[8] || 0) + (age[9] || 0)) * cl((S0[8] + S0[9]) ? S1[9] / (S0[8] + S0[9]) : 1);
+    var cr0 = (S0[2] + S0[3]) ? S0[0] / (S0[2] + S0[3]) : 0, cr1 = (S1[2] + S1[3]) ? S1[0] / (S1[2] + S1[3]) : 0, a23 = (age[2] || 0) + (age[3] || 0);
+    D[0] = cr0 && a23 ? (age[0] || 0) * cl(cr1 / cr0) * cl((D[2] + D[3]) / a23) : (age[0] || 0);
+    var M = age.map(function (v, i) { return Math.sqrt(Math.max(v, 0.01) * Math.max(D[i], 0.01)); }), tot = function (a) { return a.reduce(function (x, y) { return x + y; }, 0); };
+    var sg = function (y) { return G.y[y] ? G.y[y].t.reduce(function (x, y2) { return x + y2; }, 0) : null; };
+    return { now: age, y5: M, y10: D, t0: tot(age), t5: tot(M), t10: tot(D), g: [['2026', sg('2026')], ['2031', sg('2031')], ['2036', sg('2036')], ['2041', sg('2041')]], gname: G.n, note: G.note }; }
+  var SEGS = [['👶 0~9세', [0], '어린이집·소아과·키즈카페·유아용품'], ['🎒 10대', [1], '입시·보습 학원·문구·분식'], ['🧑 20·30대', [2, 3], '카페·주점·편의점·원룸·배달'], ['🧔 40·50대', [4, 5], '자녀 학원·외식·병원·자동차'], ['👴 60·70대', [6, 7], '병의원·약국·한식·전통시장·여가'], ['👵 80세 이상', [8, 9], '요양·돌봄·재가복지·의료']];
+  function popProjHtml(age, gu, nm, story) { if (!POPP) { ppLoad(); return ''; } if (!age || age.length < 10) return ''; var J = ppProject(age, gu); if (!J) return ''; var f1 = function (x) { return (Math.round(x * 10) / 10).toLocaleString(); }, pc = function (a, b) { return a ? (b - a) / a * 100 : 0; };
+    var g0 = J.g[0][1], h = '';
+    h += row('주민 수', Math.round(J.t0).toLocaleString() + '명 → 5년 뒤 약 <b>' + Math.round(J.t5).toLocaleString() + '</b>(' + (pc(J.t0, J.t5) >= 0 ? '+' : '') + f1(pc(J.t0, J.t5)) + '%) → 10년 뒤 약 <b>' + Math.round(J.t10).toLocaleString() + '</b>(' + (pc(J.t0, J.t10) >= 0 ? '+' : '') + f1(pc(J.t0, J.t10)) + '%)' + (g0 ? ' <em>(' + esc(J.gname) + ' 추계 ' + (pc(g0, J.g[2][1]) >= 0 ? '+' : '') + f1(pc(g0, J.g[2][1])) + '%)</em>' : ''));
+    h += vzLineQ([[esc(nm || '이 동') + '(추정)', [J.t0, J.t5, J.t10, null], '#7c3aed'], [esc(J.gname) + '(통계청 추계 · 지금 = 이 동 크기로 맞춤)', J.g.map(function (q) { return q[1] && g0 ? q[1] / g0 * J.t0 : null; }), '#94a3b8', 1]], ['지금', '5년 뒤', '10년 뒤', '15년 뒤'], { title: '주민 수 — 지금 · 5년 뒤 · 10년 뒤', fmt: function (x) { return Math.round(x).toLocaleString(); } });
+    var g4 = function (a) { return [a[0] + a[1], a[2] + a[3], a[4] + a[5], a[6] + a[7] + a[8] + a[9]]; };
+    h += '<div class="vz"><div class="cap">나이 구성 — 얼굴 하나 = 10%</div>' + agePicto(g4(J.now), '지금') + agePicto(g4(J.y5), '5년 뒤') + agePicto(g4(J.y10), '10년 뒤') + '</div>';
+    var seg = SEGS.map(function (q) { var a = 0, b = 0; q[1].forEach(function (i) { a += J.now[i]; b += J.y10[i]; }); return [q[0], pc(a, b), b, q[2], a]; });
+    h += vzDiv(seg.map(function (q) { return [q[0], q[1], q[2]]; }), { title: '나이 무리별 10년 뒤 늘고 줄음(작은 숫자 = 10년 뒤 명)' });
+    var up = seg.slice().sort(function (a, b) { return b[1] - a[1]; }), best = up[0], worst = up[up.length - 1];
+    h += '<div class="simc"><b>🏪 상권에 주는 뜻(추론)</b><div class="rcard">' + seg.map(function (q) { return row(q[0], '<b style="color:' + (q[1] >= 3 ? '#16a34a' : q[1] <= -3 ? '#dc2626' : 'var(--ink2)') + '">' + (q[1] >= 0 ? '▲ +' : '▼ ') + f1(q[1]) + '%</b> — ' + esc(q[3])); }).join('') + '</div><p class="cap">가장 느는 무리: <b>' + best[0] + '</b>(' + esc(best[3]) + ' 쪽 수요가 커질 쪽) · 가장 주는 무리: <b>' + worst[0] + '</b>(' + esc(worst[3]) + ' 쪽은 손님이 줄 쪽) — 주민만 본 추론이다. 일하러·놀러 오는 바깥 손님·재개발·새 아파트 입주는 이 계산에 없다.</p></div>';
+    h += '<p class="cap">추정 방법: 이 동 지금 주민등록 10세 계급 × ' + esc(J.gname) + ' 통계청 장래인구추계(2022 기준 · 중위)의 10년 코호트 변화율(코호트 변화율법 · Hamilton-Perry) · 5년 뒤 = 중간값 · 0~9세 = 이 동의 아이÷20·30대 비율에 시군구의 그 비율 변화를 곱함' + (J.note ? ' · ' + esc(J.note) : '') + ' · ' + esc(POPP.source) + ' — 공식 동 추계가 아니라 이 지도의 근사(설계값)</p>';
+    if (story) { var tx = '<b>5년·10년 뒤(추정).</b> 주민 ' + Math.round(J.t0).toLocaleString() + '명 → 5년 뒤 약 ' + Math.round(J.t5).toLocaleString() + ' → 10년 뒤 약 ' + Math.round(J.t10).toLocaleString() + '명(' + (pc(J.t0, J.t10) >= 0 ? '+' : '') + f1(pc(J.t0, J.t10)) + '%). 10년 동안 가장 느는 나이는 ' + best[0] + '(' + (best[1] >= 0 ? '+' : '') + f1(best[1]) + '%) — ' + esc(best[3]) + ' 쪽이 커질 쪽, 가장 주는 나이는 ' + worst[0] + '(' + f1(worst[1]) + '%) — ' + esc(worst[3]) + ' 쪽은 줄 쪽(추론).';
+      return { t: tx, v: h }; }
+    return '<div class="dh">🔮 인구 5년·10년 뒤 — 따라가는 상권(추정)</div>' + h; }
+  function popProjRows(d) { if (!d || !d.k || !d.pop || !d.pop.age) return ''; return popProjHtml(d.pop.age, d.k.slice(0, 5), d.name, false); }
 
   // ---------- v2.46.0 🏠 집안 구성(소유자 「동별 가구 구성원 · 세대당 몇 명 · 혼자 사는지 · 결혼했는지 · 이혼율 · 기초수급자 비율」) — data/house-dong.json · tools/region/house-bake.py ----------
   var HSD = null, HSP = null;
@@ -4442,7 +4473,7 @@
   function sgn1(x, d) { return (x >= 0 ? '+' : '') + (d ? x.toFixed(d) : Math.round(x)) ; }
   function storyData(d) {
     var gu = d.gcd || '11650';
-    return Promise.all([sdLoad(gu), cpiLoad(), houseLoad(), dlLoad(gu)]).then(function (a) {
+    return Promise.all([sdLoad(gu), cpiLoad(), houseLoad(), dlLoad(gu), ppLoad()]).then(function (a) {
       var Dg = a[0].dong, Xg = a[0].x, row0 = Dg && Dg.dong.filter(function (q) { return d.k ? q.k === d.k : q.name === d.name; })[0] || {};
       var k = row0.k || d.k, F = RFAC[gu] && RFAC[gu].dong ? RFAC[gu].dong[k] || null : null; if (!F && RFAC[gu] && RFAC[gu].dong) for (var kk in RFAC[gu].dong) if (RFAC[gu].dong[kk].name === (row0.name || d.name)) { F = RFAC[gu].dong[kk]; break; } var X = Xg && Xg.dong ? Xg.dong[k] || null : null;
       var w = 0, c = 0, n = 0; JGGA.forEach(function (q) { if (q.gu === gu && q.t[1] === (row0.name || d.name)) { n++; w += q.t[9] || 0; c += q.t[8] || 0; } });
@@ -4473,7 +4504,7 @@
         (S.F && S.F.cc && S.F.cc[1] ? vzH([['정원', S.F.cc[1], '#94a3b8'], ['지금 다니는 아이', S.F.cc[2] || 0, '#22c55e']], { title: '👶 어린이집 ' + S.F.cc[0] + '곳 — 정원 vs 지금(명)', unit: '명' }) : '') +
         (S.F && S.F.ccy && S.Fm && S.Fm.cyears && S.F.ccy.length > 2 ? '<div class="vz"><div class="cap">어린이집 수 — 해마다(곳)</div>' + bar(S.F.ccy, '#22c55e', S.F.ccy.map(function (_, i) { return "'" + String(+S.Fm.cyears[0] + i).slice(2); })) + '</div>' : '');
       if (v1) P.push('<div class="vzg">' + v1 + '</div>'); }
-    if (S.d && S.d.k) { var HS0 = houseHtml(S.d.k, p && p.tot, S.name, true); var HV0 = HSD && HSD.dong[S.d.k], HS1 = HSD && HSD.sd[S.d.k.slice(0, 2)]; if (HV0 && HV0.hh) { var q1 = HV0.hh[1] / HV0.hh[0] * 100, qs = HS1 ? HS1.hh[1] / HS1.hh[0] * 100 : null; GL.push(['👤', '혼자 사는 세대', f1(q1) + '%', qs != null ? S.sido + ' ' + f1(qs) + '%' : '', qs != null ? q1 - qs : null]); if (HV0.one) GL.push(['🧓', '혼자 사는 65세 이상', (HV0.one[5] + HV0.one[6]).toLocaleString() + '명', '1인 세대의 ' + f1((HV0.one[5] + HV0.one[6]) / (HV0.hh[1] || 1) * 100) + '%', null]); if (HV0.wel && p && p.tot) { var gp0 = HSD.sgw[S.d.k.slice(0, 5)], gpp = guPopSum(S.d.k.slice(0, 5)); if (HV0.cha) GL.push(['💡', '저소득(수급+차상위)', f1((HV0.wel[0] + HV0.cha[0]) / p.tot * 100) + '%', '수급 ' + f1(HV0.wel[0] / p.tot * 100) + ' · 차상위 ' + f1(HV0.cha[0] / p.tot * 100), null]); GL.push(['🧾', '기초생활수급', f1(HV0.wel[0] / p.tot * 100) + '%', gp0 && gpp ? '구 ' + f1(gp0[0] / gpp * 100) + '%' : '', gp0 && gpp ? HV0.wel[0] / p.tot * 100 - gp0[0] / gpp * 100 : null]); } } if (HS0 && HS0.t) { P.push(HS0.t); P.push('<div class="vz">' + HS0.v + '</div>'); if (HSD.dong[S.d.k] && HSD.dong[S.d.k].hh) { var hp1 = HSD.dong[S.d.k].hh[1] / HSD.dong[S.d.k].hh[0] * 100; if (hp1 >= 45) tags.push('혼자 사는 세대 ' + Math.round(hp1) + '%'); } } }
+    if (S.d && S.d.k) { var HS0 = houseHtml(S.d.k, p && p.tot, S.name, true); var HV0 = HSD && HSD.dong[S.d.k], HS1 = HSD && HSD.sd[S.d.k.slice(0, 2)]; if (HV0 && HV0.hh) { var q1 = HV0.hh[1] / HV0.hh[0] * 100, qs = HS1 ? HS1.hh[1] / HS1.hh[0] * 100 : null; GL.push(['👤', '혼자 사는 세대', f1(q1) + '%', qs != null ? S.sido + ' ' + f1(qs) + '%' : '', qs != null ? q1 - qs : null]); if (HV0.one) GL.push(['🧓', '혼자 사는 65세 이상', (HV0.one[5] + HV0.one[6]).toLocaleString() + '명', '1인 세대의 ' + f1((HV0.one[5] + HV0.one[6]) / (HV0.hh[1] || 1) * 100) + '%', null]); if (HV0.wel && p && p.tot) { var gp0 = HSD.sgw[S.d.k.slice(0, 5)], gpp = guPopSum(S.d.k.slice(0, 5)); if (HV0.cha) GL.push(['💡', '저소득(수급+차상위)', f1((HV0.wel[0] + HV0.cha[0]) / p.tot * 100) + '%', '수급 ' + f1(HV0.wel[0] / p.tot * 100) + ' · 차상위 ' + f1(HV0.cha[0] / p.tot * 100), null]); GL.push(['🧾', '기초생활수급', f1(HV0.wel[0] / p.tot * 100) + '%', gp0 && gpp ? '구 ' + f1(gp0[0] / gpp * 100) + '%' : '', gp0 && gpp ? HV0.wel[0] / p.tot * 100 - gp0[0] / gpp * 100 : null]); } } var PJ0 = p && p.age ? popProjHtml(p.age, S.d.k.slice(0, 5), S.name, true) : null; if (PJ0 && PJ0.t) { P.push(PJ0.t); P.push('<div class="vz">' + PJ0.v + '</div>'); } if (HS0 && HS0.t) { P.push(HS0.t); P.push('<div class="vz">' + HS0.v + '</div>'); if (HSD.dong[S.d.k] && HSD.dong[S.d.k].hh) { var hp1 = HSD.dong[S.d.k].hh[1] / HSD.dong[S.d.k].hh[0] * 100; if (hp1 >= 45) tags.push('혼자 사는 세대 ' + Math.round(hp1) + '%'); } } }
     // ② 머무는 사람
     var L = S.live; if (L && (L.wd || L.we) && p && p.tot) { var t2 = '<b>머무는 사람.</b> ', o = [];
       ['wd', 'we'].forEach(function (k2) { var a = L[k2]; if (!a) return; var mx = Math.max.apply(null, a), mn = Math.min.apply(null, a), pk = a.indexOf(mx), busy = []; a.forEach(function (v, i) { if (v >= mn + (mx - mn) * 0.7) busy.push(i); });

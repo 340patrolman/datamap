@@ -84,7 +84,40 @@ for k, v in BZ.items():
     if bz: D[k]['bz5'] = bz
     bzi = [[INM[a], v.get(('2015', a), {}).get('T10', 0), v.get(('2020', a), {}).get('T10', 0)] for a in INM if a != '0' and (('2015', a) in v or ('2020', a) in v)]
     if bzi: D[k]['bzi5'] = sorted(bzi, key=lambda x: -x[2])
-SRCS = {'어린이집(전국)': '어린이집정보공개포털 「어린이집 기본정보」(정기 2026-09 말일 · 운영 중 · 좌표로 행정동)', '유치원(전국)': '교육부 유치원알리미 공시 「일반 현황」 2026년 1차(국·공·사립 전체 · 좌표로 행정동)', '사업체(경제총조사)': '통계청 경제총조사 읍·면·동별/산업대분류별 총괄(KOSIS DT_1KI1511 · DT_2KI2011 — 2015 · 2020 · 5년마다)'}
+# 관공서(서울·경기 밖) — 주민센터 = 행정안전부 읍면동 하부행정기관 현황(동 이름) · 우체국 = 우정사업본부 전국 우체국 현황(주소의 법정동 → 행정동 근사)
+GUBY = {}
+for f in feats:
+    pr = f['properties']; GUBY.setdefault((sg(pr['sidonm']), nz(pr['sggnm'])), pr['sgg'])
+def gu_of(addr):
+    t = addr.split()
+    if len(t) < 3: return None
+    for cand in (t[1] + t[2], t[1]):
+        g = GUBY.get((sg(t[0]), nz(cand)))
+        if g: return g
+    return None
+import glob as _g
+for r in csv.DictReader(open(_g.glob(os.path.join(SRC, '*읍면동 하부행정기관*.csv'))[0], encoding='utf-8-sig')):
+    nm = re.sub(r'\s*(행정복지센터|주민센터|사무소)$', '', r['읍면동'].strip()); k = find(r['시도'], r['시군구'], nm)
+    if k: D[k].setdefault('gov', {})['주민센터'] = 1; cnt['주민센터'] += 1
+    else: cnt['주민센터 못 맞춤'] += 1
+SHB = {}
+for fn in _g.glob(os.path.join(R, '*', 'shd.json')):
+    J = json.load(open(fn, encoding='utf-8'))
+    for u, v in J['b2h'].items(): SHB[(J['gu'], u)] = max(v, key=v.get)
+for r in csv.DictReader(open(_g.glob(os.path.join(SRC, '*우체국 현황*.csv'))[0], encoding='utf-8-sig')):
+    ad = (r.get(' 주소(도로명) ') or r.get('주소(도로명)') or '').strip(); g = gu_of(ad); m = re.search(r'\(([^,)]+)', ad)
+    em = next((w for w in ad.split()[2:5] if re.search('[읍면]$', w)), None)
+    if g and em:
+        k = next((f['properties']['adm_cd2'][:8] for f in feats if f['properties']['sgg'] == g and f['properties']['adm_nm'].split(' ')[-1] == em), None)
+        if k: g2 = D[k].setdefault('gov', {}); g2['우체국'] = g2.get('우체국', 0) + 1; cnt['우체국'] += 1; continue
+    if not g or not m: cnt['우체국 못 맞춤'] += 1; continue
+    bd = m.group(1).strip(); k = SHB.get((g, bd))
+    if not k:
+        st = re.sub(r'[0-9.·]*(동|가|리)$', '', bd); C = [f['properties']['adm_cd2'][:8] for f in feats if f['properties']['sgg'] == g and nz(f['properties']['adm_nm'].split(' ')[-1]).startswith(st)]
+        k = C[0] if len(C) == 1 else None
+    if k: g2 = D[k].setdefault('gov', {}); g2['우체국'] = g2.get('우체국', 0) + 1; cnt['우체국'] += 1
+    else: cnt['우체국 못 맞춤'] += 1
+SRCS = {'관공서(전국)': '주민센터 = 행정안전부 읍면동 하부행정기관 현황(2025-12-31) · 우체국 = 우정사업본부 전국 우체국 현황(2026-08-31 · 주소의 법정동으로 행정동 근사)', '어린이집(전국)': '어린이집정보공개포털 「어린이집 기본정보」(정기 2026-09 말일 · 운영 중 · 좌표로 행정동)', '유치원(전국)': '교육부 유치원알리미 공시 「일반 현황」 2026년 1차(국·공·사립 전체 · 좌표로 행정동)', '사업체(경제총조사)': '통계청 경제총조사 읍·면·동별/산업대분류별 총괄(KOSIS DT_1KI1511 · DT_2KI2011 — 2015 · 2020 · 5년마다)'}
 IX = json.load(open(os.path.join(R, 'index.json'), encoding='utf-8')); upd = 0
 for g in IX['gus']:
     gu = g['gu']; fn = os.path.join(R, gu, 'fac.json')
@@ -99,6 +132,7 @@ for g in IX['gus']:
         if 'kgc' in v: x['kgc'] = v['kgc']
         if not seoul_gg:
             if 'cc' in v: x['cc'] = v['cc']
+            if 'gov' in v and 'gov' not in x: x['gov'] = v['gov']
             if 'bz5' in v: x['bz'] = v['bz5']; x['bzi'] = v.get('bzi5', []); x['bziy'] = ['2015', '2020']; x['bzsrc'] = SRCS['사업체(경제총조사)']
         elif 'bz' not in x and 'bz5' in v: x['bz'] = v['bz5']; x['bzi'] = v.get('bzi5', []); x['bziy'] = ['2015', '2020']; x['bzsrc'] = SRCS['사업체(경제총조사)']
     pts = doc.setdefault('pts', {})

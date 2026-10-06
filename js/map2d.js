@@ -2066,7 +2066,7 @@
       h += row('어린이집 추이', F.cyears[0] + '년 ' + c0 + '곳 → ' + F.cyears[F.cyears.length - 1] + '년 ' + c1 + '곳 <b>' + sgn(pctCh(c0, c1)) + '</b>') + '<div class="cap">해마다 운영 중인 어린이집 수(곳 · 그해 말 · 인가일~폐지일로 셈 · ' + F.cyears[F.cyears.length - 1] + '년은 ' + (F.sido === '41' ? '자료 기준일 2025.7' : '지금') + ')</div>' + bar(x.ccy, '#db2777', F.cyears.map(function (y) { return "'" + String(y).slice(2); })); srcs.push(F.sido === '41' ? S['경기 어린이집'] : S['어린이집']); }
     if (x.kgy && x.kgy.some(function (v) { return v; })) { var g0 = x.kgy[0], g1 = x.kgy[x.kgy.length - 1];
       h += row('유치원 추이', F.kyears[0] + '년 ' + g0 + '곳 → ' + F.kyears[F.kyears.length - 1] + '년 ' + g1 + '곳 <b>' + sgn(pctCh(g0, g1)) + '</b>') + '<div class="cap">해마다 유치원 수(곳 · 서울시교육청 · ' + F.kyears[0] + '~' + F.kyears[F.kyears.length - 1] + ')</div>' + bar(x.kgy, '#d97706', F.kyears.map(function (y) { return "'" + String(y).slice(2); })); srcs.push(S['유치원·학교']); }
-    if (x.gov) { var GO = Object.keys(x.gov).sort(function (a, b) { return x.gov[b] - x.gov[a]; }); h += row('관공서', GO.map(function (k) { return esc(k) + ' ' + x.gov[k]; }).join(' · ') + ' <em>(OSM)</em>'); }
+    if (x.gov) { var GO = Object.keys(x.gov).sort(function (a, b) { return x.gov[b] - x.gov[a]; }); h += row('관공서', GO.map(function (k) { return esc(k) + ' ' + x.gov[k]; }).join(' · ') + ' <em>(' + (/^(11|41)/.test(String(F.gu || '')) ? 'OSM' : '주민센터 = 행정안전부 · 우체국 = 우정사업본부 — 주소로 동을 잡은 곳만') + ')</em>'); }
     if (x.gcs && x.gcs.m.length) { var g2 = x.gcs, ch = pctCh(g2.h22, g2.h25); srcs.push(S['경기 카드매출']);
       h += '<div class="dh">💳 카드 매출 — 경기도 카드사 집계</div>' + row('같은 1~6월 월평균', won(g2.h22) + ' (2022) → <b>' + won(g2.h25) + '</b> (2025) <b>' + sgn(ch) + '</b>') + (g2.bar ? row('주점·유흥(2025 월평균)', won(g2.bar)) : '') +
         '<div class="lst">' + g2.ind.slice(0, 8).map(function (t) { var c = pctCh(t[2], t[1]), mm = String(t[0]).match(/^(소매\/유통|생활서비스|여가\/오락|음식|학문\/교육|의료\/건강|공연\/전시|미디어\/통신|공공\/기업\/단체)\/(.+)$/) || [0, '', t[0]]; return '<div><b>' + esc(mm[2]) + '</b> <small>' + esc(mm[1]) + '</small><span class="' + (c == null ? '' : c > 10 ? 'up' : c < -10 ? 'dn' : '') + '">' + won(t[1]) + ' ' + sgn(c) + '</span></div>'; }).join('') + '</div>' +
@@ -2947,7 +2947,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.51.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.51.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }

@@ -3944,17 +3944,27 @@
     else { LAYERS.forEach(function (l) { if (KEEP.indexOf(l[0]) < 0) on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; m[3].forEach(function (k) { if (hasL(k)) on[k] = true; }); }
     unitKeep(); CAT = c; MID = id; try { localStorage.setItem('tg_map2d_cat', c); localStorage.setItem('tg_map2d_mid', id); } catch (e) {}
     saveOn(); paintLayers(); sel = null; show(null); draw(); summary(); }
-  var LFQ = '';
+  var LFQ = '', LV = 'cat'; try { LV = localStorage.getItem('tg_map2d_lv') || 'cat'; } catch (e) {}
   function catPaint(pn, nOn) {   // v2.20.0 소유자 「먼저 판은 고르기 쉬웠는데 지금은 찾을 수 없다 · 전체를 다 볼 수 있게 · 구분은 잘 되어 있다」 → 탭으로 가리지 않고 모두 펼친다
     if (!CATS) return;
     if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanH"></div><div id="m2dPanB"></div><div class="pst"><div class="psec">⚡ 근무별 한 번에</div></div>'; var st = pn.querySelector('.pst');
       if ($('m2dPre')) st.appendChild($('m2dPre')); var t2 = document.createElement('div'); t2.className = 'psec'; t2.textContent = '🕒 이 시각 한눈에'; st.appendChild(t2); if ($('m2dSum')) st.appendChild($('m2dSum'));
       var ft = document.createElement('div'); ft.className = 'pg pft'; ft.innerHTML = '<button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button><button data-onb="1">❔ 처음 안내 다시</button>'; st.appendChild(ft);
-      $('m2dPanH').innerHTML = '<div class="ph"><b>🗂 레이어 <small id="m2dPanN"></small></b><button data-lh="1">❓ 설명</button><button class="x" data-close="1">닫기</button></div><input id="m2dLF" type="search" placeholder="레이어 이름으로 찾기 — 예: 사고 · 공시지가 · 버스" autocomplete="off"><div class="jmp">' + CATS.filter(function (c) { return c[2]; }).map(function (c) { return '<button data-jump="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '<button data-jump="etc">➕ 그 밖</button></div>';
+      $('m2dPanH').innerHTML = '<div class="ph"><b>🗂 레이어 <small id="m2dPanN"></small></b><button data-lh="1">❓ 설명</button><button class="x" data-close="1">닫기</button></div><div class="lvs"><button data-lv="cat">🗂 묶음별</button><button data-lv="all">📋 전체 목록</button><button data-lv="on">✅ 켜진 것</button></div><input id="m2dLF" type="search" placeholder="레이어 이름으로 찾기 — 예: 사고 · 공시지가 · 버스" autocomplete="off"><div class="jmp" id="m2dJmp"></div>';
       $('m2dLF').addEventListener('input', function () { LFQ = this.value.trim(); lfApply(); }); }
     $('m2dPanN').textContent = nOn + '개 켜짐'; var lhb = $('m2dPanH').querySelector('[data-lh]'); if (lhb) lhb.classList.toggle('on', !!LHON);
+    $('m2dPanH').querySelectorAll('[data-lv]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-lv') === LV); if (b.getAttribute('data-lv') === 'on') b.textContent = '✅ 켜진 것 ' + nOn; });
+    var GL = []; LAYERS.forEach(function (l) { if (GL.indexOf(l[3]) < 0) GL.push(l[3]); }); GL.sort(function (a, b) { var x = GORD.indexOf(a), y = GORD.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
+    $('m2dJmp').innerHTML = LV === 'cat' ? CATS.filter(function (c) { return c[2]; }).map(function (c) { return '<button data-jump="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '<button data-jump="etc">➕ 그 밖</button>' : LV === 'all' ? GL.map(function (g, i) { return '<button data-jump="g' + i + '">' + esc(g) + '</button>'; }).join('') : '';
     function chip(k) { var bt = '<button data-k="' + k + '" class="lyr' + (on[k] ? ' on' : '') + '" data-n="' + esc(lname(k)) + '">' + lname(k) + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(k) + '</div>' : bt; }
     var seen = {}, h = LHON ? '<p class="lhn">레이어 이름을 누르면 켜고 끈다. 회색 글은 그 레이어가 무엇인지 · 어디서 온 자료인지 · 어떻게 쓰는지.</p>' : '';
+    if (LV === 'all' || LV === 'on') {   // v2.25.0 소유자 「레이어 메뉴 전체가 보여야 하는데 전체에서도 고를 수 있게」 — 모든 레이어를 분류마다 한 번씩(묶음별처럼 겹치지 않게) · 켜진 것만
+      var LS = LV === 'on' ? LAYERS.filter(function (l) { return on[l[0]]; }) : LAYERS;
+      h += LV === 'on' && !LS.length ? '<p class="lhn">켜진 레이어가 없다.</p>' : '';
+      h += GL.map(function (g, i) { var ls = LS.filter(function (l) { return l[3] === g; }); if (!ls.length) return ''; var n = ls.filter(function (l) { return on[l[0]]; }).length;
+        return '<section class="c1" id="lc-g' + i + '"><div class="c2"><div class="c2h"><b>' + esc(g) + '</b><small style="color:var(--ink2)">' + ls.length + '</small>' + (n ? '<i>' + n + '</i>' : '') + '</div><div class="pg' + (LHON ? ' lhv' : '') + '">' + ls.map(function (l) { return chip(l[0]); }).join('') + '</div></div></section>'; }).join('');
+      if (LV === 'all') h += '<p class="lhn">모두 ' + LAYERS.length + '개 레이어 · 「🗂 묶음별」은 쓰임새(인구·경찰업무·상권…)로 다시 묶어 같은 레이어가 여러 곳에 나온다.</p>';
+      $('m2dPanB').innerHTML = h; lfApply(); qcPaint(); return; }
     CATS.forEach(function (c) { if (!c[2]) return;
       h += '<section class="c1" id="lc-' + c[0] + '"><h4>' + c[1] + '</h4>' + c[2].map(function (m) { var ks = midKeys(m), n = ks.filter(function (k) { return on[k]; }).length; ks.forEach(function (k) { seen[k] = 1; });
         return '<div class="c2"><div class="c2h"><b>' + m[1] + '</b>' + (n ? '<i>' + n + '</i>' : '') + (m[3].length ? '<button data-mon="' + c[0] + '|' + m[0] + '">기본만 켜기</button>' : '') + (n ? '<button data-moff="' + c[0] + '|' + m[0] + '">끄기</button>' : '') + '</div>' +
@@ -3968,6 +3978,7 @@
     B.querySelectorAll('.pg, .c2, .c1').forEach(function (g) { if (!q) { g.style.display = ''; return; } var any = Array.prototype.some.call(g.querySelectorAll('button.lyr'), function (b) { var el = b.parentNode.classList.contains('lhi') ? b.parentNode : b; return el.style.display !== 'none'; }); g.style.display = any ? '' : 'none'; }); }
   function catClick(b) {
     var a;
+    if ((a = b.getAttribute('data-lv'))) { LV = a; try { localStorage.setItem('tg_map2d_lv', LV); } catch (e) {} paintLayers(); var pn0 = $('m2dPanel'); if (pn0) pn0.scrollTop = 0; return true; }
     if ((a = b.getAttribute('data-jump'))) { var sc = $('lc-' + a), pn = $('m2dPanel'); if (sc && pn) pn.scrollTo({ top: sc.offsetTop - ($('m2dPanH') ? $('m2dPanH').offsetHeight : 0) - 4, behavior: 'smooth' }); return true; }
     if ((a = b.getAttribute('data-cat'))) { CAT = a; var C = catOf(a); if (C && C[2] && !C[2].some(function (m) { return m[0] === MID; })) MID = C[2][0][0]; try { localStorage.setItem('tg_map2d_cat', CAT); localStorage.setItem('tg_map2d_mid', MID); } catch (e) {} paintLayers(); return true; }
     if ((a = b.getAttribute('data-mid'))) { MID = a; try { localStorage.setItem('tg_map2d_mid', MID); } catch (e) {} paintLayers(); return true; }

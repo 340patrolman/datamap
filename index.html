@@ -539,6 +539,13 @@
     #m2dZoom #m2dFit, #m2dZoom #m2dLegB { font-size: 12px !important; }
     body.cardon #m2dCtrB { display: none !important; }
   }
+  /* v2.25.0 레이어 판 — 보기 셋(묶음별 · 전체 목록 · 켜진 것) · 폰에서는 위 막대 아래부터 화면 끝까지 */
+  #m2dPanel .lvs { display: flex; background: var(--chip); border-radius: 12px; padding: 3px; gap: 2px; margin: 2px 0 6px; }
+  #m2dPanel .lvs button { flex: 1; min-width: 0; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+  #m2dPanel .lvs button.on { background: var(--acc); color: #fff; }
+  :root.dark #m2dPanel .lvs button.on { background: #2563eb; }
+  #m2dJmp:empty { display: none; }
+  @media (max-width: 759px) { #m2dPanel { top: calc(var(--toph, 90px) + 4px) !important; max-height: none !important; } }
 </style>
 </head>
 <body>
@@ -637,7 +644,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.24.0"></script>
+<script src="js/map2d.js?v=2.25.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

@@ -19,7 +19,7 @@
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
     ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
-    ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['jiga', '🟧 공시지가·지목 지도(대지 ㎡당 · 농지·임야 비율 · 250m·동)', false, '주거·부동산', 1], ['land', '📐 필지 — 공시지가·용도·건물(누르면 · 브이월드)', false, '주거·부동산', 1], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['lpop', '👥 생활인구(인구감소지역 · 시군구 월별)', false, '인구 구성', 1], ['fdong', '🌏 외국인 현황(시군구·읍면동 · 비율·인원·유형·5년 변화)', false, '인구 구성', 1], ['minbak', '🏡 외국인관광 도시민박', false, '인구 구성', 1], ['stay', '🛏 숙박시설(호텔·호스텔·콘도·한옥·펜션·농어촌민박·모텔 · 전국)', false, '인구 구성', 1], ['flodge', '🏨 관광숙박(서울 · 호텔·호스텔)', false, '인구 구성', 0], ['msub', '🚇 대구 도시철도 하차(월별)', false, '이동·동선', 0], ['busd', '🚌 인천 버스 정류장 승하차(일평균)', false, '이동·동선', 0], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['usgg', '🗂 시군구로 나눠 보기', false, '바탕', 1], ['rnet', '🛣 도로망 등급(전국 · 국도·지방도·시군도)', false, '도로·교통', 1], ['volp', '🚙 시간대 교통량(서울 조사 지점)', false, '도로·교통', 1], ['exv', '🛣 고속도로 영업소 교통량(전국)', false, '도로·교통', 1], ['upb', '👮 지구대·파출소 관할(근사)', false, '치안·안전', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
+    ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['jiga', '🟧 공시지가·지목 지도(대지 ㎡당 · 농지·임야 비율 · 250m·동)', false, '주거·부동산', 1], ['land', '📐 필지 — 공시지가·용도·건물(누르면 · 브이월드)', false, '주거·부동산', 1], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['lpop', '👥 생활인구(인구감소지역 · 시군구 월별)', false, '인구 구성', 1], ['fdong', '🌏 외국인 현황(시군구·읍면동 · 비율·인원·유형·5년 변화)', false, '인구 구성', 1], ['minbak', '🏡 외국인관광 도시민박', false, '인구 구성', 1], ['stay', '🛏 숙박시설(호텔·호스텔·콘도·한옥·펜션·농어촌민박·모텔 · 전국)', false, '인구 구성', 1], ['flodge', '🏨 관광숙박(서울 · 호텔·호스텔)', false, '인구 구성', 0], ['msub', '🚇 대구 도시철도 하차(월별)', false, '이동·동선', 0], ['busd', '🚌 인천 버스 정류장 승하차(일평균)', false, '이동·동선', 0], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['usgg', '🗂 시군구로 나눠 보기', false, '바탕', 1], ['rnet', '🛣 도로망 등급(전국 · 국도·지방도·시군도)', false, '도로·교통', 1], ['rpost', '🔢 도로 번호(서울 도시고속도로 가로등 · 고속도로 거리표)', false, '도로·교통', 1], ['volp', '🚙 시간대 교통량(서울 조사 지점)', false, '도로·교통', 1], ['exv', '🛣 고속도로 영업소 교통량(전국)', false, '도로·교통', 1], ['upb', '👮 지구대·파출소 관할(근사)', false, '치안·안전', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
     ['risk', '🟥 사고위험지역', false, '교통사고', 0], ['sz', '🏫 어린이보호구역', false, '교통사고', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통사고', 0], ['cam', '📷 단속 카메라', false, '도로·교통', 0], ['spd', '🚥 도로 소통(받은 때)', false, '도로·교통', 0], ['sig', '🚦 신호 주기', false, '도로·교통', 0], ['sigx', '🔢 신호 교차로 번호', false, '도로·교통', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '소비·상권', 1], ['rent', '💰 상가 임대료·공실률', false, '소비·상권', 0], ['szone', '🏬 소진공 주요상권(전국)', false, '소비·상권', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '인구 구성', 1], ['crowd', '📡 실시간 인파·카드', false, '이동·동선', 1], ['live', '👥 생활인구(지금)', false, '인구 구성', 1], ['sales', '💳 카드 매출(시간대)', false, '소비·상권', 1], ['bus', '🚌 버스 승차·하차', false, '이동·동선', 1], ['subr', '🚇 지하철 승차·하차', false, '이동·동선', 0], ['vol', '🚙 교통량', false, '이동·동선', 0], ['bike', '🚲 따릉이', false, '이동·동선', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
@@ -860,7 +860,7 @@
     GU.forEach(function (g) { path(g.pts); ctx.lineWidth = 2.4; ctx.setLineDash([8, 5]); ctx.strokeStyle = dark ? '#9fb3d1' : '#475569'; ctx.stroke(); ctx.setLineDash([]); });
     // 도로 — 바탕 지도가 있으면 OSM 도로 전부(종류별 폭·색 · 지하차도 점선 · 다리 테), 없으면 간선 10개
     if (on.road && OSM) drawBaseRoads(dark);
-    drawUnits(dark); drawLpop(dark); drawFdong(dark); drawRnet(dark); drawSgg(dark); drawVols(dark); drawExv(dark); drawMsub(dark); drawBusd(dark); drawFlodge(dark); drawMinbak(dark); drawStay(dark); drawJiga(dark); drawLand(dark);   // v0.10.90 시·군·구 경계(서울·경기·인천)
+    drawUnits(dark); drawLpop(dark); drawFdong(dark); drawRnet(dark); drawSgg(dark); drawVols(dark); drawExv(dark); drawMsub(dark); drawBusd(dark); drawFlodge(dark); drawMinbak(dark); drawStay(dark); drawRpost(dark); drawJiga(dark); drawLand(dark);   // v0.10.90 시·군·구 경계(서울·경기·인천)
     // 건물
     if (on.bld && BLD.length && view.s > 0.12) BLD.forEach(function (b) { path(b.p); ctx.closePath(); ctx.fillStyle = dark ? 'rgba(200,210,225,.28)' : (BASE ? 'rgba(186,176,164,.85)' : 'rgba(90,100,115,.30)'); ctx.fill(); if (BASE && !dark && view.s > 0.5) { ctx.lineWidth = 0.6; ctx.strokeStyle = 'rgba(120,110,100,.7)'; ctx.stroke(); } });
     if ((on.road || on.jcnm) && OSM) drawBaseLabels(dark);
@@ -924,7 +924,7 @@
   cv.addEventListener('pointermove', function (e) { if (!ptrs[e.pointerId]) return; ptrs[e.pointerId] = [e.offsetX, e.offsetY]; var ks = Object.keys(ptrs);
     if (pinch && ks.length === 2) { var a = ptrs[ks[0]], b = ptrs[ks[1]], d = Math.hypot(a[0] - b[0], a[1] - b[1]); zoomAt(pinch.s * d / pinch.d, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, pinch.m); return; }
     if (drag) { var dx = e.offsetX - drag.x, dy = e.offsetY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy)); view.cx = drag.cx - dx / view.s; view.cy = drag.cy - dy / view.s; draw(); } });
-  function up(e) { var wasTap = drag && drag.moved < 6; delete ptrs[e.pointerId]; if (Object.keys(ptrs).length < 2) pinch = null; if (wasTap) tap(e.offsetX, e.offsetY); if (!Object.keys(ptrs).length) drag = null; }
+  function up(e) { var wasTap = drag && drag.moved < 6 && !RPLP.fired; delete ptrs[e.pointerId]; if (Object.keys(ptrs).length < 2) pinch = null; if (wasTap) tap(e.offsetX, e.offsetY); if (!Object.keys(ptrs).length) drag = null; }
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', function (e) { delete ptrs[e.pointerId]; drag = null; pinch = null; });
   cv.addEventListener('wheel', function (e) { e.preventDefault(); zoomAt(view.s * (e.deltaY < 0 ? 1.18 : 1 / 1.18), e.offsetX, e.offsetY); }, { passive: false });
   function zoomAt(ns, sx, sy, anchor) { ns = Math.max(0.03, Math.min(3, ns)); var m = anchor || M(sx, sy); view.s = ns; view.cx = m[0] - (sx - cv.clientWidth / 2) / ns; view.cy = m[1] - (sy - cv.clientHeight / 2) / ns; if (on.bld && ns > 0.12) loadBld(); draw(); }
@@ -1067,6 +1067,7 @@
     } else if (it.kind === 'vols') { h = volsCard(it.v);
     } else if (it.kind === 'exv') { h = exvCard(it.u);
     } else if (it.kind === 'stay') { h = stayCard(it);
+    } else if (it.kind === 'rpost' || it.kind === 'rnear') { h = rpCard(it);
     } else if (it.kind === 'minbak') { var mb = it.s; h = '<h3>🏡 ' + esc(mb[2]) + '</h3>' + row('상태', mb[3] ? '<b>휴업</b>' : '영업') + row('주소', esc(mb[5])) + row('객실수', mb[4] != null ? mb[4] + '실' : '자료 없음') + row('인허가', esc(mb[6])) + (mb[8] ? row('자리', '원본에 좌표가 없어 주소로 찾음') : '') + '<p class="desc">외국인관광 도시민박업(관광진흥법) — 외국인 관광객에게 집을 내주는 민박. 투숙 인원·국적은 공개되지 않는다.</p>' + src(it.m.source);
     } else if (it.kind === 'flodge') { var fl = it.s; h = '<h3>🏨 ' + esc(fl[2]) + '</h3>' + row('업종', esc(fl[3]) + (fl[4] && fl[4] !== '도시민박' ? ' · ' + esc(fl[4]) : '')) + row('주소', esc(fl[5])) + row('인허가', esc(fl[6])) + '<p class="desc">' + esc(FLODGE.note) + '</p>' + src(FLODGE.source);
     } else if (it.kind === 'busd') { var bd = it.s; h = '<h3>🚌 ' + esc(bd[0]) + ' <small>(' + esc(bd[1]) + ')</small></h3>' + row('승차 하루 평균', bd[4].toLocaleString() + '명') + row('하차 하루 평균', bd[5].toLocaleString() + '명') + '<p class="desc">' + esc(BUSD.note) + '</p>' + src(BUSD.source);
@@ -2856,6 +2857,7 @@
   $('m2dFind').addEventListener('keydown', function (e) {
     if (e.key !== 'Enter') return;
     var q = this.value.trim(); if (!q) return;
+    if (rpFind(q, this)) return;
     var c = [];
     DONG.forEach(function (d) { if (d.name.indexOf(q) >= 0) c.push({ p: d.c, it: { kind: 'dong', d: d } }); });
     var rseen = {}; RDONG.forEach(function (d) { if ((d.gu + ' ' + d.name).indexOf(q) >= 0) { rseen[d.gcd + d.name] = 1; c.push({ p: d.c, it: { kind: 'dong', d: d } }); } });
@@ -3023,6 +3025,7 @@
   function trdBB(x) { if (!x.bb) { var b = [1e9, -1e9, 1e9, -1e9]; x.rings.forEach(function (r) { r.forEach(function (q) { b[0] = Math.min(b[0], q[0]); b[1] = Math.max(b[1], q[0]); b[2] = Math.min(b[2], q[1]); b[3] = Math.max(b[3], q[1]); }); }); x.bb = b; } return x.bb; }
   // ---------- ❓ 층 설명(v2.0.0 · 소유자 「많은 레이어가 있어 이제는 친절한 설명이 필요해」) — 무엇을 · 어디서 · 어떻게 쓰나 ----------
   var LHELP = {
+    rpost: '도로 위 기둥 번호 — 서울 도시고속도로 가로등주 관리번호(예: 올_23-05 · 서울시 2022-11 · 19,291개). 많이 확대하면 점과 번호가 보인다. 찾기 칸에 「올 23-05」·「올림픽 23-5」를 넣으면 그 자리로 간다. 지도를 길게 누르면(PC 는 오른쪽 클릭) 가장 가까운 번호를 알려 준다 — 112·무전으로 위치를 불러 줄 때. 고속도로 거리표(km)는 한국도로공사 파일을 받으면 붙는다 · 일반국도 km 는 공개 자료가 없어 만들지 않는다.',
     stay: '전국 숙박시설 — 관광호텔·호스텔·휴양콘도·한옥체험(한옥스테이)·관광펜션·농어촌민박·일반 숙박업(여관·모텔 등) 영업 중인 곳(행정안전부 지방행정인허가 2025-11-27). 범례에서 종류를 골라 켜고 끈다. 영문 상호가 있으면 외국인 손님을 받는 곳일 가능성이 크다(추론). 에어비앤비 등 등록 안 한 숙소·투숙 인원은 공개되지 않는다.',
     jiga: '대지(지목 「대」) 필지의 ㎡당 개별공시지가 중앙값 — 250m 칸 색(가까이) · 행정동 색(멀리). 범례에서 「🌾 농지 · 🌳 임야 · 🏠 대지 · 🏭 공장 비율」로 바꾸면 지목(땅 쓰임) 넓이 비율을 칠한다. 국토교통부 개별공시지가(브이월드 연속지적도 · 이용허락 제한 없음)를 이 지도가 칸·동으로 묶었다. 필지 하나는 「📐 필지」를 켜고 누른다. 공시지가는 세금·보상 기준값이지 시세가 아니다.',
     land: '켜고 지도를 누르면 그 자리 필지 하나 — 지번·개별공시지가(1990년부터 해마다)·면적·지목·이용상황·도로접면·용도지역·지구(토지이용계획)·소유 구분·건물(용도·층·연면적·사용승인). 많이 확대하면 지적선, 범례에서 용도지역 색. 국토교통부 브이월드에서 그때 받는다(브이월드 키 · 이 기기에만) · 받은 값은 저장하지 않는다 · 공시지가는 시세가 아니다.',
@@ -3769,6 +3772,52 @@
 
 
 
+
+  // ---------- v2.30.0 🔢 도로 번호 → 위치(코워크 지시 2026-10-06) — data/road-posts.json(tools/region/roadpost-bake.py) ----------
+  //  가로등주 관리번호 「접두_구간-순번」 · 찾기 칸에서 번호로 가기 · 길게 누르기(PC 오른쪽 클릭) = 가장 가까운 번호 · 접두 뜻(올=올림픽대로 …)은 추정
+  var RP = null, RPP = null, RPIX = null, RPLP = { t: 0, fired: false, x: 0, y: 0 };
+  var RPALIAS = [[/^올림픽(대로)?/, '올'], [/^강변(북로)?/, '강'], [/^동부(간선(도로)?)?/, '동'], [/^내부(순환(로)?)?/, '내'], [/^북부(간선(도로)?)?/, '북부']];
+  function rpKey(t) { t = String(t || '').replace(/\s+/g, ' ').trim(); RPALIAS.forEach(function (a) { t = t.replace(a[0], a[1]); });
+    var m = /^(.*?)[\s_]*(\d+)\s*-\s*(\d+)$/.exec(t) || /^(.*?)[\s_]+(\d+)\s+(\d+)$/.exec(t); if (m) return m[1].replace(/[\s_-]+$/, '').replace(/\s+/g, '') + '|' + (+m[2]) + '|' + (+m[3]);
+    var m2 = /^(.*?)[\s_-]*(\d+)$/.exec(t); return m2 ? m2[1].replace(/[\s_-]+$/, '').replace(/\s+/g, '') + '|' + (+m2[2]) : t.replace(/\s+/g, ''); }
+  function rpLoad() { if (RPP) return RPP; RPP = fetch('data/road-posts.json').then(function (r) { return r.json(); }).then(function (j) { RP = j; RPIX = {};
+      Object.keys(j.sets).forEach(function (sk) { j.sets[sk].items.forEach(function (it) { it.p = sk === 'exkm' ? P(it[4], it[3]) : P(it[2], it[1]); it.sk = sk; if (sk === 'lamp') RPIX[rpKey(it[0])] = it; }); }); draw(); return j; }).catch(function () { RPP = null; return null; }); return RPP; }
+  function rpRoad(id) { var L = RP && RP.sets.lamp; if (!L) return ''; var pre = String(id).split('_')[0]; return L.prefix && L.prefix[pre] ? L.prefix[pre] + ' <em>(접두로 본 추정)</em>' : esc(String(id).replace(/[-_]?\d+(-\d+)?$/, '')); }
+  function rpGo(it) { view.cx = it.p[0]; view.cy = it.p[1]; view.s = Math.max(view.s, 0.6); if (!on.rpost) { on.rpost = true; saveOn(); paintLayers(); } draw(); var sx = S(it.p); TAPM = it.p; sel = { x: sx[0], y: sx[1], r: 8, it: { kind: 'rpost', r: it } }; show(sel.it); draw(); }
+  function rpFind(q, inp) {
+    var k = rpKey(q), kk0 = k.split('|'); if (kk0.length < 2 || !kk0[0]) return false;
+    if (!RP) { $('m2dFindMsg').textContent = '도로 번호 목록을 받는 중…'; rpLoad().then(function (j) { if (j) inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); }); return true; }
+    var it = RPIX[k];
+    if (!it) { var kk = k.split('|'), cand = RP.sets.lamp.items.filter(function (x) { var y = rpKey(x[0]).split('|'); return y[0] === kk[0] && y[1] === kk[1]; });
+      if (!cand.length) return false; if (kk[2] != null) { cand.sort(function (a, b) { return Math.abs(+rpKey(a[0]).split('|')[2] - kk[2]) - Math.abs(+rpKey(b[0]).split('|')[2] - kk[2]); }); } it = cand[0]; $('m2dFindMsg').textContent = '「' + q + '」 그대로는 없어 가장 가까운 번호 ' + it[0] + ' 로'; }
+    else $('m2dFindMsg').textContent = '';
+    rpGo(it); return true; }
+  function rpNear(m, sk, lim) { if (!RP || !RP.sets[sk]) return null; var b = null, bd = 1e12; RP.sets[sk].items.forEach(function (it) { var dx = it.p[0] - m[0], dy = it.p[1] - m[1]; if (Math.abs(dx) > lim || Math.abs(dy) > lim) return; var d = dTrue(it.p, m); if (d < bd) { bd = d; b = it; } }); return b && bd <= lim ? [b, bd] : null; }
+  function drawRpost(dark) {
+    if (!on.rpost) return; if (!RP) { rpLoad(); return; } if (view.s < 0.35) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, lab = view.s >= 0.9;
+    Object.keys(RP.sets).forEach(function (sk) { RP.sets[sk].items.forEach(function (it) { var sx = S(it.p); if (sx[0] < -20 || sx[1] < -20 || sx[0] > W0 + 20 || sx[1] > H0 + 20) return;
+      dot(it.p, 3, sk === 'exkm' ? '#16a34a' : '#f59e0b', dark ? '#111827' : '#fff', { kind: 'rpost', r: it });
+      if (lab) { ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; var tx = sk === 'exkm' ? it[1] + ' ' + it[2] + 'k' : String(it[0]).replace('_', ''); ctx.lineWidth = 3; ctx.strokeStyle = dark ? 'rgba(15,22,36,.9)' : 'rgba(255,255,255,.9)'; ctx.strokeText(tx, sx[0] + 5, sx[1]); ctx.fillStyle = dark ? '#fde68a' : '#92400e'; ctx.fillText(tx, sx[0] + 5, sx[1]); } }); });
+  }
+  function rpCopyBtn(p) { var ll = [p[0] / KX + LON0, LAT0 - p[1] / KY]; return '<button data-copy="' + ll[1].toFixed(6) + ', ' + ll[0].toFixed(6) + '">📋 좌표 복사 ' + ll[1].toFixed(5) + ', ' + ll[0].toFixed(5) + '</button>'; }
+  function rpCard(it) {
+    var L = RP && RP.sets.lamp, srcT = src((L ? L.source + ' · ' + L.license : '서울특별시 가로등 위치 정보') + ' · 기준일 2022-11-08 — 그 뒤 바뀐 번호는 다를 수 있다');
+    if (it.kind === 'rpost') { var r = it.r; if (r.sk === 'exkm') return '<h3>🔢 ' + esc(r[1]) + ' ' + esc(r[2]) + 'km</h3>' + row('노선', esc(r[0]) + ' ' + esc(r[1])) + '<div class="lg-btns">' + rpCopyBtn(r.p) + '</div><p class="desc">⚠ 도로 중심선 위 점이라 실제 거리표 기둥과 수~수십 m 다르다 · 상·하행 구분 없음</p>' + src(RP.sets.exkm.source || '한국도로공사 도로중심선 이정 좌표');
+      return '<h3>🔢 ' + esc(r[0]) + '</h3>' + row('도로', rpRoad(r[0])) + row('번호 꼴', '접두_구간-순번 (가로등주 관리번호)') + '<div class="lg-btns">' + rpCopyBtn(r.p) + '</div><p class="desc">' + esc((L && L.prefixNote) || '') + ' · 기둥에 붙은 번호와 다르면 현장 번호가 맞다.</p>' + srcT; }
+    if (!RP) { rpLoad(); return '<h3>📍 여기서 가장 가까운 번호</h3><p class="desc">도로 번호 목록을 받는 중…</p>'; }
+    var m = it.m, a = rpNear(m, 'lamp', 600), b = rpNear(m, 'exkm', 1500), h = '<h3>📍 여기서 가장 가까운 번호</h3>';
+    h += a ? row('가로등 번호', '<button class="lk" data-rpgo="lamp|' + esc(a[0][0]) + '"><b>' + esc(a[0][0]) + '</b></button> · ' + Math.round(a[1]) + 'm · ' + rpRoad(a[0][0])) : row('가로등 번호', '600m 안에 없다 <em>(서울 도시고속도로만 자료가 있다)</em>');
+    if (RP.sets.exkm) h += b ? row('고속도로 거리표', esc(b[0][1]) + ' <b>' + esc(b[0][2]) + 'km</b> · ' + Math.round(b[1]) + 'm') : row('고속도로 거리표', '1.5km 안에 없다');
+    else h += row('고속도로 거리표', '자료 대기 <em>(한국도로공사 이정 좌표를 받으면 붙는다)</em>');
+    return h + '<div class="lg-btns">' + rpCopyBtn(m) + '</div><p class="desc">112·119·무전으로 위치를 불러 줄 때 — 「올림픽대로 올_23-05 가로등 앞」처럼. 일반국도 km 는 공개 자료가 없다.</p>' + srcT; }
+  cv.addEventListener('pointerdown', function (e) { RPLP.fired = false; clearTimeout(RPLP.t); if (e.pointerType === 'mouse') return; RPLP.x = e.offsetX; RPLP.y = e.offsetY;
+    RPLP.t = setTimeout(function () { if (drag && drag.moved >= 8) return; if (Object.keys(ptrs).length > 1) return; RPLP.fired = true; rpLong(RPLP.x, RPLP.y); }, 650); });
+  cv.addEventListener('pointermove', function (e) { if (Math.abs(e.offsetX - RPLP.x) + Math.abs(e.offsetY - RPLP.y) > 8) clearTimeout(RPLP.t); });
+  cv.addEventListener('pointerup', function () { clearTimeout(RPLP.t); });
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); clearTimeout(RPLP.t); RPLP.fired = true; rpLong(e.offsetX, e.offsetY); });
+  function rpLong(x, y) { var m = M(x, y); TAPM = m; var it = { kind: 'rnear', m: m }; sel = { x: x, y: y, r: 6, it: it }; rpLoad().then(function () { if (sel && sel.it === it) show(it); }); show(it); draw(); try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-rpgo]'); if (b) { var a = b.getAttribute('data-rpgo').split('|'), it = RPIX && RPIX[rpKey(a[1])]; if (it) rpGo(it); return; }
+    var c = e.target.closest('#m2dCard [data-copy]'); if (c) { var t = c.getAttribute('data-copy'); try { navigator.clipboard.writeText(t).then(function () { c.textContent = '✅ 복사했다 ' + t; }); } catch (e2) { prompt('복사', t); } } });
   // ---------- v2.28.0 🔗 이 자리의 관계(온톨로지) — 소유자 「여러 가지 온톨로지적 개념을 넣은 설명을 상단에」 ----------
   //  대상(지점·칸·동·지구대·경찰서·시군구·교차로·카메라·응급실·관서)과 그 사이 관계(속함·관할·구역·가까움)를 이름 붙여 잇는다 · 관계마다 근거 = 원자료 / 계산(거리) / 근사
   var RELON = true; try { RELON = localStorage.getItem('tg_map2d_rel') !== '0'; } catch (e) {}
@@ -3784,9 +3833,10 @@
     var er = PUB && PUB.er && PUB.er.length ? relNear(m, PUB.er, function (q) { return q.p; }, function (q) { return q.name; }) : null; if (er && er[1] < 15000) nx.push(['🏥 응급실', er[0], er[1], '응급의료기관(원자료) · 거리 계산']);
     if (POL2) { var pb = relNear(m, POL2.pbox, function (b) { return b.p; }, function (b) { return b[0] + (b[1] ? ' 파출소' : ' 지구대'); }); if (pb) nx.push(['👮 지구대·파출소 청사', pb[0], pb[1], '경찰청 주소 현황 → 좌표 · 거리 계산']);
       var ps = relNear(m, POL2.stations, function (q) { return q.p; }, function (q) { return q[1]; }); if (ps) nx.push(['🚓 경찰서 청사', ps[0], ps[1], '경찰민원24 좌표 · 거리 계산']); }
+    var rpn = RP ? rpNear(m, 'lamp', 400) : null; if (rpn) nx.push(['🔢 가로등 번호', rpn[0][0], rpn[1], '서울시 가로등 위치(2022-11) · 거리 계산']);
     var ll = [m[0] / KX + LON0, LAT0 - m[1] / KY];
     var h = '<details class="rel"' + (RELON ? ' open' : '') + '><summary>🔗 이 자리의 관계 <small>— 대상과 관계를 이름 붙여 잇는 「온톨로지」 보기</small></summary>' +
-      '<div class="relx">지점 <b>' + ll[1].toFixed(5) + ', ' + ll[0].toFixed(5) + '</b>' + (it && it.kind && it.kind !== 'dong' && it.kind !== 'unit' ? ' · 지금 카드 = ' + esc(({ g250: '250m 칸', land: '필지', jgc: '공시지가 칸', node: '교차로', cam: '단속 카메라', stay: '숙박시설', minbak: '도시민박', pub: '시설', rnl: '도로' })[it.kind] || it.kind) : '') + '</div>' +
+      '<div class="relx">지점 <b>' + ll[1].toFixed(5) + ', ' + ll[0].toFixed(5) + '</b>' + (it && it.kind && it.kind !== 'dong' && it.kind !== 'unit' ? ' · 지금 카드 = ' + esc(({ g250: '250m 칸', land: '필지', jgc: '공시지가 칸', node: '교차로', cam: '단속 카메라', stay: '숙박시설', minbak: '도시민박', pub: '시설', rnl: '도로', rpost: '도로 번호', rnear: '가까운 도로 번호' })[it.kind] || it.kind) : '') + '</div>' +
       '<div class="rell">' + R.map(function (r) { return '<div><span class="s">' + r[0] + '</span> ' + r[1] + ' <span class="p">' + r[2] + '</span><small>' + esc(r[3]) + ' · <i class="' + (r[4] === '원자료' ? 'o' : 'a') + '">' + r[4] + '</i></small></div>'; }).join('') +
       nx.map(function (q) { return '<div><span class="s">가장 가까운 ' + q[0] + '</span> <b>' + esc(q[1]) + '</b> <span class="p">' + fm(q[2]) + '</span><small>' + esc(q[3]) + ' · <i class="c">계산</i></small></div>'; }).join('') + '</div>' +
       '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
@@ -3986,7 +4036,7 @@
       ['care', '🎒 교육·돌봄', [['학교', ['edu', 'school', 'aca']], ['어린이', ['kg', 'cc', 'kids', 'pg', 'sz']]], ['edu', 'kg', 'cc']]
     ]],
     ['police', '🚓 경찰업무', [
-      ['traf', '🚦 교통', [['교통사고', ['acc', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh', 'spota']], ['신호·교차로', ['tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['도로·교통량', ['rnet', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
+      ['traf', '🚦 교통', [['교통사고', ['acc', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh', 'spota']], ['신호·교차로', ['tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['도로·교통량', ['rnet', 'rpost', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
       ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'play', 'inn', 'stay', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
       ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
     ]],
@@ -4223,5 +4273,5 @@
   paintLayers(); ctrPaint(); dnApply();
   (function () { var hs = location.hash || ''; var seen = '1'; try { seen = localStorage.getItem('tg_map2d_onb'); } catch (e) {} if (seen || /(^|[#&])(lat|ly|here|gps)=/.test(hs)) return;
     if (document.documentElement.classList.contains('gated')) window.addEventListener('tggate', function () { setTimeout(onbOpen, 300); }); else setTimeout(onbOpen, 700); })();   // 처음 안내는 확인코드 관문 뒤에
-  window.TGMap2D = { stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
+  window.TGMap2D = { rp: function () { return RP; }, rpFind: rpFind, rpLong: rpLong, stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
 })();

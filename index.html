@@ -604,6 +604,16 @@
   #m2dPnl .simc { margin: 8px 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); }
   #m2dPnl .simc svg { display: block; margin-top: 4px; overflow: visible; }
   #m2dPnl label.pchk { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; margin: 6px 0; }
+  /* v2.37.0 관계 장부 등급 딱지 · 현장 확인 */
+  .lgb { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 0 6px; border-radius: 8px; background: rgba(100,116,139,.18); color: var(--ink2); white-space: nowrap; }
+  .lgb.g3, .lgb.g4 { background: rgba(22,163,74,.16); color: #15803d; } .lgb.g1, .lgb.g2 { background: rgba(245,158,11,.18); color: #b45309; }
+  :root.dark .lgb.g3, :root.dark .lgb.g4 { color: #86efac; } :root.dark .lgb.g1, :root.dark .lgb.g2 { color: #fcd34d; }
+  #m2dCard details.ledg { margin-top: 8px; } #m2dCard details.ledg > summary { cursor: pointer; font-weight: 800; font-size: 13px; }
+  #m2dCard details.ledg > div { padding: 4px 0; border-top: 1px dashed var(--line); font-size: 12.5px; } #m2dCard details.ledg small { display: block; color: var(--ink2); font-size: 11px; }
+  #m2dCard .fld { margin-top: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); font-size: 12.5px; }
+  #m2dCard .fld .ff { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; } #m2dCard .fld .ff select, #m2dCard .fld .ff input { min-height: 32px; border: 1px solid var(--line); border-radius: 8px; background: var(--chip); color: var(--ink); font-size: 12px; } #m2dCard .fld .ff input { flex: 1; min-width: 140px; padding: 0 8px; }
+  #m2dCard .fld button { min-height: 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--chip); color: var(--ink); cursor: pointer; font-size: 12px; } #m2dCard .fld .fimp { cursor: pointer; color: var(--acc); font-weight: 700; }
+  #m2dCard .fld .fl > div { padding: 2px 0; border-bottom: 1px dashed var(--line); }
 </style>
 </head>
 <body>
@@ -702,7 +712,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.36.0"></script>
+<script src="js/map2d.js?v=2.37.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

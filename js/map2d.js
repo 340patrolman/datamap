@@ -1049,7 +1049,7 @@
       h += src((D.sz.source || {}).hot || '');
     } else if (it.kind === 'cam') {
       var cm = it.c; h = '<h3>📷 무인 단속 카메라</h3>' + row('자리', esc(cm.at)) + row('도로', esc(cm.road)) + row('제한속도', cm.lim ? cm.lim + 'km/h' : '-') + row('설치', esc(cm.yr || '-')) + row('단속구분 코드', esc(cm.se) + ' <em>(코드 뜻은 대조 전)</em>');
-      h += camEff(cm) + src('경찰청 전국무인교통단속카메라표준데이터(기준일 2026-04-06) · 설치 전후 사고 = TAAS 사고 10년(100m 칸)');
+      h += camEff(cm) + ledgLine('R4') + src('경찰청 전국무인교통단속카메라표준데이터(기준일 2026-04-06) · 설치 전후 사고 = TAAS 사고 10년(100m 칸)');
     } else if (it.kind === 'sig') {
       var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + row('교차로 번호', esc(s.no)) + row('지금', sigNow(s)) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다');
     } else if (it.kind === 'sub') {
@@ -1619,7 +1619,7 @@
     var el = $('m2dPre'); if (!el) return; var si = seasonInfo(); PRESETS = PRESETS.filter(function (x) { return x[0] !== 'season'; }); PRESETS.unshift(['season', si.icon + ' 지금 계절 · ' + si.short, si.keys]);
     el.innerHTML = '<button data-x="none" class="ctl">모두 끄기</button><button data-x="reset" class="ctl">처음대로</button><button data-x="biz" class="ctl biz">🏪 창업 자리 찾기</button><button data-x="rad" class="ctl biz">📐 반경 분석</button>' + PRESETS.map(function (x) { var act = LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); return '<button data-p="' + x[0] + '" class="' + (act ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') +
       '';
-    var pc = $('m2dPreC'); if (pc) pc.innerHTML = '<details id="m2dPreCD" class="prec"' + (PRECO ? ' open' : '') + '><summary>📋 묶음마다 켜는 레이어 — 어떻게 짜였나</summary>' + PRESETS.map(function (x) { return '<div><button data-p="' + x[0] + '" class="pk">' + x[1] + '</button> → ' + x[2].filter(hasL).map(function (k) { return esc(lname(k)); }).join(' · ') + '</div>'; }).join('') + '<p class="lhn">묶음을 누르면 행정동·도로·바탕만 남기고 나머지는 끈 뒤 이 레이어들을 켠다 · 「처음대로」 = 레이어마다 처음 값 · 「모두 끄기」 = 바탕만</p></details>';
+    var pc = $('m2dPreC'); if (pc) pc.innerHTML = '<details id="m2dPreCD" class="prec"' + (PRECO ? ' open' : '') + '><summary>📋 묶음마다 켜는 레이어 — 어떻게 짜였나</summary>' + PRESETS.map(function (x) { return '<div><button data-p="' + x[0] + '" class="pk">' + x[1] + '</button> → ' + x[2].filter(hasL).map(function (k) { return esc(lname(k)); }).join(' · ') + (PRENOTE[x[0]] ? '<br><small>' + PRENOTE[x[0]] + '</small>' : '') + '</div>'; }).join('') + '<p class="lhn">묶음을 누르면 행정동·도로·바탕만 남기고 나머지는 끈 뒤 이 레이어들을 켠다 · 「처음대로」 = 레이어마다 처음 값 · 「모두 끄기」 = 바탕만</p></details>';
     preFit();
   }
   // v0.10.92 소유자 「모두 끄기·처음대로는 왼쪽 맨 앞 · 화면을 넘으면 두 줄로」 — 한 줄에 다 들면 한 줄, 넘치면 두 줄(그래도 넘치면 옆으로 민다)
@@ -1878,7 +1878,7 @@
   function a10Add(c, m) { var k = c[0] + ',' + c[1], x = A10K[k];
     if (!x) { x = A10K[k] = { c: c, p: P(c[1], c[0]), m: m }; A10.push(x); return; }
     if (!x.mm) x.mm = [{ c: x.c, m: x.m }]; x.mm.push({ c: c, m: m }); var n = x.c.slice(); for (var i = 2; i <= 22; i++) n[i] += c[i]; if (c[24] > n[24]) { n[23] = c[23]; n[24] = c[24]; n[25] = c[25]; } x.c = n; }
-  var A10MS = { all: ['전체 사고', '#ea580c'], sev: ['사망·중상자', '#b91c1c'], ped: ['보행자 피해', '#2563eb'], two: ['자전거·PM·이륜', '#16a34a'], night: ['밤(20~6시)', '#1e3a8a'] };
+  var A10MS = { all: ['전체 사고', '#ea580c'], sev: ['사망·중상자', '#b91c1c'], ped: ['보행자 피해', '#2563eb'], two: ['자전거·PM·이륜', '#16a34a'], night: ['밤(20~6시)', '#1e3a8a'], rate: ['사고율(÷하차 · R2)', '#9333ea'] };
   function a10Prep() { var T = D.taas10; if (!T) return; var kA = A10.filter(function (x) { return x.m; }), kF = F10.filter(function (x) { return x.m; });   // 먼저 온 구 파일은 남긴다
     A10 = []; A10K = {}; T.cells.forEach(function (c) { a10Add(c, null); }); kA.forEach(function (x) { (x.mm || [x]).forEach(function (q) { a10Add(q.c, q.m); }); }); F10 = T.fatal.map(function (f) { return { f: f, p: P(f[17], f[16]) }; }).concat(kF);
     // 교차로 집계를 2019년부터(v0.10.82 · 소유자 「사고 데이터 2019년부터」) — 칸을 585m 안 가장 가까운 실제 교차로에 배정(23~25 집계와 같은 규칙)
@@ -1889,16 +1889,17 @@
   }
   function accN(n, a, b) { if (!n.y10) return 0; var t = 0; for (var y = a; y <= b; y++) t += n.y10[y - 2016]; return t; }
   function deadN(n, a, b) { if (!n.d10) return 0; var t = 0; for (var y = a; y <= b; y++) t += n.d10[y - 2016]; return t; }
-  function a10Val(c) {
+  function a10Val(c, x) {
+    if (A10M === 'rate') { var rr = x && a10Rate(x); return rr ? rr.v : 0; }
     if (A10M === 'all') return A10Y === 19 ? c.slice(5, 12).reduce(function (a, b) { return a + b; }, 0) : A10Y ? c[2 + A10Y - 2016] : c.slice(2, 12).reduce(function (a, b) { return a + b; }, 0);
     var share = A10Y === 19 ? c.slice(5, 12).reduce(function (a, b) { return a + b; }, 0) / Math.max(1, c.slice(2, 12).reduce(function (a, b) { return a + b; }, 0)) : A10Y ? c[2 + A10Y - 2016] / Math.max(1, c.slice(2, 12).reduce(function (a, b) { return a + b; }, 0)) : 1;
     return (A10M === 'sev' ? c[12] + c[13] : A10M === 'ped' ? c[14] : A10M === 'two' ? c[15] + c[16] + c[17] : c[18]) * share;
   }
   function drawA10(dark) {
-    if (on.acc10 && A10.length) { var vs = A10.map(function (x) { return a10Val(x.c); }), mx = Math.max.apply(null, vs) || 1, col = A10MS[A10M][1], h = 50;
+    if (on.acc10 && A10.length) { if (A10M === 'rate') rateReady(); var vs = A10.map(function (x) { return a10Val(x.c, x); }), mx = Math.max.apply(null, vs) || 1, col = A10MS[A10M][1], h = 50;
       var W0 = cv.clientWidth, H0 = cv.clientHeight;
       A10.forEach(function (x, k) { var v = vs[k]; if (!v) return; var t = Math.sqrt(v / mx), a = S([x.p[0] - h, x.p[1] - h]), b = S([x.p[0] + h, x.p[1] + h]); if (b[0] < 0 || b[1] < 0 || a[0] > W0 || a[1] > H0) return;
-        ctx.fillStyle = hexA(col, 0.12 + 0.7 * t); ctx.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+        ctx.fillStyle = hexA(col, 0.12 + 0.7 * t); ctx.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]); if (A10M === 'rate' && x.rt && x.rt.hid) { ctx.lineWidth = 2.5; ctx.strokeStyle = '#facc15'; ctx.strokeRect(a[0] + 1, a[1] + 1, b[0] - a[0] - 2, b[1] - a[1] - 2); }
         if (view.s > 0.35) { ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = t > 0.5 ? '#fff' : '#111827'; ctx.fillText(String(Math.round(v)), (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); }
         hit.push({ x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2, r: Math.max(6, (b[0] - a[0]) / 2), it: { kind: 'a10', x: x } }); }); }
     if (on.fatal10 && F10.length) F10.forEach(function (x) { if (A10Y === 19 ? x.f[0] < 2019 : A10Y && x.f[0] !== A10Y) return; dot(x.p, 5.5, '#111827', '#fca5a5', { kind: 'f10', x: x }); });
@@ -1911,14 +1912,14 @@
       row('날씨·노면', esc(dic('w', f[8]) + ' · ' + dic('s', f[9]))) + row('가해 / 피해', esc(dic('k', f[10]) + ' / ' + dic('k', f[11]))) + row('사상', '사망 ' + f[12] + ' · 중상 ' + f[13] + ' · 경상 ' + f[14] + (f[15] ? ' · 부상신고 ' + f[15] : '')) + '<p class="desc">' + esc(T.note) + '</p>' + src(T.source); }
     var c = it.x.c, tot = c.slice(2, 12).reduce(function (a, b) { return a + b; }, 0), ys = []; for (var y = 2016; y <= 2025; y++) ys.push(y);
     return '<h3>🚗 사고 10년 — 이 ' + (it.x.k ? '250m 칸 ' + esc(it.x.k) : '100m 칸') + '</h3>' + row('2016~2025', tot + '건 · 사망 ' + c[12] + ' · 중상 ' + c[13]) + row('누가', '보행자 피해 ' + c[14] + ' · 자전거 ' + c[15] + ' · PM ' + c[16] + ' · 이륜·원동기 가해 ' + c[17]) +
-      row('주 법규위반', esc(dic('v', c[23])) + ' ' + c[24] + '건') + row('주 유형', esc(dic('t', c[25]))) + row('밤(20~6시)', c[18] + '건 (' + pct(c[18], tot) + '%)') + (it.x.mm ? row('자료', it.x.mm.length + '개 구 파일의 같은 칸을 더함 — 사고가 난 법정동이 서로 다른 구') : '') +
+      (function () { var rr = a10Rate(it.x); return rr ? row('사고율(R2)', '하루 하차 1천 명당 10년 <b>' + rr.v.toFixed(1) + '건</b> · 150m 안 하차 ' + Math.round(rr.off).toLocaleString() + '명' + (rr.hid ? ' · <b style="color:#a16207">숨은 위험(사고율 상위 10% · 건수는 아님)</b>' : '') + ' ' + ledgBadge('R2')) : ''; })() + row('주 법규위반', esc(dic('v', c[23])) + ' ' + c[24] + '건') + row('주 유형', esc(dic('t', c[25]))) + row('밤(20~6시)', c[18] + '건 (' + pct(c[18], tot) + '%)') + (it.x.mm ? row('자료', it.x.mm.length + '개 구 파일의 같은 칸을 더함 — 사고가 난 법정동이 서로 다른 구') : '') +
       '<div class="cap">해마다 교통사고 건수(건 · 2016~2025 · 이 ' + (it.x.k ? '250m' : '100m') + ' 칸)</div>' + bar(c.slice(2, 12), '#ea580c', LB_Y16) + '<div class="cap">시간대별 교통사고 건수(건 · 10년 합 · 0~6 · 6~12 · 12~18 · 18~24시)</div>' + bar(c.slice(19, 23), '#1e3a8a', LB_TB4) + '<p class="desc">' + esc(T.note) + '</p>' + src(T.source);
   }
   function a10Legend() {
     if (!on.acc10 && !on.fatal10 && !on.acc250) return null; var ys = ['', 19]; for (var y = 2016; y <= 2025; y++) ys.push(y);
     return ['🚗 사고 10년(TAAS)', '<div class="lg-btns">' + Object.keys(A10MS).map(function (k) { return '<button data-a10m="' + k + '" class="' + (k === A10M ? 'on' : '') + '">' + A10MS[k][0] + '</button>'; }).join('') + '</div>' +
       '<div class="lg-btns"><select data-a10y aria-label="해">' + ys.map(function (y) { return '<option value="' + y + '"' + ((A10Y || '') == y ? ' selected' : '') + '>' + (y === 19 ? '2019~2025' : y ? y + '년만' : '10년 전부') + '</option>'; }).join('') + '</select></div>' +
-      li(hexA(A10MS[A10M][1], 0.8), '100m 칸 · 진할수록 많음(√) · 확대하면 숫자', 'box') + (on.fatal10 ? li('#111827', '사망사고(한 건씩)') : '') + '<small class="lg-n">' + (D.taas10 ? D.taas10.count.toLocaleString() + '건 · 개인정보 없음' : '') + '</small>'];
+      li(hexA(A10MS[A10M][1], 0.8), A10M === 'rate' ? '사고율 = 10년 사고 ÷ 150m 안 하루 하차 × 1,000 · 하차 200명 미만 칸은 안 칠함' : '100m 칸 · 진할수록 많음(√) · 확대하면 숫자', 'box') + (A10M === 'rate' ? li('#facc15', '숨은 위험 — 사고율 상위 10% · 건수는 상위 10% 밖', 'line') + '<small class="lg-n">' + ledgBadge('R2') + ' 노출(하차)은 2026년 6월 한 달 값을 10년에 썼다 · 서울만(교통카드 자료)</small>' : '') + (on.fatal10 ? li('#111827', '사망사고(한 건씩)') : '') + '<small class="lg-n">' + (D.taas10 ? D.taas10.count.toLocaleString() + '건 · 개인정보 없음' : '') + '</small>'];
   }
   // ---------- 🛡 치안·생활안전 시설(v0.10.78 · 서울 열린데이터 — 서초구) ----------
   var SAFE = [], SRCX = {};   // [층 키, 이름, 색, 점들[{p, it}]] · SRCX = 경기 구 파일이 가져온 출처(경기 생활시설)
@@ -3234,6 +3235,48 @@
     var tk = setInterval(function () { if (RAD.busy) return; clearInterval(tk); PNL.res = RAD.res; PNL.wait = false; pnlOut(); }, 300);
   }
 
+
+  // ---------- v2.37.0 📒 관계 장부(증거 사다리) — data/relations-ledger.json · 3단계 이상만 「근거」, 1~2단계는 「가설」 · 4단계(현장 확인)는 이 기기 안 메모만 ----------
+  //  규칙: 장부에 없는 관계는 해석으로 화면에 내보내지 않는다 — 새 해석을 넣을 때 장부 항목(가설·단위·검정·등급·주의)을 먼저 만든다
+  var LEDG = null, LEDGP = null;
+  function ledgLoad() { if (LEDGP) return LEDGP; LEDGP = fetch('data/relations-ledger.json').then(function (r) { return r.json(); }).then(function (j) { LEDG = {}; j.relations.forEach(function (r) { LEDG[r.id] = r; }); LEDG._meta = j; var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it) show(sel.it); paintPre(); return j; }).catch(function () { LEDG = {}; }); return LEDGP; }
+  function ledgBadge(id) { if (!LEDG) { ledgLoad(); return '<span class="lgb">' + id + '</span>'; } var r = LEDG[id]; if (!r) return ''; var g = +r['등급'] || 0, f = fieldCnt(id);
+    return '<span class="lgb g' + g + '" title="' + esc(r['가설'] + ' — ' + (r['판정'] || '')) + '">' + id + ' · ' + g + '단계 ' + (g >= 3 ? '근거' : '가설') + (f.n ? ' · 현장 ' + f.yes + '/' + f.n : '') + '</span>'; }
+  function ledgLine(id) { if (!LEDG) { ledgLoad(); return ''; } var r = LEDG[id]; if (!r) return ''; return '<div class="talk"><b>📒 관계 장부 ' + ledgBadge(id) + '</b><div>' + esc(r['가설']) + '</div><div>' + esc(r['판정'] || '') + '</div>' + (r['주의'] ? '<small>주의 — ' + esc(r['주의']) + '</small>' : '') + (r['다음'] ? '<small>다음 — ' + esc(r['다음']) + '</small>' : '') + '</div>'; }
+  var PRENOTE = { night: '근거 — R3 3단계: 주점 비중이 높은 100m 칸은 밤(20~6시) 사고 비율이 높다(서울 두 지역 묶음에서 재현 · 번화가 효과만은 아님)', traffic: '기준선 — R1 3단계: 지난 5년 사고가 많던 칸은 다음 5년에도 많다(상위 1% 칸의 97%가 다음 기간 상위 5%)', acc10: '기준선 R1(3단계) · 「🚗 사고 10년」 범례의 「사고율」 = R2(3단계)' };
+  // R2 사고율 — 150m 안 버스·지하철 하루 하차 합으로 나눈다(서울 교통카드 · 받은 구만)
+  var RTD = { n: -1, stops: [], grid: {} };
+  function rateReady() { if (!PUB) return; var v = viewLL(); rIdx().forEach(function (g) { var x = g.box; if (g.gu.slice(0, 2) !== '11' || !(g.bytes || {}).transit || x[2] < v[0] || x[0] > v[2] || x[3] < v[1] || x[1] > v[3]) return; xLoad(g.gu); });
+    var n = PUB.bus.length + PUB.subr.length; if (n === RTD.n) return; RTD.n = n; RTD.grid = {}; RTD.stops = [];
+    function add(p, off) { if (!off) return; var k = Math.floor(p[0] / 300) + ',' + Math.floor(p[1] / 300); (RTD.grid[k] = RTD.grid[k] || []).push([p, off]); }
+    PUB.bus.forEach(function (q) { var f = FLOW.bus[q.o.id]; if (f) add(q.p, f[1].reduce(function (a, b) { return a + b; }, 0)); });
+    PUB.subr.forEach(function (q) { var f = FLOW.sub[q.name]; if (f) add(q.p, f[1].reduce(function (a, b) { return a + b; }, 0)); });
+    A10.forEach(function (x) { x.rt = undefined; }); rateHid(); }
+  function a10Rate(x) { if (x.rt !== undefined) return x.rt; var gx = Math.floor(x.p[0] / 300), gy = Math.floor(x.p[1] / 300), off = 0;
+    for (var i = -1; i <= 1; i++) for (var j = -1; j <= 1; j++) (RTD.grid[(gx + i) + ',' + (gy + j)] || []).forEach(function (q) { if (dTrue(q[0], x.p) <= 150) off += q[1]; });
+    var tot = x.c.slice(2, 12).reduce(function (a, b) { return a + b; }, 0); x.rt = off >= 200 && tot ? { v: tot / off * 1000, off: off, tot: tot } : null; return x.rt; }
+  function rateHid() { var L = A10.map(function (x) { return [x, a10Rate(x)]; }).filter(function (q) { return q[1]; }); if (L.length < 20) return;
+    var rs = L.map(function (q) { return q[1].v; }).sort(function (a, b) { return a - b; }), ts = L.map(function (q) { return q[1].tot; }).sort(function (a, b) { return a - b; }), r90 = rs[Math.floor(rs.length * 0.9)], t90 = ts[Math.floor(ts.length * 0.9)];
+    L.forEach(function (q) { q[1].hid = q[1].v >= r90 && q[1].tot < t90; }); }
+  // 4단계 — 현장 확인 메모(이 기기 localStorage 만 · 공개 저장소·서버로 가지 않는다)
+  var FIELD = []; try { FIELD = JSON.parse(localStorage.getItem('tg_map2d_field') || '[]') || []; } catch (e) {}
+  function fieldSave() { try { localStorage.setItem('tg_map2d_field', JSON.stringify(FIELD)); } catch (e) {} }
+  function fieldCnt(id) { var o = { n: 0, yes: 0 }; FIELD.forEach(function (f) { if (f.r === id) { o.n++; if (f.v === 'yes') o.yes++; } }); return o; }
+  function fieldHtml(m) { var ll = [m[0] / KX + LON0, LAT0 - m[1] / KY], near = FIELD.filter(function (f) { return dTrue(P(f.ll[1], f.ll[0]), m) <= 200; });
+    var opts = (LEDG ? Object.keys(LEDG).filter(function (k) { return k !== '_meta'; }) : ['R1', 'R2', 'R3', 'R4']).map(function (k) { return '<option value="' + k + '">' + k + (LEDG && LEDG[k] ? ' — ' + esc(String(LEDG[k]['가설']).slice(0, 26)) : '') + '</option>'; }).join('') + '<option value="자유">자유 메모</option>';
+    return '<div class="fld"><b>✅ 현장 확인 — 4단계(이 기기에만 저장)</b>' + (near.length ? '<div class="fl">' + near.slice(-6).map(function (f) { return '<div>' + esc(f.t) + ' · ' + esc(f.r) + ' · ' + ({ yes: '✅ 맞다', no: '❌ 아니다', unk: '❔ 모르겠다' })[f.v] + (f.m ? ' — ' + esc(f.m) : '') + ' <button data-fdel="' + f.id + '" aria-label="지우기">×</button></div>'; }).join('') + '</div>' : '') +
+      '<div class="ff"><select data-fr>' + opts + '</select><select data-fv><option value="yes">✅ 맞다</option><option value="no">❌ 아니다</option><option value="unk">❔ 모르겠다</option></select><input data-fm placeholder="메모(사람 이름·차량번호는 적지 않는다)" maxlength="200"><button data-fadd="' + ll[1].toFixed(5) + ',' + ll[0].toFixed(5) + '">저장</button></div>' +
+      '<small>기록은 이 폰·PC 브라우저 안에만 남는다(밖으로 나가지 않는다) · 이 기기 기록 ' + FIELD.length + '건 <button data-fexp="1">📤 파일로 내보내기</button> <label class="fimp">📥 가져오기<input type="file" accept=".json" data-fimp hidden></label></small></div>'; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-fadd],[data-fdel],[data-fexp]'); if (!b) return; var cd = b.closest('#m2dCard');
+    if (b.getAttribute('data-fadd')) { var a = b.getAttribute('data-fadd').split(','), box = b.closest('.ff'), m = (box.querySelector('[data-fm]').value || '').replace(/\d{2,3}[가-힣]\d{4}/g, '○○○').slice(0, 200);
+      FIELD.push({ id: Date.now().toString(36), t: new Date().toISOString().slice(0, 10), ll: [+a[0], +a[1]], r: box.querySelector('[data-fr]').value, v: box.querySelector('[data-fv]').value, m: m }); fieldSave(); if (sel && sel.it) show(sel.it); return; }
+    if (b.getAttribute('data-fdel')) { var id = b.getAttribute('data-fdel'); FIELD = FIELD.filter(function (f) { return f.id !== id; }); fieldSave(); if (sel && sel.it) show(sel.it); return; }
+    if (b.getAttribute('data-fexp')) { var bl = new Blob([JSON.stringify({ schema: 'tg-field/1', items: FIELD }, null, 1)], { type: 'application/json' }), u = URL.createObjectURL(bl), aa = document.createElement('a'); aa.href = u; aa.download = '현장확인_' + new Date().toISOString().slice(0, 10) + '.json'; document.body.appendChild(aa); aa.click(); setTimeout(function () { URL.revokeObjectURL(u); aa.remove(); }, 500); } });
+  document.addEventListener('change', function (e) { var t = e.target; if (!t.hasAttribute || !t.hasAttribute('data-fimp') || !t.files || !t.files[0]) return; var fr = new FileReader();
+    fr.onload = function () { try { var j = JSON.parse(fr.result), it = (j && j.items) || [], seen = {}; FIELD.forEach(function (f) { seen[f.id] = 1; }); it.forEach(function (f) { if (f && f.id && !seen[f.id] && f.ll) FIELD.push(f); }); fieldSave(); if (sel && sel.it) show(sel.it); } catch (e2) { alert('현장 확인 파일이 아니다'); } }; fr.readAsText(t.files[0]); });
+  function ledgRel(m) { if (!LEDG) { ledgLoad(); return ''; } var ids = Object.keys(LEDG).filter(function (k) { return k !== '_meta'; });
+    return '<details class="ledg"><summary>📒 관계 장부 — 검증 등급 ' + ids.length + '개</summary>' + ids.map(function (k) { var r = LEDG[k]; return '<div>' + ledgBadge(k) + ' ' + esc(r['가설']) + '<small>' + esc(r['판정'] || '') + '</small></div>'; }).join('') +
+      '<p class="relh">사다리 — 1 공존 · 2 시간 동조 · 3 재현(기간·지역 분할) · 4 현장 확인. 3단계 이상만 근무 묶음 판단에 쓴다 · R1(과거 사고 → 미래 사고)보다 나은 정보를 줄 때만 값어치가 있다.</p>' + fieldHtml(m) + '</details>'; }
   // ---------- v2.36.0 개업 손익 시뮬레이션 — 소유자 「업종별 개업 손익 · 시뮬레이션 · 사장 일정·휴무·브레이크 · 4대보험·전기·청소·인터넷·세금 · 그래프 · 지역별 개업 초기비용」 ----------
   var FTC = null, FTCP = null;
   var TPLCAT = { cafe: ['커피'], cafe_low: ['커피'], drink: ['음료 (커피 외)', '아이스크림/빙수 '], bakery: ['제과제빵'], hansik: ['한식'], meat: ['한식'], noodle: ['한식'], seafood: ['한식', '일식'], chinese: ['중식'], japanese: ['일식'], western: ['서양식', '기타 외국식'], chicken: ['치킨'], pizza: ['피자', '패스트푸드'], bunsik: ['분식'], delivery: ['분식', '패스트푸드', '기타 외식'], hof: ['주점'], pub: ['주점'] };
@@ -3944,6 +3987,7 @@
       '<div class="rell">' + R.map(function (r) { return '<div><span class="s">' + r[0] + '</span> ' + r[1] + ' <span class="p">' + r[2] + '</span><small>' + esc(r[3]) + ' · <i class="' + (r[4] === '원자료' ? 'o' : 'a') + '">' + r[4] + '</i></small></div>'; }).join('') +
       nx.map(function (q) { return '<div><span class="s">가장 가까운 ' + q[0] + '</span> <b>' + esc(q[1]) + '</b> <span class="p">' + fm(q[2]) + '</span><small>' + esc(q[3]) + ' · <i class="c">계산</i></small></div>'; }).join('') + '</div>' +
       '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
+    h = h.replace(/<\/details>$/, ledgRel(m) + '</details>');
     box.insertAdjacentHTML('beforeend', h);
     var dd = box.querySelector('details.rel'); if (dd) dd.addEventListener('toggle', function () { RELON = dd.open; try { localStorage.setItem('tg_map2d_rel', RELON ? '1' : '0'); } catch (e) {} });
   }
@@ -3975,7 +4019,7 @@
     var bar = B['호프주점'] && B['간이주점'] ? [B['호프주점'][0] + B['간이주점'][0], B['호프주점'][1] + B['간이주점'][1]] : null, fd = D['음식업'];
     var hy = []; if (bar && bar[0] > bar[1]) hy.push('주점(호프·간이) ' + bar[1] + ' → ' + bar[0] + '곳 — 밤 음주운전 단속 자리를 다시 볼 만하다');
     if (fd && fd[2] && fd[0] / fd[2] >= 0.35) hy.push('음식업 3년 미만 ' + Math.round(fd[0] / fd[2] * 100) + '% — 상권이 바뀌는 중일 수 있다(이면도로 조업·배달 이륜 증가 가능)');
-    if (hy.length) h += '<div class="talk"><b>🧪 가설 — 숫자에서 끌어낸 해석(사실 확인 전)</b>' + hy.map(function (q) { return '<div>· ' + esc(q) + '</div>'; }).join('') + '</div>';
+    if (hy.length) h += '<div class="talk"><b>🧪 가설 — 숫자에서 끌어낸 해석(사실 확인 전)</b>' + hy.map(function (q) { return '<div>· ' + esc(q) + (/주점/.test(q) ? ' <small>관련 근거 ' + ledgBadge('R3') + ' 주점 비중이 높은 칸은 밤 사고 비율이 높다(서울 두 지역 묶음 재현) — 이 구의 「늘었다」 자체는 검증 전</small>' : '') + '</div>'; }).join('') + '</div>';
     return h + src(ECG.source + ' · ' + ECG.note); }
   function econRows(k8) { if (!k8) return ''; if (!ECD) { econLoad(); return ''; } var v = ECD.dong[k8], h = '', rt = ECR && ECR.pension ? ECR.pension[0] * 2 : null;
     if (v) { h += '<div class="dh">🏢 일터 — 국민연금 가입 사업장 <small style="font-weight:600;color:var(--ink2)">(' + esc(ECD.ym) + ')</small></div>';
@@ -4377,5 +4421,5 @@
   paintLayers(); ctrPaint(); dnApply();
   (function () { var hs = location.hash || ''; var seen = '1'; try { seen = localStorage.getItem('tg_map2d_onb'); } catch (e) {} if (seen || /(^|[#&])(lat|ly|here|gps)=/.test(hs)) return;
     if (document.documentElement.classList.contains('gated')) window.addEventListener('tggate', function () { setTimeout(onbOpen, 300); }); else setTimeout(onbOpen, 700); })();   // 처음 안내는 확인코드 관문 뒤에
-  window.TGMap2D = { ftc: function () { return FTC; }, pnl: function () { return PNL; }, pnlOpen: pnlOpen, rp: function () { return RP; }, rpFind: rpFind, rpLong: rpLong, stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
+  window.TGMap2D = { ledg: function () { return LEDG; }, field: function () { return FIELD; }, ftc: function () { return FTC; }, pnl: function () { return PNL; }, pnlOpen: pnlOpen, rp: function () { return RP; }, rpFind: rpFind, rpLong: rpLong, stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
 })();

@@ -463,6 +463,13 @@
   #m2dCard { border: 0 !important; border-radius: 18px !important; box-shadow: var(--sh2) !important; }
   #m2dZoom button { border: 0 !important; box-shadow: var(--sh) !important; border-radius: 14px !important; }
   #m2dCard .r { border-top: 1px solid var(--line) !important; }
+  .pfsum { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; font-size: 12.5px; font-weight: 800; } .pfsum span { padding: 3px 10px; border-radius: 12px; background: var(--chip); } .pfsum .g { background: #dcfce7; color: #166534; } .pfsum .y { background: #fef3c7; color: #92400e; } .pfsum .r { background: #fee2e2; color: #991b1b; }
+  .pflow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; counter-reset: none; }
+  .pflow li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 8px 9px 8px 9px; border-radius: 12px; border: 2px solid #cbd5e1; background: var(--panel); min-height: 92px; }
+  .pflow li.s-g { border-color: #16a34a; background: linear-gradient(180deg, rgba(22,163,74,.10), transparent 70%); } .pflow li.s-y { border-color: #f59e0b; background: linear-gradient(180deg, rgba(245,158,11,.12), transparent 70%); } .pflow li.s-r { border-color: #dc2626; background: linear-gradient(180deg, rgba(220,38,38,.10), transparent 70%); }
+  .pflow .pn { position: absolute; top: -8px; left: -6px; width: 20px; height: 20px; border-radius: 10px; background: #334155; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; } .pflow li.s-g .pn { background: #16a34a; } .pflow li.s-y .pn { background: #d97706; } .pflow li.s-r .pn { background: #dc2626; }
+  .pflow .pi { font-size: 20px; line-height: 1; } .pflow b { font-size: 12.5px; } .pflow .pv { font-size: 16px; font-weight: 900; } .pflow li.s-g .pv { color: #15803d; } .pflow li.s-y .pv { color: #b45309; } .pflow li.s-r .pv { color: #b91c1c; } .pflow small { font-size: 11px; color: var(--ink2); line-height: 1.35; }
+  .pflow li:not(:last-child)::after { content: '→'; position: absolute; right: -9px; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 900; color: #94a3b8; z-index: 1; }
   #m2dCard h3 .dhb { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 8px; vertical-align: middle; } #m2dCard h3 .dhb button { height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid #7c3aed; background: #f5f3ff; color: #5b21b6; font-size: 12.5px; font-weight: 800; cursor: pointer; } #m2dCard h3 .dhb button + button { border-color: #0891b2; background: #ecfeff; color: #0e7490; } :root.dark #m2dCard h3 .dhb button { background: #2e1065; color: #ddd6fe; } :root.dark #m2dCard h3 .dhb button + button { background: #083344; color: #a5f3fc; }
   #m2dCard .lg-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } #m2dCard .lg-btns button { height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
   #m2dCard a.xl { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--acc); color: var(--acc); text-decoration: none; font-weight: 700; font-size: 13px; }
@@ -748,7 +755,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.62.0"></script>
+<script src="js/map2d.js?v=2.63.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

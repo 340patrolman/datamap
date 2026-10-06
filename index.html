@@ -454,6 +454,50 @@
   #m2dCard .lg-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } #m2dCard .lg-btns button { height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
   #m2dCard a.xl { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--acc); color: var(--acc); text-decoration: none; font-weight: 700; font-size: 13px; }
   @media (max-width: 430px) { #m2dFold { padding: 0 10px !important; } #m2dTop .row1 #m2dFind { font-size: 14px; } }
+  /* v2.20.0 맨 위 줄 가볍게 — 찾기는 🔍 를 누르면 · 📍 지역 고르기 · 레이어 판 전체 펼침 */
+  #m2dTop .row1 .sp { flex: 1; }
+  #m2dRegB { flex: 0 1 auto; min-width: 0; height: 40px; padding: 0 13px; border-radius: 20px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 13.5px; font-weight: 800; white-space: nowrap; cursor: pointer; overflow: hidden; text-overflow: ellipsis; }
+  #m2dFindB { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 20px; border: 0; background: var(--chip); font-size: 17px; cursor: pointer; }
+  body.findon #m2dFindB { background: var(--acc); }
+  #m2dFindRow { display: none; margin-top: 7px; }
+  body.findon #m2dFindRow { display: block; }
+  #m2dFindRow #m2dFind { width: 100%; height: 40px; border: 1px solid var(--line); border-radius: 12px; background: var(--chip); color: var(--ink); padding: 0 12px; font-size: 15px; }
+  #m2dPanH { position: sticky; top: -6px; z-index: 2; background: var(--panel); margin: 0 -14px; padding: 0 14px 6px; border-bottom: 1px solid var(--line); }
+  #m2dLF { width: 100%; height: 38px; border: 1px solid var(--line); border-radius: 12px; background: var(--chip); color: var(--ink); padding: 0 12px; font-size: 14px; margin: 2px 0 6px; }
+  #m2dPanel .jmp { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  #m2dPanel .jmp::-webkit-scrollbar { display: none; }
+  #m2dPanel .jmp button { flex: 0 0 auto; height: 32px; padding: 0 11px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  #m2dPanel .c1 { padding-top: 6px; }
+  #m2dPanel .c1 > h4 { margin: 10px 0 2px; font-size: 16px; letter-spacing: -.3px; }
+  #m2dPanel .c2 { margin: 6px 0 4px; padding: 6px 10px 2px; border-radius: 14px; background: var(--chip); }
+  #m2dPanel .c2h { display: flex; align-items: center; gap: 6px; }
+  #m2dPanel .c2h b { font-size: 14px; } #m2dPanel .c2h i { font-style: normal; font-size: 11px; font-weight: 800; color: #fff; background: var(--acc); border-radius: 9px; padding: 0 6px; }
+  #m2dPanel .c2h button { margin-left: auto; height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--acc); background: transparent; color: var(--acc); font-size: 12px; font-weight: 700; cursor: pointer; }
+  #m2dPanel .c2h button + button { margin-left: 0; border-color: var(--line); color: var(--ink2); }
+  #m2dPanel .c2 .pg button.lyr { background: var(--panel); }
+  #m2dPanel .c2 .pg button.lyr.on { background: var(--chipOn); }
+  #m2dReg { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; max-height: calc(100vh - var(--toph, 90px) - 12px); overflow-y: auto; background: var(--panel); color: var(--ink); border-radius: 20px 20px 0 0; box-shadow: var(--sh2); padding: 6px 14px calc(14px + env(safe-area-inset-bottom)); }
+  #m2dReg::before { content: ""; display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto 6px; }
+  #m2dReg.on { display: block; }
+  @media (min-width: 760px) { #m2dReg { left: 10px; right: auto; width: 420px; top: calc(var(--toph, 90px) + 8px); bottom: 10px; max-height: none; border-radius: 16px; } #m2dReg::before { display: none; } }
+  #m2dReg .ph { display: flex; align-items: center; justify-content: space-between; font-size: 15px; margin-bottom: 6px; }
+  #m2dReg .ph .x { height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); cursor: pointer; }
+  #m2dReg .seg { display: flex; background: var(--chip); border-radius: 12px; padding: 3px; gap: 2px; }
+  #m2dReg .seg button { flex: 1; min-width: 0; min-height: 40px; padding: 3px 2px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font-size: 12.5px; font-weight: 800; line-height: 1.2; cursor: pointer; word-break: keep-all; }
+  #m2dReg .seg button.on { background: var(--acc); color: #fff; }
+  :root.dark #m2dReg .seg button.on { background: #2563eb; }
+  #m2dReg .rgn { font-size: 12px; color: var(--ink2); margin: 6px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  #m2dReg .ctr { height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 12px; cursor: pointer; }
+  #m2dReg .ctr.on { background: #0f766e; border-color: #0f766e; color: #fff; font-weight: 700; }
+  #m2dReg .crm { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 8px 0 2px; font-size: 13px; }
+  #m2dReg .crm button { border: 0; background: none; color: var(--acc); font-weight: 800; font-size: 13.5px; padding: 4px 2px; min-height: 32px; cursor: pointer; }
+  #m2dReg .crm span { color: var(--ink2); }
+  #m2dReg .rgt { font-size: 12.5px; font-weight: 800; color: var(--ink2); margin: 10px 0 6px; }
+  #m2dReg .rgl { display: flex; flex-wrap: wrap; gap: 6px; }
+  #m2dReg .rgl button { height: 38px; padding: 0 13px; border-radius: 19px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  #m2dReg .rgl button small { font-weight: 600; color: var(--ink2); font-size: 11px; margin-left: 2px; }
+  #m2dReg .rgl button.all { border-color: var(--acc); color: var(--acc); }
+  @media (max-width: 380px) { #m2dRegB { padding: 0 10px; font-size: 13px; } #m2dReg .seg button { font-size: 11.5px; } }
 </style>
 </head>
 <body>
@@ -461,7 +505,9 @@
   <!-- v2.18.0 네이버·카카오 지도처럼 — 맨 위 찾기 칸 · 밤낮 · 레이어 단추 / 그 아래 날짜·시각·빠른 칩 한 줄(옆으로 민다) / 시각 칩을 누르면 시각 막대 -->
   <div class="row1">
     <a class="back" href="https://340patrolman.github.io/traffic-game/" aria-label="교통경찰 게임으로">←</a>
-    <input id="m2dFind" type="search" placeholder="🔍 동·교차로·역 찾기" enterkeyhint="search" autocomplete="off" aria-label="찾기">
+    <button id="m2dRegB" aria-expanded="false" aria-controls="m2dReg">📍 지역 고르기</button>
+    <button id="m2dFindB" aria-expanded="false" aria-label="찾기 — 동·교차로·길·역·정류장">🔍</button>
+    <span class="sp"></span>
     <button id="m2dDN" aria-label="화면 밝기">🌓</button>
     <button id="m2dFold" aria-expanded="false" aria-controls="m2dPanel" aria-label="레이어 고르기">🗂 레이어 <b id="m2dLayN">0</b></button>
   </div>
@@ -471,6 +517,7 @@
     <span id="m2dQC"></span>
   </div>
   <div id="m2dTime"><button id="m2dNowBtn" class="on" aria-label="지금 시각으로">지금</button><button id="m2dHm" aria-label="한 시간 앞">◀</button><input id="m2dHour" type="range" min="0" max="23" step="1" aria-label="볼 시각"><button id="m2dHp" aria-label="한 시간 뒤">▶</button><b id="m2dHourT"></b></div>
+  <div id="m2dFindRow"><input id="m2dFind" type="search" placeholder="동 · 교차로 · 길 · 역 · 정류장 · 병원" enterkeyhint="search" autocomplete="off" aria-label="찾기"></div>
   <div id="m2dFindMsg"></div>
   <div id="m2dMore">
     <span id="m2dNow"></span>
@@ -548,7 +595,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.19.0"></script>
+<script src="js/map2d.js?v=2.20.0"></script>
 <script>
   // 캔버스 자리 = 위 막대 아래부터 화면 끝까지(막대 높이가 기기·글자 크기마다 다르다)
   (function () {

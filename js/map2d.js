@@ -3796,11 +3796,11 @@
     ['people', '👥 인구·생활', [
       ['pop', '👥 인구 구성', [['주민·가구', ['jgg', 'dong']], ['그 시각 머무는 사람', ['live', 'live250', 'lpop']], ['외국인', ['fdong', 'fl250', 'minbak', 'flodge']]], ['jgg', 'live250', 'lpop']],
       ['move', '🚶 이동·동선', [['대중교통', ['bus', 'subr', 'sub', 'exit', 'bstop', 'msub', 'busd', 'lbus']], ['사람 흐름', ['crowd', 'spot', 'bike', 'evt', 'gfest']]], ['bus', 'subr', 'sub']],
-      ['life', '🏥 생활시설', [['의료', ['hosp', 'phar', 'er', 'ger', 'aed']], ['관공서', ['govr', 'gov', 'post', 'lib', 'dem', 'welf', 'kyr']], ['편의', ['conv', 'bank', 'box', 'wc', 'wc2', 'park', 'heat', 'cold', 'her']]], ['govr', 'hosp', 'phar']],
+      ['life', '🏥 생활시설', [['의료', ['hosp', 'phar', 'er', 'ger', 'aed']], ['관공서', ['govr', 'gov', 'post', 'lib', 'dem', 'welf', 'kyr']], ['편의', ['conv', 'bank', 'box', 'wc', 'wc2', 'park', 'heat', 'cold', 'her']], ['차·연료', ['fuel', 'ev', 'gev', 'pk', 'gpark']]], ['govr', 'hosp', 'phar']],
       ['care', '🎒 교육·돌봄', [['학교', ['edu', 'school', 'aca']], ['어린이', ['kg', 'cc', 'kids', 'pg', 'sz']]], ['edu', 'kg', 'cc']]
     ]],
     ['police', '🚓 경찰업무', [
-      ['traf', '🚦 교통', [['교통사고', ['acc', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh']], ['신호·교차로', ['tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['도로·교통량', ['rnet', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
+      ['traf', '🚦 교통', [['교통사고', ['acc', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh', 'spota']], ['신호·교차로', ['tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['도로·교통량', ['rnet', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
       ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'play', 'inn', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
       ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
     ]],
@@ -3847,29 +3847,31 @@
     else { LAYERS.forEach(function (l) { if (KEEP.indexOf(l[0]) < 0) on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; m[3].forEach(function (k) { if (hasL(k)) on[k] = true; }); }
     unitKeep(); CAT = c; MID = id; try { localStorage.setItem('tg_map2d_cat', c); localStorage.setItem('tg_map2d_mid', id); } catch (e) {}
     saveOn(); paintLayers(); sel = null; show(null); draw(); summary(); }
-  function catPaint(pn, nOn) {
+  var LFQ = '';
+  function catPaint(pn, nOn) {   // v2.20.0 소유자 「먼저 판은 고르기 쉬웠는데 지금은 찾을 수 없다 · 전체를 다 볼 수 있게 · 구분은 잘 되어 있다」 → 탭으로 가리지 않고 모두 펼친다
     if (!CATS) return;
-    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanB"></div><div class="pst"><div class="psec">⚡ 근무별 한 번에</div></div>'; var st = pn.querySelector('.pst');
+    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanH"></div><div id="m2dPanB"></div><div class="pst"><div class="psec">⚡ 근무별 한 번에</div></div>'; var st = pn.querySelector('.pst');
       if ($('m2dPre')) st.appendChild($('m2dPre')); var t2 = document.createElement('div'); t2.className = 'psec'; t2.textContent = '🕒 이 시각 한눈에'; st.appendChild(t2); if ($('m2dSum')) st.appendChild($('m2dSum'));
-      var ft = document.createElement('div'); ft.className = 'pg pft'; ft.innerHTML = '<button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button><button data-onb="1">❔ 처음 안내 다시</button>'; st.appendChild(ft); }
-    var C = catOf(CAT) || CATS[0], h = '<div class="ph"><b>🗂 레이어 <small>' + nOn + '개 켜짐</small></b><button data-lh="1" class="' + (LHON ? 'on' : '') + '">❓ 설명</button><button class="x" data-close="1">닫기</button></div>';
-    h += '<div class="unit"><span>지도를 누르면</span><div class="seg">' + UNITS.map(function (u) { return '<button data-unit="' + u[0] + '" class="' + ((UNIT || 'dong') === u[0] ? 'on' : '') + '">' + u[1] + '</button>'; }).join('') + '</div><button data-ctr="1" class="ctr' + (CTR ? ' on' : '') + '">📍 지도 가운데 기준 ' + (CTR ? '켬' : '끔') + '</button></div>';
-    h += '<div class="cat">' + CATS.map(function (c) { return '<button data-cat="' + c[0] + '" class="' + (C[0] === c[0] ? 'on' : '') + '">' + c[1] + '</button>'; }).join('') + '</div>';
-    if (LHON) h += '<p class="lhn">레이어 이름을 누르면 켜고 끈다. 회색 글은 그 레이어가 무엇인지 · 어디서 온 자료인지 · 어떻게 쓰는지.</p>';
-    function chip(k) { var bt = '<button data-k="' + k + '" class="lyr' + (on[k] ? ' on' : '') + '">' + lname(k) + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(k) + '</div>' : bt; }
-    if (!C[2]) {
-      var G = []; LAYERS.forEach(function (l) { if (G.indexOf(l[3]) < 0) G.push(l[3]); }); G.sort(function (a, b) { var x = GORD.indexOf(a), y = GORD.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
-      h += G.map(function (g) { return '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g) + '</div>' + LAYERS.filter(function (l) { return l[3] === g; }).map(function (l) { return chip(l[0]); }).join('') + '</div>'; }).join('');
-    } else {
-      var M0 = C[2].filter(function (m) { return m[0] === MID; })[0] || C[2][0];
-      if (C[2].length > 1) h += '<div class="mid">' + C[2].map(function (m) { var n = midKeys(m).filter(function (k) { return on[k]; }).length; return '<button data-mid="' + m[0] + '" class="' + (m === M0 ? 'on' : '') + '">' + m[1] + (n ? ' <b>' + n + '</b>' : '') + '</button>'; }).join('') + '</div>';
-      h += M0[2].map(function (g) { var ks = g[1].filter(hasL); if (!ks.length) return ''; return '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g[0]) + '</div>' + ks.map(chip).join('') + '</div>'; }).join('');
-      if (M0[3].length) h += '<div class="pg pact"><button data-mon="' + C[0] + '|' + M0[0] + '">✨ ' + esc(M0[1].replace(/^\S+ /, '')) + ' 기본만 켜기</button><button data-moff="' + C[0] + '|' + M0[0] + '">이 묶음 끄기</button></div>';
-    }
-    $('m2dPanB').innerHTML = h; qcPaint();
+      var ft = document.createElement('div'); ft.className = 'pg pft'; ft.innerHTML = '<button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button><button data-onb="1">❔ 처음 안내 다시</button>'; st.appendChild(ft);
+      $('m2dPanH').innerHTML = '<div class="ph"><b>🗂 레이어 <small id="m2dPanN"></small></b><button data-lh="1">❓ 설명</button><button class="x" data-close="1">닫기</button></div><input id="m2dLF" type="search" placeholder="레이어 이름으로 찾기 — 예: 사고 · 공시지가 · 버스" autocomplete="off"><div class="jmp">' + CATS.filter(function (c) { return c[2]; }).map(function (c) { return '<button data-jump="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '<button data-jump="etc">➕ 그 밖</button></div>';
+      $('m2dLF').addEventListener('input', function () { LFQ = this.value.trim(); lfApply(); }); }
+    $('m2dPanN').textContent = nOn + '개 켜짐'; var lhb = $('m2dPanH').querySelector('[data-lh]'); if (lhb) lhb.classList.toggle('on', !!LHON);
+    function chip(k) { var bt = '<button data-k="' + k + '" class="lyr' + (on[k] ? ' on' : '') + '" data-n="' + esc(lname(k)) + '">' + lname(k) + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(k) + '</div>' : bt; }
+    var seen = {}, h = LHON ? '<p class="lhn">레이어 이름을 누르면 켜고 끈다. 회색 글은 그 레이어가 무엇인지 · 어디서 온 자료인지 · 어떻게 쓰는지.</p>' : '';
+    CATS.forEach(function (c) { if (!c[2]) return;
+      h += '<section class="c1" id="lc-' + c[0] + '"><h4>' + c[1] + '</h4>' + c[2].map(function (m) { var ks = midKeys(m), n = ks.filter(function (k) { return on[k]; }).length; ks.forEach(function (k) { seen[k] = 1; });
+        return '<div class="c2"><div class="c2h"><b>' + m[1] + '</b>' + (n ? '<i>' + n + '</i>' : '') + (m[3].length ? '<button data-mon="' + c[0] + '|' + m[0] + '">기본만 켜기</button>' : '') + (n ? '<button data-moff="' + c[0] + '|' + m[0] + '">끄기</button>' : '') + '</div>' +
+          m[2].map(function (g) { var gk = g[1].filter(hasL); return gk.length ? '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g[0]) + '</div>' + gk.map(chip).join('') + '</div>' : ''; }).join('') + '</div>'; }).join('') + '</section>'; });
+    var etc = LAYERS.filter(function (l) { return !seen[l[0]]; });
+    h += '<section class="c1" id="lc-etc"><h4>➕ 그 밖의 레이어</h4><div class="c2"><div class="pg' + (LHON ? ' lhv' : '') + '">' + (etc.length ? etc.map(function (l) { return chip(l[0]); }).join('') : '<small class="lhn">모든 레이어가 위 묶음에 들어 있다.</small>') + '</div></div></section>';
+    $('m2dPanB').innerHTML = h; lfApply(); qcPaint();
   }
+  function lfApply() { var B = $('m2dPanB'); if (!B) return; var q = LFQ.replace(/\s/g, '');
+    B.querySelectorAll('button.lyr').forEach(function (b) { var hit = !q || (b.getAttribute('data-n') || '').replace(/\s/g, '').indexOf(q) >= 0 || (b.getAttribute('data-k') === q); var el = b.parentNode.classList.contains('lhi') ? b.parentNode : b; el.style.display = hit ? '' : 'none'; });
+    B.querySelectorAll('.pg, .c2, .c1').forEach(function (g) { if (!q) { g.style.display = ''; return; } var any = Array.prototype.some.call(g.querySelectorAll('button.lyr'), function (b) { var el = b.parentNode.classList.contains('lhi') ? b.parentNode : b; return el.style.display !== 'none'; }); g.style.display = any ? '' : 'none'; }); }
   function catClick(b) {
     var a;
+    if ((a = b.getAttribute('data-jump'))) { var sc = $('lc-' + a), pn = $('m2dPanel'); if (sc && pn) pn.scrollTo({ top: sc.offsetTop - ($('m2dPanH') ? $('m2dPanH').offsetHeight : 0) - 4, behavior: 'smooth' }); return true; }
     if ((a = b.getAttribute('data-cat'))) { CAT = a; var C = catOf(a); if (C && C[2] && !C[2].some(function (m) { return m[0] === MID; })) MID = C[2][0][0]; try { localStorage.setItem('tg_map2d_cat', CAT); localStorage.setItem('tg_map2d_mid', MID); } catch (e) {} paintLayers(); return true; }
     if ((a = b.getAttribute('data-mid'))) { MID = a; try { localStorage.setItem('tg_map2d_mid', MID); } catch (e) {} paintLayers(); return true; }
     if ((a = b.getAttribute('data-mon'))) { a = a.split('|'); midApply(a[0], a[1], true); return true; }
@@ -3952,9 +3954,61 @@
     if (ONB.mids.length) { var a0 = ONB.mids[0].split('|'); CAT = a0[0]; MID = a0[1]; } else { CAT = 'people'; MID = 'pop'; }
     try { localStorage.setItem('tg_map2d_cat', CAT); localStorage.setItem('tg_map2d_mid', MID); } catch (e) {}
     CTR = ONB.ctr; try { localStorage.setItem('tg_map2d_ctr', CTR ? '1' : '0'); } catch (e) {}
-    onbClose(); unitSet(ONB.unit); ctrPaint(); summary();
+    onbClose(); unitSet(ONB.unit); REG.mode = ONB.unit; ctrPaint(); summary();
     toast(CTR ? '📍 지도를 옮기고 「가운데 보기」를 누르세요' : '지도에서 ' + (UNITS.filter(function (u) { return u[0] === UNIT; })[0] || ['', '동'])[1].replace(/^\S+ /, '') + '을(를) 누르세요'); }
+
+  // ---------- v2.20.0 📍 지역 고르기 — 소유자 「행정구역 단위로 · 경찰서 관할로 · 지구대 파출소 별로 지역을 선택」 ----------
+  var REG = { mode: UNIT || 'dong', a: null, b: null };
+  var RGEL = document.createElement('div'); RGEL.id = 'm2dReg'; RGEL.setAttribute('role', 'dialog'); RGEL.setAttribute('aria-label', '지역 고르기'); document.body.appendChild(RGEL);
+  function regOpen(f) { RGEL.classList.toggle('on', f); if (f) { $('m2dPanel').classList.remove('on'); if ((REG.mode === 'ps' || REG.mode === 'pb') && !POL2) polLoad().then(regPaint); regPaint(); } var b = $('m2dRegB'); if (b) b.setAttribute('aria-expanded', f ? 'true' : 'false'); }
+  function kSort(a, b) { return String(a).localeCompare(String(b), 'ko'); }
+  function sidoName(code) { return (SIDO_FULL[code] || code); }
+  function regFit(box, sMin) { var a = P(box[0], box[3]), b = P(box[2], box[1]), w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]); view.cx = (a[0] + b[0]) / 2; view.cy = (a[1] + b[1]) / 2;
+    view.s = Math.max(0.006, Math.min(sMin || 1, Math.min(cv.clientWidth / (w * 1.08 || 1), cv.clientHeight * 0.55 / (h * 1.08 || 1)))); view.cy += cv.clientHeight * 0.18 / view.s; }
+  function regShow(it, p) { var s0 = S(p); TAPM = p; sel = { x: s0[0], y: s0[1], r: 8, it: it }; show(it); draw(); if (window.innerWidth < 760) regOpen(false); }
+  function regPaint() {
+    var m = REG.mode, h = '<div class="ph"><b>📍 지역 고르기</b><button class="x" data-rg="x">닫기</button></div>';
+    h += '<div class="seg">' + [['dong', '🏘 읍면동'], ['sgg', '🗂 시군구'], ['ps', '🚓 경찰서 관할'], ['pb', '👮 지구대·파출소']].map(function (u) { return '<button data-rgm="' + u[0] + '" class="' + (m === u[0] ? 'on' : '') + '">' + u[1] + '</button>'; }).join('') + '</div>';
+    h += '<p class="rgn">고른 단위로 지도를 누를 때도 카드가 뜬다 · <button data-ctr="1" class="ctr' + (CTR ? ' on' : '') + '">📍 지도 가운데 기준 ' + (CTR ? '켬' : '끔') + '</button></p>';
+    var crumbs = [], list = '';
+    function chips(arr, attr) { return '<div class="rgl">' + arr.map(function (x) { return '<button ' + attr + '="' + esc(x[0]) + '">' + esc(x[1]) + (x[2] ? ' <small>' + esc(x[2]) + '</small>' : '') + '</button>'; }).join('') + '</div>'; }
+    if (m === 'dong' || m === 'sgg') {
+      var G = rIdx(); if (!G.length) list = '<p class="rgn">지역 목록을 받는 중…</p>';
+      else if (!REG.a) { var sd = {}; G.forEach(function (g) { sd[g.sido] = (sd[g.sido] || 0) + 1; }); list = '<div class="rgt">시·도</div>' + chips(Object.keys(sd).sort(function (a, b) { return kSort(sidoName(a), sidoName(b)); }).map(function (k) { return [k, sidoName(k), sd[k] + '']; }), 'data-rga'); }
+      else { crumbs.push(['a', sidoName(REG.a)]);
+        if (m === 'sgg') { var SG = SGG.map(function (x, i) { return [i, x]; }).filter(function (q) { return q[1].g.sido === sidoName(REG.a); }).sort(function (a, b) { return kSort(a[1].g.name, b[1].g.name); });
+          list = '<div class="rgt">시·군·구 — 누르면 그 시군구 한 장</div>' + chips(SG.map(function (q) { return ['s' + q[0], q[1].g.name]; }), 'data-rgp'); }
+        else if (!REG.b) { list = '<div class="rgt">시·군·구</div>' + chips(G.filter(function (g) { return g.sido === REG.a; }).sort(function (a, b) { return kSort(a.name, b.name); }).map(function (g) { return [g.gu, g.name, (g.d || []).length + '']; }), 'data-rgb'); }
+        else { var g = G.filter(function (x) { return x.gu === REG.b; })[0]; crumbs.push(['b', g ? g.name : REG.b]);
+          list = '<div class="rgt">읍·면·동 — 누르면 그 동으로</div><div class="rgl"><button data-rgp="g' + esc(REG.b) + '" class="all">🗂 ' + esc(g ? g.name : '') + ' 전체</button></div>' + chips(((g && g.d) || []).slice().sort(function (a, b) { return kSort(a[0], b[0]); }).map(function (x) { return ['d' + REG.b + '|' + x[0], x[0]]; }), 'data-rgp'); } } }
+    else {
+      if (!POL2) list = '<p class="rgn">경찰 관서 목록을 받는 중…</p>';
+      else if (!REG.a) { var cg = {}; POL2.stations.forEach(function (st) { cg[st[5]] = (cg[st[5]] || 0) + 1; }); list = '<div class="rgt">시·도경찰청</div>' + chips(Object.keys(cg).sort(kSort).map(function (k) { return [k, k.replace(/경찰청$/, ''), cg[k] + '서']; }), 'data-rga'); }
+      else { crumbs.push(['a', REG.a]); var ST = POL2.stations.filter(function (st) { return st[5] === REG.a; }).sort(function (a, b) { return kSort(a[1], b[1]); });
+        if (m === 'ps') list = '<div class="rgt">경찰서 — 누르면 그 관할 한 장</div>' + chips(ST.map(function (st) { return ['p' + st[0], st[1].replace(/경찰서$/, '서')]; }), 'data-rgp');
+        else if (!REG.b) list = '<div class="rgt">경찰서</div>' + chips(ST.map(function (st) { var n = POL2.pbox.filter(function (b) { return b[6] === st[0]; }).length; return [st[0], st[1].replace(/경찰서$/, '서'), n + '곳']; }), 'data-rgb');
+        else { var s1 = POL2.byI[+REG.b]; crumbs.push(['b', s1 ? s1[1] : REG.b]);
+          list = '<div class="rgt">지구대·파출소 — 누르면 그 구역(근사) 한 장</div><div class="rgl"><button data-rgp="p' + esc(REG.b) + '" class="all">🚓 ' + esc(s1 ? s1[1] : '') + ' 관할 전체</button></div>' + chips(POL2.pbox.map(function (b, i) { return [i, b]; }).filter(function (q) { return q[1][6] === +REG.b; }).sort(function (a, b) { return kSort(a[1][0], b[1][0]); }).map(function (q) { return ['b' + q[0], q[1][0] + (q[1][1] ? ' 파출소' : ' 지구대')]; }), 'data-rgp'); } } }
+    if (crumbs.length) h += '<div class="crm"><button data-rgc="0">전국</button>' + crumbs.map(function (c, i) { return '<span>›</span><button data-rgc="' + (i + 1) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>';
+    RGEL.innerHTML = '<div class="rgw">' + h + list + '</div>'; }
+  RGEL.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var v;
+    if (b.getAttribute('data-rg') === 'x') { regOpen(false); return; }
+    if (b.getAttribute('data-ctr')) { ctrSet(!CTR); regPaint(); return; }
+    if ((v = b.getAttribute('data-rgm'))) { var pol = v === 'ps' || v === 'pb', wasPol = REG.mode === 'ps' || REG.mode === 'pb'; REG.mode = v; if (pol !== wasPol) REG.a = null; REG.b = null; unitSet(v); if (pol && !POL2) polLoad().then(regPaint); regPaint(); return; }
+    if ((v = b.getAttribute('data-rgc'))) { if (v === '0') { REG.a = null; REG.b = null; } else if (v === '1') REG.b = null; regPaint(); return; }
+    if ((v = b.getAttribute('data-rga'))) { REG.a = v; REG.b = null; regPaint(); return; }
+    if ((v = b.getAttribute('data-rgb'))) { REG.b = v; regPaint(); return; }
+    if ((v = b.getAttribute('data-rgp'))) { var t = v[0], r = v.slice(1);
+      if (t === 's') { var i = +r, G = SGG[i]; var bx = [1e9, 1e9, -1e9, -1e9]; G.rings.forEach(function (rg) { rg.forEach(function (q) { var ll = landLL(q); bx[0] = Math.min(bx[0], ll[0]); bx[1] = Math.min(bx[1], ll[1]); bx[2] = Math.max(bx[2], ll[0]); bx[3] = Math.max(bx[3], ll[1]); }); }); regFit(bx); regShow({ kind: 'unit', u: { t: 'sgg', id: i } }, G.c); }
+      else if (t === 'g') { var g = rIdx().filter(function (x) { return x.gu === r; })[0]; if (!g) return; regFit(g.box); var si = -1; SGG.forEach(function (q, k) { if (si < 0 && q.g.sido === sidoName(g.sido) && (g.name === q.g.name || g.name.indexOf(q.g.name) === 0)) si = k; }); var c = P((g.box[0] + g.box[2]) / 2, (g.box[1] + g.box[3]) / 2); if (si >= 0) regShow({ kind: 'unit', u: { t: 'sgg', id: si } }, c); else { draw(); if (window.innerWidth < 760) regOpen(false); } }
+      else if (t === 'd') { var a = r.split('|'), g2 = rIdx().filter(function (x) { return x.gu === a[0]; })[0], x = g2 && (g2.d || []).filter(function (q) { return q[0] === a[1]; })[0]; if (!x) return; var p = P(x[1], x[2]); view.cx = p[0]; view.cy = p[1]; view.s = Math.max(0.09, Math.min(view.s, 0.3)); view.cy += cv.clientHeight * 0.18 / view.s; draw();
+        var d = dongAtM(p); regShow(d ? { kind: 'dong', d: d } : { kind: 'rgo', gu: g2.gu, name: x[0], g: g2.name }, d ? d.c : p); }
+      else if (t === 'p') { var st = POL2.byI[+r]; if (!st || !st.p) return; view.cx = st.p[0]; view.cy = st.p[1]; view.s = 0.045; view.cy += cv.clientHeight * 0.18 / view.s; if (!on.jurk) { on.jurk = true; saveOn(); paintLayers(); } regShow({ kind: 'unit', u: { t: 'ps', id: st[0] } }, st.p); }
+      else if (t === 'b') { var bx2 = POL2.pbox[+r]; if (!bx2) return; view.cx = bx2.p[0]; view.cy = bx2.p[1]; view.s = 0.09; view.cy += cv.clientHeight * 0.18 / view.s; if (!on.upb) { on.upb = true; saveOn(); paintLayers(); } regShow({ kind: 'unit', u: { t: 'pb', id: +r } }, bx2.p); } } });
+  if ($('m2dRegB')) $('m2dRegB').onclick = function () { regOpen(!RGEL.classList.contains('on')); };
+  if ($('m2dFindB')) $('m2dFindB').onclick = function () { var on2 = !document.body.classList.contains('findon'); document.body.classList.toggle('findon', on2); this.setAttribute('aria-expanded', on2 ? 'true' : 'false'); if (on2) setTimeout(function () { $('m2dFind').focus(); }, 30); };
+  cv.addEventListener('pointerdown', function () { if (window.innerWidth < 760) regOpen(false); });
   paintLayers(); ctrPaint(); dnApply();
   (function () { var hs = location.hash || ''; var seen = '1'; try { seen = localStorage.getItem('tg_map2d_onb'); } catch (e) {} if (!seen && !/(^|[#&])(lat|ly|here|gps)=/.test(hs)) setTimeout(onbOpen, 700); })();
-  window.TGMap2D = { land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
+  window.TGMap2D = { regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
 })();

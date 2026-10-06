@@ -635,6 +635,11 @@
   .glance .gt.up { border-left-color: #dc2626; } .glance .gt.dn { border-left-color: #2563eb; }
   .glance .gi { font-size: 16px; } .glance .gt b { font-size: 17px; line-height: 1.15; } .glance .gn { font-size: 11.5px; color: var(--ink2); }
   .glance .gt small { font-size: 11px; color: var(--ink2); } .glance .gt.up small { color: #dc2626; } .glance .gt.dn small { color: #2563eb; }
+  /* v2.49.1 부동산 안내 띠 */
+  #m2dEst { display: none; position: fixed; left: 10px; right: 64px; bottom: calc(108px + env(safe-area-inset-bottom)); z-index: 7; max-width: 560px; background: var(--card, #fff); color: var(--ink); border: 1px solid var(--line); border-left: 5px solid #ca8a04; border-radius: 12px; padding: 6px 8px; box-shadow: 0 4px 14px rgba(0,0,0,.18); font-size: 12.5px; }
+  #m2dEst button { height: 30px; margin: 2px 3px 2px 0; padding: 0 9px; border-radius: 15px; border: 1px solid #ca8a04; background: transparent; color: #a16207; font-weight: 700; font-size: 12px; cursor: pointer; }
+  #m2dEst button.on { background: #ca8a04; color: #fff; } #m2dEst button.tax { background: #16a34a; border-color: #16a34a; color: #fff; } #m2dEst button[data-est="x"] { float: right; border: 0; color: var(--ink2); }
+  #m2dEst small { display: block; margin-top: 3px; color: var(--ink2); line-height: 1.4; } #m2dCard.on ~ #m2dEst, body.cardon #m2dEst { display: none !important; }
 </style>
 </head>
 <body>
@@ -733,7 +738,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.49.0"></script>
+<script src="js/map2d.js?v=2.49.1"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

@@ -2424,8 +2424,8 @@
     ks.forEach(function (k, i) { var v = vals[i]; if (v == null) return; var r = sq(GRID[k].p, 125); if (!inView(r, W0, H0)) return;
       var t = HM === 'jr' ? Math.max(0, Math.min(1, (v - 40) / 50)) : Math.max(0, Math.min(1, (v - lo) / ((hi - lo) || 1)));
       ctx.fillStyle = hexA(col, 0.08 + 0.6 * t); ctx.fillRect(r[0], r[1], r[2], r[3]);
-      if (r[2] > 40) { ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = t > 0.55 ? '#fff' : (dark ? '#e2e8f0' : '#111827');
-        ctx.fillText(HM === 'jr' ? v + '%' : HM === 'wo' ? v + '만' : (Math.round(v * 3.3058 / 100) / 10).toLocaleString() + '천', r[0] + r[2] / 2, r[1] + r[3] / 2); }
+      if (r[2] > 46) { ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = t > 0.55 ? '#fff' : (dark ? '#e2e8f0' : '#111827');
+        ctx.fillText(HM === 'jr' ? v + '%' : HM === 'wo' ? v + '만' : (Math.round(v * 3.3058 / 100) * 100).toLocaleString() + '만', r[0] + r[2] / 2, r[1] + r[3] / 2); }
       hit.push({ x: r[0] + r[2] / 2, y: r[1] + r[3] / 2, r: Math.max(6, r[2] * 0.71), it: { kind: 'hmg', c: k } }); });
     if (view.s >= 0.12) HCX.forEach(function (x) { if (x.p) dot(x.p, 3.4, HTC[x.c[0]], '#fff', { kind: 'hmc', x: x }); });
   }
@@ -2445,7 +2445,7 @@
     if (!on.home) return null;
     return ['🏠 주택 실거래(250m)', '<div class="lg-btns">' + Object.keys(HMS).map(function (k) { return '<button data-hm="' + k + '" class="' + (k === HM ? 'on' : '') + '">' + HMS[k][0] + '</button>'; }).join('') + '</div>' +
       li(hexA(HMS[HM][3], 0.6), HM === 'jr' ? '진할수록 전세가율 높음(40%→90%)' : '진할수록 높음(화면 안 하위 10% → 상위 10%)', 'box') + li(HTC[0], '아파트 단지') + li(HTC[1], '오피스텔') + li(HTC[2], '연립다세대') +
-      '<div class="lg-btns"><button data-taxfree="1">🧾 세무 — 직접 넣어 계산(살 때·보유·팔 때·증여·상속)</button></div><small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 숫자 = 평당(전용 · 천만 원) · 단독·다가구는 지번이 가려져 칸에 없음 · 단지 점을 누르면 그 단지로 세무 계산</small>'];
+      '<div class="lg-btns"><button data-taxfree="1">🧾 세무 — 직접 넣어 계산(살 때·보유·팔 때·증여·상속)</button></div><small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 칸 숫자 = 평당 매매가 가운데 값(전용면적 기준 · 만 원) · 단독·다가구는 지번이 가려져 칸에 없음 · 단지 점을 누르면 그 단지로 세무 계산</small>'];
   }
   function homeDong(k8) { for (var gu in HOMED) { var d = HOMED[gu].dong[k8]; if (d) return { v: d, m: HOMED[gu] }; } return null; }
 
@@ -2924,7 +2924,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.49.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.49.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3584,13 +3584,24 @@
 
   // ---------- 층 단추 · 찾기 ----------
   var lay = $('m2dLayers');
+  // v2.49.1 소유자 「주거·부동산 레이어를 켜도 잘 안 보인다 · 세금 계산 자료는 넣은 걸로 안다」 — 부동산 층이 켜져 있으면 화면 아래에 무엇을 누르면 되는지와 세금 계산 단추를 늘 보인다
+  function estPaint() { var el = $('m2dEst'); if (!el) { el = document.createElement('div'); el.id = 'm2dEst'; document.body.appendChild(el);
+      el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var a = b.getAttribute('data-est');
+        if (a === 'tax') { TX.pick = 'own'; taxOpen({ kind: 'land', cat: 'apt', name: '직접 넣기' }); }
+        else if (a === 'jiga') { on.jiga = !on.jiga; if (on.jiga) on.home = false; saveOn(); paintLayers(); draw(); }
+        else if (a === 'home') { on.home = !on.home; if (on.home) on.jiga = false; saveOn(); paintLayers(); draw(); }
+        else if (a === 'x') { el.classList.add('hide'); } }); }
+    var any = on.home || on.jiga || on.land || on.rtc; el.style.display = any && !el.classList.contains('hide') ? 'block' : 'none'; if (!any) { el.classList.remove('hide'); return; }
+    el.innerHTML = '<b>🏠 부동산</b> <button data-est="home" class="' + (on.home ? 'on' : '') + '">실거래 평당가</button><button data-est="jiga" class="' + (on.jiga ? 'on' : '') + '">공시지가</button><button data-est="tax" class="tax">🧾 세금 계산</button><button data-est="x" aria-label="안내 닫기">✕</button>' +
+      '<small>' + (on.home ? '칸 숫자 = 평당 매매가(전용) · <b>● 단지 점</b>을 누르면 그 단지로 세금 계산' : on.jiga ? '칸 숫자 = 대지 ㎡당 공시지가 가운데 값' : '') + (on.land ? (VWKEY ? ' · 확대해 <b>땅(필지)</b>을 누르면 공시지가·기준시가로 세금 계산' : ' · <b>📐 필지는 브이월드 키를 넣어야 보인다</b>(범례 🔑)') : '') + '</small>'; }
+
   function paintLayers() {
     var nOn = LAYERS.filter(function (l) { return on[l[0]]; }).length; if ($('m2dLayN')) $('m2dLayN').textContent = nOn;
     lay.innerHTML = '<button data-all="1" class="all">🗂 모든 레이어 <b>' + nOn + '</b></button>' +
       LAYERS.slice().sort(function (a, b) { return (on[b[0]] ? 2 : b[4] ? 1 : 0) - (on[a[0]] ? 2 : a[4] ? 1 : 0); }).map(function (l) { return '<button data-k="' + l[0] + '" class="' + (on[l[0]] ? 'on' : '') + '">' + l[1] + '</button>'; }).join('');
     var pn = $('m2dPanel'); if (!pn) return;
     catPaint(pn, nOn);
-    paintPre();
+    paintPre(); estPaint();
   }
   // v2.10.0 층 설명에 범위·출처·이용허락·추정 여부(data/layers.json — 굽는 도구가 실제 파일에서 센다)
   var LMETA = null, LMETAP = null;
@@ -4905,7 +4916,7 @@
   function jgGroups() { for (var g in JIGA) if (JIGA[g].jm) return JIGA[g].jm.groups; return ['대지', '농지', '임야', '공장·창고', '길·물', '그 밖']; }
   function jgYear() { for (var g in JIGA) return JIGA[g].year; return ''; }
   function drawJiga(dark) {
-    if (!on.jiga) return; var v = viewLL(), W0 = cv.clientWidth, H0 = cv.clientHeight;
+    if (!on.jiga || (on.home && view.s >= 0.03)) return; var v = viewLL(), W0 = cv.clientWidth, H0 = cv.clientHeight;
     rIdx().forEach(function (g) { var x = g.box; if (!(g.bytes || {}).jiga || x[2] < v[0] || x[0] > v[2] || x[3] < v[1] || x[1] > v[3]) return; jgLoad(g.gu); });
     if (JGM !== 'p') { var MQ = JGMS[JGM]; if (view.s < 0.03) { allDong().forEach(function (d) { var jj = d.k && jgJmDong(d.k), sh = jj && jmShare(jj, MQ[1]); if (sh == null || !inViewBox(d)) return; ctx.fillStyle = hexA(MQ[2], 0.06 + 0.7 * sh); d.polys.forEach(function (pg) { path(pg[0]); ctx.closePath(); ctx.fill(); }); }); return; }
       Object.keys(JIGJM).forEach(function (k) { if (!GRID[k]) return; var r = sq(GRID[k].p, 125); if (!inView(r, W0, H0)) return; var sh = jmShare(JIGJM[k], MQ[1]); if (sh == null) return; ctx.fillStyle = hexA(MQ[2], 0.06 + 0.7 * sh); ctx.fillRect(r[0], r[1], r[2], r[3]);
@@ -5035,7 +5046,7 @@
     ]],
     ['biz', '💳 상권·부동산', [
       ['spend', '💳 소비·상권', [['카드·매출', ['sales', 'crowd']], ['상권', ['trd', 'szone', 'rent']], ['가게', ['conv', 'bank', 'bar', 'play', 'inn']]], ['sales', 'trd', 'szone']],
-      ['estate', '🏠 주거·부동산', [['토지 · 공시지가', ['jiga', 'land']], ['실거래', ['home', 'rtc']], ['집·건물', ['jgg', 'bld']]], ['jiga', 'land', 'home']]
+      ['estate', '🏠 주거·부동산', [['토지 · 공시지가', ['jiga', 'land']], ['실거래', ['home', 'rtc']], ['집·건물', ['jgg', 'bld']]], ['land', 'home']]
     ]],
     ['wx', '⛅ 날씨·실시간', [
       ['now', '🌦 지금 날씨', [['날씨', ['lwx', 'lair', 'lrad', 'lak', 'lkma']]], ['lwx', 'lair']],

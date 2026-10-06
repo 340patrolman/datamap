@@ -19,7 +19,7 @@
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
     ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
-    ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['lpop', '👥 생활인구(인구감소지역 · 시군구 월별)', false, '인구 구성', 1], ['msub', '🚇 대구 도시철도 하차(월별)', false, '이동·동선', 0], ['busd', '🚌 인천 버스 정류장 승하차(일평균)', false, '이동·동선', 0], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['usgg', '🗂 시군구로 나눠 보기', false, '바탕', 1], ['rnet', '🛣 도로망 등급(전국 · 국도·지방도·시군도)', false, '도로·교통', 1], ['volp', '🚙 시간대 교통량(서울 조사 지점)', false, '도로·교통', 1], ['exv', '🛣 고속도로 영업소 교통량(전국)', false, '도로·교통', 1], ['upb', '👮 지구대·파출소 관할(근사)', false, '치안·안전', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
+    ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['lpop', '👥 생활인구(인구감소지역 · 시군구 월별)', false, '인구 구성', 1], ['fdong', '🌏 외국인주민 비율(읍면동 · 전국)', false, '인구 구성', 1], ['flodge', '🏨 외국인 관광숙박(서울 · 도시민박·호스텔·호텔)', false, '인구 구성', 0], ['msub', '🚇 대구 도시철도 하차(월별)', false, '이동·동선', 0], ['busd', '🚌 인천 버스 정류장 승하차(일평균)', false, '이동·동선', 0], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['usgg', '🗂 시군구로 나눠 보기', false, '바탕', 1], ['rnet', '🛣 도로망 등급(전국 · 국도·지방도·시군도)', false, '도로·교통', 1], ['volp', '🚙 시간대 교통량(서울 조사 지점)', false, '도로·교통', 1], ['exv', '🛣 고속도로 영업소 교통량(전국)', false, '도로·교통', 1], ['upb', '👮 지구대·파출소 관할(근사)', false, '치안·안전', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
     ['risk', '🟥 사고위험지역', false, '교통사고', 0], ['sz', '🏫 어린이보호구역', false, '교통사고', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통사고', 0], ['cam', '📷 단속 카메라', false, '도로·교통', 0], ['spd', '🚥 도로 소통(받은 때)', false, '도로·교통', 0], ['sig', '🚦 신호 주기', false, '도로·교통', 0], ['sigx', '🔢 신호 교차로 번호', false, '도로·교통', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '소비·상권', 1], ['rent', '💰 상가 임대료·공실률', false, '소비·상권', 0], ['szone', '🏬 소진공 주요상권(전국)', false, '소비·상권', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '인구 구성', 1], ['crowd', '📡 실시간 인파·카드', false, '이동·동선', 1], ['live', '👥 생활인구(지금)', false, '인구 구성', 1], ['sales', '💳 카드 매출(시간대)', false, '소비·상권', 1], ['bus', '🚌 버스 승차·하차', false, '이동·동선', 1], ['subr', '🚇 지하철 승차·하차', false, '이동·동선', 0], ['vol', '🚙 교통량', false, '이동·동선', 0], ['bike', '🚲 따릉이', false, '이동·동선', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
@@ -860,7 +860,7 @@
     GU.forEach(function (g) { path(g.pts); ctx.lineWidth = 2.4; ctx.setLineDash([8, 5]); ctx.strokeStyle = dark ? '#9fb3d1' : '#475569'; ctx.stroke(); ctx.setLineDash([]); });
     // 도로 — 바탕 지도가 있으면 OSM 도로 전부(종류별 폭·색 · 지하차도 점선 · 다리 테), 없으면 간선 10개
     if (on.road && OSM) drawBaseRoads(dark);
-    drawUnits(dark); drawLpop(dark); drawRnet(dark); drawSgg(dark); drawVols(dark); drawExv(dark); drawMsub(dark); drawBusd(dark);   // v0.10.90 시·군·구 경계(서울·경기·인천)
+    drawUnits(dark); drawLpop(dark); drawFdong(dark); drawRnet(dark); drawSgg(dark); drawVols(dark); drawExv(dark); drawMsub(dark); drawBusd(dark); drawFlodge(dark);   // v0.10.90 시·군·구 경계(서울·경기·인천)
     // 건물
     if (on.bld && BLD.length && view.s > 0.12) BLD.forEach(function (b) { path(b.p); ctx.closePath(); ctx.fillStyle = dark ? 'rgba(200,210,225,.28)' : (BASE ? 'rgba(186,176,164,.85)' : 'rgba(90,100,115,.30)'); ctx.fill(); if (BASE && !dark && view.s > 0.5) { ctx.lineWidth = 0.6; ctx.strokeStyle = 'rgba(120,110,100,.7)'; ctx.stroke(); } });
     if ((on.road || on.jcnm) && OSM) drawBaseLabels(dark);
@@ -1013,7 +1013,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
-      h += polRows(d.k, d.c);
+      h += polRows(d.k, d.c); h += fdRows(d.k);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1063,6 +1063,7 @@
     } else if (it.kind === 'rnl') { var l = it.l; h = '<h3>🛣 ' + esc(l.nm || '(이름 없는 길)') + '</h3>' + row('등급', esc(RNG[l.g] || l.g)) + row('제한속도', l.ms ? l.ms + 'km/h' : '자료 없음') + '<p class="desc">국가교통정보센터 표준노드링크(도로 한 토막 = 링크). 등급은 도로법상 도로 종류다. 차로 수·통행량은 이 자료에 없다 — 서울 조사 지점은 「🚙 시간대 교통량」.</p>' + src(RN.src || ITSL.src || '국가교통정보센터 표준노드링크');
     } else if (it.kind === 'vols') { h = volsCard(it.v);
     } else if (it.kind === 'exv') { h = exvCard(it.u);
+    } else if (it.kind === 'flodge') { var fl = it.s; h = '<h3>🏨 ' + esc(fl[2]) + '</h3>' + row('업종', esc(fl[3]) + (fl[4] && fl[4] !== '도시민박' ? ' · ' + esc(fl[4]) : '')) + row('주소', esc(fl[5])) + row('인허가', esc(fl[6])) + '<p class="desc">' + esc(FLODGE.note) + '</p>' + src(FLODGE.source);
     } else if (it.kind === 'busd') { var bd = it.s; h = '<h3>🚌 ' + esc(bd[0]) + ' <small>(' + esc(bd[1]) + ')</small></h3>' + row('승차 하루 평균', bd[4].toLocaleString() + '명') + row('하차 하루 평균', bd[5].toLocaleString() + '명') + '<p class="desc">' + esc(BUSD.note) + '</p>' + src(BUSD.source);
     } else if (it.kind === 'msub') { var ms = it.s; h = '<h3>🚇 ' + esc(ms[0]) + '역 <small>(대구 도시철도)</small></h3>' + row('하차 하루 평균', ms[3].toLocaleString() + '명') + '<p class="desc">' + esc(MSUB.note) + '</p>' + src(MSUB.source);
     } else if (it.kind === 'pst') { h = pstCard(it.s);
@@ -1796,7 +1797,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
-    h += polRows(d.k, d.c);
+    h += polRows(d.k, d.c); h += fdRows(d.k);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + (GB.ggcard ? '<button data-ggc="' + esc(d.gcd) + '|' + esc(d.k) + '">💳 카드 소비 자세히(연령·성별·시간·업종)</button>' : '') + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -2347,7 +2348,7 @@
   var THEMES = [
     ['all', '전체', null],
     ['split', '🗂 나눠 보기', ['dong', 'usgg', 'jurk', 'upb', 'pbox', 'ri'], ['usgg']],
-    ['people', '👥 인구 구성', ['dong', 'jgg', 'live250', 'live', 'lpop', 'fl250', 'crowd', 'ri'], ['dong', 'jgg', 'live250']],
+    ['people', '👥 인구 구성', ['dong', 'jgg', 'live250', 'live', 'lpop', 'fdong', 'flodge', 'fl250', 'crowd', 'ri'], ['dong', 'jgg', 'live250']],
     ['move', '🚶 이동·동선', ['volp', 'live250', 'lpop', 'bus', 'bstop', 'msub', 'busd', 'subr', 'sub', 'exit', 'bike', 'lbus', 'spot', 'crowd', 'vol', 'evt', 'gfest'], ['bus', 'subr', 'sub', 'live250']],
     ['spend', '💳 소비·상권', ['sales', 'trd', 'szone', 'rent', 'crowd', 'rtc', 'conv', 'bank', 'bar', 'play', 'inn'], ['sales', 'trd', 'szone']],
     ['estate', '🏠 주거·부동산', ['home', 'rtc', 'rent', 'jgg', 'bld'], ['home', 'rtc']],
@@ -2411,6 +2412,7 @@
   // v2.8.0 🌏 외국인 자세히(시군구) — 국적·체류자격(영주 등)·연령×성별·체류기간·귀화 · 출처마다 기준일이 달라 더하지 않는다
   var LB_AGE8 = ['0~9', '10대', '20대', '30대', '40대', '50대', '60대', '70~'], LB_STAY7 = ['1년↓', '1~2', '2~3', '3~4', '4~5', '5~10', '10년↑'];
   function frnCard(gu) {
+    FRCUR = gu;
     var F2 = FRN && FRN.gu[gu]; if (!F2) return '<h3>🌏 외국인 주민</h3><p class="desc">이 시군구는 자료가 없다(2024 뒤에 생긴 구 등).</p>';
     var v = F2['2024'] || {}, Dt = FRN.detail || {}, h = '<h3>🌏 외국인 — ' + esc(guName(gu)) + ' <small>(' + esc(F2.src) + ')</small></h3>';
     h += row('외국인 주민(행안부 2024)', (v.tot || 0).toLocaleString() + '명 · 총인구의 ' + (v.pop ? (v.tot / v.pop * 100).toFixed(1) : '-') + '% · 세대 ' + (v.hh || 0).toLocaleString());
@@ -2424,6 +2426,13 @@
       h += '<div class="cap">연령별 외국인(한국국적 없음 · 남 ' + tm.toLocaleString() + ' · 2024)</div>' + bar(A2.mf, '#2563eb', LB_AGE8) + '<div class="cap">연령별 외국인(한국국적 없음 · 여 ' + tf.toLocaleString() + ')</div>' + bar(A2.ff || [], '#db2777', LB_AGE8);
       if (A2.mn) h += '<div class="cap">연령별 귀화자(남 파랑 · 여 분홍 합 — 한국국적 취득)</div>' + bar(A2.mn.map(function (x, i) { return x + ((A2.fn || [])[i] || 0); }), '#64748b', LB_AGE8); }
     if (F2.stay) { var ts = F2.stay.reduce(function (a, b) { return a + b; }, 0); h += row('머문 기간', '1년 미만 ' + pct(F2.stay[0], ts) + '% · 5년 이상 ' + pct(F2.stay[5] + F2.stay[6], ts) + '% <em>(장기 거주 비중)</em>') + '<div class="cap">체류기간별 외국인 주민(명 · 2024)</div>' + bar(F2.stay, '#0f766e', LB_STAY7); }
+    if (FEST && FEST.gu[gu]) { var E = FEST.gu[gu], hs = E.house, ld = E.land;
+      if (hs) h += row('외국인 소유 공동주택(' + esc(hs['기간']) + ')', (hs['주택수'] || 0).toLocaleString() + '호 · 소유자 ' + (hs['소유자수'] || 0).toLocaleString() + '명 · 1인당 ' + (hs['1인당 평균소유주택수'] || '-') + (hs['범위'] === 'city' ? ' <em>(시 전체 값)</em>' : ''));
+      if (ld) { var lm = Object.keys(ld.m).sort(); h += '<div class="cap">외국인 토지 거래(필지 · 달마다' + (ld['범위'] === 'city' ? ' · 시 전체' : '') + ')</div>' + bar(lm.map(function (q) { return ld.m[q]['필지'] || 0; }), '#b45309', lm.map(function (q) { return q.slice(4); })); } }
+    else if (!FEST) festLoad();
+    if (FSIDO) { var sdn = SIDO_FULL[gu.slice(0, 2)], Fs = FSIDO.sido[sdn] || (gu.slice(0, 2) === '12' ? FSIDO.sido['전라남도'] : null);
+      if (Fs) h += row('고용허가 외국인 근로자(' + esc(sdn === '전남광주통합특별시' ? '전라남도' : sdn) + ' 전체 · ' + esc(Fs['기준월']) + ')', 'E-9 ' + ((Fs.E9 || {})['계'] || 0).toLocaleString() + '명(제조 ' + ((Fs.E9 || {})['제조업'] || 0).toLocaleString() + ' · 농축산 ' + ((Fs.E9 || {})['농축산업'] || 0).toLocaleString() + ') · H-2 ' + ((Fs.H2 || {})['계'] || 0).toLocaleString() + '명 · 사업장 ' + ((Fs.biz || {})['계'] || 0).toLocaleString() + ' <em>(시도 단위만 공표)</em>'); }
+    else fsLoad();
     h += '<p class="desc"><b>단기체류(90일 이하 · 관광·단기방문)</b>는 시군구 공식 통계가 없다(법무부 단기체류외국인 현황은 전국 단위) — 서울은 <b>🌏 지금 머무는 외국인 250m</b> 층(서울시 생활인구 장기·단기체류)으로 「그 시각 그 칸에 머무는 사람」과 국적을 볼 수 있다. 등록외국인(법무부 · 연말)과 외국인주민(행안부 · 11월 1일)은 기준이 달라 더하지 않는다.</p>';
     return h + src(FRN.source + ' · ' + [Dt.q, Dt.nat, Dt.age, Dt.stay].filter(Boolean).join(' · '));
   }
@@ -2682,6 +2691,33 @@
     if (!on.busd) return; if (!BUSD) { if (!BUSDP) BUSDP = fetch('data/bus-incheon.json').then(function (r) { return r.json(); }).then(function (j) { j.stops.forEach(function (b) { b.p = P(b[2], b[3]); b.t = b[4] + b[5]; }); BUSD = j; draw(); }).catch(function () {}); return; }
     if (view.s < 0.01) return; var mx = Math.max.apply(null, BUSD.stops.map(function (b) { return b.t; }).concat([1])), W0 = cv.clientWidth, H0 = cv.clientHeight;
     BUSD.stops.forEach(function (b) { var q = S(b.p); if (q[0] < -20 || q[1] < -20 || q[0] > W0 + 20 || q[1] > H0 + 20) return; dot(b.p, 3 + 9 * Math.sqrt(b.t / mx), 'rgba(22,163,74,.75)', '#fff', { kind: 'busd', s: b }); });
+  }
+  // v2.16.0 🌏 읍면동 외국인주민(행안부 2024) · 🏨 서울 외국인 관광숙박 · 🏠 외국인 부동산(시군구)
+  var FDONG = null, FDONGP = null, FLODGE = null, FLODGEP = null, FEST = null, FESTP = null;
+  var FSIDO = null, FSIDOP = null, FRCUR = null;
+  function frnAgain() { var c = $('m2dCard'); if (FRCUR && c && c.classList.contains('on') && /🌏 외국인 —/.test((c.querySelector('h3') || {}).textContent || '')) show({ kind: 'frn', gu: FRCUR }); }
+  function fsLoad() { if (!FSIDOP) FSIDOP = fetch('data/foreign-sido.json').then(function (r) { return r.json(); }).then(function (j) { FSIDO = j; frnAgain(); }).catch(function () {}); return FSIDOP; }
+  function fdLoad() { if (!FLODGEP) FLODGEP = fetch('data/lodging-seoul.json').then(function (r) { return r.json(); }).then(function (j) { j.pts.forEach(function (q) { q.p = P(q[1], q[0]); }); FLODGE = j; draw(); }).catch(function () {});
+    if (!FDONGP) FDONGP = fetch('data/foreign-dong.json').then(function (r) { return r.json(); }).then(function (j) { FDONG = j; draw(); if (sel && sel.it && sel.it.kind === 'dong') show(sel.it); }).catch(function () {}); return FDONGP; }
+  function festLoad() { if (!FESTP) FESTP = fetch('data/foreign-estate.json').then(function (r) { return r.json(); }).then(function (j) { FEST = j; frnAgain(); }).catch(function () {}); return FESTP; }
+  function fdRows(k8) {
+    if (!k8) return ''; if (!FDONG) { fdLoad(); return ''; } var f = FDONG.dong[k8]; if (!f) return '';
+    var n = function (v) { return v == null ? '*' : v.toLocaleString(); }, h = row('외국인주민(이 동 · 2024.11)', '<b>' + n(f.t) + '명</b> — 한국국적 없음 ' + n(f.nf) + ' · 귀화 ' + n(f.n) + ' · 자녀 ' + n(f.c));
+    h += row('한국국적 없는 사람', '근로자 ' + n(f.w) + ' · 결혼이민 ' + n(f.m) + ' · 유학생 ' + n(f.s) + ' · 동포 ' + n(f.k) + ' · 기타 ' + n(f.e) + ' <em>(* = 작아서 가린 값)</em>');
+    if (f.mc) h += row('다문화가구원', n(f.mc[0]) + '명 — 한국인 배우자 ' + n(f.mc[1]) + ' · 결혼이민·귀화 ' + n(f.mc[2]) + ' · 자녀 ' + n(f.mc[3]) + ' · 기타 동거인 ' + n(f.mc[4]));
+    if (FLODGE && FLODGE.dong[k8]) { var L = FLODGE.dong[k8]; h += row('외국인 관광숙박(서울)', Object.keys(L).map(function (q) { return esc(q || '기타') + ' ' + L[q]; }).join(' · ') + '곳 <em>(영업 중 · 투숙 인원은 비공개)</em>'); }
+    return h;
+  }
+  function drawFdong(dark) {
+    if (!on.fdong) return; if (!FDONG) { fdLoad(); return; } var a0 = M(0, 0), a1 = M(cv.clientWidth, cv.clientHeight);
+    allDong().forEach(function (d) { if (!d.k || !d.polys || !d.box || d.box[1] < a0[0] || d.box[0] > a1[0] || d.box[3] < a0[1] || d.box[2] > a1[1]) return; var f = FDONG.dong[d.k], p = d.pop && d.pop.tot; if (!f || f.t == null || !p) return;
+      var r = f.t / p, t = Math.min(1, Math.sqrt(r / 0.3)); ctx.save(); ctx.globalAlpha = 0.12 + 0.6 * t; ctx.fillStyle = '#0e7490'; d.polys.forEach(function (Pg) { path(Pg[0]); ctx.fill(); }); ctx.restore();
+      if (view.s >= 0.02) label([d.c[0], d.c[1] + 14 / view.s], (r * 100).toFixed(1) + '%', 10, '#fff', 'rgba(14,116,144,.85)'); });
+  }
+  function drawFlodge(dark) {
+    if (!on.flodge) return; if (!FLODGE) { if (!FLODGEP) FLODGEP = fetch('data/lodging-seoul.json').then(function (r) { return r.json(); }).then(function (j) { j.pts.forEach(function (q) { q.p = P(q[1], q[0]); }); FLODGE = j; draw(); }).catch(function () {}); return; }
+    if (view.s < 0.01) return; var W0 = cv.clientWidth, H0 = cv.clientHeight;
+    FLODGE.pts.forEach(function (q) { var sx = S(q.p); if (sx[0] < -10 || sx[1] < -10 || sx[0] > W0 + 10 || sx[1] > H0 + 10) return; dot(q.p, q[3] === '관광숙박업' ? 4.5 : 3, q[3] === '관광숙박업' ? '#be185d' : '#f472b6', '#fff', { kind: 'flodge', s: q }); });
   }
   function drawMsub(dark) {
     if (!on.msub) return; if (!MSUB) { if (!MSUBP) MSUBP = fetch('data/metro-daegu.json').then(function (r) { return r.json(); }).then(function (j) { j.stations.forEach(function (s2) { s2.p = P(s2[1], s2[2]); }); MSUB = j; draw(); }).catch(function () {}); return; }
@@ -2968,6 +3004,8 @@
     usgg: '시·군·구마다 다른 색으로 칠한다(경기 일반구는 시로). 누르면 그 시군구의 합계 — 주민·연령·가구·가게·사고·대중교통·카드·외국인 — 와 「🤖 AI용 복사」.',
     upb: '지구대·파출소마다 맡는 동네를 칠한다 — 공식 관할 경계는 공개되지 않아 「그 동의 관할 경찰서 지구대·파출소 가운데 동 가운데에서 가장 가까운 곳」으로 근사한다. 누르면 그 지구대·파출소 구역의 합계.',
     ri: '읍·면의 리(里) 경계(브이월드 법정리 약 1.5만 · 147개 시군구). 리 단위 인구·카드 통계는 공개되지 않아 리마다 가게 수·사고 10년·사망사고만 이 지도의 점으로 센다. 리를 누르면 숫자.',
+    fdong: '행정안전부 2024 외국인주민 현황(2024.11.1 · 읍면동) — 동마다 「외국인주민 ÷ 주민등록」 비율로 칠한다(진할수록 높음). 동을 누르면 근로자·결혼이민·유학생·동포·귀화·자녀·다문화가구원. 3개월 넘게 사는 사람 기준.',
+    flodge: '서울 외국인관광 도시민박업·관광숙박업(호텔·호스텔) 영업 중인 곳(지방행정인허가) — 단기체류 외국인이 묵는 자리. 투숙 인원은 공개되지 않는다. 전국판은 활용신청 대기.',
     lpop: '통계청·행정안전부 인구감소지역 생활인구(주민등록 + 그 달 하루 3시간 넘게 머문 체류인구 · 통신 추정) — 인구감소지역 89·관심지역 18곳만 공표. 시군구를 「주민 대비 몇 배」로 칠한다. 누르면 달마다·남녀·연령.',
     busd: '인천광역시 정류장별 이용승객(공공데이터포털 · 시간대 없음) — 정류장마다 하루 평균 승차·하차. 원 크기 = 승하차 합.',
     msub: '대구교통공사 월별 하차 인원(공공데이터포털) — 역마다 하루 평균 하차. 대구는 시간대·승차를 공개하지 않는다(대전·광주는 「🚇 지하철 승차·하차」에 시간대로).',

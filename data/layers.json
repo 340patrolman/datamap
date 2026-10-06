@@ -396,6 +396,34 @@
 "paid_ok": false
 },
 {
+"key": "fdong",
+"name": "🌏 외국인주민 비율(읍면동 · 전국)",
+"group": "인구 구성",
+"default": false,
+"file": "foreign-dong.json",
+"kind": "poly",
+"scope": "national",
+"cover": "전국",
+"src": "행정안전부 지방자치단체 외국인주민 현황(2024 · 읍면동)",
+"license": "확인 필요(행정안전부 공표 통계)",
+"estimate": false,
+"paid_ok": false
+},
+{
+"key": "flodge",
+"name": "🏨 외국인 관광숙박(서울 · 도시민박·호스텔·호텔)",
+"group": "인구 구성",
+"default": false,
+"file": "lodging-seoul.json",
+"kind": "point",
+"scope": "seoul",
+"cover": "서울",
+"src": "서울 열린데이터광장",
+"license": "확인 필요(데이터셋마다 — 대부분 공공누리 1유형)",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "msub",
 "name": "🚇 대구 도시철도 하차(월별)",
 "group": "이동·동선",

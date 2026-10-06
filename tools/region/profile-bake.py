@@ -93,7 +93,7 @@ def main(sidos):
             sl = d.get('sales')
             if sl and sl.get('amt'):
                 a = sl['amt']; tbs = sl.get('tb') or []; dw = sl.get('dw') or []
-                o['카드 매출(추정)'] = {'분기': D.get('quarter'), '매출_만원': a, '건수': sl.get('cnt'), '주민 1인당_만원': rnd(a / p['tot'], 1) if p and p.get('tot') else None,
+                o['카드 매출(추정)'] = {'분기': D.get('quarter'), '기간': '한 달 평균(서울 상권분석 분기 합계 ÷ 3)', '매출_만원': a, '건수': sl.get('cnt'), '주민 1인당_만원': rnd(a / p['tot'], 1) if p and p.get('tot') else None,
                                     '시간대 비중%': {D['tb'][i]: pct(v, sum(tbs)) for i, v in enumerate(tbs)} if tbs else None, '요일 비중%': {DOW[i]: pct(v, sum(dw)) for i, v in enumerate(dw)} if dw else None,
                                     '업종 상위': [{'업종': r[0], '매출_만원': r[1], '비중%': pct(r[1], a)} for r in (sl.get('top') or [])[:10]]}
             out[k] = o

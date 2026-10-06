@@ -6,6 +6,7 @@
 #   업종마다 그 동 인허가 1·3·5년 생존 · 폐업 가게 평균 영업기간 · 지난해 폐업 ÷ 지금 영업(bizsv.json · 사례 5곳 미만이면 구 전체)
 #   py -3.12 -X utf8 tools/region/ggbiz-bake.py
 import json, os, glob, math
+GGMON = 12   # v2.60.0 경기 추정매출 = 한 해 값으로 읽는다(map2d.js GGMON 과 같게)
 from shapely.geometry import shape, Point, Polygon, MultiPolygon
 from shapely.prepared import prep
 
@@ -117,13 +118,13 @@ for f in sorted(glob.glob(os.path.join(R, '41*', 'ggtrd.json'))):
                 if r[0] in dd[2]: a = amt.setdefault(ii, [0, 0]); a[0] += r[1]; a[1] += r[2]
         per = {}
         for ii in set(amt) | set(cnt):
-            a = amt.get(ii, [0, 0]); per[ii] = [round(a[0] / 3), round(a[1] / 3), cnt.get(ii, 0)]
-        items.append([it['n'], it['k'], gu, k8, round(it['lat'], 5), round(it['lon'], 5), round(ha_of(g, it['lat']), 2), it.get('st') or 0, (it.get('tot') or [0])[0] and round(it['tot'][0] / 3) or 0, {str(k): v for k, v in per.items()}])
+            a = amt.get(ii, [0, 0]); per[ii] = [round(a[0] / GGMON), round(a[1] / GGMON), cnt.get(ii, 0)]
+        items.append([it['n'], it['k'], gu, k8, round(it['lat'], 5), round(it['lon'], 5), round(ha_of(g, it['lat']), 2), it.get('st') or 0, (it.get('tot') or [0])[0] and round(it['tot'][0] / GGMON) or 0, {str(k): v for k, v in per.items()}])
     print(gu, len(T['items']))
 
 doc = {'schema': 'tg-ggbiz/1', 'quarter': quarter, 'baked': __import__('datetime').date.today().isoformat(),
        'source': '경기데이터드림 발달·골목상권 영역과 추정매출(경기도시장상권진흥원 · 산업분류 10차 · ' + quarter + '분기) · 소상공인시장진흥공단 상가정보(' + SIDX['stdrYm'] + ') · 지방행정 인허가(LOCALDATA) · 경기 카드 매출(경기데이터드림) · 주민등록 인구',
-       'note': '한 달 매출 = 경기도 추정 분기 매출 ÷ 3(모델 추정값 · 실제 매출 아님 · 공개분 한 분기) · 점포 = 그 상권 다각형 안 상가정보 점포(소분류를 산업분류에 손으로 맞춤 — 1:1 이 아니다) · 생존·성장·인구는 상권이 든 행정동 값(같은 동 상권은 같다)',
+       'note': '한 달 매출 = 경기도 추정매출 ÷ 12(자료에 기간이 없어 크기로 보아 한 해 값으로 읽음 — 확인 중 · 모델 추정값 · 실제 매출 아님 · 공개분 한 번) · 점포 = 그 상권 다각형 안 상가정보 점포(소분류를 산업분류에 손으로 맞춤 — 1:1 이 아니다) · 생존·성장·인구는 상권이 든 행정동 값(같은 동 상권은 같다)',
        'fields': 'inds = [열쇠, 이름, 산업분류, 상가 소분류, 인허가 묶음, 카드 업종, 손익 틀] · items = [이름, dev/alley, 구, 행정동, 위도, 경도, 넓이 ha, 상권 점포, 상권 한 달 매출(만 원), {업종 자리: [한 달 매출 만 원, 한 달 건수, 상권 안 같은 업종 점포]}] · dong = {행정동: [이름, 주민, 유동 하루 평균, 유동 해, 카드 매출 2022→2025 %(전체), {카드 업종: %}]} · sv = {행정동: {업종 자리: [1년 생존 %, 3년, 5년, 폐업 가게 평균 영업 년, 3년 대상 수, 구 값이면 1, 지금 영업, 지난해 폐업]}}',
        'inds': INDS, 'items': items, 'dong': dongs, 'sv': svs}
 fn = os.path.join(R, 'ggbiz.json')

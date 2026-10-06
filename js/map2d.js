@@ -2052,6 +2052,35 @@
     if (hh) h += row('🏠 집안 구성', '세대 ' + hh.toLocaleString() + ' · 혼자 사는 세대 <b>' + (one / hh * 100).toFixed(1) + '%</b> · 👴 혼자 사는 65세 이상 <b>' + old.toLocaleString() + '명</b>' + (wel && pop ? ' · 기초생활수급(서울·경기 동 합) ' + wel.toLocaleString() + '명(' + (wel / pop * 100).toFixed(1) + '%)' : ''));
     return h; }
 
+  // v2.52.0 소유자 「상권을 그래프·다이어그램으로 · 인플레이션·부대비용을 감안해 매출이 몇 % 올라야 제자리인지 · 어디부터 성장인지」
+  //   기준선 = 같은 기간(처음 4분기 ↔ 마지막 4분기) 소비자물가(시도 총지수) · 외식 물가 · 최저임금(고용노동부 고시 원문 — 인건비 대표값)
+  //   구간(앱 기준) = 물가보다 낮다 → 뒤처짐(실질 감소) · 물가~최저임금 사이 → 물가는 따라갔지만 인건비 오름은 못 따라감 · 최저임금 이상 → 비용 오름까지 앞선 성장
+  var MINW = { 2020: 8590, 2021: 8720, 2022: 9160, 2023: 9620, 2024: 9860, 2025: 10030, 2026: 10320 };
+  var MINW_SRC = '최저임금 = 고용노동부 고시(2020 제2019-43호 · 2021 제2020-110호 · 2022~2026 해마다 고시 · 2026 제2025-47호 10,320원)';
+  function qList(q0, n) { var y = +String(q0).slice(0, 4), q = +String(q0).slice(4), o = []; for (var i = 0; i < n; i++) { o.push(y + '' + q); q++; if (q > 4) { q = 1; y++; } } return o; }
+  function qBack(q1, n) { var y = +String(q1).slice(0, 4), q = +String(q1).slice(4), o = []; for (var i = 0; i < n; i++) { o.unshift(y + '' + q); q--; if (q < 1) { q = 4; y--; } } return o; }
+  function growthRefs(q0, q1, sido) { if (!CPI) return null; var A = qList(q0, 4), B = qBack(q1, 4), av = function (L, j) { var t = 0, n = 0; L.forEach(function (q) { var c = CPI.q[q] && (CPI.q[q][sido] || CPI.q[q]['전국']); if (c) { t += c[j]; n++; } }); return n ? t / n : null; }, mw = function (L) { var t = 0; L.forEach(function (q) { t += MINW[+q.slice(0, 4)] || 0; }); return t / L.length; };
+    var c0 = av(A, 0), c1 = av(B, 0), f0 = av(A, 1), f1 = av(B, 1), m0 = mw(A), m1 = mw(B); if (!c0 || !c1) return null;
+    return { cpi: (c1 / c0 - 1) * 100, food: f0 && f1 ? (f1 / f0 - 1) * 100 : null, mw: m0 && m1 ? (m1 / m0 - 1) * 100 : null, A: A, B: B }; }
+  function gZone(g, R0) { return g < R0.cpi ? ['#2563eb', '뒤처짐'] : R0.mw != null && g < R0.mw ? ['#f59e0b', '물가만'] : ['#16a34a', '성장']; }
+  function vzGrowth(rows, R0, opt) {   // 가로 막대 + 세로 기준선 — rows [[이름, 증가율 %, 덧말]]
+    opt = opt || {}; var refs = [['물가', R0.cpi, '#475569'], R0.food != null ? ['외식 물가', R0.food, '#7c3aed'] : null, R0.mw != null ? ['최저임금', R0.mw, '#dc2626'] : null].filter(Boolean);
+    var vals = rows.map(function (r) { return r[1]; }).concat(refs.map(function (r) { return r[1]; })).concat([0]), lo = Math.min.apply(null, vals) - 5, hi = Math.max.apply(null, vals) + 5;
+    var W = 320, L = 92, Rr = 50, rowH = 22, top = 38, H = top + rows.length * rowH + 8, X = function (v) { return L + (v - lo) / (hi - lo) * (W - L - Rr); };
+    var s2 = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="매출 증가율과 기준선">';
+    s2 += '<line x1="' + X(0).toFixed(1) + '" x2="' + X(0).toFixed(1) + '" y1="' + (top - 4) + '" y2="' + (H - 6) + '" stroke="currentColor" opacity=".35"/>';
+    var yl = [10, 20]; refs.forEach(function (r, i) { var x = X(r[1]).toFixed(1); s2 += '<line x1="' + x + '" x2="' + x + '" y1="' + (10 + i * 10) + '" y2="' + (H - 6) + '" stroke="' + r[2] + '" stroke-dasharray="4 3" stroke-width="1.5"/><text x="' + (+x + 3) + '" y="' + (8 + i * 10) + '" text-anchor="' + (+x > W - 90 ? 'end' : 'start') + '" font-size="8.5" font-weight="700" fill="' + r[2] + '">' + esc(r[0]) + ' +' + r[1].toFixed(1) + '%</text>'; });
+    rows.forEach(function (r, i) { var y = top + i * rowH, z = gZone(r[1], R0), x0 = X(Math.min(0, r[1])), x1 = X(Math.max(0, r[1]));
+      s2 += '<text x="' + (L - 4) + '" y="' + (y + 13) + '" text-anchor="end" font-size="9.5" fill="currentColor">' + esc(String(r[0]).slice(0, 11)) + '</text><rect x="' + x0.toFixed(1) + '" y="' + (y + 3) + '" width="' + Math.max(1.5, x1 - x0).toFixed(1) + '" height="14" rx="3" fill="' + z[0] + '"/><text x="' + (X(Math.max(0, r[1])) + 3).toFixed(1) + '" y="' + (y + 14) + '" font-size="9" font-weight="700" fill="' + z[0] + '">' + (r[1] >= 0 ? '+' : '') + r[1].toFixed(0) + '% ' + z[1] + '</text>'; });
+    return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + s2 + '</svg><div class="pleg"><span><i style="background:#2563eb"></i>뒤처짐 — 물가보다 덜 올라 실제로는 줄었다</span><span><i style="background:#f59e0b"></i>물가만 — 물가는 따라갔지만 인건비 오름은 못 따라감</span><span><i style="background:#16a34a"></i>성장 — 최저임금 오름까지 앞섰다</span></div></div>'; }
+  function vzQuad(cur, hist) {   // 상권변화지표 네 칸 — 가로 = 지금 영업 중인 가게의 평균 업력 · 세로 = 문 닫은 가게의 평균 업력(서울시 기준 길다/짧다)
+    var Q = { LH: [0, 0, '상권확장', '#16a34a', '새 가게가 들어와 버틴다'], HH: [1, 0, '정체', '#94a3b8', '오래된 가게가 그대로'], LL: [0, 1, '다이나믹', '#f59e0b', '많이 열고 많이 닫는다'], HL: [1, 1, '상권축소', '#dc2626', '새로 연 곳이 빨리 닫는다'] }, cnt = {}; (hist || []).forEach(function (q) { cnt[q[1]] = (cnt[q[1]] || 0) + 1; });
+    var s2 = '<svg viewBox="0 0 320 196" width="100%" role="img" aria-label="상권변화지표 네 칸">';
+    Object.keys(Q).forEach(function (k) { var q = Q[k], x = 50 + q[0] * 132, y = 14 + q[1] * 80, on = k === cur;
+      s2 += '<rect x="' + x + '" y="' + y + '" width="128" height="76" rx="8" fill="' + q[3] + '" fill-opacity="' + (on ? 0.85 : 0.14) + '" stroke="' + q[3] + '" stroke-width="' + (on ? 3 : 1) + '"/><text x="' + (x + 64) + '" y="' + (y + 26) + '" text-anchor="middle" font-size="13" font-weight="800" fill="' + (on ? '#fff' : 'currentColor') + '">' + (on ? '📍 ' : '') + q[2] + '</text><text x="' + (x + 64) + '" y="' + (y + 44) + '" text-anchor="middle" font-size="9" fill="' + (on ? '#fff' : 'currentColor') + '" opacity=".9">' + q[4] + '</text><text x="' + (x + 64) + '" y="' + (y + 63) + '" text-anchor="middle" font-size="9" font-weight="700" fill="' + (on ? '#fff' : 'currentColor') + '">' + (cnt[k] ? cnt[k] + '분기' : '-') + '</text>'; });
+    s2 += '<text x="182" y="186" text-anchor="middle" font-size="9" fill="currentColor">영업 중인 가게 평균 업력 →  짧다 | 길다</text><text x="12" y="92" text-anchor="middle" font-size="9" fill="currentColor" transform="rotate(-90 12 92)">닫은 가게 업력 ↓ 길다 | 짧다</text>';
+    return '<div class="vz"><div class="cap">상권변화지표 — 지금 칸(📍)과 2021년부터 머문 분기 수</div>' + s2 + '</svg></div>'; }
+
   function facRows(gcd, nm, k8) {   // 동 카드 아래 「동 현황」 — 소유자 2026-10-04 「상권이 살아나는지 죽는지 · 남녀 · 경로당·어린이집·유치원·입시학원」
     var F = RFAC[gcd]; if (!F) { fLoad(gcd, function () { if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }); return '<p class="desc">동 현황(남녀·시설·상권 추이)을 읽는 중…</p>'; }
     var x = (k8 && F.dong[k8]) || null; if (!x) for (var kk in F.dong) if (F.dong[kk].name === nm) { x = F.dong[kk]; break; } if (!x) return facLite(F, k8, nm);
@@ -2081,10 +2110,16 @@
       if (x.trd && x.trd.length) { var A0 = 0, A1 = 0; x.trd.forEach(function (t) { A0 += t[4]; A1 += t[3]; }); sales = pctCh(A0, A1);
         h += row('이 동의 상권', x.trd.length + '곳 · 최근 1년 매출 약 ' + won(A1) + ' <b>' + sgn(sales) + '</b> <em>(처음 1년 ' + won(A0) + ' · 2021년부터)</em>') +
           '<div class="lst">' + x.trd.slice(0, 6).map(function (t) { var c = pctCh(t[4], t[3]); return '<div><b>' + esc(t[1]) + '</b> <small>' + esc(t[2]) + ' · ' + esc(t[5] || '') + '</small><span class="' + (c == null ? '' : c > 10 ? 'up' : c < -10 ? 'dn' : '') + '">' + won(t[3]) + ' ' + sgn(c) + '</span></div>'; }).join('') + '</div>'; }
+      if (x.trd && x.trd.length) { if (!CPI) cpiLoad().then(function () { var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.kind === 'dong') show(sel.it); }); var t0 = x.trd[0], R0 = CPI && growthRefs(t0[6], t0[7], ({ '11': '서울', '41': '경기' })[String(gcd).slice(0, 2)] || '전국');
+        if (R0) { var tot0 = 0, tot1 = 0; x.trd.forEach(function (t) { tot0 += t[4]; tot1 += t[3]; }); var gp = function (a, b) { return a ? (b - a) / a * 100 : 0; }, gAll = gp(tot0, tot1);
+          h += vzGrowth([['이 동 상권 합', gAll, '']].concat(x.trd.filter(function (t) { return t[4] > 0; }).slice(0, 8).map(function (t) { return [t[1], gp(t[4], t[3]), t[2]]; })), R0, { title: '매출이 얼마나 늘었나 — ' + qLab1(R0.A[0]) + '~' + qLab1(R0.A[3]) + ' ↔ ' + qLab1(R0.B[0]) + '~' + qLab1(R0.B[3]) + ' (각 4분기 합)' });
+          var zA = gZone(gAll, R0); h += row('제자리 기준', '물가 <b>+' + R0.cpi.toFixed(1) + '%</b>' + (R0.food != null ? ' · 외식 물가 +' + R0.food.toFixed(1) + '%' : '') + (R0.mw != null ? ' · 최저임금 <b>+' + R0.mw.toFixed(1) + '%</b>' : '') + ' — 매출이 물가만큼 올라야 제자리, 최저임금 오름만큼 올라야 인건비를 감당한다') + row('이 동 상권 합', '<b style="color:' + zA[0] + '">' + (gAll >= 0 ? '+' : '') + gAll.toFixed(1) + '% · ' + zA[1] + '</b> — 물가를 걷으면 실질 ' + ((1 + gAll / 100) / (1 + R0.cpi / 100) * 100 - 100).toFixed(1) + '%') +
+            '<p class="desc">기준선: 소비자물가(' + esc(CPI.source) + ') · ' + esc(MINW_SRC) + ' · 「물가만/성장」 문턱은 이 지도의 설계값(임대료·재료비는 동 단위 공개 자료가 없어 넣지 않았다 — 외식 물가가 재료·메뉴 값의 대신 신호)</p>'; } }
       if (x.ix && x.ix.length) { var last = x.ix[x.ix.length - 1], N = F.ix_names || {}; ixl = last[1];
         h += row('상권변화지표', '<b>' + esc(N[last[1]] || last[1]) + '</b> <em>(' + last[0].slice(2, 4) + '년 ' + last[0][4] + '분기 · 운영 평균 ' + Math.round(last[2]) + '개월 · 폐업 평균 ' + Math.round(last[3]) + '개월)</em>') +
           '<div class="cap">분기마다 상권변화지표(' + x.ix[0][0].slice(0, 4) + '~' + last[0].slice(0, 4) + ')</div><div class="ixs">' + x.ix.map(function (q) { return '<i style="background:' + (IXC[q[1]] || '#ccc') + '" title="' + q[0].slice(0, 4) + '년 ' + q[0][4] + '분기 ' + esc(N[q[1]] || q[1]) + '"></i>'; }).join('') + '</div>' +
           '<div class="ixl"><span><i style="background:#16a34a"></i>상권확장 — 새로 연 점포가 버틴다</span><span><i style="background:#f59e0b"></i>다이나믹 — 많이 열고 많이 닫는다</span><span><i style="background:#94a3b8"></i>정체 — 오래된 점포가 그대로</span><span><i style="background:#dc2626"></i>상권축소 — 새로 연 곳이 빨리 닫는다</span></div>'; srcs.push(S['상권변화']); }
+      if (x.ix && x.ix.length) h += vzQuad(x.ix[x.ix.length - 1][1], x.ix);
       var up = (sales != null && sales > 10) + (stores != null && stores > 3) + (ixl === 'LH'), dn = (sales != null && sales < -10) + (stores != null && stores < -3) + (ixl === 'HL');
       var vd = up >= 2 && !dn ? '📈 <b>살아나는 쪽</b>' : dn >= 2 && !up ? '📉 <b>줄어드는 쪽</b>' : up > dn ? '↗ 조금 살아나는 쪽' : dn > up ? '↘ 조금 줄어드는 쪽' : '➡ 큰 변화 없음';
       h += row('한 줄로', vd + ' <em>(매출 ±10% · 점포 ±3% · 지표를 함께 본 이 지도의 어림 — 판단 문턱은 설계값)</em>') + '<p class="desc">상권분석서비스는 <b>2021년부터</b>만 공개된다 — 그보다 앞 10년 상권 값은 이 자료에 없다. 어린이집(2016~)·유치원(2014~)은 더 길게 본다.</p>';
@@ -2947,7 +2982,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.51.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.52.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }

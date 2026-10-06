@@ -24,7 +24,7 @@
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '소비·상권', 1], ['rent', '💰 상가 임대료·공실률', false, '소비·상권', 0], ['szone', '🏬 소진공 주요상권(전국)', false, '소비·상권', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '인구 구성', 1], ['crowd', '📡 실시간 인파·카드', false, '이동·동선', 1], ['live', '👥 생활인구(지금)', false, '인구 구성', 1], ['sales', '💳 카드 매출(시간대)', false, '소비·상권', 1], ['bus', '🚌 버스 승차·하차', false, '이동·동선', 1], ['subr', '🚇 지하철 승차·하차', false, '이동·동선', 0], ['vol', '🚙 교통량', false, '이동·동선', 0], ['bike', '🚲 따릉이', false, '이동·동선', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
     ['bar', '🍺 주점(밤 순찰)', false, '치안·안전', 0], ['play', '🎤 노래방·PC방', false, '치안·안전', 0], ['inn', '🏨 숙박', false, '치안·안전', 0], ['heat', '🥵 무더위쉼터', false, '치안·안전', 0], ['cold', '🥶 한파쉼터', false, '치안·안전', 0], ['hyd', '🧯 소화전', false, '치안·안전', 0], ['wc', '🚻 화장실', false, '치안·안전', 0],
-    ['school', '🏫 학교', false, '교육·돌봄', 0], ['kids', '🧸 유치원·어린이집', false, '교육·돌봄', 0], ['pg', '🛝 놀이터', false, '교육·돌봄', 0], ['park', '🌳 공원', false, '생활시설', 0], ['welf', '🧓 복지시설', false, '교육·돌봄', 0], ['kyr', '🧓 경로당(서울시)', false, '교육·돌봄', 0], ['cc', '👶 어린이집(서울시)', false, '교육·돌봄', 0], ['kg', '🎒 유치원(교육청)', false, '교육·돌봄', 0], ['aca', '📚 입시·교과학원', false, '교육·돌봄', 0], ['acad', '🎒 학원 현황(전국 · 입시·외국어·미술·음악·태권도 등)', false, '교육·돌봄', 1], ['edu', '🏫 학교(초·중·고·대학)', false, '교육·돌봄', 0], ['govr', '🏛 관공서(서울·경기)', false, '생활시설', 0],
+    ['school', '🏫 학교', false, '교육·돌봄', 0], ['kids', '🧸 유치원·어린이집', false, '교육·돌봄', 0], ['pg', '🛝 놀이터', false, '교육·돌봄', 0], ['park', '🌳 공원', false, '생활시설', 0], ['welf', '🧓 복지시설', false, '교육·돌봄', 0], ['kyr', '🧓 경로당(서울시)', false, '교육·돌봄', 0], ['cc', '👶 어린이집(서울시)', false, '교육·돌봄', 0], ['kg', '🎒 유치원(교육청)', false, '교육·돌봄', 0], ['aca', '📚 입시·교과학원', false, '교육·돌봄', 0], ['acad', '🎒 학원 현황(전국 · 입시·외국어·미술·음악·태권도 등)', false, '교육·돌봄', 1], ['med', '🏥 병·의원 현황(전국 · 개업·폐업 흐름)', false, '생활시설', 1], ['edu', '🏫 학교(초·중·고·대학)', false, '교육·돌봄', 0], ['govr', '🏛 관공서(서울·경기)', false, '생활시설', 0],
     ['gov', '🏢 관공서·주민센터', false, '생활시설', 0], ['lib', '📚 도서관', false, '생활시설', 0], ['post', '📮 우체국', false, '생활시설', 0], ['bank', '🏦 은행·ATM', false, '생활시설', 0], ['conv', '🏪 편의점', false, '생활시설', 0],
     ['fuel', '⛽ 주유소', false, '생활시설', 0], ['ev', '🔌 전기차 충전', false, '생활시설', 0], ['pk', '🅿 주차장', false, '생활시설', 0],
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
@@ -862,7 +862,7 @@
     GU.forEach(function (g) { path(g.pts); ctx.lineWidth = 2.4; ctx.setLineDash([8, 5]); ctx.strokeStyle = dark ? '#9fb3d1' : '#475569'; ctx.stroke(); ctx.setLineDash([]); });
     // 도로 — 바탕 지도가 있으면 OSM 도로 전부(종류별 폭·색 · 지하차도 점선 · 다리 테), 없으면 간선 10개
     if (on.road && OSM) drawBaseRoads(dark);
-    drawUnits(dark); drawJrs(dark); drawAcad(dark); drawLpop(dark); drawFdong(dark); drawRnet(dark); drawSgg(dark); drawVols(dark); drawExv(dark); drawMsub(dark); drawBusd(dark); drawFlodge(dark); drawMinbak(dark); drawStay(dark); drawRpost(dark); drawJiga(dark); drawLand(dark);   // v0.10.90 시·군·구 경계(서울·경기·인천)
+    drawUnits(dark); drawJrs(dark); drawAcad(dark); drawMed(dark); drawLpop(dark); drawFdong(dark); drawRnet(dark); drawSgg(dark); drawVols(dark); drawExv(dark); drawMsub(dark); drawBusd(dark); drawFlodge(dark); drawMinbak(dark); drawStay(dark); drawRpost(dark); drawJiga(dark); drawLand(dark);   // v0.10.90 시·군·구 경계(서울·경기·인천)
     // 건물
     if (on.bld && BLD.length && view.s > 0.12) BLD.forEach(function (b) { path(b.p); ctx.closePath(); ctx.fillStyle = dark ? 'rgba(200,210,225,.28)' : (BASE ? 'rgba(186,176,164,.85)' : 'rgba(90,100,115,.30)'); ctx.fill(); if (BASE && !dark && view.s > 0.5) { ctx.lineWidth = 0.6; ctx.strokeStyle = 'rgba(120,110,100,.7)'; ctx.stroke(); } });
     if ((on.road || on.jcnm) && OSM) drawBaseLabels(dark);
@@ -1017,7 +1017,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
-      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += fdRows(d.k); h += econRows(d.k);
+      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1078,6 +1078,8 @@
     } else if (it.kind === 'jrs') { h = jrsCard(it);
     } else if (it.kind === 'acx') { h = acCard(it);
     } else if (it.kind === 'acd') { h = acdCard(it);
+    } else if (it.kind === 'mdx') { h = mdCard(it);
+    } else if (it.kind === 'mdd') { h = mddCard(it);
     } else if (it.kind === 'pst') { h = pstCard(it.s);
     } else if (it.kind === 'pbx') { h = pbxCard(it.b);
     } else if (it.kind === 'frn') { h = frnCard(it.gu);
@@ -1811,7 +1813,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
-    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += fdRows(d.k); h += econRows(d.k);
+    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + (GB.ggcard ? '<button data-ggc="' + esc(d.gcd) + '|' + esc(d.k) + '">💳 카드 소비 자세히(연령·성별·시간·업종)</button>' : '') + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -2115,6 +2117,7 @@
     if (on.govr) G('🏛 관공서', Object.keys(GOVC).map(function (k) { return li(GOVC[k], k); }).join(''));
     if (on.juris) { var jl2 = jrsLegend(); if (jl2) G(jl2[0], jl2[1]); }
     if (on.acad) { var al3 = acLegend(); if (al3) G(al3[0], al3[1]); }
+    if (on.med) { var ml3 = mdLegend(); if (ml3) G(ml3[0], ml3[1]); }
     if (on.dong) G('🏘 행정동', li('rgba(109,40,217,.6)', '행정동 경계', 'line') + li('#64748b', '이웃 구 동(점선)', 'dash') + li('#475569', '구 경계(굵은 점선)', 'dash'));
     if (on.live) { var mx = 0, mn = 1e9; allDong().forEach(function (d) { var lv = liveNow(d); if (lv) { mx = Math.max(mx, lv.n); mn = Math.min(mn, lv.n); } }); if (mx) G('👥 생활인구 ' + hh + '시', grad('rgb(255,230,150)', 'rgb(215,60,40)', man(mn) + '명', man(mx) + '명') + '<small class="lg-n">동 안의 숫자 = 그 시각 평균 체류 인구</small>'); }
     if (on.sales) { var a = 1e18, b = 0; allDong().forEach(function (d) { var sn = salesNow(d); if (sn) { a = Math.min(a, sn.perH); b = Math.max(b, sn.perH); } }); if (b) G('💳 카드 매출 ' + esc(D.flow.sales.tb[bandOf(hh)]), grad('rgb(237,233,254)', 'rgb(117,53,214)', won(a), won(b)) + '<small class="lg-n">시간당 추정 매출(하루 평균) · 동을 누르면 업종·연령</small>'); }
@@ -2150,7 +2153,7 @@
     el.innerHTML = '<div class="lgh"><b>🗂 범례</b><button id="m2dLegX" aria-label="범례 닫기">닫기</button></div>' + (g.join('') || '<small>켠 층이 없다</small>');
     $('m2dLegX').onclick = function () { legOpen(false); };
   }
-  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-vwkey]'); if (b) { vwSetKey(); return; } b = e.target.closest('[data-lkey]'); if (b) { var lk0 = b.getAttribute('data-lkey'); lkSet(lk0, lk0 === 'dgk' ? '공공데이터포털(data.go.kr) 일반' : '국가교통정보센터(ITS)'); return; } b = e.target.closest('[data-busx]'); if (b) { BUSR = null; draw(); legend(); return; } b = e.target.closest('[data-lre]'); if (b) { liveGo(b.getAttribute('data-lre')); legend(); return; } b = e.target.closest('[data-itst]'); if (b) { LK.itst = b.getAttribute('data-itst'); try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e2) {} legend(); return; } b = e.target.closest('[data-vwm]'); if (b) { VWM = b.getAttribute('data-vwm'); try { localStorage.setItem('tg_map2d_vw', VWM); } catch (e2) {} draw(); return; } b = e.target.closest('[data-jggm]'); if (b) { JGGM = b.getAttribute('data-jggm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); return; } b = e.target.closest('[data-acm]'); if (b) { var ai = +b.getAttribute('data-acm'); ACON[ai] = !ACON[ai]; try { localStorage.setItem('tg_map2d_acad', ACON.map(function (x) { return x ? 1 : 0; }).join('')); } catch (e2) {} draw(); legend(); return; } b = e.target.closest('[data-jrsm]'); if (b) { JRSM = b.getAttribute('data-jrsm'); try { localStorage.setItem('tg_map2d_jrs', JRSM); } catch (e2) {} draw(); legend(); return; } b = e.target.closest('[data-hm]'); if (b) { HM = b.getAttribute('data-hm'); draw(); } });
+  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { if (e.target.closest('[data-bizopen]')) { if (TRDI && BIZ.idx) { var c = BIZ.idx.inds.filter(function (x) { return x[1] === TRDI; })[0]; if (c && c[0] !== BIZ.code) { BIZ.code = c[0]; bizOpen(); bizLoad(); return; } } bizOpen(); return; } var b = e.target.closest('[data-trdm]'); if (b) { TRDM = b.getAttribute('data-trdm'); draw(); return; } b = e.target.closest('[data-ggm]'); if (b) { GGM = b.getAttribute('data-ggm'); draw(); return; } b = e.target.closest('[data-hlall]'); if (b) { HLALL = !HLALL; draw(); return; } b = e.target.closest('[data-vwkey]'); if (b) { vwSetKey(); return; } b = e.target.closest('[data-lkey]'); if (b) { var lk0 = b.getAttribute('data-lkey'); lkSet(lk0, lk0 === 'dgk' ? '공공데이터포털(data.go.kr) 일반' : '국가교통정보센터(ITS)'); return; } b = e.target.closest('[data-busx]'); if (b) { BUSR = null; draw(); legend(); return; } b = e.target.closest('[data-lre]'); if (b) { liveGo(b.getAttribute('data-lre')); legend(); return; } b = e.target.closest('[data-itst]'); if (b) { LK.itst = b.getAttribute('data-itst'); try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e2) {} legend(); return; } b = e.target.closest('[data-vwm]'); if (b) { VWM = b.getAttribute('data-vwm'); try { localStorage.setItem('tg_map2d_vw', VWM); } catch (e2) {} draw(); return; } b = e.target.closest('[data-jggm]'); if (b) { JGGM = b.getAttribute('data-jggm'); draw(); return; } b = e.target.closest('[data-a10m]'); if (b) { A10M = b.getAttribute('data-a10m'); draw(); return; } b = e.target.closest('[data-mdm]'); if (b) { var mi = b.getAttribute('data-mdm'); if (mi === 'cl') MDCL = !MDCL; else MDON[+mi] = !MDON[+mi]; try { localStorage.setItem('tg_map2d_med', MDON.map(function (x) { return x ? 1 : 0; }).join('') + (MDCL ? 'c' : '')); } catch (e2) {} draw(); legend(); return; } b = e.target.closest('[data-acm]'); if (b) { var ai = +b.getAttribute('data-acm'); ACON[ai] = !ACON[ai]; try { localStorage.setItem('tg_map2d_acad', ACON.map(function (x) { return x ? 1 : 0; }).join('')); } catch (e2) {} draw(); legend(); return; } b = e.target.closest('[data-jrsm]'); if (b) { JRSM = b.getAttribute('data-jrsm'); try { localStorage.setItem('tg_map2d_jrs', JRSM); } catch (e2) {} draw(); legend(); return; } b = e.target.closest('[data-hm]'); if (b) { HM = b.getAttribute('data-hm'); draw(); } });
     $('m2dLeg').addEventListener('change', function (e) { var t = e.target; if (t.hasAttribute('data-trdi')) { TRDI = t.value; draw(); } else if (t.hasAttribute('data-a10y')) { A10Y = t.value ? +t.value : null; draw(); } }); }
   function legOpen(v) { if (v && window.innerWidth < 760 && $('m2dCard').classList.contains('on')) $('m2dCard').classList.remove('on');
     document.body.classList.toggle('legon', v); try { localStorage.setItem('tg_map2d_leg', v ? '1' : '0'); } catch (e) {} if (v) legend(); }
@@ -3136,6 +3139,60 @@
     return ['🎒 학원 현황', '<div class="lg-btns">' + ACT.map(function (x, i) { return '<button data-acm="' + i + '" class="' + (ACON[i] ? 'on' : '') + '"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x[1] + ';margin-right:3px"></i>' + x[0] + ' ' + tot[i].toLocaleString() + '</button>'; }).join('') + '</div>' +
       '<div class="cap">지금 화면 안 종류별(곳 · 켠 종류)</div>' + pie(ACT.map(function (x, i) { return [x[0].replace(/^\S+ /, ''), ACON[i] ? tot[i] : 0, x[1]]; }), 80) +
       '<div class="lg-btns"><button data-acsim="1">💰 학원·교습소 개업 시뮬레이션</button></div><small class="lg-n">보라 원 = 동마다 학원 수(켠 종류) · 확대하면 한 곳씩 · 소상공인시장진흥공단 상가(상권)정보 ' + esc(ACD.stdrYm || '') + ' · 학원·교습소를 가르지 않는다(교육청 학원·교습소 등록 자료는 좌표가 없어 아직 안 씀)</small>']; }
+  // ---------- v2.42.0 🏥 병·의원 현황 — 개업·폐업 흐름(행정안전부 지방행정인허가 · tools/region/med-bake.py · data/med-dong.json · r/<구>/med.json) · 소유자 2026-10-06(집사람 요청) ----------
+  var MDT = [['의원', '#2563eb'], ['치과의원', '#0891b2'], ['한의원', '#65a30d'], ['병원', '#7c3aed'], ['요양병원', '#a16207'], ['한방병원', '#16a34a'], ['종합병원', '#dc2626'], ['치과병원', '#06b6d4'], ['정신병원', '#db2777'], ['보건소·지소·진료소', '#475569'], ['조산원', '#f59e0b']];
+  var MDON = MDT.map(function () { return true; }), MDCL = false, MDD = null, MDDP = null, MDP = {};
+  try { var mds = localStorage.getItem('tg_map2d_med'); if (mds && mds.length >= MDT.length) { MDON = mds.slice(0, MDT.length).split('').map(function (x) { return x === '1'; }); MDCL = mds.indexOf('c') >= 0; } } catch (e) {}
+  function mdDLoad() { if (MDDP) return MDDP; MDDP = fetch('data/med-dong.json').then(function (r) { return r.json(); }).then(function (j) { MDD = j; Object.keys(j.dong).forEach(function (k) { j.dong[k].p = P(j.dong[k][0], j.dong[k][1]); }); draw(); if (document.body.classList.contains('legon')) legend(); }).catch(function () { MDD = { dong: {}, types: [], specs: [] }; }); return MDDP; }
+  function mdPLoad(gu) { if (MDP[gu]) return; var o = MDP[gu] = { a: null }; rGet(gu, 'med.json').then(function (j) { var O = j.o, K = j.k; o.a = j.pts.map(function (q) { return { p: P(O[0] + q[0] / K[0], O[1] + q[1] / K[1]), q: q, cl: q.length === 6 }; }); draw(); }).catch(function () { o.a = []; }); }
+  function mdSum(v) { var t = 0; v[3].forEach(function (n, i) { if (MDON[i]) t += n; }); return t; }
+  function mdYm(x) { return x ? String(x).replace(/(\d{4})(\d\d)/, '$1.$2') : '?'; }
+  function mdYears(a, b) { if (!a || !b) return null; var m = (Math.floor(b / 100) * 12 + b % 100) - (Math.floor(a / 100) * 12 + a % 100); return m / 12; }
+  function drawMed(dark) {
+    if (!on.med) return; if (!MDD) { mdDLoad(); return; } var W0 = cv.clientWidth, H0 = cv.clientHeight;
+    if (view.s < 0.03) { if (view.s < 0.0015) return; Object.keys(MDD.dong).forEach(function (k) { var v = MDD.dong[k], q = S(v.p); if (q[0] < -30 || q[1] < -20 || q[0] > W0 + 30 || q[1] > H0 + 20) return; var t = mdSum(v); if (!t) return;
+        var r = view.s < 0.006 ? Math.min(9, 2.5 + Math.sqrt(t) * 0.5) : Math.min(20, 6 + Math.sqrt(t) * 1.3);
+        ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, Math.PI * 2); ctx.fillStyle = dark ? 'rgba(13,148,136,.55)' : 'rgba(13,148,136,.78)'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#fff'; ctx.stroke();
+        if (view.s >= 0.006) { ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(String(t), q[0], q[1]); }
+        hit.push({ x: q[0], y: q[1], r: Math.max(r, 8), it: { kind: 'mdd', k: k } }); }); return; }
+    var v0 = viewLL(); rIdx().forEach(function (g) { var x = g.box; if (!(g.bytes || {}).med || x[2] < v0[0] || x[0] > v0[2] || x[3] < v0[1] || x[1] > v0[3]) return; mdPLoad(g.gu); });
+    Object.keys(MDP).forEach(function (gu) { var o = MDP[gu]; if (!o.a) return; o.a.forEach(function (m) { var t = m.q[2]; if (!MDON[t] || (m.cl && !MDCL)) return; var sx = S(m.p); if (sx[0] < -10 || sx[1] < -10 || sx[0] > W0 + 10 || sx[1] > H0 + 10) return;
+      if (m.cl) { dot(m.p, 2.6, dark ? '#64748b' : '#94a3b8', 'rgba(255,255,255,.7)', { kind: 'mdx', m: m }); return; }
+      dot(m.p, view.s >= 0.08 ? 4.6 : 3.4, MDT[t][1], m.q[8] ? '#f59e0b' : '#fff', { kind: 'mdx', m: m });
+      if (view.s >= 0.15) label([m.p[0], m.p[1] - 11 / view.s], m.q[7], 10, dark ? '#e2e8f0' : '#1e293b', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.8)'); }); });
+  }
+  function mdCard(it) { var q = it.m.q, sp = MDD && MDD.specs[q[3]], now = new Date(), nym = now.getFullYear() * 100 + now.getMonth() + 1;
+    if (it.m.cl) { var yy = mdYears(q[4], q[5]);
+      return '<h3>⬜ 문 닫은 ' + esc(MDT[q[2]][0]) + '</h3>' + row('개업 → 폐업', mdYm(q[4]) + ' → ' + mdYm(q[5]) + (yy != null ? ' <b>(' + yy.toFixed(1) + '년 운영)</b>' : '')) + (sp && sp !== '미상' ? row('과목(상호로 추정)', esc(sp)) : '') + '<p class="desc">폐업한 곳은 상호를 싣지 않는다(의원 상호에 사람 이름이 많다).</p>' + src(MDD.source); }
+    var y2 = mdYears(q[4], nym);
+    return '<h3>' + esc(q[7] || MDT[q[2]][0]) + '</h3>' + row('종류', esc(MDT[q[2]][0]) + (sp && sp !== '미상' ? ' · ' + esc(sp) + ' <em>(상호로 추정)</em>' : '')) + row('개업(인허가)', mdYm(q[4]) + (y2 != null ? ' · ' + y2.toFixed(1) + '년째' : '')) + (q[8] ? row('상태', '<b>휴업</b>') : '') +
+      ((q[5] || q[6]) ? row('병상 · 의료인', (q[5] || 0) + '병상 · ' + (q[6] || 0) + '명') : '') + '<p class="desc">인허가 기록이다 — 진료 시간·전문의 여부·실제 진료과는 건강보험심사평가원 자료와 다를 수 있다.</p>' + src(MDD.source); }
+  function mdYearSvg(yo, yc, y0) {   // 해마다 개업(위 · 초록)·폐업(아래 · 빨강)
+    var n = yo.length, mx = Math.max.apply(null, yo.concat(yc).concat([1])), W = 300, H = 92, mid = 44, bw = (W - 20) / n;
+    var s2 = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="해마다 개업과 폐업"><line x1="10" x2="' + (W - 10) + '" y1="' + mid + '" y2="' + mid + '" stroke="currentColor" opacity=".3"/>';
+    for (var i = 0; i < n; i++) { var x = 10 + i * bw, a = yo[i] / mx * (mid - 6), b = yc[i] / mx * (mid - 6);
+      s2 += '<rect x="' + (x + 1).toFixed(1) + '" y="' + (mid - a).toFixed(1) + '" width="' + (bw - 2).toFixed(1) + '" height="' + a.toFixed(1) + '" fill="#16a34a"><title>' + (y0 + i) + '년 개업 ' + yo[i] + '</title></rect><rect x="' + (x + 1).toFixed(1) + '" y="' + mid + '" width="' + (bw - 2).toFixed(1) + '" height="' + b.toFixed(1) + '" fill="#dc2626"><title>' + (y0 + i) + '년 폐업 ' + yc[i] + '</title></rect>';
+      if ((y0 + i) % 5 === 0 || i === n - 1) s2 += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 2) + '" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">' + String(y0 + i).slice(2) + '</text>'; }
+    s2 += '<text x="10" y="9" font-size="8.5" fill="#16a34a">개업 ▲ 최대 ' + mx + '</text><text x="' + (W - 10) + '" y="9" text-anchor="end" font-size="8.5" fill="#dc2626">▼ 폐업</text></svg>';
+    return '<div class="cap">해마다 개업(위)·폐업(아래) — ' + y0 + '~' + (y0 + n - 1) + '년 · ' + (y0 + n - 1) + '년은 받은 날까지</div>' + s2; }
+  function mdDongHtml(k) { var v = MDD && MDD.dong[k]; if (!v) return ''; var t = v[3].reduce(function (a, b) { return a + b; }, 0), so = v[4].reduce(function (a, b) { return a + b; }, 0), sc = v[5].reduce(function (a, b) { return a + b; }, 0);
+    var h = '<div class="dh">🏥 이 동 병·의원 — 영업 중 ' + t + '곳 · ' + MDD.y0 + '년부터 개업 ' + so + ' · 폐업 ' + sc + '</div>';
+    h += '<div class="rcard">' + (v[6] ? row('2010~2020 개업', v[6] + '곳 중 <b>' + v[7] + '곳(' + Math.round(v[7] / v[6] * 100) + '%)</b>이 5년 안에 폐업') : '') + (v[9] ? row('문 닫은 곳 평균 운영', (v[8] / v[9] / 12).toFixed(1) + '년(' + v[9] + '곳)') : '') + '</div>';
+    var tn = MDT.map(function (x, i) { return [x[0], v[3][i], x[1]]; }).filter(function (x) { return x[1]; });
+    if (tn.length) h += '<div class="cap">영업 중 종류별(곳)</div>' + pie(tn, 84);
+    h += mdYearSvg(v[4], v[5], MDD.y0);
+    var sp = v[10] || {}, ks = Object.keys(sp).sort(function (a, b) { return sp[b] - sp[a]; });
+    if (ks.length) h += '<div class="cap">의원 과목 — 상호로 추정(내과·소아과… · 이름에 과목이 없는 의원은 빠짐)</div>' + pie(ks.slice(0, 7).map(function (a, i) { return [MDD.specs[+a], sp[a], PIEC[i % PIEC.length]]; }).concat(ks.length > 7 ? [['그 밖', ks.slice(7).reduce(function (s3, a) { return s3 + sp[a]; }, 0), '#94a3b8']] : []), 84);
+    return h; }
+  function mddCard(it) { var v = MDD.dong[it.k]; return '<h3>🏥 ' + esc(v[2]) + ' 병·의원</h3>' + mdDongHtml(it.k) + '<p class="desc">더 확대하면 한 곳씩 보인다(범례 「문 닫은 곳도」를 켜면 폐업 자리도). 좌표가 없는 오래된 기록은 동에 못 붙였다.</p>' + src(MDD.source + ' · ' + MDD.note); }
+  function mdRows(d) { if (!on.med || !d || !d.k) return ''; if (!MDD) { mdDLoad(); return ''; } return mdDongHtml(d.k); }
+  function mdLegend() {
+    if (!MDD) { mdDLoad(); return ['🏥 병·의원 현황', '<small class="lg-n">받는 중…</small>']; } var v = viewLL(), tot = MDT.map(function () { return 0; }), yo = 0, yc = 0, y = new Date().getFullYear() - 1 - MDD.y0;
+    Object.keys(MDD.dong).forEach(function (k) { var x = MDD.dong[k]; if (x[0] < v[0] || x[0] > v[2] || x[1] < v[1] || x[1] > v[3]) return; x[3].forEach(function (n, i) { tot[i] += n; }); yo += x[4][y] || 0; yc += x[5][y] || 0; });
+    return ['🏥 병·의원 현황', '<div class="lg-btns">' + MDT.map(function (x, i) { return tot[i] ? '<button data-mdm="' + i + '" class="' + (MDON[i] ? 'on' : '') + '"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x[1] + ';margin-right:3px"></i>' + x[0] + ' ' + tot[i].toLocaleString() + '</button>' : ''; }).join('') + '<button data-mdm="cl" class="' + (MDCL ? 'on' : '') + '">⬜ 문 닫은 곳도</button></div>' +
+      '<div class="cap">지금 화면 안 영업 중(곳) · ' + (MDD.y0 + y) + '년 개업 ' + yo + ' · 폐업 ' + yc + '</div>' + pie(MDT.map(function (x, i) { return [x[0], MDON[i] ? tot[i] : 0, x[1]]; }), 80) +
+      '<small class="lg-n">청록 원 = 동마다 영업 중(켠 종류) · 확대하면 한 곳씩(주황 테 = 휴업) · ' + esc(MDD.source) + '</small>']; }
+
   // ---------- v2.40.1 🏬 상가 임차 근사치(중기부 상가건물 임대차 실태조사 2025 · data/lease-bench.json) — 넣고 빼고 고친다 · 세무사 검토용 정리 ----------
   var LEASE = null, LEASEP = null;
   function leaseLoad() { if (LEASEP) return LEASEP; LEASEP = fetch('data/lease-bench.json').then(function (r) { return r.json(); }).then(function (j) { LEASE = j; }).catch(function () { LEASE = { by: {} }; }); return LEASEP; }
@@ -3510,6 +3567,7 @@
     exv: '전국 고속도로 영업소(요금소)마다 시간당 드나든 차(입구·출구) — 한국도로공사 OpenAPI. 이 API 는 지난 시각을 주지 않아 매시간 모은 만큼만 있다(카드에 모은 시각). 본선 통행량이 아니라 영업소를 드나든 차다.',
     volp: '서울시 교통량 조사 지점(약 130곳)의 시간대별 차량 대수 — 평일(2일 평균)·토·일, 방향 둘. 원 크기 = 평일 하루 대수. 누르면 시간대 막대. 조사 지점 밖 도로는 이 값으로 추정하지 않는다.',
     juris: '행정 관할 — 🎒 교육지원청(지방교육자치법 시행령 종전 별표2 · 교육청 조례) · 🧾 세무서(국세청 세무서별 관할구역) · ⚖ 지방법원·지원(각급 법원의 설치와 관할구역에 관한 법률 별표3)을 행정동·시군구에 칠한다. 범례에서 셋 중 하나를 고르고, 지도를 누르면 그 자리의 세 관할을 한 번에 — 원문 관할 글·전화·상급 기관. 세무서는 법정동으로 적힌 관할을 행정동에 붙인 근사(회색 = 한 동이 둘로 나뉨).',
+    med: '전국 병·의원 — 행정안전부 지방행정인허가(의원·병원 · 2025-11-27). 넓게 보면 동마다 영업 중인 곳 수(켠 종류), 확대하면 한 곳씩(종류 색). 범례에서 종류를 켜고 끄고 「문 닫은 곳도」를 켜면 폐업한 자리(회색)도 보인다. 동을 누르면 종류별 수·해마다 개업과 폐업 막대·5년 안 폐업 비율·평균 운영 기간·의원 과목(상호로 추정). 폐업한 곳은 상호를 싣지 않는다.',
     acad: '전국 학원 자리 — 소상공인시장진흥공단 상가(상권)정보의 교육 업종(입시·교과 · 외국어 · 미술 · 음악 · 태권도·무술 · 예술·스포츠 · 요가·필라테스 · 컴퓨터 · 자격·기술·운전). 범례에서 종류를 켜고 끈다. 중간 확대에서는 동마다 학원 수, 더 확대하면 한 곳씩. 동을 누르면 그 동 학원 구성(막대·원형 그래프). 학원과 교습소를 따로 가르지 않는 등록 자료이고 영업 여부·수강생은 없다.',
     usgg: '시·군·구마다 다른 색으로 칠한다(경기 일반구는 시로). 누르면 그 시군구의 합계 — 주민·연령·가구·가게·사고·대중교통·카드·외국인 — 와 「🤖 AI용 복사」.',
     upb: '지구대·파출소마다 맡는 동네를 칠한다 — 공식 관할 경계는 공개되지 않아 「그 동의 관할 경찰서 지구대·파출소 가운데 동 가운데에서 가장 가까운 곳」으로 근사한다. 누르면 그 지구대·파출소 구역의 합계.',

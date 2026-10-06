@@ -3093,14 +3093,48 @@
     return ['🎒 학원 현황', '<div class="lg-btns">' + ACT.map(function (x, i) { return '<button data-acm="' + i + '" class="' + (ACON[i] ? 'on' : '') + '"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x[1] + ';margin-right:3px"></i>' + x[0] + ' ' + tot[i].toLocaleString() + '</button>'; }).join('') + '</div>' +
       '<div class="cap">지금 화면 안 종류별(곳 · 켠 종류)</div>' + pie(ACT.map(function (x, i) { return [x[0].replace(/^\S+ /, ''), ACON[i] ? tot[i] : 0, x[1]]; }), 80) +
       '<div class="lg-btns"><button data-acsim="1">💰 학원·교습소 개업 시뮬레이션</button></div><small class="lg-n">보라 원 = 동마다 학원 수(켠 종류) · 확대하면 한 곳씩 · 소상공인시장진흥공단 상가(상권)정보 ' + esc(ACD.stdrYm || '') + ' · 학원·교습소를 가르지 않는다(교육청 학원·교습소 등록 자료는 좌표가 없어 아직 안 씀)</small>']; }
+  // ---------- v2.40.1 🏬 상가 임차 근사치(중기부 상가건물 임대차 실태조사 2025 · data/lease-bench.json) — 넣고 빼고 고친다 · 세무사 검토용 정리 ----------
+  var LEASE = null, LEASEP = null;
+  function leaseLoad() { if (LEASEP) return LEASEP; LEASEP = fetch('data/lease-bench.json').then(function (r) { return r.json(); }).then(function (j) { LEASE = j; }).catch(function () { LEASE = { by: {} }; }); return LEASEP; }
+  var LS_SIDO = { '11': '서울', '26': '부산', '27': '대구', '28': '인천', '29': '광주', '30': '대전', '31': '울산', '36': '세종', '41': '경기', '51': '강원', '42': '강원', '43': '충북', '44': '충남', '52': '전북', '45': '전북', '46': '전남', '12': '전남', '47': '경북', '48': '경남', '50': '제주' };
+  function leaseOf(nm) { return LEASE && LEASE.by[nm] || null; }
+  function leaseHere() { var d = AS.k8 ? { k: AS.k8 } : dongAtM(viewMid()); var sd = d && d.k ? LS_SIDO[d.k.slice(0, 2)] : null; return sd; }
+  function asPos() { var x = AS.k8 && ACD && ACD.dong[AS.k8]; return x ? (x.p || P(x[0], x[1])) : viewMid(); }
+  function leaseRentLocal(area) { var nb = RENT ? rentNear(asPos(), 2500) : null; if (!nb) return null; var it = nb.it, a = (it.s || it.m || it.c || []), v = a[a.length - 1]; if (!v) return null; return { v: Math.round(v * area / 10), per: v, name: it.name, d: nb.d, kind: it.s ? '소규모' : it.m ? '중대형' : '집합' }; }
+  function leaseApply(v, src) { var L = src === 'up' ? leaseOf(v._up || 'P. 교육 서비스업') : src === 'all' ? leaseOf('전체') : leaseOf(leaseHere() || '전체');
+    if (src === 'local') { var lc = leaseRentLocal(+v.area || 0); if (lc) v.rent = lc.v; return; } if (!L) return; v.rent = L.rent; v.dep = L.dep; v.prem = L.prem; v.cm = L.mgmt; }
+  function leaseBox(v, up, pre) {   // 임차 근사치 묶음 — 고르기 단추 · 넣기/빼기 · 고치기
+    if (!LEASE) return ''; var sd = leaseHere(), S = sd && leaseOf(sd), U = leaseOf(up), A = leaseOf('전체'), lc = leaseRentLocal(+v.area || 0), f1 = function (x) { return x == null ? '-' : Math.round(x).toLocaleString(); };
+    var h = '<h4>🏬 임차 근사치 — 고쳐 쓰고, 빼려면 체크를 푼다</h4><table class="it"><tr><th>항목</th><th>' + esc(sd || '시도') + '</th><th>' + esc(up.replace(/^\S+ /, '')) + '</th><th>전국</th></tr>' +
+      [['보증금(만 원)', 'dep'], ['월세(만 원)', 'rent'], ['권리금(낸 곳 평균 · 만 원)', 'prem'], ['권리금을 낸 비율(%)', 'premPay'], ['공용관리비(월 · 만 원)', 'mgmt'], ['평균 전용면적(㎡)', 'areaEx']].map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + f1(S && S[r[1]]) + '</td><td>' + f1(U && U[r[1]]) + '</td><td>' + f1(A && A[r[1]]) + '</td></tr>'; }).join('') + '</table>';
+    h += '<div class="lg-btns">' + (S ? '<button data-lsa="sido">↳ ' + esc(sd) + ' 평균으로</button>' : '') + '<button data-lsa="up">↳ 업종 평균으로</button><button data-lsa="all">↳ 전국 평균으로</button>' + (lc ? '<button data-lsa="local">↳ 월세만 근처 상권 ㎡당으로(' + esc(lc.name) + ' ' + lc.d + 'm · ' + lc.per + '천 원/㎡ × ' + (+v.area || 0) + '㎡ = ' + lc.v.toLocaleString() + '만)</button>' : '') + '</div>';
+    h += '<div class="pform">' + asIn('dep', '보증금', '만 원', '돌려받는 돈 — 개업 비용에만') + asIn('rent', '월세', '만 원/월') +
+      '<label><span>권리금 <i>만 원</i></span><span class="pyw"><input type="checkbox" data-as="premOn"' + (v.premOn ? ' checked' : '') + ' aria-label="권리금 넣기"><input type="number" inputmode="decimal" step="any" data-as="prem" value="' + (v.prem == null ? '' : v.prem) + '"></span><small>낸 곳 평균 · 낸 비율 ' + (U ? U.premPay : '-') + '%(업종) — 안 내면 체크 풀기</small></label>' +
+      '<label><span>공용관리비 <i>만 원/월</i></span><span class="pyw"><input type="checkbox" data-as="cmOn"' + (v.cmOn ? ' checked' : '') + ' aria-label="공용관리비 넣기"><input type="number" inputmode="decimal" step="any" data-as="cm" value="' + (v.cm == null ? '' : v.cm) + '"></span><small>건물 공용분 · 전기·수도 등 개별 사용료는 「공과금」 칸</small></label>' +
+      '<label><span>권리금·투자 나눠 갚기 <i>개월</i></span><span class="pyw"><input type="checkbox" data-as="amOn"' + (v.amOn ? ' checked' : '') + ' aria-label="상각 넣기"><input type="number" inputmode="decimal" step="any" data-as="mon" value="' + (v.mon == null ? '' : v.mon) + '"></span><small>체크하면 (권리금+인테리어+교구) ÷ 개월을 달마다 비용으로</small></label></div>';
+    return h + '<small class="lg-n">' + esc(LEASE.source) + ' · ' + esc(LEASE.note) + ' · 근처 상권 = 한국부동산원 임대동향(전용+공용 ㎡당 · 표본 상권 평균)</small>'; }
+  function asCpaRows(o) { var v = o.v, L = LEASE, B = ASR.bench, kd = asKind(v);
+    return [['사업 형태', v.form === 'tutor' ? '교습소(신고 · 1인 1과목)' : '학원(등록)', '학원법'], ['업종', kd[1].replace(/^\S+ /, ''), '선택'], ['부가가치세', '면세 교육용역', ASR.law.vatExempt[1].split(' — ')[0]],
+      ['면적', (+v.area || 0) + '㎡', '입력'], ['수강생 × 교습비', o.n + '명 × ' + (+v.fee || 0) + '만 = ' + Math.round(o.rev) + '만/월', '가정(기본 = 실태조사 평균 매출 맞춤)'], ['월세', (+v.rent || 0) + '만', '근사(임대차 실태조사 2025·부동산원) 또는 입력'],
+      ['공용관리비', v.cmOn ? (+v.cm || 0) + '만' : '뺌', '근사(임대차 실태조사 2025)'], ['보증금', (+v.dep || 0) + '만', '근사 또는 입력'], ['권리금', v.premOn ? (+v.prem || 0) + '만' : '뺌', '근사(임대차 실태조사 2025 · 낸 곳 평균)'],
+      ['인테리어·교구', Math.round(o.inv) + '만', '입력'], ['상각', v.amOn ? Math.round(o.am) + '만/월 (' + (+v.mon || 0) + '개월)' : '뺌', '가정 — 세무상 상각 연수와 다를 수 있음'], ['인건비', Math.round(o.wage) + '만 + 사업주 4대보험 ' + Math.round(o.soc) + '만', '입력 · 요율 ' + BZ.rates.min_wage[1].split(' — ')[0]],
+      ['교재·재료', (+v.cogs || 0) + '% 매출', '가정(실태조사 매출원가율)'], ['카드수수료', (o.cardRate * 100).toFixed(2) + '% × 카드 ' + (+v.card || 0) + '%', '영세·중소 우대 요율'], ['월 이익(세전)', Math.round(o.profit) + '만', '계산'],
+      ['사장 4대·소득세', Math.round(o.tax.sum) + '만/월', '근사(지역가입 · 기본공제만 · ownTax)'], ['개업 비용', Math.round(o.init) + '만', '계산']]; }
+  var AS_CHECK = ['사업자 유형 — 면세 개인사업자(부가세 대신 면세사업자 사업장현황신고) · 학원·교습소 등록·신고증 먼저', '강사 계약 형태 — 근로자(4대보험·원천징수) / 사업소득(3.3%) 판단 · 교습소는 강사를 둘 수 없음(보조요원 1명만)', '권리금 — 장부상 처리(영업권 등)와 상각 가능 여부 · 증빙(계약서·이체)', '인테리어·교구 — 감가상각 연수·방법 · 즉시상각 대상 여부', '보증금 — 비용 아님(돌려받는 돈) · 임대료 세금계산서(임대인 일반과세자면 부가세 별도 · 면세사업자는 매입세액 공제 못 받음)', '교습비 — 교육지원청에 등록·신고한 금액 이내만 받는다(초과 징수 금지)', '배상책임보험 가입(조례 금액 이상) — 비용', '건물 용도·면적 — 학원 등록 가능 용도(근린생활시설 등)인지 · 조례 면적 기준', '종합소득세 — 장부(간편장부·복식부기) 의무 · 추계 시 경비율'];
+  function asCpa(o) { var R2 = asCpaRows(o);
+    return '<details class="simc"><summary><b>📋 세무사 검토용 정리</b> — 가정·근거·확인할 것</summary><table class="it"><tr><th>항목</th><th>값</th><th>근거·성격</th></tr>' + R2.map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td><td style="text-align:left;font-size:10.5px">' + esc(r[2]) + '</td></tr>'; }).join('') + '</table>' +
+      '<div style="font-size:12px;margin-top:6px"><b>세무사에게 확인할 것</b>' + AS_CHECK.map(function (x, i) { return '<div style="margin-top:3px">' + (i + 1) + '. ' + esc(x) + '</div>'; }).join('') + '</div><div class="lg-btns"><button data-ascpa="1">📋 세무사에게 보낼 글로 복사</button></div><small class="lg-n">이 화면은 참고용 모의계산이다 — 숫자의 성격(원자료·평균 근사·가정·입력)을 같이 적었다. 개인 정보는 넣지 않는다.</small></details>'; }
+  function asCpaText(o) { return '[학원·교습소 개업 모의계산 — 세무사 검토 요청]\n' + asCpaRows(o).map(function (r) { return '- ' + r[0] + ': ' + r[1] + ' (' + r[2] + ')'; }).join('\n') + '\n\n확인 부탁드릴 것:\n' + AS_CHECK.map(function (x, i) { return (i + 1) + '. ' + x; }).join('\n') + '\n\n(데이터 압축지도 · 참고용 · 출처: 학원법·시행령·서울/경기 조례 · 소상공인실태조사 · 상가건물 임대차 실태조사 2025 · 한국부동산원 임대동향)'; }
+
   // ---------- v2.40.0 🎒 학원·교습소 개업 시뮬레이션(소유자 2026-10-06 「학원인지 교습소인지 구분해서 운영 시뮬레이션」) ----------
   //   법정 기준 = data/acad-rules.json(학원법·시행령·서울·경기 조례 원문 · 부가세 면세) · 기본값 = 소상공인실태조사 교육 서비스업 평균(연 매출 7,500만)을 맞춘 예시 — 내 값으로 고친다
   //   입력은 이 화면 메모리에만(AS.v) · 손익 판 #m2dPnl 을 같이 쓴다
   var AS = { on: false, v: null, k8: null }, ASR = null, ASRP = null;
   var AS_KIND = [['study', '📚 보습·입시 교과', 0, '보습·논술'], ['lang', '🔤 외국어', 1, '실용 외국어'], ['art', '🎨 미술', 2, '음악·미술·무용'], ['music', '🎹 음악(피아노 외)', 3, '음악·미술·무용'], ['piano', '🎹 피아노', 3, '음악·미술·무용'], ['etc', '🎭 그 밖', 5, '그 밖 교습과정']];
-  function asLoad() { if (ASRP) return ASRP; ASRP = Promise.all([fetch('data/acad-rules.json').then(function (r) { return r.json(); }).then(function (j) { ASR = j; }), bzLoad(), acDLoad()]); ASRP.catch(function () { ASRP = null; }); return ASRP; }
+  function asLoad() { if (ASRP) return ASRP; ASRP = Promise.all([fetch('data/acad-rules.json').then(function (r) { return r.json(); }).then(function (j) { ASR = j; }), bzLoad(), acDLoad(), leaseLoad(), rentLoad()]); ASRP.catch(function () { ASRP = null; }); return ASRP; }
   function asDefaults(form) { var B = ASR.bench, mw = rv('min_wage') * 209 / 1e4;
-    return { form: form || 'tutor', kind: 'study', area: form === 'academy' ? B.area : 40, lec: 70, slots: 4, days: 5, per: 3, n: 25, fee: Math.round(B.sales * 100 / 12 / 25), rent: Math.round(B.rent * 100 / 12), mgmt: Math.round(B.other * 100 / 12), cogs: Math.round(B.cogs / B.sales * 100), inst: form === 'academy' ? 1 : 0, ipay: Math.round(mw), asst: 0, apay: Math.round(mw / 2), card: 80, dep: Math.round(B.rent * 100 / 12) * 10, inter: 0, equip: 0 }; }
+    var Le = leaseOf('P. 교육 서비스업');
+    return { form: form || 'tutor', kind: 'study', area: form === 'academy' ? B.area : 40, lec: 70, slots: 4, days: 5, per: 3, n: 25, fee: Math.round(B.sales * 100 / 12 / 25), rent: Le ? Le.rent : Math.round(B.rent * 100 / 12), mgmt: Math.round(B.other * 100 / 12), cm: Le ? Le.mgmt : 0, cmOn: true, cogs: Math.round(B.cogs / B.sales * 100), inst: form === 'academy' ? 1 : 0, ipay: Math.round(mw), asst: 0, apay: Math.round(mw / 2), card: 80, dep: Le ? Le.dep : Math.round(B.rent * 100 / 12) * 10, prem: Le ? Le.prem : 0, premOn: true, inter: 0, equip: 0, mon: 60, amOn: true }; }
   function asOpen(k8) {
     var el = $('m2dPnl'); if (!el) return; TX.on = false; AS.on = true; AS.k8 = k8 || null;
     el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
@@ -3116,9 +3150,10 @@
     o.rev = o.n * n(v.fee); var yr = o.rev * 12, cr = (ASR && BZ.rates.card || []).filter(function (c) { return yr <= c[0]; })[0] || [0, 0.0145]; o.cardRate = cr[1];
     o.cardFee = o.rev * n(v.card) / 100 * o.cardRate; o.cogs = o.rev * n(v.cogs) / 100;
     o.wage = o.instN * n(v.ipay) + (v.asst ? n(v.apay) : 0); var sr = rv('pension') + rv('health') * (1 + rv('ltc_of_health')) + rv('emp_ui') + rv('emp_stable') + rv('ind') + rv('commute'); o.soc = o.wage * sr;
-    o.fixed = n(v.rent) + n(v.mgmt) + o.wage + o.soc; o.cost = o.fixed + o.cogs + o.cardFee; o.profit = o.rev - o.cost;
+    o.cm = v.cmOn ? n(v.cm) : 0; o.prem = v.premOn ? n(v.prem) : 0; o.inv = n(v.inter) * n(v.area) + n(v.equip); o.am = v.amOn && n(v.mon) > 0 ? (o.prem + o.inv) / n(v.mon) : 0;
+    o.fixed = n(v.rent) + n(v.mgmt) + o.cm + o.wage + o.soc + o.am; o.cost = o.fixed + o.cogs + o.cardFee; o.profit = o.rev - o.cost;
     var cmu = n(v.fee) * (1 - n(v.cogs) / 100 - n(v.card) / 100 * o.cardRate); o.bep = cmu > 0 ? Math.ceil(o.fixed / cmu) : null;
-    o.tax = ownTax(o.profit, 1); o.take = o.profit - o.tax.sum; o.init = n(v.dep) + n(v.inter) * n(v.area) + n(v.equip);
+    o.tax = ownTax(o.profit, 1); o.take = o.profit - o.tax.sum; o.init = n(v.dep) + o.prem + o.inv;
     var sd = asSido(), S = sd && ASR.sido[sd];
     if (v.form === 'tutor') {
       o.ok.push('교습자 1명 · 1과목만(' + L.tutorOneSubject[1] + ')'); o.ok.push('강사 없음 · 보조요원 1명까지(' + L.tutorNoInstructor[1].split(' — ')[0] + ' · 제3항)');
@@ -3141,14 +3176,14 @@
     var h = '<div class="lg-h"><b>🎒 학원·교습소 개업 시뮬레이션</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
     h += '<div class="lg-btns"><button data-asf="tutor" class="' + (v.form === 'tutor' ? 'on' : '') + '">🏠 교습소(신고 · 1인 1과목)</button><button data-asf="academy" class="' + (v.form === 'academy' ? 'on' : '') + '">🏫 학원(등록 · 강사)</button></div>';
     h += '<div class="lg-btns">' + AS_KIND.map(function (x) { return '<button data-ask="' + x[0] + '" class="' + (v.kind === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>';
-    h += '<div id="asOut"></div><h4>✍ 조건 <small style="font-weight:400;color:var(--ink2)">— 기본값은 실태조사 평균을 맞춘 예시 · 내 값으로 고친다 · 저장 안 함</small></h4><div class="pform">' +
+    h += '<div id="asOut"></div>' + '<h4>✍ 조건 <small style="font-weight:400;color:var(--ink2)">— 기본값은 실태조사 평균을 맞춘 예시 · 내 값으로 고친다 · 저장 안 함</small></h4><div class="pform">' +
       asIn('area', '면적', '㎡', '전용 · 평 = ㎡ ÷ 3.3058') + (v.form === 'academy' ? asIn('lec', '강의실 비율', '%', '나머지는 상담·대기·화장실(가정)') : '') +
       asIn('slots', '하루 수업', '회', '시간표 칸 수') + asIn('days', '주 수업', '일') + asIn('per', '학생 1명 주', '회', '한 학생이 주에 오는 횟수') +
       asIn('n', '수강생', '명') + asIn('fee', '1인 월 교습비', '만 원', '교육청에 등록·신고한 교습비 이내') +
-      asIn('rent', '월세', '만 원', '실태조사 교육업 임차료 평균 ' + Math.round(B.rent * 100 / 12) + '만') + asIn('mgmt', '관리비·공과·광고', '만 원', '실태조사 기타비용 평균 ' + Math.round(B.other * 100 / 12) + '만') + asIn('cogs', '교재·재료', '% 매출') +
+      asIn('mgmt', '공과금·광고·소모품', '만 원', '실태조사 교육업 기타비용 평균 ' + Math.round(B.other * 100 / 12) + '만') + asIn('cogs', '교재·재료', '% 매출') +
       (v.form === 'academy' ? asIn('inst', '강사', '명') + asIn('ipay', '강사 1명 월급', '만 원', '2026 최저임금 월 209시간 = ' + Math.round(rv('min_wage') * 209 / 1e4) + '만') : '') + asIn('apay', '보조요원 월급', '만 원') +
       '<label class="pchk"><input type="checkbox" data-as="asst"' + (v.asst ? ' checked' : '') + '> 보조요원 1명 둔다</label>' + asIn('card', '카드 결제 비율', '%') +
-      asIn('dep', '보증금', '만 원') + asIn('inter', '인테리어', '만 원/㎡') + asIn('equip', '책걸상·교구·악기', '만 원') + '</div>';
+      asIn('inter', '인테리어', '만 원/㎡') + asIn('equip', '책걸상·교구·악기', '만 원') + '</div>' + leaseBox(AS.v, 'P. 교육 서비스업', 'as');
     h += '<div class="src">법정 기준: ' + esc(ASR.checkedVia + ' · ' + ASR.checked) + ' · 학원법·시행령 · ' + esc(Object.keys(ASR.sido).map(function (k) { return ASR.sido[k].src; }).join(' · ')) + ' · 평균: ' + esc(B.src) + ' · 요율: ' + esc(BZ.rates.min_wage[1]) + '</div>';
     h += '<p class="lg-n">참고용 모의계산이다 — 실제 개업은 관할 교육지원청(학원·교습소 담당)·세무서·건축물 용도(학원은 제2종 근린생활시설 또는 교육연구시설 등) 확인을 거친다.</p>';
     el.innerHTML = h; asOut(); }
@@ -3172,19 +3207,20 @@
     var full = function (f, cap) { var w = {}; Object.keys(v).forEach(function (q) { w[q] = v[q]; }); w.n = cap; return asCalc(w, f); }, A2 = full('tutor', A.cap), C2 = full('academy', C.cap);
     h += txHBars([['교습소 지금 ' + A.n + '명', Math.max(0, A.profit) * 1e4, '#86efac'], ['교습소 한도 ' + A.cap + '명', Math.max(0, A2.profit) * 1e4, '#16a34a', true], ['학원 지금 ' + C.n + '명', Math.max(0, C.profit) * 1e4, '#93c5fd'], ['학원 한도 ' + C.cap + '명', Math.max(0, C2.profit) * 1e4, '#2563eb', true]], '한 달 이익 — 교습소 vs 학원(같은 면적·교습비 · 한도까지 채우면)') +
       '<p class="lg-n">차이는 수용 한도에서 난다 — 교습소는 한 번 ' + A.seat + '명(법정 9명 · 피아노 5명 · ㎡당 0.3명) · 학원은 한 번 ' + C.seat + '명(강의실 ㎡당 1명)' + (C.warn.length ? ' · <span style="color:#b91c1c">학원으로 하려면: ' + esc(C.warn.join(' / ')) + '</span>' : '') + '</p>';
-    h += '<div class="simc"><b style="font-size:12.5px">한 달 비용 구성</b>' + pie([['월세', +v.rent || 0, '#7c3aed'], ['관리·공과·광고', +v.mgmt || 0, '#0891b2'], ['인건비', o.wage, '#2563eb'], ['사업주 4대보험', o.soc, '#60a5fa'], ['교재·재료', o.cogs, '#f59e0b'], ['카드수수료', o.cardFee, '#94a3b8']], 92) + '</div>';
-    h += '<table class="it"><tr><th>한 달(만 원)</th><th>값</th></tr>' + [['매출 = ' + o.n + '명 × ' + (+v.fee || 0) + '만', o.rev], ['월세', +v.rent || 0], ['관리비·공과·광고', +v.mgmt || 0], ['인건비(' + (o.instN ? '강사 ' + o.instN + '명' : '강사 없음') + (v.asst ? ' · 보조 1' : '') + ')', o.wage], ['사업주 4대보험', o.soc], ['교재·재료', o.cogs], ['카드수수료(' + (o.cardRate * 100).toFixed(2) + '% · 영세·중소 우대)', o.cardFee], ['이익', o.profit], ['사장 국민연금·건강보험(지역)', o.tax.pen + o.tax.hea], ['사장 소득세·지방소득세', o.tax.it + o.tax.loc], ['사장 몫', o.take]].map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + Math.round(r[1]).toLocaleString() + '</td></tr>'; }).join('') + '</table>';
-    h += '<div class="rcard">' + row('개업 비용', wn(o.init) + ' <em>(보증금 ' + (+v.dep || 0).toLocaleString() + ' + 인테리어 ' + ((+v.inter || 0) * (+v.area || 0)).toLocaleString() + ' + 교구 ' + (+v.equip || 0).toLocaleString() + '만)</em>') + (o.take > 0 && o.init ? row('회수', '사장 몫으로 약 ' + Math.ceil(o.init / o.take) + '개월') : '') + '</div>';
+    h += '<div class="simc"><b style="font-size:12.5px">한 달 비용 구성</b>' + pie([['월세', +v.rent || 0, '#7c3aed'], ['공용관리비', o.cm, '#a78bfa'], ['공과·광고·소모품', +v.mgmt || 0, '#0891b2'], ['권리금·투자 상각', o.am, '#64748b'], ['인건비', o.wage, '#2563eb'], ['사업주 4대보험', o.soc, '#60a5fa'], ['교재·재료', o.cogs, '#f59e0b'], ['카드수수료', o.cardFee, '#94a3b8']], 92) + '</div>';
+    h += '<table class="it"><tr><th>한 달(만 원)</th><th>값</th></tr>' + [['매출 = ' + o.n + '명 × ' + (+v.fee || 0) + '만', o.rev], ['월세', +v.rent || 0], ['공과금·광고·소모품', +v.mgmt || 0], ['공용관리비' + (v.cmOn ? '' : '(뺌)'), o.cm], ['권리금·인테리어·교구 상각(' + (+v.mon || 0) + '개월)' + (v.amOn ? '' : '(뺌)'), o.am], ['인건비(' + (o.instN ? '강사 ' + o.instN + '명' : '강사 없음') + (v.asst ? ' · 보조 1' : '') + ')', o.wage], ['사업주 4대보험', o.soc], ['교재·재료', o.cogs], ['카드수수료(' + (o.cardRate * 100).toFixed(2) + '% · 영세·중소 우대)', o.cardFee], ['이익', o.profit], ['사장 국민연금·건강보험(지역)', o.tax.pen + o.tax.hea], ['사장 소득세·지방소득세', o.tax.it + o.tax.loc], ['사장 몫', o.take]].map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + Math.round(r[1]).toLocaleString() + '</td></tr>'; }).join('') + '</table>';
+    h += '<div class="rcard">' + row('개업 비용', wn(o.init) + ' <em>(보증금 ' + (+v.dep || 0).toLocaleString() + ' + 권리금 ' + o.prem.toLocaleString() + ' + 인테리어 ' + ((+v.inter || 0) * (+v.area || 0)).toLocaleString() + ' + 교구 ' + (+v.equip || 0).toLocaleString() + '만)</em>') + (o.take > 0 && o.init ? row('회수', '사장 몫으로 약 ' + Math.ceil(o.init / o.take) + '개월') : '') + '</div>';
     var k = AS.k8, d = k ? allDong().filter(function (x) { return x.k === k; })[0] : dongAtM(viewMid()), av = d && ACD && ACD.dong[d.k];
     if (av) { var kid = d.pop && d.pop.age ? d.pop.age[0] + d.pop.age[1] : 0, same = av[3 + kd[2]] || 0, all = 0; for (var i = 3; i < av.length; i++) all += av[i];
       var ref = [0, 0]; allDong().forEach(function (x) { var a2 = ACD.dong[x.k]; if (!a2 || !x.pop || !x.pop.age || x.k.slice(0, 5) !== d.k.slice(0, 5)) return; ref[0] += a2[3 + kd[2]] || 0; ref[1] += x.pop.age[0] + x.pop.age[1]; });
       h += '<div class="simc"><b style="font-size:12.5px">📍 ' + esc(av[2]) + ' — 이 자리 시장</b><div class="rcard">' + row('19세 이하 주민', kid ? kid.toLocaleString() + '명' : '자료 없음(확대해 동 자료를 받는다)') + row('같은 종류 학원', same + '곳 · 학원 전체 ' + all + '곳') +
         (kid ? row('19세 이하 1천 명당 같은 종류', (same / kid * 1000).toFixed(1) + '곳' + (ref[1] ? ' <em>(같은 시군구 보이는 동 평균 ' + (ref[0] / ref[1] * 1000).toFixed(1) + ')</em>' : '')) : '') + (kid && same ? row('학원 1곳당 19세 이하', Math.round(kid / same).toLocaleString() + '명') : '') + '</div><small class="lg-n">학원 수 = 상가업소 등록(교습소는 빠진 곳이 많다) · 주민 = 주민등록 · 경쟁은 동 경계를 넘는다</small></div>'; }
     h += '<div class="simc"><b style="font-size:12.5px">견주어 보기 — 소상공인실태조사 교육 서비스업(전국 평균)</b><div class="rcard">' + row('업체당 한 해', '매출 ' + wn(B.sales * 100) + ' · 비용 ' + wn(B.cost * 100) + ' · 이익 ' + wn(B.profit * 100)) + row('비용 속', '급여 ' + wn(B.wage * 100) + ' · 임차료 ' + wn(B.rent * 100) + ' · 매출원가 ' + wn(B.cogs * 100) + ' · 기타 ' + wn(B.other * 100)) + row('평균', '면적 ' + B.area + '㎡ · 하루 ' + B.hours + '시간 · 월 ' + B.days + '일') + row('어려움', esc(B.pain)) + row('내 계산 한 해', '매출 ' + wn(o.rev * 12) + ' · 이익 ' + wn(o.profit * 12)) + '</div><small class="lg-n">' + esc(B.src) + ' — 학원·교습소·과외 등을 다 합친 평균이다</small></div>';
+    h += asCpa(o);
     el.innerHTML = h; }
   if ($('m2dPnl')) {
-    $('m2dPnl').addEventListener('click', function (e) { if (!AS.on) return; var b = e.target.closest('[data-asf],[data-ask]'); if (!b) return;
-      if (b.hasAttribute('data-asf')) { var f = b.getAttribute('data-asf'); if (f !== AS.v.form) { var keep = AS.v, nv = asDefaults(f); ['kind', 'n', 'fee', 'rent', 'mgmt', 'slots', 'days', 'per', 'card', 'dep', 'inter', 'equip'].forEach(function (k) { nv[k] = keep[k]; }); AS.v = nv; } asForm(); return; }
+    $('m2dPnl').addEventListener('click', function (e) { if (!AS.on) return; var lb = e.target.closest('[data-lsa]'); if (lb) { leaseApply(AS.v, lb.getAttribute('data-lsa')); asForm(); return; } if (e.target.closest('[data-ascpa]')) { var tx = asCpaText(asCalc(AS.v)); if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { e.target.closest('[data-ascpa]').textContent = '✅ 복사됨'; }); return; } var b = e.target.closest('[data-asf],[data-ask]'); if (!b) return;
+      if (b.hasAttribute('data-asf')) { var f = b.getAttribute('data-asf'); if (f !== AS.v.form) { var keep = AS.v, nv = asDefaults(f); ['kind', 'n', 'fee', 'rent', 'mgmt', 'cm', 'cmOn', 'slots', 'days', 'per', 'card', 'dep', 'prem', 'premOn', 'inter', 'equip', 'mon', 'amOn'].forEach(function (k) { nv[k] = keep[k]; }); AS.v = nv; } asForm(); return; }
       AS.v.kind = b.getAttribute('data-ask'); asForm(); });
     $('m2dPnl').addEventListener('input', function (e) { if (!AS.on) return; var t = e.target, k = t.getAttribute('data-as'); if (!k) return; AS.v[k] = t.type === 'checkbox' ? t.checked : (t.value === '' ? null : +t.value); asOut(); });
     $('m2dPnl').addEventListener('change', function (e) { if (!AS.on) return; var t = e.target, k = t.getAttribute('data-as'); if (k && t.type === 'checkbox') { AS.v[k] = t.checked; asOut(); } });
@@ -3551,8 +3587,8 @@
   ];
   function pnlDefaults(k) {
     var t = tplOf(k), R = t.krei, v = {}, sal = krAvg('sales', R), dd = krAvg('days', R) || 27.7, ch = kr('channel', R);
-    v.rent = krAvg('rent', R); v.dep = krAvg('deposit', R); v.prem = 0; v.inv = Math.round(krAvg('invest', R) || 0); v.mon = 60; v.conv = (rv('base_rate') * 100);
-    v.mgmt = 0; v.area = krAvg('area', R); v.seats = Math.round(krAvg('seats', R) || 0) || null; v.hours = krAvg('hours', R); v.days = dd; v.price = krAvg('price', R);
+    var LE = leaseOf('I56. 음식점 및 주점업'); v.rent = krAvg('rent', R); v.dep = krAvg('deposit', R); v.prem = LE ? LE.prem : 0; v.inv = Math.round(krAvg('invest', R) || 0); v.mon = 60; v.conv = (rv('base_rate') * 100);
+    v.mgmt = LE ? LE.mgmt : 0; v.area = krAvg('area', R); v.seats = Math.round(krAvg('seats', R) || 0) || null; v.hours = krAvg('hours', R); v.days = dd; v.price = krAvg('price', R);
     v.cust = sal && v.price ? Math.round(sal * 1e4 / 12 / dd / v.price) : null;
     v.turns = v.seats && v.cust ? Math.max(0.5, Math.round(v.cust * (ch ? ch[1] / 100 : 1) / v.seats * 10) / 10) : null;
     v.food = sal ? Math.round(krAvg('food', R) / sal * 1000) / 10 : null; v.other = sal ? Math.round((krAvg('other', R) + krAvg('tax', R)) / sal * 1000) / 10 : null;
@@ -3566,7 +3602,7 @@
     Object.keys(v).forEach(function (x) { if (typeof v[x] === 'number') v[x] = Math.round(v[x] * 10) / 10; });
     return v;
   }
-  var PSRC = { open: '가정(10시)', close: '여는 시각 + KREI 표24 영업시간', brk: '가정(없음)', rest: 'KREI 표26 정기휴무 「매주」가 절반 넘으면 1', prep: '가정(1시간)', c_tax: 'KREI 표100 ÷ 12', rent: 'KREI 표20', dep: 'KREI 표19', inv: 'KREI 표31', area: 'KREI 표12', seats: 'KREI 표29', hours: 'KREI 표24', days: 'KREI 표25', price: 'KREI 표67', cust: 'KREI 표95 매출 ÷ 객단가 ÷ 영업일', food: 'KREI 표97÷95', other: 'KREI 표100+103÷95', dlv: 'KREI 표58', to: 'KREI 표58', dlvfee: 'KREI 표51·54÷배달 매출', staffN: 'KREI 표98 인건비를 최저시급 시간으로', staffH: '같은 환산', wage: '2026 최저임금', conv: '기준금리', mon: '가정(5년)', turns: '평균 손님÷좌석(가정)', ownH: '영업시간', own: '가정', fam: '가정', prem: '0(직접)', mgmt: '0(직접)' };
+  var PSRC = { open: '가정(10시)', close: '여는 시각 + KREI 표24 영업시간', brk: '가정(없음)', rest: 'KREI 표26 정기휴무 「매주」가 절반 넘으면 1', prep: '가정(1시간)', c_tax: 'KREI 표100 ÷ 12', rent: 'KREI 표20', dep: 'KREI 표19', inv: 'KREI 표31', area: 'KREI 표12', seats: 'KREI 표29', hours: 'KREI 표24', days: 'KREI 표25', price: 'KREI 표67', cust: 'KREI 표95 매출 ÷ 객단가 ÷ 영업일', food: 'KREI 표97÷95', other: 'KREI 표100+103÷95', dlv: 'KREI 표58', to: 'KREI 표58', dlvfee: 'KREI 표51·54÷배달 매출', staffN: 'KREI 표98 인건비를 최저시급 시간으로', staffH: '같은 환산', wage: '2026 최저임금', conv: '기준금리', mon: '가정(5년)', turns: '평균 손님÷좌석(가정)', ownH: '영업시간', own: '가정', fam: '가정', prem: '상가임대차 실태조사 2025 음식점·주점 낸 곳 평균(낸 비율 약 19% — 안 냈으면 0)', mgmt: '상가임대차 실태조사 2025 공용관리비 평균' };
   function pnlCalc(v) {
     var W = 52 / 12, n = function (x) { return +x || 0; }, er = empRate(), o = {};
     o.convRent = n(v.rent) + n(v.dep) * n(v.conv) / 100 / 12; o.amort = (n(v.prem) + n(v.inv)) / Math.max(1, n(v.mon));
@@ -3597,7 +3633,7 @@
     var el = $('m2dPnl'); if (!el) return; el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); TX.on = false; AS.on = false;
     ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
     if (c) PNL.c = c; el.innerHTML = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">업종 자료를 받는 중…</p>';
-    bzLoad().then(function () { if (!PNL.ready) { PNL.v = pnlDefaults(PNL.k); PNL.ready = true; } pnlForm(); pnlGather(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">자료를 받지 못했다(' + esc(e && e.message || e) + ')</p>'; });
+    Promise.all([bzLoad(), leaseLoad()]).then(function () { if (!PNL.ready) { PNL.v = pnlDefaults(PNL.k); PNL.ready = true; } pnlForm(); pnlGather(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">자료를 받지 못했다(' + esc(e && e.message || e) + ')</p>'; });
   }
   function pnlGather() {
     if (!PNL.c) { PNL.res = null; pnlOut(); return; }
@@ -3714,7 +3750,7 @@
     BZ.tpl.items.forEach(function (x) { (G[x.g] = G[x.g] || []).push(x); });
     var h = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
     h += '<div class="bizrow"><label>업종 <select data-pz="k">' + Object.keys(G).map(function (g) { return '<optgroup label="' + esc(g) + '">' + G[g].map(function (x) { return '<option value="' + x.k + '"' + (x.k === PNL.k ? ' selected' : '') + '>' + esc(x.n) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '</select></label></div>';
-    h += '<div class="lg-btns"><button data-px="here">📍 지금 화면 가운데를 자리로</button><button data-px="reset">↺ 업종 평균으로 되돌리기</button><button data-px="copy">📋 글로 복사</button><button data-px="xlsx">📥 엑셀(수식 그대로)</button></div>';
+    h += '<div class="lg-btns"><button data-px="here">📍 지금 화면 가운데를 자리로</button><button data-px="reset">↺ 업종 평균으로 되돌리기</button><button data-px="ls-sido">🏬 임차를 이 시도 평균으로</button><button data-px="ls-up">🏬 임차를 음식점 평균으로</button><button data-px="ls-local">🏬 월세만 근처 상권 ㎡당으로</button><button data-px="copy">📋 글로 복사</button><button data-px="xlsx">📥 엑셀(수식 그대로)</button></div>';
     if (t.pending) h += '<p class="pbig bad">⏳ ' + esc(t.pending) + '</p>';
     h += '<p class="lg-n">' + (t.tip ? '💡 ' + esc(t.tip) + ' ' : '') + '영업 종류: ' + esc(t.lic || '-') + '. 회색 글씨는 <b>업종 평균(KREI 2025 외식업체 경영실태조사)</b> 기본값 — 계약서·견적의 실제 숫자로 바꿔 쓴다.</p>';
     var FTCB = ftcList(PNL.k);
@@ -3886,7 +3922,11 @@
   if ($('m2dPnl')) {
     $('m2dPnl').addEventListener('click', function (e) { var b = e.target.closest('[data-px]'); if (!b) { if ($('m2dPnl').classList.contains('min') && !e.target.closest('input,select,summary')) $('m2dPnl').classList.remove('min'); return; } var x = b.getAttribute('data-px');
       if (x === 'x') { $('m2dPnl').classList.remove('on'); document.body.classList.remove('pnlon'); TX.on = false; TX.o = null; TX.v = {}; AS.on = false; draw(); return; } if (x === 'min') { e.stopPropagation(); $('m2dPnl').classList.toggle('min'); return; }
-      if (x === 'here') { PNL.c = viewMid(); pnlGather(); return; } if (x === 'reset') { PNL.v = pnlDefaults(PNL.k); pnlForm(); return; }
+      if (x === 'here') { PNL.c = viewMid(); pnlGather(); return; }
+      if (/^ls-/.test(x)) { var dd0 = PNL.c ? dongAtM(PNL.c) : null, sd0 = dd0 && dd0.k ? LS_SIDO[dd0.k.slice(0, 2)] : null, L0 = x === 'ls-up' ? leaseOf('I56. 음식점 및 주점업') : leaseOf(sd0 || '전체');
+        if (x === 'ls-local') { var nb0 = RENT && PNL.c ? rentNear(PNL.c, 2500) : null, a0 = nb0 && (nb0.it.s || nb0.it.m || nb0.it.c || []), pv = a0 && a0[a0.length - 1]; if (pv && PNL.v.area) { PNL.v.rent = Math.round(pv * PNL.v.area / 10); PSRC.rent = '한국부동산원 임대동향 ' + nb0.it.name + '(' + nb0.d + 'm) ' + pv + '천 원/㎡ × 면적'; } else { b.textContent = '근처 상권 자료 없음'; return; } }
+        else if (L0) { PNL.v.rent = L0.rent; PNL.v.dep = L0.dep; PNL.v.prem = L0.prem; PNL.v.mgmt = L0.mgmt; var sl = '상가임대차 실태조사 2025 ' + (x === 'ls-up' ? '음식점·주점' : (sd0 || '전국')) + ' 평균'; PSRC.rent = sl; PSRC.dep = sl; PSRC.prem = sl + '(낸 곳 · 안 냈으면 0)'; PSRC.mgmt = sl + '(공용관리비)'; }
+        pnlForm(); return; } if (x === 'reset') { PNL.v = pnlDefaults(PNL.k); pnlForm(); return; }
       if (x === 'copy') { var tx = pnlText(); if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { b.textContent = '✅ 복사됨'; }); return; } if (x === 'xlsx') { pnlXlsx(); return; } });
     $('m2dPnl').addEventListener('input', function (e) { var t = e.target, el = $('m2dPnl');
       if (t.getAttribute('data-py')) { var a = t.value === '' ? null : Math.round(+t.value * 3.305785 * 10) / 10; PNL.v.area = a; var am = el.querySelector('[data-pf="area"]'); if (am) am.value = a == null ? '' : a; pnlOut(); return; }

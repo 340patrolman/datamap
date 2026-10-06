@@ -598,6 +598,12 @@
   #m2dPanel.lvall .c2 { margin: 4px 0 !important; padding: 4px 8px 2px !important; }
   #m2dPanel.lvall .c2h .gc { font-size: 13px; padding: 2px !important; }
   #m2dPnl .pyw { display: flex; align-items: center; gap: 4px; } #m2dPnl .pyw input { flex: 1; min-width: 0; } #m2dPnl .pyw b { font-size: 12px; color: var(--ink2); }
+  /* v2.36.0 개업 손익 시뮬레이션 — 끌기 막대 · 그림 */
+  #m2dPnl .simb { border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; margin: 6px 0; background: var(--chip); }
+  #m2dPnl label.sim { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 12.5px; } #m2dPnl label.sim span { flex: 0 0 150px; } #m2dPnl label.sim input { flex: 1; accent-color: var(--acc); }
+  #m2dPnl .simc { margin: 8px 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); }
+  #m2dPnl .simc svg { display: block; margin-top: 4px; overflow: visible; }
+  #m2dPnl label.pchk { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -696,7 +702,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.35.0"></script>
+<script src="js/map2d.js?v=2.36.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

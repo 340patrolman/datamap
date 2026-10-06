@@ -644,6 +644,9 @@
   .hsc { margin: 4px 0; } .hsb { height: 12px; border-radius: 6px; border: 1px solid var(--line); } .hst { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
   .jgs { display: flex; flex-wrap: wrap; gap: 3px 8px; font-size: 11px; } .jgs i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
   #m2dQC button.qtax { border-color: #16a34a !important; color: #15803d !important; font-weight: 800; }
+  /* v2.49.3 가격 말풍선 */
+  #m2dTip { display: none; position: fixed; z-index: 30; pointer-events: none; max-width: 280px; background: rgba(15,23,42,.94); color: #f8fafc; border-radius: 10px; padding: 7px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+  #m2dTip i { font-style: normal; color: #fcd34d; font-weight: 700; } #m2dTip small { color: #cbd5e1; } #m2dTip b { color: #fff; }
 </style>
 </head>
 <body>
@@ -742,7 +745,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.49.2"></script>
+<script src="js/map2d.js?v=2.49.3"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

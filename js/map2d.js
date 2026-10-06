@@ -2931,7 +2931,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.49.2'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.49.3'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3548,6 +3548,25 @@
     else if (a[0] === 'up' && i > 0) { MY.splice(i - 1, 0, MY.splice(i, 1)[0]); if (MYST === i) MYST = i - 1; else if (MYST === i - 1) MYST = i; }
     else if (a[0] === 'del' && m && confirm('「' + m.n + '」을 지울까요?')) { MY.splice(i, 1); if (MYST === i) MYST = -1; else if (MYST > i) MYST--; }
     mySaveLS(); paintPre(); myMgr(); });
+
+  // v2.49.3 소유자 「픽셀(칸)을 터치하거나 마우스 포인터를 대면 가격대가 나오게」 — 실거래 칸·단지 점·공시지가 칸 위에 말풍선(마우스 = 댈 때 · 손가락 = 누를 때 2.5초)
+  var TIPEL = null, TIPT = null;
+  function tipOf(it) { if (!it) return null;
+    if (it.kind === 'hmg') { var g = HOMEG[it.c]; if (!g) return null; var v = g.v, L = [];
+      [['a', '아파트'], ['o', '오피스텔'], ['r', '연립다세대']].forEach(function (q) { var x = v[q[0]]; if (!x) return; var t = [];
+        if (x[0]) t.push('매매 평당 <b>' + hmFmt(x[1], 'apt') + '</b>(' + x[0] + '건)'); if (x[2]) t.push('전세 ' + hmFmt(x[3], 'apt')); if (x[4]) t.push('월세 ' + x[5] + '만'); if (x[6] != null) t.push('전세가율 ' + x[6] + '%');
+        if (t.length) L.push('<i>' + q[1] + '</i> ' + t.join(' · ')); });
+      return L.length ? '<b>🏠 250m 칸</b><br>' + L.join('<br>') + '<br><small>평당 = 전용 · 매매 24개월</small>' : null; }
+    if (it.kind === 'hmc') { var c = it.x.c, tr = c[8]; return '<b>' + esc(c[1] || '단지') + '</b>' + (c[7] ? ' <small>' + c[7] + '년</small>' : '') + '<br>' + (tr && tr[0] ? '매매 평당 <b>' + hmFmt(tr[1], 'apt') + '</b>(' + tr[0] + '건) · 마지막 ' + (tr[3] / 1e4).toFixed(2) + '억(' + tr[4] + '㎡)' : '매매 없음') + '<br><small>누르면 🧾 세금 계산</small>'; }
+    if (it.kind === 'jgc') { var j = JIGAG[it.c]; if (!j) return null; var w = j.v; return '<b>🟧 공시지가 250m 칸</b><br>대지 ㎡당 <b>' + wonM2(w[0]) + '원</b> · 평당 ' + wonM2(w[0] * 3.305785) + '원<br><small>가장 높은 대지 ㎡당 ' + wonM2(w[3]) + '원 · ' + w[1] + '필지</small>'; }
+    return null; }
+  function tipHit(x, y) { var best = null, bd = 1e9; hit.forEach(function (h) { if (!/^(hmg|hmc|jgc)$/.test(h.it.kind)) return; var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 2 && d < bd) { bd = d; best = h; } }); return best; }
+  function tipShow(cx, cy, html) { if (!TIPEL) { TIPEL = document.createElement('div'); TIPEL.id = 'm2dTip'; document.body.appendChild(TIPEL); } if (!html) { TIPEL.style.display = 'none'; return; }
+    TIPEL.innerHTML = html; TIPEL.style.display = 'block'; var w = TIPEL.offsetWidth, hh = TIPEL.offsetHeight, X = cx + 14, Y = cy + 14; if (X + w > window.innerWidth - 6) X = cx - w - 14; if (Y + hh > window.innerHeight - 6) Y = cy - hh - 14; TIPEL.style.left = Math.max(6, X) + 'px'; TIPEL.style.top = Math.max(6, Y) + 'px'; }
+  cv.addEventListener('pointermove', function (e) { if (e.pointerType !== 'mouse' || e.buttons) { if (e.pointerType === 'mouse') tipShow(0, 0, null); return; } var h = tipHit(e.offsetX, e.offsetY); tipShow(e.clientX, e.clientY, h ? tipOf(h.it) : null); cv.style.cursor = h ? 'pointer' : ''; });
+  cv.addEventListener('pointerleave', function () { tipShow(0, 0, null); });
+  var TIPD = null; cv.addEventListener('pointerdown', function (e) { TIPD = [e.offsetX, e.offsetY]; });
+  cv.addEventListener('pointerup', function (e) { if (e.pointerType === 'mouse' || !TIPD || Math.abs(e.offsetX - TIPD[0]) + Math.abs(e.offsetY - TIPD[1]) > 10) return; var h = tipHit(e.offsetX, e.offsetY), t = h ? tipOf(h.it) : null; if (!t) return; tipShow(e.clientX, Math.max(70, e.clientY - 90), t); clearTimeout(TIPT); TIPT = setTimeout(function () { tipShow(0, 0, null); }, 2500); });
 
   // ---------- v2.44.0 📝 틀린 곳 알리기(시범 사용 · 서버 없음 — 보던 화면·숫자를 글로 모아 복사·공유) ----------
   function fbHtml() { return '<div class="fbx"><div class="lg-btns"><button data-pc="1">💻 PC로 보내기</button><button data-fb="1">📝 틀린 곳·헷갈린 곳 알리기</button></div><div id="m2dFbF"></div></div>'; }

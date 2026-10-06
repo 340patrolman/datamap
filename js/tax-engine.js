@@ -162,6 +162,22 @@
     var fee = p * r; if (cap != null) fee = Math.min(fee, cap);
     return { total: won(fee), steps: [['거래금액', won(p)], ['상한요율', r, how + (cap ? ' · 한도 ' + cap.toLocaleString() + '원' : '')], ['중개보수 상한(한쪽)', won(fee)]], warn: [B._] };
   }
-  root.TaxEngine = { prog: prog, cgt: cgt, jbsHouse: jbsHouse, jbsLand: jbsLand, gift: gift, inherit: inherit, acq: acq, prop: prop, broker: broker };
+  // 등기 부대비용 — 인지세 · 제1종 국민주택채권  a = {cat, price(계약서 기재금액), official(시가표준액), bldg, landVal, metro, disc(즉시매도 할인율 %)}
+  function reg(R, a) {
+    var G = R.reg, st = [], warn = [], isH = !!HOUSE[a.cat], p = a.price || 0, stamp = 0;
+    if (!(isH && p <= G.stampHouseFree)) { var row = G.stamp[0].filter(function (x) { return x[0] === null || p <= x[0]; })[0]; stamp = row[1]; }
+    st.push(['인지세(계약서 1부)', stamp, G.stamp[1]]);
+    function bond(tbl, v) { var r = tbl.filter(function (x) { return x[0] === null || v < x[0]; })[0]; var rt = a.metro ? r[1] : r[2], b = Math.round(v * rt / 1e4) * 1e4; return [b, rt]; }
+    var parts = [];
+    if (isH) parts.push(['주택', a.official || 0, G.bond.house]);
+    else if (a.cat === 'shop' || a.cat === 'offiB' || a.cat === 'offiH') { if (a.landVal) parts.push(['토지', a.landVal, G.bond.land]); parts.push(['건물', a.cat === 'shop' ? (a.bldg || 0) : (a.official || 0), G.bond.other]); }
+    else parts.push(['토지', a.official || 0, G.bond.land]);
+    var bt = 0; parts.forEach(function (q) { var b = bond(q[2], q[1]); bt += b[0]; st.push(['국민주택채권 매입액(' + q[0] + ' 시가표준액 ' + won(q[1]).toLocaleString() + '원 × ' + (b[1] * 1000).toFixed(0) + '/1,000)', b[0], G.bond._.split(' — ')[0] + (a.metro ? ' · 특별시·광역시' : ' · 그 밖 지역')]); });
+    var dc = a.disc ? bt * a.disc / 100 : 0; st.push(['채권 즉시매도 비용(할인율 ' + (a.disc || 0) + '%)', won(dc), a.disc ? '입력한 할인율' : '할인율을 넣으면 셈 — 그날 은행 고지 할인율']);
+    if (!a.official) warn.push('국민주택채권은 시가표준액(공시가격)으로 매긴다 — 공시가격이 없어 0으로 셈');
+    if (a.cat === 'farm') warn.push('영농 목적 농지 취득은 국민주택채권 매입 면제(별표 3호 마목)');
+    return { stamp: stamp, bond: bt, bondCost: won(dc), total: won(stamp + dc), steps: st, warn: warn.concat(['인지세는 계약서마다 — 매수·매도인이 나눠 내는 것이 보통(인지세법 제1조 공동작성 연대)', '법무사 보수·등기 신청 수수료는 넣지 않았다']) };
+  }
+  root.TaxEngine = { prog: prog, cgt: cgt, jbsHouse: jbsHouse, jbsLand: jbsLand, gift: gift, inherit: inherit, acq: acq, prop: prop, broker: broker, reg: reg };
   if (typeof module !== 'undefined') module.exports = root.TaxEngine;
 })(typeof window !== 'undefined' ? window : globalThis);

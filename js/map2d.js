@@ -2026,13 +2026,25 @@
   var IXC = { LH: '#16a34a', LL: '#f59e0b', HL: '#dc2626', HH: '#94a3b8' };
   function pctCh(a, b) { return a ? Math.round((b - a) / a * 100) : null; }
   function sgn(v) { return v == null ? '-' : (v > 0 ? '+' : '') + v + '%'; }
+  // v2.49.0 소유자 「서울에서 나오는 내용이 전국에서 다 나와야」 — 동별 시설 기록이 없는 시도: 주민등록 남녀·나이(피라미드) · 학교(표준데이터 점) · 학원(상가정보 점)을 이 동 경계 안에서 센다 · 빠진 것은 빠졌다고 적는다
+  function facLite(F, k8, nm) { var d = allDong().filter(function (q) { return k8 ? q.k === k8 : q.name === nm; })[0]; if (!d) return ''; var h = '<div class="dh">📋 동 현황</div>', p = d.pop;
+    if (p && p.m && p.f) { h += row('남녀', '남 ' + p.m.toLocaleString() + '(' + Math.round(p.m / (p.m + p.f) * 100) + '%) · 여 ' + p.f.toLocaleString() + '(' + Math.round(p.f / (p.m + p.f) * 100) + '%) <em>· 여자 100명당 남자 ' + Math.round(p.m / p.f * 100) + '명</em>');
+      if (p.mage && p.fage) h += '<div class="cap">연령대별 남녀 인구(명 · 주민등록 · 위가 나이 많음)</div>' + pyr(p.mage, p.fage); }
+    var cnt = function (arr) { var o = {}, n = 0; (arr || []).forEach(function (q) { if (!inPoly(d, P(q[1], q[0]))) return; n++; if (q[3]) o[q[3]] = (o[q[3]] || 0) + 1; }); return { n: n, o: o }; };
+    var E = cnt(F.pts && F.pts.edu), A = cnt(F.pts && F.pts.aca), fl = [];
+    if (F.pts && F.pts.edu) fl.push('초 ' + (E.o['초'] || 0) + ' · 중 ' + (E.o['중'] || 0) + ' · 고 ' + (E.o['고'] || 0));
+    if (F.pts && F.pts.aca) fl.push('입시·교과학원 ' + A.n + '곳');
+    if (fl.length) h += row('교육', fl.join(' · ') + ' <em>(' + esc((F.source || {})['학교'] || '') + ')</em>');
+    h += row('어린이집·유치원·경로당', '<em>' + esc((F.source || {})['비고'] || '이 시도 자료를 아직 못 받았다') + ' — 전국 자료를 찾는 중</em>');
+    return h; }
+
   function facRows(gcd, nm, k8) {   // 동 카드 아래 「동 현황」 — 소유자 2026-10-04 「상권이 살아나는지 죽는지 · 남녀 · 경로당·어린이집·유치원·입시학원」
     var F = RFAC[gcd]; if (!F) { fLoad(gcd, function () { if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }); return '<p class="desc">동 현황(남녀·시설·상권 추이)을 읽는 중…</p>'; }
-    var x = (k8 && F.dong[k8]) || null; if (!x) for (var kk in F.dong) if (F.dong[kk].name === nm) { x = F.dong[kk]; break; } if (!x) return '';
+    var x = (k8 && F.dong[k8]) || null; if (!x) for (var kk in F.dong) if (F.dong[kk].name === nm) { x = F.dong[kk]; break; } if (!x) return facLite(F, k8, nm);
     var S = F.source || {}, h = '<div class="dh">📋 동 현황</div>', srcs = [];
     if (x.sex) { var m = x.sex[0], f = x.sex[1]; h += row('남녀', '남 ' + m.toLocaleString() + '(' + Math.round(m / (m + f) * 100) + '%) · 여 ' + f.toLocaleString() + '(' + Math.round(f / (m + f) * 100) + '%) <em>· 여자 100명당 남자 ' + Math.round(m / f * 100) + '명</em>') +
       '<div class="cap">연령대별 남녀 인구(명 · 주민등록 2026년 9월 · 위가 나이 많음)</div>' + pyr(x.sex[2], x.sex[3]); srcs.push(S['남녀']); }
-    var fl = []; if (x.cc) fl.push('어린이집 ' + x.cc[0] + '곳(정원 ' + x.cc[1] + (x.cc[2] >= 0 ? ' · 현원 ' + x.cc[2] : '') + ')'); if (x.kgy) fl.push('유치원 ' + x.kgy[x.kgy.length - 1] + '곳'); else if (x.kgN) fl.push('유치원 ' + x.kgN + '곳');
+    var fl = []; if (x.cc) fl.push('어린이집 ' + x.cc[0] + '곳(정원 ' + x.cc[1] + (x.cc[2] >= 0 ? ' · 현원 ' + x.cc[2] : '') + ')'); if (x.kgy) fl.push('유치원 ' + x.kgy[x.kgy.length - 1] + '곳'); else if (x.kgN) fl.push('유치원 ' + x.kgN + '곳'); else if (F.kyears || F.sido === '41') fl.push('유치원 0곳 <em>(' + (F.sido === '11' ? '서울시교육청 목록 기준 — 이 목록은 서초구가 21곳뿐이라 사립 유치원 일부가 빠져 있을 수 있다' : '목록 기준') + ')</em>');
     var E = x.edu || {}; if (x.edu || x.sch) fl.push('초 ' + (E['초'] != null ? E['초'] : (x.sch || {}).e || 0) + ' · 중 ' + (E['중'] != null ? E['중'] : (x.sch || {}).m || 0) + ' · 고 ' + (E['고'] != null ? E['고'] : (x.sch || {}).h || 0) + (E['대학'] ? ' · 대학 ' + E['대학'] : '') + (E['기타'] ? ' · 특수·기타 ' + E['기타'] : '')); if (x.kyr) fl.push('경로당 ' + x.kyr + '곳'); if (x.aca != null || x.acaAll) fl.push('입시·교과학원 ' + (x.aca || 0) + '곳(학원 전체 ' + (x.acaAll || 0) + ')');
     if (fl.length) h += row('아이·어르신·교육', fl.join(' · ') + (F.sido === '41' ? ' <em>(경기: 경로당은 OSM 에 있는 곳만 · 유치원은 이름으로 자리를 잡은 곳만(경기 전체 1,771곳 중 ' + (F.kgNo || 0) + '곳은 자리를 못 잡아 빠짐) · 학교는 OSM·어린이보호구역 자료)</em>' : x.kyr && F.kyrNo ? ' <em>(경로당은 주소로 자리를 잡은 곳만 — 이 구 ' + F.kyrNo + '곳 빠짐)</em>' : ''));
     if (x.ccy && x.ccy.some(function (v) { return v; })) { var c0 = x.ccy[0], c1 = x.ccy[x.ccy.length - 1];
@@ -2912,7 +2924,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.48.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.49.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }

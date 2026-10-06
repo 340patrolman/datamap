@@ -21,10 +21,12 @@ def mtype(u):
 SP = [('소아', '소아청소년과'), ('이비인후', '이비인후과'), ('정형', '정형외과'), ('피부', '피부과'), ('안과', '안과'), ('산부인', '산부인과'), ('여성', '산부인과'), ('비뇨', '비뇨의학과'), ('정신', '정신건강의학과'), ('마음', '정신건강의학과'),
       ('성형', '성형외과'), ('재활', '재활의학과'), ('통증', '마취통증의학과'), ('마취', '마취통증의학과'), ('가정의학', '가정의학과'), ('영상', '영상의학과'), ('신경외과', '신경외과'), ('신경과', '신경과'), ('내과', '내과'), ('외과', '외과')]
 SPN = ['미상'] + sorted({x[1] for x in SP})
-def spec(name, t):
+def spec(name, t, subj=''):   # 의원 과목 — ① 상호(○○내과) ② 상호에 없으면 신고 진료과목이 하나뿐일 때 그 과목
     if t != 0: return 0
     for k, v in SP:
         if k in (name or ''): return SPN.index(v)
+    L = [x.strip() for x in (subj or '').split(',') if x.strip()]
+    if len(L) == 1 and L[0] in SPN: return SPN.index(L[0])
     return 0
 def ym(d):
     d = (d or '').strip()
@@ -59,7 +61,7 @@ for fn in ('clinics.csv', 'hospitals.csv'):
         if not d:
             c = F[di][0].representative_point(); d = D[k8] = {'c': [round(c.x, 5), round(c.y, 5)], 'n': F[di][2], 'open': [0] * len(MT), 'yo': [0] * (Y1 - Y0 + 1), 'yc': [0] * (Y1 - Y0 + 1), 'co': 0, 'c5': 0, 'lm': 0, 'ln': 0, 'sp': collections.Counter()}
         o = ym(g('인허가일자')); closed = st not in ('영업/정상', '휴업'); cl = (ym(g('폐업일자')) or ym(g('인허가취소일자'))) if closed else None
-        sp = spec(g('사업장명'), t)
+        sp = spec(g('사업장명'), t, g('진료과목내용명'))
         if not closed: d['open'][t] += 1; d['sp'][sp] += 1; cnt['영업' if st == '영업/정상' else '휴업'] += 1
         else: cnt['폐업'] += 1
         if o and Y0 <= o // 100 <= Y1: d['yo'][o // 100 - Y0] += 1
@@ -75,7 +77,7 @@ out = {k: d['c'] + [d['n'], d['open'], d['yo'], d['yc'], d['co'], d['c5'], d['lm
 res = {'schema': 'tg-med-dong/1', 'types': MT, 'specs': SPN, 'y0': Y0, 'y1': Y1,
        'source': '행정안전부 지방행정인허가(LOCALDATA) 건강_의원 15045024 · 건강_병원 15045025(공공데이터포털 · 2025-11-27 · 이용허락 제한 없음) · 행정동 = 통계청 SGIS(가공 vuski/admdongkor 2026-07 · CC BY 4.0)',
        'fields': 'dong = {행정동 8자리: [경도, 위도, 이름, 영업 중 종류별 수(types), 해마다 개업(y0~y1), 해마다 폐업, 2010~2020 개업 수, 그중 5년 안 폐업, 폐업한 곳 운영 개월 합, 그 수, {의원 과목(이름으로 추정): 영업 수}]}',
-       'note': '인허가 기록 그대로 — 개업 = 인허가일자 · 폐업 = 폐업일자(직권폐업은 취소일자) · 전출·제외 기록은 뺌 · 좌표 없는 기록(대개 오래된 폐업)은 동에 못 붙였다 · 의원 과목은 상호(○○내과·○○소아과…)로 추정한 것이다(신고한 진료과목은 여러 개라 대표 과목이 없다)',
+       'note': '인허가 기록 그대로 — 개업 = 인허가일자 · 폐업 = 폐업일자(직권폐업은 취소일자) · 전출·제외 기록은 뺌 · 좌표 없는 기록(대개 오래된 폐업)은 동에 못 붙였다 · 의원 과목 = 상호(○○내과·○○소아과…)로 추정 · 상호에 없으면 신고 진료과목이 하나뿐일 때 그 과목(여러 개 신고한 의원은 「미상」)',
        'counts': dict(cnt), 'dong': out}
 p = os.path.join(ROOT, 'data', 'med-dong.json'); json.dump(res, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
 IX = json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8')); KX, KY = 88800, 111000; nb = {}

@@ -2947,7 +2947,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.50.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.50.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3454,10 +3454,21 @@
   function eok(m) { return m >= 10000 ? (Math.round(m / 1000) / 10).toLocaleString() + '억' : Math.round(m).toLocaleString() + '만'; }
   function qtl(a, q) { var i = (a.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return a[lo] + (a[hi] - a[lo]) * (i - lo); }
   function dealStats(k8) { var gu = k8.slice(0, 5), DJ = DLS[gu], HM = HOMED[gu]; if (!DJ || !HM) return null; var A = BANDS.map(function () { return []; }), O = [], RH = [], n = 0;
-    DJ.d.forEach(function (x) { if (x[4]) return; var c = DJ.c[x[0]]; if (!c || c[4] == null) return; var hc = HM.cx[c[4]]; if (!hc || hc[6] !== k8) return; var m2 = x[2] / 100; n++;
-      if (c[0] === 0) { for (var i = 0; i < BANDS.length; i++) if (m2 > BANDS[i][0] - (i ? 0 : 1) && m2 <= BANDS[i][1]) { A[i].push(x[3]); break; } } else (c[0] === 1 ? O : RH).push(x[3]); });
+    var EX = [[], [], []], AB = BANDS.map(function () { return []; });
+    DJ.d.forEach(function (x) { if (x[4]) return; var c = DJ.c[x[0]]; if (!c || c[4] == null) return; var hc = HM.cx[c[4]]; if (!hc || hc[6] !== k8) return; var m2 = x[2] / 100; n++; EX[c[0]].push({ v: x[3], m2: m2, ym: x[1], nm: c[1], umd: DJ.umds[c[2]] || '', jb: c[3], ck: c[4], gu: gu });
+      if (c[0] === 0) { for (var i = 0; i < BANDS.length; i++) if (m2 > BANDS[i][0] - (i ? 0 : 1) && m2 <= BANDS[i][1]) { A[i].push(x[3]); AB[i].push(EX[0][EX[0].length - 1]); break; } } else (c[0] === 1 ? O : RH).push(x[3]); });
     var st = function (a) { if (!a.length) return null; a.sort(function (p, q) { return p - q; }); return [a[0], qtl(a, 0.25), qtl(a, 0.5), qtl(a, 0.75), a[a.length - 1], a.length]; };
-    return { n: n, apt: A.map(st), offi: st(O), rh: st(RH), src: DJ.source }; }
+    var mm = function (L) { if (!L.length) return null; var mx = L[0], mn = L[0], t = 0; L.forEach(function (q) { t += q.v; if (q.v > mx.v) mx = q; if (q.v < mn.v) mn = q; }); return { n: L.length, avg: t / L.length, max: mx, min: mn }; };
+    return { n: n, apt: A.map(st), offi: st(O), rh: st(RH), mm: EX.map(mm), mb: AB.map(mm), src: DJ.source }; }
+  function dealWhere(q) { return '<button class="lk" data-goc="' + esc(q.gu + '|' + q.ck) + '">' + esc(q.nm || '(이름 없음)') + '</button> <small>' + esc(q.umd) + ' ' + esc(q.jb || '') + ' · ' + Math.round(q.m2) + '㎡(' + Math.round(q.m2 / 3.3058) + '평) · ' + String(q.ym).replace(/(\d{4})(\d\d)/, '$1.$2') + '</small>'; }
+  function dealMinMaxHtml(D2) { var h = '', one = function (title, sub, m) { return '<div class="simc"><b>' + title + '</b> <small>' + sub + ' · 매매 ' + m.n + '건</small><div class="rcard">' + row('평균', '<b>' + eok(m.avg) + '</b>') + row('🔺 최고', '<b style="color:#dc2626">' + eok(m.max.v) + '</b> — ' + dealWhere(m.max)) + (m.n > 1 ? row('🔻 최저', '<b style="color:#2563eb">' + eok(m.min.v) + '</b> — ' + dealWhere(m.min)) : '') + '</div></div>'; };
+    D2.mb.forEach(function (m, i) { if (m) h += one('🏢 아파트 ' + BANDS[i][2], BANDS[i][3], m); });
+    if (D2.mm[1]) h += one('🏙 오피스텔', '면적 전체', D2.mm[1]); if (D2.mm[2]) h += one('🏘 연립·다세대', '면적 전체', D2.mm[2]);
+    var um = {}; D2.mm.forEach(function (m) { if (m) [m.max, m.min].forEach(function (q) { um[q.umd] = q.gu; }); }); var SHl = Object.keys(um).map(function (u) { var H2 = HOMED[um[u]], x = H2 && H2.sh && H2.sh[u]; return x && x[0] ? esc(u) + ' 매매 ' + x[0] + '건 · 연면적 평당 가운데 <b>' + hmFmt(x[1], 'apt') + '</b>' : ''; }).filter(Boolean);
+    if (SHl.length) h += '<div class="simc"><b>🏠 단독·다가구 주택</b> <small>지번이 가려져 공개돼 한 건씩 최고·최저는 낼 수 없다 — 법정동 가운데 값</small><div class="rcard">' + row('법정동', SHl.join('<br>')) + '</div></div>';
+    return h ? '<div class="cap">평형마다 평균 · 최고가 어디 · 최저가 어디(단지 이름을 누르면 그 단지로)</div>' + h : ''; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-goc]'); if (!b) return; var a = b.getAttribute('data-goc').split('|'), x = HCX.filter(function (q) { return q.m.gu === a[0] && String(q.k) === a[1]; })[0]; if (!x || !x.p) return;
+    view.cx = x.p[0]; view.cy = x.p[1]; view.s = Math.max(view.s, 0.6); if (!on.home) { on.home = true; saveOn(); paintLayers(); } draw(); var sp = S(x.p); TAPM = x.p; sel = { x: sp[0], y: sp[1], r: 6, it: { kind: 'hmc', x: x } }; show(sel.it); draw(); });
   function vzRange(rows, opt) {   // 범위 막대 — rows [[이름, 덧말, [최저, 25%, 가운데, 75%, 최고, 건수]]] · 가는 줄 = 최저~최고 · 굵은 칸 = 가운데 절반 · 점 = 가운데
     opt = opt || {}; var all = [].concat.apply([], rows.map(function (r) { return [r[2][0], r[2][4]]; })), mn = Math.min.apply(null, all), mx = Math.max.apply(null, all), X = function (v) { return ((v - mn) / ((mx - mn) || 1) * 100).toFixed(1); };
     return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + rows.map(function (r, i) { var a = r[2], col = opt.colors ? opt.colors[i % opt.colors.length] : '#2563eb';
@@ -3469,7 +3480,7 @@
     if (D2.offi) { rows.push(['오피스텔', '면적 전체', D2.offi]); cc.push('#0891b2'); } if (D2.rh) { rows.push(['연립·다세대', '면적 전체', D2.rh]); cc.push('#16a34a'); }
     if (!rows.length) return '';
     var na = D2.apt.reduce(function (t, a) { return t + (a ? a[5] : 0); }, 0);
-    var h = '<div class="dh">🏢 평형별 실거래 매매가 — ' + esc(nm || '이 동') + ' <small style="font-weight:600;color:var(--ink2)">(최근 24개월)</small></div>' + vzRange(rows, { title: '면적별 거래 가격 범위(만 원·억)', colors: cc });
+    var h = '<div class="dh">🏢 평형별 실거래 매매가 — ' + esc(nm || '이 동') + ' <small style="font-weight:600;color:var(--ink2)">(최근 24개월)</small></div>' + dealMinMaxHtml(D2) + vzRange(rows, { title: '면적별 거래 가격 범위(만 원·억)', colors: cc });
     if (na) h += vzStack([['아파트 거래', D2.apt.map(function (a) { return a ? a[5] : 0; }), na + '건']], BANDS.map(function (b, i) { return [b[2] + '(' + b[3].split(' · ')[0] + ')', cols[i]]; }), { title: '아파트 거래가 어느 크기에 몰렸나(건수 %)' });
     return h + '<p class="cap">면적 = 전용면적(㎡ · 평 = ㎡ ÷ 3.3058) · 「보통 ○평형」은 분양 때 부르는 공급면적의 흔한 범위(단지마다 다르다 · 근사) · 해제 거래 뺌 · ' + esc(D2.src) + ' · 단지 자리(지번 좌표)로 행정동을 가름 · 건수가 적으면 한두 건이 범위를 정한다</p>'; }
   function dealRows(d) { if (!d || !d.k) return ''; return dealBandsHtml(d.k, d.name); }

@@ -3050,7 +3050,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.65.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.66.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -5497,6 +5497,26 @@
     cd.addEventListener('touchend', function (e) { if (pz && e.touches.length < 2) { pz = null; try { localStorage.setItem('tg_map2d_cardz', CZ.toFixed(2)); } catch (e2) {} } });
     if (window.MutationObserver) new MutationObserver(function () { document.body.classList.toggle('cardon', cd.classList.contains('on')); }).observe(cd, { attributes: true, attributeFilter: ['class'] });
     window.TGCard = { setH: setH, setZ: setZ, h: function () { return CH; }, z: function () { return CZ; } };
+  })();
+
+  // ---------- v2.66.0 가− 가+ 글씨 크기(소유자 「지도 안 설명글의 글씨 크기를 조절 · 오른쪽 위 닫기 단추 왼쪽에 + − · 스타일과 톤에 맞게」) ----------
+  //   카드·손익·반경 분석·창업 자리·범례의 닫기 왼쪽에 두 단추 · 판은 머리줄(.lg-h) 아래 내용에 CSS zoom(--tz · 그래프도 같이) · 폰 카드는 두 손가락 글씨(--cz)와 같은 값을 움직인다 · 기기에 기억(tg_map2d_tz)
+  (function () {
+    var TZ = 1, root = document.documentElement, small = function () { return window.innerWidth < 760; };
+    try { TZ = +localStorage.getItem('tg_map2d_tz') || 1; } catch (e) {}
+    function apply() { root.style.setProperty('--tz', TZ.toFixed(2)); }
+    function btns() { return '<span class="tzb" role="group" aria-label="글씨 크기"><button type="button" data-tz="-1" title="글씨 작게" aria-label="글씨 작게">가−</button><button type="button" data-tz="1" title="글씨 크게" aria-label="글씨 크게">가+</button></span>'; }
+    function inject(el) { if (!el) return;
+      if (el.id === 'm2dCard') { var lx = el.querySelector('#m2dLad .ladx'); if (lx && !(lx.previousElementSibling && lx.previousElementSibling.classList.contains('tzb'))) lx.insertAdjacentHTML('beforebegin', btns());   // 사다리 줄이 있으면 그 줄의 닫기 왼쪽
+        if (!el.querySelector(':scope > .tzb') && $('m2dX')) $('m2dX').insertAdjacentHTML('beforebegin', btns()); return; }
+      if (el.querySelector('.tzb')) return; var x = el.id === 'm2dLeg' ? $('m2dLegX') : null;
+      if (!x) { var hd = el.querySelector('.lg-h'); if (hd) x = [].filter.call(hd.querySelectorAll('button'), function (b) { return b.textContent.trim() === '닫기'; })[0]; }
+      if (x) x.insertAdjacentHTML('beforebegin', btns()); }
+    ['m2dCard', 'm2dPnl', 'm2dRad', 'm2dBiz', 'm2dLeg'].forEach(function (id) { var el = $(id); if (!el) return; inject(el); if (window.MutationObserver) new MutationObserver(function () { inject(el); }).observe(el, { childList: true, subtree: id === 'm2dCard' }); });
+    document.addEventListener('click', function (e) { var b = e.target.closest('[data-tz]'); if (!b) return; e.preventDefault(); var d = +b.getAttribute('data-tz') * 0.1;
+      if (b.closest('#m2dCard') && small() && window.TGCard) { var z = Math.max(0.8, Math.min(2.2, Math.round((TGCard.z() + d) * 10) / 10)); TGCard.setZ(z); try { localStorage.setItem('tg_map2d_cardz', z.toFixed(2)); } catch (e2) {} return; }
+      TZ = Math.max(0.8, Math.min(1.8, Math.round((TZ + d) * 10) / 10)); try { localStorage.setItem('tg_map2d_tz', TZ.toFixed(2)); } catch (e2) {} apply(); });
+    apply();
   })();
   // ---------- v2.18.0 쓰기 쉽게(소유자 2026-10-06 「밤 낮 모드 · 층 → 레이어 · 네이버·카카오·미국 부동산 지도처럼 · 1단계 단위 → 2단계 인구 → 3단계 업무 대·중·소 분류」) ----------
   // 레이어 키는 그대로(T-Book 주소 #ly= 그대로) — 묶음은 보여 주는 차례만 바꾼다 · 한 레이어가 여러 묶음에 들 수 있다

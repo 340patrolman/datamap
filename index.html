@@ -463,6 +463,13 @@
   #m2dCard { border: 0 !important; border-radius: 18px !important; box-shadow: var(--sh2) !important; }
   #m2dZoom button { border: 0 !important; box-shadow: var(--sh) !important; border-radius: 14px !important; }
   #m2dCard .r { border-top: 1px solid var(--line) !important; }
+  .talk.tkbig { font-size: 13px; } .talk.tkbig .tkh { display: block; font-size: 16px; font-weight: 900; margin-bottom: 6px; }
+  .tkpi { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; } .tkpi span { display: flex; flex-direction: column; gap: 1px; padding: 8px 9px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .tkpi em { font-style: normal; font-size: 22px; line-height: 1; } .tkpi small { font-size: 11.5px; font-weight: 700; color: var(--ink2); } .tkpi b { font-size: 21px; font-weight: 900; line-height: 1.15; } .tkpi u { text-decoration: none; font-size: 11px; color: var(--ink2); }
+  .tkpi i { font-style: normal; font-size: 12px; font-weight: 800; } .tkpi i.up { color: #dc2626; } .tkpi i.dn { color: #2563eb; } .tkn { display: block; font-size: 11px; color: var(--ink2); margin: 2px 0 4px; }
+  .talk.tkbig .vz .cap { font-size: 13px; font-weight: 800; color: var(--ink); } .talk.tkbig .vzr { font-size: 13px; margin-top: 5px; } .talk.tkbig .vzl { flex-basis: 104px; } .talk.tkbig .vzb { height: 12px; } .talk.tkbig .pleg { font-size: 12px; }
+  .talk.tkbig .ttiles small { font-size: 11px; } .talk.tkbig .ttiles b { font-size: 18px; } .talk.tkbig .ttiles i { font-size: 11px; } .talk.tkbig .tchips span { font-size: 13px; padding: 5px 10px; }
+  .tkd { margin-top: 8px; } .tkd > summary { cursor: pointer; font-size: 13px; font-weight: 800; padding: 6px 0; } .talk.tkbig .tki { font-size: 13.5px; }
   .vzg > .vz.wide { flex: 1 1 100%; }
   .ttiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; } .ttiles span { display: flex; flex-direction: column; align-items: center; padding: 5px 2px; border-radius: 8px; text-align: center; } .ttiles small { font-size: 9.5px; line-height: 1.2; opacity: .85; } .ttiles b { font-size: 15px; font-weight: 900; } .ttiles i { font-style: normal; font-size: 9.5px; font-weight: 700; opacity: .8; }
   .tchips { display: flex; flex-wrap: wrap; gap: 5px; } .tchips span { padding: 4px 9px; border-radius: 14px; background: var(--chip); border: 1px solid var(--line); font-size: 12px; } .tchips b { color: #dc2626; }
@@ -759,7 +766,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.64.0"></script>
+<script src="js/map2d.js?v=2.65.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

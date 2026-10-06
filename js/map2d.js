@@ -1014,7 +1014,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
-      h += polRows(d.k, d.c); h += fdRows(d.k);
+      h += polRows(d.k, d.c); h += fdRows(d.k); h += econRows(d.k);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1803,7 +1803,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
-    h += polRows(d.k, d.c); h += fdRows(d.k);
+    h += polRows(d.k, d.c); h += fdRows(d.k); h += econRows(d.k);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + (GB.ggcard ? '<button data-ggc="' + esc(d.gcd) + '|' + esc(d.k) + '">💳 카드 소비 자세히(연령·성별·시간·업종)</button>' : '') + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -2542,6 +2542,7 @@
     if (u.t === 'sgg') { var fx = 0, fn = []; gus.forEach(function (g) { var F2 = FRN && FRN.gu[g]; if (F2 && F2['2024'] && fn.indexOf(F2.src) < 0) { fx += F2['2024'].tot || 0; fn.push(F2.src); } }); if (fx) h += row('외국인 주민(행안부 2024)', fx.toLocaleString() + '명' + (A.pop ? ' · 주민 대비 약 ' + pct(fx, A.pop) + '%' : '')); }
     var nm = A.names.sort(function (a, b2) { return b2[1] - a[1]; });
     h += row('든 동(주민 많은 순)', nm.slice(0, 30).map(function (q) { return esc(q[0]); }).join(' · ') + (nm.length > 30 ? ' … 외 ' + (nm.length - 30) + '곳' : ''));
+    if (u.t === 'sgg') h += econGuHtml(econSggKeys(u.id), SGG[u.id].g.name);
     h += '<div class="lg-btns"><button data-aiu="' + u.t + '|' + u.id + '">🤖 AI용 복사 — 이 단위 기본 자료</button></div>';
     return h + '<p class="desc">이 지도에 구운 행정동 프로필(profile.json)을 더한 값이다. ' + (u.t === 'pb' ? '<b>지구대·파출소 구역은 공식 관할이 아니라 근사</b>(관할 경계 비공개 — 그 동의 관할 경찰서 지구대·파출소 가운데 가장 가까운 곳). ' : u.t === 'ps' ? '경찰서 관할은 별표2 × 행정동 근사 — 번지로 나뉜 동은 두 서 모두에 든다. ' : '') + '생활인구·카드(서울)는 서울만, 카드 상세는 경기 일부 시만 있다.</p>' + src('행정동 프로필(주민 행안부 · 가구 SGIS · 가게 소진공 · 사고 TAAS · 교통카드 · 카드) · 관할 = 직제 시행규칙 별표2 · 지구대 자리 = 경찰청 주소 현황');
   }
@@ -3765,6 +3766,46 @@
 
 
 
+
+  // ---------- v2.27.0 일터·생활업종 역추정(코워크 지시 2026-10-06) — 국민연금 사업장(행정동) · 국세청 사업자현황(시군구) · tools/region/econ-bake.py ----------
+  //  값은 원자료 합 그대로 · 「어림」·「가설」 딱지 · 시군구 값을 동으로 나누지 않는다
+  var ECD = null, ECG = null, ECP = null, ECNK = null, ECR = null;
+  function econLoad() { if (ECP) return ECP; ECP = Promise.all([fetch('data/econ-dong.json').then(function (r) { return r.json(); }), fetch('data/econ-gu.json').then(function (r) { return r.json(); }), fetch('data/biz-rates.json').then(function (r) { return r.json(); }).catch(function () { return null; })]).then(function (a) { ECD = a[0]; ECG = a[1]; ECR = a[2]; ECNK = {}; Object.keys(ECG.gu).forEach(function (k) { ECNK[k.replace(/\s/g, '')] = k; });
+    var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && /^(dong|unit)$/.test(sel.it.kind)) show(sel.it); }).catch(function () { ECD = ECG = null; }); return ECP; }
+  var ECALT = { '12': ['광주광역시', '전라남도', '전남광주통합특별시'], '51': ['강원특별자치도', '강원도'], '52': ['전북특별자치도', '전라북도'] };
+  function econGuKey(gu) { if (!ECNK) return null; var g = rIdx().filter(function (x) { return x.gu === gu; })[0]; if (!g) return null; var nm = g.name.replace(/\s/g, ''), sds = (ECALT[g.sido] || []).concat([SIDO_FULL[g.sido] || '']);
+    for (var i = 0; i < sds.length; i++) { var k = ECNK[sds[i].replace(/\s/g, '') + nm]; if (k) return k; }
+    var c = Object.keys(ECNK).filter(function (q) { return q.slice(-nm.length) === nm; }); return c.length === 1 ? ECNK[c[0]] : null; }
+  function econSggKeys(i) { if (!ECNK) { econLoad(); return []; } var G = SGG[i].g, sds = [G.sido].concat(ECALT[Object.keys(SIDO_FULL).filter(function (c) { return SIDO_FULL[c] === G.sido; })[0]] || []), nm = G.name.replace(/\s/g, '');
+    var o = []; Object.keys(ECNK).forEach(function (q) { sds.forEach(function (sd) { var p = sd.replace(/\s/g, '') + nm; if (q === p || (q.indexOf(p) === 0 && /구$/.test(q))) if (o.indexOf(ECNK[q]) < 0) o.push(ECNK[q]); }); }); return o; }
+  function econMerge(keys) { var B = {}, D = {}, A = {}; keys.forEach(function (k) { var g = ECG.gu[k]; if (!g) return;
+      Object.keys(g.b100).forEach(function (q) { var t = B[q] = B[q] || [0, 0]; t[0] += g.b100[q][0]; t[1] += g.b100[q][1]; });
+      Object.keys(g.dur).forEach(function (q) { var t = D[q] = D[q] || [0, 0, 0]; t[0] += g.dur[q][0]; t[1] += g.dur[q][1]; t[2] += g.dur[q][2]; });
+      Object.keys(g.age).forEach(function (q) { var t = A[q] = A[q] || [0, 0]; t[0] += g.age[q][0]; t[1] += g.age[q][1]; }); }); return { b100: B, dur: D, age: A }; }
+  var ECFIX = ['호프주점', '간이주점', '노래방', '편의점', '커피음료점', '한식음식점', 'pc방', '여관ㆍ모텔'];
+  function ecPct(a, b) { return b ? (a / b - 1) * 100 : null; }
+  function econGuHtml(keys, nm) { if (!ECG) { econLoad(); return '<p class="cap">국세청 생활업종 자료를 받는 중…</p>'; } if (!keys.length) return ''; var M0 = econMerge(keys), B = M0.b100, h = '<div class="dh">🌡 생활업종 체온 — ' + esc(nm) + ' <small style="font-weight:600;color:var(--ink2)">(국세청 ' + esc(String(ECG.asof).replace(/(\d{4})(\d\d)(\d\d)/, '$1.$2')) + ' · 시군구)</small></div>';
+    var L2 = Object.keys(B).filter(function (q) { return B[q][1] >= 20; }).map(function (q) { return [q, B[q][0], ecPct(B[q][0], B[q][1])]; });
+    var up = L2.slice().sort(function (a, b) { return b[2] - a[2]; }).slice(0, 5), dn = L2.slice().sort(function (a, b) { return a[2] - b[2]; }).slice(0, 5);
+    function f(q) { return esc(q[0]) + ' ' + q[1].toLocaleString() + ' <b style="color:' + (q[2] >= 0 ? '#dc2626' : '#2563eb') + '">' + (q[2] >= 0 ? '+' : '') + q[2].toFixed(1) + '%</b>'; }
+    h += row('많이 는 업종', up.map(f).join(' · ')) + row('많이 준 업종', dn.map(f).join(' · '));
+    h += row('밤·생활 업종', ECFIX.filter(function (q) { return B[q]; }).map(function (q) { return f([q, B[q][0], ecPct(B[q][0], B[q][1]) || 0]); }).join(' · ') + ' <em>(사업자 수 · 한 해 전 같은 달 대비)</em>');
+    var D = M0.dur, A = M0.age; function age2(up) { var d = D[up], a = A[up]; if (!d || !d[2]) return ''; return esc(up) + ' 3년 미만 <b>' + Math.round(d[0] / d[2] * 100) + '%</b> · 10년 이상 ' + Math.round(d[1] / d[2] * 100) + '%' + (a && a[1] ? ' · 대표자 40세 미만 ' + Math.round(a[0] / a[1] * 100) + '%' : ''); }
+    h += row('상권 나이', ['음식업', '소매업', '숙박업'].map(age2).filter(Boolean).join('<br>'));
+    var bar = B['호프주점'] && B['간이주점'] ? [B['호프주점'][0] + B['간이주점'][0], B['호프주점'][1] + B['간이주점'][1]] : null, fd = D['음식업'];
+    var hy = []; if (bar && bar[0] > bar[1]) hy.push('주점(호프·간이) ' + bar[1] + ' → ' + bar[0] + '곳 — 밤 음주운전 단속 자리를 다시 볼 만하다');
+    if (fd && fd[2] && fd[0] / fd[2] >= 0.35) hy.push('음식업 3년 미만 ' + Math.round(fd[0] / fd[2] * 100) + '% — 상권이 바뀌는 중일 수 있다(이면도로 조업·배달 이륜 증가 가능)');
+    if (hy.length) h += '<div class="talk"><b>🧪 가설 — 숫자에서 끌어낸 해석(사실 확인 전)</b>' + hy.map(function (q) { return '<div>· ' + esc(q) + '</div>'; }).join('') + '</div>';
+    return h + src(ECG.source + ' · ' + ECG.note); }
+  function econRows(k8) { if (!k8) return ''; if (!ECD) { econLoad(); return ''; } var v = ECD.dong[k8], h = '', rt = ECR && ECR.pension ? ECR.pension[0] * 2 : null;
+    if (v) { h += '<div class="dh">🏢 일터 — 국민연금 가입 사업장 <small style="font-weight:600;color:var(--ink2)">(' + esc(ECD.ym) + ')</small></div>';
+      h += row('국민연금 가입 직장인(어림)', '<b>' + v[1].toLocaleString() + '명</b> · 사업장 ' + v[0].toLocaleString() + '곳(법인 ' + v[5].toLocaleString() + ' · 50인 이상 ' + v[6] + ')');
+      if (rt && v[1]) h += row('1인당 월 보수 어림', '약 ' + Math.round(v[2] / v[1] / rt / 1e4).toLocaleString() + '만 원 <em>(고지금액 ÷ 가입자 ÷ 보험료율 ' + (rt * 100).toFixed(1) + '%)</em>');
+      h += row('이번 달 고용', '신규 ' + v[3].toLocaleString() + ' · 상실 ' + v[4].toLocaleString() + ' → <b style="color:' + (v[3] - v[4] >= 0 ? '#dc2626' : '#2563eb') + '">' + (v[3] - v[4] >= 0 ? '+' : '') + (v[3] - v[4]).toLocaleString() + '명</b>');
+      if (v[7] && v[7].length) h += row('가입자 많은 업종', v[7].map(function (q) { return esc(q[0]) + ' ' + q[1].toLocaleString(); }).join(' · '));
+      h += '<p class="cap">⚠ 상한 때문에 고소득 동은 보수가 낮게 나온다 · ⚠ 본사 일괄신고 사업장은 본사 동에 몰린다(강남·서초·여의도 과대) · ⚠ 공무원·사학·군인 연금 대상자는 빠진다</p>'; }
+    var gk = econGuKey(k8.slice(0, 5)); if (gk) h += econGuHtml([gk], gk.replace(/^\S+\s/, ''));
+    return h; }
   // ---------- v2.26.0 🛏 숙박시설(전국 · 지방행정인허가 다섯 업종) — tools/region/stay-bake.py → r/<구>/stay.json ----------
   var STY = [['🏨', '관광호텔', '#2563eb'], ['🎒', '호스텔', '#f59e0b'], ['🏖', '휴양콘도', '#0891b2'], ['🏯', '한옥체험', '#9a3412'], ['🏡', '관광펜션', '#16a34a'], ['🌾', '농어촌민박', '#65a30d'], ['🛌', '숙박업(여관·모텔 등)', '#7c3aed']];
   var STK = {}, RLOADST = {}, STYON = [1, 1, 1, 1, 1, 1, 1];

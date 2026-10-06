@@ -2421,13 +2421,13 @@
       row('매매(24개월)', tr[0] ? tr[0] + '건 · 평당 중앙 <b>' + pyeong(tr[1]) + '</b> · 마지막 ' + String(tr[2]).replace(/(\d{4})(\d\d)/, '$1.$2') + ' ' + (tr[3] / 1e4).toFixed(2) + '억(' + tr[4] + '㎡)' : '없음') +
       row('전세(12개월)', je[0] ? je[0] + '건 · 평당 보증금 중앙 ' + pyeong(je[1]) + (tr[0] >= 3 && je[0] >= 3 ? ' · 전세가율 약 <b>' + Math.round(je[1] / tr[1] * 100) + '%</b>' : '') : '없음') +
       row('월세(12개월)', wo[0] ? wo[0] + '건 · 월세 중앙 ' + wo[1] + '만 · 보증금 중앙 ' + Math.round(wo[2]).toLocaleString() + '만' : '없음') + HM_NOTE +
-      '<div class="lg-btns"><button data-taxh="' + esc(m.gu + '|' + it.x.k) + '">💰 세금 모의계산 — 증여·상속·양도·종부</button></div>' + src(m.source);
+      '<div class="lg-btns"><button data-taxh="' + esc(m.gu + '|' + it.x.k) + '">🧾 세무 — 살 때·보유·팔 때·증여·상속</button></div>' + src(m.source);
   }
   function homeLegend() {
     if (!on.home) return null;
     return ['🏠 주택 실거래(250m)', '<div class="lg-btns">' + Object.keys(HMS).map(function (k) { return '<button data-hm="' + k + '" class="' + (k === HM ? 'on' : '') + '">' + HMS[k][0] + '</button>'; }).join('') + '</div>' +
       li(hexA(HMS[HM][3], 0.6), HM === 'jr' ? '진할수록 전세가율 높음(40%→90%)' : '진할수록 높음(화면 안 하위 10% → 상위 10%)', 'box') + li(HTC[0], '아파트 단지') + li(HTC[1], '오피스텔') + li(HTC[2], '연립다세대') +
-      '<small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 숫자 = 평당(전용 · 천만 원) · 단독·다가구는 지번이 가려져 칸에 없음</small>'];
+      '<div class="lg-btns"><button data-taxfree="1">🧾 세무 — 직접 넣어 계산(살 때·보유·팔 때·증여·상속)</button></div><small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 숫자 = 평당(전용 · 천만 원) · 단독·다가구는 지번이 가려져 칸에 없음 · 단지 점을 누르면 그 단지로 세무 계산</small>'];
   }
   function homeDong(k8) { for (var gu in HOMED) { var d = HOMED[gu].dong[k8]; if (d) return { v: d, m: HOMED[gu] }; } return null; }
 
@@ -2893,24 +2893,26 @@
   //   규칙 = data/tax-rules.json(해마다 이 파일만) · 계산 = js/tax-engine.js(TaxEngine · 시제품 그대로 · 검사 14/14)
   //   개인 입력(취득가·주택 수·나이·관계)은 이 변수(TX.v)에만 — 저장·주소·전송 없음, 창을 닫으면 지운다
   //   시가 후보 = 같은 단지 · 전용 ±5% · 평가기간(상증법 시행령 제49조 · 시행규칙 제15조 제3항) — 거래 일자·층·동은 원자료에 없어 경계 달은 「일자 확인 필요」
-  var TX = { on: false, o: null, v: {}, tab: 'gift', area: null, date: null, pick: 'mid', off: null, offErr: '' }, TAXR = null, TAXP = null;
+  var TX = { on: false, o: null, v: {}, tab: 'buy', area: null, date: null, pick: 'mid', off: null, offErr: '' }, TAXR = null, TAXP = null;
   var TX_REL = [['lineal_ascendant', '부모·조부모 → 성인 자녀'], ['lineal_ascendant_minor', '부모·조부모 → 미성년 자녀'], ['spouse', '배우자'], ['lineal_descendant', '자녀 → 부모'], ['other_relative', '그 밖 친족']];
-  var TX_TAB = [['gift', '🎁 증여'], ['inherit', '🕯 상속'], ['cgt', '💸 양도'], ['jbs', '🏛 종부']];
+  var TX_TAB = [['buy', '🛒 살 때'], ['hold', '🏠 가지고 있을 때'], ['cgt', '💸 팔 때'], ['gift', '🎁 증여'], ['inherit', '🕯 상속'], ['all', '📊 한눈에']];
+  var TX_CAT = [['apt', '🏢 아파트·연립·다세대'], ['house', '🏠 단독·다가구'], ['offiH', '🏙 오피스텔(주거용)'], ['offiB', '🏙 오피스텔(업무용)'], ['shop', '🏬 상가·사무실 건물'], ['landAgg', '🟫 토지(나대지·잡종지)'], ['farm', '🌾 농지(전·답·과수원)'], ['forest', '🌲 임야']];
+  var TX_ISH = { apt: 1, house: 1, offiH: 1 };
   var TX_NOTE = '참고용 모의계산이며 세무 신고·상담이 아닙니다. 실제 신고는 세무사·국세청 확인을 거치세요. 국세청은 다른 매매사례나 감정가액을 시가로 볼 수 있습니다.';
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.39.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.41.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
   function txAddM(ym, k) { var y = Math.floor(ym / 100), m = ym % 100, t = y * 12 + (m - 1) + k; return Math.floor(t / 12) * 100 + (t % 12) + 1; }
   function txYm(ds) { var p = String(ds || '').split('-'); return +p[0] * 100 + +p[1]; }
   function taxOpen(o) {
-    var el = $('m2dPnl'); if (!el) return; TX.on = true; TX.o = o; TX.v = {}; TX.area = null; TX.off = null; TX.offErr = ''; TX.pick = 'mid';
+    var el = $('m2dPnl'); if (!el) return; TX.on = true; TX.o = o; if (!o.cat) o.cat = o.kind === 'house' ? 'house' : o.kind === 'land' ? 'landAgg' : 'apt'; TX.v = { urban: true }; TX.area = null; TX.off = null; TX.offErr = ''; TX.pick = 'mid';
     if (!TX.date) { var d = new Date(); TX.date = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
     AS.on = false; el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
-    el.innerHTML = '<div class="lg-h"><b>💰 세금 모의계산</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">세법 규칙·거래 자료를 받는 중…</p>';
+    el.innerHTML = '<div class="lg-h"><b>🧾 세무 — 부동산 세금·비용</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">세법 규칙·거래 자료를 받는 중…</p>';
     var need = [taxLoad()];
     if (o.gu) need.push(rGet(o.gu, 'deals.json').then(function (j) { o.dj = j; }).catch(function () { o.dj = null; }));
     Promise.all(need).then(function () { if (TX.o !== o) return; txMatch(o); taxForm(); if (o.pnu || o.ll) txOfficial(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">받지 못했다(' + esc(e && e.message || e) + ')</p>'; });
@@ -2955,22 +2957,26 @@
   function txIn(k, lab, unit, ph) { var v = TX.v[k]; return '<label><span>' + esc(lab) + ' <i>' + esc(unit || '') + '</i></span><input type="number" inputmode="decimal" step="any" data-tx="' + k + '" value="' + (v == null ? '' : v) + '" placeholder="' + esc(ph || '') + '"></label>'; }
   function txChk(k, lab) { return '<label class="pchk"><input type="checkbox" data-tx="' + k + '"' + (TX.v[k] ? ' checked' : '') + '> ' + esc(lab) + '</label>'; }
   function taxForm() {
-    var el = $('m2dPnl'), o = TX.o; if (!el || !TX.on || !o) return; var h = '<div class="lg-h"><b>💰 세금 모의계산</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
+    var el = $('m2dPnl'), o = TX.o; if (!el || !TX.on || !o) return; var c = o.cat, ish = TX_ISH[c], h = '<div class="lg-h"><b>🧾 세무 — 부동산 세금·비용</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
     h += '<p class="pbig mid" style="margin-top:2px">' + esc(TX_NOTE) + '</p>';
-    h += '<div class="rcard">' + row('대상', esc((o.name || o.addr || '') + (o.kind === 'apt' ? ' · 공동주택' : o.kind === 'house' ? ' · 단독주택' : ' · 토지'))) + (o.addr && o.name ? row('자리', esc(o.addr)) : '') + '</div>';
-    h += '<div class="lg-btns">' + TX_TAB.map(function (t) { return '<button data-txt="' + t[0] + '" class="' + (TX.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
-    h += '<div class="pform"><label><span>' + (TX.tab === 'gift' ? '증여일' : TX.tab === 'inherit' ? '상속개시일' : TX.tab === 'cgt' ? '양도일' : '기준일') + ' <i>평가기준일</i></span><input type="date" data-txd="1" value="' + esc(TX.date) + '"></label>';
-    if (o.areas && o.areas.length) h += '<label><span>전용면적 <i>거래 건수</i></span><select data-txa="1">' + o.areas.map(function (a) { return '<option value="' + a[0] + '"' + (a[0] === TX.area ? ' selected' : '') + '>' + a[0] + '㎡(' + Math.round(a[0] / 3.305785) + '평) · ' + a[1] + '건</option>'; }).join('') + '</select></label>';
-    h += '</div><div id="txOut"></div>';
-    h += '<h4>✍ 내 조건 <small style="font-weight:400;color:var(--ink2)">— 이 화면 메모리에만 · 저장·전송 안 함</small></h4><div class="pform">';
-    if (TX.tab === 'gift') h += '<label><span>누가 누구에게</span><select data-txs="rel">' + TX_REL.map(function (r) { return '<option value="' + r[0] + '"' + ((TX.v.rel || 'lineal_ascendant') === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select></label>' + txIn('prior', '10년 안 같은 사람 증여', '만 원') + txIn('used', '이미 쓴 증여공제', '만 원');
-    if (TX.tab === 'inherit') h += txIn('other', '이 부동산 말고 재산', '만 원') + txIn('debt', '채무·장례비', '만 원') + txIn('spsh', '배우자 상속분', '만 원') + txChk('sp', '배우자 있음');
-    if (TX.tab === 'cgt') h += txIn('buy', '취득가', '만 원') + txIn('exp', '필요경비', '만 원') + txIn('hold', '보유', '년') + txIn('live', '거주', '년') + txChk('one', '1세대1주택 비과세 요건을 갖췄다(내가 판단)') +
-      '<label><span>세율</span><select data-txs="sur"><option value="">기본(중과 없음)</option><option value="two"' + (TX.v.sur === 'two' ? ' selected' : '') + '>조정대상지역 2주택 중과</option><option value="three"' + (TX.v.sur === 'three' ? ' selected' : '') + '>조정대상지역 3주택 이상 중과</option>' + (o.kind === 'land' ? '<option value="nb"' + (TX.v.sur === 'nb' ? ' selected' : '') + '>비사업용 토지</option>' : '') + '</select></label>';
-    if (TX.tab === 'jbs') h += (o.kind === 'land' ? txIn('agg', '종합합산 토지 공시가격 합계', '만 원', '비우면 이 필지') + txIn('sep', '별도합산 토지 합계', '만 원') : txIn('osum', '주택 공시가격 합계', '만 원', '비우면 이 집') + txIn('homes', '주택 수', '채', '1') + txIn('age', '나이(만)', '세') + txIn('hy', '보유', '년') + txChk('one', '1세대1주택'));
+    h += '<div class="rcard">' + row('대상', esc((o.name || o.addr || '직접 넣기'))) + (o.addr && o.name ? row('자리', esc(o.addr)) : '') + '</div>';
+    h += '<div class="pform"><label><span>부동산 종류 <i>세금이 갈린다</i></span><select data-txc="1">' + TX_CAT.map(function (x) { return '<option value="' + x[0] + '"' + (c === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></label>';
+    h += '<label><span>' + (TX.tab === 'gift' ? '증여일' : TX.tab === 'inherit' ? '상속개시일' : TX.tab === 'cgt' ? '양도일' : TX.tab === 'buy' ? '취득일' : '기준일') + ' <i>평가기준일</i></span><input type="date" data-txd="1" value="' + esc(TX.date) + '"></label>';
+    if (o.areas && o.areas.length) h += '<label><span>전용면적 <i>거래 건수</i></span><select data-txa="1">' + o.areas.map(function (q) { return '<option value="' + q[0] + '"' + (q[0] === TX.area ? ' selected' : '') + '>' + q[0] + '㎡(' + Math.round(q[0] / 3.305785) + '평) · ' + q[1] + '건</option>'; }).join('') + '</select></label>';
+    h += '</div><div class="lg-btns">' + TX_TAB.map(function (t) { return '<button data-txt="' + t[0] + '" class="' + (TX.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
+    h += '<div id="txOut"></div>';
+    h += '<h4>✍ 내 조건 <small style="font-weight:400;color:var(--ink2)">— 이 화면 메모리에만 · 저장·전송 안 함 · 금액은 만 원</small></h4><div class="pform">';
+    h += txIn('osum', ish ? '공시가격(이 집)' : c === 'shop' ? '부속토지 공시가격' : '토지 공시가격(합)', '만 원', '비우면 받은 값') + (c === 'shop' || c === 'offiB' ? txIn('bldg', '건물 시가표준액', '만 원', '구청·위택스 확인') : '') + (ish ? txIn('area', '전용면적', '㎡', '85㎡ 이하 농특세 비과세') : '');
+    if (TX.tab === 'buy' || TX.tab === 'all') h += (ish && c !== 'offiH' ? txIn('homes', '취득 뒤 주택 수', '채', '1') + txChk('adj', '조정대상지역(국토교통부 고시 확인)') + txChk('temp2', '일시적 2주택(종전 주택 기한 안 처분)') + txChk('corp', '법인') : '') + (c === 'offiH' ? txChk('offiOk', '85㎡ 이하 · 부엌·화장실 갖춤(중개보수 0.5%)') : '');
+    if (TX.tab === 'hold' || TX.tab === 'all') h += txIn('years', '보유 기간(계산)', '년', '1') + txChk('urban', '도시지역(도시지역분 0.14%)') + (ish ? txChk('one', '1세대 1주택') + txIn('homes', '주택 수(종부세)', '채', '1') + txIn('age', '나이(만)', '세') + txIn('hy', '보유', '년') + txIn('jsum', '종부세 주택 공시가격 합계', '만 원', '비우면 이 집') : c === 'landAgg' ? txIn('agg', '종합합산 토지 공시가격 합계', '만 원', '비우면 이 땅') : c === 'shop' ? txIn('sep', '별도합산 토지 합계(종부세)', '만 원', '비우면 이 부속토지') : '');
+    if (TX.tab === 'cgt' || TX.tab === 'all') h += txIn('buy', '취득가', '만 원') + txIn('exp', '필요경비(취득세·중개보수·수리)', '만 원') + txIn('hold', '보유', '년') + (ish ? txIn('live', '거주', '년') + txChk('one', '1세대1주택 비과세 요건을 갖췄다(내가 판단)') : '') +
+      '<label><span>세율</span><select data-txs="sur"><option value="">기본(중과 없음)</option>' + (ish ? '<option value="two"' + (TX.v.sur === 'two' ? ' selected' : '') + '>조정대상지역 2주택 중과</option><option value="three"' + (TX.v.sur === 'three' ? ' selected' : '') + '>조정대상지역 3주택 이상 중과</option>' : '') + (/landAgg|farm|forest/.test(c) ? '<option value="nb"' + (TX.v.sur === 'nb' ? ' selected' : '') + '>비사업용 토지(+10%p)</option>' : '') + '</select></label>';
+    if (TX.tab === 'all') h += txIn('grow', '해마다 값 변화', '%', '0') ;
+    if (TX.tab === 'gift') h += '<label><span>누가 누구에게</span><select data-txs="rel">' + TX_REL.map(function (r) { return '<option value="' + r[0] + '"' + ((TX.v.rel || 'lineal_ascendant') === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select></label>' + txIn('prior', '10년 안 같은 사람 증여', '만 원') + txIn('used', '이미 쓴 증여공제', '만 원') + (ish ? txChk('adj', '조정대상지역') + txChk('gfam', '1세대 1주택자가 배우자·직계존비속에게(증여 취득세 중과 제외)') : '');
+    if (TX.tab === 'inherit') h += txIn('other', '이 부동산 말고 재산', '만 원') + txIn('debt', '채무·장례비', '만 원') + txIn('spsh', '배우자 상속분', '만 원') + txChk('sp', '배우자 있음') + (ish ? txChk('ione', '상속으로 1가구 1주택(취득세 특례)') : '');
     h += '</div>';
     h += '<div class="src">세법: ' + esc(Object.keys(TAXR.versions).map(function (k) { return k + ' ' + TAXR.versions[k]; }).join(' · ')) + ' · 확인 ' + esc(TAXR.checked) + ' · 거래: 국토교통부 실거래가 · 공시가격: 국토교통부 브이월드(누를 때 받고 저장 안 함)</div>';
-    h += '<p class="pbig bad" style="font-size:12px">' + esc(TX_NOTE) + ' 특정인의 세금을 대신 계산하거나 상담하는 기능이 아니다.</p>';
+    h += '<p class="pbig bad" style="font-size:12px">' + esc(TX_NOTE) + ' 특정인의 세금을 대신 계산하거나 상담하는 기능이 아니다. 법무사 보수·국민주택채권·인지세·등기 비용은 아직 넣지 않았다.</p>';
     el.innerHTML = h; txOut(); }
   function txDealSvg(all, w, val) {   // 거래 한 건씩(점) · 평가기간(색 띠) · 고른 가액(선)
     if (!all.length) return ''; var W = 300, H = 92, L = 34, B = 16, yms = all.map(function (r) { return r.ym; }), a0 = Math.min.apply(null, yms.concat([w[0]])), a1 = Math.max.apply(null, yms.concat([w[1]]));
@@ -2987,61 +2993,98 @@
   function txHBars(items, title) {   // 가로 막대 — [이름, 값, 색, 굵게]
     var mx = Math.max.apply(null, items.map(function (x) { return x[1]; })) || 1;
     return '<div class="simc"><b style="font-size:12.5px">' + esc(title) + '</b>' + items.map(function (x) { return '<div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px"><span style="flex:0 0 92px;' + (x[3] ? 'font-weight:800' : '') + '">' + esc(x[0]) + '</span><span style="flex:1;background:var(--chip);border-radius:5px;height:14px;position:relative"><i style="position:absolute;left:0;top:0;bottom:0;width:' + Math.max(1, x[1] / mx * 100).toFixed(1) + '%;background:' + x[2] + ';border-radius:5px"></i></span><b style="flex:0 0 64px;text-align:right">' + txWon(x[1]) + '</b></div>'; }).join('') + '</div>'; }
-  function txRun(val) {
-    var E = window.TaxEngine, v = TX.v, o = TX.o, M = function (k) { return (+v[k] || 0) * 1e4; };
-    if (TX.tab === 'gift') return E.gift(TAXR, { value: val, relation: v.rel || 'lineal_ascendant', priorGift10y: M('prior'), priorDeductUsed: M('used') });
-    if (TX.tab === 'inherit') return E.inherit(TAXR, { estate: val + M('other'), debts: M('debt'), spouseAlive: !!v.sp, spouseShare: M('spsh') });
-    if (TX.tab === 'cgt') { var r = E.cgt(TAXR, { kind: o.kind === 'land' ? (v.sur === 'nb' ? 'nonbizLand' : 'land') : 'house', sell: val, buy: M('buy'), expense: M('exp'), holdYears: +v.hold || 0, liveYears: +v.live || 0, oneHouseExempt: !!v.one && o.kind !== 'land', surcharge: v.sur === 'two' || v.sur === 'three' ? v.sur : 0 });
-      if (!v.buy) r.warn = ['취득가를 넣어야 양도차익이 나온다 — 지금은 0원으로 계산'].concat(r.warn || []); return r; }
-    if (o.kind === 'land') return E.jbsLand(TAXR, { aggregateSum: v.agg ? M('agg') : val, separateSum: M('sep') });
-    return E.jbsHouse(TAXR, { officialSum: v.osum ? M('osum') : val, homes: +v.homes || 1, oneHouse: !!v.one, age: +v.age || 0, holdYears: +v.hy || 0 }); }
+  function txOffW() { var o = TX.o, of = txOffVal(); if (TX.v.osum) return TX.v.osum * 1e4; if (of && TX_ISH[o.cat]) return of.mid; return o.land || (of ? of.mid : 0); }
+  function txRun(val, tab) {
+    var E = window.TaxEngine, v = TX.v, o = TX.o, c = o.cat, ish = TX_ISH[c], M = function (k) { return (+v[k] || 0) * 1e4; }, off = txOffW(), area = +v.area || TX.area || 0; tab = tab || TX.tab;
+    var cgtKind = ish ? 'house' : c === 'shop' || c === 'offiB' ? 'building' : (v.sur === 'nb' ? 'nonbizLand' : 'land');
+    function pack(parts, steps, warn) { var t = 0; parts.forEach(function (q) { t += q[1]; }); return { total: Math.round(t), parts: parts, steps: steps, warn: warn }; }
+    if (tab === 'buy') { var a1 = E.acq(TAXR, { cat: c, cause: 'buy', price: val, homesAfter: +v.homes || 1, adj: !!v.adj, temp2: !!v.temp2, corp: !!v.corp, area: area }), b1 = E.broker(TAXR, { cat: c, price: val, offiOk: !!v.offiOk });
+      return pack([['취득세', a1.acq, '#dc2626'], ['지방교육세', a1.edu, '#f59e0b'], ['농어촌특별세', a1.rural, '#a16207'], ['중개보수(상한)', b1.total, '#64748b']], a1.steps.concat([['— 중개보수', '']]).concat(b1.steps), a1.warn.concat(b1.warn)); }
+    if (tab === 'hold') { var yrs = Math.max(1, +v.years || 1), pr = E.prop(TAXR, { cat: c, official: c === 'shop' || c === 'offiB' ? 0 : off, bldg: M('bldg'), landVal: c === 'shop' ? off : 0, oneHouse: !!v.one, urban: v.urban !== false }), jb = null;
+      if (ish) jb = E.jbsHouse(TAXR, { officialSum: v.jsum ? M('jsum') : off, homes: +v.homes || 1, oneHouse: !!v.one, age: +v.age || 0, holdYears: +v.hy || 0 });
+      else if (c === 'landAgg') jb = E.jbsLand(TAXR, { aggregateSum: v.agg ? M('agg') : off, separateSum: 0 });
+      else if (c === 'shop') jb = E.jbsLand(TAXR, { aggregateSum: 0, separateSum: v.sep ? M('sep') : off });
+      var parts = [['재산세·도시지역분·교육세(한 해)', pr.total * yrs, '#7c3aed']]; if (jb) parts.push(['종합부동산세·농특세(한 해)', jb.total * yrs, '#2563eb']);
+      var st = pr.steps.slice(); if (jb) st = st.concat([['— 종합부동산세', '']]).concat(jb.steps); if (yrs > 1) st.push(['× 보유 ' + yrs + '년(같은 값 가정)', '']);
+      return pack(parts, st, pr.warn.concat(jb ? jb.warn : []).concat(c === 'farm' || c === 'forest' ? ['분리과세 농지·임야는 종부세 대상이 아니다(종합부동산세법 — 토지분은 종합합산·별도합산만)'] : []).concat(c === 'offiH' ? ['주거용 오피스텔은 실제 쓰임에 따라 주택으로 재산세·종부세·주택 수에 들 수 있다'] : [])); }
+    if (tab === 'cgt') { var r = E.cgt(TAXR, { kind: cgtKind, sell: val, buy: M('buy'), expense: M('exp'), holdYears: +v.hold || 0, liveYears: +v.live || 0, oneHouseExempt: !!v.one && ish, surcharge: v.sur === 'two' || v.sur === 'three' ? v.sur : 0 }), b2 = E.broker(TAXR, { cat: c, price: val, offiOk: !!v.offiOk });
+      if (!v.buy) r.warn = ['취득가를 넣어야 양도차익이 나온다 — 지금은 0원으로 계산'].concat(r.warn || []);
+      return pack([['양도소득세', r.tax || 0, '#dc2626'], ['지방소득세', r.local || 0, '#f59e0b'], ['중개보수(상한)', b2.total, '#64748b']], r.steps.concat([['— 중개보수', '']]).concat(b2.steps), (r.warn || []).concat(b2.warn)); }
+    if (tab === 'gift') { var g = E.gift(TAXR, { value: val, relation: v.rel || 'lineal_ascendant', priorGift10y: M('prior'), priorDeductUsed: M('used') }), ga = E.acq(TAXR, { cat: c, cause: 'gift', price: val, official: off, adj: !!v.adj, giftFamily: !!v.gfam, area: area });
+      return pack([['증여세', g.total, '#dc2626'], ['취득세(받는 사람)', ga.acq, '#7c3aed'], ['지방교육세', ga.edu, '#f59e0b'], ['농어촌특별세', ga.rural, '#a16207']], g.steps.concat([['— 증여 취득세(받는 사람)', '']]).concat(ga.steps), (g.warn || []).concat(ga.warn)); }
+    if (tab === 'inherit') { var ih = E.inherit(TAXR, { estate: val + M('other'), debts: M('debt'), spouseAlive: !!v.sp, spouseShare: M('spsh') }), ia = E.acq(TAXR, { cat: c, cause: 'inherit', price: off || val, inheritOne: !!v.ione, area: area });
+      return pack([['상속세', ih.total, '#dc2626'], ['취득세(상속인)', ia.acq, '#7c3aed'], ['지방교육세', ia.edu, '#f59e0b'], ['농어촌특별세', ia.rural, '#a16207']], ih.steps.concat([['— 상속 취득세(시가표준액)', '']]).concat(ia.steps), (ih.warn || []).concat(ia.warn).concat(off ? [] : ['상속 취득세는 시가표준액(공시가격)으로 매긴다 — 공시가격이 없어 고른 가액으로 셈'])); }
+    return null; }
+  function txAll(val) {   // 📊 한눈에 — 사서 N년 가지고 판다
+    var v = TX.v, yrs = Math.max(1, +v.years || 5), g = (+v.grow || 0) / 100, sell = val * Math.pow(1 + g, yrs), b = txRun(val, 'buy'), hv = {}; Object.keys(v).forEach(function (k) { hv[k] = v[k]; }); hv.years = yrs;
+    var keep = TX.v; TX.v = hv; var h1 = txRun(val, 'hold'); TX.v.buy = val / 1e4; TX.v.exp = (b.total) / 1e4; TX.v.hold = yrs; if (TX.v.live == null && TX_ISH[TX.o.cat]) TX.v.live = yrs; var c1 = txRun(sell, 'cgt'); TX.v = keep;
+    return { buy: b, hold: h1, cgt: c1, sell: sell, yrs: yrs }; }
   function txOut() {
-    var el = $('txOut'); if (!el || !TX.on) return; var o = TX.o, h = '', K = txCands(), cs = txStats(K.c), of = txOffVal();
+    var el = $('txOut'); if (!el || !TX.on) return; var o = TX.o, h = '', K = txCands(), cs = txStats(K.c), of = txOffVal(), c = o.cat;
     var isVal = TX.tab === 'gift' || TX.tab === 'inherit';
-    if (o.kind === 'apt' || (o.rows && o.rows.length)) {
+    if (o.rows && o.rows.length && TX.tab !== 'hold') {
       h += '<h4>① 시가 후보 — 같은 단지 · 전용 ±' + Math.round(TAXR.inheritGift.similarSaleApt.areaTol * 100) + '% · ' + (isVal ? '평가기간 ' + String(K.w ? K.w[0] : '').replace(/(\d{4})(\d\d)/, '$1.$2') + '~' + String(K.w ? K.w[1] : '').replace(/(\d{4})(\d\d)/, '$1.$2') : '최근 12개월(참고)') + '</h4>';
-      if (!o.rows || !o.rows.length) h += '<p class="desc">이 단지의 매매 실거래(24개월)가 자료에 없다 — 아래 공시가격(보충적 평가)이나 직접 넣은 값으로 계산한다.</p>';
-      else { h += txDealSvg(K.all, K.w || [0, 0], (TX.pick !== 'off' && TX.pick !== 'own' && cs) ? cs[TX.pick] : null);
-        if (cs) h += '<div class="rcard">' + row('후보', cs.n + '건 · 최저 ' + txWon(cs.min) + ' · 중앙 ' + txWon(cs.mid) + ' · 최고 ' + txWon(cs.max) + (K.c.some(function (r) { return r.edge; }) ? ' <em>(경계 달 거래는 일자 확인 필요 — 원자료에 일자 없음)</em>' : '')) + '</div>';
-        else h += '<p class="desc">평가기간 안에 이 면적 거래가 없다 → 보충적 평가(공시가격)나 감정평가로 간다.</p>'; }
-      h += '<p class="lg-n">' + esc(TAXR.inheritGift.similarSaleApt._ + ' · ' + TAXR.inheritGift.valuationWindow._) + ' — 공동주택가격 ±5% 조건과 「공시가격 차이가 가장 작은 1건」은 거래의 동·호가 없어 판정하지 못한다. 평가대상 자체의 매매·감정·수용가가 있으면 그것이 먼저다.</p>'; }
-    h += '<h4>② 공시가격(보충적 평가)</h4>';
-    if (o.kind === 'land') h += '<div class="rcard">' + row('개별공시지가 × 면적', o.land ? '<b>' + txWon(o.land) + '</b> <em>(㎡당 ' + txWon(o.jiga) + ' × ' + Math.round(o.ar).toLocaleString() + '㎡)</em>' : '필지 카드에서 공시지가를 받은 뒤 다시 열기') + '</div>';
-    if (of) h += '<div class="rcard">' + row(o.kind === 'house' ? '개별주택가격' : '공동주택가격', '<b>' + txWon(of.mid) + '</b>' + (of.n > 1 ? ' <em>(이 면적 ' + of.n + '호 · ' + txWon(of.min) + '~' + txWon(of.max) + ' · 가운데 값)</em>' : '') + ' · ' + esc(of.yr || '') + '년') + '</div>';
-    else if (o.kind !== 'land') h += '<p class="lg-n">' + (TX.offErr ? esc(TX.offErr) : '브이월드에서 받는 중…') + '</p>';
-    var pk = [['min', '후보 최저'], ['mid', '후보 중앙'], ['max', '후보 최고'], ['last', '가장 최근'], ['off', '공시가격'], ['own', '직접']].filter(function (p) { return p[0] === 'own' || (p[0] === 'off' ? (of || o.land) : cs); });
+      h += txDealSvg(K.all, K.w || [0, 0], (TX.pick !== 'off' && TX.pick !== 'own' && cs) ? cs[TX.pick] : null);
+      if (cs) h += '<div class="rcard">' + row('후보', cs.n + '건 · 최저 ' + txWon(cs.min) + ' · 중앙 ' + txWon(cs.mid) + ' · 최고 ' + txWon(cs.max) + (K.c.some(function (r) { return r.edge; }) ? ' <em>(경계 달 거래는 일자 확인 필요 — 원자료에 일자 없음)</em>' : '')) + '</div>';
+      else h += '<p class="desc">이 기간에 이 면적 거래가 없다 → 공시가격(보충적 평가)이나 감정평가.</p>';
+      if (isVal) h += '<p class="lg-n">' + esc(TAXR.inheritGift.similarSaleApt._ + ' · ' + TAXR.inheritGift.valuationWindow._) + ' — 공동주택가격 ±5% 조건과 「공시가격 차이가 가장 작은 1건」은 거래의 동·호가 없어 판정하지 못한다.</p>'; }
+    else if (o.kind === 'apt' && TX.tab !== 'hold') h += '<p class="desc">이 단지의 매매 실거래(24개월)가 자료에 없다 — 공시가격이나 직접 넣은 값으로 계산한다.</p>';
+    h += '<h4>② 공시가격(시가표준액 · 보유세·상속 취득세의 기준)</h4>';
+    if (o.land && !TX_ISH[c]) h += '<div class="rcard">' + row('개별공시지가 × 면적', '<b>' + txWon(o.land) + '</b> <em>(㎡당 ' + txWon(o.jiga) + ' × ' + Math.round(o.ar).toLocaleString() + '㎡)</em>') + '</div>';
+    if (of) h += '<div class="rcard">' + row(o.kind === 'house' ? '개별주택가격' : '공동주택가격', '<b>' + txWon(of.mid) + '</b>' + (of.n > 1 ? ' <em>(이 면적 ' + of.n + '호 · ' + txWon(of.min) + '~' + txWon(of.max) + ')</em>' : '') + ' · ' + esc(of.yr || '') + '년') + '</div>';
+    else if (TX_ISH[c] && (o.pnu || o.ll)) h += '<p class="lg-n">' + (TX.offErr ? esc(TX.offErr) : '브이월드에서 받는 중…') + '</p>';
+    if (TX.v.osum) h += '<p class="lg-n">✍ 공시가격 직접 넣음: ' + txWon(TX.v.osum * 1e4) + '</p>';
+    var pk = [['min', '후보 최저'], ['mid', '후보 중앙'], ['max', '후보 최고'], ['last', '가장 최근'], ['off', '공시가격'], ['own', '직접']].filter(function (p) { return p[0] === 'own' || (p[0] === 'off' ? (of || o.land || TX.v.osum) : cs); });
     if (!pk.some(function (p) { return p[0] === TX.pick; })) TX.pick = pk[0][0];
-    h += '<h4>③ 어느 값으로 계산할까</h4><div class="lg-btns">' + pk.map(function (p) { return '<button data-txp="' + p[0] + '" class="' + (TX.pick === p[0] ? 'on' : '') + '">' + p[1] + '</button>'; }).join('') + '</div>';
-    if (TX.pick === 'own') h += '<div class="pform">' + txIn('own', '가액 직접', '원', '예: 4500000000').replace('data-tx="own"', 'data-tx="own" data-txraw="1"') + '</div>';
-    var val = txValue(); if (TX.tab === 'jbs' && o.kind !== 'land') { val = TX.v.osum ? TX.v.osum * 1e4 : TX.pick === 'own' ? (+TX.v.own || 0) : of ? of.mid : 0; h += '<p class="lg-n">종부세는 시가가 아니라 <b>공시가격</b>으로 매긴다 — ✍ 「주택 공시가격 합계」 → 받은 공시가격 → 「직접」 차례로 쓴다.</p>'; }
-    if (!val) { el.innerHTML = h + '<p class="pbig bad">계산할 가액이 없다 — 공시가격을 받거나 「직접」에 넣는다.</p>'; return; }
-    var r = txRun(val), tot = r.total != null ? r.total : (r.tax || 0);
-    h += '<h4>④ 결과 — ' + esc(TX_TAB.filter(function (t) { return t[0] === TX.tab; })[0][1]) + '</h4><p class="pbig ' + (tot ? 'bad' : 'good') + '">가액 <b>' + txWon(val) + '</b> → 낼 세금 약 <b style="font-size:17px">' + txWon(tot) + '원</b>' + (val ? ' <small>(가액의 ' + (tot / val * 100).toFixed(tot / val < 0.01 ? 2 : 1) + '%)</small>' : '') + '</p>';
-    if (val && tot) h += txPie([['세금', tot, '#dc2626'], ['남는 몫', Math.max(0, val - tot), '#16a34a']], '가액 가운데 세금');
+    if (TX.tab !== 'hold') { h += '<h4>③ 어느 값으로 계산할까(거래가·시가)</h4><div class="lg-btns">' + pk.map(function (p) { return '<button data-txp="' + p[0] + '" class="' + (TX.pick === p[0] ? 'on' : '') + '">' + p[1] + '</button>'; }).join('') + '</div>';
+      if (TX.pick === 'own') h += '<div class="pform">' + txIn('own', '가액 직접', '원', '예: 4500000000') + '</div>'; }
+    var val = TX.pick === 'off' ? txOffW() : txValue(); if (TX.tab === 'hold') { val = txOffW(); if (!val && c !== 'shop' && c !== 'offiB') { el.innerHTML = h + '<p class="pbig bad">보유세는 공시가격으로 매긴다 — 공시가격을 받거나 ✍ 칸에 넣는다.</p>'; return; } }
+    else if (!val) { el.innerHTML = h + '<p class="pbig bad">계산할 가액이 없다 — 공시가격을 받거나 「직접」에 넣는다.</p>'; return; }
+    if (TX.tab === 'all') { var A = txAll(val), sumB = A.buy.total, sumH = A.hold.total, sumS = A.cgt.total, tot = sumB + sumH + sumS;
+      h += '<h4>④ 한눈에 — 지금 ' + txWon(val) + '에 사서 ' + A.yrs + '년 가지고 ' + txWon(A.sell) + '에 판다</h4><p class="pbig bad">세금·비용 합계 약 <b style="font-size:17px">' + txWon(tot) + '원</b> <small>(산 값의 ' + (tot / val * 100).toFixed(1) + '%)</small></p>';
+      h += txHBars([['🛒 살 때', sumB, '#7c3aed', true], ['🏠 ' + A.yrs + '년 보유', sumH, '#2563eb', true], ['💸 팔 때', sumS, '#dc2626', true]], '언제 얼마나 나가나');
+      h += txPie([['살 때', A.buy], ['보유', A.hold], ['팔 때', A.cgt]].reduce(function (acc, st) { return acc.concat(st[1].parts.map(function (q) { return [st[0] + ' · ' + q[0].replace(/\(한 해\)/, ''), q[1], q[2]]; })); }, []), '세금·비용 구성');
+      h += '<p class="lg-n">보유세는 공시가격이 같다고 보고 해마다 같은 값을 더했다 · 팔 때 필요경비 = 살 때 낸 세금·중개보수 · 보유 = 거주 기간으로 가정(주택) · 상세는 각 탭.</p>';
+      [['🛒 살 때', A.buy], ['🏠 보유', A.hold], ['💸 팔 때', A.cgt]].forEach(function (q) { (q[1].warn || []).slice(0, 3).forEach(function (w2) { h += '<p class="lg-n" style="color:#b91c1c">⚠ ' + esc(q[0] + ' — ' + w2) + '</p>'; }); });
+      h += txCpa(val, A); el.innerHTML = h; return; }
+    var r = txRun(val), tot2 = r.total;
+    h += '<h4>④ 결과 — ' + esc(TX_TAB.filter(function (t) { return t[0] === TX.tab; })[0][1]) + '</h4><p class="pbig ' + (tot2 ? 'bad' : 'good') + '">' + (TX.tab === 'hold' ? '공시가격 ' : '가액 ') + '<b>' + txWon(val || txOffW()) + '</b> → 낼 돈 약 <b style="font-size:17px">' + txWon(tot2) + '원</b>' + (val ? ' <small>(' + (tot2 / val * 100).toFixed(tot2 / val < 0.01 ? 2 : 1) + '%)</small>' : '') + '</p>';
+    if (r.parts.length > 1) h += txPie(r.parts.map(function (q) { return [q[0], q[1], q[2]]; }), '무엇으로 나가나');
     if (isVal && cs && cs.n > 1) { var it = [['후보 최저', cs.min], ['후보 중앙', cs.mid], ['후보 최고', cs.max]].concat(of ? [['공시가격', of.mid]] : []).map(function (q) { var rr = txRun(q[1]); return [q[0] + ' ' + txWon(q[1]), rr.total, q[0] === '공시가격' ? '#0891b2' : '#7c3aed', false]; });
       var mn = Math.min.apply(null, it.map(function (x) { return x[1]; })), mxx = Math.max.apply(null, it.map(function (x) { return x[1]; }));
       h += txHBars(it, '시가 선택에 따른 세액 범위 — 최저·최고 차이 ' + txWon(mxx - mn) + '원'); }
-    h += '<table class="it"><tr><th>계산 과정</th><th>금액</th><th>근거</th></tr>' + r.steps.map(function (q) { var n = q[1], isR = typeof n === 'number' && n > 0 && n < 1; return '<tr><td>' + esc(q[0]) + '</td><td>' + (isR ? (n * 100).toFixed(0) + '%' : txWon(n)) + '</td><td style="text-align:left;font-size:10.5px">' + esc(q[2] || '') + '</td></tr>'; }).join('') + '</table>';
+    h += '<table class="it"><tr><th>계산 과정</th><th>금액</th><th>근거</th></tr>' + r.steps.map(function (q) { var n = q[1], isR = typeof n === 'number' && n > 0 && n < 1; return '<tr><td>' + esc(q[0]) + '</td><td>' + (n === '' ? '' : isR ? (n * 100).toFixed(n < 0.01 ? 3 : 1).replace(/\.?0+$/, '') + '%' : txWon(n)) + '</td><td style="text-align:left;font-size:10.5px">' + esc(q[2] || '') + '</td></tr>'; }).join('') + '</table>';
     (r.warn || []).forEach(function (w2) { h += '<p class="lg-n" style="color:#b91c1c">⚠ ' + esc(w2) + '</p>'; });
+    h += txCpa(val, null, r);
     el.innerHTML = h; }
+  var TX_CHECK = ['세대 구성과 주택 수(분양권·입주권·주거용 오피스텔 포함 여부) — 취득세 중과·양도세 비과세·종부세 1세대1주택', '조정대상지역 여부(취득·양도 당시 국토교통부 고시)', '시가 — 평가대상 자체 거래·감정가액이 먼저 · 유사매매사례 선택(동·호·공시가격 ±5%)', '1세대1주택 비과세 보유·거주 요건(소득세법 시행령 제154조) — 이 계산은 미대조', '취득가·필요경비 증빙(취득세·중개보수·자본적 지출)', '증여 10년 합산 · 상속공제(금융재산·동거주택 등) — 미구현', '재산세 과세표준상한·세부담상한 — 미구현(고지서와 다를 수 있음)', '농지 자경 감면·비사업용 토지 판정'];
+  function txCpaRows(val, A, r) { var o = TX.o, v = TX.v, cat = TX_CAT.filter(function (x) { return x[0] === o.cat; })[0];
+    var R2 = [['대상', (o.name || o.addr || '직접') + ' · ' + (cat ? cat[1].replace(/^\S+ /, '') : ''), '선택'], ['계산', TX_TAB.filter(function (t) { return t[0] === TX.tab; })[0][1].replace(/^\S+ /, ''), '탭'], ['가액', txWon(val) + ' (' + ({ min: '후보 최저', mid: '후보 중앙', max: '후보 최고', last: '가장 최근', off: '공시가격', own: '직접' })[TX.pick] + ')', '실거래·공시가격·입력'], ['공시가격', txWon(txOffW()), '브이월드·입력']];
+    Object.keys(v).forEach(function (k) { if (v[k] != null && v[k] !== '' && k !== 'own') R2.push([k, String(v[k]), '입력(만 원·년·여부)']); });
+    if (r) r.parts.forEach(function (q) { R2.push([q[0], txWon(q[1]), '계산']); }); if (A) { R2.push(['살 때', txWon(A.buy.total), '계산'], [A.yrs + '년 보유', txWon(A.hold.total), '계산'], ['팔 때(' + txWon(A.sell) + ')', txWon(A.cgt.total), '계산']); }
+    return R2; }
+  function txCpa(val, A, r) { var R2 = txCpaRows(val, A, r); TX.cpa = { val: val, A: A, r: r };
+    return '<details class="simc"><summary><b>📋 세무사 검토용 정리</b> — 가정·근거·확인할 것</summary><table class="it"><tr><th>항목</th><th>값</th><th>근거</th></tr>' + R2.map(function (q) { return '<tr><td>' + esc(q[0]) + '</td><td>' + esc(q[1]) + '</td><td style="text-align:left;font-size:10.5px">' + esc(q[2]) + '</td></tr>'; }).join('') + '</table><div style="font-size:12px;margin-top:6px"><b>세무사에게 확인할 것</b>' + TX_CHECK.map(function (x, i) { return '<div style="margin-top:3px">' + (i + 1) + '. ' + esc(x) + '</div>'; }).join('') + '</div><div class="lg-btns"><button data-txcpa="1">📋 세무사에게 보낼 글로 복사</button></div></details>'; }
   function txPie(parts, title) { return '<div class="simc"><b style="font-size:12.5px">' + esc(title) + '</b>' + pie(parts, 92) + '</div>'; }
   if ($('m2dPnl')) {
-    $('m2dPnl').addEventListener('click', function (e) { if (!TX.on) return; var b = e.target.closest('[data-txt],[data-txp]'); if (!b) return;
+    $('m2dPnl').addEventListener('click', function (e) { if (!TX.on) return; if (e.target.closest('[data-txcpa]')) { var C2 = TX.cpa || {}, tx = '[부동산 세금 모의계산 — 세무사 검토 요청]\n' + txCpaRows(C2.val, C2.A, C2.r).map(function (q) { return '- ' + q[0] + ': ' + q[1] + ' (' + q[2] + ')'; }).join('\n') + '\n\n확인 부탁드릴 것:\n' + TX_CHECK.map(function (x, i) { return (i + 1) + '. ' + x; }).join('\n') + '\n\n(데이터 압축지도 · 참고용 · 세법: ' + Object.keys(TAXR.versions).map(function (k) { return k + ' ' + TAXR.versions[k]; }).join(' · ') + ')'; if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { e.target.closest('[data-txcpa]').textContent = '✅ 복사됨'; }); return; } var b = e.target.closest('[data-txt],[data-txp]'); if (!b) return;
       if (b.hasAttribute('data-txt')) { TX.tab = b.getAttribute('data-txt'); taxForm(); return; } TX.pick = b.getAttribute('data-txp'); txOut(); if (TX.pick === 'own') { var q = document.querySelector('[data-tx="own"]'); if (q) q.focus(); } });
     $('m2dPnl').addEventListener('input', function (e) { if (!TX.on) return; var t = e.target, k = t.getAttribute('data-tx');
       if (k) { TX.v[k] = t.type === 'checkbox' ? t.checked : (t.value === '' ? null : +t.value); if (k === 'own') { var fo = document.activeElement === t; txOut(); if (fo) { var q = document.querySelector('[data-tx="own"]'); if (q) { q.focus(); try { q.setSelectionRange(q.value.length, q.value.length); } catch (e2) {} } } return; } txOut(); return; }
       if (t.hasAttribute('data-txd')) { if (t.value) { TX.date = t.value; txOut(); } return; } });
     $('m2dPnl').addEventListener('change', function (e) { if (!TX.on) return; var t = e.target;
-      if (t.hasAttribute('data-txa')) { TX.area = +t.value; txOut(); return; } var k = t.getAttribute('data-txs'); if (k) { TX.v[k] = t.value; txOut(); return; } if (t.type === 'checkbox' && t.getAttribute('data-tx')) { TX.v[t.getAttribute('data-tx')] = t.checked; txOut(); } });
+      if (t.hasAttribute('data-txa')) { TX.area = +t.value; txOut(); return; } if (t.hasAttribute('data-txc')) { TX.o.cat = t.value; taxForm(); return; } var k = t.getAttribute('data-txs'); if (k) { TX.v[k] = t.value; txOut(); return; } if (t.type === 'checkbox' && t.getAttribute('data-tx')) { TX.v[t.getAttribute('data-tx')] = t.checked; txOut(); } });
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-taxh]'); if (b) { var a = b.getAttribute('data-taxh').split('|'), x = HCX.filter(function (q) { return q.m.gu === a[0] && String(q.k) === a[1]; })[0]; if (!x) return; var c = x.c;
-      taxOpen({ kind: 'apt', gu: a[0], cxk: a[1], name: c[1], t: c[0], umd: x.m.umds[c[2]], addr: guName(a[0]) + ' ' + x.m.umds[c[2]], ll: c[3] ? [c[4], c[3]] : null }); return; }
+      taxOpen({ kind: 'apt', cat: c[0] === 1 ? 'offiH' : 'apt', gu: a[0], cxk: a[1], name: c[1], t: c[0], umd: x.m.umds[c[2]], addr: guName(a[0]) + ' ' + x.m.umds[c[2]], ll: c[3] ? [c[4], c[3]] : null }); return; }
+    if (e.target.closest('[data-taxfree]')) { TX.pick = 'own'; taxOpen({ kind: 'land', cat: 'apt', name: '직접 넣기' }); return; }
     b = e.target.closest('[data-taxl]'); if (!b || !LCUR || !LCUR.f) return; var it = LCUR, f = it.f, ch = (it.ch || []).slice().pop(), fr = (it.fr || [])[0], ar = ch ? +ch.lndpclAr : fr ? +fr.lndpclAr : 0;
     var py = {}; (it.pr || []).forEach(function (q) { if (+q.pblntfPclnd) py[q.stdrYear] = +q.pblntfPclnd; }); var ys = Object.keys(py).sort(), jg = ys.length ? py[ys[ys.length - 1]] : (+f.jiga || 0);
     var bu = (it.bd || []).map(function (q) { return (q.mainPrposCodeNm || '') + (q.detailPrposCodeNm || ''); }).join(' '), kind = /공동주택|아파트|연립|다세대/.test(bu) ? 'apt' : /단독주택|다가구/.test(bu) ? 'house' : 'land';
     var ad = String(f.addr || ''), m = ad.match(/(\S+[동리가로])\s+(산?\d+(?:-\d+)?)\s*$/), jb = String(f.jibun || '').replace(/\s*\D+$/, '').replace(/^산/, '');
-    taxOpen({ kind: kind, pnu: f.pnu, addr: ad, gu: kind === 'apt' ? String(f.pnu).slice(0, 5) : null, umd: m ? m[1] : null, jibun: jb, land: jg && ar ? jg * ar : 0, jiga: jg, ar: ar }); });
+    var jm = ch ? String(ch.lndcgrCodeNm || '') : '', cat0 = kind === 'apt' ? 'apt' : kind === 'house' ? 'house' : /근린|업무|판매|숙박|교육연구/.test(bu) ? 'shop' : /^(전|답|과수원)/.test(jm) ? 'farm' : /임야/.test(jm) ? 'forest' : 'landAgg';
+    taxOpen({ kind: kind, cat: cat0, pnu: f.pnu, addr: ad, gu: kind === 'apt' ? String(f.pnu).slice(0, 5) : null, umd: m ? m[1] : null, jibun: jb, land: jg && ar ? jg * ar : 0, jiga: jg, ar: ar }); });
   var PIEC = ['#2563eb', '#db2777', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2', '#dc2626', '#65a30d'];
   function pieAge(a) { if (!a || a.length < 8) return ''; var t = function (i, j) { var x = 0; for (var k = i; k <= j && k < a.length; k++) x += a[k] || 0; return x; };
     return '<div class="cap">나이 구성</div>' + pie([['0~19세', t(0, 1), '#22c55e'], ['20~39세', t(2, 3), '#3b82f6'], ['40~59세', t(4, 5), '#8b5cf6'], ['60~79세', t(6, 7), '#f59e0b'], ['80세 이상', t(8, 9), '#dc2626']], 84); }
@@ -4540,7 +4583,7 @@
         return row(esc(b.buldNm || b.buldDongNm || b.buldMainAtachSeCodeNm || '건물'), esc(b.mainPrposCodeNm || '') + (b.detailPrposCodeNm && b.detailPrposCodeNm !== b.mainPrposCodeNm ? '(' + esc(b.detailPrposCodeNm) + ')' : '') + ' · 지상 ' + esc(b.groundFloorCo || '?') + '층/지하 ' + esc(b.undgrndFloorCo || 0) + '층 · 연면적 ' + Math.round(+b.buldTotar || 0).toLocaleString() + '㎡' + (b.strctCodeNm ? ' · ' + esc(b.strctCodeNm) : '') + (+b.btlRt ? ' · 건폐율 ' + esc(b.btlRt) + '% · 용적률 ' + esc(b.measrmtRt) + '%' : '') + (yr ? ' · 사용승인 ' + esc(b.useConfmDe) + (age != null ? ' <em>(' + age + '년 됨)</em>' : '') : '')); }).join('') + (it.bd.length > 8 ? '<p class="cap">… 외 ' + (it.bd.length - 8) + '동</p>' : ''); }
     else if (it.done) h += '<p class="cap">건축물대장에 오른 건물이 없다(빈 땅·도로이거나 대장이 다른 필지에 있다).</p>';
     if (!it.done) h += '<p class="cap">공시지가 추이·토지특성·건물을 받는 중…</p>';
-    h += '<div class="lg-btns" style="margin-top:8px"><button data-taxl="1">💰 세금 모의계산</button><a class="xl" target="_blank" rel="noopener" href="https://www.eum.go.kr/web/ar/lu/luLandDet.jsp?pnu=' + esc(f.pnu) + '&mode=search&isNoScr=script">토지이음에서 보기 ↗</a></div>';
+    h += '<div class="lg-btns" style="margin-top:8px"><button data-taxl="1">🧾 세무(세금·비용)</button><a class="xl" target="_blank" rel="noopener" href="https://www.eum.go.kr/web/ar/lu/luLandDet.jsp?pnu=' + esc(f.pnu) + '&mode=search&isNoScr=script">토지이음에서 보기 ↗</a></div>';
     return h + srcT; }
   function drawLand(dark) {
     if (!on.land) return; var W0 = cv.clientWidth, H0 = cv.clientHeight;

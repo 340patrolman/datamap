@@ -106,6 +106,62 @@
     st.push(['산출세액', won(t)], ['신고세액공제', won(fc)], ['납부세액', won(t - fc)]);
     return { total: won(t - fc), steps: st, warn: ['금융재산공제·동거주택공제·가업공제 등 미구현 · 배우자 공제 한도식 미구현'] };
   }
-  root.TaxEngine = { prog: prog, cgt: cgt, jbsHouse: jbsHouse, jbsLand: jbsLand, gift: gift, inherit: inherit };
+  // ---------- v2.41.0 지방세·중개보수(데이터 압축지도 세무 파트) — 규칙 = R.acq · R.prop · R.broker(지방세법·시행령·농특세법·공인중개사법 시행규칙 원문 2026-10-06) ----------
+  var HOUSE = { apt: 1, house: 1 };
+  // 취득세  a = {cat, cause:'buy'|'gift'|'inherit'|'new', price, official, homesAfter, adj, temp2, corp, area, giftFamily, inheritOne}
+  function acq(R, a) {
+    var A = R.acq, Q = A.rates, st = [], warn = [], p = a.price || 0, isH = !!HOUSE[a.cat], sb = A.surBase[0], r, edu, rural, mult = 0, how;
+    var small = isH && a.area && a.area <= A.smallHouseM2;
+    if (a.cause === 'buy') {
+      if (isH) {
+        if (a.corp) mult = A.multi.corp;
+        else if (a.adj) mult = a.homesAfter >= 3 ? A.multi.threeAdj : (a.homesAfter === 2 && !a.temp2 ? A.multi.twoAdj : 0);
+        else mult = a.homesAfter >= 4 ? A.multi.fourNon : (a.homesAfter === 3 ? A.multi.threeNon : 0);
+        if (mult) { r = Q.other[0] + sb * mult; how = '중과 ' + (r * 100).toFixed(0) + '% · ' + A.multi._.split(' — ')[0]; edu = (Q.other[0] - sb) * 0.2; rural = (sb + sb * mult) * 0.1; }
+        else { r = p <= 6e8 ? Q.houseLow[0] : p > 9e8 ? Q.houseHigh[0] : Math.round((p * 2 / 3e8 - 3) / 100 * 1e6) / 1e6; how = '유상 주택 ' + (r * 100).toFixed(2) + '% · ' + (p > 6e8 && p <= 9e8 ? Q.houseMidFormula[1] : p <= 6e8 ? Q.houseLow[1] : Q.houseHigh[1]); edu = r * 0.5 * 0.2; rural = sb * 0.1; }
+      } else if (a.cat === 'farm') { r = Q.farm[0]; how = Q.farm[1]; edu = (r - sb) * 0.2; rural = sb * 0.1; }
+      else { r = Q.other[0]; how = Q.other[1]; edu = (r - sb) * 0.2; rural = sb * 0.1; }
+    } else if (a.cause === 'gift') {
+      r = Q.gift[0]; how = Q.gift[1]; edu = (r - sb) * 0.2; rural = sb * 0.1;
+      if (isH && a.adj && (a.official || 0) >= A.giftSur.min && !a.giftFamily) { r = Q.other[0] + sb * A.giftSur.mult; how = '증여 중과 12% · ' + A.giftSur._.split(' — ')[0]; edu = (Q.other[0] - sb) * 0.2; rural = (sb + sb * A.giftSur.mult) * 0.1; }
+    } else if (a.cause === 'inherit') {
+      r = a.cat === 'farm' ? Q.inheritFarm[0] : Q.inherit[0]; how = a.cat === 'farm' ? Q.inheritFarm[1] : Q.inherit[1]; edu = (r - sb) * 0.2; rural = sb * 0.1;
+      if (isH && a.inheritOne) { r = r - sb; how = A.inheritOneHouse[0] + ' · ' + A.inheritOneHouse[1]; rural = 0; warn.push('상속 1가구 1주택 특례의 농어촌특별세는 0 으로 근사(표준세율 2% 를 빼고 셈) — 확인 필요'); }
+    } else { r = Q.newBuild[0]; how = Q.newBuild[1]; edu = (r - sb) * 0.2; rural = sb * 0.1; }
+    if (small) { rural = 0; }
+    var t1 = p * r, t2 = p * Math.max(0, edu), t3 = p * rural;
+    st.push(['과세표준(취득가액·시가인정액·시가표준액)', won(p), a.cause === 'inherit' ? '상속 = 시가표준액(공시가격)' : a.cause === 'gift' ? '증여 = 시가인정액(매매사례 등) — 없으면 시가표준액' : '사실상 취득가격'], ['취득세율', r, how], ['취득세', won(t1)], ['지방교육세', won(t2), A.eduTax[1]], ['농어촌특별세', won(t3), small ? '국민주택규모(85㎡) 이하 주택 — 비과세' : A.ruralTax[1]], ['합계', won(t1 + t2 + t3)]);
+    if (isH && a.cause === 'buy' && !a.corp) warn.push('주택 수·조정대상지역·일시적 2주택은 내가 고른 값이다(지방세법 시행령 제28조의2~5 산정 방법 — 분양권·입주권·주거용 오피스텔도 셀 수 있음)');
+    if (a.cat === 'farm') warn.push('자경 농민 농지 감면(지방세특례제한법 제6조)은 넣지 않았다');
+    return { total: won(t1 + t2 + t3), acq: won(t1), edu: won(t2), rural: won(t3), rate: r, steps: st, warn: warn };
+  }
+  // 재산세(한 해)  a = {cat, official, bldg, landVal, oneHouse, urban}
+  function prop(R, a) {
+    var Pp = R.prop, st = [], t = 0, base = 0, tb = [];
+    if (HOUSE[a.cat] || a.cat === 'offiH') {
+      var fv = a.oneHouse ? step(Pp.fmv.oneHouse, a.official || 0) : Pp.fmv.house; base = (a.official || 0) * fv;
+      var one = a.oneHouse && (a.official || 0) <= Pp.houseOneCap; t = prog(base, (one ? Pp.houseOne : Pp.house)[0]);
+      st.push(['주택 시가표준액(공시가격)', won(a.official || 0)], ['공정시장가액비율', fv, Pp.fmv._], ['과세표준', won(base)], ['재산세', won(t), one ? Pp.houseOne[1] : Pp.house[1]]);
+      tb.push(base);
+    } else if (a.cat === 'landAgg') { base = (a.official || 0) * Pp.fmv.land; t = prog(base, Pp.landAgg[0]); st.push(['토지 공시가격', won(a.official || 0)], ['공정시장가액비율', Pp.fmv.land], ['과세표준', won(base)], ['재산세(종합합산)', won(t), Pp.landAgg[1]]); tb.push(base); }
+    else if (a.cat === 'farm' || a.cat === 'forest') { base = (a.official || 0) * Pp.fmv.land; t = base * Pp.landFarm[0]; st.push(['토지 공시가격', won(a.official || 0)], ['과세표준', won(base)], ['재산세(분리과세 0.07%)', won(t), Pp.landFarm[1]]); tb.push(base); }
+    else {
+      var b1 = (a.bldg || 0) * Pp.fmv.land, t1 = b1 * Pp.building[0], b2 = (a.landVal || 0) * Pp.fmv.land, t2 = prog(b2, Pp.landSep[0]); t = t1 + t2; base = b1 + b2;
+      st.push(['건물 시가표준액', won(a.bldg || 0), '국세청·지자체 건물 시가표준액(직접)'], ['건물 재산세 0.25%', won(t1), Pp.building[1]], ['부속토지 공시가격', won(a.landVal || 0)], ['부속토지 재산세(별도합산)', won(t2), Pp.landSep[1]]); tb.push(b1, b2);
+    }
+    var u = a.urban ? base * Pp.urban[0] : 0, e = t * Pp.eduTax[0];
+    st.push(['도시지역분', won(u), a.urban ? Pp.urban[1] : '안 넣음'], ['지방교육세', won(e), Pp.eduTax[1]], ['합계(한 해)', won(t + u + e)]);
+    return { total: won(t + u + e), steps: st, warn: [Pp.capNote] };
+  }
+  // 중개보수(한쪽)  a = {cat, price, offiOk}
+  function broker(R, a) {
+    var B = R.broker, p = a.price || 0, r, cap = null, how;
+    if (HOUSE[a.cat]) { var row = B.houseSale[0].filter(function (x) { return x[0] === null || p < x[0]; })[0]; r = row[1]; cap = row[2]; how = B.houseSale[1]; }
+    else if (a.cat === 'offiH' && a.offiOk) { r = B.offi[0]; how = B.offi[1]; }
+    else { r = B.other[0]; how = B.other[1]; }
+    var fee = p * r; if (cap != null) fee = Math.min(fee, cap);
+    return { total: won(fee), steps: [['거래금액', won(p)], ['상한요율', r, how + (cap ? ' · 한도 ' + cap.toLocaleString() + '원' : '')], ['중개보수 상한(한쪽)', won(fee)]], warn: [B._] };
+  }
+  root.TaxEngine = { prog: prog, cgt: cgt, jbsHouse: jbsHouse, jbsLand: jbsLand, gift: gift, inherit: inherit, acq: acq, prop: prop, broker: broker };
   if (typeof module !== 'undefined') module.exports = root.TaxEngine;
 })(typeof window !== 'undefined' ? window : globalThis);

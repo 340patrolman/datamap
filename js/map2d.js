@@ -543,8 +543,8 @@
   var LBOX = [126.3, 36.85, 127.9, 38.35];   // 서울·경기
   function lkSet(k, name) { var v = prompt(name + ' 인증키를 붙여 넣으세요. 이 기기에만 저장됩니다(저장소·다른 기기로 안 감). 비우면 지웁니다.', LK[k] || ''); if (v == null) return;
     v = v.replace(/\s+/g, ''); if (v) LK[k] = v; else delete LK[k]; try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {} LIVE.ev = null; LIVE.sp = null; LIVE.ak = null; LIVE.kma = null; LIVE.wrn = null; LIVE.eqk = null; LIVE.bs = null; liveGo(); draw(); }
-  // ITS 호출 한도 — 개발키 = 한 달 100건 · 운영키 = 한 달 10,000건(코워크가 2026-10-04 상향 신청 · 관리자 승인 뒤). 이 기기에서 부른 것만 센다(다른 기기·PC 도구가 쓴 것은 모른다).
-  function itsTier() { return LK.itst === 'op' ? 'op' : 'dev'; }
+  // ITS 호출 한도 — 개발키 = 한 달 100건 · 운영키 = 한 달 10,000건(2026-10-04 상향 신청 → 2026-10-07 승인 · 같은 키). 이 기기에서 부른 것만 센다(다른 기기·PC 도구가 쓴 것은 모른다).
+  function itsTier() { return LK.itst === 'dev' ? 'dev' : 'op'; }   // v2.68.1 2026-10-07 운영 승인 확인(코워크) — 기본 = 운영키 · 「개발키」를 직접 고른 기기만 개발키
   function itsPer() { var d = new Date(); return 'm' + (d.getFullYear() * 100 + d.getMonth() + 1); }
   function itsMax() { return itsTier() === 'op' ? 9500 : 90; }
   function itsQuota(add) { var pp = itsPer(), q; try { q = JSON.parse(localStorage.getItem('tg_map2d_itsn') || '{}') || {}; } catch (e) { q = {}; }
@@ -3050,7 +3050,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.68.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.68.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }

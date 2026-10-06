@@ -3051,7 +3051,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.69.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.69.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -5268,7 +5268,7 @@
     var c = e.target.closest('#m2dCard [data-copy]'); if (c) { var t = c.getAttribute('data-copy'); try { navigator.clipboard.writeText(t).then(function () { c.textContent = '✅ 복사했다 ' + t; }); } catch (e2) { prompt('복사', t); } } });
   // ---------- v2.28.0 🔗 이 자리의 관계(온톨로지) — 소유자 「여러 가지 온톨로지적 개념을 넣은 설명을 상단에」 ----------
   //  대상(지점·칸·동·지구대·경찰서·시군구·교차로·카메라·응급실·관서)과 그 사이 관계(속함·관할·구역·가까움)를 이름 붙여 잇는다 · 관계마다 근거 = 원자료 / 계산(거리) / 근사
-  var RELON = true; try { RELON = localStorage.getItem('tg_map2d_rel') !== '0'; } catch (e) {}
+  var RELON = false;   // v2.69.1 소유자 「대상과 관계를 이어 주는 온톨로지는 눌러야 열리게」 — 카드마다 접힌 채로 시작(기억하지 않는다)
   function relNear(m, arr, pf, nf) { var b = null, bd = 1e12; arr.forEach(function (q) { var p = pf(q); if (!p) return; var d = dTrue(p, m); if (d < bd) { bd = d; b = q; } }); return b ? [nf(b), bd] : null; }
   function relFill(steps, m, it) {
     var box = $('m2dLad'); if (!box) return; var R = [], REL = { cell: ['속한다', '국가지점번호 250m 격자', '원자료'], ri: ['속한다', '브이월드 리 경계', '원자료'], dong: ['속한다', '통계청 SGIS 행정동 경계', '원자료'], pb: ['구역이다', '가장 가까운 지구대·파출소(관할 경계 비공개)', '근사'], ps: ['관할한다', '직제 시행규칙 별표2 × 행정동', '근사'], sgg: ['속한다', 'SGIS 시군구 경계', '원자료'] };
@@ -5291,7 +5291,7 @@
       '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
     h = h.replace(/<\/details>$/, ledgRel(m) + '</details>');
     box.insertAdjacentHTML('beforeend', h);
-    var dd = box.querySelector('details.rel'); if (dd) dd.addEventListener('toggle', function () { RELON = dd.open; try { localStorage.setItem('tg_map2d_rel', RELON ? '1' : '0'); } catch (e) {} });
+
   }
   // ---------- v2.27.0 일터·생활업종 역추정(코워크 지시 2026-10-06) — 국민연금 사업장(행정동) · 국세청 사업자현황(시군구) · tools/region/econ-bake.py ----------
   //  값은 원자료 합 그대로 · 「어림」·「가설」 딱지 · 시군구 값을 동으로 나누지 않는다

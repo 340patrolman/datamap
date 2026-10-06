@@ -478,6 +478,7 @@
   function path(pts) { ctx.beginPath(); pts.forEach(function (q, k) { var s = S(q); if (k) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); }
   function zk() { return Math.max(0.55, Math.min(1.35, view.s / 0.3)); }
   function dot(q, r, fill, stroke, item) { var s = S(q); if (s[0] < -40 || s[1] < -40 || s[0] > cv.clientWidth + 40 || s[1] > cv.clientHeight + 40) return; r = r * zk(); ctx.beginPath(); ctx.arc(s[0], s[1], r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.lineWidth = 1.5; ctx.strokeStyle = stroke; ctx.stroke(); } if (item) hit.push({ x: s[0], y: s[1], r: Math.max(r, 9), it: item }); }
+  function halo(q, text, size, color, dark) { var s0 = S(q); ctx.font = 'bold ' + size + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round'; ctx.lineWidth = 3.5; ctx.strokeStyle = dark ? 'rgba(15,22,36,.9)' : 'rgba(255,255,255,.95)'; ctx.strokeText(text, s0[0], s0[1]); ctx.fillStyle = color; ctx.fillText(text, s0[0], s0[1]); }   // 글씨만(바탕 상자 없이 테두리 빛)
   function label(q, text, size, color, bg) { var s = S(q); ctx.font = 'bold ' + size + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; if (bg) { var w = ctx.measureText(text).width; ctx.fillStyle = bg; ctx.fillRect(s[0] - w / 2 - 3, s[1] - size / 2 - 2, w + 6, size + 4); } ctx.fillStyle = color; ctx.fillText(text, s[0], s[1]); }
   // ---------- 🛰 브이월드 배경지도(v1.5.0) — 켠 사람만 api.vworld.kr 에서 256px 조각을 받는다 · 끄면 통신 0 ----------
   // 키는 저장소에 없다. 기기마다 「🔑 키 넣기」 또는 주소 #vwkey=… 로 한 번 넣으면 그 기기에만 남는다(tg_map2d_vwkey).
@@ -1021,7 +1022,7 @@
     } else if (it.kind === 'node') {
       var n = it.n, st = it.st; h = '<h3>' + (n.real ? '🚦 ' : '✕ ') + esc(n.name) + '</h3>' + (it.rep ? row(REP.here ? '지금 위치' : '보고 자리', (REP.here ? '지금 위치에서 ' : 'T-Book 보고 자리에서 ') + it.rep + 'm') + repAround() + hereRows() : '') + row('도로', esc(n.pair.replace('×', ' × ')));
       if (!n.real) { h += row('실제', '두 도로가 만나지 않는다 — ' + esc(n.why || ('최단 ' + n.gap + 'm'))) + '<p class="desc">게임 지도(격자)에는 교차로가 있지만 실제 길에는 없다. 사고·신호 자료를 이 자리에 붙이지 않는다.</p>' + src('OpenStreetMap(ODbL) · 2026-09-28 · 두 도로의 모든 선분 사이 최단 거리');
-        card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + h; card.classList.add('on'); $('m2dX').onclick = function () { sel = null; show(null); draw(); }; return; }
+        card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + h; card.classList.add('on'); $('m2dX').onclick = function () { sel = null; show(null); draw(); }; return; }
       h += row('신호 교차로', n.sig ? esc(n.sig.name) + ' <em>#' + esc(n.sig.no) + '</em>' : '<em>공개 신호 목록(C-ITS)에 없음</em>');
       if (n.nameSrc) h += row('이름', '<em>' + esc(n.nameSrc) + '</em>');
       if (n.dong) h += row('행정동', esc(n.dong.dong) + ((n.dong.also || []).length ? ' · ' + esc(n.dong.also.join('·')) + ' <em>경계</em>' : ''));
@@ -1111,7 +1112,7 @@
       h += src('서울경찰청 「오늘의 주요집회」 · 주최자는 담지 않았다');
     }
     if (it.kind === 'dong' && it.d && it.d.c) { h += talkDong(it.d) + '<div class="lg-btns"><button data-story="1">📝 이 동 풀어 읽기</button><button data-pnlhere="' + (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div><div id="storyBox"></div>'; }
-    card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>'; card.classList.add('on');
+    card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>'; card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
@@ -1544,10 +1545,10 @@
       var m = k.pts[Math.floor(k.pts.length / 2)], s = S(m); hit.push({ x: s[0], y: s[1], r: 7, it: { kind: 'link', k: k } }); }); }
     if (on.crowd && LIVEP.length) LIVEP.forEach(function (Lp) {
       var cw = crowdAt(Lp); if (!cw) return; var col = LVC[cw.lvl] || '#64748b';
-      Lp.rings.forEach(function (r) { path(r); ctx.closePath(); if (cw.kind !== 'old') { ctx.fillStyle = col; ctx.globalAlpha = dark ? 0.28 : 0.22; ctx.fill(); ctx.globalAlpha = 1; } ctx.lineWidth = 2.5; ctx.setLineDash(cw.kind === 'old' ? [6, 4] : cw.kind === 'fcst' ? [10, 3] : []); ctx.strokeStyle = cw.kind === 'old' ? (dark ? '#94a3b8' : '#64748b') : col; ctx.stroke(); ctx.setLineDash([]); });
+      Lp.rings.forEach(function (r) { path(r); ctx.closePath(); ctx.save(); ctx.globalAlpha = 0.28; ctx.lineWidth = 1; ctx.setLineDash(cw.kind === 'old' ? [5, 4] : []); ctx.strokeStyle = cw.kind === 'old' ? (dark ? '#94a3b8' : '#64748b') : col; ctx.stroke(); ctx.restore(); });   // v2.32.0 소유자 「인파는 테두리 아주 옅게 · 글씨로만」
       var s = S(Lp.c); hit.push({ x: s[0], y: s[1], r: 14, it: { kind: 'crowd', L: Lp } });
       if (view.s > 0.07) { var t1 = Lp.o.name + ' · ' + (cw.lvl || '-'), t2 = (cw.min ? man(cw.min) + '~' + man(cw.max) + '명' : '') + (cw.kind === 'fcst' ? ' 예측' : cw.kind === 'old' ? ' (받은 때 ' + (cw.t || '').slice(11, 16) + ')' : ' 지금');
-        label(Lp.c, t1, 12, '#fff', cw.kind === 'old' ? 'rgba(71,85,105,.85)' : col); label([Lp.c[0], Lp.c[1] + 17 / view.s], t2, 10.5, dark ? '#e2e8f0' : '#1f2937', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.88)'); }
+        halo(Lp.c, t1, 12.5, cw.kind === 'old' ? (dark ? '#cbd5e1' : '#475569') : col, dark); halo([Lp.c[0], Lp.c[1] + 16 / view.s], t2, 10.5, dark ? '#e2e8f0' : '#334155', dark); }
     });
   }
   var H10C = { '보행자': '#2563eb', '보행노인': '#7c3aed', '보행어린이': '#ca8a04', '자전거': '#16a34a', '이륜차': '#dc2626', '화물차': '#78350f', '결빙': '#0891b2', '지자체별(전체)': '#475569' };
@@ -2612,7 +2613,7 @@
     var gi = sggAt(m); if (gi >= 0) steps.push(['sgg', '🗂 ' + SGG[gi].g.name, { kind: 'unit', u: { t: 'sgg', id: gi } }]);
     if (!POL2) polLoad();
     if (steps.length < 3) return; LADS = steps;
-    top.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;margin:0 0 6px">⬆ ' + steps.map(function (q, i) { return q[2] ? '<button data-lad="' + i + '" style="font-size:12px;padding:3px 7px;border-radius:999px;border:1px solid #94a3b8;background:' + (q[0] === lv ? '#1e3a8a;color:#fff' : 'transparent') + '">' + esc(q[1]) + '</button>' : '<span style="padding:3px 4px;' + (lv === 'pt' ? 'font-weight:800' : 'opacity:.7') + '">' + esc(q[1]) + '</span>'; }).join('<span style="opacity:.5">›</span>') + '</div>';
+    top.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;margin:0 0 6px">⬆ ' + steps.map(function (q, i) { return q[2] ? '<button data-lad="' + i + '" style="font-size:12px;padding:3px 7px;border-radius:999px;border:1px solid #94a3b8;background:' + (q[0] === lv ? '#1e3a8a;color:#fff' : 'transparent') + '">' + esc(q[1]) + '</button>' : '<span style="padding:3px 4px;' + (lv === 'pt' ? 'font-weight:800' : 'opacity:.7') + '">' + esc(q[1]) + '</span>'; }).join('<span style="opacity:.5">›</span>') + '<button class="ladx" data-cardx="1" aria-label="카드 닫기">닫기</button></div>'; var cdx = $('m2dCard'); if (cdx) cdx.classList.add('haslad');
     relFill(steps, m, it);
     if (!bot) return;
     // 윗단위 비교 · 아래 단위 순위 — profile.json 을 받은 뒤
@@ -2631,6 +2632,7 @@
       b2.innerHTML = h; });
   }
   document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-cardx]')) { var x0 = $('m2dX'); if (x0) x0.click(); return; }
     var b = e.target.closest('[data-lad]'); if (b) { var q = LADS[+b.getAttribute('data-lad')]; if (q && q[2]) { if (sel) sel.it = q[2]; else sel = { x: -99, y: -99, r: 0, it: q[2] }; show(q[2]); } return; }
     var g = e.target.closest('[data-godong]'); if (g) { var a = g.getAttribute('data-godong').split('|'); goDong(a[0], a[1], a[2], a[3].split(',').map(Number)); } });
 

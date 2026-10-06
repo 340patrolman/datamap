@@ -470,15 +470,87 @@
   .talk.tkbig .vz .cap { font-size: 13px; font-weight: 800; color: var(--ink); } .talk.tkbig .vzr { font-size: 13px; margin-top: 5px; } .talk.tkbig .vzl { flex-basis: 104px; } .talk.tkbig .vzb { height: 12px; } .talk.tkbig .pleg { font-size: 12px; }
   .talk.tkbig .ttiles small { font-size: 11px; } .talk.tkbig .ttiles b { font-size: 18px; } .talk.tkbig .ttiles i { font-size: 11px; } .talk.tkbig .tchips span { font-size: 13px; padding: 5px 10px; }
   .tkd { margin-top: 8px; } .tkd > summary { cursor: pointer; font-size: 13px; font-weight: 800; padding: 6px 0; } .talk.tkbig .tki { font-size: 13.5px; }
+  #m2dTr { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 6; max-height: 52vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px 10px; box-shadow: 0 8px 24px rgba(0,0,0,.22); display: none; }
+  #m2dTr .src { margin-top: 8px; font-size: 11.5px; color: var(--ink2); }
+  #m2dTr .cap { font-size: 12px; color: var(--ink2); margin-top: 6px; }
+  #m2dTr .desc { font-size: 13px; margin: 6px 0 0; }
+  #m2dTr .bars { display: flex; align-items: flex-end; gap: 2px; height: 46px; margin-top: 3px; }
+  #m2dTr .bars i { flex: 1; min-height: 1px; border-radius: 2px 2px 0 0; }
+  #m2dTr .lx, #m2dTr .vx { display: flex; gap: 2px; }
+  #m2dTr .lx { margin-top: 2px; }
+  #m2dTr .vx { margin-top: 3px; margin-bottom: 1px; }
+  #m2dTr .lx span, #m2dTr .vx span { flex: 1; min-width: 0; text-align: center; font-size: 10px; line-height: 13px; color: var(--ink2); white-space: nowrap; overflow: hidden; font-variant-numeric: tabular-nums; letter-spacing: -.4px; }
+  #m2dTr .vx span { color: var(--ink); font-weight: 700; font-size: 9.5px; }
+  #m2dTr .lx span b { font-weight: inherit; }
+  #m2dTr .vx.many span { overflow: visible; }
+  #m2dTr .nil { font-size: 12px; color: var(--ink2); margin: 2px 0 4px; padding: 6px 8px; border: 1px dashed var(--line); border-radius: 8px; }
+  #m2dTr .vx.many span:first-child { text-align: left; } #m2dTr .vx.many span:last-child { text-align: right; }
+  #m2dTr .vx span.mx { color: #b91c1c; }
+  #m2dTr .vx span.n { color: var(--ink); text-decoration: underline; }
+  #m2dTr .bars.h24 i.n { outline: 2px solid var(--ink); outline-offset: 0; }
+  #m2dTr .bars.b2 .hb { flex: 1; display: flex; align-items: flex-end; gap: 1px; height: 100%; border-bottom: 3px solid transparent; }
+  #m2dTr .bars.b2 .hb.b { border-bottom-color: #dc2626; }
+  #m2dTr .bars.b2 .hb.n { outline: 2px solid var(--ink); }
+  #m2dTr .hx { display: flex; gap: 2px; margin-top: 2px; }
+  #m2dTr .hx span { flex: 1; text-align: center; font-size: 10px; line-height: 14px; color: var(--ink2); font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+  #m2dTr .hx span.b { color: #dc2626; font-weight: 800; }
+  #m2dTr .hx span.n { background: var(--ink); color: var(--bg); border-radius: 3px; font-weight: 800; }
+  #m2dTr .hk { font-size: 11.5px; color: var(--ink2); margin-top: 3px; line-height: 1.5; }
+  #m2dTr .hk i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin: 0 3px 0 6px; vertical-align: -1px; }
+  #m2dTr .hk i:first-child { margin-left: 0; }
+  #m2dTr .hk i.nw { background: transparent; outline: 2px solid var(--ink); outline-offset: -2px; }
+  #m2dTr .hk u { display: inline-block; width: 12px; height: 3px; background: #dc2626; margin: 0 3px 0 4px; vertical-align: 2px; }
+  #m2dTr .hk b { color: #dc2626; }
+  #m2dTr .ln { display: inline-block; min-width: 22px; padding: 0 5px; border-radius: 11px; color: #fff; font-style: normal; text-align: center; font-weight: 700; font-size: 12px; }
+  #m2dTr .bizwhy button { float: right; border: 1px solid #7c3aed; background: transparent; color: #7c3aed; border-radius: 8px; padding: 3px 8px; font-size: 12px; min-height: 30px; cursor: pointer; }
+  @media (max-width: 759px) { #m2dBiz { max-height: 40vh; } #m2dTr { max-height: 42vh; } }
+  #m2dTr { display: none; position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 7; max-height: 58vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; box-shadow: 0 6px 24px rgba(0,0,0,.18); font-size: 13px; }
+  @media (min-width: 760px) { #m2dTr { right: auto; width: 400px; max-height: 64vh; } }
+  #m2dTr.on { display: block; }
+  #m2dTr.min { max-height: 44px; overflow: hidden; cursor: pointer; }
+  #m2dTr.min > :not(.lg-h) { display: none; }
+  @media (max-width: 759px) { #m2dTr.min { display: none; } }
+  #m2dTr .lg-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  #m2dTr button, #m2dTr select { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 8px; padding: 5px 8px; font-size: 12.5px; min-height: 34px; cursor: pointer; }
+  #m2dTr .lg-btns { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+  #m2dTr .lg-btns button.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  #m2dTr .bizrow { display: flex; flex-wrap: wrap; gap: 6px; }
+  #m2dTr .bizrow label { display: flex; align-items: center; gap: 4px; font-weight: 700; }
+  #m2dTr .bizrow select { max-width: 210px; }
+  #m2dTr .lg-n { color: var(--ink2); font-size: 11.5px; margin: 4px 0; display: block; }
+  #m2dTr .rcard .r { display: flex; gap: 10px; padding: 3px 0; border-top: 1px dashed var(--line); font-size: 13px; }
+  #m2dTr .rcard .r b { flex: 0 0 96px; color: var(--ink2); font-weight: 600; }
+  #m2dTr .rcard .r span { flex: 1; min-width: 0; word-break: keep-all; overflow-wrap: anywhere; }
+  #m2dTr em { font-style: normal; color: #b45309; font-size: 11.5px; }
+  #m2dTr .cap { font-size: 12px; color: var(--ink2); margin-top: 6px; }
+  #m2dTr .bars { display: flex; align-items: flex-end; gap: 2px; height: 46px; margin-top: 3px; }
+  #m2dTr .bars i { flex: 1; min-height: 1px; border-radius: 2px 2px 0 0; }
+  #m2dTr .lx, #m2dTr .vx { display: flex; gap: 2px; }
+  #m2dTr .lx span, #m2dTr .vx span { flex: 1; min-width: 0; text-align: center; font-size: 10px; line-height: 13px; color: var(--ink2); white-space: nowrap; overflow: hidden; }
+  #m2dTr ol.comp { margin: 4px 0; padding-left: 20px; columns: 2; font-size: 12.5px; }
+  @media (max-width: 759px) { body.radon:has(#m2dTr.on:not(.min)) #m2dCard { display: none; } }
+  #m2dTr .bizwhy { background: rgba(124,58,237,.08); border: 1px solid rgba(124,58,237,.35); border-radius: 10px; padding: 6px 8px; margin: 0 0 6px; font-size: 12.5px; line-height: 1.45; }
+  #m2dTr .bizwhy { background: rgba(124,58,237,.08); border: 1px solid rgba(124,58,237,.35); border-radius: 10px; padding: 6px 8px; margin: 0 0 6px; font-size: 12.5px; line-height: 1.45; }
+  #m2dTr table.it { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 3px; }
+  #m2dTr table.it th, #m2dTr table.it td { border: 1px solid var(--line); padding: 2px 3px; text-align: center; }
+  #m2dTr table.it td:first-child { text-align: left; white-space: nowrap; max-width: 104px; overflow: hidden; text-overflow: ellipsis; }
+  #m2dTr table.it th.now { outline: 2px solid #dc2626; }
+  #m2dTr table.it tr.bar td:first-child { color: #b45309; font-weight: 800; }
+  #m2dTr h4 { margin: 10px 0 4px; font-size: 14px; } #m2dTr .trs { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; margin: 5px 0; } #m2dTr .trh { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; } #m2dTr .trh small { color: var(--ink2); } #m2dTr .trh button { margin-left: auto; min-height: 30px; }
+  #m2dTr .tra { font-size: 13px; } #m2dTr .tra .vzl { flex-basis: 62px; } #m2dTr .tra .vzb { height: 12px; } #m2dTr .tra b small { font-weight: 600; color: var(--ink2); } #m2dTr .tra button { min-height: 28px; padding: 2px 6px; }
+  #m2dTr .trn { display: inline-block; min-width: 38px; padding: 1px 6px; border-radius: 7px; color: #fff; font-style: normal; font-weight: 800; font-size: 12px; text-align: center; }
+  #m2dTr .trrow { display: flex; align-items: center; gap: 5px; margin-top: 5px; flex-wrap: wrap; } #m2dTr .trrow em { font-style: normal; font-weight: 800; color: var(--ink2); min-width: 30px; }
+  #m2dTr .trc { display: inline-flex; flex-direction: column; align-items: center; padding: 4px 8px; border-radius: 10px; background: var(--chip); border: 1px solid var(--line); line-height: 1.2; } #m2dTr .trc b { font-size: 15px; } #m2dTr .trc i { font-style: normal; font-size: 11.5px; font-weight: 700; color: #2563eb; } #m2dTr .trc small { font-size: 10.5px; color: var(--ink2); } #m2dTr .trc.soon { border-color: #dc2626; } #m2dTr .trc.soon i { color: #dc2626; }
+  #m2dLad .trbtn button { border: 1px solid #0891b2; background: #ecfeff; color: #0e7490; font-weight: 800; } :root.dark #m2dLad .trbtn button { background: #083344; color: #a5f3fc; }
   .pgrab { position: sticky; top: -8px; z-index: 5; height: 24px; margin: -8px -10px 2px; background: var(--panel); touch-action: none; cursor: ns-resize; border-radius: 14px 14px 0 0; } .pgrab i { display: block; width: 46px; height: 5px; border-radius: 3px; background: var(--line); margin: 10px auto 0; } .pgrab:hover i { background: var(--ink2); } .pgrab.drag i { background: var(--acc); }
-  #m2dPnl.sized, #m2dRad.sized, #m2dBiz.sized { max-height: none !important; height: var(--ph); } #m2dPnl.sized.min, #m2dRad.sized.min, #m2dBiz.sized.min { height: auto; max-height: 44px !important; }
+  #m2dPnl.sized, #m2dRad.sized, #m2dBiz.sized, #m2dTr.sized { max-height: none !important; height: var(--ph); } #m2dPnl.sized.min, #m2dRad.sized.min, #m2dBiz.sized.min, #m2dTr.sized.min { height: auto; max-height: 44px !important; }
   .tzb { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 4px; } .tzb button { height: 30px; min-width: 36px; padding: 0 7px; border-radius: 9px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 12px; font-weight: 900; cursor: pointer; line-height: 1; } .tzb button + button { font-size: 14.5px; } .tzb button:active { background: var(--chipOn); color: var(--chipOnInk); }
   #m2dLeg .lgh .tzb { margin-left: auto; }
   #m2dCard > .tzb { position: absolute; right: 78px; top: 8px; z-index: 4; margin: 0; } #m2dCard > .tzb button { height: 34px; border-radius: 10px; }
   @media (max-width: 759px) { #m2dCard > .tzb { top: 30px; } }
   #m2dCard.haslad > .tzb { display: none; } #m2dLad .tzb { margin: 0 2px 0 auto; } #m2dLad .tzb button { height: 26px; min-width: 32px; padding: 0 6px; border-radius: 8px; font-size: 11.5px; } #m2dLad .tzb button + button { font-size: 13.5px; }
   @media (min-width: 760px) { #m2dCard > :not(.x):not(.tzb):not(.grab) { zoom: var(--tz, 1); } }
-  #m2dPnl > :not(.lg-h):not(.pgrab), #m2dRad > :not(.lg-h):not(.pgrab), #m2dBiz > :not(.lg-h):not(.pgrab), #m2dLeg > :not(.lgh) { zoom: var(--tz, 1); }
+  #m2dPnl > :not(.lg-h):not(.pgrab), #m2dRad > :not(.lg-h):not(.pgrab), #m2dBiz > :not(.lg-h):not(.pgrab), #m2dTr > :not(.lg-h):not(.pgrab), #m2dLeg > :not(.lgh) { zoom: var(--tz, 1); }
   .vzg > .vz.wide { flex: 1 1 100%; }
   .ttiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; } .ttiles span { display: flex; flex-direction: column; align-items: center; padding: 5px 2px; border-radius: 8px; text-align: center; } .ttiles small { font-size: 9.5px; line-height: 1.2; opacity: .85; } .ttiles b { font-size: 15px; font-weight: 900; } .ttiles i { font-style: normal; font-size: 9.5px; font-weight: 700; opacity: .8; }
   .tchips { display: flex; flex-wrap: wrap; gap: 5px; } .tchips span { padding: 4px 9px; border-radius: 14px; background: var(--chip); border: 1px solid var(--line); font-size: 12px; } .tchips b { color: #dc2626; }
@@ -722,6 +794,7 @@
 <div id="m2dBiz" aria-label="창업 자리 찾기"></div>
 <div id="m2dRad" aria-label="반경 분석"></div>
 <div id="m2dPnl" aria-label="손익 계산"></div>
+<div id="m2dTr" aria-label="여기 대중교통"></div>
 <div id="m2dFoot">
   <details><summary>ⓘ 자료 출처 · 한계</summary>
     <ul class="all">
@@ -775,7 +848,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.69.1"></script>
+<script src="js/map2d.js?v=2.70.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

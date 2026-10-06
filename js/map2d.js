@@ -2912,7 +2912,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.48.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.48.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3480,11 +3480,11 @@
       txt.push('기초생활수급자 ' + w[0].toLocaleString() + '명(주민의 ' + f1(wr) + '%' + (gr != null ? ' · 구 ' + f1(gr) + '%' : '') + ', 65세 이상 ' + w[6].toLocaleString() + '명)'); }
     else if (sw && gp) { h += row('기초생활수급자(구)', '<b>' + sw[0].toLocaleString() + '명 · 구 주민의 ' + f1(sw[0] / gp * 100) + '%</b> · ' + sw[1].toLocaleString() + '가구 <em>(' + esc(HSD.asof.wel_sgg) + ' · 동 단위 공개는 서울·경기만 — 구 값)</em>'); txt.push('기초생활수급자(구 전체) 주민의 ' + f1(sw[0] / gp * 100) + '%'); }
     if (v.cha && pop) { var ch = v.cha, cr = ch[0] / pop * 100, low = ((v.wel ? v.wel[0] : 0) + ch[0]) / pop * 100;
-      h += row('차상위(이 동)', '<b>' + ch[0].toLocaleString() + '명 · 주민의 ' + f1(cr) + '%</b> · 👴 65세 이상 ' + ch[7].toLocaleString() + ' · 👧 18세 미만 ' + ch[6].toLocaleString() + ' <em>(서울 열린데이터광장 OA-22226)</em>');
+      h += row('차상위(이 동)', '<b>' + ch[0].toLocaleString() + '명 · 주민의 ' + f1(cr) + '%</b> · 👴 65세 이상 ' + ch[7].toLocaleString() + ' · 👧 18세 미만 ' + ch[6].toLocaleString() + ' <em>(서울 열린데이터광장 OA-22226 · 기준일이 파일에 적혀 있지 않다 — 같은 자료의 공공데이터포털 판은 2021-07-31 기준이라 수급자(2024-05)보다 옛 값일 수 있다)</em>');
       h += vzStack([['차상위 구성', ch.slice(1, 6), ch[0].toLocaleString() + '명']], [['👪 한부모가족', '#db2777'], ['🏥 본인부담경감', '#f59e0b'], ['📄 차상위 확인', '#3b82f6'], ['♿ 장애인', '#8b5cf6'], ['🔧 자활', '#16a34a']], { title: '차상위 — 어떤 지원으로 잡혔나(%)' });
       var lowOf = function (q) { var x = HSD.dong[q]; return x ? (x.wel ? x.wel[0] : 0) + (x.cha ? x.cha[0] : 0) : 0; }, DN2 = {}, PP = {}; allDong().forEach(function (d) { if (d.k && d.pop && d.pop.tot) { DN2[d.k] = d.name; PP[d.k] = d.pop.tot; } });
       var lm = Object.keys(HSD.dong).filter(function (q) { return q.slice(0, 5) === gu && PP[q] && HSD.dong[q].cha; }).map(function (q) { return [q, lowOf(q) / PP[q] * 100]; }).sort(function (a, b) { return b[1] - a[1]; }), gl2 = lm.reduce(function (t, x) { return t + lowOf(x[0]); }, 0), gpp2 = lm.reduce(function (t, x) { return t + PP[x[0]]; }, 0);
-      h += row('💡 저소득 비율(수급 + 차상위)', '<b>주민의 ' + f1(low) + '%</b>' + (gpp2 ? ' <em>(구 ' + f1(gl2 / gpp2 * 100) + '%)</em>' : '') + ' — 나라가 소득을 조사해 확인한 사람(기준 중위소득 50% 이하) 수로 본 동네 소득 수준');
+      h += row('💡 저소득 비율(수급 + 차상위)', '<b>주민의 ' + f1(low) + '%</b>' + (gpp2 ? ' <em>(구 ' + f1(gl2 / gpp2 * 100) + '%)</em>' : '') + ' — 나라가 소득을 조사해 확인한 사람(기준 중위소득 50% 이하) 수로 본 동네 소득 수준 <em>(수급 2024-05 + 차상위 기준일 미표기 — 시점이 다를 수 있다)</em>');
       if (lm.length > 2) { var li = lm.map(function (x) { return x[0]; }).indexOf(k8), lc = lm.slice(0, 8); if (li >= 8) lc.push(lm[li]); h += vzH(lc.map(function (x) { return [(x[0] === k8 ? '▶ ' : '') + (DN2[x[0]] || x[0]), x[1], x[0] === k8 ? '#dc2626' : '#f59e0b']; }), { title: '구 안 동 저소득 비율(기초수급 + 차상위 · 주민 대비 %) — 빨강 ▶ = 이 동 · ' + (li + 1) + '위 / ' + lm.length + '동', fmt: function (x) { return f1(x) + '%'; } }); }
       txt.push('차상위 ' + ch[0].toLocaleString() + '명(' + f1(cr) + '%) — 수급과 합친 저소득 비율 ' + f1(low) + '%'); }
     if (sw && gp && sw.length > 2 && !v.cha) { h += row('차상위(구 · ' + esc(HSD.asof.wel_sgg) + ')', '<b>' + sw[2].toLocaleString() + '명 · 구 주민의 ' + f1(sw[2] / gp * 100) + '%</b> <em>(차상위 본인부담경감·자활·장애인 세 사업 합 · 동 단위는 서울만 공개(OA-22226) — 아직 안 받음)</em>');

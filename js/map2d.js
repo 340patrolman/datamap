@@ -2577,8 +2577,7 @@
   function goDong(gu, k, name, c) {   // ⬇ 좁혀 가기 — 그 동으로 옮겨 동 카드
     var p = P(c[0], c[1]); TAPM = p; view.cx = p[0]; view.cy = p[1]; if (view.s < 0.03) view.s = 0.03;
     var d = allDong().filter(function (q) { return q.k === k; })[0];
-    if (d) { show({ kind: 'dong', d: d }); draw(); return; }
-    show({ kind: 'rgo', gu: gu, g: guName(gu), name: name }); draw();
+    var it2 = d ? { kind: 'dong', d: d } : { kind: 'rgo', gu: gu, g: guName(gu), name: name }, sp = S(d ? d.c : p); sel = { x: sp[0], y: sp[1], r: 8, it: it2 }; show(it2); draw();
   }
   function cmpHtml(A, Ap, pn) {
     if (!A.pop || !Ap.pop) return '';
@@ -2612,6 +2611,7 @@
     if (!POL2) polLoad();
     if (steps.length < 3) return; LADS = steps;
     top.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;margin:0 0 6px">⬆ ' + steps.map(function (q, i) { return q[2] ? '<button data-lad="' + i + '" style="font-size:12px;padding:3px 7px;border-radius:999px;border:1px solid #94a3b8;background:' + (q[0] === lv ? '#1e3a8a;color:#fff' : 'transparent') + '">' + esc(q[1]) + '</button>' : '<span style="padding:3px 4px;' + (lv === 'pt' ? 'font-weight:800' : 'opacity:.7') + '">' + esc(q[1]) + '</span>'; }).join('<span style="opacity:.5">›</span>') + '</div>';
+    relFill(steps, m, it);
     if (!bot) return;
     // 윗단위 비교 · 아래 단위 순위 — profile.json 을 받은 뒤
     var cur = null, par = null, parName = '', kids = null, kidTitle = '';
@@ -2629,7 +2629,7 @@
       b2.innerHTML = h; });
   }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-lad]'); if (b) { var q = LADS[+b.getAttribute('data-lad')]; if (q && q[2]) show(q[2]); return; }
+    var b = e.target.closest('[data-lad]'); if (b) { var q = LADS[+b.getAttribute('data-lad')]; if (q && q[2]) { if (sel) sel.it = q[2]; else sel = { x: -99, y: -99, r: 0, it: q[2] }; show(q[2]); } return; }
     var g = e.target.closest('[data-godong]'); if (g) { var a = g.getAttribute('data-godong').split('|'); goDong(a[0], a[1], a[2], a[3].split(',').map(Number)); } });
 
   // ---------- v2.13.0 🛣 전국 도로망(ITS 표준링크 · 0.5° 조각 a = 고속·국도 · b = 시도·국지도·지방도 · 크게 확대하면 시군구 파일로 시군도) ----------
@@ -3767,6 +3767,31 @@
 
 
 
+
+  // ---------- v2.28.0 🔗 이 자리의 관계(온톨로지) — 소유자 「여러 가지 온톨로지적 개념을 넣은 설명을 상단에」 ----------
+  //  대상(지점·칸·동·지구대·경찰서·시군구·교차로·카메라·응급실·관서)과 그 사이 관계(속함·관할·구역·가까움)를 이름 붙여 잇는다 · 관계마다 근거 = 원자료 / 계산(거리) / 근사
+  var RELON = true; try { RELON = localStorage.getItem('tg_map2d_rel') !== '0'; } catch (e) {}
+  function relNear(m, arr, pf, nf) { var b = null, bd = 1e12; arr.forEach(function (q) { var p = pf(q); if (!p) return; var d = dTrue(p, m); if (d < bd) { bd = d; b = q; } }); return b ? [nf(b), bd] : null; }
+  function relFill(steps, m, it) {
+    var box = $('m2dLad'); if (!box) return; var R = [], REL = { cell: ['속한다', '국가지점번호 250m 격자', '원자료'], ri: ['속한다', '브이월드 리 경계', '원자료'], dong: ['속한다', '통계청 SGIS 행정동 경계', '원자료'], pb: ['구역이다', '가장 가까운 지구대·파출소(관할 경계 비공개)', '근사'], ps: ['관할한다', '직제 시행규칙 별표2 × 행정동', '근사'], sgg: ['속한다', 'SGIS 시군구 경계', '원자료'] };
+    var PRED = { cell: '에 속한다', ri: '에 속한다', dong: '에 속한다', pb: ' 구역이다(근사)', ps: ' 관할이다', sgg: '에 속한다' };
+    steps.forEach(function (q, i) { var r = REL[q[0]]; if (!r || !q[2]) return; R.push(['이 자리는', '<button data-lad="' + i + '">' + esc(q[1]) + '</button>', PRED[q[0]], r[1], r[2]]); });
+    function fm(d) { return d >= 1000 ? (d / 1000).toFixed(1) + 'km' : Math.round(d) + 'm'; }
+    var nx = [];
+    var jc = JCN.length ? relNear(m, JCN, function (J) { return J.p; }, function (J) { return J.t[0]; }) : null; if (jc && jc[1] < 3000) nx.push(['🚦 교차로', jc[0], jc[1], 'ITS 교차로 이름(원자료) · 거리 계산']);
+    var cm = D.cam && D.cam.items.length ? relNear(m, D.cam.items, function (c) { return P(c.lon, c.lat); }, function (c) { return c.name || c.loc || c.addr || '무인 단속 카메라'; }) : null; if (cm && cm[1] < 3000) nx.push(['📷 단속 카메라', cm[0], cm[1], '경찰청 무인단속카메라(원자료) · 거리 계산']);
+    var er = PUB && PUB.er && PUB.er.length ? relNear(m, PUB.er, function (q) { return q.p; }, function (q) { return q.name; }) : null; if (er && er[1] < 15000) nx.push(['🏥 응급실', er[0], er[1], '응급의료기관(원자료) · 거리 계산']);
+    if (POL2) { var pb = relNear(m, POL2.pbox, function (b) { return b.p; }, function (b) { return b[0] + (b[1] ? ' 파출소' : ' 지구대'); }); if (pb) nx.push(['👮 지구대·파출소 청사', pb[0], pb[1], '경찰청 주소 현황 → 좌표 · 거리 계산']);
+      var ps = relNear(m, POL2.stations, function (q) { return q.p; }, function (q) { return q[1]; }); if (ps) nx.push(['🚓 경찰서 청사', ps[0], ps[1], '경찰민원24 좌표 · 거리 계산']); }
+    var ll = [m[0] / KX + LON0, LAT0 - m[1] / KY];
+    var h = '<details class="rel"' + (RELON ? ' open' : '') + '><summary>🔗 이 자리의 관계 <small>— 대상과 관계를 이름 붙여 잇는 「온톨로지」 보기</small></summary>' +
+      '<div class="relx">지점 <b>' + ll[1].toFixed(5) + ', ' + ll[0].toFixed(5) + '</b>' + (it && it.kind && it.kind !== 'dong' && it.kind !== 'unit' ? ' · 지금 카드 = ' + esc(({ g250: '250m 칸', land: '필지', jgc: '공시지가 칸', node: '교차로', cam: '단속 카메라', stay: '숙박시설', minbak: '도시민박', pub: '시설', rnl: '도로' })[it.kind] || it.kind) : '') + '</div>' +
+      '<div class="rell">' + R.map(function (r) { return '<div><span class="s">' + r[0] + '</span> ' + r[1] + ' <span class="p">' + r[2] + '</span><small>' + esc(r[3]) + ' · <i class="' + (r[4] === '원자료' ? 'o' : 'a') + '">' + r[4] + '</i></small></div>'; }).join('') +
+      nx.map(function (q) { return '<div><span class="s">가장 가까운 ' + q[0] + '</span> <b>' + esc(q[1]) + '</b> <span class="p">' + fm(q[2]) + '</span><small>' + esc(q[3]) + ' · <i class="c">계산</i></small></div>'; }).join('') + '</div>' +
+      '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
+    box.insertAdjacentHTML('beforeend', h);
+    var dd = box.querySelector('details.rel'); if (dd) dd.addEventListener('toggle', function () { RELON = dd.open; try { localStorage.setItem('tg_map2d_rel', RELON ? '1' : '0'); } catch (e) {} });
+  }
   // ---------- v2.27.0 일터·생활업종 역추정(코워크 지시 2026-10-06) — 국민연금 사업장(행정동) · 국세청 사업자현황(시군구) · tools/region/econ-bake.py ----------
   //  값은 원자료 합 그대로 · 「어림」·「가설」 딱지 · 시군구 값을 동으로 나누지 않는다
   var ECD = null, ECG = null, ECP = null, ECNK = null, ECR = null;
@@ -4015,7 +4040,7 @@
       var ft = document.createElement('div'); ft.className = 'pg pft'; ft.innerHTML = '<button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button><button data-onb="1">❔ 처음 안내 다시</button>'; st.appendChild(ft);
       $('m2dPanH').innerHTML = '<div class="ph"><b>🗂 레이어 <small id="m2dPanN"></small></b><button data-lh="1">❓ 설명</button><button class="x" data-close="1">닫기</button></div><div class="lvs"><button data-lv="cat">🗂 묶음별</button><button data-lv="all">📋 전체 목록</button><button data-lv="on">✅ 켜진 것</button></div><input id="m2dLF" type="search" placeholder="레이어 이름으로 찾기 — 예: 사고 · 공시지가 · 버스" autocomplete="off"><div class="jmp" id="m2dJmp"></div>';
       $('m2dLF').addEventListener('input', function () { LFQ = this.value.trim(); lfApply(); }); }
-    $('m2dPanN').textContent = nOn + '개 켜짐'; var lhb = $('m2dPanH').querySelector('[data-lh]'); if (lhb) lhb.classList.toggle('on', !!LHON);
+    pn.classList.toggle('lvall', LV !== 'cat'); $('m2dPanN').textContent = nOn + '개 켜짐'; var lhb = $('m2dPanH').querySelector('[data-lh]'); if (lhb) lhb.classList.toggle('on', !!LHON);
     $('m2dPanH').querySelectorAll('[data-lv]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-lv') === LV); if (b.getAttribute('data-lv') === 'on') b.textContent = '✅ 켜진 것 ' + nOn; });
     var GL = []; LAYERS.forEach(function (l) { if (GL.indexOf(l[3]) < 0) GL.push(l[3]); }); GL.sort(function (a, b) { var x = GORD.indexOf(a), y = GORD.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
     $('m2dJmp').innerHTML = LV === 'cat' ? CATS.filter(function (c) { return c[2]; }).map(function (c) { return '<button data-jump="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '<button data-jump="etc">➕ 그 밖</button>' : LV === 'all' ? GL.map(function (g, i) { return '<button data-jump="g' + i + '">' + esc(g) + '</button>'; }).join('') : '';

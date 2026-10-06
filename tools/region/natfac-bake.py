@@ -118,6 +118,22 @@ for r in csv.DictReader(open(_g.glob(os.path.join(SRC, '*우체국 현황*.csv')
     if k: g2 = D[k].setdefault('gov', {}); g2['우체국'] = g2.get('우체국', 0) + 1; cnt['우체국'] += 1
     else: cnt['우체국 못 맞춤'] += 1
 SRCS = {'관공서(전국)': '주민센터 = 행정안전부 읍면동 하부행정기관 현황(2025-12-31) · 우체국 = 우정사업본부 전국 우체국 현황(2026-08-31 · 주소의 법정동으로 행정동 근사)', '어린이집(전국)': '어린이집정보공개포털 「어린이집 기본정보」(정기 2026-09 말일 · 운영 중 · 좌표로 행정동)', '유치원(전국)': '교육부 유치원알리미 공시 「일반 현황」 2026년 1차(국·공·사립 전체 · 좌표로 행정동)', '사업체(경제총조사)': '통계청 경제총조사 읍·면·동별/산업대분류별 총괄(KOSIS DT_1KI1511 · DT_2KI2011 — 2015 · 2020 · 5년마다)'}
+# v2.69.0 전국 경로당 — 공공데이터포털 15114136 「전국마을회관및경로당표준데이터」(2026-10-07 받음 · 07_API키/out/natfac/kyr/) · 영업만 · 좌표로 행정동
+#   서울·경기도 이것으로 바꾼다(종전 = 서울 주소 맞춤 79% · 경기 OSM). 경로당 = 시설유형 「경로당」·「마을회관및경로당」 · 「마을회관」만인 곳은 따로 센다(vh)
+KF = sorted(_g.glob(os.path.join(SRC, 'kyr', 'tn_pubr_public_vill_hall_sen_cent_svc_*.csv'))); KYR = collections.defaultdict(list); KYRD = collections.Counter(); KVH = collections.Counter(); KYRDATE = ''
+if KF:
+    for r in csv.DictReader(open(KF[-1], encoding='utf-8-sig')):
+        if (r['BUSI_COD_NM'] or '').strip() != '영업': cnt['경로당 폐업·휴업'] += 1; continue
+        try: lat, lon = float(r['LAT']), float(r['LOT'])
+        except ValueError: cnt['경로당 좌표 없음'] += 1; continue
+        p = dong_of(lon, lat)
+        if not p: cnt['경로당 동 밖'] += 1; continue
+        k8 = p['adm_cd2'][:8]; t = (r['FLCT_TYP'] or '').strip(); KYRDATE = max(KYRDATE, r['CRTR_YMD'] or '')
+        if '경로당' in t:
+            KYRD[k8] += 1; cnt['경로당'] += 1
+            KYR[p['sgg']].append([round(lat, 6), round(lon, 6), (r['FLCT_NM'] or '').strip(), (r['LCTN_ROAD_NM_ADDR'] or r['LCTN_LOTNO_ADDR'] or '').strip(), '표준데이터', t, (r['BUIL_YMD'] or '')[:4], round(num(r['BUIL_AREA']))])
+        else: KVH[k8] += 1; cnt['마을회관'] += 1
+    SRCS['경로당'] = '공공데이터포털 전국마을회관및경로당표준데이터(15114136 · 지자체 등록 · 데이터기준일 ~' + KYRDATE + ' · 받은 날 2026-10-07 · 운영 중만 · 좌표로 행정동)'
 IX = json.load(open(os.path.join(R, 'index.json'), encoding='utf-8')); upd = 0
 for g in IX['gus']:
     gu = g['gu']; fn = os.path.join(R, gu, 'fac.json')
@@ -130,6 +146,11 @@ for g in IX['gus']:
         x = DD.setdefault(k, {}); x.setdefault('name', q['name']); v = D.get(k, {}); p = q.get('pop') or {}
         if 'sex' not in x and p.get('mage'): x['sex'] = [p['m'], p['f'], p['mage'], p['fage']]
         if 'kgc' in v: x['kgc'] = v['kgc']
+        if KF:
+            if KYRD.get(k): x['kyr'] = KYRD[k]
+            else: x.pop('kyr', None)
+            if KVH.get(k): x['vh'] = KVH[k]
+            else: x.pop('vh', None)
         if not seoul_gg:
             if 'cc' in v: x['cc'] = v['cc']
             if 'gov' in v and 'gov' not in x: x['gov'] = v['gov']
@@ -141,6 +162,7 @@ for g in IX['gus']:
     if PTS[gu]['kg2']: pts['kg2'] = PTS[gu]['kg2']
     if not seoul_gg and PTS[gu]['kg2']: pts['kg'] = PTS[gu]['kg2']
     doc['natkg'] = '2026-1'
+    if KF: pts['kyr'] = KYR[gu]; doc['kyrNo'] = 0; doc['kyrnat'] = KYRDATE
     json.dump(doc, open(fn, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':')); g.setdefault('bytes', {})['fac'] = os.path.getsize(fn); upd += 1
 json.dump(IX, open(os.path.join(R, 'index.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
 print('구', upd, dict(cnt), '동 사업체', len(BZ))

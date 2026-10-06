@@ -118,7 +118,7 @@
   // v0.10.100 동 현황 보강(구마다 fac.json) — 남녀 · 어린이집·유치원(해마다) · 경로당 · 입시·교과학원 · 상권변화지표 · 점포 추이 · 이 동의 상권. 서초도 이 파일을 쓴다.
   var RLOADF = {}, RFAC = {}, FAC_KEYS = ['kyr', 'cc', 'kg', 'aca', 'edu', 'govr'];
   var GOVC = { '주민센터': '#16a34a', '시청·구청': '#1d4ed8', '세무서': '#a16207', '등기소': '#7c3aed', '법원': '#9333ea', '검찰': '#6b21a8', '경찰': '#0f172a', '소방': '#dc2626', '교육청': '#0d9488', '보건소': '#db2777', '우체국': '#ea580c', '국가기관': '#475569' };
-  var FACL = { kyr: ['🧓 경로당(서울시)', '#b45309'], cc: ['👶 어린이집(서울시)', '#db2777'], kg: ['🎒 유치원(교육청)', '#d97706'], aca: ['📚 입시·교과학원', '#2563eb'], edu: ['🏫 학교(초·중·고·대학)', '#0f766e'], govr: ['🏛 관공서(서울·경기)', '#1d4ed8'] };
+  var FACL = { kyr: ['🧓 경로당', '#b45309'], cc: ['👶 어린이집(서울시)', '#db2777'], kg: ['🎒 유치원(교육청)', '#d97706'], aca: ['📚 입시·교과학원', '#2563eb'], edu: ['🏫 학교(초·중·고·대학)', '#0f766e'], govr: ['🏛 관공서(서울·경기)', '#1d4ed8'] };
   function facL(k) { var L = SAFE.filter(function (x) { return x[0] === k; })[0]; if (!L) { L = [k, FACL[k][0], FACL[k][1], [], 0]; SAFE.push(L); POLL.push([k, FACL[k][0], FACL[k][1], FACL[k][0]]); } return L; }
   function fLoad(gu, then) {
     if (!RLOADF[gu]) RLOADF[gu] = rGet(gu, 'fac.json').then(function (j) { RFAC[gu] = j;
@@ -2024,7 +2024,8 @@
   }
   function facCard(it) {
     var k = it.L[0], r = it.q.r, S = (it.q.m || {}).source || {}, h = '<h3>' + esc(FACL[k][0]) + '</h3>', s = '';
-    if (k === 'kyr' && r[4] === 'OSM') { h += row('이름', esc(r[2])) + row('자리', '<em>OpenStreetMap 의 경로당 점 — 경기 경로당은 공식 좌표 목록을 찾지 못해 OSM 에 있는 곳만</em>'); s = S['경기 경로당']; }
+    if (k === 'kyr' && r[4] === '표준데이터') { h += row('이름', esc(r[2])) + row('주소', esc(r[3])) + row('유형', esc(r[5] || '경로당')) + (r[6] ? row('건립', esc(r[6]) + '년') : '') + (r[7] ? row('건물 면적', r[7].toLocaleString() + '㎡') : ''); s = S['경로당']; }
+    else if (k === 'kyr' && r[4] === 'OSM') { h += row('이름', esc(r[2])) + row('자리', '<em>OpenStreetMap 의 경로당 점 — 경기 경로당은 공식 좌표 목록을 찾지 못해 OSM 에 있는 곳만</em>'); s = S['경기 경로당']; }
     else if (k === 'kyr') { h += row('이름', esc(r[2])) + row('주소', esc(r[3])) + row('자리', r[4] === '이름' ? '<em>OpenStreetMap 의 같은 이름 경로당 점(근사)</em>' : r[4] === '근사' ? '<em>같은 길의 가장 가까운 번호 자리(근사 — 이 방법을 시험해 보니 오차 가운데 약 40m · 열에 아홉은 125m 안)</em>' : '<em>OpenStreetMap 건물 도로명주소와 맞춘 자리</em>'); s = S['경로당']; }
     else if (k === 'cc') { h += row('이름', esc(r[2])) + row('유형', esc(r[3])) + (r[5] == null ? row('정원', r[4] + '명') : row('정원 · 현원', r[4] + '명 · ' + r[5] + '명' + (r[4] ? ' <em>(채운 비율 ' + Math.round(r[5] / r[4] * 100) + '%)</em>' : ''))); s = r[5] == null ? S['경기 어린이집'] : S['어린이집']; }
     else if (k === 'kg') { h += row('이름', esc(r[2])) + row('설립', esc(r[3])) + (r[4] ? row('자리', '<em>' + (r[4] === 'OSM' ? 'OpenStreetMap 의 같은 이름 점' : r[4] === '병설 학교' ? '병설된 학교 자리' : '어린이보호구역 대상 시설(표준데이터)의 같은 이름 점') + '</em>') : ''); s = r[4] ? S['경기 유치원'] : S['유치원·학교']; }
@@ -2153,8 +2154,8 @@
     if (x.sex) { var m = x.sex[0], f = x.sex[1]; h += row('남녀', '남 ' + m.toLocaleString() + '(' + Math.round(m / (m + f) * 100) + '%) · 여 ' + f.toLocaleString() + '(' + Math.round(f / (m + f) * 100) + '%) <em>· 여자 100명당 남자 ' + Math.round(m / f * 100) + '명</em>') +
       '<div class="cap">연령대별 남녀 인구(명 · 주민등록 2026년 9월 · 위가 나이 많음)</div>' + pyr(x.sex[2], x.sex[3]); srcs.push(S['남녀']); }
     var fl = []; if (x.cc) fl.push('어린이집 ' + x.cc[0] + '곳(정원 ' + x.cc[1] + (x.cc[2] >= 0 ? ' · 현원 ' + x.cc[2] : '') + ')'); if (x.kgc) fl.push('유치원 ' + x.kgc[0] + '곳(정원 ' + x.kgc[1] + ' · 원아 ' + x.kgc[2] + ')'); else if (F.natkg) fl.push('유치원 0곳 <em>(교육부 유치원알리미 2026년 1차 공시 · 국·공·사립 전체)</em>'); else if (x.kgy) fl.push('유치원 ' + x.kgy[x.kgy.length - 1] + '곳'); else if (x.kgN) fl.push('유치원 ' + x.kgN + '곳');
-    var E = x.edu || {}; if (x.edu || x.sch) fl.push('초 ' + (E['초'] != null ? E['초'] : (x.sch || {}).e || 0) + ' · 중 ' + (E['중'] != null ? E['중'] : (x.sch || {}).m || 0) + ' · 고 ' + (E['고'] != null ? E['고'] : (x.sch || {}).h || 0) + (E['대학'] ? ' · 대학 ' + E['대학'] : '') + (E['기타'] ? ' · 특수·기타 ' + E['기타'] : '')); if (x.kyr) fl.push('경로당 ' + x.kyr + '곳'); if (x.aca != null || x.acaAll) fl.push('입시·교과학원 ' + (x.aca || 0) + '곳(학원 전체 ' + (x.acaAll || 0) + ')');
-    if (fl.length) h += row('아이·어르신·교육', fl.join(' · ') + (F.sido === '41' ? ' <em>(경기: 경로당은 OSM 에 있는 곳만 · 유치원은 이름으로 자리를 잡은 곳만(경기 전체 1,771곳 중 ' + (F.kgNo || 0) + '곳은 자리를 못 잡아 빠짐) · 학교는 OSM·어린이보호구역 자료)</em>' : x.kyr && F.kyrNo ? ' <em>(경로당은 주소로 자리를 잡은 곳만 — 이 구 ' + F.kyrNo + '곳 빠짐)</em>' : ''));
+    var E = x.edu || {}; if (x.edu || x.sch) fl.push('초 ' + (E['초'] != null ? E['초'] : (x.sch || {}).e || 0) + ' · 중 ' + (E['중'] != null ? E['중'] : (x.sch || {}).m || 0) + ' · 고 ' + (E['고'] != null ? E['고'] : (x.sch || {}).h || 0) + (E['대학'] ? ' · 대학 ' + E['대학'] : '') + (E['기타'] ? ' · 특수·기타 ' + E['기타'] : '')); if (x.kyr) fl.push('경로당 ' + x.kyr + '곳'); if (x.vh) fl.push('마을회관 ' + x.vh + '곳'); if (x.aca != null || x.acaAll) fl.push('입시·교과학원 ' + (x.aca || 0) + '곳(학원 전체 ' + (x.acaAll || 0) + ')');
+    if (fl.length) h += row('아이·어르신·교육', fl.join(' · ') + (F.sido === '41' ? ' <em>(경기: ' + (F.kyrnat ? '' : '경로당은 OSM 에 있는 곳만 · ') + '유치원은 이름으로 자리를 잡은 곳만(경기 전체 1,771곳 중 ' + (F.kgNo || 0) + '곳은 자리를 못 잡아 빠짐) · 학교는 OSM·어린이보호구역 자료)</em>' : F.kyrnat ? ' <em>(경로당 = 전국마을회관및경로당표준데이터 · 운영 중 · 기준 ~' + esc(F.kyrnat) + ')</em>' : x.kyr && F.kyrNo ? ' <em>(경로당은 주소로 자리를 잡은 곳만 — 이 구 ' + F.kyrNo + '곳 빠짐)</em>' : ''));
     if (x.cc || x.kgc) h += '<div class="vzg">' + vzH([['👶 어린이집 정원', x.cc ? x.cc[1] : 0, '#94a3b8'], ['👶 어린이집 다니는 아이', x.cc && x.cc[2] > 0 ? x.cc[2] : 0, '#22c55e'], ['🎒 유치원 정원', x.kgc ? x.kgc[1] : 0, '#cbd5e1'], ['🎒 유치원 원아', x.kgc ? x.kgc[2] : 0, '#3b82f6']].filter(function (q) { return q[1]; }), { title: '어린이집 ' + (x.cc ? x.cc[0] : 0) + '곳 · 유치원 ' + (x.kgc ? x.kgc[0] : 0) + '곳 — 정원과 지금 다니는 아이(명)', unit: '명' }) + '</div>';
     if (x.ccy && x.ccy.some(function (v) { return v; })) { var c0 = x.ccy[0], c1 = x.ccy[x.ccy.length - 1];
       h += row('어린이집 추이', F.cyears[0] + '년 ' + c0 + '곳 → ' + F.cyears[F.cyears.length - 1] + '년 ' + c1 + '곳 <b>' + sgn(pctCh(c0, c1)) + '</b>') + '<div class="cap">해마다 운영 중인 어린이집 수(곳 · 그해 말 · 인가일~폐지일로 셈 · ' + F.cyears[F.cyears.length - 1] + '년은 ' + (F.sido === '41' ? '자료 기준일 2025.7' : '지금') + ')</div>' + bar(x.ccy, '#db2777', F.cyears.map(function (y) { return "'" + String(y).slice(2); })); srcs.push(F.sido === '41' ? S['경기 어린이집'] : S['어린이집']); }
@@ -3050,7 +3051,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.68.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.69.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }

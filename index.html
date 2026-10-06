@@ -553,7 +553,7 @@
     #m2dCard .r { font-size: 14.5px !important; } #m2dCard .r b { flex-basis: 128px !important; }
     #m2dCard .desc, #m2dCard .cap { font-size: 13.5px !important; }
     #m2dPanel.lvall { left: 10px !important; right: 10px !important; width: auto !important; }
-    #m2dPanel.lvall #m2dPanB { column-width: 300px; column-gap: 14px; }
+    #m2dPanel.lvall #m2dPanB { column-width: 250px; column-gap: 12px; }
     #m2dPanel.lvall #m2dPanB .c1 { break-inside: avoid; }
   }
   #m2dPanel.lvall { top: calc(var(--toph, 90px) + 4px) !important; bottom: 0 !important; max-height: none !important; }
@@ -590,6 +590,13 @@
   /* v2.32.0 닫기 = 사다리 줄 끝(내용을 가리지 않게) · PC 카드 35% */
   #m2dCard.haslad > .x { display: none !important; }
   #m2dCard .ladx { margin-left: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-weight: 700; cursor: pointer; min-height: 26px; }
+  /* v2.33.0 레이어 판 한 화면 — 설명은 평소 접힘 · 📎 범위·출처는 한 번 더 눌러야 · 전체 목록 단추 촘촘히 */
+  #m2dPanel .lmd { margin-top: 2px; } #m2dPanel .lmd > summary { cursor: pointer; font-size: 11px; color: var(--acc); font-weight: 700; list-style: none; } #m2dPanel .lmd > summary::-webkit-details-marker { display: none; }
+  #m2dPanel.lvall .pg { gap: 4px !important; padding: 4px 0 !important; }
+  #m2dPanel.lvall .pg button.lyr { height: 30px !important; padding: 0 9px !important; font-size: 12.5px !important; }
+  #m2dPanel.lvall .lyw .lhq { width: 22px; height: 22px; font-size: 11px; }
+  #m2dPanel.lvall .c2 { margin: 4px 0 !important; padding: 4px 8px 2px !important; }
+  #m2dPanel.lvall .c2h .gc { font-size: 13px; padding: 2px !important; }
 </style>
 </head>
 <body>
@@ -688,7 +695,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.32.0"></script>
+<script src="js/map2d.js?v=2.33.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

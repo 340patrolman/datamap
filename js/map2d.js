@@ -2834,16 +2834,16 @@
   // v2.10.0 층 설명에 범위·출처·이용허락·추정 여부(data/layers.json — 굽는 도구가 실제 파일에서 센다)
   var LMETA = null, LMETAP = null;
   function lhTxt(k) {
-    if (!LMETA && !LMETAP) LMETAP = fetch('data/layers.json').then(function (r) { return r.json(); }).then(function (j) { LMETA = {}; j.layers.forEach(function (x) { LMETA[x.key] = x; }); if (LHON) paintLayers(); }).catch(function () { LMETA = {}; });
+    if (!LMETA && !LMETAP) LMETAP = fetch('data/layers.json').then(function (r) { return r.json(); }).then(function (j) { LMETA = {}; j.layers.forEach(function (x) { LMETA[x.key] = x; }); if (LHON || Object.keys(LHK).some(function (q) { return LHK[q]; })) paintLayers(); }).catch(function () { LMETA = {}; });
     var m = LMETA && LMETA[k], t = LHELP[k] ? esc(LHELP[k]) : '';
-    if (m) t += (t ? '<br>' : '') + '<i class="lm">📎 ' + esc(m.cover || '') + ' · ' + esc(m.src) + (m.estimate ? ' · 추정 포함' : '') + ' · 이용허락 ' + esc(m.license) + '</i>';
-    return t ? '<small>' + t + '</small>' : '';
+    var mt = m ? '<details class="lmd"><summary>📎 범위·출처·이용허락</summary><i class="lm">' + esc(m.cover || '') + ' · ' + esc(m.src) + (m.estimate ? ' · 추정 포함' : '') + ' · 이용허락 ' + esc(m.license) + '</i></details>' : '';   // v2.33.0 소유자 「범위·출처는 필요할 때만」
+    return t || mt ? '<small>' + t + mt + '</small>' : '';
   }
   function toggle(k) { on[k] = !on[k]; if (k === 'bld' && on[k]) loadBld(); saveOn(); paintLayers(); draw(); }
   function onLayerClick(e) {
     var b = e.target.closest('button'); if (!b) return; var pn = $('m2dPanel');
     if (catClick(b)) return;
-    if (b.getAttribute('data-lh')) { LHON = !LHON; LHK = {}; try { localStorage.setItem('tg_map2d_lh', LHON ? '1' : '0'); } catch (e2) {} paintLayers(); return; }
+    if (b.getAttribute('data-lh')) { LHON = !LHON; LHK = {}; try { localStorage.setItem('tg_map2d_lh2', LHON ? '1' : '0'); } catch (e2) {} paintLayers(); return; }
     if (b.getAttribute('data-all')) { pn.classList.toggle('on'); return; }
     if (b.getAttribute('data-close')) { pn.classList.remove('on'); return; }
     if (b.getAttribute('data-none')) { layersNone(); return; }
@@ -3111,7 +3111,7 @@
     pbtn: '보행자 작동 신호기(누름 버튼).'
   };
   var LHON = false;
-  try { LHON = localStorage.getItem('tg_map2d_lh') === '1'; } catch (e) {}
+  try { LHON = localStorage.getItem('tg_map2d_lh2') === '1'; } catch (e) {}
   // ---------- 🗣 자동 해설(v2.0.0 · 소유자 「인구분포가 나오면 데이터에 따른 설명 — 모르고 넘어갈 수 있으니」) ----------
   //  숫자를 앱 기준으로 읽어 문장으로 — 기준(몇 배·몇 %p)을 같이 적는다. 「그래서 어떤 장사」 쪽은 일반론이라 그렇게 밝힌다.
   var AREF = null; fetch('data/area-ref.json').then(function (r) { return r.json(); }).then(function (j) { AREF = j; }).catch(function () {});
@@ -4141,7 +4141,7 @@
     if ((a = b.getAttribute('data-p')) && b.classList.contains('pk')) { preset(a); return true; }
     if ((a = b.getAttribute('data-gc'))) { if (GCL[a]) delete GCL[a]; else GCL[a] = 1; gclSave(); paintLayers(); return true; }
     if ((a = b.getAttribute('data-gall'))) { gcAll(a === 'open'); return true; }
-    if ((a = b.getAttribute('data-lhk'))) { if (LHON) { LHON = false; try { localStorage.setItem('tg_map2d_lh', '0'); } catch (e) {} LAYERS.forEach(function (l) { LHK[l[0]] = 1; }); } LHK[a] = !LHK[a]; paintLayers(); return true; }
+    if ((a = b.getAttribute('data-lhk'))) { if (LHON) { LHON = false; try { localStorage.setItem('tg_map2d_lh2', '0'); } catch (e) {} LAYERS.forEach(function (l) { LHK[l[0]] = 1; }); } LHK[a] = !LHK[a]; paintLayers(); return true; }
     if ((a = b.getAttribute('data-lv'))) { LV = a; try { localStorage.setItem('tg_map2d_lv', LV); } catch (e) {} paintLayers(); var pn0 = $('m2dPanel'); if (pn0) pn0.scrollTop = 0; return true; }
     if ((a = b.getAttribute('data-jump'))) { var sc = $('lc-' + a), pn = $('m2dPanel'); if (sc && pn) pn.scrollTo({ top: sc.offsetTop - ($('m2dPanH') ? $('m2dPanH').offsetHeight : 0) - 4, behavior: 'smooth' }); return true; }
     if ((a = b.getAttribute('data-cat'))) { CAT = a; var C = catOf(a); if (C && C[2] && !C[2].some(function (m) { return m[0] === MID; })) MID = C[2][0][0]; try { localStorage.setItem('tg_map2d_cat', CAT); localStorage.setItem('tg_map2d_mid', MID); } catch (e) {} paintLayers(); return true; }

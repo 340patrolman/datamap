@@ -1125,7 +1125,11 @@
       var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + r.from + '~' + r.to)) + row('자리', esc(r.p)) + row('신고 인원', (r.n || '-') + '명 <em>(신고값)</em>') + (r.approx ? row('자리 표시', '<em>근사</em> — ' + esc(r.note)) : '');
       h += src('서울경찰청 「오늘의 주요집회」 · 주최자는 담지 않았다');
     }
-    if (it.kind === 'dong' && it.d && it.d.c) { h += talkDong(it.d) + '<div class="lg-btns"><button data-story="1">📝 이 동 풀어 읽기</button><button data-pnlhere="' + (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div><div id="storyBox"></div>'; }
+    if (it.kind === 'dong' && it.d && it.d.c) { var dll = (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5), dA = 0;   // v2.61.0 소유자 「읍면동 오른쪽 옆에 상권분석 · 그 옆에 이 동 풀어 읽기 · 손익 계산은 그대로」
+      (it.d.polys || []).forEach(function (pg) { var r = pg[0] || [], a = 0; for (var i = 0, k = r.length - 1; i < r.length; k = i++) a += (r[k][0] + r[i][0]) * (r[k][1] - r[i][1]); dA += Math.abs(a / 2); });
+      var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
+      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1">📝 이 동 풀어 읽기</button></span></h3><div id="storyBox"></div>');
+      h += talkDong(it.d) + '<div class="lg-btns"><button data-pnlhere="' + dll + '">💰 여기서 손익 계산</button></div>'; }
     card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
@@ -3044,7 +3048,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.60.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.61.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -5105,6 +5109,7 @@
     var done = function () { c.textContent = '✅ 복사됨'; };
     try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(done, function () { ta.select(); try { document.execCommand('copy'); done(); } catch (e3) {} }); else { ta.select(); document.execCommand('copy'); done(); } } catch (e2) { ta.select(); } });
   document.addEventListener('click', function (e) { var bf = e.target.closest('[data-frn]'); if (bf) { show({ kind: 'frn', gu: bf.getAttribute('data-frn') }); return; } });
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-trdhere]'); if (!b) return; var a = b.getAttribute('data-trdhere').split('|'), ll = a[0].split(','), q = P(+ll[0], +ll[1]); RAD.r = +a[1] || 500; view.cx = q[0]; view.cy = q[1]; view.s = Math.max(view.s, RAD.r >= 1000 ? 0.12 : 0.25); radOpen(q); draw(); });
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-radhere]'); if (!b) return; var a = b.getAttribute('data-radhere').split(','); var q = P(+a[0], +a[1]); view.cx = q[0]; view.cy = q[1]; view.s = Math.max(view.s, 0.25); radOpen(q); });
   if ($('m2dRad')) {
     $('m2dRad').addEventListener('click', function (e) { var b = e.target.closest('[data-rx],[data-rr]'); if (!b) { if ($('m2dRad').classList.contains('min')) $('m2dRad').classList.remove('min'); return; }

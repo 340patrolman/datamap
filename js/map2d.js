@@ -3050,7 +3050,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.67.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.68.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -5497,6 +5497,26 @@
     cd.addEventListener('touchend', function (e) { if (pz && e.touches.length < 2) { pz = null; try { localStorage.setItem('tg_map2d_cardz', CZ.toFixed(2)); } catch (e2) {} } });
     if (window.MutationObserver) new MutationObserver(function () { document.body.classList.toggle('cardon', cd.classList.contains('on')); }).observe(cd, { attributes: true, attributeFilter: ['class'] });
     window.TGCard = { setH: setH, setZ: setZ, h: function () { return CH; }, z: function () { return CZ; } };
+  })();
+
+  // ---------- v2.68.0 판 높이 손잡이(소유자 「업종별 개업 예상과 학원 교습소 개업 화면이 고정 · 윗부분으로 끌어올리거나 아래로 내리거나 · 독립 화면이 열려도 구조는 동일하도록」) ----------
+  //   💰 개업 예상·🎒 학원(m2dPnl) · 📐 반경 분석(m2dRad) · 🏪 창업 자리(m2dBiz) 맨 위에 카드와 같은 손잡이 — 끌면 높이 · 톡 누르면 크게(90%) ↔ 반(45%) · 판마다 기기에 기억(tg_map2d_ph_판)
+  (function () {
+    ['m2dPnl', 'm2dRad', 'm2dBiz'].forEach(function (id) {
+      var el = $(id); if (!el) return; var key = 'tg_map2d_ph_' + id, H0 = 0; try { H0 = +localStorage.getItem(key) || 0; } catch (e) {}
+      function setH(px) { var h = Math.max(110, Math.min(window.innerHeight - 70, px)); el.style.setProperty('--ph', Math.round(h) + 'px'); el.classList.add('sized'); return h; }
+      if (H0) setH(H0 * window.innerHeight);
+      window.addEventListener('resize', function () { var f = 0; try { f = +localStorage.getItem(key) || 0; } catch (e) {} if (f) setH(f * window.innerHeight); });
+      function inject() { if (el.querySelector(':scope > .pgrab')) return; el.insertAdjacentHTML('afterbegin', '<div class="pgrab" title="끌어서 높이 · 눌러서 크게/반"><i></i></div>'); }
+      inject(); if (window.MutationObserver) new MutationObserver(inject).observe(el, { childList: true });
+      var dr = null;
+      el.addEventListener('pointerdown', function (e) { if (!e.target.closest('.pgrab')) return; var h = el.getBoundingClientRect().height; dr = { y: e.clientY, h: h, n: h, id: e.pointerId, t: Date.now() }; try { el.setPointerCapture(e.pointerId); } catch (e2) {} var g = el.querySelector('.pgrab'); if (g) g.classList.add('drag'); e.preventDefault(); });
+      el.addEventListener('pointermove', function (e) { if (!dr || e.pointerId !== dr.id) return; dr.n = setH(dr.h + (dr.y - e.clientY)); });
+      function end() { if (!dr) return; var g = el.querySelector('.pgrab'); if (g) g.classList.remove('drag'); var nh = dr.n;
+        if (Math.abs(dr.n - dr.h) < 6 && Date.now() - dr.t < 300) nh = setH(dr.h < window.innerHeight * 0.6 ? window.innerHeight * 0.9 : window.innerHeight * 0.45);
+        dr = null; try { localStorage.setItem(key, (nh / window.innerHeight).toFixed(3)); } catch (e2) {} }
+      el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    });
   })();
 
   // ---------- v2.66.0 가− 가+ 글씨 크기(소유자 「지도 안 설명글의 글씨 크기를 조절 · 오른쪽 위 닫기 단추 왼쪽에 + − · 스타일과 톤에 맞게」) ----------

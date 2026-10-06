@@ -298,6 +298,34 @@
 "paid_ok": false
 },
 {
+"key": "jiga",
+"name": "🟧 공시지가·지목 지도(대지 ㎡당 · 농지·임야 비율 · 250m·동)",
+"group": "주거·부동산",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
+"key": "land",
+"name": "📐 필지 — 공시지가·용도·건물(누르면 · 브이월드)",
+"group": "주거·부동산",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "home",
 "name": "🏠 주택 실거래 — 평당·전세가율(250m)",
 "group": "주거·부동산",
@@ -397,7 +425,7 @@
 },
 {
 "key": "fdong",
-"name": "🌏 외국인주민 비율(읍면동 · 전국)",
+"name": "🌏 외국인 현황(시군구·읍면동 · 비율·인원·유형·5년 변화)",
 "group": "인구 구성",
 "default": false,
 "file": "foreign-dong.json",
@@ -420,6 +448,20 @@
 "cover": "서울·경기·인천·대전·세종·충북·충남·강원·부산·대구·울산·경북·경남·전남광주·전북",
 "src": "행정안전부 지방행정인허가 문화_외국인관광도시민박업(공공데이터포털 15044966)",
 "license": "확인 필요(공공데이터포털 이용허락범위 표기 확인)",
+"estimate": false,
+"paid_ok": false
+},
+{
+"key": "stay",
+"name": "🛏 숙박시설(호텔·호스텔·콘도·한옥·펜션·농어촌민박·모텔 · 전국)",
+"group": "인구 구성",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
 "estimate": false,
 "paid_ok": false
 },
@@ -494,6 +536,20 @@
 "paid_ok": true
 },
 {
+"key": "juris",
+"name": "🏛 행정 관할(교육지원청·세무서·법원 · 전국)",
+"group": "바탕",
+"default": false,
+"file": "juris.json",
+"kind": "poly",
+"scope": "national",
+"cover": "전국",
+"src": "국가법령정보센터 원문(각급 법원의 설치와 관할구역에 관한 법률 별표3 · 지방교육자치법 시행령 종전 별표2 · 시·도 교육청 조례 별표) · 국세청 세무서별 관할구역(공공데이터포털 15099881)",
+"license": "법령 별표 = 저작권법 제7조 보호받지 않는 저작물 · 국세청 파일은 확인 필요",
+"estimate": true,
+"paid_ok": true
+},
+{
 "key": "rnet",
 "name": "🛣 도로망 등급(전국 · 국도·지방도·시군도)",
 "group": "도로·교통",
@@ -503,6 +559,20 @@
 "scope": "national",
 "cover": "전국",
 "src": "국가교통정보센터 ITS",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
+"key": "rpost",
+"name": "🔢 도로 번호(서울 가로등 · 전국 고속도로 거리표 km)",
+"group": "도로·교통",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
 "license": "확인 필요",
 "estimate": false,
 "paid_ok": false

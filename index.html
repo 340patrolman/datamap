@@ -620,6 +620,11 @@
   .vzp i { bottom: auto !important; height: 6px; } .vzp i + i { top: 7px; } .vzr > b small { font-weight: 600; color: var(--ink2); }
   .vz .pleg { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; margin-top: 4px; } .vz .pleg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
   #m2dCard .fbx { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; } #m2dCard .fbx textarea { width: 100%; box-sizing: border-box; min-height: 64px; font: inherit; font-size: 13px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--chip); color: var(--ink); } #m2dFbB { display: none; } :root.pilot #m2dFbB { display: inline-flex; }
+  /* v2.46.1 소유자 「닫기 단추 색이 밋밋하다 — 잘 보이게」 — 닫기는 어디서나 빨간 바탕·흰 글씨·✕ */
+  #m2dCard .x, #m2dCard .ladx, #m2dPanel .ph .x, #m2dReg .ph .x, [data-px="x"], [data-bx="x"], [data-rx="x"], [data-rg="x"], [data-close], #m2dLegX, #m2dGetX { background: #dc2626 !important; border: 0 !important; color: #fff !important; font-weight: 800 !important; box-shadow: 0 2px 6px rgba(220,38,38,.35); }
+  #m2dCard .x::before, #m2dCard .ladx::before, #m2dPanel .ph .x::before, #m2dReg .ph .x::before, [data-px="x"]::before, [data-bx="x"]::before, [data-rx="x"]::before, [data-rg="x"]::before, [data-close]::before, #m2dLegX::before, #m2dGetX::before { content: "✕ "; font-weight: 900; }
+  #m2dCard .x:hover, #m2dCard .ladx:hover, [data-px="x"]:hover, [data-bx="x"]:hover, [data-close]:hover { background: #b91c1c !important; }
+  #m2dFoldX { background: #1e3a8a !important; color: #fff !important; border: 0 !important; }
 </style>
 </head>
 <body>
@@ -718,7 +723,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.46.0"></script>
+<script src="js/map2d.js?v=2.47.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

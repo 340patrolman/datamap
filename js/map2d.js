@@ -2912,7 +2912,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.46.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.47.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3430,7 +3430,10 @@
     if (v.one) { var o = v.one, ot = o.reduce(function (a, b) { return a + b; }, 0) || 1, old = o[5] + o[6];
       h += row('👴 혼자 사는 65세 이상', '<b>' + old.toLocaleString() + '명</b> · 1인 세대의 ' + f1(old / ot * 100) + '%' + (v.onesx ? ' · 남 ' + v.onesx[0].toLocaleString() + ' · 여 ' + v.onesx[1].toLocaleString() : '') + (SDv ? ' <em>(' + esc(sdn) + ' ' + f1((SDv.one[5] + SDv.one[6]) / (SDv.one.reduce(function (a, b) { return a + b; }, 0) || 1) * 100) + '%)</em>' : ''));
       txt.push('혼자 사는 65세 이상 ' + old.toLocaleString() + '명(1인 세대의 ' + f1(old / ot * 100) + '%) — 폭염·한파·고독사 살핌 대상의 크기');
-      h += vzStack([['이 동 1인 세대', o, ot.toLocaleString() + '명']].concat(SDv ? [[sdn, SDv.one, '']] : []), ONEK, { title: '혼자 사는 사람 나이(%)' }); }
+      h += vzStack([['이 동 1인 세대', o, ot.toLocaleString() + '명']].concat(SDv ? [[sdn, SDv.one, '']] : []), ONEK, { title: '혼자 사는 사람 나이(%)' });
+      var om = Object.keys(HSD.dong).filter(function (q) { return q.slice(0, 5) === gu && HSD.dong[q].one; }).map(function (q) { var x = HSD.dong[q].one; return [q, x[5] + x[6]]; }).sort(function (a, b) { return b[1] - a[1]; });
+      if (om.length > 2) { var DN = {}; allDong().forEach(function (d) { if (d.k) DN[d.k] = d.name; }); var oi = om.map(function (x) { return x[0]; }).indexOf(k8), oc = om.slice(0, 8); if (oi >= 8) oc.push(om[oi]);
+        h += vzH(oc.map(function (x) { return [DN[x[0]] || x[0], x[1], x[0] === k8 ? '#dc2626' : '#f59e0b']; }), { title: '👴 구 안 동 — 혼자 사는 65세 이상(명) · 빨강 = 이 동 · ' + (oi + 1) + '위 / ' + om.length + '동', unit: '명' }); } }
     if (v.cen) { var ys = Object.keys(v.cen).sort(), r1 = ys.map(function (y) { var c = v.cen[y]; return c[0] ? c[1] / c[0] * 100 : null; });
       h += vzLineQ([['1인가구 비율(%)', r1, '#f59e0b']], ys, { title: '1인가구 비율 — 해마다(통계청 일반가구 · 등록센서스)', fmt: function (x) { return f1(x) + '%'; } });
       if (ys.length > 1) txt.push('통계청 1인가구는 ' + ys[0] + '년 ' + f1(r1[0]) + '% → ' + ys[ys.length - 1] + '년 ' + f1(r1[r1.length - 1]) + '%'); }
@@ -3449,7 +3452,16 @@
       if (mates.length > 2) { var mi = mates.map(function (x) { return x[2]; }).indexOf('#dc2626'), cut = mates.slice(0, 8); if (mi >= 8) cut.push(mates[mi]); h += vzH(cut, { title: '구 안 동 수급률(%) — 빨강 = 이 동 · ' + (mi + 1) + '위 / ' + mates.length + '동', fmt: function (x) { return f1(x) + '%'; } }); }
       txt.push('기초생활수급자 ' + w[0].toLocaleString() + '명(주민의 ' + f1(wr) + '%' + (gr != null ? ' · 구 ' + f1(gr) + '%' : '') + ', 65세 이상 ' + w[6].toLocaleString() + '명)'); }
     else if (sw && gp) { h += row('기초생활수급자(구)', '<b>' + sw[0].toLocaleString() + '명 · 구 주민의 ' + f1(sw[0] / gp * 100) + '%</b> · ' + sw[1].toLocaleString() + '가구 <em>(' + esc(HSD.asof.wel_sgg) + ' · 동 단위 공개는 서울·경기만 — 구 값)</em>'); txt.push('기초생활수급자(구 전체) 주민의 ' + f1(sw[0] / gp * 100) + '%'); }
-    var src = '<p class="cap">' + esc(HSD.source) + ' · ' + esc(HSD.note) + '</p>';
+    if (sw && gp && sw.length > 2) { h += row('차상위(구 · ' + esc(HSD.asof.wel_sgg) + ')', '<b>' + sw[2].toLocaleString() + '명 · 구 주민의 ' + f1(sw[2] / gp * 100) + '%</b> <em>(차상위 본인부담경감·자활·장애인 세 사업 합 · 동 단위는 서울만 공개(OA-22226) — 아직 안 받음)</em>');
+      h += row('기초연금(구)', sw[3].toLocaleString() + '명 · 구 주민의 ' + f1(sw[3] / gp * 100) + '% <em>(65세 이상 가운데 소득 하위 약 70% 대상 — 노인 소득 단서)</em>');
+      h += vzH([['기초생활수급', sw[0] / gp * 100, '#dc2626'], ['차상위 3사업', sw[2] / gp * 100, '#f59e0b'], ['기초연금', sw[3] / gp * 100, '#7c3aed']], { title: '구 주민 가운데(%) — 사회보장정보원 ' + esc(HSD.asof.wel_sgg), fmt: function (x) { return f1(x) + '%'; } });
+      txt.push('구 전체 차상위 ' + f1(sw[2] / gp * 100) + '% · 기초연금 ' + f1(sw[3] / gp * 100) + '%'); }
+    var MD = HSD.mid; if (MD) { var hn = pop ? Math.max(1, Math.min(7, Math.round(pop / hh[0]))) : 2, mm = MD.mid[hn - 1], man = function (x) { return Math.round(x / 1e4).toLocaleString() + '만'; };
+      h += row('기준 중위소득 ' + MD.year + '(월)', MD.mid.slice(0, 4).map(function (x, i) { return (i + 1) + '인 ' + man(x); }).join(' · ') + ' <em>(나라가 정한 가구 소득의 가운데 값 — 이 동 주민의 실제 소득이 아니다)</em>');
+      h += vzH([['기준 중위소득', mm, '#16a34a'], ['차상위 기준(50%)', mm * 0.5, '#f59e0b'], ['의료급여 선정(40%)', MD.med[hn - 1], '#ea580c'], ['생계급여 선정(32%)', MD.live[hn - 1], '#dc2626']], { title: hn + '인 가구 한 달 소득 기준선(' + MD.year + ') — 이 동 세대당 ' + (pop ? f1(pop / hh[0]) : '?') + '명에 가까운 가구', fmt: function (x) { return man(x) + '원'; } });
+      var pay = ECD && ECD.dong[k8] && ECR && ECR.pension && ECD.dong[k8][1] ? ECD.dong[k8][2] / ECD.dong[k8][1] / (ECR.pension[0] * 2) : null;
+      h += row('이 동 주민 소득(중위값)', '<b>공개 값 없음</b> — 동 단위 주민 소득은 어느 기관도 내지 않는다(서울시 상권분석 소득 칸은 2026년 지워짐 · 국세청 소득은 구 단위).' + (pay ? ' 단서: 이 동 사업장 국민연금 1인당 보수 어림 ' + man(pay) + '원(일하는 곳 기준 · 사는 사람 아님)' : '') + ' · 수급률·차상위·기초연금·집값을 함께 본다.'); }
+    var src = '<p class="cap">' + esc(HSD.source) + ' · ' + esc(HSD.note) + (HSD.mid ? ' · ' + esc(HSD.mid.src) : '') + '</p>';
     if (story) return { t: '<b>집안 구성.</b> ' + txt.join(' · ') + '. 주민등록 「세대」는 통계청 「가구」와 다르다(같은 집이라도 주소를 따로 둔 경우). <small>(' + esc(HSD.source) + ')</small>', v: h.replace(/^<div class="dh">[\s\S]*?<\/div>/, '') };
     return h + src; }
   function houseRows(d) { if (!d || !d.k) return ''; return houseHtml(d.k, d.pop && d.pop.tot, d.name, false); }

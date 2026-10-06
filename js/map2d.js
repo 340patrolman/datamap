@@ -1021,7 +1021,7 @@
     } else if (it.kind === 'node') {
       var n = it.n, st = it.st; h = '<h3>' + (n.real ? '🚦 ' : '✕ ') + esc(n.name) + '</h3>' + (it.rep ? row(REP.here ? '지금 위치' : '보고 자리', (REP.here ? '지금 위치에서 ' : 'T-Book 보고 자리에서 ') + it.rep + 'm') + repAround() + hereRows() : '') + row('도로', esc(n.pair.replace('×', ' × ')));
       if (!n.real) { h += row('실제', '두 도로가 만나지 않는다 — ' + esc(n.why || ('최단 ' + n.gap + 'm'))) + '<p class="desc">게임 지도(격자)에는 교차로가 있지만 실제 길에는 없다. 사고·신호 자료를 이 자리에 붙이지 않는다.</p>' + src('OpenStreetMap(ODbL) · 2026-09-28 · 두 도로의 모든 선분 사이 최단 거리');
-        card.innerHTML = '<button class="x" id="m2dX">닫기</button>' + h; card.classList.add('on'); $('m2dX').onclick = function () { sel = null; show(null); draw(); }; return; }
+        card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + h; card.classList.add('on'); $('m2dX').onclick = function () { sel = null; show(null); draw(); }; return; }
       h += row('신호 교차로', n.sig ? esc(n.sig.name) + ' <em>#' + esc(n.sig.no) + '</em>' : '<em>공개 신호 목록(C-ITS)에 없음</em>');
       if (n.nameSrc) h += row('이름', '<em>' + esc(n.nameSrc) + '</em>');
       if (n.dong) h += row('행정동', esc(n.dong.dong) + ((n.dong.also || []).length ? ' · ' + esc(n.dong.also.join('·')) + ' <em>경계</em>' : ''));
@@ -1109,7 +1109,7 @@
       h += src('서울경찰청 「오늘의 주요집회」 · 주최자는 담지 않았다');
     }
     if (it.kind === 'dong' && it.d && it.d.c) { h += talkDong(it.d) + '<div class="lg-btns"><button data-story="1">📝 이 동 풀어 읽기</button><button data-pnlhere="' + (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5) + '">💰 여기서 손익 계산</button></div><div id="storyBox"></div>'; }
-    card.innerHTML = '<button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>'; card.classList.add('on');
+    card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>'; card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
@@ -3862,6 +3862,31 @@
   if ($('m2dLeg')) $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-jgm]'); if (!b) return; JGM = b.getAttribute('data-jgm'); try { localStorage.setItem('tg_map2d_jgm', JGM); } catch (e2) {} draw(); legend(); });
   if ($('m2dLeg')) $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-landuq]'); if (!b) return; LAND.uq = !LAND.uq; LAND.wk = ''; try { localStorage.setItem('tg_map2d_landuq', LAND.uq ? '1' : '0'); } catch (e2) {} draw(); legend(); });
   document.addEventListener('click', function (e) { var b = e.target.closest('#m2dCard [data-vwkey]'); if (!b) return; vwSetKey(); LAND.wk = ''; if (sel && sel.it && sel.it.kind === 'land') { sel.it.q = null; sel.it.err = null; show(sel.it); } });
+
+  // ---------- v2.24.0 폰 카드 = 양옆 꽉 · 위 손잡이를 끌어 높이(기억) · 끝까지 내리면 닫힘 · 두 손가락으로 글씨 크기(기억) — 소유자 「반만 보인다 · 위아래로 크기 · 두 손가락 확대 축소 · 작은 화면 활용」 ----------
+  (function () {
+    var cd = $('m2dCard'); if (!cd) return; var small = function () { return window.innerWidth < 760; }, root = document.documentElement;
+    var CH = 0.55, CZ = 1; try { CH = +localStorage.getItem('tg_map2d_cardh') || 0.55; CZ = +localStorage.getItem('tg_map2d_cardz') || 1; } catch (e) {}
+    var CUR = 0;   // 지금 카드 높이(눈에 보이는 px) — 카드 전체를 zoom 하므로 잰 값 대신 이 값으로 끈다
+    function setH(px) { var vh = window.innerHeight, h = Math.max(140, Math.min(vh - 24, px)); CUR = h; root.style.setProperty('--cardh', Math.round(h) + 'px'); document.body.classList.toggle('cardtall', h > vh * 0.62); }
+    function setZ(z) { CZ = Math.max(0.8, Math.min(2.2, z)); root.style.setProperty('--cz', CZ.toFixed(2)); }
+    setH(CH * window.innerHeight); setZ(CZ); window.addEventListener('resize', function () { setH(CH * window.innerHeight); });
+    var dr = null;
+    cd.addEventListener('pointerdown', function (e) { if (!small() || !e.target.closest('.grab')) return; dr = { y: e.clientY, h: CUR, n: CUR, id: e.pointerId, t: Date.now() }; try { cd.setPointerCapture(e.pointerId); } catch (e2) {} cd.classList.add('drag'); e.preventDefault(); });
+    cd.addEventListener('pointermove', function (e) { if (!dr || e.pointerId !== dr.id) return; var nh = dr.h + (dr.y - e.clientY * 1); dr.n = Math.max(60, Math.min(window.innerHeight - 24, nh)); root.style.setProperty('--cardh', dr.n + 'px'); });
+    function end(e) { if (!dr) return; var nh = dr.n, moved = Math.abs(nh - dr.h), quick = Date.now() - dr.t < 250; cd.classList.remove('drag'); dr = null;
+      if (nh < 120) { setH(CH * window.innerHeight); var x = $('m2dX'); if (x) x.click(); return; }
+      if (moved < 6 && quick) { nh = nh < window.innerHeight * 0.7 ? window.innerHeight * 0.92 : window.innerHeight * 0.5; }   // 손잡이를 톡 누르면 크게 ↔ 반
+      CH = nh / window.innerHeight; setH(nh); try { localStorage.setItem('tg_map2d_cardh', CH.toFixed(3)); } catch (e2) {} }
+    cd.addEventListener('pointerup', end); cd.addEventListener('pointercancel', end);
+    function dist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+    var pz = null;
+    cd.addEventListener('touchstart', function (e) { if (e.touches.length === 2) pz = { d: dist(e.touches) || 1, z: CZ }; }, { passive: true });
+    cd.addEventListener('touchmove', function (e) { if (!pz || e.touches.length !== 2) return; e.preventDefault(); setZ(pz.z * dist(e.touches) / pz.d); }, { passive: false });
+    cd.addEventListener('touchend', function (e) { if (pz && e.touches.length < 2) { pz = null; try { localStorage.setItem('tg_map2d_cardz', CZ.toFixed(2)); } catch (e2) {} } });
+    if (window.MutationObserver) new MutationObserver(function () { document.body.classList.toggle('cardon', cd.classList.contains('on')); }).observe(cd, { attributes: true, attributeFilter: ['class'] });
+    window.TGCard = { setH: setH, setZ: setZ, h: function () { return CH; }, z: function () { return CZ; } };
+  })();
   // ---------- v2.18.0 쓰기 쉽게(소유자 2026-10-06 「밤 낮 모드 · 층 → 레이어 · 네이버·카카오·미국 부동산 지도처럼 · 1단계 단위 → 2단계 인구 → 3단계 업무 대·중·소 분류」) ----------
   // 레이어 키는 그대로(T-Book 주소 #ly= 그대로) — 묶음은 보여 주는 차례만 바꾼다 · 한 레이어가 여러 묶음에 들 수 있다
   var CATS = [

@@ -517,6 +517,28 @@
   #m2dGate input { width: 100%; height: 48px; border: 1px solid var(--line); border-radius: 14px; background: var(--chip); color: var(--ink); font-size: 18px; text-align: center; letter-spacing: 2px; }
   #m2dGate button { width: 100%; height: 48px; margin-top: 10px; border: 0; border-radius: 14px; background: var(--acc); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; }
   #m2dGate .bad { color: #dc2626; font-weight: 700; min-height: 20px; margin: 8px 0 0; }
+  /* v2.24.0 작은 화면 — 카드는 양옆 꽉 바텀 시트(손잡이로 높이 · 두 손가락 글씨) · 위 줄 낮게 · 카드를 크게 열면 칩 줄 감춤 · 오른쪽 단추 작게 */
+  #m2dCard .grab { display: none; }
+  @media (max-width: 759px) {
+    #m2dCard { left: 0 !important; right: auto !important; bottom: 0 !important; zoom: var(--cz, 1); width: calc(100vw / var(--cz, 1)) !important; height: calc(var(--cardh, 55vh) / var(--cz, 1)); max-height: none !important; border-radius: 18px 18px 0 0 !important; padding: 0 14px calc(12px + env(safe-area-inset-bottom)) !important; touch-action: pan-y; overscroll-behavior: contain; }
+    #m2dCard.drag { transition: none; user-select: none; }
+    #m2dCard .grab { display: block; position: sticky; top: 0; z-index: 3; height: 28px; margin: 0 -14px 2px; background: var(--panel); touch-action: none; cursor: ns-resize; }
+    #m2dCard .grab i { display: block; width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 11px auto 0; }
+    #m2dCard.drag .grab i { background: var(--acc); }
+    #m2dCard .x { top: 30px !important; z-index: 4; }
+    #m2dCard h3 { margin-top: 2px !important; }
+    #m2dTop { padding: calc(5px + env(safe-area-inset-top)) 8px 5px !important; }
+    #m2dTop .row1 { gap: 5px; }
+    #m2dRegB, #m2dFindB, #m2dDN, #m2dFold { height: 36px !important; }
+    #m2dFindB, #m2dDN { width: 36px !important; }
+    #m2dChips { margin-top: 5px !important; }
+    #m2dChips > button, #m2dQC button { height: 32px !important; padding: 0 10px !important; font-size: 12.5px !important; }
+    body.cardon.cardtall #m2dChips, body.cardon.cardtall #m2dTop #m2dTime, body.cardon.cardtall #m2dFindRow { display: none !important; }
+    #m2dZoom { gap: 5px !important; right: 8px !important; }
+    #m2dZoom button { width: 40px !important; height: 40px !important; font-size: 18px !important; }
+    #m2dZoom #m2dFit, #m2dZoom #m2dLegB { font-size: 12px !important; }
+    body.cardon #m2dCtrB { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -615,7 +637,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.23.0"></script>
+<script src="js/map2d.js?v=2.24.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

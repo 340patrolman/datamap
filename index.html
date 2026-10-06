@@ -569,6 +569,24 @@
   #m2dCard i.o { background: rgba(22,163,74,.15); color: #15803d; } #m2dCard i.c { background: rgba(37,99,235,.13); color: #1d4ed8; } #m2dCard i.a { background: rgba(245,158,11,.18); color: #b45309; }
   :root.dark #m2dCard i.o { color: #86efac; } :root.dark #m2dCard i.c { color: #93c5fd; } :root.dark #m2dCard i.a { color: #fcd34d; }
   #m2dCard .relh { font-size: 11.5px; color: var(--ink2); margin: 6px 0 2px; line-height: 1.5; }
+  /* v2.29.0 레이어 판 — 근무별 묶음을 위로 · 묶음 하나씩/모두 접기 · ⓘ 설명 하나씩 */
+  #m2dPanel .ptop { margin: 8px 0 4px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--chip); }
+  #m2dPanel .ptop > summary { cursor: pointer; font-size: 13.5px; color: var(--ink); }
+  #m2dPanel .ptop > summary small { font-weight: 600; color: var(--ink2); font-size: 11.5px; }
+  #m2dPanel .prec { margin: 6px 0 2px; font-size: 12.5px; line-height: 1.6; }
+  #m2dPanel .prec > summary { cursor: pointer; font-weight: 700; color: var(--acc); }
+  #m2dPanel .prec > div { padding: 3px 0; border-top: 1px dashed var(--line); color: var(--ink2); }
+  #m2dPanel .prec .pk { height: 28px; padding: 0 9px; border-radius: 9px; border: 1px solid var(--acc); background: var(--panel); color: var(--acc); font-weight: 700; font-size: 12px; cursor: pointer; }
+  #m2dPanel .fold { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
+  #m2dPanel .fold button { height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 12px; font-weight: 700; cursor: pointer; }
+  #m2dPanel .fold button.on { background: #0e7490; border-color: #0e7490; color: #fff; }
+  #m2dPanel .c2h .gc { border: 0 !important; background: none !important; color: var(--ink) !important; font-size: 14px; padding: 4px 2px !important; margin: 0 !important; height: auto !important; cursor: pointer; text-align: left; }
+  #m2dPanel .c2h .gc i { font-style: normal; font-size: 11px; font-weight: 800; color: #fff; background: var(--acc); border-radius: 9px; padding: 0 6px; }
+  #m2dPanel .c2.cl { padding-bottom: 6px; }
+  #m2dPanel .lyw { display: inline-flex; align-items: center; gap: 2px; }
+  #m2dPanel .lyw .lhq { width: 26px; height: 26px; min-height: 0; padding: 0; border-radius: 13px; border: 1px solid var(--line); background: var(--panel); color: var(--ink2); font-size: 13px; cursor: pointer; }
+  #m2dPanel .lyw .lhq.on { background: #0e7490; border-color: #0e7490; color: #fff; }
+  #m2dPanel .lhi { display: block; margin: 3px 0 7px; }
 </style>
 </head>
 <body>
@@ -667,7 +685,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.28.0"></script>
+<script src="js/map2d.js?v=2.29.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

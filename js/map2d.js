@@ -1616,6 +1616,7 @@
     var el = $('m2dPre'); if (!el) return; var si = seasonInfo(); PRESETS = PRESETS.filter(function (x) { return x[0] !== 'season'; }); PRESETS.unshift(['season', si.icon + ' 지금 계절 · ' + si.short, si.keys]);
     el.innerHTML = '<button data-x="none" class="ctl">모두 끄기</button><button data-x="reset" class="ctl">처음대로</button><button data-x="biz" class="ctl biz">🏪 창업 자리 찾기</button><button data-x="rad" class="ctl biz">📐 반경 분석</button>' + PRESETS.map(function (x) { var act = LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); return '<button data-p="' + x[0] + '" class="' + (act ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') +
       '';
+    var pc = $('m2dPreC'); if (pc) pc.innerHTML = '<details id="m2dPreCD" class="prec"' + (PRECO ? ' open' : '') + '><summary>📋 묶음마다 켜는 레이어 — 어떻게 짜였나</summary>' + PRESETS.map(function (x) { return '<div><button data-p="' + x[0] + '" class="pk">' + x[1] + '</button> → ' + x[2].filter(hasL).map(function (k) { return esc(lname(k)); }).join(' · ') + '</div>'; }).join('') + '<p class="lhn">묶음을 누르면 행정동·도로·바탕만 남기고 나머지는 끈 뒤 이 레이어들을 켠다 · 「처음대로」 = 레이어마다 처음 값 · 「모두 끄기」 = 바탕만</p></details>';
     preFit();
   }
   // v0.10.92 소유자 「모두 끄기·처음대로는 왼쪽 맨 앞 · 화면을 넘으면 두 줄로」 — 한 줄에 다 들면 한 줄, 넘치면 두 줄(그래도 넘치면 옆으로 민다)
@@ -2839,7 +2840,7 @@
   function onLayerClick(e) {
     var b = e.target.closest('button'); if (!b) return; var pn = $('m2dPanel');
     if (catClick(b)) return;
-    if (b.getAttribute('data-lh')) { LHON = !LHON; try { localStorage.setItem('tg_map2d_lh', LHON ? '1' : '0'); } catch (e2) {} paintLayers(); return; }
+    if (b.getAttribute('data-lh')) { LHON = !LHON; LHK = {}; try { localStorage.setItem('tg_map2d_lh', LHON ? '1' : '0'); } catch (e2) {} paintLayers(); return; }
     if (b.getAttribute('data-all')) { pn.classList.toggle('on'); return; }
     if (b.getAttribute('data-close')) { pn.classList.remove('on'); return; }
     if (b.getAttribute('data-none')) { layersNone(); return; }
@@ -4033,39 +4034,54 @@
     unitKeep(); CAT = c; MID = id; try { localStorage.setItem('tg_map2d_cat', c); localStorage.setItem('tg_map2d_mid', id); } catch (e) {}
     saveOn(); paintLayers(); sel = null; show(null); draw(); summary(); }
   var LFQ = '', LV = 'cat'; try { LV = localStorage.getItem('tg_map2d_lv') || 'cat'; } catch (e) {}
-  function catPaint(pn, nOn) {   // v2.20.0 소유자 「먼저 판은 고르기 쉬웠는데 지금은 찾을 수 없다 · 전체를 다 볼 수 있게 · 구분은 잘 되어 있다」 → 탭으로 가리지 않고 모두 펼친다
+  // v2.29.0 소유자 「근무별 한 번에 메뉴를 전체 목록 밑에 — 어떻게 구성되고 진행되는지 알 수 있게 · 설명(건물·단속카메라 등)은 지금 전부 펼쳐져 있다 → 그 부분만도, 전체로도 접고 펼치게」
+  var LHK = {}, GCL = {}, PRECO = false, PSTO = true;
+  try { GCL = JSON.parse(localStorage.getItem('tg_map2d_gcl') || '{}') || {}; PSTO = localStorage.getItem('tg_map2d_pst') !== '0'; } catch (e) {}
+  function gclSave() { try { localStorage.setItem('tg_map2d_gcl', JSON.stringify(GCL)); } catch (e) {} }
+  function catPaint(pn, nOn) {   // v2.20.0 탭으로 가리지 않고 모두 펼친다 · v2.25.0 보기 셋 · v2.29.0 근무별 묶음을 위로 · 하나씩/모두 접기
     if (!CATS) return;
-    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanH"></div><div id="m2dPanB"></div><div class="pst"><div class="psec">⚡ 근무별 한 번에</div></div>'; var st = pn.querySelector('.pst');
-      if ($('m2dPre')) st.appendChild($('m2dPre')); var t2 = document.createElement('div'); t2.className = 'psec'; t2.textContent = '🕒 이 시각 한눈에'; st.appendChild(t2); if ($('m2dSum')) st.appendChild($('m2dSum'));
+    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanH"></div><details class="pst ptop" id="m2dPstD"' + (PSTO ? ' open' : '') + '><summary class="psec">⚡ 근무별 한 번에 <small>— 누르면 그 근무에 맞는 레이어 묶음만 켠다</small></summary><div id="m2dPreC"></div></details><div id="m2dPanB"></div><div class="pst" id="m2dPst2"></div>';
+      var pd = $('m2dPstD'); if ($('m2dPre')) pd.insertBefore($('m2dPre'), $('m2dPreC')); pd.addEventListener('toggle', function () { PSTO = pd.open; try { localStorage.setItem('tg_map2d_pst', PSTO ? '1' : '0'); } catch (e) {} });
+      var st = $('m2dPst2'), t2 = document.createElement('div'); t2.className = 'psec'; t2.textContent = '🕒 이 시각 한눈에'; st.appendChild(t2); if ($('m2dSum')) st.appendChild($('m2dSum'));
       var ft = document.createElement('div'); ft.className = 'pg pft'; ft.innerHTML = '<button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button><button data-onb="1">❔ 처음 안내 다시</button>'; st.appendChild(ft);
-      $('m2dPanH').innerHTML = '<div class="ph"><b>🗂 레이어 <small id="m2dPanN"></small></b><button data-lh="1">❓ 설명</button><button class="x" data-close="1">닫기</button></div><div class="lvs"><button data-lv="cat">🗂 묶음별</button><button data-lv="all">📋 전체 목록</button><button data-lv="on">✅ 켜진 것</button></div><input id="m2dLF" type="search" placeholder="레이어 이름으로 찾기 — 예: 사고 · 공시지가 · 버스" autocomplete="off"><div class="jmp" id="m2dJmp"></div>';
-      $('m2dLF').addEventListener('input', function () { LFQ = this.value.trim(); lfApply(); }); }
-    pn.classList.toggle('lvall', LV !== 'cat'); $('m2dPanN').textContent = nOn + '개 켜짐'; var lhb = $('m2dPanH').querySelector('[data-lh]'); if (lhb) lhb.classList.toggle('on', !!LHON);
+      $('m2dPanH').innerHTML = '<div class="ph"><b>🗂 레이어 <small id="m2dPanN"></small></b><button class="x" data-close="1">닫기</button></div><div class="lvs"><button data-lv="cat">🗂 묶음별</button><button data-lv="all">📋 전체 목록</button><button data-lv="on">✅ 켜진 것</button></div>' +
+        '<div class="fold"><button data-gall="open">▾ 묶음 모두 펼치기</button><button data-gall="close">▸ 묶음 모두 접기</button><button data-lh="1">ⓘ 설명 모두</button></div><input id="m2dLF" type="search" placeholder="레이어 이름으로 찾기 — 예: 사고 · 공시지가 · 버스" autocomplete="off"><div class="jmp" id="m2dJmp"></div>';
+      $('m2dLF').addEventListener('input', function () { LFQ = this.value.trim(); lfApply(); });
+      pn.addEventListener('toggle', function (e) { if (e.target && e.target.id === 'm2dPreCD') PRECO = e.target.open; }, true); }
+    pn.classList.toggle('lvall', LV !== 'cat'); $('m2dPanN').textContent = nOn + '개 켜짐'; var lhb = $('m2dPanH').querySelector('[data-lh]'); if (lhb) { lhb.classList.toggle('on', !!LHON); lhb.textContent = LHON ? 'ⓘ 설명 모두 접기' : 'ⓘ 설명 모두 펼치기'; }
     $('m2dPanH').querySelectorAll('[data-lv]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-lv') === LV); if (b.getAttribute('data-lv') === 'on') b.textContent = '✅ 켜진 것 ' + nOn; });
     var GL = []; LAYERS.forEach(function (l) { if (GL.indexOf(l[3]) < 0) GL.push(l[3]); }); GL.sort(function (a, b) { var x = GORD.indexOf(a), y = GORD.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
     $('m2dJmp').innerHTML = LV === 'cat' ? CATS.filter(function (c) { return c[2]; }).map(function (c) { return '<button data-jump="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '<button data-jump="etc">➕ 그 밖</button>' : LV === 'all' ? GL.map(function (g, i) { return '<button data-jump="g' + i + '">' + esc(g) + '</button>'; }).join('') : '';
-    function chip(k) { var bt = '<button data-k="' + k + '" class="lyr' + (on[k] ? ' on' : '') + '" data-n="' + esc(lname(k)) + '">' + lname(k) + '</button>'; return LHON ? '<div class="lhi">' + bt + lhTxt(k) + '</div>' : bt; }
-    var seen = {}, h = LHON ? '<p class="lhn">레이어 이름을 누르면 켜고 끈다. 회색 글은 그 레이어가 무엇인지 · 어디서 온 자료인지 · 어떻게 쓰는지.</p>' : '';
-    if (LV === 'all' || LV === 'on') {   // v2.25.0 소유자 「레이어 메뉴 전체가 보여야 하는데 전체에서도 고를 수 있게」 — 모든 레이어를 분류마다 한 번씩(묶음별처럼 겹치지 않게) · 켜진 것만
+    function chip(k) { var bt = '<button data-k="' + k + '" class="lyr' + (on[k] ? ' on' : '') + '" data-n="' + esc(lname(k)) + '">' + lname(k) + '</button>', op = LHON || LHK[k], q = '<button class="lhq' + (op ? ' on' : '') + '" data-lhk="' + k + '" aria-label="' + esc(lname(k)) + ' 설명 ' + (op ? '접기' : '펼치기') + '">ⓘ</button>';
+      return op ? '<div class="lhi"><span class="lyw">' + bt + q + '</span>' + lhTxt(k) + '</div>' : '<span class="lyw">' + bt + q + '</span>'; }
+    function sec(id, head, body, extra) { var cl = !!GCL[id]; return '<div class="c2' + (cl ? ' cl' : '') + '"><div class="c2h"><button class="gc" data-gc="' + esc(id) + '" aria-expanded="' + !cl + '">' + (cl ? '▸' : '▾') + ' ' + head + '</button>' + (extra || '') + '</div>' + (cl ? '' : body) + '</div>'; }
+    var seen = {}, h = '';
+    if (LV === 'all' || LV === 'on') {   // v2.25.0 모든 레이어를 분류마다 한 번씩 · 켜진 것만
       var LS = LV === 'on' ? LAYERS.filter(function (l) { return on[l[0]]; }) : LAYERS;
       h += LV === 'on' && !LS.length ? '<p class="lhn">켜진 레이어가 없다.</p>' : '';
       h += GL.map(function (g, i) { var ls = LS.filter(function (l) { return l[3] === g; }); if (!ls.length) return ''; var n = ls.filter(function (l) { return on[l[0]]; }).length;
-        return '<section class="c1" id="lc-g' + i + '"><div class="c2"><div class="c2h"><b>' + esc(g) + '</b><small style="color:var(--ink2)">' + ls.length + '</small>' + (n ? '<i>' + n + '</i>' : '') + '</div><div class="pg' + (LHON ? ' lhv' : '') + '">' + ls.map(function (l) { return chip(l[0]); }).join('') + '</div></div></section>'; }).join('');
-      if (LV === 'all') h += '<p class="lhn">모두 ' + LAYERS.length + '개 레이어 · 「🗂 묶음별」은 쓰임새(인구·경찰업무·상권…)로 다시 묶어 같은 레이어가 여러 곳에 나온다.</p>';
+        return '<section class="c1" id="lc-g' + i + '">' + sec('g:' + g, '<b>' + esc(g) + '</b> <small style="color:var(--ink2)">' + ls.length + '</small>' + (n ? ' <i>' + n + '</i>' : ''), '<div class="pg">' + ls.map(function (l) { return chip(l[0]); }).join('') + '</div>') + '</section>'; }).join('');
+      if (LV === 'all') h += '<p class="lhn">모두 ' + LAYERS.length + '개 레이어 · 이름을 누르면 켜고 끈다 · ⓘ 를 누르면 그 레이어 설명(무엇 · 어디서 온 자료 · 어떻게 쓰나)만 펼친다 · 「🗂 묶음별」은 쓰임새(인구·경찰업무·상권…)로 다시 묶어 같은 레이어가 여러 곳에 나온다.</p>';
       $('m2dPanB').innerHTML = h; lfApply(); qcPaint(); return; }
     CATS.forEach(function (c) { if (!c[2]) return;
       h += '<section class="c1" id="lc-' + c[0] + '"><h4>' + c[1] + '</h4>' + c[2].map(function (m) { var ks = midKeys(m), n = ks.filter(function (k) { return on[k]; }).length; ks.forEach(function (k) { seen[k] = 1; });
-        return '<div class="c2"><div class="c2h"><b>' + m[1] + '</b>' + (n ? '<i>' + n + '</i>' : '') + (m[3].length ? '<button data-mon="' + c[0] + '|' + m[0] + '">기본만 켜기</button>' : '') + (n ? '<button data-moff="' + c[0] + '|' + m[0] + '">끄기</button>' : '') + '</div>' +
-          m[2].map(function (g) { var gk = g[1].filter(hasL); return gk.length ? '<div class="pg' + (LHON ? ' lhv' : '') + '"><div class="pgt">' + esc(g[0]) + '</div>' + gk.map(chip).join('') + '</div>' : ''; }).join('') + '</div>'; }).join('') + '</section>'; });
+        return sec('m:' + c[0] + '|' + m[0], '<b>' + m[1] + '</b>' + (n ? ' <i>' + n + '</i>' : ''), m[2].map(function (g) { var gk = g[1].filter(hasL); return gk.length ? '<div class="pg"><div class="pgt">' + esc(g[0]) + '</div>' + gk.map(chip).join('') + '</div>' : ''; }).join(''),
+          (m[3].length ? '<button data-mon="' + c[0] + '|' + m[0] + '">기본만 켜기</button>' : '') + (n ? '<button data-moff="' + c[0] + '|' + m[0] + '">끄기</button>' : '')); }).join('') + '</section>'; });
     var etc = LAYERS.filter(function (l) { return !seen[l[0]]; });
-    h += '<section class="c1" id="lc-etc"><h4>➕ 그 밖의 레이어</h4><div class="c2"><div class="pg' + (LHON ? ' lhv' : '') + '">' + (etc.length ? etc.map(function (l) { return chip(l[0]); }).join('') : '<small class="lhn">모든 레이어가 위 묶음에 들어 있다.</small>') + '</div></div></section>';
+    if (etc.length) h += '<section class="c1" id="lc-etc"><h4>➕ 그 밖의 레이어</h4>' + sec('m:etc', '<b>그 밖</b>', '<div class="pg">' + etc.map(function (l) { return chip(l[0]); }).join('') + '</div>') + '</section>';
     $('m2dPanB').innerHTML = h; lfApply(); qcPaint();
   }
+  function gcAll(open) { var ids = []; if (LV === 'cat') CATS.forEach(function (c) { if (c[2]) c[2].forEach(function (m) { ids.push('m:' + c[0] + '|' + m[0]); }); }); else LAYERS.forEach(function (l) { if (ids.indexOf('g:' + l[3]) < 0) ids.push('g:' + l[3]); }); ids.push('m:etc');
+    ids.forEach(function (k) { if (open) delete GCL[k]; else GCL[k] = 1; }); gclSave(); paintLayers(); }
   function lfApply() { var B = $('m2dPanB'); if (!B) return; var q = LFQ.replace(/\s/g, '');
-    B.querySelectorAll('button.lyr').forEach(function (b) { var hit = !q || (b.getAttribute('data-n') || '').replace(/\s/g, '').indexOf(q) >= 0 || (b.getAttribute('data-k') === q); var el = b.parentNode.classList.contains('lhi') ? b.parentNode : b; el.style.display = hit ? '' : 'none'; });
-    B.querySelectorAll('.pg, .c2, .c1').forEach(function (g) { if (!q) { g.style.display = ''; return; } var any = Array.prototype.some.call(g.querySelectorAll('button.lyr'), function (b) { var el = b.parentNode.classList.contains('lhi') ? b.parentNode : b; return el.style.display !== 'none'; }); g.style.display = any ? '' : 'none'; }); }
+    B.querySelectorAll('button.lyr').forEach(function (b) { var hit = !q || (b.getAttribute('data-n') || '').replace(/\s/g, '').indexOf(q) >= 0 || (b.getAttribute('data-k') === q); var el = b.closest('.lhi') || b.closest('.lyw') || b; el.style.display = hit ? '' : 'none'; });
+    B.querySelectorAll('.pg, .c2, .c1').forEach(function (g) { if (!q) { g.style.display = ''; return; } var any = Array.prototype.some.call(g.querySelectorAll('button.lyr'), function (b) { var el = b.closest('.lhi') || b.closest('.lyw') || b; return el.style.display !== 'none'; }); g.style.display = any ? '' : 'none'; }); }
   function catClick(b) {
     var a;
+    if ((a = b.getAttribute('data-p')) && b.classList.contains('pk')) { preset(a); return true; }
+    if ((a = b.getAttribute('data-gc'))) { if (GCL[a]) delete GCL[a]; else GCL[a] = 1; gclSave(); paintLayers(); return true; }
+    if ((a = b.getAttribute('data-gall'))) { gcAll(a === 'open'); return true; }
+    if ((a = b.getAttribute('data-lhk'))) { if (LHON) { LHON = false; try { localStorage.setItem('tg_map2d_lh', '0'); } catch (e) {} LAYERS.forEach(function (l) { LHK[l[0]] = 1; }); } LHK[a] = !LHK[a]; paintLayers(); return true; }
     if ((a = b.getAttribute('data-lv'))) { LV = a; try { localStorage.setItem('tg_map2d_lv', LV); } catch (e) {} paintLayers(); var pn0 = $('m2dPanel'); if (pn0) pn0.scrollTop = 0; return true; }
     if ((a = b.getAttribute('data-jump'))) { var sc = $('lc-' + a), pn = $('m2dPanel'); if (sc && pn) pn.scrollTo({ top: sc.offsetTop - ($('m2dPanH') ? $('m2dPanH').offsetHeight : 0) - 4, behavior: 'smooth' }); return true; }
     if ((a = b.getAttribute('data-cat'))) { CAT = a; var C = catOf(a); if (C && C[2] && !C[2].some(function (m) { return m[0] === MID; })) MID = C[2][0][0]; try { localStorage.setItem('tg_map2d_cat', CAT); localStorage.setItem('tg_map2d_mid', MID); } catch (e) {} paintLayers(); return true; }

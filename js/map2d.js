@@ -2909,7 +2909,7 @@
   function taxOpen(o) {
     var el = $('m2dPnl'); if (!el) return; TX.on = true; TX.o = o; TX.v = {}; TX.area = null; TX.off = null; TX.offErr = ''; TX.pick = 'mid';
     if (!TX.date) { var d = new Date(); TX.date = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
-    el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
+    AS.on = false; el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
     el.innerHTML = '<div class="lg-h"><b>💰 세금 모의계산</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">세법 규칙·거래 자료를 받는 중…</p>';
     var need = [taxLoad()];
     if (o.gu) need.push(rGet(o.gu, 'deals.json').then(function (j) { o.dj = j; }).catch(function () { o.dj = null; }));
@@ -3081,8 +3081,8 @@
     return '<div class="cap">종류별 학원 수(곳 · 상가업소 등록)</div>' + bar(n, '#7c3aed', ACT.map(function (x) { return x[0].split(' ')[1]; })) + pie(ACT.map(function (x, i) { return [x[0].replace(/^\S+ /, ''), n[i], x[1]]; }), 84); }
   function acDongHtml(k, d) { var v = ACD && ACD.dong[k]; if (!v) return ''; var t = 0; for (var i = 3; i < v.length; i++) t += v[i]; if (!t) return row('학원', '이 동 안에 등록된 학원이 없다');
     var p = d && d.pop && d.pop.age ? d.pop.age[0] + d.pop.age[1] : 0;
-    return '<div class="dh">🎒 이 동 학원 ' + t.toLocaleString() + '곳' + (p ? ' · 19세 이하 1천 명당 ' + (t / p * 1000).toFixed(1) + '곳' : '') + '</div>' + acChart(v); }
-  function acdCard(it) { var v = ACD.dong[it.k]; return '<h3>🎒 ' + esc(v[2]) + ' 학원 현황</h3>' + acDongHtml(it.k, null) + '<p class="desc">더 확대하면 한 곳씩 보인다. 학원과 교습소를 가르지 않는 등록 자료이고 영업 여부·수강생은 없다.</p>' + src(ACD.source + ' · 기준 ' + (ACD.stdrYm || '')); }
+    return '<div class="dh">🎒 이 동 학원 ' + t.toLocaleString() + '곳' + (p ? ' · 19세 이하 1천 명당 ' + (t / p * 1000).toFixed(1) + '곳' : '') + '</div>' + acChart(v) + '<div class="lg-btns"><button data-acsim="' + esc(k) + '">💰 이 동에서 학원·교습소 개업 시뮬레이션</button></div>'; }
+  function acdCard(it) { var v = ACD.dong[it.k]; return '<h3>🎒 ' + esc(v[2]) + ' 학원 현황</h3>' + acDongHtml(it.k, allDong().filter(function (x) { return x.k === it.k; })[0] || null) + '<p class="desc">더 확대하면 한 곳씩 보인다. 학원과 교습소를 가르지 않는 등록 자료이고 영업 여부·수강생은 없다.</p>' + src(ACD.source + ' · 기준 ' + (ACD.stdrYm || '')); }
   function acCard(it) { var q = it.q, o = ACP[it.gu];
     return '<h3>' + ACT[q.t][0].split(' ')[0] + ' ' + esc(q.n || '(이름 없음)') + '</h3>' + row('종류', esc(ACT[q.t][0].replace(/^\S+ /, ''))) + (q.f ? row('층', esc(q.f) + '층') : '') +
       '<p class="desc">상가(상권)정보에 등록된 자리다 — 학원·교습소를 따로 가르지 않고, 영업 여부·수강생·교습과목 세부는 없다. 교습소·개인과외는 빠진 곳이 많다.</p>' + src((o && o.src || '소상공인시장진흥공단 상가(상권)정보') + (o && o.ym ? ' · 기준 ' + o.ym : '')); }
@@ -3092,7 +3092,105 @@
     Object.keys(ACD.dong).forEach(function (k) { var x = ACD.dong[k]; if (x[0] < v[0] || x[0] > v[2] || x[1] < v[1] || x[1] > v[3]) return; for (var i = 0; i < ACT.length; i++) tot[i] += x[3 + i] || 0; });
     return ['🎒 학원 현황', '<div class="lg-btns">' + ACT.map(function (x, i) { return '<button data-acm="' + i + '" class="' + (ACON[i] ? 'on' : '') + '"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x[1] + ';margin-right:3px"></i>' + x[0] + ' ' + tot[i].toLocaleString() + '</button>'; }).join('') + '</div>' +
       '<div class="cap">지금 화면 안 종류별(곳 · 켠 종류)</div>' + pie(ACT.map(function (x, i) { return [x[0].replace(/^\S+ /, ''), ACON[i] ? tot[i] : 0, x[1]]; }), 80) +
-      '<small class="lg-n">보라 원 = 동마다 학원 수(켠 종류) · 확대하면 한 곳씩 · 소상공인시장진흥공단 상가(상권)정보 ' + esc(ACD.stdrYm || '') + ' · 학원·교습소를 가르지 않는다(교육청 학원·교습소 등록 자료는 좌표가 없어 아직 안 씀)</small>']; }
+      '<div class="lg-btns"><button data-acsim="1">💰 학원·교습소 개업 시뮬레이션</button></div><small class="lg-n">보라 원 = 동마다 학원 수(켠 종류) · 확대하면 한 곳씩 · 소상공인시장진흥공단 상가(상권)정보 ' + esc(ACD.stdrYm || '') + ' · 학원·교습소를 가르지 않는다(교육청 학원·교습소 등록 자료는 좌표가 없어 아직 안 씀)</small>']; }
+  // ---------- v2.40.0 🎒 학원·교습소 개업 시뮬레이션(소유자 2026-10-06 「학원인지 교습소인지 구분해서 운영 시뮬레이션」) ----------
+  //   법정 기준 = data/acad-rules.json(학원법·시행령·서울·경기 조례 원문 · 부가세 면세) · 기본값 = 소상공인실태조사 교육 서비스업 평균(연 매출 7,500만)을 맞춘 예시 — 내 값으로 고친다
+  //   입력은 이 화면 메모리에만(AS.v) · 손익 판 #m2dPnl 을 같이 쓴다
+  var AS = { on: false, v: null, k8: null }, ASR = null, ASRP = null;
+  var AS_KIND = [['study', '📚 보습·입시 교과', 0, '보습·논술'], ['lang', '🔤 외국어', 1, '실용 외국어'], ['art', '🎨 미술', 2, '음악·미술·무용'], ['music', '🎹 음악(피아노 외)', 3, '음악·미술·무용'], ['piano', '🎹 피아노', 3, '음악·미술·무용'], ['etc', '🎭 그 밖', 5, '그 밖 교습과정']];
+  function asLoad() { if (ASRP) return ASRP; ASRP = Promise.all([fetch('data/acad-rules.json').then(function (r) { return r.json(); }).then(function (j) { ASR = j; }), bzLoad(), acDLoad()]); ASRP.catch(function () { ASRP = null; }); return ASRP; }
+  function asDefaults(form) { var B = ASR.bench, mw = rv('min_wage') * 209 / 1e4;
+    return { form: form || 'tutor', kind: 'study', area: form === 'academy' ? B.area : 40, lec: 70, slots: 4, days: 5, per: 3, n: 25, fee: Math.round(B.sales * 100 / 12 / 25), rent: Math.round(B.rent * 100 / 12), mgmt: Math.round(B.other * 100 / 12), cogs: Math.round(B.cogs / B.sales * 100), inst: form === 'academy' ? 1 : 0, ipay: Math.round(mw), asst: 0, apay: Math.round(mw / 2), card: 80, dep: Math.round(B.rent * 100 / 12) * 10, inter: 0, equip: 0 }; }
+  function asOpen(k8) {
+    var el = $('m2dPnl'); if (!el) return; TX.on = false; AS.on = true; AS.k8 = k8 || null;
+    el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
+    el.innerHTML = '<div class="lg-h"><b>🎒 학원·교습소 개업 시뮬레이션</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">법정 기준·실태조사 자료를 받는 중…</p>';
+    asLoad().then(function () { if (!AS.on) return; if (!AS.v) AS.v = asDefaults('tutor'); asForm(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">받지 못했다(' + esc(e && e.message || e) + ')</p>'; }); }
+  function asSido() { var k = AS.k8; if (!k) { var d = dongAtM(viewMid()); k = d && d.k; } return k ? (k.slice(0, 2) === '11' ? '서울특별시' : k.slice(0, 2) === '41' ? '경기도' : null) : null; }
+  function asKind(v) { return AS_KIND.filter(function (x) { return x[0] === v.kind; })[0] || AS_KIND[0]; }
+  function asCalc(v0, form) {   // 한 달(만 원)
+    var v = {}; Object.keys(v0).forEach(function (k) { v[k] = v0[k]; }); if (form) v.form = form; var L = ASR.law, n = function (x) { return +x || 0; }, kd = asKind(v), o = { v: v, warn: [], ok: [] };
+    if (v.form === 'tutor') { o.seat = Math.min(v.kind === 'piano' ? L.tutorMaxPiano[0] : L.tutorMax[0], Math.floor(n(v.area) * L.tutorPerM2[0])); o.instN = 0; }
+    else { o.seat = Math.floor(n(v.area) * n(v.lec) / 100 * 1); o.instN = n(v.inst); }
+    o.cap = n(v.per) > 0 ? Math.floor(o.seat * n(v.slots) * n(v.days) / n(v.per)) : 0; o.n = Math.min(n(v.n), o.cap);
+    o.rev = o.n * n(v.fee); var yr = o.rev * 12, cr = (ASR && BZ.rates.card || []).filter(function (c) { return yr <= c[0]; })[0] || [0, 0.0145]; o.cardRate = cr[1];
+    o.cardFee = o.rev * n(v.card) / 100 * o.cardRate; o.cogs = o.rev * n(v.cogs) / 100;
+    o.wage = o.instN * n(v.ipay) + (v.asst ? n(v.apay) : 0); var sr = rv('pension') + rv('health') * (1 + rv('ltc_of_health')) + rv('emp_ui') + rv('emp_stable') + rv('ind') + rv('commute'); o.soc = o.wage * sr;
+    o.fixed = n(v.rent) + n(v.mgmt) + o.wage + o.soc; o.cost = o.fixed + o.cogs + o.cardFee; o.profit = o.rev - o.cost;
+    var cmu = n(v.fee) * (1 - n(v.cogs) / 100 - n(v.card) / 100 * o.cardRate); o.bep = cmu > 0 ? Math.ceil(o.fixed / cmu) : null;
+    o.tax = ownTax(o.profit, 1); o.take = o.profit - o.tax.sum; o.init = n(v.dep) + n(v.inter) * n(v.area) + n(v.equip);
+    var sd = asSido(), S = sd && ASR.sido[sd];
+    if (v.form === 'tutor') {
+      o.ok.push('교습자 1명 · 1과목만(' + L.tutorOneSubject[1] + ')'); o.ok.push('강사 없음 · 보조요원 1명까지(' + L.tutorNoInstructor[1].split(' — ')[0] + ' · 제3항)');
+      o.ok.push('같은 시간 ' + (v.kind === 'piano' ? L.tutorMaxPiano[0] : L.tutorMax[0]) + '명 이하 · 강의실 ㎡당 ' + L.tutorPerM2[0] + '명 이하 → 이 면적 ' + n(v.area) + '㎡ 면 한 번에 ' + o.seat + '명');
+      if (Math.floor(n(v.area) * L.tutorPerM2[0]) < (v.kind === 'piano' ? 5 : 9)) o.warn.push('면적 ' + n(v.area) + '㎡ 로는 ㎡당 0.3명 기준에 걸려 한 번에 ' + o.seat + '명까지(' + Math.ceil((v.kind === 'piano' ? 5 : 9) / L.tutorPerM2[0]) + '㎡ 면 법정 최대 인원)');
+      o.ok.push('신고(' + L.tutorReg[1] + ')'); }
+    else {
+      o.ok.push('같은 시간 10명 이상을 가르치면 학원(' + L.academyMin[1].split(' — ')[0] + ') · 교육감 등록(' + L.academyReg[1].split(' — ')[0] + ')');
+      if (o.seat < L.academyMin[0]) o.warn.push('강의실 면적으로 한 번에 ' + o.seat + '명뿐 — 10명이 안 되면 교습소로도 할 수 있다');
+      if (S) { var ma = S.minArea[kd[3]]; if (ma == null) o.warn.push(kd[3] + ' 학원 시설은 ' + sd + ' 조례 실기 별표를 따른다(이 표에 아직 없음 — 교육지원청 확인)'); else if (n(v.area) < ma) o.warn.push(sd + ' 조례: ' + kd[3] + ' 학원은 ' + ma + '㎡ 이상 — 지금 ' + n(v.area) + '㎡'); else o.ok.push(sd + ' 조례 ' + kd[3] + ' 학원 ' + ma + '㎡ 이상 — 충족(' + n(v.area) + '㎡)');
+        o.ok.push('강의실 1㎡당 1명 이하(' + S.lecturePerM2[1].split(' — ')[0] + ')'); }
+      else o.warn.push('이 자리 시·도의 학원 시설 기준(조례)은 아직 이 표에 없다 — ' + ASR.otherSido); }
+    if (n(v.n) > o.cap) o.warn.push('수강생 ' + n(v.n) + '명은 수용 한도 ' + o.cap + '명(한 번 ' + o.seat + '명 × 하루 ' + n(v.slots) + '회 × 주 ' + n(v.days) + '일 ÷ 1명 주 ' + n(v.per) + '회)을 넘는다 — 한도까지만 셈');
+    if (S) o.ok.push('교습 시간 ' + S.hours + ' · 보험 ' + S.insurance);
+    o.ok.push('부가세 면세(' + L.vatExempt[1].split(' — ')[0] + ') — 매출에 부가세가 붙지 않는다');
+    return o; }
+  function asIn(k, lab, unit, note) { var v = AS.v[k]; return '<label title="' + esc(note || '') + '"><span>' + esc(lab) + ' <i>' + esc(unit || '') + '</i></span><input type="number" inputmode="decimal" step="any" data-as="' + k + '" value="' + (v == null ? '' : v) + '"><small>' + esc(note || '') + '</small></label>'; }
+  function asForm() {
+    var el = $('m2dPnl'); if (!el || !AS.on) return; var v = AS.v, B = ASR.bench;
+    var h = '<div class="lg-h"><b>🎒 학원·교습소 개업 시뮬레이션</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
+    h += '<div class="lg-btns"><button data-asf="tutor" class="' + (v.form === 'tutor' ? 'on' : '') + '">🏠 교습소(신고 · 1인 1과목)</button><button data-asf="academy" class="' + (v.form === 'academy' ? 'on' : '') + '">🏫 학원(등록 · 강사)</button></div>';
+    h += '<div class="lg-btns">' + AS_KIND.map(function (x) { return '<button data-ask="' + x[0] + '" class="' + (v.kind === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>';
+    h += '<div id="asOut"></div><h4>✍ 조건 <small style="font-weight:400;color:var(--ink2)">— 기본값은 실태조사 평균을 맞춘 예시 · 내 값으로 고친다 · 저장 안 함</small></h4><div class="pform">' +
+      asIn('area', '면적', '㎡', '전용 · 평 = ㎡ ÷ 3.3058') + (v.form === 'academy' ? asIn('lec', '강의실 비율', '%', '나머지는 상담·대기·화장실(가정)') : '') +
+      asIn('slots', '하루 수업', '회', '시간표 칸 수') + asIn('days', '주 수업', '일') + asIn('per', '학생 1명 주', '회', '한 학생이 주에 오는 횟수') +
+      asIn('n', '수강생', '명') + asIn('fee', '1인 월 교습비', '만 원', '교육청에 등록·신고한 교습비 이내') +
+      asIn('rent', '월세', '만 원', '실태조사 교육업 임차료 평균 ' + Math.round(B.rent * 100 / 12) + '만') + asIn('mgmt', '관리비·공과·광고', '만 원', '실태조사 기타비용 평균 ' + Math.round(B.other * 100 / 12) + '만') + asIn('cogs', '교재·재료', '% 매출') +
+      (v.form === 'academy' ? asIn('inst', '강사', '명') + asIn('ipay', '강사 1명 월급', '만 원', '2026 최저임금 월 209시간 = ' + Math.round(rv('min_wage') * 209 / 1e4) + '만') : '') + asIn('apay', '보조요원 월급', '만 원') +
+      '<label class="pchk"><input type="checkbox" data-as="asst"' + (v.asst ? ' checked' : '') + '> 보조요원 1명 둔다</label>' + asIn('card', '카드 결제 비율', '%') +
+      asIn('dep', '보증금', '만 원') + asIn('inter', '인테리어', '만 원/㎡') + asIn('equip', '책걸상·교구·악기', '만 원') + '</div>';
+    h += '<div class="src">법정 기준: ' + esc(ASR.checkedVia + ' · ' + ASR.checked) + ' · 학원법·시행령 · ' + esc(Object.keys(ASR.sido).map(function (k) { return ASR.sido[k].src; }).join(' · ')) + ' · 평균: ' + esc(B.src) + ' · 요율: ' + esc(BZ.rates.min_wage[1]) + '</div>';
+    h += '<p class="lg-n">참고용 모의계산이다 — 실제 개업은 관할 교육지원청(학원·교습소 담당)·세무서·건축물 용도(학원은 제2종 근린생활시설 또는 교육연구시설 등) 확인을 거친다.</p>';
+    el.innerHTML = h; asOut(); }
+  function asCurve(v) {   // 수강생 수에 따른 월 이익 — 교습소·학원 같이
+    var W = 300, H = 120, L2 = 36, B2 = 18, A = asCalc(v, 'tutor'), C = asCalc(v, 'academy'), mx = Math.max(A.cap, C.cap, +v.n || 0, 10), pts = [], lo = 0, hi = 0;
+    [A, C].forEach(function (o, j) { var arr = []; for (var i = 0; i <= mx; i += Math.max(1, Math.round(mx / 40))) { var w = {}; Object.keys(v).forEach(function (k) { w[k] = v[k]; }); w.n = i; var r = asCalc(w, j ? 'academy' : 'tutor'); arr.push([i, r.profit, i <= r.cap]); lo = Math.min(lo, r.profit); hi = Math.max(hi, r.profit); } pts.push(arr); });
+    var X = function (i) { return L2 + i / mx * (W - L2 - 6); }, Y = function (p) { return 4 + (1 - (p - lo) / ((hi - lo) || 1)) * (H - B2 - 4); };
+    var s2 = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="수강생 수에 따른 월 이익"><line x1="' + L2 + '" x2="' + (W - 4) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" stroke="currentColor" opacity=".35"/>';
+    [lo, 0, hi].forEach(function (p) { s2 += '<text x="' + (L2 - 3) + '" y="' + (Y(p) + 3).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="currentColor" opacity=".75">' + Math.round(p).toLocaleString() + '만</text>'; });
+    for (var t = 0; t <= mx; t += Math.max(5, Math.round(mx / 6 / 5) * 5)) s2 += '<text x="' + X(t).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">' + t + '명</text>';
+    pts.forEach(function (arr, j) { var c = j ? '#2563eb' : '#16a34a'; s2 += '<polyline fill="none" stroke="' + c + '" stroke-width="2" points="' + arr.filter(function (q) { return q[2]; }).map(function (q) { return X(q[0]).toFixed(1) + ',' + Y(q[1]).toFixed(1); }).join(' ') + '"/>'; });
+    [A, C].forEach(function (o, j) { if (o.bep != null && o.bep <= mx) s2 += '<circle cx="' + X(o.bep).toFixed(1) + '" cy="' + Y(0).toFixed(1) + '" r="3.5" fill="' + (j ? '#2563eb' : '#16a34a') + '"><title>손익분기 ' + o.bep + '명</title></circle>'; });
+    s2 += '<line x1="' + X(+v.n || 0).toFixed(1) + '" x2="' + X(+v.n || 0).toFixed(1) + '" y1="4" y2="' + (H - B2) + '" stroke="#ea580c" stroke-dasharray="3 2"/></svg>';
+    return '<div class="simc"><b style="font-size:12.5px">수강생 수에 따른 월 이익 — 선이 끝나는 곳 = 수용 한도</b>' + s2 + '<div class="pleg"><span><i style="background:#16a34a"></i>교습소(한도 ' + A.cap + '명 · 손익분기 ' + (A.bep == null ? '-' : A.bep + '명') + ')</span><span><i style="background:#2563eb"></i>학원(한도 ' + C.cap + '명 · 손익분기 ' + (C.bep == null ? '-' : C.bep + '명') + ')</span><span><i style="background:#ea580c"></i>지금 수강생</span></div></div>'; }
+  function asOut() {
+    var el = $('asOut'); if (!el || !AS.on) return; var v = AS.v, o = asCalc(v), B = ASR.bench, kd = asKind(v), h = '';
+    h += '<p class="pbig ' + (o.profit >= 0 ? 'good' : 'bad') + '">' + (v.form === 'tutor' ? '🏠 교습소' : '🏫 학원') + ' · ' + esc(kd[1]) + ' — 한 달 매출 <b>' + wn(o.rev) + '</b> · 비용 ' + wn(o.cost) + ' → 이익 <b style="font-size:16px">' + wn(o.profit) + '</b><br>사장 몫(4대·소득세 뒤) 약 <b>' + wn(o.take) + '</b> · 손익분기 수강생 <b>' + (o.bep == null ? '-' : o.bep + '명') + '</b> · 수용 한도 ' + o.cap + '명(한 번 ' + o.seat + '명)</p>';
+    h += '<div class="simc"><b style="font-size:12.5px">법정 기준 점검</b>' + o.ok.map(function (x) { return '<div style="font-size:12px;margin-top:3px">✅ ' + esc(x) + '</div>'; }).join('') + o.warn.map(function (x) { return '<div style="font-size:12px;margin-top:3px;color:#b91c1c">⚠ ' + esc(x) + '</div>'; }).join('') + '</div>';
+    h += asCurve(v);
+    var A = asCalc(v, 'tutor'), C = asCalc(v, 'academy');
+    var full = function (f, cap) { var w = {}; Object.keys(v).forEach(function (q) { w[q] = v[q]; }); w.n = cap; return asCalc(w, f); }, A2 = full('tutor', A.cap), C2 = full('academy', C.cap);
+    h += txHBars([['교습소 지금 ' + A.n + '명', Math.max(0, A.profit) * 1e4, '#86efac'], ['교습소 한도 ' + A.cap + '명', Math.max(0, A2.profit) * 1e4, '#16a34a', true], ['학원 지금 ' + C.n + '명', Math.max(0, C.profit) * 1e4, '#93c5fd'], ['학원 한도 ' + C.cap + '명', Math.max(0, C2.profit) * 1e4, '#2563eb', true]], '한 달 이익 — 교습소 vs 학원(같은 면적·교습비 · 한도까지 채우면)') +
+      '<p class="lg-n">차이는 수용 한도에서 난다 — 교습소는 한 번 ' + A.seat + '명(법정 9명 · 피아노 5명 · ㎡당 0.3명) · 학원은 한 번 ' + C.seat + '명(강의실 ㎡당 1명)' + (C.warn.length ? ' · <span style="color:#b91c1c">학원으로 하려면: ' + esc(C.warn.join(' / ')) + '</span>' : '') + '</p>';
+    h += '<div class="simc"><b style="font-size:12.5px">한 달 비용 구성</b>' + pie([['월세', +v.rent || 0, '#7c3aed'], ['관리·공과·광고', +v.mgmt || 0, '#0891b2'], ['인건비', o.wage, '#2563eb'], ['사업주 4대보험', o.soc, '#60a5fa'], ['교재·재료', o.cogs, '#f59e0b'], ['카드수수료', o.cardFee, '#94a3b8']], 92) + '</div>';
+    h += '<table class="it"><tr><th>한 달(만 원)</th><th>값</th></tr>' + [['매출 = ' + o.n + '명 × ' + (+v.fee || 0) + '만', o.rev], ['월세', +v.rent || 0], ['관리비·공과·광고', +v.mgmt || 0], ['인건비(' + (o.instN ? '강사 ' + o.instN + '명' : '강사 없음') + (v.asst ? ' · 보조 1' : '') + ')', o.wage], ['사업주 4대보험', o.soc], ['교재·재료', o.cogs], ['카드수수료(' + (o.cardRate * 100).toFixed(2) + '% · 영세·중소 우대)', o.cardFee], ['이익', o.profit], ['사장 국민연금·건강보험(지역)', o.tax.pen + o.tax.hea], ['사장 소득세·지방소득세', o.tax.it + o.tax.loc], ['사장 몫', o.take]].map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + Math.round(r[1]).toLocaleString() + '</td></tr>'; }).join('') + '</table>';
+    h += '<div class="rcard">' + row('개업 비용', wn(o.init) + ' <em>(보증금 ' + (+v.dep || 0).toLocaleString() + ' + 인테리어 ' + ((+v.inter || 0) * (+v.area || 0)).toLocaleString() + ' + 교구 ' + (+v.equip || 0).toLocaleString() + '만)</em>') + (o.take > 0 && o.init ? row('회수', '사장 몫으로 약 ' + Math.ceil(o.init / o.take) + '개월') : '') + '</div>';
+    var k = AS.k8, d = k ? allDong().filter(function (x) { return x.k === k; })[0] : dongAtM(viewMid()), av = d && ACD && ACD.dong[d.k];
+    if (av) { var kid = d.pop && d.pop.age ? d.pop.age[0] + d.pop.age[1] : 0, same = av[3 + kd[2]] || 0, all = 0; for (var i = 3; i < av.length; i++) all += av[i];
+      var ref = [0, 0]; allDong().forEach(function (x) { var a2 = ACD.dong[x.k]; if (!a2 || !x.pop || !x.pop.age || x.k.slice(0, 5) !== d.k.slice(0, 5)) return; ref[0] += a2[3 + kd[2]] || 0; ref[1] += x.pop.age[0] + x.pop.age[1]; });
+      h += '<div class="simc"><b style="font-size:12.5px">📍 ' + esc(av[2]) + ' — 이 자리 시장</b><div class="rcard">' + row('19세 이하 주민', kid ? kid.toLocaleString() + '명' : '자료 없음(확대해 동 자료를 받는다)') + row('같은 종류 학원', same + '곳 · 학원 전체 ' + all + '곳') +
+        (kid ? row('19세 이하 1천 명당 같은 종류', (same / kid * 1000).toFixed(1) + '곳' + (ref[1] ? ' <em>(같은 시군구 보이는 동 평균 ' + (ref[0] / ref[1] * 1000).toFixed(1) + ')</em>' : '')) : '') + (kid && same ? row('학원 1곳당 19세 이하', Math.round(kid / same).toLocaleString() + '명') : '') + '</div><small class="lg-n">학원 수 = 상가업소 등록(교습소는 빠진 곳이 많다) · 주민 = 주민등록 · 경쟁은 동 경계를 넘는다</small></div>'; }
+    h += '<div class="simc"><b style="font-size:12.5px">견주어 보기 — 소상공인실태조사 교육 서비스업(전국 평균)</b><div class="rcard">' + row('업체당 한 해', '매출 ' + wn(B.sales * 100) + ' · 비용 ' + wn(B.cost * 100) + ' · 이익 ' + wn(B.profit * 100)) + row('비용 속', '급여 ' + wn(B.wage * 100) + ' · 임차료 ' + wn(B.rent * 100) + ' · 매출원가 ' + wn(B.cogs * 100) + ' · 기타 ' + wn(B.other * 100)) + row('평균', '면적 ' + B.area + '㎡ · 하루 ' + B.hours + '시간 · 월 ' + B.days + '일') + row('어려움', esc(B.pain)) + row('내 계산 한 해', '매출 ' + wn(o.rev * 12) + ' · 이익 ' + wn(o.profit * 12)) + '</div><small class="lg-n">' + esc(B.src) + ' — 학원·교습소·과외 등을 다 합친 평균이다</small></div>';
+    el.innerHTML = h; }
+  if ($('m2dPnl')) {
+    $('m2dPnl').addEventListener('click', function (e) { if (!AS.on) return; var b = e.target.closest('[data-asf],[data-ask]'); if (!b) return;
+      if (b.hasAttribute('data-asf')) { var f = b.getAttribute('data-asf'); if (f !== AS.v.form) { var keep = AS.v, nv = asDefaults(f); ['kind', 'n', 'fee', 'rent', 'mgmt', 'slots', 'days', 'per', 'card', 'dep', 'inter', 'equip'].forEach(function (k) { nv[k] = keep[k]; }); AS.v = nv; } asForm(); return; }
+      AS.v.kind = b.getAttribute('data-ask'); asForm(); });
+    $('m2dPnl').addEventListener('input', function (e) { if (!AS.on) return; var t = e.target, k = t.getAttribute('data-as'); if (!k) return; AS.v[k] = t.type === 'checkbox' ? t.checked : (t.value === '' ? null : +t.value); asOut(); });
+    $('m2dPnl').addEventListener('change', function (e) { if (!AS.on) return; var t = e.target, k = t.getAttribute('data-as'); if (k && t.type === 'checkbox') { AS.v[k] = t.checked; asOut(); } });
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-acsim]'); if (!b) return; var k = b.getAttribute('data-acsim'); asOpen(/^\d{8}$/.test(k) ? k : null); });
+
   // ---------- 층 단추 · 찾기 ----------
   var lay = $('m2dLayers');
   function paintLayers() {
@@ -3496,7 +3594,7 @@
     return { pen: pen * k / 12, hea: hea * k / 12, it: it * k / 12, loc: loc * k / 12, sum: (pen + hea + it + loc) * k / 12, base: base, rate: base > 0 ? (it + loc) / y : 0 }; }
   function wn(x) { return x == null || !isFinite(x) ? '-' : (Math.abs(x) >= 10000 ? (x / 10000).toFixed(2).replace(/\.?0+$/, '') + '억' : Math.round(x).toLocaleString() + '만') + ' 원'; }
   function pnlOpen(c) {
-    var el = $('m2dPnl'); if (!el) return; el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); TX.on = false;
+    var el = $('m2dPnl'); if (!el) return; el.classList.add('on'); el.classList.remove('min'); document.body.classList.add('pnlon'); TX.on = false; AS.on = false;
     ['m2dRad', 'm2dBiz'].forEach(function (id) { if ($(id)) $(id).classList.remove('on'); }); document.body.classList.remove('radon', 'bizon');
     if (c) PNL.c = c; el.innerHTML = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="x">닫기</button></span></div><p class="lg-n">업종 자료를 받는 중…</p>';
     bzLoad().then(function () { if (!PNL.ready) { PNL.v = pnlDefaults(PNL.k); PNL.ready = true; } pnlForm(); pnlGather(); }).catch(function (e) { el.innerHTML += '<p class="lg-n" style="color:#b91c1c">자료를 받지 못했다(' + esc(e && e.message || e) + ')</p>'; });
@@ -3611,7 +3709,7 @@
       (r[8] ? row('주요 상품', esc(r[8])) : '') + (r[9] ? row('가맹점 부담금', ['가맹비', '교육비', '보증금', '기타'].map(function (q, i) { return r[9][i] ? q + ' ' + wn(r[9][i] / 10) : ''; }).filter(Boolean).join(' · ') + (r[9][4] ? ' · <b>합계 ' + wn(r[9][4] / 10) + '</b>' : '') + ' <em>(범위의 가운데)</em>') : '') +
       (ks.length ? row('지역별 평균매출', ks.slice(0, 6).map(function (k) { return esc(k) + ' ' + wn(Rg[k][1] / 10) + '(' + Rg[k][0] + '곳)'; }).join(' · ')) : '') + '</div><p class="src">' + esc(FTC.source) + ' · ' + esc(FTC.note) + '</p>'; }
   function pnlForm() {
-    if (TX.on) return;
+    if (TX.on || AS.on) return;
     var el = $('m2dPnl'), t = tplOf(PNL.k), G = {};
     BZ.tpl.items.forEach(function (x) { (G[x.g] = G[x.g] || []).push(x); });
     var h = '<div class="lg-h"><b>💰 손익 계산</b><span><button data-px="min">▾ 접기</button> <button data-px="x">닫기</button></span></div>';
@@ -3787,7 +3885,7 @@
   }
   if ($('m2dPnl')) {
     $('m2dPnl').addEventListener('click', function (e) { var b = e.target.closest('[data-px]'); if (!b) { if ($('m2dPnl').classList.contains('min') && !e.target.closest('input,select,summary')) $('m2dPnl').classList.remove('min'); return; } var x = b.getAttribute('data-px');
-      if (x === 'x') { $('m2dPnl').classList.remove('on'); document.body.classList.remove('pnlon'); TX.on = false; TX.o = null; TX.v = {}; draw(); return; } if (x === 'min') { e.stopPropagation(); $('m2dPnl').classList.toggle('min'); return; }
+      if (x === 'x') { $('m2dPnl').classList.remove('on'); document.body.classList.remove('pnlon'); TX.on = false; TX.o = null; TX.v = {}; AS.on = false; draw(); return; } if (x === 'min') { e.stopPropagation(); $('m2dPnl').classList.toggle('min'); return; }
       if (x === 'here') { PNL.c = viewMid(); pnlGather(); return; } if (x === 'reset') { PNL.v = pnlDefaults(PNL.k); pnlForm(); return; }
       if (x === 'copy') { var tx = pnlText(); if (navigator.clipboard) navigator.clipboard.writeText(tx).then(function () { b.textContent = '✅ 복사됨'; }); return; } if (x === 'xlsx') { pnlXlsx(); return; } });
     $('m2dPnl').addEventListener('input', function (e) { var t = e.target, el = $('m2dPnl');
@@ -4695,5 +4793,5 @@
   paintLayers(); ctrPaint(); dnApply();
   (function () { var hs = location.hash || ''; var seen = '1'; try { seen = localStorage.getItem('tg_map2d_onb'); } catch (e) {} if (seen || /(^|[#&])(lat|ly|here|gps)=/.test(hs)) return;
     if (document.documentElement.classList.contains('gated')) window.addEventListener('tggate', function () { setTimeout(onbOpen, 300); }); else setTimeout(onbOpen, 700); })();   // 처음 안내는 확인코드 관문 뒤에
-  window.TGMap2D = { tax: function (o) { taxOpen(o); }, ledg: function () { return LEDG; }, field: function () { return FIELD; }, ftc: function () { return FTC; }, pnl: function () { return PNL; }, pnlOpen: pnlOpen, rp: function () { return RP; }, rpFind: rpFind, rpLong: rpLong, stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
+  window.TGMap2D = { tax: function (o) { taxOpen(o); }, acsim: function (k) { asOpen(k); }, as: function () { return AS; }, ledg: function () { return LEDG; }, field: function () { return FIELD; }, ftc: function () { return FTC; }, pnl: function () { return PNL; }, pnlOpen: pnlOpen, rp: function () { return RP; }, rpFind: rpFind, rpLong: rpLong, stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
 })();

@@ -18,7 +18,8 @@ def rd(pat): f = glob.glob(os.path.join(SRC, pat))[0]; return list(csv.DictReade
 def num(x):   # 통계청 'X' = 비밀보호(작은 값) → 0
     try: return int(float(x))
     except (TypeError, ValueError): return 0
-def nz(s): return re.sub(r'제(\d)', r'\1', re.sub(r'[\s·.ㆍ,()]', '', str(s or '')))   # 행안부 「창신제1동」 = 통계청·서울 「창신1동」
+def nz(s): return re.sub(r'[\s·.ㆍ,()\-]', '', str(s or ''))
+def nzj(s): return re.sub(r'제(\d)', r'\1', nz(s))   # 행안부 「창신제1동」 = 통계청·서울 「창신1동」 — 이름 색인은 두 꼴 다(「홍제1동」은 제를 떼면 안 된다)
 def sg(sd):   # 시도 묶음(개편 전후 이름을 한 열쇠로)
     s = nz(sd)
     for a, b in (('광주', 'JN'), ('전라남', 'JN'), ('전남', 'JN'), ('강원', 'GW'), ('전라북', 'JB'), ('전북', 'JB'), ('제주', 'JJ'), ('세종', 'SJ'), ('경상북', 'GB'), ('경북', 'GB'), ('경상남', 'GN'), ('경남', 'GN'), ('충청북', 'CB'), ('충북', 'CB'), ('충청남', 'CN'), ('충남', 'CN')):
@@ -31,9 +32,9 @@ for r in rd('*세대원수별*세대수*.csv'):
     if not r['읍면동명'].strip() or c[-2:] != '00': continue
     k = c[:8]; n = [int(r[x] or 0) for x in ('전체세대수', '1인세대', '2인세대', '3인세대', '4인세대')]
     n.append(sum(int(r[x] or 0) for x in ('5인세대', '6인세대', '7인세대', '8인세대', '9인세대', '10인이상세대')))
-    H[k] = {'hh': n}; IDX[(sg(r['시도명']), nz(r['읍면동명']))].append((k, nz(r['시군구명']))); SDN[k[:2]] = r['시도명']
+    H[k] = {'hh': n}; [IDX[(sg(r['시도명']), q)].append((k, nz(r['시군구명']))) for q in {nz(r['읍면동명']), nzj(r['읍면동명'])}]; SDN[k[:2]] = r['시도명']
 def find(sd, sgg, dong):
-    L = IDX.get((sg(sd), nz(dong)), [])
+    L = IDX.get((sg(sd), nz(dong))) or IDX.get((sg(sd), nzj(dong)), [])
     if len(L) == 1: return L[0][0]
     s = nz(sgg); M = [x for x in L if x[1] == s or x[1].startswith(s) or s.startswith(x[1]) or (s and s in x[1])]
     return M[0][0] if len(M) == 1 else None
@@ -112,6 +113,19 @@ for r in GG:
     seen.add(key); k = find('경기도', r['SIGNGU_NM'], r['EMD_NM'])
     if k: addw(k, r['QUALFCTN_DIV'], r['AGE_DIV'], int(r['PSN_CNT'] or 0), 'gg'); H[k]['welyy'] = r['YY']
     else: miss['경기 수급'] += 1
+# ⑥-2 서울 차상위(동) — cha [합, 한부모가족(모자·부자·청소년·조손), 본인부담경감, 차상위계층 확인, 차상위장애인, 차상위자활, 18세 미만, 65세 이상] · 서울 열린데이터광장 OA-22226
+CHK = {'차상위본인부담경감대상자': 2, '차상위계층 확인': 3, '차상위장애인': 4, '차상위자활': 5}
+f = os.path.join(SRC, 'seoul_cha.csv')
+if os.path.exists(f):
+    for r in csv.DictReader(io.StringIO(open(f, 'rb').read().decode('cp949'))):
+        n = int(r['수급권자수'] or 0)
+        if not n: continue
+        k = find(r['시도'], r['시군구'], r['읍면동'])
+        if not k: miss['서울 차상위'] += 1; continue
+        o = H[k].setdefault('cha', [0] * 8); o[0] += n; o[CHK.get(r['자격'], 1)] += n
+        if '18세미만' in nz(r['연령구간']): o[6] += n
+        if '65' in r['연령구간']: o[7] += n
+        H[k]['chasrc'] = 'seoul'
 # ⑧ 시군구 수급권자(전국 · 2025-12) — 시군구 이름 → 지도 구 코드
 GUS = {}
 for k in H: GUS.setdefault((sg(SDN[k[:2]]), nz(SDN[k[:2]])), set()).add(k[:5])
@@ -140,9 +154,9 @@ def agg(keys):
     return o
 SD = collections.defaultdict(list); GU = collections.defaultdict(list)
 for k in H: SD[k[:2]].append(k); GU[k[:5]].append(k)
-res = {'schema': 'tg-house/1', 'asof': {'hh': '2026-08', 'cen': '2015·2020·2024·2025', 'mar': '2020', 'div': '2016~2025', 'wel_seoul': '2024-05', 'wel_gg': gy, 'wel_sgg': '2025-12'},
-       'source': '행정안전부 주민등록 세대원수별 세대수·1인세대수(공공데이터포털 15097974·15097973 · 2026-08-31) · 통계청 KOSIS 가구원수별 가구-읍면동(DT_1JC1502)·혼인상태(DT_1PM2007 · 2020 표본)·인구동태건수(DT_1B8000K) · 서울 열린데이터광장 OA-22227 · 경기데이터드림 국민기초생활 수급자 현황 · 한국사회보장정보원 시군구별 수급권자(15062448 · 기초생활·차상위·기초연금) · 보건복지부 고시 제2025-135호(2026 기준 중위소득)',
-       'fields': 'dong = {행정동 8자리: hh [세대, 1인, 2인, 3인, 4인, 5인 이상] · one 1인세대 나이 [0~19, 20대, 30대, 40대, 50~64, 65~79, 80+] · onesx [남, 여] · cen {해: 일반가구 [계, 1인, 2인, 3인, 4인, 5인 이상]} · mar 2020 15세 이상 [계, 미혼, 배우자있음, 사별, 이혼] · div {해: [혼인, 이혼]} · wel [수급자, 생계, 의료, 주거, 교육, 18세 미만, 65세 이상] · welsrc seoul|gg} · sd/sg = 시도·시군구 합 · sgw = {시군구 5자리: [기초생활 수급권자, 수급가구, 차상위 3사업 합, 기초연금 수급권자]} · mid = 2026 기준 중위소득·생계·의료 선정기준(1~7인 · 원/월) · guwel = 서울 구청 직접(동에 안 붙은) 수급자',
+res = {'schema': 'tg-house/1', 'asof': {'hh': '2026-08', 'cen': '2015·2020·2024·2025', 'mar': '2020', 'div': '2016~2025', 'wel_seoul': '2024-05', 'wel_gg': gy, 'wel_sgg': '2025-12', 'cha_seoul': 'OA-22226(서울 열린데이터광장 · 받은 날 2026-10-06)'},
+       'source': '행정안전부 주민등록 세대원수별 세대수·1인세대수(공공데이터포털 15097974·15097973 · 2026-08-31) · 통계청 KOSIS 가구원수별 가구-읍면동(DT_1JC1502)·혼인상태(DT_1PM2007 · 2020 표본)·인구동태건수(DT_1B8000K) · 서울 열린데이터광장 OA-22227(수급자)·OA-22226(차상위) · 경기데이터드림 국민기초생활 수급자 현황 · 한국사회보장정보원 시군구별 수급권자(15062448 · 기초생활·차상위·기초연금) · 보건복지부 고시 제2025-135호(2026 기준 중위소득)',
+       'fields': 'dong = {행정동 8자리: hh [세대, 1인, 2인, 3인, 4인, 5인 이상] · one 1인세대 나이 [0~19, 20대, 30대, 40대, 50~64, 65~79, 80+] · onesx [남, 여] · cen {해: 일반가구 [계, 1인, 2인, 3인, 4인, 5인 이상]} · mar 2020 15세 이상 [계, 미혼, 배우자있음, 사별, 이혼] · div {해: [혼인, 이혼]} · wel [수급자, 생계, 의료, 주거, 교육, 18세 미만, 65세 이상] · welsrc seoul|gg · cha 서울 차상위 [합, 한부모가족, 본인부담경감, 계층확인, 장애인, 자활, 18세 미만, 65세 이상]} · sd/sg = 시도·시군구 합 · sgw = {시군구 5자리: [기초생활 수급권자, 수급가구, 차상위 3사업 합, 기초연금 수급권자]} · mid = 2026 기준 중위소득·생계·의료 선정기준(1~7인 · 원/월) · guwel = 서울 구청 직접(동에 안 붙은) 수급자',
        'note': '주민등록 「세대」는 통계청 「가구」와 다르다(주소만 같이 두거나 따로 둔 경우) · 혼인상태는 2020 표본 한 시점 · 이혼은 그 해 신고 건수(주소지 기준) · 수급자는 자격(생계·의료·주거·교육)마다 한 사람을 한 번 센 값',
        'dong': H, 'sd': {k: agg(v) for k, v in SD.items()}, 'sg': {k: agg(v) for k, v in GU.items()}, 'sgw': SGW, 'mid': MID, 'guwel': dict(GUWEL), 'miss': dict(miss)}
 p = os.path.join(ROOT, 'data', 'house-dong.json'); json.dump(res, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))

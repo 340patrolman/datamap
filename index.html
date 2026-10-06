@@ -625,6 +625,16 @@
   #m2dCard .x::before, #m2dCard .ladx::before, #m2dPanel .ph .x::before, #m2dReg .ph .x::before, [data-px="x"]::before, [data-bx="x"]::before, [data-rx="x"]::before, [data-rg="x"]::before, [data-close]::before, #m2dLegX::before, #m2dGetX::before { content: "✕ "; font-weight: 900; }
   #m2dCard .x:hover, #m2dCard .ladx:hover, [data-px="x"]:hover, [data-bx="x"]:hover, [data-close]:hover { background: #b91c1c !important; }
   #m2dFoldX { background: #1e3a8a !important; color: #fff !important; border: 0 !important; }
+  /* v2.48.0 범위 막대 · 한눈에 타일 */
+  .vrg { margin-top: 6px; } .vrl { font-size: 12px; } .vrl small { color: var(--ink2); font-weight: 600; }
+  .vrb { position: relative; height: 14px; background: var(--chip); border-radius: 4px; margin: 2px 0; } .vrb i { position: absolute; display: block; }
+  .vrb i.ln { top: 6px; height: 2px; opacity: .7; } .vrb i.bx { top: 2px; height: 10px; border-radius: 3px; } .vrb i.md { top: 1px; width: 8px; height: 12px; margin-left: -4px; border-radius: 50%; background: #fff; border: 2px solid #0f172a; box-sizing: border-box; }
+  .vrt { font-size: 11.5px; color: var(--ink2); } .vrt b { color: var(--ink); }
+  .glance { margin: 6px 0 10px; } .glance .gl { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 6px; }
+  .glance .gt { border: 1px solid var(--line); border-left: 5px solid #94a3b8; border-radius: 10px; padding: 6px 8px; background: var(--chip); display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .glance .gt.up { border-left-color: #dc2626; } .glance .gt.dn { border-left-color: #2563eb; }
+  .glance .gi { font-size: 16px; } .glance .gt b { font-size: 17px; line-height: 1.15; } .glance .gn { font-size: 11.5px; color: var(--ink2); }
+  .glance .gt small { font-size: 11px; color: var(--ink2); } .glance .gt.up small { color: #dc2626; } .glance .gt.dn small { color: #2563eb; }
 </style>
 </head>
 <body>
@@ -723,7 +733,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.47.0"></script>
+<script src="js/map2d.js?v=2.48.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

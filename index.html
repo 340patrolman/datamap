@@ -451,6 +451,8 @@
   #m2dCard { border: 0 !important; border-radius: 18px !important; box-shadow: var(--sh2) !important; }
   #m2dZoom button { border: 0 !important; box-shadow: var(--sh) !important; border-radius: 14px !important; }
   #m2dCard .r { border-top: 1px solid var(--line) !important; }
+  #m2dCard .lg-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } #m2dCard .lg-btns button { height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
+  #m2dCard a.xl { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--acc); color: var(--acc); text-decoration: none; font-weight: 700; font-size: 13px; }
   @media (max-width: 430px) { #m2dFold { padding: 0 10px !important; } #m2dTop .row1 #m2dFind { font-size: 14px; } }
 </style>
 </head>
@@ -539,13 +541,14 @@
       <li>치안·생활안전 — 서울시 안심귀갓길 시설(코드표 첨부 xlsx)·안심 서비스 · AED · 소방용수 · 서초구 불법주정차 단속 CCTV · 견인차량보관소 · 공중화장실 · 안심택배함 · 치매안심센터(서울 열린데이터광장)</li>
       <li>다발지 10년 — 도로교통공단 다발지역 OpenAPI(2016~2025) · 지하철 10년 — 서울시 CardSubwayTime(해마다 6월) · 카드 매출 추이 — 2021년 1분기~</li>
       <li>사고 10년 — 도로교통공단 TAAS GIS 사고분석(서초구 2016~2025 · 22,546건 · 100m 칸 · 사망사고 122건 한 건씩 · 나이·성별·상해·사고번호·날짜의 일은 받는 자리에서 버림)</li>
+      <li>📐 필지 — 국토교통부 브이월드(연속지적도 LP_PA_CBND_BUBUN · 개별공시지가 · 토지특성 · 토지이용계획 · 건축물 · 토지임야 · 용도지역 WMS). 레이어를 켠 사람만 누를 때 api.vworld.kr 에서 받는다(키는 기기마다) · 저장하지 않는다 · 공시지가는 시세가 아니다</li>
       <li>이 지도는 기기 안에서만 돈다 — 통신 0 · 위치를 묻지 않는다 · 켠 레이어·밤낮·처음 안내 고른 것은 이 기기에만 저장</li>
     </ul>
   </details>
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.18.0"></script>
+<script src="js/map2d.js?v=2.19.0"></script>
 <script>
   // 캔버스 자리 = 위 막대 아래부터 화면 끝까지(막대 높이가 기기·글자 크기마다 다르다)
   (function () {

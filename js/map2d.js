@@ -2947,7 +2947,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.50.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.51.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3449,7 +3449,8 @@
 
   // ---------- v2.48.0 🏢 평형별 실거래 가격 범위(소유자 「평방미터와 평을 병기 · 실거래 가격 범위 · 다른 지역도 · 한눈에」) — r/<구>/deals.json(매매 24개월 한 건씩) × home.json 단지 → 행정동 ----------
   var DLS = {}, DLP = {};
-  function dlLoad(gu) { if (DLP[gu]) return DLP[gu]; DLP[gu] = Promise.all([rGet(gu, 'deals.json').then(function (j) { DLS[gu] = j; }).catch(function () { DLS[gu] = null; }), hmLoad(gu)]).then(function () { var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.kind === 'dong') { var sb = document.getElementById('storyBox'); if (!sb || !sb.innerHTML.trim()) show(sel.it); } }); return DLP[gu]; }
+  var SHDS = {}, RTMS = {};
+  function dlLoad(gu) { if (DLP[gu]) return DLP[gu]; DLP[gu] = Promise.all([rGet(gu, 'deals.json').then(function (j) { DLS[gu] = j; }).catch(function () { DLS[gu] = null; }), hmLoad(gu), rGet(gu, 'shd.json').then(function (j) { SHDS[gu] = j; }).catch(function () { SHDS[gu] = null; }), rGet(gu, 'rtms.json').then(function (j) { RTMS[gu] = j; }).catch(function () { RTMS[gu] = null; })]).then(function () { var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.kind === 'dong') { var sb = document.getElementById('storyBox'); if (!sb || !sb.innerHTML.trim()) show(sel.it); } }); return DLP[gu]; }
   var BANDS = [[0, 60, '60㎡ 이하', '18평 이하 · 보통 24평형 안팎'], [60, 85, '60~85㎡', '18~26평 · 보통 25~34평형'], [85, 102, '85~102㎡', '26~31평 · 보통 35~41평형'], [102, 135, '102~135㎡', '31~41평 · 보통 42~54평형'], [135, 1e9, '135㎡ 넘음', '41평 넘음 · 보통 55평형 이상']];
   function eok(m) { return m >= 10000 ? (Math.round(m / 1000) / 10).toLocaleString() + '억' : Math.round(m).toLocaleString() + '만'; }
   function qtl(a, q) { var i = (a.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return a[lo] + (a[hi] - a[lo]) * (i - lo); }
@@ -3465,7 +3466,7 @@
     D2.mb.forEach(function (m, i) { if (m) h += one('🏢 아파트 ' + BANDS[i][2], BANDS[i][3], m); });
     if (D2.mm[1]) h += one('🏙 오피스텔', '면적 전체', D2.mm[1]); if (D2.mm[2]) h += one('🏘 연립·다세대', '면적 전체', D2.mm[2]);
     var um = {}; D2.mm.forEach(function (m) { if (m) [m.max, m.min].forEach(function (q) { um[q.umd] = q.gu; }); }); var SHl = Object.keys(um).map(function (u) { var H2 = HOMED[um[u]], x = H2 && H2.sh && H2.sh[u]; return x && x[0] ? esc(u) + ' 매매 ' + x[0] + '건 · 연면적 평당 가운데 <b>' + hmFmt(x[1], 'apt') + '</b>' : ''; }).filter(Boolean);
-    if (SHl.length) h += '<div class="simc"><b>🏠 단독·다가구 주택</b> <small>지번이 가려져 공개돼 한 건씩 최고·최저는 낼 수 없다 — 법정동 가운데 값</small><div class="rcard">' + row('법정동', SHl.join('<br>')) + '</div></div>';
+    if (SHl.length && false) h += '<div class="simc"><b>🏠 단독·다가구 주택</b> <small>지번이 가려져 공개돼 한 건씩 최고·최저는 낼 수 없다 — 법정동 가운데 값</small><div class="rcard">' + row('법정동', SHl.join('<br>')) + '</div></div>';
     return h ? '<div class="cap">평형마다 평균 · 최고가 어디 · 최저가 어디(단지 이름을 누르면 그 단지로)</div>' + h : ''; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-goc]'); if (!b) return; var a = b.getAttribute('data-goc').split('|'), x = HCX.filter(function (q) { return q.m.gu === a[0] && String(q.k) === a[1]; })[0]; if (!x || !x.p) return;
     view.cx = x.p[0]; view.cy = x.p[1]; view.s = Math.max(view.s, 0.6); if (!on.home) { on.home = true; saveOn(); paintLayers(); } draw(); var sp = S(x.p); TAPM = x.p; sel = { x: sp[0], y: sp[1], r: 6, it: { kind: 'hmc', x: x } }; show(sel.it); draw(); });
@@ -3474,15 +3475,32 @@
     return '<div class="vz">' + (opt.title ? '<div class="cap">' + esc(opt.title) + '</div>' : '') + rows.map(function (r, i) { var a = r[2], col = opt.colors ? opt.colors[i % opt.colors.length] : '#2563eb';
       return '<div class="vrg"><div class="vrl"><b>' + esc(r[0]) + '</b>' + (r[1] ? ' <small>' + esc(r[1]) + '</small>' : '') + '</div><div class="vrb"><i class="ln" style="left:' + X(a[0]) + '%;width:' + Math.max(0.5, X(a[4]) - X(a[0])) + '%;background:' + col + '"></i><i class="bx" style="left:' + X(a[1]) + '%;width:' + Math.max(1, X(a[3]) - X(a[1])) + '%;background:' + col + '"></i><i class="md" style="left:' + X(a[2]) + '%"></i></div><div class="vrt">' + eok(a[0]) + ' ~ ' + eok(a[4]) + ' · 가운데 <b>' + eok(a[2]) + '</b> · ' + a[5] + '건</div></div>'; }).join('') +
       '<div class="pleg"><span>가는 줄 = 가장 싼~비싼 거래</span><span>굵은 칸 = 가운데 절반(25~75%)</span><span>흰 점 = 가운데 값</span></div></div>'; }
-  function dealBandsHtml(k8, nm) { var gu = k8.slice(0, 5); if (DLS[gu] === undefined || !HOMED[gu]) { dlLoad(gu); return ''; } var D2 = dealStats(k8); if (!D2 || !D2.n) return '';
+  function dealBandsHtml(k8, nm) { var gu = k8.slice(0, 5); if (DLS[gu] === undefined || !HOMED[gu] || SHDS[gu] === undefined || RTMS[gu] === undefined) { dlLoad(gu); return ''; } var D2 = dealStats(k8), XS = shdHtml(k8) + rtcDongHtml(k8); if (!D2 || !D2.n) return XS ? '<div class="dh">🏢 실거래 매매가 — ' + esc(nm || '이 동') + ' <small style="font-weight:600;color:var(--ink2)">(최근 24개월)</small></div>' + XS : '';
     var rows = [], cols = ['#93c5fd', '#3b82f6', '#2563eb', '#1d4ed8', '#1e3a8a'], cc = [];
     BANDS.forEach(function (b, i) { if (D2.apt[i]) { rows.push(['아파트 ' + b[2], b[3], D2.apt[i]]); cc.push(cols[i]); } });
     if (D2.offi) { rows.push(['오피스텔', '면적 전체', D2.offi]); cc.push('#0891b2'); } if (D2.rh) { rows.push(['연립·다세대', '면적 전체', D2.rh]); cc.push('#16a34a'); }
     if (!rows.length) return '';
     var na = D2.apt.reduce(function (t, a) { return t + (a ? a[5] : 0); }, 0);
-    var h = '<div class="dh">🏢 평형별 실거래 매매가 — ' + esc(nm || '이 동') + ' <small style="font-weight:600;color:var(--ink2)">(최근 24개월)</small></div>' + dealMinMaxHtml(D2) + vzRange(rows, { title: '면적별 거래 가격 범위(만 원·억)', colors: cc });
+    var h = '<div class="dh">🏢 평형별 실거래 매매가 — ' + esc(nm || '이 동') + ' <small style="font-weight:600;color:var(--ink2)">(최근 24개월)</small></div>' + dealMinMaxHtml(D2) + XS + vzRange(rows, { title: '면적별 거래 가격 범위(만 원·억)', colors: cc });
     if (na) h += vzStack([['아파트 거래', D2.apt.map(function (a) { return a ? a[5] : 0; }), na + '건']], BANDS.map(function (b, i) { return [b[2] + '(' + b[3].split(' · ')[0] + ')', cols[i]]; }), { title: '아파트 거래가 어느 크기에 몰렸나(건수 %)' });
     return h + '<p class="cap">면적 = 전용면적(㎡ · 평 = ㎡ ÷ 3.3058) · 「보통 ○평형」은 분양 때 부르는 공급면적의 흔한 범위(단지마다 다르다 · 근사) · 해제 거래 뺌 · ' + esc(D2.src) + ' · 단지 자리(지번 좌표)로 행정동을 가름 · 건수가 적으면 한두 건이 범위를 정한다</p>'; }
+  // v2.51.0 소유자 「단독·다가구는 지번을 가려도 근사치로 · 건물·주택·토지」 — 단독·다가구(법정동 기준 근사) · 상업업무용 건물(집합 = 이 동 · 일반 = 법정동)
+  function pyN(m2) { return m2 ? Math.round(m2 / 3.3058) + '평' : '-'; }
+  function mmOf(L, f) { if (!L.length) return null; var mx = L[0], mn = L[0], t = 0; L.forEach(function (q) { t += f(q); if (f(q) > f(mx)) mx = q; if (f(q) < f(mn)) mn = q; }); return { n: L.length, avg: t / L.length, max: mx, min: mn }; }
+  function shdHtml(k8) { var gu = k8.slice(0, 5), J = SHDS[gu]; if (!J) return ''; var U = Object.keys(J.b2h).filter(function (u) { return J.b2h[u][k8]; }); if (!U.length) return '';
+    var ui = U.map(function (u) { return J.umds.indexOf(u); }), L = J.d.filter(function (x) { return ui.indexOf(x[0]) >= 0; }); if (!L.length) return '';
+    var where = function (x) { return '<b>' + esc(J.umds[x[0]]) + ' ' + esc(x[2] || '') + '</b>' + (x[1] ? ' 다가구' : ' 단독') + ' <small>· 대지 ' + pyN(x[3]) + ' · 연면적 ' + pyN(x[4]) + (x[7] ? ' · ' + x[7] + '년' : '') + ' · ' + String(x[6]).replace(/(\d{4})(\d\d)/, '$1.$2') + '</small>'; };
+    var h = '', one = function (t, LL) { var m = mmOf(LL, function (x) { return x[5]; }); if (!m) return ''; var lp = LL.filter(function (x) { return x[3]; }).map(function (x) { return x[5] / (x[3] / 3.3058); }).sort(function (a, b) { return a - b; });
+      return '<div class="simc"><b>' + t + '</b> <small>매매 ' + m.n + '건 · 법정동 ' + U.map(esc).join('·') + ' 전체 기준(근사)</small><div class="rcard">' + row('평균', '<b>' + eok(m.avg) + '</b>' + (lp.length ? ' · 대지 평당 가운데 ' + eok(lp[Math.floor(lp.length / 2)]) : '')) + row('🔺 최고', '<b style="color:#dc2626">' + eok(m.max[5]) + '</b> — ' + where(m.max)) + (m.n > 1 ? row('🔻 최저', '<b style="color:#2563eb">' + eok(m.min[5]) + '</b> — ' + where(m.min)) : '') + '</div></div>'; };
+    h += one('🏠 단독주택', L.filter(function (x) { return !x[1]; })) + one('🏠 다가구주택', L.filter(function (x) { return x[1]; }));
+    return h ? h + '<p class="cap">단독·다가구는 국토부가 지번을 가려서 공개한다(「8**」 = 800번대) — 자리를 못 잡아 이 동이 걸친 법정동 전체 거래로 본 근사 · 대지 평당 = 거래가 ÷ 대지 평수(건물값 포함) · ' + esc(J.source) + '</p>' : ''; }
+  function rtcDongHtml(k8) { var gu = k8.slice(0, 5), T = RTMS[gu], J = SHDS[gu]; if (!T || !T.items) return ''; var U = J ? Object.keys(J.b2h).filter(function (u) { return J.b2h[u][k8]; }) : [];
+    var A = T.items.filter(function (it) { return it[2] === 0 && it[9] === k8; }), G = T.items.filter(function (it) { return it[2] === 1 && U.indexOf(T.umds[it[11]]) >= 0; });
+    var where = function (it) { return '<b>' + esc(T.uses[it[1]] || '') + '</b> <small>' + esc(T.umds[it[11]] || '') + (it[3] != null ? ' · ' + it[3] + '층' : '') + ' · 건물 ' + pyN(it[4]) + (it[5] ? ' · 대지 ' + pyN(it[5]) : '') + (it[12] ? ' · ' + it[12] + '년' : '') + ' · ' + String(it[0]).replace(/(\d{4})(\d\d)/, '$1.$2') + '</small>'; };
+    var one = function (t, sub, L) { var m = mmOf(L, function (it) { return it[6]; }); if (!m) return ''; return '<div class="simc"><b>' + t + '</b> <small>' + sub + ' · 매매 ' + m.n + '건</small><div class="rcard">' + row('평균', '<b>' + eok(m.avg) + '</b>') + row('🔺 최고', '<b style="color:#dc2626">' + eok(m.max[6]) + '</b> — ' + where(m.max)) + (m.n > 1 ? row('🔻 최저', '<b style="color:#2563eb">' + eok(m.min[6]) + '</b> — ' + where(m.min)) : '') + '</div></div>'; };
+    var h = one('🏬 상가·사무실(집합 — 호실)', '이 동 안', A) + one('🏢 상가·업무 건물(통째)', '법정동 ' + U.map(esc).join('·') + ' 전체 기준(근사)', G);
+    return h ? h + '<p class="cap">' + esc(T.source) + ' · 일반건물(통째 거래)은 지번이 가려져 법정동 단위 · 지분만 사고판 거래가 섞이면 최저가가 비정상으로 낮게 나올 수 있다 · 땅만 거래한 토지 매매 실거래는 활용신청이 막혀(포털 오류) 아직 없다</p>' : ''; }
+
   function dealRows(d) { if (!d || !d.k) return ''; return dealBandsHtml(d.k, d.name); }
 
   // ---------- v2.46.0 🏠 집안 구성(소유자 「동별 가구 구성원 · 세대당 몇 명 · 혼자 사는지 · 결혼했는지 · 이혼율 · 기초수급자 비율」) — data/house-dong.json · tools/region/house-bake.py ----------

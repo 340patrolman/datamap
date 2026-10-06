@@ -134,6 +134,7 @@ for g in IX['gus']:
             if 'cc' in v: x['cc'] = v['cc']
             if 'gov' in v and 'gov' not in x: x['gov'] = v['gov']
             if 'bz5' in v: x['bz'] = v['bz5']; x['bzi'] = v.get('bzi5', []); x['bziy'] = ['2015', '2020']; x['bzsrc'] = SRCS['사업체(경제총조사)']
+        if seoul_gg and gu[:2] == '41' and 'cc' in v and (x.get('cc') or [0, 0, -1])[2] < 0: x['cc'] = v['cc']   # 경기 어린이집 자료엔 현원이 없다(-1) — 전국 어린이집 기본정보(현원 있음)로
         elif 'bz' not in x and 'bz5' in v: x['bz'] = v['bz5']; x['bzi'] = v.get('bzi5', []); x['bziy'] = ['2015', '2020']; x['bzsrc'] = SRCS['사업체(경제총조사)']
     pts = doc.setdefault('pts', {})
     if not seoul_gg and PTS[gu]['cc']: pts['cc'] = PTS[gu]['cc']

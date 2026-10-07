@@ -1123,6 +1123,7 @@
     } else if (it.kind === 'pub') {
       h = pubCard(it);
     } else if (it.kind === 'lore') { h = loreCard(it.ids);
+    } else if (it.kind === 'jmy') { h = jmyCard(it.e, it.link);
     } else if (it.kind === 'rone') { h = roneCard(it);
     } else if (it.kind === 'rally') {
       var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + r.from + '~' + r.to)) + row('자리', esc(r.p)) + row('신고 인원', (r.n || '-') + '명 <em>(신고값)</em>') + (r.approx ? row('자리 표시', '<em>근사</em> — ' + esc(r.note)) : '');
@@ -1131,7 +1132,7 @@
     if (it.kind === 'dong' && it.d && it.d.c) { var dll = (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5), dA = 0;   // v2.61.0 소유자 「읍면동 오른쪽 옆에 상권분석 · 그 옆에 이 동 풀어 읽기 · 손익 계산은 그대로」
       (it.d.polys || []).forEach(function (pg) { var r = pg[0] || [], a = 0; for (var i = 0, k = r.length - 1; i < r.length; k = i++) a += (r[k][0] + r[i][0]) * (r[k][1] - r[i][1]); dA += Math.abs(a / 2); });
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
-      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>' + loreDong(it.d));
+      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>' + loreDong(it.d) + jmyRows(it.d));
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
     card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
@@ -1201,11 +1202,27 @@
     if (!mine.length && !g2.length && !sd.length) return ''; return '<div class="lorebox">' + loreList(mine, '📜 이 동 이야기') + loreList(g2, '📜 ' + esc(guName(gu)) + ' 이야기') + loreList(sd, '📜 ' + (d.k.slice(0, 2) === '11' ? '서울' : '이 시도') + ' 전체 이야기') + '</div>'; }
   function loreStn(name, p) { if (LORE === undefined) { loreLoad(); return ''; } if (!LORE) return ''; var nm = String(name || '').replace(/역$/, ''), d = p ? dongAtM(p) : null, a = [], b = [];
     LORE.items.forEach(function (st) { var at = (st.at.pts || []).some(function (q) { return q[2] === nm + '역'; }); if (at) a.push(st); else if (d && d.k && st.at.adm.indexOf(d.k) >= 0) b.push(st); });
-    return loreList(a, '📜 이 역 이야기') + loreList(b, '📜 둘레 동 이야기'); }
+    return loreList(a, '📜 이 역 이야기') + loreList(b, '📜 둘레 동 이야기') + (d ? jmyRows(d) : ''); }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-lore],[data-lorely]'); if (!b) return;
     var id = b.getAttribute('data-lore'); if (id) { var st = loreById(id), lp = st && loreP(st); if (lp) { view.cx = lp[0]; view.cy = lp[1]; draw(); } var s3 = lp ? S(lp) : [0, 0]; sel = { x: s3[0], y: s3[1], r: 10, it: { kind: 'lore', ids: [id] } }; show(sel.it); draw(); return; }
     b.getAttribute('data-lorely').split(',').forEach(function (k) { if (k in on) on[k] = true; }); saveOn(); paintLayers(); draw(); legend(); b.textContent = '✔ 켰다'; });
   if ($('m2dLeg')) $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-lorec]'); if (!b) return; var k = b.getAttribute('data-lorec'); if (LCAT[k]) delete LCAT[k]; else LCAT[k] = 1; try { localStorage.setItem('tg_map2d_lorecat', JSON.stringify(LCAT)); } catch (e2) {} draw(); legend(); });
+
+  // ---------- v2.74.0 🏷 이 동네 지명(서울역사편찬원 「서울 지명사전」 · r/<서울 구>/jimyeong.json ← tools/region/jimyeong-bake.py) ----------
+  // 이용조건 확인 전 — 설명은 첫 문장만 · 원문은 지명사전 링크로 · 좌표 = 지명사전 「지도보기」 점(같은 점에 여럿이 겹치면 동 가운데에 찍힌 것일 수 있다)
+  var JMY = {};
+  function jmyLink(J, nm) { return J.link + encodeURIComponent(String(nm).replace(/\(.*?\)/g, '').trim()); }
+  function jmyRows(d) { var gu = d && (d.gcd || (d.k && d.k.slice(0, 5))); if (!gu || !d.k || gu.slice(0, 2) !== '11') return '';
+    if (JMY[gu] === undefined) { JMY[gu] = null; rGet(gu, 'jimyeong.json').then(function (j) { JMY[gu] = j; }).catch(function () { JMY[gu] = false; }).then(function () { if (sel && sel.it && (sel.it.kind === 'dong' || sel.it.kind === 'sub')) show(sel.it); }); return ''; }
+    var J = JMY[gu]; if (!J) return ''; var L = (J.d[d.k] || []).slice().sort(function (a, b) { return (b[4] ? 1 : 0) - (a[4] ? 1 : 0) || (a[0] < b[0] ? -1 : 1); }); if (!L.length) return '';
+    var pts = {}; L.forEach(function (e) { if (e[1] != null) { var k = e[1] + ',' + e[2]; pts[k] = (pts[k] || 0) + 1; } });
+    return '<details class="rel jmy"><summary>🏷 이 동네 지명 <small>' + L.length + '곳 · 서울 지명사전 · 눌러 펼침</small></summary><ul class="jmyl">' + L.map(function (e) { var many = e[1] != null && pts[e[1] + ',' + e[2]] > 2;
+      return '<li><b>' + esc(e[0]) + '</b>' + (e[3] ? ' <i class="lst say" title="지명사전 지도의 주소 신뢰도 표시 — 높음·보통·낮음과의 대응은 미확인">' + esc(e[3]) + '</i>' : '') + (e[1] != null ? ' <button class="jmyp" data-jmy="' + esc(J.gu) + '|' + esc(d.k) + '|' + L.indexOf(e) + '" title="' + (many ? '같은 점에 지명 여럿 — 동 가운데일 수 있다' : '지명사전 지도보기 점') + '">📍' + (many ? '≈' : '') + '</button>' : '') +
+        (e[4] ? '<br><span>' + esc(e[4]) + '</span>' : '') + ' <a href="' + esc(jmyLink(J, e[0])) + '" target="_blank" rel="noopener">원문</a></li>'; }).join('') + '</ul><p class="src">' + esc(J.source) + ' · ' + esc(J.note) + '</p></details>'; }
+  function jmyCard(e, link) { return '<h3>🏷 ' + esc(e[0]) + '</h3>' + (e[4] ? '<p class="desc">' + esc(e[4]) + '</p>' : '<p class="lg-n">설명 없음(지명사전에 이름만)</p>') + row('자리 표시', esc(e[3] || '-') + ' <em>(지명사전 지도보기 점 · 신뢰도 표시 A·B·C 의 뜻은 미확인 · 같은 점에 지명 여럿이면 동 가운데일 수 있다)</em>') + '<div class="lg-btns"><a class="btnlink" href="' + esc(link) + '" target="_blank" rel="noopener">📖 지명사전 원문</a></div>' + src('서울역사편찬원 「서울 지명사전」 — 이용조건 확인 전이라 첫 문장만 싣는다'); }
+  document.addEventListener('click', function (ev) { var b = ev.target.closest('[data-jmy]'); if (!b) return; var a = b.getAttribute('data-jmy').split('|'), J = JMY[a[0]]; if (!J) return;
+    var L = (J.d[a[1]] || []).slice().sort(function (x, y) { return (y[4] ? 1 : 0) - (x[4] ? 1 : 0) || (x[0] < y[0] ? -1 : 1); }), e = L[+a[2]]; if (!e || e[1] == null) return;
+    var q = P(e[1], e[2]); view.cx = q[0]; view.cy = q[1]; view.s = Math.max(view.s, 0.3); draw(); var s3 = S(q); sel = { x: s3[0], y: s3[1], r: 9, it: { kind: 'jmy', e: e, link: jmyLink(J, e[0]) } }; show(sel.it); draw(); });
 
   // ---------- 공공데이터 묶음(pubdata) ----------
   var PUB = null;
@@ -3173,7 +3190,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.73.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.74.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4144,6 +4161,9 @@
   //   🚌 국토교통부 TAGO 버스정류소(좌표 근처) · 버스도착 · 버스위치 — 138개 시·군(경기 포함) · 서울 시내버스는 서울시 API 가 https 를 안 열어 빠진다(광역·인천 버스는 나옴)
   //   🚇 TAGO 지하철정보(역 시간표 · 요일·상하행) — 역 자리는 이 지도의 서울 지하철역(784) · 🚆 한국철도공사 열차운행정보(실제 운행 · 하루 뒤 공개) · ✈ TAGO 국내항공운항정보(출발·도착 공항마다)
   var TR = null, TRST = null, TRSTP = null, TRT = 0;
+  var STNALL = null;   // v2.74.0 역 자리 = 서울시 역사마스터(data/r/stations.json) + 서울 밖 전국 도시철도역(data/stations-kr.json · 국가철도공단 표준데이터)
+  function stnAll() { if (STNALL) return STNALL; var g = function (u) { return fetch(u).then(function (r) { return r.json(); }).then(function (j) { return j.items; }).catch(function () { return []; }); };
+    STNALL = Promise.all([g('data/r/stations.json'), g('data/stations-kr.json')]).then(function (a) { return a[0].concat(a[1]); }); return STNALL; }
   var TRAP = [['NAARKSS', '김포', ['11', '41', '28']], ['NAARKSI', '인천', []], ['NAARKPK', '김해', ['26', '48', '31']], ['NAARKPC', '제주', ['50']], ['NAARKTN', '대구', ['27', '47']], ['NAARKJJ', '광주', ['12']], ['NAARKTU', '청주', ['43', '44', '30', '36']], ['NAARKJB', '무안', []], ['NAARKPU', '울산', []], ['NAARKNY', '양양', ['51']], ['NAARKJY', '여수', []], ['NAARKPS', '사천', []], ['NAARKTH', '포항경주', []], ['NAARKNW', '원주', []], ['NAARKJK', '군산', ['52']]];
   var TRRAIL = ['서울', '용산', '영등포', '청량리', '광명', '수원', '천안아산', '대전', '오송', '동대구', '부산', '광주송정', '익산', '강릉', '포항', '울산(통도사)', '경주', '목포', '여수EXPO', '전주'];
   function trItems(j) { var it = (((j || {}).response || {}).body || {}).items; it = it && it.item; return it ? (Array.isArray(it) ? it : [it]) : []; }
@@ -4172,7 +4192,7 @@
     }).catch(function (e) { if (TR === T && T.loc) { T.loc.busy = 0; T.loc.err = trErr(e); trPaint(); } }); }
   function trDay() { var w = new Date().getDay(); return w === 0 ? '03' : w === 6 ? '02' : '01'; }
   function trSub() { var T = TR; if (!LK.dgk) return;
-    if (!TRSTP) TRSTP = fetch('data/r/stations.json').then(function (r) { return r.json(); }).then(function (j) { TRST = j.items.map(function (x) { return { nm: x[0], ln: x[1], p: P(x[2], x[3]) }; }); }).catch(function () { TRST = []; });
+    if (!TRSTP) TRSTP = stnAll().then(function (L) { TRST = L.map(function (x) { return { nm: x[0], ln: x[1], p: P(x[2], x[3]) }; }); });
     TRSTP.then(function () { if (TR !== T) return; var near = {}; (TRST || []).forEach(function (q) { var d = dTrue(q.p, T.c); if (d < 1500 && (!near[q.nm] || near[q.nm].d > d)) near[q.nm] = { nm: q.nm, d: d, p: q.p }; });
       var L = Object.keys(near).map(function (k) { return near[k]; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 2); T.sub = { st: L, lines: [], pend: L.length }; trPaint(); if (!L.length) return;
       L.forEach(function (q) { var kw = q.nm.replace(/역$/, '').replace(/\(.*\)$/, '');
@@ -4224,7 +4244,7 @@
       if (T.loc) h += '<p class="lg-n">📍 <b>' + esc(T.loc.no) + '</b> 버스 ' + (T.loc.busy ? '받는 중…' : T.loc.err ? esc(T.loc.err) : T.loc.v.length + '대 지도에 표시(주황)') + ' <button data-tx="locx">지우기</button></p>'; }
     // 🚇
     h += '<h4>🚇 가까운 지하철역 · 다음 열차</h4>'; var S0 = T.sub;
-    if (!S0) h += '<p class="lg-n">역을 찾는 중…</p>'; else if (S0.err) h += '<p class="lg-n">' + esc(S0.err) + '</p>'; else if (!S0.st.length) h += '<div class="nil">1.5km 안에 이 지도가 아는 지하철역이 없다(역 자리는 지금 서울 지하철역만 — 다른 지역은 준비 중).</div>';
+    if (!S0) h += '<p class="lg-n">역을 찾는 중…</p>'; else if (S0.err) h += '<p class="lg-n">' + esc(S0.err) + '</p>'; else if (!S0.st.length) h += '<div class="nil">1.5km 안에 이 지도가 아는 지하철·도시철도역이 없다(역 자리 = 서울시 역사마스터 + 전국도시철도역사정보 표준데이터).</div>';
     else { if (!S0.lines.length) h += S0.pend > 0 ? '<p class="lg-n">시간표를 찾는 중…</p>' : '<div class="nil">TAGO 지하철 시간표에서 ' + esc(S0.st.map(function (q) { return q.nm; }).join(' · ')) + ' 역을 찾지 못했다(이름이 달라 못 이은 것일 수 있다 — 준비 중).</div>';
       S0.lines.forEach(function (Ln) { var U = trNext(Ln.u, 3), Dn = trNext(Ln.dn, 3), ch = function (a) { return a.length ? a.map(function (x) { return '<span class="trc' + (x.m <= 5 ? ' soon' : '') + '"><b>' + x.t + '</b><i>' + x.m + '분 뒤</i><small>' + esc(x.end) + '행</small></span>'; }).join('') : '<small class="lg-n">' + (Ln.u === null ? '받는 중…' : '오늘 남은 열차 없음') + '</small>'; };
         h += '<div class="trs"><div class="trh"><b>' + esc(Ln.st) + '</b> <small>' + esc(Ln.route) + ' · ' + Math.round(Ln.d) + 'm</small></div><div class="trrow"><em>상행</em>' + ch(U) + '</div><div class="trrow"><em>하행</em>' + ch(Dn) + '</div></div>'; });
@@ -5302,7 +5322,7 @@
     var ll = [c[0] / KX + LON0, LAT0 - c[1] / KY], dl = r / KX * 1.1, dt = r / KY * 1.1, bx = [ll[0] - dl, ll[1] - dt, ll[0] + dl, ll[1] + dt];
     var gus = rIdx().filter(function (g) { var b = g.box; return !(b[2] < bx[0] || b[0] > bx[2] || b[3] < bx[1] || b[1] > bx[3]); });
     var jobs = [sLoadIdx(), rentLoad()];
-    if (!STNS) jobs.push(fetch('data/r/stations.json').then(function (x) { return x.json(); }).then(function (j) { STNS = j.items.map(function (s2) { return { n: s2[0], l: s2[1], p: P(s2[2], s2[3]) }; }); }).catch(function () { STNS = []; }));
+    if (!STNS) jobs.push(stnAll().then(function (L) { STNS = L.map(function (s2) { return { n: s2[0], l: s2[1], p: P(s2[2], s2[3]) }; }); }));
     gus.forEach(function (g) { jobs.push(sLoad(g.gu)); jobs.push(jgP(g.gu)); jobs.push(fLoad(g.gu)); if ((g.bytes || {}).ggtrd) jobs.push(gLoad(g.gu)); if ((g.bytes || {}).trdar) jobs.push(new Promise(function (res) { tLoad(g.gu, res); setTimeout(res, 20000); })); jobs.push(rLoadGu(g.gu)); if ((g.bytes || {}).transit) jobs.push(xLoad(g.gu)); if ((g.bytes || {}).safety) jobs.push(sfLoad(g.gu)); if ((g.bytes || {}).taas10) jobs.push(aLoad(g.gu)); if ((g.bytes || {}).live250) jobs.push(l2Load(g.gu)); if ((g.bytes || {}).rtms) jobs.push(rtLoad(g.gu)); });
     Promise.all(jobs).then(function () { RAD.gus = gus; RAD.res = radCalc(gus); RAD.res.grid = gridRad(RAD.c, RAD.r); RAD.busy = false; radPaint(); draw(); });
   }

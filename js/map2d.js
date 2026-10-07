@@ -1283,8 +1283,8 @@
     ctx.lineCap = 'butt'; ctx.lineJoin = 'miter'; }
   function walkLegend() { var any = Object.keys(WKP).map(function (g) { return WKP[g].j; }).filter(Boolean)[0], ck = any && any.check;
     return ['🚶 예상 귀갓길(추정)', li('rgba(220,40,40,.9)', '굵고 붉을수록 저녁에 많이 걷는 길', 'line') + li('rgba(250,170,60,.5)', '하루 20명 남짓', 'line') +
-      (ck ? '<div class="tkpi"><span><em>🏪</em><small>편의점 중 굵은 길(상위 20%) 30m 안</small><b>' + Math.round(ck.share_conv * 100) + '%</b><u>' + ck.hit + '/' + ck.conv + '곳</u></span><span><em>🛣</em><small>그 길이 전체 길에서 차지하는 몫</small><b>' + Math.round(ck.share_len * 100) + '%</b><u>→ 약 ' + (ck.share_conv / ck.share_len).toFixed(1) + '배 몰림</u></span></div><small class="lg-n">가설 점검(관계장부식 1단계 「공존」) — 편의점이 예상 동선 굵은 길에 몰리는가 · 큰길·역 앞 효과와 섞여 있다</small>' : '') +
-      '<small class="lg-n">모형이지 관측이 아니다 — 저녁 ' + (any ? any.hours.join('~') : '17~23') + '시 버스·지하철 하차 인원을 걸음 거리 안 집계구에 가구 × e^(−거리/λ)로 나눠(λ 버스 400m · 지하철 800m · 가정) 최단 길로 보냄 · 지형(언덕·계단)은 높이 자료가 오면 넣는다 · 지금은 서초구만 · 서울시 교통카드 · 통계청 SGIS · © OpenStreetMap</small>']; }
+      (ck ? '<div class="tkpi"><span><em>🏪</em><small>편의점 중 굵은 길(상위 20%) 30m 안 · ' + esc(guName(any.gu)) + '</small><b>' + Math.round(ck.share_conv * 100) + '%</b><u>' + ck.hit + '/' + ck.conv + '곳</u></span><span><em>🛣</em><small>그 길이 전체 길에서 차지하는 몫</small><b>' + Math.round(ck.share_len * 100) + '%</b><u>→ 약 ' + (ck.share_conv / ck.share_len).toFixed(1) + '배 몰림</u></span></div><small class="lg-n">가설 점검(관계장부식 1단계 「공존」) — 편의점이 예상 동선 굵은 길에 몰리는가 · 큰길·역 앞 효과와 섞여 있다</small>' : '') +
+      '<small class="lg-n">모형이지 관측이 아니다 — 저녁 ' + (any ? any.hours.join('~') : '17~23') + '시 버스·지하철 하차 인원을 걸음 거리 안 집계구에 가구 × e^(−거리/λ)로 나눠(λ 버스 400m · 지하철 800m · 가정) 최단 길로 보냄 · 지형(언덕·계단)은 높이 자료가 오면 넣는다 · 서울 25구 = 버스+지하철 · <b>경기 = 지하철만</b>(버스 하차 자료 없음 — 버스로 오는 사람 길은 빠졌다 · 편의점 점검 수치도 그래서 낮다) · 서울시 교통카드 · 통계청 SGIS · © OpenStreetMap</small>']; }
 
   // ---------- 공공데이터 묶음(pubdata) ----------
   var PUB = null;
@@ -3255,7 +3255,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.80.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.81.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4584,7 +4584,7 @@
     box: '안심택배함.', dem: '치매안심센터.', tgis: 'T-GIS 신호 교차로(서울시 · 종속 신호 포함).',
     spot: '길목 — 지금 시각 버스·지하철 하차가 많은 곳(숫자 = 순위). 순찰·단속 자리 고르기용.',
     spota: '길목 다발지(참고).', hot10: '사고다발지 10년(2016~2025) 겹친 자리.', jct: '교차로별 10년 사고(서울·경기) — 가장 가까운 교차로 하나에 모은 값.',
-    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', walk: '예상 귀갓길 — 저녁(17~23시) 지하철 출입구·버스정류장에서 내린 사람이 집(집계구 가구)까지 걸어갈 길을 모형으로 그렸다. 골목상권은 이 길 위에 선다(편의점이 굵은 길에 약 2배 몰린다 — 범례). 관측이 아니라 추정이고 지형은 아직 안 넣었다.', hira: '건강보험심사평가원 「전국 병의원 및 약국 현황」(분기) — 지금 문 연 병의원의 종별·의사 수·진료과목·과목별 전문의 수와 전국 약국. 진료과목을 고르면 그 과목을 진료하는 곳만 보인다(예: 소아청소년과). 개업·폐업 흐름은 「병·의원 현황」 층.', ggbrt: '서울 중앙버스전용차로 정류장 405곳마다 서는 경기버스 노선과 배차간격(경기도 버스 API). 동그라미가 클수록 출퇴근 시간에 버스가 자주 선다(Σ 60÷배차 · 계산값). 정류장 사고를 볼 때 「버스가 얼마나 자주 서는가」 기준값으로 쓴다. 서울 시내버스는 이 자료에 없다.', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
+    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', walk: '예상 귀갓길(서울 25구 · 경기는 지하철만) — 저녁(17~23시) 지하철 출입구·버스정류장에서 내린 사람이 집(집계구 가구)까지 걸어갈 길을 모형으로 그렸다. 골목상권은 이 길 위에 선다(편의점이 굵은 길에 약 2배 몰린다 — 범례). 관측이 아니라 추정이고 지형은 아직 안 넣었다.', hira: '건강보험심사평가원 「전국 병의원 및 약국 현황」(분기) — 지금 문 연 병의원의 종별·의사 수·진료과목·과목별 전문의 수와 전국 약국. 진료과목을 고르면 그 과목을 진료하는 곳만 보인다(예: 소아청소년과). 개업·폐업 흐름은 「병·의원 현황」 층.', ggbrt: '서울 중앙버스전용차로 정류장 405곳마다 서는 경기버스 노선과 배차간격(경기도 버스 API). 동그라미가 클수록 출퇴근 시간에 버스가 자주 선다(Σ 60÷배차 · 계산값). 정류장 사고를 볼 때 「버스가 얼마나 자주 서는가」 기준값으로 쓴다. 서울 시내버스는 이 자료에 없다.', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
     flt: '침수 흔적(2010~2025).', flr: '침수 이력이 있는 도로.', und: '침수 이력 지하차도.', ice: '제설함 — 결빙 우려 자리.', hcab: '도로 열선 설치 길.', advb: '제설 전진기지.',
     pbtn: '보행자 작동 신호기(누름 버튼).'
   };

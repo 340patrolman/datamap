@@ -773,8 +773,9 @@
   @media (min-width: 760px) {
     #m2dPnl, #m2dPnl.on, #m2dRad, #m2dBiz, #m2dTr { top: calc(var(--toph, 90px) + 8px) !important; bottom: 10px !important; height: auto !important; max-height: none !important; width: var(--pw, 35vw) !important; min-width: 340px; max-width: calc(100vw - 90px); }
     #m2dCard { width: var(--pw, 35vw) !important; min-width: 360px; max-width: calc(100vw - 90px); }
-    #m2dPnl > .pgrab, #m2dRad > .pgrab, #m2dBiz > .pgrab, #m2dTr > .pgrab { display: none; }
+    #m2dPnl.sized, #m2dRad.sized, #m2dBiz.sized, #m2dTr.sized, #m2dCard.sized { top: auto !important; height: var(--ph) !important; max-height: none !important; }   /* v2.79.0 PC 도 위 손잡이로 높이 · 옆 손잡이로 넓이 */
   }
+  @media (max-width: 759px) { #m2dCard > .pgrab { display: none; } }
   .pwgrab { position: fixed; z-index: 30; width: 14px; margin-left: -7px; cursor: ew-resize; touch-action: none; display: none; }
   .pwgrab i { position: absolute; left: 5px; top: 50%; width: 4px; height: 46px; margin-top: -23px; border-radius: 3px; background: var(--line); box-shadow: 0 0 0 1px var(--panel); }
   .pwgrab:hover i, .pwgrab.drag i { background: var(--acc); }
@@ -877,7 +878,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.78.0"></script>
+<script src="js/map2d.js?v=2.79.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

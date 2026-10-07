@@ -29,7 +29,7 @@
     ['fuel', '⛽ 주유소', false, '생활시설', 0], ['ev', '🔌 전기차 충전', false, '생활시설', 0], ['pk', '🅿 주차장', false, '생활시설', 0],
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
     ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장 자리(전국 · OSM)', false, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
-    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0], ['hira', '🩺 병의원·약국(심평원 · 과목·전문의 · 전국)', false, '생활시설', 1],
+    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0], ['walk', '🚶 예상 귀갓길(역·정류장 → 집 · 추정)', false, '이동·동선', 1], ['hira', '🩺 병의원·약국(심평원 · 과목·전문의 · 전국)', false, '생활시설', 1],
     ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '날씨·계절', 0], ['hcab', '🔥 도로 열선 길', false, '날씨·계절', 0], ['advb', '❄ 제설 전진기지', false, '날씨·계절', 0],
     ['pbtn', '🚸 보행자작동신호기', false, '도로·교통', 0]
@@ -904,7 +904,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark); drawLore(dark); drawGgbrt(dark); drawHira(dark);
+    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark); drawWalk(dark); drawLore(dark); drawGgbrt(dark); drawHira(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -1269,6 +1269,22 @@
     return h + row('전화', tel(q2[6])) + src(j.source + ' · ' + j.note); }
   if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-hrf]'); if (!b) return; var k = b.getAttribute('data-hrf'); HRF[k] = !HRF[k]; try { localStorage.setItem('tg_map2d_hira', JSON.stringify(HRF)); } catch (e2) {} draw(); legend(); });
     $('m2dLeg').addEventListener('change', function (e) { if (!e.target.hasAttribute('data-hrsp')) return; HRF.sp = e.target.value; try { localStorage.setItem('tg_map2d_hira', JSON.stringify(HRF)); } catch (e2) {} draw(); legend(); }); }
+
+  // ---------- v2.79.0 🚶 예상 귀갓길(r/<구>/walk.json ← tools/region/walkflow-bake.py · 추정 모형) — 소유자 「주민 동선은 지하철 출입구·버스정류장에서 집으로 걸어가는 길 · 그런 곳에 편의점·가게」 ----------
+  var WKP = {};
+  function wkLoad(gu) { if (WKP[gu]) return; var o = WKP[gu] = { j: null }; rGet(gu, 'walk.json').then(function (j) { var O = j.o, K = j.k; j.L = j.lines.map(function (l) { var pts = []; for (var i = 1; i < l.length; i += 2) pts.push(P(O[0] + l[i] / K[0], O[1] + l[i + 1] / K[1])); var b = bbOf(pts); return { f: l[0], pts: pts, bb: b }; }); j.mx = Math.max.apply(null, j.L.map(function (x) { return x.f; }).concat([1])); o.j = j; draw(); legend(); }).catch(function () { o.j = false; }); }
+  function drawWalk(dark) { if (!on.walk || view.s < 0.02) return; var v0 = viewLL(), W0 = cv.clientWidth, H0 = cv.clientHeight;
+    rIdx().forEach(function (g) { var x = g.box; if (!(g.bytes || {}).walk || x[2] < v0[0] || x[0] > v0[2] || x[3] < v0[1] || x[1] > v0[3]) return; wkLoad(g.gu); });
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    Object.keys(WKP).forEach(function (gu) { var j = WKP[gu].j; if (!j) return; var lo = Math.log(20), hi = Math.log(j.mx);
+      j.L.forEach(function (l) { var a = S([l.bb[0], l.bb[2]]), b = S([l.bb[1], l.bb[3]]); if (Math.max(a[0], b[0]) < -20 || Math.min(a[0], b[0]) > W0 + 20 || Math.max(a[1], b[1]) < -20 || Math.min(a[1], b[1]) > H0 + 20) return;
+        var t = Math.max(0, Math.min(1, (Math.log(l.f) - lo) / Math.max(0.1, hi - lo))); ctx.beginPath(); l.pts.forEach(function (q, i) { var p = S(q); if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); });
+        ctx.strokeStyle = 'rgba(' + Math.round(250 - 30 * t) + ',' + Math.round(170 - 130 * t) + ',' + Math.round(60 - 20 * t) + ',' + (0.35 + 0.55 * t).toFixed(2) + ')'; ctx.lineWidth = (1 + 7 * t) * zk(); ctx.stroke(); }); });
+    ctx.lineCap = 'butt'; ctx.lineJoin = 'miter'; }
+  function walkLegend() { var any = Object.keys(WKP).map(function (g) { return WKP[g].j; }).filter(Boolean)[0], ck = any && any.check;
+    return ['🚶 예상 귀갓길(추정)', li('rgba(220,40,40,.9)', '굵고 붉을수록 저녁에 많이 걷는 길', 'line') + li('rgba(250,170,60,.5)', '하루 20명 남짓', 'line') +
+      (ck ? '<div class="tkpi"><span><em>🏪</em><small>편의점 중 굵은 길(상위 20%) 30m 안</small><b>' + Math.round(ck.share_conv * 100) + '%</b><u>' + ck.hit + '/' + ck.conv + '곳</u></span><span><em>🛣</em><small>그 길이 전체 길에서 차지하는 몫</small><b>' + Math.round(ck.share_len * 100) + '%</b><u>→ 약 ' + (ck.share_conv / ck.share_len).toFixed(1) + '배 몰림</u></span></div><small class="lg-n">가설 점검(관계장부식 1단계 「공존」) — 편의점이 예상 동선 굵은 길에 몰리는가 · 큰길·역 앞 효과와 섞여 있다</small>' : '') +
+      '<small class="lg-n">모형이지 관측이 아니다 — 저녁 ' + (any ? any.hours.join('~') : '17~23') + '시 버스·지하철 하차 인원을 걸음 거리 안 집계구에 가구 × e^(−거리/λ)로 나눠(λ 버스 400m · 지하철 800m · 가정) 최단 길로 보냄 · 지형(언덕·계단)은 높이 자료가 오면 넣는다 · 지금은 서초구만 · 서울시 교통카드 · 통계청 SGIS · © OpenStreetMap</small>']; }
 
   // ---------- 공공데이터 묶음(pubdata) ----------
   var PUB = null;
@@ -2386,6 +2402,7 @@
     if (on.rone) { var rl2 = roneLegend(); G(rl2[0], rl2[1]); }
     if (on.lore) { var lr2 = loreLegend(); G(lr2[0], lr2[1]); }
     if (on.hira) { var hr2 = hiraLegend(); G(hr2[0], hr2[1]); }
+    if (on.walk) { var wk2 = walkLegend(); G(wk2[0], wk2[1]); }
     if (on.ggbrt) G('🚌 중앙차로 정류장 경기버스', GB ? '<small class="lg-n">● 크기 = 출퇴근(첨두) 시간당 서는 경기버스 대수(Σ 60÷배차 · 계산값 · 3분 미만 의심값 뺌) · ' + esc(GB.collected) + ' 수집 · 서울 중앙버스전용차로 정류장 405곳 한정 · 서울 시내버스 빠짐 · 경기도 버스 API</small>' : '<small class="lg-n">받는 중…</small>');
     if (on.acad) { var al3 = acLegend(); if (al3) G(al3[0], al3[1]); }
     if (on.med) { var ml3 = mdLegend(); if (ml3) G(ml3[0], ml3[1]); }
@@ -2647,7 +2664,7 @@
     ['all', '전체', null],
     ['split', '🗂 나눠 보기', ['dong', 'usgg', 'juris', 'jurk', 'upb', 'pbox', 'ri'], ['usgg']],
     ['people', '👥 인구 구성', ['dong', 'jgg', 'live250', 'live', 'lpop', 'fdong', 'minbak', 'flodge', 'fl250', 'crowd', 'ri'], ['dong', 'jgg', 'live250']],
-    ['move', '🚶 이동·동선', ['volp', 'live250', 'lpop', 'bus', 'ggbrt', 'bstop', 'msub', 'busd', 'subr', 'sub', 'exit', 'bike', 'lbus', 'spot', 'crowd', 'vol', 'evt', 'gfest'], ['bus', 'subr', 'sub', 'live250']],
+    ['move', '🚶 이동·동선', ['volp', 'live250', 'lpop', 'walk', 'bus', 'ggbrt', 'bstop', 'msub', 'busd', 'subr', 'sub', 'exit', 'bike', 'lbus', 'spot', 'crowd', 'vol', 'evt', 'gfest'], ['bus', 'subr', 'sub', 'live250']],
     ['spend', '💳 소비·상권', ['sales', 'trd', 'szone', 'rent', 'crowd', 'rtc', 'conv', 'bank', 'bar', 'play', 'inn'], ['sales', 'trd', 'szone']],
     ['estate', '🏠 주거·부동산', ['home', 'rtc', 'rone', 'rent', 'jgg', 'bld'], ['home', 'rtc']],
     ['traffic', '🚦 도로·교통', ['rnet', 'volp', 'exv', 'tlt', 'road', 'jcnm', 'lspd', 'spd', 'lev', 'lcc', 'vol', 'sig', 'sigx', 'tgis', 'pbtn', 'cam', 'pkcctv', 'pk', 'gpark', 'ev', 'gev', 'fuel', 'tow'], ['rnet', 'volp', 'jcnm', 'lspd', 'cam']],
@@ -3238,7 +3255,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.78.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.79.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4542,7 +4559,7 @@
     box: '안심택배함.', dem: '치매안심센터.', tgis: 'T-GIS 신호 교차로(서울시 · 종속 신호 포함).',
     spot: '길목 — 지금 시각 버스·지하철 하차가 많은 곳(숫자 = 순위). 순찰·단속 자리 고르기용.',
     spota: '길목 다발지(참고).', hot10: '사고다발지 10년(2016~2025) 겹친 자리.', jct: '교차로별 10년 사고(서울·경기) — 가장 가까운 교차로 하나에 모은 값.',
-    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', hira: '건강보험심사평가원 「전국 병의원 및 약국 현황」(분기) — 지금 문 연 병의원의 종별·의사 수·진료과목·과목별 전문의 수와 전국 약국. 진료과목을 고르면 그 과목을 진료하는 곳만 보인다(예: 소아청소년과). 개업·폐업 흐름은 「병·의원 현황」 층.', ggbrt: '서울 중앙버스전용차로 정류장 405곳마다 서는 경기버스 노선과 배차간격(경기도 버스 API). 동그라미가 클수록 출퇴근 시간에 버스가 자주 선다(Σ 60÷배차 · 계산값). 정류장 사고를 볼 때 「버스가 얼마나 자주 서는가」 기준값으로 쓴다. 서울 시내버스는 이 자료에 없다.', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
+    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', walk: '예상 귀갓길 — 저녁(17~23시) 지하철 출입구·버스정류장에서 내린 사람이 집(집계구 가구)까지 걸어갈 길을 모형으로 그렸다. 골목상권은 이 길 위에 선다(편의점이 굵은 길에 약 2배 몰린다 — 범례). 관측이 아니라 추정이고 지형은 아직 안 넣었다.', hira: '건강보험심사평가원 「전국 병의원 및 약국 현황」(분기) — 지금 문 연 병의원의 종별·의사 수·진료과목·과목별 전문의 수와 전국 약국. 진료과목을 고르면 그 과목을 진료하는 곳만 보인다(예: 소아청소년과). 개업·폐업 흐름은 「병·의원 현황」 층.', ggbrt: '서울 중앙버스전용차로 정류장 405곳마다 서는 경기버스 노선과 배차간격(경기도 버스 API). 동그라미가 클수록 출퇴근 시간에 버스가 자주 선다(Σ 60÷배차 · 계산값). 정류장 사고를 볼 때 「버스가 얼마나 자주 서는가」 기준값으로 쓴다. 서울 시내버스는 이 자료에 없다.', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
     flt: '침수 흔적(2010~2025).', flr: '침수 이력이 있는 도로.', und: '침수 이력 지하차도.', ice: '제설함 — 결빙 우려 자리.', hcab: '도로 열선 설치 길.', advb: '제설 전진기지.',
     pbtn: '보행자 작동 신호기(누름 버튼).'
   };
@@ -5914,15 +5931,15 @@
   // ---------- v2.68.0 판 높이 손잡이(소유자 「업종별 개업 예상과 학원 교습소 개업 화면이 고정 · 윗부분으로 끌어올리거나 아래로 내리거나 · 독립 화면이 열려도 구조는 동일하도록」) ----------
   //   💰 개업 예상·🎒 학원(m2dPnl) · 📐 반경 분석(m2dRad) · 🏪 창업 자리(m2dBiz) 맨 위에 카드와 같은 손잡이 — 끌면 높이 · 톡 누르면 크게(90%) ↔ 반(45%) · 판마다 기기에 기억(tg_map2d_ph_판)
   (function () {
-    ['m2dPnl', 'm2dRad', 'm2dBiz', 'm2dTr'].forEach(function (id) {
-      var el = $(id); if (!el) return; var key = 'tg_map2d_ph2_' + id, H0 = 0; try { H0 = +localStorage.getItem(key) || 0; } catch (e) {}   // v2.77.0 기본 = 화면 높이 35%(CSS --ph 없을 때) · 새 열쇠라 예전 높이는 안 이어 씀
+    ['m2dPnl', 'm2dRad', 'm2dBiz', 'm2dTr', 'm2dCard'].forEach(function (id) {   // v2.79.0 카드도(PC 에서만 — 폰 카드는 제 손잡이 .grab)
+      var el = $(id); if (!el) return; var cardPC = id === 'm2dCard', key = 'tg_map2d_ph2_' + (cardPC ? 'pc_' : '') + id, H0 = 0; try { H0 = +localStorage.getItem(key) || 0; } catch (e) {}   // v2.77.0 기본 = 화면 높이 35%(CSS --ph 없을 때) · 새 열쇠라 예전 높이는 안 이어 씀
       function setH(px) { var h = Math.max(110, Math.min(window.innerHeight - 70, px)); el.style.setProperty('--ph', Math.round(h) + 'px'); el.classList.add('sized'); return h; }
       if (H0) setH(H0 * window.innerHeight);
       window.addEventListener('resize', function () { var f = 0; try { f = +localStorage.getItem(key) || 0; } catch (e) {} if (f) setH(f * window.innerHeight); });
       function inject() { if (el.querySelector(':scope > .pgrab')) return; el.insertAdjacentHTML('afterbegin', '<div class="pgrab" title="끌어서 높이 · 눌러서 크게/반"><i></i></div>'); }
       inject(); if (window.MutationObserver) new MutationObserver(inject).observe(el, { childList: true });
       var dr = null;
-      el.addEventListener('pointerdown', function (e) { if (!e.target.closest('.pgrab')) return; var h = el.getBoundingClientRect().height; dr = { y: e.clientY, h: h, n: h, id: e.pointerId, t: Date.now() }; try { el.setPointerCapture(e.pointerId); } catch (e2) {} var g = el.querySelector('.pgrab'); if (g) g.classList.add('drag'); e.preventDefault(); });
+      el.addEventListener('pointerdown', function (e) { if (!e.target.closest('.pgrab') || (cardPC && window.innerWidth < 760)) return; var h = el.getBoundingClientRect().height; dr = { y: e.clientY, h: h, n: h, id: e.pointerId, t: Date.now() }; try { el.setPointerCapture(e.pointerId); } catch (e2) {} var g = el.querySelector('.pgrab'); if (g) g.classList.add('drag'); e.preventDefault(); });
       el.addEventListener('pointermove', function (e) { if (!dr || e.pointerId !== dr.id) return; dr.n = setH(dr.h + (dr.y - e.clientY)); });
       function end() { if (!dr) return; var g = el.querySelector('.pgrab'); if (g) g.classList.remove('drag'); var nh = dr.n;
         if (Math.abs(dr.n - dr.h) < 6 && Date.now() - dr.t < 300) nh = setH(dr.h < window.innerHeight * 0.6 ? window.innerHeight * 0.9 : window.innerHeight * 0.45);
@@ -5953,6 +5970,9 @@
     });
   })();
 
+  // v2.79.0 소유자 「이 자리의 관계를 그 문장 칸을 눌러서 보고 · 열린 창을 누르면 다시 닫히게」 — 카드 안 details.rel 펼친 안쪽(단추·링크·입력 말고)을 누르면 접힌다
+  document.addEventListener('click', function (e) { var dt = e.target.closest('#m2dCard details.rel[open]'); if (!dt || e.target.closest('summary,button,a,input,select,label,textarea')) return; if (e.target.closest('details.rel') !== dt) return; dt.open = false; var sm = dt.querySelector('summary'); if (sm && sm.getBoundingClientRect().top < 0) sm.scrollIntoView({ block: 'nearest' }); });
+
   // ---------- v2.66.0 가− 가+ 글씨 크기(소유자 「지도 안 설명글의 글씨 크기를 조절 · 오른쪽 위 닫기 단추 왼쪽에 + − · 스타일과 톤에 맞게」) ----------
   //   카드·손익·반경 분석·창업 자리·범례의 닫기 왼쪽에 두 단추 · 판은 머리줄(.lg-h) 아래 내용에 CSS zoom(--tz · 그래프도 같이) · 폰 카드는 두 손가락 글씨(--cz)와 같은 값을 움직인다 · 기기에 기억(tg_map2d_tz)
   (function () {
@@ -5977,7 +5997,7 @@
   var CATS = [
     ['people', '👥 인구·생활', [
       ['pop', '👥 인구 구성', [['주민·가구', ['jgg', 'dong']], ['그 시각 머무는 사람', ['live', 'live250', 'lpop']], ['외국인', ['fdong', 'fl250', 'minbak', 'stay', 'flodge']]], ['jgg', 'live250', 'lpop']],
-      ['move', '🚶 이동·동선', [['대중교통', ['bus', 'subr', 'sub', 'exit', 'bstop', 'ggbrt', 'msub', 'busd', 'lbus']], ['사람 흐름', ['crowd', 'spot', 'bike', 'evt', 'gfest']]], ['bus', 'subr', 'sub']],
+      ['move', '🚶 이동·동선', [['대중교통', ['bus', 'subr', 'sub', 'exit', 'bstop', 'ggbrt', 'msub', 'busd', 'lbus']], ['사람 흐름', ['walk', 'crowd', 'spot', 'bike', 'evt', 'gfest']]], ['bus', 'subr', 'sub']],
       ['life', '🏥 생활시설', [['의료', ['hira', 'hosp', 'phar', 'er', 'ger', 'aed']], ['관공서', ['govr', 'gov', 'post', 'lib', 'dem', 'welf', 'kyr']], ['편의', ['conv', 'bank', 'box', 'wc', 'wc2', 'park', 'heat', 'cold', 'her']], ['차·연료', ['fuel', 'ev', 'gev', 'pk', 'gpark']]], ['govr', 'hosp', 'phar']],
       ['care', '🎒 교육·돌봄', [['학교', ['edu', 'school', 'aca']], ['어린이', ['kg', 'cc', 'kids', 'pg', 'sz']]], ['edu', 'kg', 'cc']]
     ]],

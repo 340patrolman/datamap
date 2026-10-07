@@ -658,6 +658,20 @@
     #m2dPanel.lvall #m2dPanB .c1 { break-inside: avoid; }
   }
   #m2dPanel.lvall { top: calc(var(--toph, 90px) + 4px) !important; bottom: 0 !important; max-height: none !important; }
+  /* v2.73.0 📜 이야기 층 — 글은 코워크 공급 그대로 · 등급·확인 배지 고정 */
+  .lorebox { margin: 4px 0 10px; } details.lore, .lore { border: 1px solid var(--line); border-left: 4px solid #92400e; border-radius: 12px; padding: 7px 10px; margin: 6px 0; background: var(--panel); }
+  details.lore > summary { cursor: pointer; font-size: 14px; line-height: 1.45; } details.lore[open] > summary { margin-bottom: 4px; } details.lore > summary small, .lhd small { color: var(--ink2); font-weight: 600; font-size: 11.5px; }
+  .lhd b { font-size: 16px; } .lbd { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 4px; vertical-align: middle; }
+  .lcat, .lst { font-style: normal; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+  .lcat { color: #fff; background: var(--lc, #92400e); } .lst.ok { background: #dcfce7; color: #166534; } .lst.chk { background: #fef3c7; color: #92400e; } .lst.hy { background: #ede9fe; color: #5b21b6; } .lst.say { background: var(--chip); color: var(--ink2); }
+  .lgr { display: inline-block; min-width: 22px; text-align: center; font-size: 11px; font-weight: 900; padding: 0 5px; border-radius: 6px; color: #fff; } .lgr.gA { background: #15803d; } .lgr.gAm { background: #4d7c0f; } .lgr.gB { background: #1d4ed8; } .lgr.gBm { background: #6366f1; } .lgr.gC { background: #9ca3af; }
+  .lsrc { margin: 6px 0 2px; padding-left: 18px; font-size: 12px; } .lsrc li { margin: 2px 0; } .lsrc a { color: var(--link, #2563eb); }
+  .lalt { margin: 6px 0; } .lalt > b { font-size: 12.5px; } .lalt > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; margin-top: 4px; }
+  .lalt span { display: flex; flex-direction: column; padding: 7px 9px; border-radius: 10px; border: 1px dashed #b45309; background: var(--chip); } .lalt em { font-style: normal; font-size: 17px; font-weight: 900; } .lalt small { font-size: 11.5px; color: var(--ink2); }
+  .lcase { margin: 8px 0; padding: 7px 9px; border-radius: 10px; background: var(--chip); } .ltl svg { width: 100%; max-width: 420px; height: auto; display: block; color: var(--ink); } .ltl small { font-size: 11px; color: var(--ink2); }
+  .ltide { margin: 8px 0; padding: 8px 10px; border-radius: 10px; border: 1px dashed #2563eb; display: flex; flex-direction: column; gap: 2px; } .ltide small { color: var(--ink2); font-size: 12px; }
+  .lsay { font-size: 12px; color: var(--ink2); margin: 2px 0; } .lwarn { font-size: 12.5px; color: #92400e; margin: 4px 0; } .lrsp { font-size: 12px; color: var(--ink2); margin: 4px 0; }
+  .lorec button { border-left: 4px solid var(--lc) !important; } .lorec button:not(.on) { opacity: .45; }
   #m2dCard details.rel { margin: 2px 0 10px; border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; background: var(--chip); }
   #m2dCard details.rel > summary { cursor: pointer; font-weight: 800; font-size: 14px; }
   #m2dCard details.rel > summary small { font-weight: 600; color: var(--ink2); font-size: 11.5px; }
@@ -848,7 +862,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.72.0"></script>
+<script src="js/map2d.js?v=2.73.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

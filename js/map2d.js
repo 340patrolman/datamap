@@ -29,7 +29,7 @@
     ['fuel', '⛽ 주유소', false, '생활시설', 0], ['ev', '🔌 전기차 충전', false, '생활시설', 0], ['pk', '🅿 주차장', false, '생활시설', 0],
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
     ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장 자리(전국 · OSM)', false, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
-    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0],
+    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1],
     ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '날씨·계절', 0], ['hcab', '🔥 도로 열선 길', false, '날씨·계절', 0], ['advb', '❄ 제설 전진기지', false, '날씨·계절', 0],
     ['pbtn', '🚸 보행자작동신호기', false, '도로·교통', 0]
@@ -903,7 +903,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark);
+    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark); drawLore(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -1060,7 +1060,7 @@
     } else if (it.kind === 'sig') {
       var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + row('교차로 번호', esc(s.no)) + row('지금', sigNow(s)) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다');
     } else if (it.kind === 'sub') {
-      h = '<h3>🚇 ' + esc(it.s.name) + '</h3>' + row('노선', (it.s.lines || []).map(function (l) { return '<i class="ln" style="background:' + (LINE_C[l] || '#64748b') + '">' + esc(l) + '</i>'; }).join(' ')) + row('교차로', esc(it.n.name)) + src('자리는 교차로 기준(출입구 위치 아님) · 역 이름은 지도 파일');
+      h = '<h3>🚇 ' + esc(it.s.name) + '</h3>' + row('노선', (it.s.lines || []).map(function (l) { return '<i class="ln" style="background:' + (LINE_C[l] || '#64748b') + '">' + esc(l) + '</i>'; }).join(' ')) + row('교차로', esc(it.n.name)) + loreStn(it.s.name, it.n.p) + src('자리는 교차로 기준(출입구 위치 아님) · 역 이름은 지도 파일');
     } else if (it.kind === 'her') {
       var hr = it.h; h = '<h3>🏛 ' + esc(hr.name) + '</h3>' + row('종류', esc(hr.kind)) + row('시대', esc(hr.era || '-')) + row('주소', esc(hr.addr || '-')) + '<p class="desc">' + esc(unent(hr.desc).slice(0, 220)) + '…</p>' + src('국가유산청 국가유산 목록');
     } else if (it.kind === 'vol') {
@@ -1122,6 +1122,7 @@
       h = extraCard(it);
     } else if (it.kind === 'pub') {
       h = pubCard(it);
+    } else if (it.kind === 'lore') { h = loreCard(it.ids);
     } else if (it.kind === 'rone') { h = roneCard(it);
     } else if (it.kind === 'rally') {
       var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + r.from + '~' + r.to)) + row('자리', esc(r.p)) + row('신고 인원', (r.n || '-') + '명 <em>(신고값)</em>') + (r.approx ? row('자리 표시', '<em>근사</em> — ' + esc(r.note)) : '');
@@ -1130,12 +1131,82 @@
     if (it.kind === 'dong' && it.d && it.d.c) { var dll = (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5), dA = 0;   // v2.61.0 소유자 「읍면동 오른쪽 옆에 상권분석 · 그 옆에 이 동 풀어 읽기 · 손익 계산은 그대로」
       (it.d.polys || []).forEach(function (pg) { var r = pg[0] || [], a = 0; for (var i = 0, k = r.length - 1; i < r.length; k = i++) a += (r[k][0] + r[i][0]) * (r[k][1] - r[i][1]); dA += Math.abs(a / 2); });
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
-      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>');
+      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>' + loreDong(it.d));
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
     card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
+  // ---------- v2.73.0 📜 이야기 층(지역 스토리 · 코워크가 출처를 붙여 공급 · data/stories.json ← tools/story/story-bake.py) ----------
+  // 원칙(지시서 1절): 글은 코워크가 준 그대로 · 출처·근거등급 배지 고정 · 설은 설로 · 확인 필요·가설 배지 · 출처끼리 다르면 나란히 · 재난은 희생자 존중 · 정치는 구조 사실만
+  var LORE, LOREP = null, LCAT = {};
+  try { LCAT = JSON.parse(localStorage.getItem('tg_map2d_lorecat') || '{}') || {}; } catch (e) {}
+  var LCOL = { toponym: '#0e7490', fengshui: '#15803d', disaster: '#b91c1c', war: '#57534e', development: '#b45309', society: '#7c3aed', traffic: '#1d4ed8', politics: '#be185d', history: '#92400e' };
+  var LICO = { toponym: '🏷', fengshui: '⛰', disaster: '🌊', war: '🎖', development: '🏗', society: '🧑‍🤝‍🧑', traffic: '🚦', politics: '🗳', history: '📜' };
+  function loreLoad() { if (LOREP) return LOREP; LOREP = fetch('data/stories.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { LORE = j; }).catch(function () { LORE = null; })
+    .then(function () { draw(); legend(); var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && (sel.it.kind === 'dong' || sel.it.kind === 'sub')) show(sel.it); }); return LOREP; }
+  function loreCatOk(st) { return !LCAT[st.cat]; }
+  function loreById(id) { return LORE ? LORE.items.filter(function (x) { return x.id === id; })[0] : null; }
+  function loreP(st) { var A = st.at; if (A.pts && A.pts.length) return P(A.pts[0][0], A.pts[0][1]); if (A.lines && A.lines.length) { var L = A.lines[0], m = L[Math.floor(L.length / 2)]; return P(m[0], m[1]); } if (A.areas && A.areas.length) { var r = A.areas[0], x = 0, y = 0; r.forEach(function (q) { x += q[0]; y += q[1]; }); return P(x / r.length, y / r.length); } if (A.cen) return P(A.cen[0], A.cen[1]); return null; }
+  function drawLore(dark) { if (!on.lore) return; if (LORE === undefined) { loreLoad(); return; } if (!LORE) return; var grp = {};
+    var path = function (pts, close) { ctx.beginPath(); pts.forEach(function (q, i) { var p = S(P(q[0], q[1])); if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); }); if (close) ctx.closePath(); };
+    LORE.items.forEach(function (st) { if (!loreCatOk(st)) return; var A = st.at, col = LCOL[st.cat] || '#92400e';
+      (A.areas || []).forEach(function (r) { path(r, true); ctx.globalAlpha = 0.13; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.6; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]); });
+      (A.lines || []).forEach(function (L) { path(L, false); ctx.globalAlpha = 0.6; ctx.setLineDash([10, 6]); ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.lineCap = 'butt'; });
+      var Q = (A.pts || []).map(function (q) { return [q[0], q[1], 0]; }); if (!Q.length) { var lp = loreP(st); if (lp) Q.push([lp[0] / KX + LON0, LAT0 - lp[1] / KY, A.cen && !A.pts ? 1 : 0]); }
+      Q.forEach(function (q) { var k = q[0].toFixed(4) + ',' + q[1].toFixed(4); (grp[k] = grp[k] || { q: q, ids: [], col: col }).ids.push(st.id); }); });
+    Object.keys(grp).forEach(function (k) { var g = grp[k], s2 = S(P(g.q[0], g.q[1])); if (s2[0] < -40 || s2[1] < -40 || s2[0] > cv.clientWidth + 40 || s2[1] > cv.clientHeight + 40) return; var r = 8 * zk();
+      ctx.beginPath(); ctx.arc(s2[0], s2[1], r, 0, Math.PI * 2); if (g.q[2]) { ctx.fillStyle = dark ? 'rgba(15,22,36,.85)' : 'rgba(255,255,255,.92)'; ctx.fill(); ctx.setLineDash([3, 2]); ctx.lineWidth = 2; ctx.strokeStyle = g.col; ctx.stroke(); ctx.setLineDash([]); } else { ctx.fillStyle = g.col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); }
+      ctx.font = 'bold ' + Math.round(9 * zk()) + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = g.q[2] ? g.col : '#fff'; ctx.fillText(g.ids.length > 1 ? String(g.ids.length) : '史', s2[0], s2[1] + 0.5);
+      hit.push({ x: s2[0], y: s2[1], r: Math.max(r, 11), it: { kind: 'lore', ids: g.ids } });
+      if (view.s > 0.12) { var t0 = loreById(g.ids[0]); label([P(g.q[0], g.q[1])[0], P(g.q[0], g.q[1])[1] - 20 / view.s], t0.title + (g.ids.length > 1 ? ' 외 ' + (g.ids.length - 1) : ''), 11, dark ? '#fde68a' : g.col, dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.9)'); } }); }
+  function loreLegend() { var T = '📜 이야기'; if (LORE === undefined) { loreLoad(); return [T, '<small class="lg-n">받는 중…</small>']; } if (!LORE) return [T, '<small class="lg-n">받지 못했다</small>'];
+    var n = {}; LORE.items.forEach(function (x) { n[x.cat] = (n[x.cat] || 0) + 1; });
+    return [T + ' — ' + LORE.items.length + '건', '<div class="lg-btns lorec">' + Object.keys(LORE.cats).filter(function (k) { return n[k]; }).map(function (k) { return '<button data-lorec="' + k + '" class="' + (LCAT[k] ? '' : 'on') + '" style="--lc:' + LCOL[k] + '">' + LICO[k] + ' ' + esc(LORE.cats[k]) + ' ' + n[k] + '</button>'; }).join('') + '</div>' +
+      '<small class="lg-n">● 자리 있음 · ◌ 동 단위(정확한 자리 아님) · 굵은 점선 = 길·다리 · 근거등급 ' + Object.keys(LORE.grade).map(function (g) { return '<b class="lgr g' + g.replace('-', 'm') + '">' + g + '</b> ' + esc(LORE.grade[g]); }).join(' · ') + '</small>']; }
+  function loreBadges(st) { return '<span class="lbd"><i class="lcat" style="--lc:' + (LCOL[st.cat] || '#92400e') + '">' + (LICO[st.cat] || '') + ' ' + esc(LORE.cats[st.cat] || st.cat) + '</i>' + (st.status === 'needs_check' ? '<i class="lst chk">⚠ 확인 필요</i>' : '<i class="lst ok">✔ 출처 확인</i>') + (st.hypo ? '<i class="lst hy">🧪 가설</i>' : '') + (st.say ? '<i class="lst say">「' + esc(st.say) + '」</i>' : '') + '</span>'; }
+  function loreTl(cs) { if (!cs.tl) return ''; var m = function (t) { var a = t.split(':'); return +a[0] * 60 + (+a[1]); }, t0 = 15 * 60, t1 = 23 * 60, W = 320, x = function (t) { return 10 + (m(t) - t0) / (t1 - t0) * (W - 20); };
+    var tide = cs.tl.filter(function (q) { return q[2] === 't'; }), fl = cs.tl.filter(function (q) { return q[2] === 'f'; }), g = '';
+    for (var hh = 15; hh <= 23; hh++) { var xx = x(hh + ':00'); g += '<line x1="' + xx + '" y1="30" x2="' + xx + '" y2="36" stroke="currentColor" opacity=".35"/><text x="' + xx + '" y="47" font-size="9" text-anchor="middle" fill="currentColor" opacity=".7">' + hh + '시</text>'; }
+    if (tide.length && fl.length) { var a = x(tide[0][1]), b = x(fl[0][1]); g += '<rect x="' + a + '" y="27" width="' + (b - a) + '" height="6" rx="3" fill="#f59e0b" opacity=".45"/><text x="' + ((a + b) / 2) + '" y="24" font-size="10" font-weight="800" text-anchor="middle" fill="#b45309">' + ((m(fl[0][1]) - m(tide[0][1])) / 60).toFixed(1) + '시간</text>'; }
+    tide.forEach(function (q, i) { var xx = x(q[1]); g += '<circle cx="' + xx + '" cy="30" r="5" fill="#2563eb" opacity="' + (i ? '.45' : '1') + '"><title>' + esc(q[0] + ' ' + q[1]) + '</title></circle>'; });
+    fl.forEach(function (q) { var xx = x(q[1]); g += '<path d="M' + (xx - 6) + ' 36 L' + (xx + 6) + ' 36 L' + xx + ' 24 Z" fill="#dc2626"><title>' + esc(q[0] + ' ' + q[1]) + '</title></path>'; });
+    return '<div class="ltl"><svg viewBox="0 0 ' + W + ' 52" role="img" aria-label="인천 만조에서 반포 침수까지">' + g + '</svg><small>' + cs.tl.map(function (q) { return '<b style="color:' + (q[2] === 't' ? '#2563eb' : '#dc2626') + '">' + (q[2] === 't' ? '●' : '▲') + '</b> ' + esc(q[0]) + ' ' + q[1]; }).join(' · ') + '</small></div>'; }
+  function loreBody(st) { var h = '<p class="desc">' + esc(st.body) + '</p>';
+    if (st.say) h += '<p class="lsay">「' + esc(st.say) + '」로 전하는 이야기 — 사실로 단정하지 않는다</p>';
+    if (st.hypo) h += '<p class="lwarn">🧪 ' + esc(st.hypo) + '</p>';
+    if (st.warn) h += '<p class="lwarn">⚠ ' + esc(st.warn) + '</p>';
+    var F = st.facts || [], sh = F.filter(function (f) { return f.v.length <= 16; }), lg = F.filter(function (f) { return f.v.length > 16; });
+    if (sh.length) h += '<div class="tkpi">' + sh.map(function (f) { return '<span><small>' + esc(f.k) + '</small><b>' + esc(f.v) + '</b></span>'; }).join('') + '</div>';
+    if (lg.length) h += '<div class="rcard">' + lg.map(function (f) { return row(f.k, esc(f.v)); }).join('') + '</div>';
+    if (st.alt) h += '<div class="lalt"><b>' + esc(st.alt_title || '출처마다 다르다') + '</b><div>' + st.alt.map(function (a) { return '<span><em>' + esc(a[0]) + '</em><small>' + esc(a[1]) + '</small></span>'; }).join('') + '</div></div>';
+    (st.cases || []).forEach(function (cs) { h += '<div class="lcase"><b>' + esc(cs.d) + '</b> <small>' + esc(cs.what) + '</small>' + loreTl(cs) + '<div class="rcard">' + cs.rows.map(function (r) { return row(r[0], esc(r[1])); }).join('') + '</div>' +
+      (cs.alt ? '<div class="lalt"><b>같은 날, 다른 설명 — 둘 다 적는다</b><div>' + cs.alt.map(function (a) { return '<span><em>' + esc(a[0]) + '</em><small>' + esc(a[1]) + '</small></span>'; }).join('') + '</div></div>' : '') +
+      '<small class="lg-n">' + cs.src.map(function (q) { return '<a href="' + esc(q[1]) + '" target="_blank" rel="noopener">' + esc(q[0]) + '</a>'; }).join(' · ') + '</small></div>'; });
+    if (st.id === 'jamsu-tide') h += '<div class="ltide"><b>🌊 만조 경보 — 준비 중</b><small>국립해양조사원 인천 조석예보(정해진 시각에 받아 둔 자료)가 오면 그날 대조기·만조 시각과 반포·잠수교 저지 위험 시간대(만조+2~4시간)를 여기 띄운다. 근거는 위 사례 2건뿐이다.</small></div>';
+    if (st.respect) h += '<p class="lrsp">🕯 삼가 희생자를 기억합니다</p>';
+    if (st.cat === 'politics') h += '<p class="lg-n">장소·구조 사실만 적었다 — 특정 후보·정당 평가는 하지 않는다.</p>';
+    if (st.layers && st.layers.length) h += '<div class="lg-btns"><button data-lorely="' + st.layers.join(',') + '">🗺 같은 자리 자료 층 같이 켜기(' + st.layers.map(function (k) { var l = LAYERS.filter(function (x) { return x[0] === k; })[0]; return l ? l[1] : k; }).join(' · ') + ')</button></div>';
+    if (st.layer_wait) h += '<p class="lg-n">' + esc(st.layer_wait) + '</p>';
+    var nm = Object.keys(st.at.names || {}).map(function (k) { return st.at.names[k]; });
+    if (nm.length || st.at.region) h += '<p class="lg-n">걸친 곳: ' + (st.at.region ? '서울 전역 · ' : '') + esc(nm.join(' · ')) + (st.at.cen && !st.at.pts ? ' <em>(동 단위 — 지도의 빈 동그라미는 정확한 자리가 아니다)</em>' : '') + '</p>';
+    if (st.links && st.links.length) h += '<details class="rel"><summary>🔗 이어지는 이야기 <small>' + st.links.length + '건</small></summary><div class="lg-btns">' + st.links.map(function (id) { var x = loreById(id); return x ? '<button data-lore="' + id + '">' + (LICO[x.cat] || '') + ' ' + esc(x.title) + '</button>' : ''; }).join('') + '</div></details>';
+    h += '<ol class="lsrc">' + st.sources.map(function (q) { return '<li><b class="lgr g' + q.g.replace('-', 'm') + '" title="' + esc(LORE.grade[q.g] || '') + '">' + q.g + '</b> ' + (q.u ? '<a href="' + esc(q.u) + '" target="_blank" rel="noopener">' + esc(q.t) + '</a>' : esc(q.t) + ' <i class="lst chk">원문 주소 대기</i>') + '</li>'; }).join('') + '</ol>';
+    return h; }
+  function loreCard(ids) { if (!LORE) { loreLoad(); return '<h3>📜 이야기</h3><p class="lg-n">받는 중…</p>'; } var L = ids.map(loreById).filter(Boolean);
+    return '<h3>📜 이야기' + (L.length > 1 ? ' ' + L.length + '건' : '') + '</h3>' + L.map(function (st) { return '<div class="lore"><div class="lhd"><b>' + esc(st.title) + '</b>' + (st.date ? ' <small>' + esc(st.date) + '</small>' : '') + loreBadges(st) + '</div>' + loreBody(st) + '</div>'; }).join('') + src(LORE.source + ' · ' + LORE.anchor_note); }
+  function loreList(L, title) { if (!L.length) return ''; return '<div class="dh">' + title + ' <small style="font-weight:600;color:var(--ink2)">' + L.length + '건 · 눌러 펼침 · 출처 붙음</small></div>' + L.map(function (st) { return '<details class="lore"><summary><b>' + (LICO[st.cat] || '') + ' ' + esc(st.title) + '</b>' + (st.date ? ' <small>' + esc(st.date) + '</small>' : '') + loreBadges(st) + '</summary>' + loreBody(st) + '</details>'; }).join(''); }
+  function loreDong(d) { if (LORE === undefined) { loreLoad(); return ''; } if (!LORE || !d || !d.k) return ''; var gu = d.gcd || d.k.slice(0, 5), mine = [], g2 = [], sd = [];
+    LORE.items.forEach(function (st) { var A = st.at; if (A.adm.indexOf(d.k) >= 0) mine.push(st); else if ((A.gu || []).indexOf(gu) >= 0) g2.push(st); else if (A.region && d.k.slice(0, 2) === A.region) sd.push(st); });
+    if (!mine.length && !g2.length && !sd.length) return ''; return '<div class="lorebox">' + loreList(mine, '📜 이 동 이야기') + loreList(g2, '📜 ' + esc(guName(gu)) + ' 이야기') + loreList(sd, '📜 ' + (d.k.slice(0, 2) === '11' ? '서울' : '이 시도') + ' 전체 이야기') + '</div>'; }
+  function loreStn(name, p) { if (LORE === undefined) { loreLoad(); return ''; } if (!LORE) return ''; var nm = String(name || '').replace(/역$/, ''), d = p ? dongAtM(p) : null, a = [], b = [];
+    LORE.items.forEach(function (st) { var at = (st.at.pts || []).some(function (q) { return q[2] === nm + '역'; }); if (at) a.push(st); else if (d && d.k && st.at.adm.indexOf(d.k) >= 0) b.push(st); });
+    return loreList(a, '📜 이 역 이야기') + loreList(b, '📜 둘레 동 이야기'); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-lore],[data-lorely]'); if (!b) return;
+    var id = b.getAttribute('data-lore'); if (id) { var st = loreById(id), lp = st && loreP(st); if (lp) { view.cx = lp[0]; view.cy = lp[1]; draw(); } var s3 = lp ? S(lp) : [0, 0]; sel = { x: s3[0], y: s3[1], r: 10, it: { kind: 'lore', ids: [id] } }; show(sel.it); draw(); return; }
+    b.getAttribute('data-lorely').split(',').forEach(function (k) { if (k in on) on[k] = true; }); saveOn(); paintLayers(); draw(); legend(); b.textContent = '✔ 켰다'; });
+  if ($('m2dLeg')) $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-lorec]'); if (!b) return; var k = b.getAttribute('data-lorec'); if (LCAT[k]) delete LCAT[k]; else LCAT[k] = 1; try { localStorage.setItem('tg_map2d_lorecat', JSON.stringify(LCAT)); } catch (e2) {} draw(); legend(); });
+
   // ---------- 공공데이터 묶음(pubdata) ----------
   var PUB = null;
   function pubPrep() {
@@ -2250,6 +2321,7 @@
     if (on.govr) G('🏛 관공서', Object.keys(GOVC).map(function (k) { return li(GOVC[k], k); }).join(''));
     if (on.juris) { var jl2 = jrsLegend(); if (jl2) G(jl2[0], jl2[1]); }
     if (on.rone) { var rl2 = roneLegend(); G(rl2[0], rl2[1]); }
+    if (on.lore) { var lr2 = loreLegend(); G(lr2[0], lr2[1]); }
     if (on.acad) { var al3 = acLegend(); if (al3) G(al3[0], al3[1]); }
     if (on.med) { var ml3 = mdLegend(); if (ml3) G(ml3[0], ml3[1]); }
     if (on.dong) G('🏘 행정동', li('rgba(109,40,217,.6)', '행정동 경계', 'line') + li('#64748b', '이웃 구 동(점선)', 'dash') + li('#475569', '구 경계(굵은 점선)', 'dash'));
@@ -2517,7 +2589,7 @@
     ['acc', '🚗 교통사고', ['acc', 'acc250', 'acc10', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'sz', 'szh', 'spot', 'spota'], ['acc10', 'fatal10', 'jct', 'hot10']],
     ['safe', '🛡 치안·안전', ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er', 'ger', 'aed', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'glamp', 'fw', 'hyd', 'box', 'bar', 'play', 'inn', 'dem'], ['jurk', 'pbox', 'pol', 'fire', 'er']],
     ['care', '🎒 교육·돌봄', ['edu', 'school', 'kg', 'cc', 'kids', 'aca', 'kyr', 'welf', 'dem', 'pg', 'sz'], ['edu', 'kg', 'cc', 'kyr']],
-    ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'conv', 'bank', 'box'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
+    ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'lore', 'conv', 'bank', 'box'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
     ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
     ['live', '📡 실시간', ['lev', 'lspd', 'lcc', 'lak', 'lkma', 'lbus', 'lwx', 'lair', 'lrad', 'crowd'], ['lev', 'lspd', 'lcc', 'lwx', 'lrad']],
     ['map', '🗺 바탕·격자', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm', 'g250', 'ri'], ['g250']]
@@ -3101,7 +3173,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.72.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.73.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3946,6 +4018,7 @@
     NEAR.forEach(function (d) { if (!RGUN[d.gu] && !c.some(function (x) { return x.it.kind === 'rgo' && x.it.g === d.gu && x.it.name === d.name; }) && (d.gu + ' ' + d.name).indexOf(q) >= 0) c.push({ p: d.c, it: { kind: 'near', d: d } }); });
     NODES.forEach(function (n) { if (n.name.indexOf(q) >= 0 || (n.sig && n.sig.name.indexOf(q) >= 0)) c.push({ p: n.p, it: { kind: 'node', n: n, st: D.acc && D.acc.nodes ? D.acc.nodes.filter(function (x) { return x.node[0] === n.i && x.node[1] === n.j; })[0] : null } }); });
     if (D.her) D.her.items.forEach(function (h) { if (h.name.indexOf(q) >= 0 && h.lat) c.push({ p: P(h.lon, h.lat), it: { kind: 'her', h: h } }); });
+    if (LORE) LORE.items.forEach(function (st) { var lp = loreP(st); if (lp && st.title.indexOf(q) >= 0) c.push({ p: lp, it: { kind: 'lore', ids: [st.id] } }); });
     if (D.sig) D.sig.spots.forEach(function (s) { if (s.name.indexOf(q) >= 0) c.push({ p: P(s.lon, s.lat), it: { kind: 'sig', s: s } }); });
     TG.forEach(function (t) { if (t.name.indexOf(q) >= 0 || String(t.c) === q) c.push({ p: t.p, it: { kind: 'tgis', t: t }, k: 'tgis' }); });
     SPOTS.forEach(function (s2) { if (s2.name.indexOf(q) >= 0) { var rk = spotRank().indexOf(s2) + 1; c.push({ p: s2.p, it: { kind: 'spot', q: s2, rank: rk }, k: 'spot' }); } });
@@ -4396,7 +4469,7 @@
     box: '안심택배함.', dem: '치매안심센터.', tgis: 'T-GIS 신호 교차로(서울시 · 종속 신호 포함).',
     spot: '길목 — 지금 시각 버스·지하철 하차가 많은 곳(숫자 = 순위). 순찰·단속 자리 고르기용.',
     spota: '길목 다발지(참고).', hot10: '사고다발지 10년(2016~2025) 겹친 자리.', jct: '교차로별 10년 사고(서울·경기) — 가장 가까운 교차로 하나에 모은 값.',
-    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', her: '국가유산(문화재).',
+    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
     flt: '침수 흔적(2010~2025).', flr: '침수 이력이 있는 도로.', und: '침수 이력 지하차도.', ice: '제설함 — 결빙 우려 자리.', hcab: '도로 열선 설치 길.', advb: '제설 전진기지.',
     pbtn: '보행자 작동 신호기(누름 버튼).'
   };
@@ -5765,7 +5838,7 @@
     ['police', '🚓 경찰업무', [
       ['traf', '🚦 교통', [['교통사고', ['acc', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh', 'spota']], ['신호·교차로', ['tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['도로·교통량', ['rnet', 'rpost', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
       ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'play', 'inn', 'stay', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
-      ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
+      ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['lore', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
     ]],
     ['biz', '💳 상권·부동산', [
       ['spend', '💳 소비·상권', [['카드·매출', ['sales', 'crowd']], ['상권', ['trd', 'szone', 'rent']], ['가게', ['conv', 'bank', 'bar', 'play', 'inn']]], ['sales', 'trd', 'szone']],
@@ -5777,7 +5850,7 @@
       ['live', '📡 실시간 교통', [['도로', ['lev', 'lspd', 'lcc', 'lbus']], ['인파', ['crowd']]], ['lev', 'lspd']]
     ]],
     ['base', '🗺 바탕', [
-      ['map', '🗺 바탕 지도', [['바탕', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm']], ['나눠 보기 경계', ['usgg', 'juris', 'jurk', 'upb', 'ri']], ['격자', ['g250']], ['역사', ['her']]], []]
+      ['map', '🗺 바탕 지도', [['바탕', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm']], ['나눠 보기 경계', ['usgg', 'juris', 'jurk', 'upb', 'ri']], ['격자', ['g250']], ['역사·이야기', ['lore', 'her']]], []]
     ]],
     ['all', '전체', null]
   ];

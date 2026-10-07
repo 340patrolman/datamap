@@ -765,6 +765,19 @@
   #m2dTip i { font-style: normal; color: #fcd34d; font-weight: 700; } #m2dTip small { color: #cbd5e1; } #m2dTip b { color: #fff; }
   /* v2.54.1 막대 최고·최저 표시 */
   .hl { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11.5px; font-weight: 800; margin-top: 2px; }
+  /* v2.77.0 정보 창 크기 하나로(소유자 「지도를 가리며 보여지는 창은 전체 화면의 35% · PC 는 옆으로도 · 스마트폰은 위아래로 확장」)
+     폰 = 아래에서 화면 높이의 35%(위 손잡이로 위아래) · PC = 화면 폭의 35% · 세로는 위 줄 아래부터 바닥까지(옆 손잡이로 넓이) · 크기는 기기에 기억 */
+  @media (max-width: 759px) {
+    #m2dPnl, #m2dRad, #m2dBiz, #m2dTr { max-height: none !important; height: var(--ph, 35vh); }
+  }
+  @media (min-width: 760px) {
+    #m2dPnl, #m2dPnl.on, #m2dRad, #m2dBiz, #m2dTr { top: calc(var(--toph, 90px) + 8px) !important; bottom: 10px !important; height: auto !important; max-height: none !important; width: var(--pw, 35vw) !important; min-width: 340px; max-width: calc(100vw - 90px); }
+    #m2dCard { width: var(--pw, 35vw) !important; min-width: 360px; max-width: calc(100vw - 90px); }
+    #m2dPnl > .pgrab, #m2dRad > .pgrab, #m2dBiz > .pgrab, #m2dTr > .pgrab { display: none; }
+  }
+  .pwgrab { position: fixed; z-index: 30; width: 14px; margin-left: -7px; cursor: ew-resize; touch-action: none; display: none; }
+  .pwgrab i { position: absolute; left: 5px; top: 50%; width: 4px; height: 46px; margin-top: -23px; border-radius: 3px; background: var(--line); box-shadow: 0 0 0 1px var(--panel); }
+  .pwgrab:hover i, .pwgrab.drag i { background: var(--acc); }
 </style>
 </head>
 <body>
@@ -864,7 +877,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.76.1"></script>
+<script src="js/map2d.js?v=2.77.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

@@ -3238,7 +3238,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.76.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.77.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -5838,7 +5838,7 @@
   // ---------- v2.24.0 폰 카드 = 양옆 꽉 · 위 손잡이를 끌어 높이(기억) · 끝까지 내리면 닫힘 · 두 손가락으로 글씨 크기(기억) — 소유자 「반만 보인다 · 위아래로 크기 · 두 손가락 확대 축소 · 작은 화면 활용」 ----------
   (function () {
     var cd = $('m2dCard'); if (!cd) return; var small = function () { return window.innerWidth < 760; }, root = document.documentElement;
-    var CH = 0.55, CZ = 1; try { CH = +localStorage.getItem('tg_map2d_cardh') || 0.55; CZ = +localStorage.getItem('tg_map2d_cardz') || 1; } catch (e) {}
+    var CH = 0.35, CZ = 1; try { CH = +localStorage.getItem('tg_map2d_cardh2') || 0.35; CZ = +localStorage.getItem('tg_map2d_cardz') || 1; } catch (e) {}   // v2.77.0 폰 카드 기본 = 화면 높이 35%(소유자) · 새 열쇠 cardh2
     var CUR = 0;   // 지금 카드 높이(눈에 보이는 px) — 카드 전체를 zoom 하므로 잰 값 대신 이 값으로 끈다
     function setH(px) { var vh = window.innerHeight, h = Math.max(140, Math.min(vh - 24, px)); CUR = h; root.style.setProperty('--cardh', Math.round(h) + 'px'); document.body.classList.toggle('cardtall', h > vh * 0.62); }
     function setZ(z) { CZ = Math.max(0.8, Math.min(2.2, z)); root.style.setProperty('--cz', CZ.toFixed(2)); }
@@ -5849,7 +5849,7 @@
     function end(e) { if (!dr) return; var nh = dr.n, moved = Math.abs(nh - dr.h), quick = Date.now() - dr.t < 250; cd.classList.remove('drag'); dr = null;
       if (nh < 120) { setH(CH * window.innerHeight); var x = $('m2dX'); if (x) x.click(); return; }
       if (moved < 6 && quick) { nh = nh < window.innerHeight * 0.7 ? window.innerHeight * 0.92 : window.innerHeight * 0.5; }   // 손잡이를 톡 누르면 크게 ↔ 반
-      CH = nh / window.innerHeight; setH(nh); try { localStorage.setItem('tg_map2d_cardh', CH.toFixed(3)); } catch (e2) {} }
+      CH = nh / window.innerHeight; setH(nh); try { localStorage.setItem('tg_map2d_cardh2', CH.toFixed(3)); } catch (e2) {} }
     cd.addEventListener('pointerup', end); cd.addEventListener('pointercancel', end);
     function dist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
     var pz = null;
@@ -5864,7 +5864,7 @@
   //   💰 개업 예상·🎒 학원(m2dPnl) · 📐 반경 분석(m2dRad) · 🏪 창업 자리(m2dBiz) 맨 위에 카드와 같은 손잡이 — 끌면 높이 · 톡 누르면 크게(90%) ↔ 반(45%) · 판마다 기기에 기억(tg_map2d_ph_판)
   (function () {
     ['m2dPnl', 'm2dRad', 'm2dBiz', 'm2dTr'].forEach(function (id) {
-      var el = $(id); if (!el) return; var key = 'tg_map2d_ph_' + id, H0 = 0; try { H0 = +localStorage.getItem(key) || 0; } catch (e) {}
+      var el = $(id); if (!el) return; var key = 'tg_map2d_ph2_' + id, H0 = 0; try { H0 = +localStorage.getItem(key) || 0; } catch (e) {}   // v2.77.0 기본 = 화면 높이 35%(CSS --ph 없을 때) · 새 열쇠라 예전 높이는 안 이어 씀
       function setH(px) { var h = Math.max(110, Math.min(window.innerHeight - 70, px)); el.style.setProperty('--ph', Math.round(h) + 'px'); el.classList.add('sized'); return h; }
       if (H0) setH(H0 * window.innerHeight);
       window.addEventListener('resize', function () { var f = 0; try { f = +localStorage.getItem(key) || 0; } catch (e) {} if (f) setH(f * window.innerHeight); });
@@ -5877,6 +5877,28 @@
         if (Math.abs(dr.n - dr.h) < 6 && Date.now() - dr.t < 300) nh = setH(dr.h < window.innerHeight * 0.6 ? window.innerHeight * 0.9 : window.innerHeight * 0.45);
         dr = null; try { localStorage.setItem(key, (nh / window.innerHeight).toFixed(3)); } catch (e2) {} }
       el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    });
+  })();
+
+  // ---------- v2.77.0 PC 정보 창 넓이 손잡이(소유자 「PC 버전은 옆으로도 확장」) — 카드·개업 예상·학원·반경·창업 자리·대중교통 · 기본 화면 폭 35% · 끌면 넓이 · 두 번 누르면 35% 로 · 창마다 기기에 기억(tg_map2d_pw_창) ----------
+  (function () {
+    var big = function () { return window.innerWidth >= 760; };
+    ['m2dCard', 'm2dPnl', 'm2dRad', 'm2dBiz', 'm2dTr'].forEach(function (id) {
+      var el = $(id); if (!el) return; var key = 'tg_map2d_pw_' + id, g = document.createElement('div'); g.className = 'pwgrab'; g.title = '끌어서 넓이 · 두 번 누르면 화면의 35%'; g.innerHTML = '<i></i>'; document.body.appendChild(g);
+      function setW(px) { var w = Math.max(340, Math.min(window.innerWidth - 90, px)); el.style.setProperty('--pw', Math.round(w) + 'px'); return w; }
+      function load() { var f = 0; try { f = +localStorage.getItem(key) || 0; } catch (e) {} if (f) setW(f * window.innerWidth); else el.style.removeProperty('--pw'); }
+      load(); window.addEventListener('resize', load);
+      var side = 'r';
+      function place() { if (!big() || getComputedStyle(el).display === 'none') { g.style.display = 'none'; return; } var r = el.getBoundingClientRect(); if (r.width < 50) { g.style.display = 'none'; return; }
+        side = r.left + r.width / 2 < window.innerWidth / 2 ? 'r' : 'l'; g.style.display = 'block'; g.style.left = (side === 'r' ? r.right : r.left) + 'px'; g.style.top = r.top + 'px'; g.style.height = r.height + 'px'; }
+      if (window.MutationObserver) new MutationObserver(function () { requestAnimationFrame(place); }).observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
+      window.addEventListener('resize', function () { requestAnimationFrame(place); }); setInterval(place, 700);
+      var dr = null;
+      g.addEventListener('pointerdown', function (e) { var r = el.getBoundingClientRect(); dr = { x: e.clientX, w: r.width, n: r.width, id: e.pointerId }; try { g.setPointerCapture(e.pointerId); } catch (e2) {} g.classList.add('drag'); e.preventDefault(); });
+      g.addEventListener('pointermove', function (e) { if (!dr || e.pointerId !== dr.id) return; dr.n = setW(dr.w + (side === 'r' ? 1 : -1) * (e.clientX - dr.x)); place(); });
+      function end() { if (!dr) return; g.classList.remove('drag'); try { localStorage.setItem(key, (dr.n / window.innerWidth).toFixed(3)); } catch (e2) {} dr = null; draw(); }
+      g.addEventListener('pointerup', end); g.addEventListener('pointercancel', end);
+      g.addEventListener('dblclick', function () { try { localStorage.removeItem(key); } catch (e2) {} el.style.removeProperty('--pw'); requestAnimationFrame(place); });
     });
   })();
 

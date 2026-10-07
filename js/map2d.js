@@ -3238,7 +3238,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.77.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.78.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3707,6 +3707,10 @@
       h += '<div class="simc"><b style="font-size:12.5px">📍 ' + esc(av[2]) + ' — 이 자리 시장</b><div class="rcard">' + row('19세 이하 주민', kid ? kid.toLocaleString() + '명' : '자료 없음(확대해 동 자료를 받는다)') + row('같은 종류 학원', same + '곳 · 학원 전체 ' + all + '곳') +
         (kid ? row('19세 이하 1천 명당 같은 종류', (same / kid * 1000).toFixed(1) + '곳' + (ref[1] ? ' <em>(같은 시군구 보이는 동 평균 ' + (ref[0] / ref[1] * 1000).toFixed(1) + ')</em>' : '')) : '') + (kid && same ? row('학원 1곳당 19세 이하', Math.round(kid / same).toLocaleString() + '명') : '') + '</div><small class="lg-n">학원 수 = 상가업소 등록(교습소는 빠진 곳이 많다) · 주민 = 주민등록 · 경쟁은 동 경계를 넘는다</small></div>'; }
     h += '<div class="simc"><b style="font-size:12.5px">견주어 보기 — 소상공인실태조사 교육 서비스업(전국 평균)</b><div class="rcard">' + row('업체당 한 해', '매출 ' + wn(B.sales * 100) + ' · 비용 ' + wn(B.cost * 100) + ' · 이익 ' + wn(B.profit * 100)) + row('비용 속', '급여 ' + wn(B.wage * 100) + ' · 임차료 ' + wn(B.rent * 100) + ' · 매출원가 ' + wn(B.cogs * 100) + ' · 기타 ' + wn(B.other * 100)) + row('평균', '면적 ' + B.area + '㎡ · 하루 ' + B.hours + '시간 · 월 ' + B.days + '일') + row('어려움', esc(B.pain)) + row('내 계산 한 해', '매출 ' + wn(o.rev * 12) + ' · 이익 ' + wn(o.profit * 12)) + '</div><small class="lg-n">' + esc(B.src) + ' — 학원·교습소·과외 등을 다 합친 평균이다</small></div>';
+    (function () { var dd = d && d.pop ? d : null, sr = rv('pension') + rv('health') * (1 + rv('ltc_of_health')) + rv('emp_ui') + rv('emp_stable') + rv('ind') + rv('commute'), cmu = (+v.fee || 0) * (1 - (+v.cogs || 0) / 100 - (+v.card || 0) / 100 * o.cardRate);
+      var sm = av ? (av[3 + kd[2]] || 0) : 0, rf = null; if (av && dd) { var r0 = [0, 0]; allDong().forEach(function (x) { var a2 = ACD.dong[x.k]; if (!a2 || !x.pop || !x.pop.age || x.k.slice(0, 5) !== dd.k.slice(0, 5)) return; r0[0] += a2[3 + kd[2]] || 0; r0[1] += x.pop.age[0] + x.pop.age[1]; }); rf = r0[1] ? r0[0] / r0[1] * 1000 : null; }
+      var slotH = WV.slotH != null ? WV.slotH : 1;
+      h += wideView({ take: o.take, workH: (+v.slots || 0) * slotH * (+v.days || 0) * 52 / 12, extraDef: 8, unit: '수강생', unitGain: cmu, init: o.init, d: dd, target: 'kid', same: sm, sameLbl: '같은 종류 학원', refPer: rf, er: sr, tasks: AS_TASKS }).replace('<div class="bizrow">', '<div class="bizrow"><label title="시간표 한 칸이 몇 시간인가 — 기본 1시간은 가정">수업 한 칸 <input type="number" step="0.5" data-wv="slotH" value="' + slotH + '" style="width:56px"> 시간 <i>(가정)</i></label>'); })();
     h += asCpa(o);
     el.innerHTML = h; }
   if ($('m2dPnl')) {
@@ -4687,6 +4691,51 @@
     return o;
   }
 
+  // ---------- v2.78.0 🔭 넓게 보기(소유자 「세세하고 현실적으로 — 작으면 혼자 다 하고 · 사람을 쓰면 인건비 · 최소 얼마를 못 벌면 직장이 낫다 · 본업 말고 챙길 것 · 인구·구매력·경쟁으로 시장이 커지나 줄어드나」) ----------
+  //   학원·교습소(asOut)와 음식점·카페(pnlOut)가 같이 쓴다 · 숫자는 이미 계산한 값과 공개 자료(추계인구·국세청)만 · 「가정」 칸은 화면에 가정이라 적고 고쳐 쓴다(저장 안 함)
+  var WV = { job: null, extra: null, slotH: null };
+  function wideView(c) {   // c = {take 세후 사장 몫(만 원/월), workH 본업 시간(월), extraDef 본업 외 기본(주 시간 · 가정), unit '수강생'|'하루 손님', unitGain 1단위가 늘 때 월 이익(만 원), init 개업 비용(만 원), d 동, target 'kid'|'all', same 같은 종류 업체 수, sameLbl, refPer 시군구 평균(1천 명당), er 사업주 4대보험 비율, tasks 본업 외 할 일 목록}
+    var mw = rv('min_wage'), W = 52 / 12, n = function (x) { return +x || 0; }, h = '<h4>🔭 넓게 보기 — 혼자 할까 · 사람을 쓸까 · 직장이 나을까 · 시장은 커지나</h4>';
+    var job = WV.job != null ? WV.job : Math.round(mw * 209 / 1e4), ex = WV.extra != null ? WV.extra : c.extraDef;
+    var hrs = n(c.workH) + ex * W, per = hrs > 0 ? c.take * 1e4 / hrs : null, jobH = job * 1e4 / 209;
+    h += '<div class="bizrow"><label title="직장에 다니면 받을 세후 월급 — 기본은 2026 최저임금 월 환산(209시간)">직장이면 받을 월급 <input type="number" data-wv="job" value="' + job + '" style="width:80px"> 만 원</label><label title="상담·학부모/손님 응대·홍보·장보기·청소·장부·세금 신고 등 — 기본값은 가정이다">본업 말고 주 <input type="number" data-wv="extra" value="' + ex + '" style="width:56px"> 시간 <i>(가정)</i></label></div>';
+    h += '<div class="tkpi"><span><em>⏱</em><small>사장이 일하는 시간(월)</small><b>' + Math.round(hrs) + '시간</b><u>본업 ' + Math.round(n(c.workH)) + ' + 본업 밖 ' + Math.round(ex * W) + '</u></span><span><em>💵</em><small>시간당 사장 몫(세후)</small><b>' + (per != null ? Math.round(per).toLocaleString() + '원' : '-') + '</b><u>최저임금 ' + mw.toLocaleString() + '원</u></span><span><em>🏢</em><small>직장이면(시간당)</small><b>' + Math.round(jobH).toLocaleString() + '원</b><u>월 ' + job + '만 ÷ 209시간</u></span></div>';
+    h += vzH([['내 가게 사장 몫(세후 · 월)', Math.max(0, c.take), '#16a34a'], ['직장이면 받을 월급', job, '#2563eb'], ['최저임금으로 같은 시간 일하면', hrs * mw / 1e4, '#94a3b8']], { title: '한 달 손에 쥐는 돈 견주기(만 원)', unit: '만' });
+    var gap = c.take - job, bad = c.take < job || (per != null && per < jobH);
+    h += '<div class="pbig ' + (c.take <= 0 ? 'bad' : bad ? 'mid' : 'good') + '">' + (c.take <= 0 ? '이 조건이면 <b>적자</b> — 직장이 낫다.' : gap < 0 ? '직장 월급보다 한 달 <b>' + Math.round(-gap) + '만 원 덜</b> 번다' + (per != null && per < jobH ? ' · 시간당으로도 직장보다 낮다' : '') + ' → <b>이 조건이면 직장이 낫다.</b>' : '직장 월급보다 한 달 <b>' + Math.round(gap) + '만 원 더</b> 번다' + (per != null && per < jobH ? ' — 그러나 일하는 시간이 길어 <b>시간당으로는 직장보다 낮다</b>.' : '.')) + (c.init ? ' 개업 비용 <b>' + wn(c.init) + '</b>을 걸고 하는 일이다(보증금 말고 권리금·인테리어는 돌려받는다는 보장이 없다).' : '') + '</div>';
+    // 사람을 쓰면
+    var ft = (40 * W + 8 * W) * mw / 1e4 * (1 + c.er + 1 / 12), pt = (20 * W + 4 * W) * mw / 1e4 * (1 + c.er + 1 / 12);
+    if (c.unitGain > 0) { var need = function (x) { return Math.ceil(x / c.unitGain); };
+      h += vzH([['보조·알바 1명(주 20시간)', need(pt), '#f59e0b'], ['직원·강사 1명(주 40시간)', need(ft), '#dc2626'], ['직원·강사 2명', need(ft * 2), '#7f1d1d']], { title: '사람을 쓰면 본전까지 ' + c.unit + ' 몇 명이 더 있어야 하나(명)', unit: '명' }) +
+        '<p class="lg-n">1명 월 비용 = 최저임금 ' + mw.toLocaleString() + '원 × (주휴 포함 시간) × (1 + 사업주 4대보험 ' + (c.er * 100).toFixed(1) + '% + 퇴직적립 8.33%) — 주 40시간 ' + Math.round(ft) + '만 · 주 20시간 ' + Math.round(pt) + '만 원 · ' + c.unit + ' 1명이 늘 때 이익 ' + (Math.round(c.unitGain * 10) / 10) + '만 원으로 나눴다. 작으면 사장이 ' + (c.unit === '수강생' ? '수업·상담·청소·장부' : '조리·응대·청소·장부') + '를 다 하고, 키우면 사람값만큼 ' + c.unit + '을 더 모아야 한다.</p>'; }
+    // 본업 말고 챙길 일
+    h += '<details class="rel"><summary>🧾 본업 말고 챙길 일 <small>' + c.tasks.length + '가지 · 위 「본업 말고 주 ○시간」에 넣는다</small></summary><ul class="jmyl">' + c.tasks.map(function (t) { return '<li><b>' + esc(t[0]) + '</b>' + (t[1] ? '<br><span>' + esc(t[1]) + '</span>' : '') + '</li>'; }).join('') + '</ul></details>';
+    // 시장 흐름
+    var d = c.d, J = d && d.pop && d.pop.age && POPP ? ppProject(d.pop.age, d.k.slice(0, 5)) : null; if (!POPP) ppLoad();
+    if (J) { var tg = c.target === 'kid' ? function (a) { return (a[0] || 0) + (a[1] || 0); } : function (a) { return a.reduce(function (x, y) { return x + y; }, 0); }, t0 = tg(J.now), t5 = tg(J.y5), t10 = tg(J.y10), pc = function (a, b) { return a ? (b - a) / a * 100 : 0; }, lbl = c.target === 'kid' ? '0~19세' : '주민 전체';
+      h += vzLineQ([[lbl + ' — ' + esc(d.name) + '(추정)', [t0, t5, t10, null], '#7c3aed']], ['지금', '5년 뒤', '10년 뒤', ''], { title: '수요 — ' + lbl + ' 지금 · 5년 뒤 · 10년 뒤', fmt: function (x) { return Math.round(x).toLocaleString(); } });
+      var per0 = c.same ? t0 / c.same : null, per10 = c.same ? t10 / c.same : null;
+      if (c.same) h += vzH([['지금', per0, '#7c3aed'], ['5년 뒤', t5 / c.same, '#a78bfa'], ['10년 뒤', per10, '#c4b5fd']], { title: c.sameLbl + ' 1곳당 ' + lbl + '(명 · 지금 업체 ' + c.same + '곳이 그대로라면)', unit: '명' });
+      var gt = GTAX && GTAX.gu && GTAX.gu[d.k.slice(0, 5)], dem = pc(t0, t10), dens = c.same && c.refPer ? (c.same / t0 * 1000) / c.refPer : null;
+      var sig = function (good, ic, ti, val, note) { return '<li class="s-' + (good === true ? 'g' : good === false ? 'r' : 'y') + '"><span class="pi">' + ic + '</span><b>' + ti + '</b><span class="pv">' + val + '</span><small>' + note + '</small></li>'; };
+      h += '<ul class="pflow">' + sig(dem >= 2 ? true : dem <= -5 ? false : null, '👥', '수요(' + lbl + ')', (dem >= 0 ? '+' : '') + dem.toFixed(1) + '%', '10년 뒤 · 추계') +
+        sig(dens == null ? null : dens <= 0.9 ? true : dens >= 1.2 ? false : null, '⚔', '경쟁', dens == null ? '—' : dens.toFixed(2) + '배', dens == null ? (c.same ? c.sameLbl + ' ' + c.same + '곳 · 견줄 평균 없음' : '같은 업종 자료 없음(위 ③ 자료를 받은 뒤)') : '1천 명당 업체 수 ÷ 시군구 평균') +
+        sig(gt && gt.wageR ? (gt.wageR[0] <= gt.wageR[1] / 3 ? true : gt.wageR[0] > gt.wageR[1] * 2 / 3 ? false : null) : null, '💳', '구매력(' + esc(guName(d.k.slice(0, 5))) + ')', gt && gt.wage ? gt.wageR[0] + '/' + gt.wageR[1] + '위' : '—', gt && gt.wage ? '1인당 총급여 ' + gt.wage[0].toLocaleString() + '만 원/년' : '자료 없음') + '</ul>';
+      var say = [];
+      if (dem <= -5 && dens != null && dens >= 1.2) say.push(lbl + '는 10년 동안 ' + Math.abs(dem).toFixed(0) + '% 줄고 경쟁은 이미 시군구 평균보다 빽빽하다 — 시장이 줄어드는데 나눠 먹는 곳이 많아 들어가기 어렵다');
+      else if (dem <= -5) say.push(lbl + '가 10년 동안 ' + Math.abs(dem).toFixed(0) + '% 줄어든다' + (c.same ? ' — 지금 업체 수가 그대로면 1곳당 ' + Math.round(per0).toLocaleString() + '명 → ' + Math.round(per10).toLocaleString() + '명으로 준다' : ''));
+      else if (dem >= 2 && dens != null && dens >= 1.2) say.push(lbl + '는 늘지만 경쟁이 이미 빽빽하다 — 사람이 늘어도 잘하는 곳이 많으면 나눠 먹는다');
+      else if (dem >= 2) say.push(lbl + '가 늘고 경쟁 밀도도 높지 않다 — 시장 쪽 바람은 순하다');
+      else say.push(lbl + '는 큰 변화가 없다 — 승부는 경쟁과 자리에서 난다');
+      if (gt && gt.wageR && gt.wageR[0] > gt.wageR[1] * 2 / 3) say.push('이 구는 1인당 총급여 순위가 아래쪽이라 같은 값을 받기 어려울 수 있다(사람이 늘어도 쓸 돈이 적으면 매출은 덜 는다)');
+      h += '<div class="simc"><b>🧭 시장 판정(자료로만 · 규칙: 수요 10년 ±5% · 경쟁 밀도 0.9/1.2배 · 구매력 순위 위·아래 1/3)</b><p class="desc">' + say.map(esc).join(' · ') + '</p><p class="lg-n">수요 = 이 동 주민등록 × 통계청 장래인구추계(시군구 · 코호트 변화율 추정) · 경쟁 = 지금 업체 수(늘고 주는 것은 위 「생존율·개폐업」) · 구매력 = 국세청 연말정산 1인당 총급여(' + esc(GTAX && GTAX.years ? String(GTAX.years.wage || '') : '') + ' · 시군구 · 해마다 흐름은 준비 중) — 전국 인구가 늘어도 이 동 나이 구성과 구매력이 다르면 다르게 간다</p></div>'; }
+    else if (d) h += '<p class="lg-n">시장 흐름 — 이 동 인구 자료를 받는 중이거나 없다(지도를 확대해 동 자료를 받으면 나온다).</p>';
+    return '<div class="wide">' + h + '</div>'; }
+  var AS_TASKS = [['상담·학부모 연락', '등록 상담 · 진도 알림 · 결석 보강 일정'], ['홍보', '전단·블로그·지역 카페 · 설명회'], ['교재·자료 준비 · 채점', ''], ['청소·시설 관리', '보조요원이 없으면 사장 몫'], ['교습비 수납·환불 처리', '교습비는 등록·신고한 금액 이내 · 반환 기준 지키기'], ['장부·세금', '면세사업자 사업장현황신고 · 종합소득세 신고(세무사 기장료가 따로 든다)'], ['교육청 행정', '변경 신고 · 점검 · 보험 갱신'], ['차량 운행(하면)', '어린이통학버스 신고·보험·동승자 — 운행하면 큰 일이 하나 더 는다']];
+  var PNL_TASKS = [['장보기·재료 손질', '영업 전후 시간 — 본업 시간에 안 잡히는 경우가 많다'], ['청소·설거지·마감 정리', ''], ['직원 관리', '구인 · 근무표 · 급여 · 4대보험 신고'], ['홍보·리뷰 관리', '배달앱·지도 리뷰 응대 · SNS'], ['장부·세금', '부가세 신고(일반·간이) · 종합소득세 · 카드 매출 맞추기(세무사 기장료 따로)'], ['위생·안전', '위생교육 · 보건증 · 소방·가스 점검'], ['고장·수리', '냉장고·화구·배관 — 쉬는 날에 생긴다'], ['민원·배달 사고 처리', '']];
+
+  if ($('m2dPnl')) $('m2dPnl').addEventListener('change', function (e) { var k = e.target.getAttribute('data-wv'); if (!k) return; var x = e.target.value === '' ? null : +e.target.value; WV[k] = x; if (AS.on) asOut(); else pnlOut(); });
+
   // v2.36.0 사장 본인 4대보험(지역가입자)·종합소득세 어림 — 소득 = 사장 몫(세전) · 사장이 둘이면 반씩 · 요율 biz-rates.json · 세율 소득세법 제55조 ①(2023년 귀속부터)
   var ITAX = [[1400, 0.06, 0], [5000, 0.15, 126], [8800, 0.24, 576], [15000, 0.35, 1544], [30000, 0.38, 1994], [50000, 0.40, 2594], [100000, 0.42, 3594], [1e12, 0.45, 6594]];
   function incTax(base) { if (base <= 0) return 0; for (var i = 0; i < ITAX.length; i++) if (base <= ITAX[i][0]) return base * ITAX[i][1] - ITAX[i][2]; return 0; }
@@ -4940,6 +4989,8 @@
       row('5인 규칙', o.five ? '<b style="color:#b91c1c">직원 5인 이상 — 연장·야간·휴일 가산 50%를 따로 더해야 한다(이 계산에 없음)</b>' : '직원 5인 미만 — 연장·야간·휴일 가산수당 없음(사장은 인원에 안 넣는다)') + '</div></details>';
     if (o.bep) { var base = v.cust || o.mwCust || o.bepCust, rows = [0.6, 0.8, 1, 1.2, 1.5].map(function (m) { var c2 = Math.round(base * m), s = c2 * v.price * v.days / 1e4, a = o.at(s); return [c2, a]; });
       h += '<details><summary>📊 손님 수가 바뀌면(민감도)</summary><table class="it"><tr><th>하루 손님</th><th>월 매출</th><th>사장 몫</th><th>사장 시급</th><th>임대료/매출</th></tr>' + rows.map(function (r) { var a = r[1]; return '<tr' + (a.profit < 0 ? ' class="bar"' : '') + '><td>' + r[0] + '명</td><td>' + wn(a.sales) + '</td><td>' + wn(a.profit) + '</td><td>' + (a.hourly != null ? Math.round(a.hourly).toLocaleString() + '원' : '-') + '</td><td>' + (a.rentPct != null ? a.rentPct.toFixed(1) + '%' : '-') + '</td></tr>'; }).join('') + '</table></details>'; }
+    if (Q) { var dW = PNL.c ? dongAtM(PNL.c) : null, unitG = v.price && v.days ? (+v.price) * (+v.days) / 1e4 * o.cm : 0;
+      h += wideView({ take: Q.net, workH: (+v.ownH || 0) * (+v.days || 0), extraDef: 10, unit: '하루 손님', unitGain: unitG, init: (+v.dep || 0) + (+v.prem || 0) + (+v.inv || 0), d: dW && dW.pop ? dW : null, target: 'all', same: PNL.comp1 || 0, sameLbl: '반경 안 같은 업종', refPer: null, er: o.er, tasks: PNL_TASKS }); }
     h += '<h4>③ 이 자리 — 공공 자료</h4>';
     if (!PNL.c) h += '<p class="lg-n">자리를 고르지 않았다 — 「📍 지금 화면 가운데를 자리로」를 누르거나 지도 카드의 「💰 여기서 손익」으로 연다.</p>';
     else if (PNL.wait || !PNL.res) h += '<p class="lg-n">반경 500m 자료를 모으는 중…</p>';

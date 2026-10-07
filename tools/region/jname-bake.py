@@ -28,6 +28,13 @@ for x in json.load(open(os.path.join(ROOT, 'data', 'tgis-seocho.json'), encoding
 for f in glob.glob(os.path.join(R, '*', 'jct.json')):
     if os.path.basename(os.path.dirname(f))[:2] not in ('11', '41'): continue
     for x in json.load(open(f, encoding='utf-8'))['items']: PTS.append((127.01 + x[1] / 88800, 37.49 - x[2] / 111000, x[-1][3:] if isinstance(x[-1], str) and x[-1].startswith('원래:') else x[0], 2, 'C-ITS·OSM(교차로 사고)'))   # 앞 실행에서 바꾼 이름이 아니라 원래 이름으로
+FIELD = json.load(open(os.path.join(ROOT, 'tools', 'region', 'field-names.json'), encoding='utf-8'))['items']   # v2.88.1 소유자 현장 확인 이름 — 맨 먼저
+def field(lon, lat, r=30):
+    b = None
+    for x in FIELD:
+        d = math.hypot((x['lon'] - lon) * 88800, (x['lat'] - lat) * 111000)
+        if d <= r and (b is None or d < b[0]): b = (d, x)
+    return b[1] if b else None
 G = collections.defaultdict(list); C = 0.002
 for i, x in enumerate(PTS): G[(int(x[0] / C), int(x[1] / C))].append(i)
 def alts(lon, lat, minp=4, r=40):
@@ -57,6 +64,10 @@ for f in glob.glob(os.path.join(R, '*', 'jcnm.json')):
         if len(t) > 6: t[0] = t[6]; del t[6:]   # 다시 돌려도 처음 ITS 이름에서 · t[6] 원래 ITS 이름 · t[7] 고른 출처 · t[8] 다른 신호 이름
         if t[3] not in (1, 6): continue
         its = t[0]; good = bool(GOOD.search(its)); al = [a for a in alts(t[1], t[2]) if a.replace(' ', '') != its.replace(' ', '')]
+        fx = field(t[1], t[2]) if t[3] == 1 else None
+        if fx:
+            t[0] = fx['name']; t += [its, '현장 확인(소유자 ' + fx['date'] + ')', ' · '.join(a for a in al if a != fx['name'])]; cnt['현장 확인'] += 1; REN[(gu, t[1], t[2])] = fx['name']
+            CAN.append((t[1], t[2], t[0])); TAIL[(gu, t[1], t[2])] = [t[0], t[6], t[7], t[8]]; continue
         b = None if good else best(t[1], t[2], 2)   # v2.88.0 ITS 이름이 교차로다운 이름이면 그대로(신호 이름은 「다른 이름」) · 건물·가게 이름일 때만 바꾼다
         if b and b[2] and b[2].replace(' ', '') != its.replace(' ', ''):
             t[0] = b[2]; t += [its, b[4], ' · '.join(a for a in al if a != b[2])]; cnt[b[4]] += 1; REN[(gu, t[1], t[2])] = b[2]

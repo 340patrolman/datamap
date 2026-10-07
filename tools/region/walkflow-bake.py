@@ -6,12 +6,17 @@
 #     도착 = 집계구(통계청 SGIS · jgg.json) 가운데 · 가구 수만큼 끌어당김 — 이 구 + 상자에 걸친 이웃 구 집계구
 #     나눔 = 정류장마다 하차 인원을 걸음 거리 d 안 집계구에 가구 × e^(−d/λ) 비율로(λ 버스 400m · 지하철 800m · 끝 거리 2.5λ — 정류장 400m·역 800m 보행권 관행을 쓴 가정)
 #     길 = OSM 걸을 수 있는 길(© OpenStreetMap contributors · ODbL · kr.pbf 2026-10-03) 최단 거리 · 고속·자동차 전용(motorway·trunk)과 foot=no 는 뺀다
-#     ⚠ 지형(언덕·계단 회피)은 아직 없다 — 높이 자료(DEM)가 오면 걸음 비용에 경사를 넣는다(Tobler 걸음 함수)
+#     지형(v2.86.0) = Copernicus DEM GLO-30(07_API키/out/dem · 30m DSM — 건물·수목이 섞임) → 5×5칸(약 150m) 평균으로 고르게 · 경사 ±15% 에서 자름 · Tobler 걸음 함수로 걸음 비용(오르막 비싸게 · 완만한 내리막 조금 싸게 · 방향마다 따로)
+#       produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.
+#     경기 버스(v2.86.0) = 경기도 정류소 별 승하차(2026-07 · 평일 일평균 하차) × 서울 버스 17~23시 하차 비중(시간대가 없어 근사) — 07_API키/out/ggstop/gg_stop_coords.json(ggstop-bake.py)
 #   검증(가설 · 관계장부식): 편의점(소상공인 상가업소 G20405)이 예상 동선 굵은 길 가까이에 몰리는가 — 길 길이 몫과 견줌
 #   수도권 길망은 처음 한 번 kr.pbf 에서 뽑아 07_API키/out/walknet/capital.npz 에 둔다(다시 쓸 때 빠름)
 #   → data/r/<구>/walk.json  py -3.12 -X utf8 tools/region/walkflow-bake.py [구 …]   (구를 안 주면 서울·경기 transit 있는 곳 전부)
 import json, os, sys, math, heapq, collections, glob, time
 import numpy as np
+from PIL import Image
+from shapely.geometry import shape as shp, Point as Pt
+from shapely.strtree import STRtree as STR
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.dirname(ROOT); R = os.path.join(ROOT, 'data', 'r'); PBF = 'C:/Users/knpth/osmwork/kr.pbf'
 CACHE = os.path.join(KB, '07_API키', 'out', 'walknet', 'capital.npz')
@@ -51,6 +56,39 @@ WG = collections.defaultdict(list); C = 0.02
 for w in range(NW):
     for gx in range(int(WB[w, 0] / C), int(WB[w, 2] / C) + 1):
         for gy in range(int(WB[w, 1] / C), int(WB[w, 3] / C) + 1): WG[(gx, gy)].append(w)
+DEMD = os.path.join(KB, '07_API키', 'out', 'dem'); DEMT = {}
+def dem_tile(la, lo):
+    key = (la, lo)
+    if key not in DEMT:
+        f = os.path.join(DEMD, 'Copernicus_DSM_COG_10_N%02d_00_E%03d_00_DEM.tif' % (la, lo))
+        if not os.path.exists(f): DEMT[key] = None
+        else:
+            a = np.array(Image.open(f), dtype=np.float64); n = 5; c = np.cumsum(np.cumsum(np.pad(a, ((n // 2 + 1, n // 2), (n // 2 + 1, n // 2)), mode='edge'), 0), 1)
+            DEMT[key] = ((c[n:, n:] - c[:-n, n:] - c[n:, :-n] + c[:-n, :-n]) / (n * n)).astype(np.float32)
+    return DEMT[key]
+def elev(lon, lat):
+    t = dem_tile(int(math.floor(lat)), int(math.floor(lon)))
+    if t is None: return None
+    r = min(t.shape[0] - 1, int((math.floor(lat) + 1 - lat) * t.shape[0])); c = min(t.shape[1] - 1, int((lon - math.floor(lon)) * t.shape[1])); return float(t[r, c])
+GMAX = 0.15
+def tob(g): g = max(-GMAX, min(GMAX, g)); return math.exp(3.5 * (abs(g + 0.05) - 0.05))   # Tobler: 평지 1 · +10% 1.42 · −5% 0.84
+GGS = None; GGP = os.path.join(KB, '07_API키', 'out', 'ggstop', 'gg_stop_coords.json')
+if os.path.exists(GGP): GGS = json.load(open(GGP, encoding='utf-8'))['stops']
+HJ = [f for f in json.load(open(os.path.join(KB, '13_관할경계', '원자료', 'hjd20260701.geojson'), encoding='utf-8'))['features'] if f['properties']['sido'] == '41']; HJG = [shp(f['geometry']) for f in HJ]; HJT = STR(HJG)
+def gu_of(lon, lat):
+    p = Pt(lon, lat)
+    for i in HJT.query(p):
+        if HJG[i].contains(p): return HJ[i]['properties']['sgg']
+GGBYGU = collections.defaultdict(list)
+if GGS:
+    for st in GGS:
+        g2 = gu_of(st[2], st[3])
+        if g2: GGBYGU[g2].append(st)
+SB = [0.0, 0.0]
+for f in glob.glob(os.path.join(R, '11*', 'transit.json')):
+    for b in json.load(open(f, encoding='utf-8')).get('bus', []): SB[0] += sum(b[5][H0:H1]); SB[1] += sum(b[5])
+SHARE = SB[0] / SB[1] if SB[1] else 0.3
+print('서울 버스 저녁 하차 비중', round(SHARE, 3), '· 경기 정류소', sum(len(v) for v in GGBYGU.values()), flush=True)
 IX = json.load(open(os.path.join(R, 'index.json'), encoding='utf-8')); GBOX = {g['gu']: g.get('box') for g in IX['gus']}
 SI = json.load(open(os.path.join(R, 'stores-index.json'), encoding='utf-8')); CV = {i for i, c in enumerate(SI['cls']) if c[5] == 'G20405'}
 def load(gu, f):
@@ -61,7 +99,8 @@ def ring0(it):
     return r
 def run(gu):
     t0 = time.time(); TR = load(gu, 'transit.json'); JG = load(gu, 'jgg.json')
-    if not TR or not JG or not (TR.get('bus') or TR.get('sub')): return None
+    if not JG or not ((TR and (TR.get('bus') or TR.get('sub'))) or GGBYGU.get(gu)): return None
+    TR = TR or {}
     bb = [180, 90, -180, -90]
     for it in JG['items']:
         for q in ring0(it): bb = [min(bb[0], q[0]), min(bb[1], q[1]), max(bb[2], q[0]), max(bb[3], q[1])]
@@ -72,10 +111,10 @@ def run(gu):
     ws = set()
     for gx in range(int(bb[0] / C), int(bb[2] / C) + 1):
         for gy in range(int(bb[1] / C), int(bb[3] / C) + 1): ws.update(WG.get((gx, gy), []))
-    NI, NP, ADJ = {}, [], collections.defaultdict(list)
+    NI, NP, ADJ, NH = {}, [], collections.defaultdict(list), []
     def nid(k):
         r = int(REFS[k])
-        if r not in NI: NI[r] = len(NP); NP.append(xy(LON[k], LAT[k]))
+        if r not in NI: NI[r] = len(NP); NP.append(xy(LON[k], LAT[k])); NH.append(elev(float(LON[k]), float(LAT[k])))
         return NI[r]
     for w in ws:
         if WB[w, 2] < bb[0] or WB[w, 0] > bb[2] or WB[w, 3] < bb[1] or WB[w, 1] > bb[3]: continue
@@ -83,7 +122,10 @@ def run(gu):
         for k in range(a, b):
             i = nid(k)
             if prev is not None and prev != i:
-                d = math.dist(NP[prev], NP[i]); ADJ[prev].append((i, d)); ADJ[i].append((prev, d))
+                d = math.dist(NP[prev], NP[i])
+                if d <= 0: prev = i; continue
+                gr = (NH[i] - NH[prev]) / d if NH[i] is not None and NH[prev] is not None else 0.0
+                ADJ[prev].append((i, d * tob(gr))); ADJ[i].append((prev, d * tob(-gr)))
             prev = i
     CELL = 100; GRID = collections.defaultdict(list)
     for i, p in enumerate(NP):
@@ -112,6 +154,10 @@ def run(gu):
     for b in TR.get('bus', []):
         v = sum(b[5][H0:H1]); n = near(xy(b[2], b[3]), 80)
         if v > 0 and n is not None: ORI.append(('bus', n, v))
+    if gu[:2] == '41':   # 경기 버스 — 평일 일평균 하차 × 서울 버스 저녁 하차 비중(근사)
+        for st in GGBYGU.get(gu, []):
+            v = st[4] * SHARE; n = near(xy(st[2], st[3]), 80)
+            if v > 0 and n is not None: ORI.append(('bus', n, v))
     for s in TR.get('sub', []):
         v = sum(s[5][H0:H1]); p = xy(s[2], s[3]); E = [e for e in ENT if bb[0] <= e[0] <= bb[2] and bb[1] <= e[1] <= bb[3] and math.dist(xy(e[0], e[1]), p) <= 300] or [(s[2], s[3])]
         for e in E:
@@ -177,8 +223,9 @@ def run(gu):
     out = [[f] + [v for nd in chain for v in (round((inv(NP[nd])[0] - O0[0]) * K0[0]), round((inv(NP[nd])[1] - O0[1]) * K0[1]))] for chain, f in lines]
     nb = sum(1 for o in ORI if o[0] == 'bus'); ns = sum(1 for o in ORI if o[0] == 'sub')
     doc = {'schema': 'tg-walk/1', 'gu': gu, 'hours': [H0, H1], 'lam': LAM, 'origins': {'bus': nb, 'sub': ns},
-           'source': '추정 — ' + ('서울시 버스·지하철' if gu[:2] == '11' else '수도권 지하철(서울시 교통카드 자료에 든 역 · 버스 없음)') + ' 시간대 하차(2026-06 하루 평균 · ' + str(H0) + '~' + str(H1) + '시) × 통계청 SGIS 집계구 가구(2023) × OpenStreetMap 걸을 수 있는 길·지하철 출입구(© OpenStreetMap contributors · ODbL)',
-           'note': '관측이 아니라 모형이다: 정류장마다 저녁 하차 인원을 걸음 거리 안 집계구에 가구 × e^(−거리/λ)(λ 버스 400m · 지하철 800m — 보행권 관행을 쓴 가정)로 나눠 최단 길로 보냈다 · 지형(언덕·계단)은 아직 안 넣었다(높이 자료 대기) · 하차한 사람이 모두 주민은 아니다 · 하루 20명 미만 길은 뺐다' + ('' if gu[:2] == '11' else ' · 경기는 버스 하차 자료가 없어 지하철에서 걷는 길만 — 버스로 오는 사람 길은 빠졌다'),
+           'source': '추정 — ' + ('서울시 버스·지하철 시간대 하차(2026-06 하루 평균 · ' + str(H0) + '~' + str(H1) + '시)' if gu[:2] == '11' else '수도권 지하철 시간대 하차(서울시 교통카드 · 2026-06) + 경기도 정류소 별 승하차(경기데이터드림 · 2026-07 평일 일평균 × 서울 버스 ' + str(H0) + '~' + str(H1) + '시 하차 비중 ' + str(round(SHARE * 100)) + '% — 근사)') + ' × 통계청 SGIS 집계구 가구(2023) × OpenStreetMap 걸을 수 있는 길·지하철 출입구(© OpenStreetMap contributors · ODbL) × 높이 Copernicus DEM GLO-30(30m 근사)',
+           'dem': 'produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30.',
+           'note': '관측이 아니라 모형이다: 정류장마다 저녁 하차 인원을 걸음 비용 안 집계구에 가구 × e^(−비용/λ)(λ 버스 400m · 지하철 800m — 보행권 관행을 쓴 가정)로 나눠 가장 편한 길로 보냈다 · 걸음 비용 = 거리 × Tobler 경사 계수(높이 30m 근사 · 150m 고르게 · 경사 ±15% 상한 — 오르막은 비싸고 완만한 내리막은 조금 싸다) · 계단·엘리베이터는 모른다 · 하차한 사람이 모두 주민은 아니다 · 하루 20명 미만 길은 뺐다' + ('' if gu[:2] == '11' else ' · 경기 버스는 하루 하차에 서울 버스 저녁 비중을 곱한 근사'),
            'check': check, 'o': O0, 'k': K0, 'fields': '[저녁 예상 걷는 사람(명/일), x1, y1, x2, y2, …] — 경도 = o0 + x/k0 · 위도 = o1 + y/k1', 'lines': out}
     p2 = os.path.join(R, gu, 'walk.json'); json.dump(doc, open(p2, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print(gu, '출발', len(ORI), '줄', len(out), os.path.getsize(p2), 'B', check, round(time.time() - t0), 's', flush=True)

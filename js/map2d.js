@@ -1191,7 +1191,7 @@
     var nm = Object.keys(st.at.names || {}).map(function (k) { return st.at.names[k]; });
     if (nm.length || st.at.region) h += '<p class="lg-n">걸친 곳: ' + (st.at.region ? '서울 전역 · ' : '') + esc(nm.join(' · ')) + (st.at.cen && !st.at.pts ? ' <em>(동 단위 — 지도의 빈 동그라미는 정확한 자리가 아니다)</em>' : '') + '</p>';
     if (st.links && st.links.length) h += '<details class="rel"><summary>🔗 이어지는 이야기 <small>' + st.links.length + '건</small></summary><div class="lg-btns">' + st.links.map(function (id) { var x = loreById(id); return x ? '<button data-lore="' + id + '">' + (LICO[x.cat] || '') + ' ' + esc(x.title) + '</button>' : ''; }).join('') + '</div></details>';
-    h += '<ol class="lsrc">' + st.sources.map(function (q) { return '<li><b class="lgr g' + q.g.replace('-', 'm') + '" title="' + esc(LORE.grade[q.g] || '') + '">' + q.g + '</b> ' + (q.u ? '<a href="' + esc(q.u) + '" target="_blank" rel="noopener">' + esc(q.t) + '</a>' : esc(q.t) + ' <i class="lst chk">원문 주소 대기</i>') + '</li>'; }).join('') + '</ol>';
+    h += '<ol class="lsrc">' + st.sources.map(function (q) { return '<li><b class="lgr g' + q.g.replace('-', 'm') + '" title="' + esc(LORE.grade[q.g] || '') + '">' + q.g + '</b> ' + (q.u ? '<a href="' + esc(q.u) + '" target="_blank" rel="noopener">' + esc(q.t) + '</a>' + (q.v === 'grok' ? ' <i class="lst chk" title="그록이 준 주소 — 코워크가 원문을 아직 못 열었다">그록 출처</i>' : q.v === 'ok' ? ' <i class="lst ok" title="코워크가 원문을 열어 문장을 확인했다">원문 확인</i>' : '') : esc(q.t) + ' <i class="lst chk">원문 주소 대기</i>') + '</li>'; }).join('') + '</ol>';
     return h; }
   function loreCard(ids) { if (!LORE) { loreLoad(); return '<h3>📜 이야기</h3><p class="lg-n">받는 중…</p>'; } var L = ids.map(loreById).filter(Boolean);
     return '<h3>📜 이야기' + (L.length > 1 ? ' ' + L.length + '건' : '') + '</h3>' + L.map(function (st) { return '<div class="lore"><div class="lhd"><b>' + esc(st.title) + '</b>' + (st.date ? ' <small>' + esc(st.date) + '</small>' : '') + loreBadges(st) + '</div>' + loreBody(st) + '</div>'; }).join('') + src(LORE.source + ' · ' + LORE.anchor_note); }
@@ -3173,7 +3173,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.73.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.73.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }

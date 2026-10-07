@@ -1024,7 +1024,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null); h += cctRows(d);
-      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
+      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d); h += unsoldRows(d);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1978,7 +1978,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k); h += cctRows(d);
-    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
+    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d); h += unsoldRows(d);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -3200,6 +3200,16 @@
     if (R.landN) h += '<div class="cap">🗺 토지 매매 거래(필지 · 달마다)</div>' + bar(R.landN.map(function (v) { return v || 0; }), '#16a34a', L);
     return h + '<p class="src">' + esc(RONE.source) + '</p>'; }
   function roneCard(it) { if (!RONE) { roneLoad(); return '<h3>🏘 ' + esc(it.nm) + '</h3><p class="desc">받는 중…</p>'; } return '<h3>🏘 ' + esc(it.nm) + ' 집값·거래 흐름</h3>' + ronePanel(RONE.sgg[it.k], it.nm, RSD[it.sd] || ''); }
+  // ---------- v2.85.0 🏚 시·군·구 미분양(data/unsold.json ← tools/region/unsold-bake.py · 국토교통부 KOSIS 116 DT_MLTM_2082 · 월) — 동 카드 집값 흐름 다음 · 구매력 칸 참고 ----------
+  var UNS, UNSP = null;
+  function unsLoad() { if (UNSP) return UNSP; UNSP = fetch('data/unsold.json').then(function (r) { return r.json(); }).then(function (j) { UNS = j; }).catch(function () { UNS = null; }).then(function () { if (sel && sel.it && sel.it.kind === 'dong') show(sel.it); }); return UNSP; }
+  function unsoldHtml(gu, small) { if (UNS === undefined) { unsLoad(); return ''; } if (!UNS || !UNS.gu[gu]) return ''; var L = UNS.gu[gu], v = L.map(function (x) { return x[1]; }), last = v[v.length - 1], y1 = v.length > 12 ? v[v.length - 13] : null;
+    var lab = L.map(function (x, i) { return i % 6 === 0 || i === L.length - 1 ? "'" + x[0].slice(2, 4) + '.' + (+x[0].slice(4)) : ''; });
+    var h = (small ? '' : '<div class="dh">🏚 ' + esc(guName(gu)) + ' 미분양 주택</div>') + '<div class="tkpi"><span><em>🏚</em><small>' + esc(guName(gu)) + ' 미분양(' + L[L.length - 1][0].slice(0, 4) + '.' + (+L[L.length - 1][0].slice(4)) + ')</small><b>' + last.toLocaleString() + '호</b><u>' + (y1 != null ? '1년 전 ' + y1.toLocaleString() + '호' : '') + '</u></span></div>';
+    if (Math.max.apply(null, v) > 0) h += vzLineQ([[guName(gu), v, '#b45309']], lab, { title: '미분양 주택 — 최근 ' + L.length + '달(호 · 늘면 새 집 수요가 약하다는 신호)', fmt: function (x) { return Math.round(x).toLocaleString(); }, zero: 1 });
+    return h + '<p class="lg-n">' + esc(UNS.source + ' · ' + UNS.note) + '</p>'; }
+  function unsoldRows(d) { var gu = d && (d.gcd || (d.k && d.k.slice(0, 5))); return gu ? unsoldHtml(gu, false) : ''; }
+
   function roneRows(d) { var gu = d && (d.gcd || (d.k && d.k.slice(0, 5))); if (!gu) return ''; if (RONE === null) { roneLoad(); return ''; } if (!RONE) return ''; var R = RONE.gu[gu]; if (!R) return '';
     var mo = RONE.months[RONE.months.length - 1]; return '<div class="dh">🏘 우리 구 집값·거래 흐름 <small style="font-weight:600;color:var(--ink2)">(R-ONE · ' + mo.slice(0, 4) + '년 ' + (+mo.slice(4)) + '월까지 · 시군구 값)</small></div>' + ronePanel(R, (d.gu || guName(gu) || '이 구'), RSD2[gu.slice(0, 2)] || ''); }
   if ($('m2dLeg')) $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-ronm]'); if (!b) return; RONM = b.getAttribute('data-ronm'); try { localStorage.setItem('tg_map2d_ronm', RONM); } catch (e2) {} draw(); legend(); });
@@ -3280,7 +3290,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.84.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.85.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4877,6 +4887,7 @@
     if (T && T[gu] && T[gu].wage) { var L = Object.keys(T).filter(function (k) { return k.slice(0, 2) === sd && T[k].wage; }).map(function (k) { return [k, T[k].wage[0]]; }).sort(function (a, b) { return b[1] - a[1]; });
       var seen = {}, L2 = L.filter(function (x) { var n = guName(x[0]).split(' ')[0]; if (sd === '41' && seen[n + x[1]] && x[0] !== gu) return false; seen[n + x[1]] = 1; return true; });
       h += vzH(L2.map(function (x) { return [guName(x[0]) + (x[0] === gu ? ' ◀' : ''), x[1], x[0] === gu ? '#dc2626' : '#cbd5e1']; }), { title: '① ' + (sd === '11' ? '서울 25개 구' : '경기 시군구') + ' 1인당 총급여(만 원/년 · 국세청 연말정산 ' + esc(GTAX.years && GTAX.years.wage || '') + ' · 빨강 = ' + guName(gu) + ' · ' + buyRk(gu, 'wage') + ')', unit: '만' }) + (sd === '41' ? '<p class="lg-n">경기는 일반구가 있는 시(수원·고양 등)는 시 값 하나라 구마다 같다 — 막대는 하나만 보였다.</p>' : ''); }
+    h += buyTrend(gu); h += unsoldHtml(gu, true);
     var HPd = HPJ[gu], Hd = HSD && HSD.dong;
     var bar2 = function (L, key, title, fmt, low) { L.sort(function (a, b) { return low ? a[1] - b[1] : b[1] - a[1]; }); var m = L.map(function (x) { return x[2]; }).indexOf(d.k); return vzH(L.map(function (x) { return [x[0] + (x[2] === d.k ? ' ◀' : ''), x[1], x[2] === d.k ? '#dc2626' : '#cbd5e1']; }), { title: title + ' — ' + (m >= 0 ? esc(d.name) + ' ' + (m + 1) + '위/' + L.length : '이 동 자료 없음'), fmt: fmt }); };
     if (W && W.dong) {
@@ -4889,7 +4900,20 @@
       if (Ld.length > 1) h += vzH(Ld.map(function (x) { return [x[0] + (x[2] === d.k ? ' ◀' : ''), x[1], x[2] === d.k ? '#dc2626' : '#cbd5e1']; }), { title: '② ' + guName(gu) + ' 안 동별 공동주택 공시가격 가운데(억 원 · 2025 · 법정동 단위라 같은 법정동의 동은 같은 값) — ' + (my >= 0 ? esc(d.name) + ' ' + (my + 1) + '위/' + Ld.length : '이 동은 공동주택 자료 없음'), fmt: function (v) { return v.toFixed(1) + '억'; } }) + '<p class="lg-n">한 동에 법정동이 여럿 걸치면 호수가 가장 많은 법정동 값 · 아파트·연립·다세대만(단독주택 빠짐) · 집값은 「가진 돈」이지 「쓰는 돈」은 아니다.</p>'; }
     if (Hd) { var Lw = GD.filter(function (x) { return Hd[x.k] && Hd[x.k].wel && x.pop && x.pop.tot; }).map(function (x) { return [x.name, Hd[x.k].wel[0] / x.pop.tot * 100, x.k]; }).sort(function (a, b) { return a[1] - b[1]; }), mw = Lw.map(function (x) { return x[2]; }).indexOf(d.k);
       if (Lw.length > 1) h += bar2(Lw, 0, '② ' + guName(gu) + ' 안 동별 기초생활 수급자 비율(% · 낮은 순 = 형편이 나은 순)', function (v) { return v.toFixed(1) + '%'; }, true); }
-    return h + '<p class="lg-n">해마다 흐름(구매력이 오르나 내리나)은 국세청 여러 해 자료가 오면 넣는다(코워크 요청).</p>'; }
+    return h; }
+  // v2.85.0 구매력 해마다(국세청 연말정산 1인당 총급여 2016~ · 종합소득 2018~ · gu-tax wageY·incY) — 「구매력이 떨어지나」 · 같은 시·도 구 평균과 견줌 · 물가 반영은 소비자물가 2021~ 만
+  function buyTrend(gu) { var T = GTAX && GTAX.gu, G = T && T[gu]; if (!G || !G.wageY || G.wageY.length < 2) return ''; var sd = gu.slice(0, 2), Y = G.wageY.map(function (x) { return x[0]; });
+    var avg = Y.map(function (y) { var a = 0, n = 0, seen = {}; Object.keys(T).forEach(function (k) { if (k.slice(0, 2) !== sd || !T[k].wageY) return; var v = T[k].wageY.filter(function (q) { return q[0] === y; })[0]; if (!v) return; var key = guName(k).split(' ')[0] + v[1]; if (sd === '41' && seen[key]) return; seen[key] = 1; a += v[1]; n++; }); return n ? a / n : null; });
+    var my = G.wageY.map(function (x) { return x[1]; }), rk = function (y) { var v = G.wageY.filter(function (q) { return q[0] === y; })[0][1], L = Object.keys(T).filter(function (k) { return k.slice(0, 2) === sd && T[k].wageY; }).map(function (k) { var q = T[k].wageY.filter(function (z) { return z[0] === y; })[0]; return q ? q[1] : null; }).filter(function (x) { return x != null; }); return [L.filter(function (x) { return x > v; }).length + 1, L.length]; };
+    var g = function (a, b) { return (b / a - 1) * 100; }, f1 = function (x) { return (x >= 0 ? '+' : '') + (Math.round(x * 10) / 10) + '%'; }, r0 = rk(Y[0]), r1 = rk(Y[Y.length - 1]), sdn = sd === '11' ? '서울' : '경기';
+    var cpiY = function (y) { if (!CPI) return null; var a = 0, n = 0; [1, 2, 3, 4].forEach(function (q) { var c = CPI.q[y + q]; if (c && c[sdn]) { a += c[sdn][0]; n++; } }); return n ? a / n : null; }; if (!CPI) cpiLoad();
+    var ya = Y.filter(function (y) { return +y >= 2021; }), real = null; if (ya.length >= 2) { var c0 = cpiY(ya[0]), c1 = cpiY(ya[ya.length - 1]); if (c0 && c1) { var v0 = G.wageY.filter(function (q) { return q[0] === ya[0]; })[0][1], v1 = G.wageY.filter(function (q) { return q[0] === ya[ya.length - 1]; })[0][1]; real = [ya[0], ya[ya.length - 1], g(v0 / c0, v1 / c1), g(c0, c1)]; } }
+    var h = '<div class="tkpi"><span><em>📈</em><small>1인당 총급여 ' + Y[0] + '→' + Y[Y.length - 1] + '</small><b>' + f1(g(my[0], my[my.length - 1])) + '</b><u>' + sdn + ' 구 평균 ' + f1(g(avg[0], avg[avg.length - 1])) + '</u></span><span><em>🏅</em><small>순위 변화(' + sdn + ' ' + r1[1] + '개 중)</small><b>' + r0[0] + '위 → ' + r1[0] + '위</b><u>' + Y[0] + ' → ' + Y[Y.length - 1] + '</u></span>' + (real ? '<span><em>🛒</em><small>물가 반영 ' + real[0] + '→' + real[1] + '</small><b>' + f1(real[2]) + '</b><u>그동안 물가 ' + f1(real[3]) + '(' + sdn + ' 소비자물가)</u></span>' : '') + '</div>';
+    h += vzLineQ([[guName(gu), my, '#dc2626'], [sdn + ' 구 평균', avg, '#94a3b8', 1]], Y.map(function (y) { return "'" + y.slice(2); }), { title: '① 해마다 1인당 총급여(만 원/년 · 국세청 연말정산 · ' + guName(gu) + ' vs ' + sdn + ' 구 평균)', fmt: function (x) { return Math.round(x).toLocaleString(); } });
+    if (G.incY && G.incY.length > 1) h += vzLineQ([[guName(gu) + ' 1인당 종합소득', G.incY.map(function (x) { return x[1]; }), '#7c3aed']], G.incY.map(function (x) { return "'" + x[0].slice(2); }), { title: '해마다 1인당 종합소득(만 원/년 · 사업·임대·이자 등 · ' + G.incY[0][0] + '~)', fmt: function (x) { return Math.round(x).toLocaleString(); } });
+    var down = g(my[my.length - 2], my[my.length - 1]) < 0, gap = g(my[0], my[my.length - 1]) - g(avg[0], avg[avg.length - 1]);
+    h += '<p class="desc">' + esc('구매력이 떨어지나? — ' + guName(gu) + ' 1인당 총급여는 ' + Y[0] + '년 ' + my[0].toLocaleString() + '만 → ' + Y[Y.length - 1] + '년 ' + my[my.length - 1].toLocaleString() + '만(' + f1(g(my[0], my[my.length - 1])) + ')' + (down ? ' · 마지막 해에 줄었다' : ' · 해마다 오르는 쪽') + ' · ' + sdn + ' 구 평균보다 ' + (gap >= 0 ? Math.round(gap) + '%p 더 올랐다' : Math.round(-gap) + '%p 덜 올랐다') + (real ? ' · 물가를 빼면 ' + real[0] + '~' + real[1] + ' ' + f1(real[2]) + (real[2] < 0 ? '(실제 살 수 있는 것은 줄었다)' : '') : '')) + '</p><p class="lg-n">국세청 연말정산(사는 곳 기준 · 근로자만) — 자영업·은퇴자 소득은 종합소득 쪽 · 물가 반영은 소비자물가 2021년부터만 있다.</p>';
+    return h; }
 
   var AS_TASKS = [['상담·학부모 연락', '등록 상담 · 진도 알림 · 결석 보강 일정'], ['홍보', '전단·블로그·지역 카페 · 설명회'], ['교재·자료 준비 · 채점', ''], ['청소·시설 관리', '보조요원이 없으면 사장 몫'], ['교습비 수납·환불 처리', '교습비는 등록·신고한 금액 이내 · 반환 기준 지키기'], ['장부·세금', '면세사업자 사업장현황신고 · 종합소득세 신고(세무사 기장료가 따로 든다)'], ['교육청 행정', '변경 신고 · 점검 · 보험 갱신'], ['차량 운행(하면)', '어린이통학버스 신고·보험·동승자 — 운행하면 큰 일이 하나 더 는다']];
   var PNL_TASKS = [['장보기·재료 손질', '영업 전후 시간 — 본업 시간에 안 잡히는 경우가 많다'], ['청소·설거지·마감 정리', ''], ['직원 관리', '구인 · 근무표 · 급여 · 4대보험 신고'], ['홍보·리뷰 관리', '배달앱·지도 리뷰 응대 · SNS'], ['장부·세금', '부가세 신고(일반·간이) · 종합소득세 · 카드 매출 맞추기(세무사 기장료 따로)'], ['위생·안전', '위생교육 · 보건증 · 소방·가스 점검'], ['고장·수리', '냉장고·화구·배관 — 쉬는 날에 생긴다'], ['민원·배달 사고 처리', '']];

@@ -1024,7 +1024,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
-      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
+      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1978,7 +1978,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
-    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
+    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -3255,7 +3255,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.79.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.80.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3864,6 +3864,31 @@
     if (story) { var tx = '<b>5년·10년 뒤(추정).</b> 주민 ' + Math.round(J.t0).toLocaleString() + '명 → 5년 뒤 약 ' + Math.round(J.t5).toLocaleString() + ' → 10년 뒤 약 ' + Math.round(J.t10).toLocaleString() + '명(' + (pc(J.t0, J.t10) >= 0 ? '+' : '') + f1(pc(J.t0, J.t10)) + '%). 10년 동안 가장 느는 나이는 ' + best[0] + '(' + (best[1] >= 0 ? '+' : '') + f1(best[1]) + '%) — ' + esc(best[3]) + ' 쪽이 커질 쪽, 가장 주는 나이는 ' + worst[0] + '(' + f1(worst[1]) + '%) — ' + esc(worst[3]) + ' 쪽은 줄 쪽(추론).';
       return { t: tx, v: h }; }
     return '<div class="dh">🔮 인구 5년·10년 뒤 — 따라가는 상권(추정)</div>' + h; }
+  // ---------- v2.80.0 👥→🏪 인구 변화로 본 업종(소유자 「읍면동 인구구조 5년·10년 예측 → 맞는 업종·위험한 업종 · 인구통계학에 따른 산업·사회·업종 변화에 대처」) ----------
+  //   업종 수요 변화 = Σ(그 업종 서울 카드 매출의 나이대 비중 × 이 동 그 나이대 인구 변화율) — data/ind-age.json(tools/region/indage-bake.py) × ppProject(이 동 × 시군구 추계)
+  //   1인당 씀씀이·구매력은 그대로라고 본 근사 · 카드 주인 나이 기준 · 대처 문장은 규칙(주 손님 나이대가 줄면 → 가장 느는 나이대 쪽으로)
+  var IAGE = null, IAGEP = null;
+  function iaLoad() { if (IAGEP) return IAGEP; IAGEP = fetch('data/ind-age.json').then(function (r) { return r.json(); }).then(function (j) { IAGE = j; if (sel && sel.it && sel.it.kind === 'dong') show(sel.it); }).catch(function () { IAGE = false; }); return IAGEP; }
+  function indShiftRows(d) { if (!d || !d.k || !d.pop || !d.pop.age) return ''; if (IAGE === null) { iaLoad(); return ''; } if (!IAGE || !POPP) { if (!POPP) ppLoad(); return ''; }
+    var gu = d.k.slice(0, 5), J = ppProject(d.pop.age, gu); if (!J) return ''; if (STI[gu] === undefined && gu.slice(0, 2) === '11') stiLoad(gu);
+    var B = [[1], [2], [3], [4], [5], [6, 7, 8, 9]], gr = function (arr) { return B.map(function (b) { var a = 0, c = 0; b.forEach(function (i) { a += J.now[i] || 0; c += arr[i] || 0; }); return a ? c / a : 1; }); }, g5 = gr(J.y5), g10 = gr(J.y10), AG = IAGE.ages;
+    var R = IAGE.inds.map(function (x) { var sh = x[2], c5 = 0, c10 = 0, ct = []; sh.forEach(function (v, i) { c5 += v * g5[i]; c10 += v * g10[i]; ct.push(v * (g10[i] - 1)); }); return { n: x[0], amt: x[1], sh: sh, p5: (c5 - 1) * 100, p10: (c10 - 1) * 100, ct: ct }; });
+    var tot = R.reduce(function (a, r) { return a + r.amt; }, 0), all10 = R.reduce(function (a, r) { return a + r.amt * r.p10; }, 0) / (tot || 1), all5 = R.reduce(function (a, r) { return a + r.amt * r.p5; }, 0) / (tot || 1);
+    var S = R.slice().sort(function (a, b) { return b.p10 - a.p10; }), up = S.filter(function (r) { return r.p10 > 0; }).slice(0, 8), dn = S.filter(function (r) { return r.p10 < 0; }).slice(-8).reverse(), f1 = function (x) { return (x >= 0 ? '+' : '') + (Math.round(x * 10) / 10) + '%'; };
+    var Lst = STI[gu] && STI[gu].dong && STI[gu].dong[d.k], st = function (nm) { var r = Lst && Lst.filter(function (q) { return q[0] === nm; })[0]; return r ? { n: r[1], o: r[2], c: r[3] } : null; };
+    var ga = g10.map(function (g, i) { return [AG[i], (g - 1) * 100]; }), best = ga.slice().sort(function (a, b) { return b[1] - a[1]; })[0], bi = AG.indexOf(best[0]);
+    var h = '<div class="dh">🏪 인구 변화로 본 업종 — 뜨는 곳 · 위험한 곳 <small style="font-weight:600;color:var(--ink2)">(10년 · 추정)</small></div>';
+    h += '<div class="tkpi"><span><em>🛒</em><small>이 동 카드 소비 전체(업종 가중)</small><b>' + f1(all10) + '</b><u>5년 ' + f1(all5) + ' · 1인당 씀씀이 그대로라면</u></span><span><em>📈</em><small>가장 느는 손님</small><b>' + best[0] + '</b><u>' + f1(best[1]) + '</u></span><span><em>📉</em><small>가장 주는 손님</small><b>' + ga.slice().sort(function (a, b) { return a[1] - b[1]; })[0][0] + '</b><u>' + f1(ga.slice().sort(function (a, b) { return a[1] - b[1]; })[0][1]) + '</u></span></div>';
+    h += vzDiv(ga.map(function (q) { return [q[0], q[1], null]; }), { title: '나이대별 사람 수 10년 변화(카드 매출 나이대로 묶음 · 이 동 추정)' });
+    h += vzDiv(up.concat(dn).map(function (r) { var t = st(r.n); return [r.n, r.p10, t ? t.n : null]; }), { title: '👍 수요가 느는 업종 8 · ⚠ 수요가 주는 업종 8(10년 · 작은 숫자 = 지금 이 동 점포)' });
+    h += '<div class="simc"><b>⚠ 위험한 업종 — 대처</b><div class="rcard">' + dn.map(function (r) { var mi = 0; r.ct.forEach(function (v, i) { if (v < r.ct[mi]) mi = i; }); var t = st(r.n), net = t ? t.o - t.c : null;
+        return row(r.n, '<b style="color:#2563eb">' + f1(r.p10) + '</b> — 주로 깎는 손님 <b>' + AG[mi] + '</b>(이 업종 매출의 ' + Math.round(r.sh[mi] * 100) + '% · 그 나이 ' + f1((g10[mi] - 1) * 100) + ')' + (t ? ' · 이 동 점포 ' + t.n + '곳(최근 1년 ' + (net >= 0 ? '+' : '') + net + ')' : '') + '<br><em>→ ' + (r.sh[bi] >= 0.1 ? '늘어나는 ' + best[0] + ' 손님(지금 이 업종 매출의 ' + Math.round(r.sh[bi] * 100) + '%)을 잡는 쪽으로 · 메뉴·시간대·가격을 그 나이에 맞춘다' : '늘어나는 ' + best[0] + ' 손님이 이 업종에는 거의 없다(매출의 ' + Math.round(r.sh[bi] * 100) + '%) — 손님층을 바꾸기 어렵다 · 규모 줄이기·업종 바꾸기를 같이 본다') + '</em>'); }).join('') + '</div></div>';
+    h += (up.length ? '<div class="simc"><b>👍 맞는 업종 — 기회</b><div class="rcard">' : '<p class="lg-n">10년 동안 수요가 느는 업종이 없다(모든 나이대 손님이 줄거나 비슷) — 이 동은 손님 수보다 객단가·단골·배달로 버티는 쪽이다.</p><div style="display:none"><div>') + up.map(function (r) { var t = st(r.n), mx = 0; r.sh.forEach(function (v, i) { if (v > r.sh[mx]) mx = i; });
+        return row(r.n, '<b style="color:#dc2626">' + f1(r.p10) + '</b> — 주 손님 ' + AG[mx] + '(' + Math.round(r.sh[mx] * 100) + '%)' + (t ? ' · 이 동 점포 ' + t.n + '곳(최근 1년 개업 ' + t.o + ' · 폐업 ' + t.c + ')' + (t.n >= 30 ? ' <em>— 이미 많다 · 수요가 늘어도 나눠 먹는다</em>' : '') : '')); }).join('') + '</div></div>';
+    h += '<details class="rel"><summary>🔎 업종 ' + R.length + '개 전부(10년 수요 순) <small>5년 · 10년</small></summary><div class="rcard">' + S.map(function (r) { var t = st(r.n); return row(r.n, f1(r.p5) + ' → <b>' + f1(r.p10) + '</b>' + (t ? ' · 점포 ' + t.n : '')); }).join('') + '</div></details>';
+    h += '<p class="cap">추정 방법: 업종마다 서울 카드 매출의 나이대 비중(' + esc(IAGE.source) + ') × 이 동 나이대 인구의 5·10년 변화(주민등록 × 통계청 장래인구추계 코호트 변화율) — 1인당 씀씀이·구매력·물가가 그대로라고 본 근사다 · 카드 주인 나이 기준(아이 학원은 부모 나이) · 점포 = 서울시 상권분석 점포-행정동(최근 4분기) · 「대처」는 규칙으로 만든 문장(주 손님이 주는 나이대 → 가장 느는 나이대 쪽으로)</p>';
+    return h; }
+
   function popProjRows(d) { if (!d || !d.k || !d.pop || !d.pop.age) return ''; return popProjHtml(d.pop.age, d.k.slice(0, 5), d.name, false); }
 
   // ---------- v2.55.0 🏪 업종별 개업·폐업·생존율 전국(지방행정 인허가 · r/<구>/biz.json · 통계청 신생기업 생존율 data/biz-official.json) ----------

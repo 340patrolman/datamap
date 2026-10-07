@@ -29,7 +29,7 @@
     ['fuel', '⛽ 주유소', false, '생활시설', 0], ['ev', '🔌 전기차 충전', false, '생활시설', 0], ['pk', '🅿 주차장', false, '생활시설', 0],
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
     ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장 자리(전국 · OSM)', false, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
-    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1],
+    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0],
     ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '날씨·계절', 0], ['hcab', '🔥 도로 열선 길', false, '날씨·계절', 0], ['advb', '❄ 제설 전진기지', false, '날씨·계절', 0],
     ['pbtn', '🚸 보행자작동신호기', false, '도로·교통', 0]
@@ -138,10 +138,11 @@
       j.spots.forEach(function (g) { g.m = j; D.hot10.spots.push(g); }); draw(); }).catch(function () {}); return RLOADH[gu];
   }
   // v0.10.96 TAAS 사고 10년(구마다 taas10.json · 서초 taas10-seocho 와 같은 꼴) — 서초는 기존 파일이 우선
-  var RLOADA = {};
+  var RLOADA = {}, A10GAP = [];   // v2.75.0 수집이 덜 된 구(사고 100건 미만 — 2026-10-07 생활안전지도 내부 대조로 드러남) — 그리지 않고 「준비 중」
   function aLoad(gu) {
     if (gu === '11650') return Promise.resolve(); if (RLOADA[gu]) return RLOADA[gu];
     RLOADA[gu] = rGet(gu, 'taas10.json').then(function (j) {
+      if ((+j.count || 0) < 100) { if (A10GAP.indexOf(gu) < 0) A10GAP.push(gu); legend(); return; }
       j.cells.forEach(function (c) { a10Add(c, j); }); j.fatal.forEach(function (f) { F10.push({ f: f, p: P(f[17], f[16]), m: j }); }); draw();
     }).catch(function () {}); return RLOADA[gu];
   }
@@ -903,7 +904,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark); drawLore(dark);
+    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark); drawLore(dark); drawGgbrt(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -1124,6 +1125,7 @@
       h = pubCard(it);
     } else if (it.kind === 'lore') { h = loreCard(it.ids);
     } else if (it.kind === 'jmy') { h = jmyCard(it.e, it.link);
+    } else if (it.kind === 'ggbrt') { h = ggbrtCard(it.s);
     } else if (it.kind === 'rone') { h = roneCard(it);
     } else if (it.kind === 'rally') {
       var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + r.from + '~' + r.to)) + row('자리', esc(r.p)) + row('신고 인원', (r.n || '-') + '명 <em>(신고값)</em>') + (r.approx ? row('자리 표시', '<em>근사</em> — ' + esc(r.note)) : '');
@@ -1224,6 +1226,23 @@
     var L = (J.d[a[1]] || []).slice().sort(function (x, y) { return (y[4] ? 1 : 0) - (x[4] ? 1 : 0) || (x[0] < y[0] ? -1 : 1); }), e = L[+a[2]]; if (!e || e[1] == null) return;
     var q = P(e[1], e[2]); view.cx = q[0]; view.cy = q[1]; view.s = Math.max(view.s, 0.3); draw(); var s3 = S(q); sel = { x: s3[0], y: s3[1], r: 9, it: { kind: 'jmy', e: e, link: jmyLink(J, e[0]) } }; show(sel.it); draw(); });
 
+  // ---------- v2.75.0 🚌 중앙차로 정류장 경기버스(data/ggbrt.json ← tools/region/ggbrt-bake.py · 코워크·소유자 결정 2026-10-07) ----------
+  // 「버스가 얼마나 자주 서는가」 — 정류장 사고를 볼 때의 기준값(관계장부 R2 승하차 노출의 보조 분모) · 서울 중앙차로 405곳만 · 서울 시내버스 빠짐
+  var GB, GBP = null;
+  function gbLoad() { if (GBP) return GBP; GBP = fetch('data/ggbrt.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) { GB = j; }).catch(function () { GB = null; }).then(function () { draw(); legend(); }); return GBP; }
+  function drawGgbrt(dark) { if (!on.ggbrt) return; if (GB === undefined) { gbLoad(); return; } if (!GB) return; var mx = 1; GB.stops.forEach(function (st) { mx = Math.max(mx, st[5]); });
+    GB.stops.forEach(function (st) { var q = P(st[2], st[3]), s2 = S(q); if (s2[0] < -30 || s2[1] < -30 || s2[0] > cv.clientWidth + 30 || s2[1] > cv.clientHeight + 30) return; var r = (3 + 9 * Math.sqrt(st[5] / mx)) * zk();
+      ctx.beginPath(); ctx.arc(s2[0], s2[1], r, 0, Math.PI * 2); ctx.fillStyle = 'rgba(217,119,6,.55)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = dark ? '#fde68a' : '#92400e'; ctx.stroke(); hit.push({ x: s2[0], y: s2[1], r: Math.max(r, 9), it: { kind: 'ggbrt', s: st } });
+      if (view.s > 0.2 && st[5] >= mx * 0.4) label([q[0], q[1] - 16 / view.s], st[1], 10.5, dark ? '#fde68a' : '#92400e', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); }); }
+  function ggbrtCard(st) { var R = st[4].map(function (i) { return GB.routes[i]; }), known = R.filter(function (r) { return r[3] >= 3; });
+    var h = '<h3>🚌 ' + esc(st[1]) + ' <small style="font-weight:600;color:var(--ink2)">중앙차로 정류장 ' + esc(st[0]) + '</small></h3>';
+    h += '<div class="tkpi"><span><em>🚌</em><small>서는 경기버스 노선</small><b>' + R.length + '개</b></span><span><em>⏰</em><small>출퇴근(첨두) 시간당</small><b>약 ' + Math.round(st[5]) + '대</b><u>Σ 60÷배차 · 계산값</u></span><span><em>🕑</em><small>그 밖(비첨두) 시간당</small><b>약 ' + Math.round(st[6]) + '대</b></span>' + (st[7] ? '<span><em>❔</em><small>배차 모르는 노선</small><b>' + st[7] + '개</b><u>시간당 대수에서 빠짐</u></span>' : '') + (st[8] ? '<span><em>⚠</em><small>배차 3분 미만 의심값</small><b>' + st[8] + '개</b><u>API 값 그대로 · 합에서 뺌</u></span>' : '') + '</div>';
+    var reg = {}; R.forEach(function (r) { reg[r[2]] = (reg[r[2]] || 0) + 1; });
+    h += '<div class="vzg">' + vzH(Object.keys(reg).sort(function (a, b) { return reg[b] - reg[a]; }).slice(0, 8).map(function (k) { return [k, reg[k], '#d97706']; }), { title: '어디서 오는 버스인가(노선 지역)', unit: '개' }) +
+      (known.length ? vzPair(known.slice().sort(function (a, b) { return a[3] - b[3]; }).slice(0, 12).map(function (r) { return [r[0] + ' · ' + r[2], 60 / r[3], r[4] ? 60 / r[4] : 0]; }), ['첨두 시간당', '비첨두 시간당'], { color: '#d97706', fmt: function (v) { return (Math.round(v * 10) / 10) + '대'; } }) : '') + '</div>';
+    h += '<details class="rel"><summary>🚌 노선 ' + R.length + '개 자세히 <small>배차·첫차·막차·기점→종점</small></summary><div class="rcard">' + R.slice().sort(function (a, b) { return (a[3] || 999) - (b[3] || 999); }).map(function (r) { return row(r[0] + ' (' + r[2] + ')', esc(r[1]) + ' · ' + (r[3] ? '첨두 ' + r[3] + '분' + (r[3] < 3 ? ' <b style="color:#b45309">⚠ 의심값</b>' : '') : '배차 모름') + (r[4] ? ' / 비첨두 ' + r[4] + '분' : '') + (r[5] ? ' · ' + esc(r[5]) + '~' + esc(r[6]) : '') + (r[7] ? ' <em>' + esc(r[7]) + ' → ' + esc(r[8]) + '</em>' : '')); }).join('') + '</div></details>';
+    return h + src(GB.source + ' · ' + GB.collected + ' 수집 · ' + GB.note); }
+
   // ---------- 공공데이터 묶음(pubdata) ----------
   var PUB = null;
   function pubPrep() {
@@ -1264,7 +1283,7 @@
   function liveMax(key, h) { var c = key + h; if (LMX[c] == null) { var m = 0; allDong().forEach(function (d) { var a = liveArr(d); if (a) m = Math.max(m, a[key][h]); }); LMX[c] = m; } return LMX[c]; }   // 서울 전체(받은 구까지) 한 눈금
   function liveNow(x) {
     var d = typeof x === 'string' ? { name: x } : x, A = liveArr(d); if (!A) return null;
-    var dt = new Date(pickDate() + 'T00:00'), we = dt.getDay() === 0 || dt.getDay() === 6, h = nowH(), key = we ? 'we' : 'wd';
+    var dt = new Date(pickDate() + 'T00:00'), we = weOf(dt), h = nowH(), key = we ? 'we' : 'wd';
     return { n: A[key][h], max: liveMax(key, h), we: we, h: h, arr: A[key], other: A[we ? 'wd' : 'we'] };
   }
   function ring(pts, fill, stroke) { if (!pts || pts.length < 3) return; path(pts); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = stroke; ctx.stroke(); }
@@ -1693,9 +1712,9 @@
   // ---------- 🕐 시각 막대 · 🧭 근무별 한 번에 · 지금 요약(v0.10.76 · 소유자 「더 효율적이고 구체적으로」) ----------
   function setHour(h) { HOUR = h == null ? null : (h + 24) % 24; paintTime(); draw(); summary(); if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }
   function paintTime() {
-    var h = nowH(), dt = new Date(pickDate() + 'T00:00'), we = dt.getDay() === 0 || dt.getDay() === 6, r = $('m2dHour'); if (!r) return;
-    r.value = h; $('m2dHourT').innerHTML = h + '시<span class="wk"> · ' + (we ? '주말' : '평일') + '</span>' + (HOUR == null ? '' : ' ✎'); $('m2dNowBtn').classList.toggle('on', HOUR == null);
-    var db = $('m2dDateB'); if (db) { db.textContent = '📅 ' + (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + '일월화수목금토'[dt.getDay()] + ')'; db.classList.toggle('we', we); }
+    var h = nowH(), dt = new Date(pickDate() + 'T00:00'), we = weOf(dt), hn = holOf(dt), r = $('m2dHour'); if (!r) return;
+    r.value = h; $('m2dHourT').innerHTML = h + '시<span class="wk"> · ' + (hn ? '공휴일(주말로 봄)' : we ? '주말' : '평일') + '</span>' + (HOUR == null ? '' : ' ✎'); $('m2dNowBtn').classList.toggle('on', HOUR == null);
+    var db = $('m2dDateB'); if (db) { db.textContent = '📅 ' + (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + '일월화수목금토'[dt.getDay()] + (hn ? ' · ' + hn : '') + ')'; db.title = hn ? hn + ' — 한국천문연구원 특일 정보(공휴일은 주말과 같이 본다)' : ''; db.classList.toggle('we', we); }
     var tb = $('m2dTimeB'); if (tb) { tb.textContent = HOUR == null ? '🕒 지금 ' + h + '시' : '🕒 ' + h + '시 보기'; tb.classList.toggle('set', HOUR != null); }
   }
   if ($('m2dHour')) {
@@ -2028,7 +2047,7 @@
     if (!on.acc10 && !on.fatal10 && !on.acc250) return null; var ys = ['', 19]; for (var y = 2016; y <= 2025; y++) ys.push(y);
     return ['🚗 사고 10년(TAAS)', '<div class="lg-btns">' + Object.keys(A10MS).map(function (k) { return '<button data-a10m="' + k + '" class="' + (k === A10M ? 'on' : '') + '">' + A10MS[k][0] + '</button>'; }).join('') + '</div>' +
       '<div class="lg-btns"><select data-a10y aria-label="해">' + ys.map(function (y) { return '<option value="' + y + '"' + ((A10Y || '') == y ? ' selected' : '') + '>' + (y === 19 ? '2019~2025' : y ? y + '년만' : '10년 전부') + '</option>'; }).join('') + '</select></div>' +
-      li(hexA(A10MS[A10M][1], 0.8), A10M === 'rate' ? '사고율 = 10년 사고 ÷ 150m 안 하루 하차 × 1,000 · 하차 200명 미만 칸은 안 칠함' : '100m 칸 · 진할수록 많음(√) · 확대하면 숫자', 'box') + (A10M === 'rate' ? li('#facc15', '숨은 위험 — 사고율 상위 10% · 건수는 상위 10% 밖', 'line') + '<small class="lg-n">' + ledgBadge('R2') + ' 노출(하차)은 2026년 6월 한 달 값을 10년에 썼다 · 서울만(교통카드 자료)</small>' : '') + (on.fatal10 ? li('#111827', '사망사고(한 건씩)') : '') + '<small class="lg-n">' + (D.taas10 ? D.taas10.count.toLocaleString() + '건 · 개인정보 없음' : '') + '</small>'];
+      li(hexA(A10MS[A10M][1], 0.8), A10M === 'rate' ? '사고율 = 10년 사고 ÷ 150m 안 하루 하차 × 1,000 · 하차 200명 미만 칸은 안 칠함' : '100m 칸 · 진할수록 많음(√) · 확대하면 숫자', 'box') + (A10M === 'rate' ? li('#facc15', '숨은 위험 — 사고율 상위 10% · 건수는 상위 10% 밖', 'line') + '<small class="lg-n">' + ledgBadge('R2') + ' 노출(하차)은 2026년 6월 한 달 값을 10년에 썼다 · 서울만(교통카드 자료)</small>' : '') + (on.fatal10 ? li('#111827', '사망사고(한 건씩)') : '') + (A10GAP.length ? '<small class="lg-n" style="color:#b45309">⚠ 준비 중 — 사고 10년 자료를 덜 모은 곳(비워 둠 · 다시 모으는 중): ' + A10GAP.map(function (g) { return esc(guName(g)); }).join(' · ') + '</small>' : '') + '<small class="lg-n">' + (D.taas10 ? D.taas10.count.toLocaleString() + '건 · 개인정보 없음' : '') + '</small>'];
   }
   // ---------- 🛡 치안·생활안전 시설(v0.10.78 · 서울 열린데이터 — 서초구) ----------
   var SAFE = [], SRCX = {};   // [층 키, 이름, 색, 점들[{p, it}]] · SRCX = 경기 구 파일이 가져온 출처(경기 생활시설)
@@ -2339,6 +2358,7 @@
     if (on.juris) { var jl2 = jrsLegend(); if (jl2) G(jl2[0], jl2[1]); }
     if (on.rone) { var rl2 = roneLegend(); G(rl2[0], rl2[1]); }
     if (on.lore) { var lr2 = loreLegend(); G(lr2[0], lr2[1]); }
+    if (on.ggbrt) G('🚌 중앙차로 정류장 경기버스', GB ? '<small class="lg-n">● 크기 = 출퇴근(첨두) 시간당 서는 경기버스 대수(Σ 60÷배차 · 계산값 · 3분 미만 의심값 뺌) · ' + esc(GB.collected) + ' 수집 · 서울 중앙버스전용차로 정류장 405곳 한정 · 서울 시내버스 빠짐 · 경기도 버스 API</small>' : '<small class="lg-n">받는 중…</small>');
     if (on.acad) { var al3 = acLegend(); if (al3) G(al3[0], al3[1]); }
     if (on.med) { var ml3 = mdLegend(); if (ml3) G(ml3[0], ml3[1]); }
     if (on.dong) G('🏘 행정동', li('rgba(109,40,217,.6)', '행정동 경계', 'line') + li('#64748b', '이웃 구 동(점선)', 'dash') + li('#475569', '구 경계(굵은 점선)', 'dash'));
@@ -2442,7 +2462,7 @@
     return '주기 ' + cur[1] + '초 · ' + String(cur[3] || '').split(' ').filter(function (x) { return +x > 0; }).length + '현시 (' + esc(cur[0]) + ' 계획)';
   }
   function volRows(v) {
-    var d = new Date(), dow = d.getDay(), arr = dow === 0 ? v.sun : dow === 6 ? v.sat : v.wd; if (!arr) return '';
+    var d = new Date(), dow = d.getDay(), arr = dow === 0 || holOf(d) ? v.sun : dow === 6 ? v.sat : v.wd; if (!arr) return '';
     var h = d.getHours(), tot = arr.map(function (x) { return x[0] + x[1]; }), day = tot.reduce(function (a, b) { return a + b; }, 0), pk = tot.indexOf(Math.max.apply(null, tot));
     return row('지금 ' + h + '시', tot[h].toLocaleString() + '대/시(양방향)') + row('하루', day.toLocaleString() + '대 · 가장 붐비는 때 ' + pk + '시') + '<div class="cap">시간대별 교통량(대/시 · 양방향 · 0~23시 · 오늘 요일의 조사값)</div>' + bar(tot, '#0ea5e9');
   }
@@ -2487,7 +2507,7 @@
     rIdx().forEach(function (g) { var x = g.box, B = g.bytes || {}; if (x[2] < v[0] || x[0] > v[2] || x[3] < v[1] || x[1] > v[3]) return;
       if (on.acc250 && B.taas250) a2Load(g.gu); if (on.g250 && view.s >= 0.05) { if (B.pts250) ptLoad(g.gu); if (B.live250) l2Load(g.gu); if (B.forn250) f2Load(g.gu); if (B.taas250) a2Load(g.gu); if (B.home) hmLoad(g.gu); if (B.rtms) rtLoad(g.gu); } if (on.home && B.home) hmLoad(g.gu); if (on.g250 && B.grid) grLoad(g.gu); if (on.live250 && B.live250) l2Load(g.gu); if (on.fl250 && B.forn250) f2Load(g.gu); if (on.rtc && B.rtms) rtLoad(g.gu); });
   }
-  function isWe() { var d = new Date().getDay(); return d === 0 || d === 6; }
+  function isWe() { return weOf(new Date()); }
   function l2Now(x) { return (isWe() ? x.we : x.wd)[nowH()]; }
   function sq(p, h) { var a = S([p[0] - h, p[1] - h]), b = S([p[0] + h, p[1] + h]); return [a[0], a[1], b[0] - a[0], b[1] - a[1]]; }
   function inView(r, W0, H0) { return !(r[0] + r[2] < 0 || r[1] + r[3] < 0 || r[0] > W0 || r[1] > H0); }
@@ -2599,7 +2619,7 @@
     ['all', '전체', null],
     ['split', '🗂 나눠 보기', ['dong', 'usgg', 'juris', 'jurk', 'upb', 'pbox', 'ri'], ['usgg']],
     ['people', '👥 인구 구성', ['dong', 'jgg', 'live250', 'live', 'lpop', 'fdong', 'minbak', 'flodge', 'fl250', 'crowd', 'ri'], ['dong', 'jgg', 'live250']],
-    ['move', '🚶 이동·동선', ['volp', 'live250', 'lpop', 'bus', 'bstop', 'msub', 'busd', 'subr', 'sub', 'exit', 'bike', 'lbus', 'spot', 'crowd', 'vol', 'evt', 'gfest'], ['bus', 'subr', 'sub', 'live250']],
+    ['move', '🚶 이동·동선', ['volp', 'live250', 'lpop', 'bus', 'ggbrt', 'bstop', 'msub', 'busd', 'subr', 'sub', 'exit', 'bike', 'lbus', 'spot', 'crowd', 'vol', 'evt', 'gfest'], ['bus', 'subr', 'sub', 'live250']],
     ['spend', '💳 소비·상권', ['sales', 'trd', 'szone', 'rent', 'crowd', 'rtc', 'conv', 'bank', 'bar', 'play', 'inn'], ['sales', 'trd', 'szone']],
     ['estate', '🏠 주거·부동산', ['home', 'rtc', 'rone', 'rent', 'jgg', 'bld'], ['home', 'rtc']],
     ['traffic', '🚦 도로·교통', ['rnet', 'volp', 'exv', 'tlt', 'road', 'jcnm', 'lspd', 'spd', 'lev', 'lcc', 'vol', 'sig', 'sigx', 'tgis', 'pbtn', 'cam', 'pkcctv', 'pk', 'gpark', 'ev', 'gev', 'fuel', 'tow'], ['rnet', 'volp', 'jcnm', 'lspd', 'cam']],
@@ -3190,7 +3210,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.74.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.75.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4035,6 +4055,7 @@
     NEAR.forEach(function (d) { if (!RGUN[d.gu] && !c.some(function (x) { return x.it.kind === 'rgo' && x.it.g === d.gu && x.it.name === d.name; }) && (d.gu + ' ' + d.name).indexOf(q) >= 0) c.push({ p: d.c, it: { kind: 'near', d: d } }); });
     NODES.forEach(function (n) { if (n.name.indexOf(q) >= 0 || (n.sig && n.sig.name.indexOf(q) >= 0)) c.push({ p: n.p, it: { kind: 'node', n: n, st: D.acc && D.acc.nodes ? D.acc.nodes.filter(function (x) { return x.node[0] === n.i && x.node[1] === n.j; })[0] : null } }); });
     if (D.her) D.her.items.forEach(function (h) { if (h.name.indexOf(q) >= 0 && h.lat) c.push({ p: P(h.lon, h.lat), it: { kind: 'her', h: h } }); });
+    if (on.ggbrt && GB) GB.stops.forEach(function (st) { if (st[1].indexOf(q) >= 0) c.push({ p: P(st[2], st[3]), it: { kind: 'ggbrt', s: st } }); });
     if (LORE) LORE.items.forEach(function (st) { var lp = loreP(st); if (lp && st.title.indexOf(q) >= 0) c.push({ p: lp, it: { kind: 'lore', ids: [st.id] } }); });
     if (D.sig) D.sig.spots.forEach(function (s) { if (s.name.indexOf(q) >= 0) c.push({ p: P(s.lon, s.lat), it: { kind: 'sig', s: s } }); });
     TG.forEach(function (t) { if (t.name.indexOf(q) >= 0 || String(t.c) === q) c.push({ p: t.p, it: { kind: 'tgis', t: t }, k: 'tgis' }); });
@@ -4190,7 +4211,7 @@
       T.loc.v = trItems(j).map(function (x) { return { p: P(+x.gpslong, +x.gpslati), nm: x.nodenm, plate: x.vehicleno || '' }; }); T.loc.busy = 0; T.loc.at = Date.now(); T.loc.err = ''; trPaint(); draw();
       if (T.loc.v.length) { var q = T.loc.v.reduce(function (a, b) { return dTrue(a.p, T.c) < dTrue(b.p, T.c) ? a : b; }); view.cx = (q.p[0] + T.c[0]) / 2; view.cy = (q.p[1] + T.c[1]) / 2; draw(); }
     }).catch(function (e) { if (TR === T && T.loc) { T.loc.busy = 0; T.loc.err = trErr(e); trPaint(); } }); }
-  function trDay() { var w = new Date().getDay(); return w === 0 ? '03' : w === 6 ? '02' : '01'; }
+  function trDay() { var w = new Date().getDay(); return w === 0 || holOf(new Date()) ? '03' : w === 6 ? '02' : '01'; }
   function trSub() { var T = TR; if (!LK.dgk) return;
     if (!TRSTP) TRSTP = stnAll().then(function (L) { TRST = L.map(function (x) { return { nm: x[0], ln: x[1], p: P(x[2], x[3]) }; }); });
     TRSTP.then(function () { if (TR !== T) return; var near = {}; (TRST || []).forEach(function (q) { var d = dTrue(q.p, T.c); if (d < 1500 && (!near[q.nm] || near[q.nm].d > d)) near[q.nm] = { nm: q.nm, d: d, p: q.p }; });
@@ -4489,7 +4510,7 @@
     box: '안심택배함.', dem: '치매안심센터.', tgis: 'T-GIS 신호 교차로(서울시 · 종속 신호 포함).',
     spot: '길목 — 지금 시각 버스·지하철 하차가 많은 곳(숫자 = 순위). 순찰·단속 자리 고르기용.',
     spota: '길목 다발지(참고).', hot10: '사고다발지 10년(2016~2025) 겹친 자리.', jct: '교차로별 10년 사고(서울·경기) — 가장 가까운 교차로 하나에 모은 값.',
-    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
+    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', ggbrt: '서울 중앙버스전용차로 정류장 405곳마다 서는 경기버스 노선과 배차간격(경기도 버스 API). 동그라미가 클수록 출퇴근 시간에 버스가 자주 선다(Σ 60÷배차 · 계산값). 정류장 사고를 볼 때 「버스가 얼마나 자주 서는가」 기준값으로 쓴다. 서울 시내버스는 이 자료에 없다.', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
     flt: '침수 흔적(2010~2025).', flr: '침수 이력이 있는 도로.', und: '침수 이력 지하차도.', ice: '제설함 — 결빙 우려 자리.', hcab: '도로 열선 설치 길.', advb: '제설 전진기지.',
     pbtn: '보행자 작동 신호기(누름 버튼).'
   };
@@ -5337,7 +5358,7 @@
     smp.forEach(function (q) { var d = dongAtM(q); if (d) dc.set(d, (dc.get(d) || 0) + 1);
       for (var k2 = 0; k2 < GGT.length; k2++) { var Y = GGT[k2], b2 = trdBB(Y); if (q[0] < b2[0] || q[0] > b2[1] || q[1] < b2[2] || q[1] > b2[3]) continue; if (Y.rings.some(function (rr) { return inRing(rr, q[0], q[1]); })) gc.set(Y, (gc.get(Y) || 0) + 1); }
       for (var k = 0; k < TRD.length; k++) { var X = TRD[k], b = trdBB(X); if (q[0] < b[0] || q[0] > b[1] || q[1] < b[2] || q[1] > b[3]) continue; if (X.rings.some(function (rr) { return inRing(rr, q[0], q[1]); })) tc.set(X, (tc.get(X) || 0) + 1); } });
-    var h = nowH(), dt2 = new Date(pickDate() + 'T00:00'), we = dt2.getDay() === 0 || dt2.getDay() === 6, key = we ? 'we' : 'wd';
+    var h = nowH(), dt2 = new Date(pickDate() + 'T00:00'), we = weOf(dt2), key = we ? 'we' : 'wd';
     o.pop = 0; o.age = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; o.live = []; for (var i = 0; i < 24; i++) o.live.push(0); o.dongs = [];
     dc.forEach(function (n, d) { if (d.area == null) d.area = polyA(d.polys); var w = Math.min(1, n * cell / (d.area || 1)); o.dongs.push([(d.gu ? d.gu + ' ' : '') + d.name, Math.round(w * 100)]);
       if (d.pop) { o.pop += d.pop.tot * w; d.pop.age.forEach(function (v, k) { o.age[k] += v * w; }); } var A = liveArr(d); if (A) A[key].forEach(function (v, k) { o.live[k] += v * w; }); });
@@ -5509,6 +5530,10 @@
   function clock() { var d = new Date(); $('m2dNow').textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일(' + '일월화수목금토'[d.getDay()] + ') ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   clock(); setInterval(function () { clock(); if (HOUR == null) { summary(); } }, 30000);
   function ymdOf(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  // v2.75.0 📅 공휴일(data/holidays.json ← tools/region/holiday-bake.py · 한국천문연구원 특일 정보) — 공휴일은 주말과 같이 본다(생활인구 휴일 평균 · 지하철 휴일 시간표 · 교통량 일요일 칸)
+  var HOL = {}; fetch('data/holidays.json').then(function (r) { return r.json(); }).then(function (j) { HOL = j.days || {}; try { paintTime(); } catch (e) {} draw(); }).catch(function () {});
+  function holOf(dt) { return HOL[ymdOf(dt)] || ''; }
+  function weOf(dt) { var w = dt.getDay(); return w === 0 || w === 6 || !!holOf(dt); }
   function pickDate() { var v = $('m2dDate') && $('m2dDate').value; return v || ymdOf(new Date()); }
   if ($('m2dDate')) { $('m2dDate').value = ymdOf(new Date()); $('m2dDate').addEventListener('change', function () { var wasSea = $('m2dPre') && $('m2dPre').querySelector('[data-p="season"].on'); sel = null; show(null); paintPre(); if (wasSea) preset('season'); draw(); paintTime(); summary(); }); }
   // v0.10.85 날짜를 바꾸면 계절 단추도 따라 바뀌고, 계절 단추가 켜져 있었으면 새 계절 층으로
@@ -5851,7 +5876,7 @@
   var CATS = [
     ['people', '👥 인구·생활', [
       ['pop', '👥 인구 구성', [['주민·가구', ['jgg', 'dong']], ['그 시각 머무는 사람', ['live', 'live250', 'lpop']], ['외국인', ['fdong', 'fl250', 'minbak', 'stay', 'flodge']]], ['jgg', 'live250', 'lpop']],
-      ['move', '🚶 이동·동선', [['대중교통', ['bus', 'subr', 'sub', 'exit', 'bstop', 'msub', 'busd', 'lbus']], ['사람 흐름', ['crowd', 'spot', 'bike', 'evt', 'gfest']]], ['bus', 'subr', 'sub']],
+      ['move', '🚶 이동·동선', [['대중교통', ['bus', 'subr', 'sub', 'exit', 'bstop', 'ggbrt', 'msub', 'busd', 'lbus']], ['사람 흐름', ['crowd', 'spot', 'bike', 'evt', 'gfest']]], ['bus', 'subr', 'sub']],
       ['life', '🏥 생활시설', [['의료', ['hosp', 'phar', 'er', 'ger', 'aed']], ['관공서', ['govr', 'gov', 'post', 'lib', 'dem', 'welf', 'kyr']], ['편의', ['conv', 'bank', 'box', 'wc', 'wc2', 'park', 'heat', 'cold', 'her']], ['차·연료', ['fuel', 'ev', 'gev', 'pk', 'gpark']]], ['govr', 'hosp', 'phar']],
       ['care', '🎒 교육·돌봄', [['학교', ['edu', 'school', 'aca']], ['어린이', ['kg', 'cc', 'kids', 'pg', 'sz']]], ['edu', 'kg', 'cc']]
     ]],

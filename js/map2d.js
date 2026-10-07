@@ -1023,7 +1023,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null);
-      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += bzsRows(d); h += dealRows(d); h += roneRows(d);
+      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1828,7 +1828,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k);
-    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += bzsRows(d); h += dealRows(d); h += roneRows(d);
+    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -3025,6 +3025,17 @@
     var mo = RONE.months[RONE.months.length - 1]; return '<div class="dh">🏘 우리 구 집값·거래 흐름 <small style="font-weight:600;color:var(--ink2)">(R-ONE · ' + mo.slice(0, 4) + '년 ' + (+mo.slice(4)) + '월까지 · 시군구 값)</small></div>' + ronePanel(R, (d.gu || guName(gu) || '이 구'), RSD2[gu.slice(0, 2)] || ''); }
   if ($('m2dLeg')) $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-ronm]'); if (!b) return; RONM = b.getAttribute('data-ronm'); try { localStorage.setItem('tg_map2d_ronm', RONM); } catch (e2) {} draw(); legend(); });
 
+  // v2.72.0 🏢 공동주택 공시가격(동 카드) — r/<구>/hp.json 의 법정동(이 행정동에 걸친 것) · 그림 먼저(대원칙)
+  var HPB = ['1억 아래', '1~3억', '3~6억', '6~9억', '9~12억', '12~15억', '15~20억', '20~30억', '30억 넘음'], HPA = ['40㎡ 아래(~12평)', '40~60㎡(12~18평)', '60~85㎡(18~26평)', '85~102㎡(26~31평)', '102~135㎡(31~41평)', '135㎡ 넘음(41평~)'];
+  function hpRows(d) { var gu = d && (d.gcd || (d.k && d.k.slice(0, 5))); if (!gu || !d.k) return ''; if (HPJ[gu] === undefined) { hpGet(gu).then(function () { if (sel && sel.it && sel.it.d === d) show(sel.it); }); return ''; }
+    var J = HPJ[gu]; if (!J) return ''; var L = Object.keys(J.bjd).map(function (b) { return [b, J.bjd[b]]; }).filter(function (x) { return (x[1][6] || []).indexOf(d.k) >= 0; }).sort(function (a, b) { return b[1][1] - a[1][1]; }); if (!L.length) return '';
+    var won = function (v) { return v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1) + '억' : Math.round(v).toLocaleString() + '만'; }, h = '<div class="dh">🏢 공동주택 공시가격 <small style="font-weight:600;color:var(--ink2)">(국토교통부 2025.1.1 정기공시 · 아파트·연립·다세대 호마다)</small></div>';
+    L.slice(0, 3).forEach(function (x) { var b = x[1], sh = (b[6] || []).length > 1;
+      h += '<div class="tkpi"><span><em>🏢</em><small>' + esc(b[0]) + (sh ? ' 전체' : '') + '</small><b>' + b[1].toLocaleString() + '호</b>' + (sh ? '<u>법정동 — 행정동 ' + b[6].length + '곳에 걸침</u>' : '') + '</span><span><em>💰</em><small>공시가격 가운데</small><b>' + won(b[2]) + '</b></span>' + (b[3] ? '<span><em>📐</em><small>㎡당 가운데</small><b>' + Math.round(b[3]).toLocaleString() + '만</b><u>평당 ' + Math.round(b[3] * 3.305785).toLocaleString() + '만</u></span>' : '') + '</div>';
+      h += '<div class="vzg">' + vzH(HPB.map(function (n, i) { return [n, b[4][i] || 0, '#7c3aed']; }).filter(function (q, i, A) { return q[1] || (i > 0 && i < A.length - 1); }), { title: '공시가격 띠별 호수 — ' + b[0], unit: '호' }) +
+        vzStack([['전용면적', b[5], b[1].toLocaleString() + '호']], HPA.map(function (n, i) { return [n, ['#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#0369a1', '#0c4a6e'][i]]; }), { title: '전용면적 구성(%)' }) + '</div>'; });
+    return h + '<p class="src">' + esc(J.source) + ' · ' + esc(J.note) + '</p>'; }
+
   function jrsLoad() { if (JRSP) return JRSP; JRSP = fetch('data/juris.json').then(function (r) { return r.json(); }).then(function (j) { JRS = j; draw(); if (document.body.classList.contains('legon')) legend(); }).catch(function () { JRS = null; }); return JRSP; }
   function jrsOfK(K, k8) { if (!k8) return null; var v = K.d[k8]; if (v != null) return v; v = K.g5[k8.slice(0, 5)]; return v == null || v < 0 ? null : v; }
   function jrsAt(kind, m) { if (!JRS) return null; var K = JRS.kinds[kind], d = dongAtM(m), v = d && d.k ? jrsOfK(K, d.k) : null; if (v != null) return v;
@@ -3090,7 +3101,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.71.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.72.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -3122,7 +3133,12 @@
     return { all: all, c: c, w: w }; }
   function txStats(c) { if (!c.length) return null; var v = c.map(function (r) { return r.amt; }).sort(function (a, b) { return a - b; }), n = v.length, md = n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2;
     var last = c.slice().sort(function (a, b) { return a.ym - b.ym; }).pop(); return { min: v[0], mid: md, max: v[n - 1], last: last.amt, n: n }; }
-  function txOffVal() { var f = TX.off; if (!f || !f.length) return null; var o = TX.o;
+  function txOffVal() { var f = TX.off, o = TX.o;
+    if ((!f || !f.length) && TX.offAgg) { var Rg = TX.offAgg, mg = o.kind === 'apt' && TX.area ? Rg.filter(function (r) { return Math.abs(r[0] - TX.area) <= Math.max(0.6, TX.area * 0.01); }) : Rg; if (!mg.length) return null;
+      var nn = 0, mn = Infinity, mx = 0, md = []; mg.forEach(function (r) { nn += r[1]; mn = Math.min(mn, r[2]); mx = Math.max(mx, r[4]); md.push([r[3], r[1]]); }); md.sort(function (a, b) { return a[0] - b[0]; });
+      var acc = 0, mid = md[0][0]; for (var mi = 0; mi < md.length; mi++) { acc += md[mi][1]; if (acc >= nn / 2) { mid = md[mi][0]; break; } }
+      return { min: mn * 1e4, mid: mid * 1e4, max: mx * 1e4, n: nn, yr: '2025', file: 1 }; }
+    if (!f || !f.length) return null;
     var m = o.kind === 'apt' && TX.area ? f.filter(function (u) { return Math.abs(u.ar - TX.area) <= Math.max(0.6, TX.area * 0.01); }) : f;
     if (!m.length) return null; var v = m.map(function (u) { return u.pc; }).sort(function (a, b) { return a - b; }); return { min: v[0], mid: v[Math.floor(v.length / 2)], max: v[v.length - 1], n: v.length, yr: m[0].yr }; }
   function txValue() {   // 지금 고른 가액(원)
@@ -3131,17 +3147,28 @@
     if (TX.pick === 'off') return of ? of.mid : (o.land || 0);
     if (!cs) return of ? of.mid : (o.land || 0);
     return cs[TX.pick] || cs.mid; }
+  // v2.72.0 공동주택 공시가격 파일(국토교통부 「주택 공시가격 정보」 2025 · tools/region/hp-bake.py → r/<구>/hp.json) — 브이월드 키가 없거나 거기에 없을 때
+  var HPJ = {};
+  function hpGet(gu) { if (!gu) return Promise.resolve(null); if (HPJ[gu] !== undefined) return Promise.resolve(HPJ[gu]); return rGet(gu, 'hp.json').then(function (j) { HPJ[gu] = j; return j; }).catch(function () { HPJ[gu] = null; return null; }); }
+  function hpNorm(s) { return String(s || '').replace(/아파트|apt|APT|\s|\(.*?\)|[·.,\-]/g, '').toLowerCase(); }
+  function txHp(o) { if (o.kind === 'house' || o.kind === 'land') return Promise.resolve(null); var gu = o.gu || (o.pnu ? String(o.pnu).slice(0, 5) : null);
+    return hpGet(gu).then(function (j) { if (!j) return null; if (o.pnu && j.pnu[o.pnu]) return j.pnu[o.pnu];
+      if (!o.name) return null; var nm = hpNorm(o.name), hit = []; Object.keys(j.pnu).forEach(function (p) { var e = j.pnu[p], b = j.bjd[p.slice(0, 10)], bn = b ? b[0].split(' ').pop() : ''; if (o.umd && bn && bn !== o.umd) return; var en = hpNorm(e[0]); if (en && (en === nm || en.indexOf(nm) >= 0 || nm.indexOf(en) >= 0)) hit.push([en, e]); });
+      var ex = hit.filter(function (x) { return x[0] === nm; }), grp = {}; (ex.length ? ex : hit).forEach(function (x) { (grp[x[0]] = grp[x[0]] || []).push(x[1]); });   // 한 단지가 필지 여러 개로 나뉜다 — 같은 이름은 합친다
+      var gk = Object.keys(grp); if (gk.length !== 1) return null; var G = grp[gk[0]], rows = [], n = 0; G.forEach(function (e) { n += e[1]; rows = rows.concat(e[2]); }); rows.sort(function (p, q) { return p[0] - q[0]; });
+      return [G[0][0].replace(/\(.*?\)$/, ''), n, rows]; }); }
+  function txHpUse(o, why) { return txHp(o).then(function (e) { if (TX.o !== o) return; if (e) { TX.offAgg = e[2]; TX.offSrc = '국토교통부 「주택 공시가격 정보」 2025 파일 · ' + esc(e[0]) + ' ' + e[1] + '호'; TX.offErr = ''; } else TX.offErr = why; txOut(); }); }
   function txOfficial() {   // 브이월드 공동주택가격·개별주택가격 — 키는 이 기기에만 · 받은 값은 창을 닫으면 버린다
-    var o = TX.o; if (!VWKEY) { TX.offErr = '브이월드 키가 있어야 공시가격을 받는다(🔑 지도 키와 같음) · 아래 칸에 직접 넣어도 된다'; txOut(); return; }
+    var o = TX.o; TX.offAgg = null; TX.offSrc = ''; if (!VWKEY) { txHpUse(o, '브이월드 키가 있어야 이 필지의 공시가격을 받는다(🔑 지도 키와 같음) · 국토부 파일에서도 이 단지를 못 찾았다 · 아래 칸에 직접 넣어도 된다'); return; }
     var gp = o.pnu ? Promise.resolve(o.pnu) : vwJ('https://api.vworld.kr/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=' + encodeURIComponent(VWKEY) + '&domain=' + vwDom() + '&format=json&errorformat=json&size=1&page=1&crs=EPSG:4326&geometry=false&attribute=true&geomFilter=POINT(' + o.ll[0].toFixed(7) + '%20' + o.ll[1].toFixed(7) + ')').then(function (j) { var r = j && j.response; return r && r.status === 'OK' ? r.result.featureCollection.features[0].properties.pnu : null; });
     gp.then(function (pnu) { if (!pnu) throw new Error('필지를 못 찾음'); var had = !!o.tb; o.pnu = pnu; if (!had) txTbase(o); var yr = new Date().getFullYear();
       var op = o.kind === 'house' ? 'getIndvdHousingPriceAttr' : 'getApartHousingPriceAttr';
       function one(y) { return nedGet(op, pnu, '&stdrYear=' + y + '&numOfRows=1000'); }
       return one(yr).then(function (f) { return f && f.length ? f : one(yr - 1); }); })
       .then(function (f) { if (TX.o !== o) return; TX.off = (f || []).map(function (u) { return { ar: +(u.prvuseAr || u.prposArea || 0), pc: +(u.pblntfPc || u.housePc || 0), yr: u.stdrYear, d: u.dongNm, h: u.hoNm }; }).filter(function (u) { return u.pc > 0; });
-        if (!TX.off.length) TX.offErr = '브이월드에 이 필지의 ' + (o.kind === 'house' ? '개별주택가격' : '공동주택가격') + '이 없다(다른 필지에 등록됐거나 아직 고시 전) · 직접 넣어도 된다';
+        if (!TX.off.length) { txHpUse(o, '브이월드에 이 필지의 ' + (o.kind === 'house' ? '개별주택가격' : '공동주택가격') + '이 없다(다른 필지에 등록됐거나 아직 고시 전) · 직접 넣어도 된다'); return; }
         txOut(); })
-      .catch(function (e) { if (TX.o !== o) return; TX.offErr = '공시가격을 받지 못했다(' + (e && e.message || e) + ') · 직접 넣어도 된다'; txOut(); }); }
+      .catch(function (e) { if (TX.o !== o) return; txHpUse(o, '공시가격을 받지 못했다(' + (e && e.message || e) + ') · 직접 넣어도 된다'); }); }
   function txIn(k, lab, unit, ph) { var v = TX.v[k]; return '<label><span>' + esc(lab) + ' <i>' + esc(unit || '') + '</i></span><input type="number" inputmode="decimal" step="any" data-tx="' + k + '" value="' + (v == null ? '' : v) + '" placeholder="' + esc(ph || '') + '"></label>'; }
   function txChk(k, lab) { return '<label class="pchk"><input type="checkbox" data-tx="' + k + '"' + (TX.v[k] ? ' checked' : '') + '> ' + esc(lab) + '</label>'; }
   function taxForm() {
@@ -3229,7 +3256,7 @@
     else if (o.kind === 'apt' && TX.tab !== 'hold') h += '<p class="desc">이 단지의 매매 실거래(24개월)가 자료에 없다 — 공시가격이나 직접 넣은 값으로 계산한다.</p>';
     h += '<h4>② 공시가격(시가표준액 · 보유세·상속 취득세의 기준)</h4>';
     if (o.land && !TX_ISH[c]) h += '<div class="rcard">' + row('개별공시지가 × 면적', '<b>' + txWon(o.land) + '</b> <em>(㎡당 ' + txWon(o.jiga) + ' × ' + Math.round(o.ar).toLocaleString() + '㎡)</em>') + '</div>';
-    if (of) h += '<div class="rcard">' + row(o.kind === 'house' ? '개별주택가격' : '공동주택가격', '<b>' + txWon(of.mid) + '</b>' + (of.n > 1 ? ' <em>(이 면적 ' + of.n + '호 · ' + txWon(of.min) + '~' + txWon(of.max) + ')</em>' : '') + ' · ' + esc(of.yr || '') + '년') + '</div>';
+    if (of) h += '<div class="rcard">' + row(o.kind === 'house' ? '개별주택가격' : '공동주택가격', '<b>' + txWon(of.mid) + '</b>' + (of.n > 1 ? ' <em>(이 면적 ' + of.n + '호 · ' + txWon(of.min) + '~' + txWon(of.max) + ')</em>' : '') + ' · ' + esc(of.yr || '') + '년' + (of.file ? ' <em>(' + TX.offSrc + ' — 2026년 공시는 브이월드 키로)</em>' : '')) + '</div>';
     else if (TX_ISH[c] && (o.pnu || o.ll)) h += '<p class="lg-n">' + (TX.offErr ? esc(TX.offErr) : '브이월드에서 받는 중…') + '</p>';
     if (TX.v.osum) h += '<p class="lg-n">✍ 공시가격 직접 넣음: ' + txWon(TX.v.osum * 1e4) + '</p>';
     var pk = [['min', '후보 최저'], ['mid', '후보 중앙'], ['max', '후보 최고'], ['last', '가장 최근'], ['off', '공시가격'], ['own', '직접']].filter(function (p) { return p[0] === 'own' || (p[0] === 'off' ? (of || o.land || TX.v.osum) : cs); });
@@ -4094,6 +4121,17 @@
       dgGet('1613000/DmstcFlightNvgInfo/GetFlightOpratInfoList', '&_type=json&numOfRows=100&pageNo=1&depAirportId=' + dep + '&arrAirportId=' + a[0] + '&depPlandTime=' + d).then(function (j) { if (TR !== T) return;
         trItems(j).forEach(function (x) { var t = String(x.depPlandTime); T.air.rows.push({ t: t.slice(8, 10) + ':' + t.slice(10, 12), to: a[1], al: x.airlineNm || '', no: x.vihicleId || '' }); }); }).catch(function () {})
         .then(function () { if (TR !== T) return; if (--T.air.left <= 0) T.air.busy = 0; T.air.rows.sort(function (p, q) { return p.t < q.t ? -1 : 1; }); trPaint(); }); }); }
+  var TRTM = {};   // 터미널 목록(고속 · 시외)
+  var TRX = { exp: ['고속버스', '1613000/ExpBusInfo/GetExpBusTrminlList', '1613000/ExpBusInfo/GetStrtpntAlocFndExpbusInfo'], sub: ['시외버스', '1613000/SuburbsBusInfo/GetSuberbsBusTrminlList', '1613000/SuburbsBusInfo/GetStrtpntAlocFndSuberbsBusInfo'] };
+  function trExp(kind) { var T = TR; T.exp = { kind: kind, dep: '', arr: '', rows: null, busy: !TRTM[kind] }; trPaint();
+    (TRTM[kind] ? Promise.resolve(TRTM[kind]) : dgGet(TRX[kind][1], '&_type=json&numOfRows=1000&pageNo=1').then(function (j) { var seen = {}; TRTM[kind] = trItems(j).filter(function (x) { if (seen[x.terminalId]) return false; seen[x.terminalId] = 1; return true; }).map(function (x) { return [x.terminalId, x.terminalNm, x.cityName || '']; }).sort(function (a, b) { return a[1] < b[1] ? -1 : 1; }); return TRTM[kind]; }))
+      .then(function (L) { if (TR !== T) return; var d = dongAtM(T.c), gn = d && d.k ? String(guName(d.k.slice(0, 5)) || '').replace(/(특별|광역)?시.*$|구$|군$/, '') : '', w = T.sd === '11' ? (kind === 'exp' ? '서울경부' : '동서울') : gn;
+        var hit = L.filter(function (t) { return w && t[1].indexOf(w) >= 0; })[0]; T.exp.dep = hit ? hit[0] : ''; T.exp.busy = 0; trPaint(); })
+      .catch(function (e) { if (TR === T) { T.exp.busy = 0; T.exp.err = trErr(e); trPaint(); } }); }
+  function trExpGo() { var T = TR, E = T.exp; if (!E.dep || !E.arr) return; E.busy = 1; E.rows = null; trPaint();
+    dgGet(TRX[E.kind][2], '&_type=json&numOfRows=200&pageNo=1&depTerminalId=' + E.dep + '&arrTerminalId=' + E.arr + '&depPlandTime=' + ymd(new Date())).then(function (j) { if (TR !== T || T.exp !== E) return;
+      E.rows = trItems(j).map(function (x) { var a = String(x.depPlandTime), b = String(x.arrPlandTime || ''); return { t: a.slice(8, 10) + ':' + a.slice(10, 12), at: b ? b.slice(8, 10) + ':' + b.slice(10, 12) : '', gr: x.gradeNm || '', fee: +x.charge || 0 }; }).sort(function (p, q) { return p.t < q.t ? -1 : 1; }); E.busy = 0; trPaint(); })
+      .catch(function (e) { if (TR === T) { E.busy = 0; E.err = trErr(e); trPaint(); } }); }
   function trPaint() {
     var el = $('m2dTr'); if (!el || !TR || !el.classList.contains('on')) return; var T = TR, h = '<div class="lg-h"><b>🚏 여기 대중교통</b><span><button data-tx="min">▾ 접기</button> <button data-tx="x">닫기</button></span></div>';
     h += '<p class="lg-n">지점 ' + T.ll[1].toFixed(5) + ', ' + T.ll[0].toFixed(5) + ' · 실시간 값은 누를 때마다 새로 받는다(도착은 30초마다 저절로)</p>';
@@ -4125,6 +4163,18 @@
       h += '<p class="lg-n"><b>' + esc(R0.nm) + '</b>역 — ' + esc(R0.d.slice(0, 4) + '-' + R0.d.slice(4, 6) + '-' + R0.d.slice(6)) + ' <b>실제 운행</b> 시각 가운데 지금(' + nowt + ') 뒤 열차 · 한국철도공사 운행정보는 하루 뒤 공개라 오늘 시간표와 다를 수 있다 · 이날 ' + R0.rows.length + '회 정차</p>';
       h += nx.length ? '<div class="trrow wrap">' + nx.map(function (x) { return '<span class="trc"><b>' + x.t + '</b><i>' + esc(x.ln) + '</i><small>' + x.ud + ' · ' + esc(x.no) + '</small></span>'; }).join('') + '</div>' : '<div class="nil">이 시각 뒤 열차가 없다(또는 역 이름이 다르다).</div>'; }
     else h += '<p class="lg-n">역을 누르면 그 역의 열차 시각(한국철도공사 운행정보)을 받는다.</p>';
+    // 🚍
+    var E0 = T.exp; h += '<h4>🚍 고속·시외버스 오늘 시간표</h4><div class="lg-btns"><button data-trx="exp" class="' + (E0 && E0.kind === 'exp' ? 'on' : '') + '">고속버스</button><button data-trx="sub" class="' + (E0 && E0.kind === 'sub' ? 'on' : '') + '">시외버스</button></div>';
+    if (E0) { var TL = TRTM[E0.kind];
+      if (E0.err) h += '<p class="lg-n">' + esc(E0.err) + '</p>';
+      if (!TL) h += '<p class="lg-n">터미널 목록 받는 중…</p>';
+      else { var opt = function (v) { return '<option value="">(고르기)</option>' + TL.map(function (t) { return '<option value="' + t[0] + '"' + (t[0] === v ? ' selected' : '') + '>' + esc(t[1]) + (t[2] ? ' · ' + esc(t[2].replace(/특별시|광역시|특별자치시|특별자치도|도$/, '')) : '') + '</option>'; }).join(''); };
+        h += '<div class="bizrow"><label>출발 <select data-trxd="dep">' + opt(E0.dep) + '</select></label><label>도착 <select data-trxd="arr">' + opt(E0.arr) + '</select></label></div>';
+        if (E0.busy) h += '<p class="lg-n">받는 중…</p>';
+        else if (E0.rows) { var dn3 = new Date(), nt3 = ('0' + dn3.getHours()).slice(-2) + ':' + ('0' + dn3.getMinutes()).slice(-2), ex = E0.rows.filter(function (x) { return x.t >= nt3; });
+          h += '<p class="lg-n">오늘 ' + E0.rows.length + '편 · 남은 ' + ex.length + '편 <em>(TAGO ' + esc(TRX[E0.kind][0]) + ' 정보 · 계획 시각 · 매진 여부는 없다)</em></p>' + (ex.length ? '<div class="trrow wrap">' + ex.slice(0, 16).map(function (x) { return '<span class="trc"><b>' + x.t + '</b><i>' + esc(x.gr) + '</i><small>' + (x.at ? x.at + ' 도착 · ' : '') + (x.fee ? x.fee.toLocaleString() + '원' : '') + '</small></span>'; }).join('') + '</div>' : '<div class="nil">오늘 남은 편이 없다(또는 이 두 터미널 사이 노선이 없다).</div>'); }
+        else h += '<p class="lg-n">출발·도착 터미널을 고르면 오늘 시간표를 받는다.</p>'; } }
+    else h += '<p class="lg-n">고속·시외를 고르면 이 지점 시군구 이름으로 출발 터미널을 먼저 고른다.</p>';
     // ✈
     var A0 = T.air; h += '<h4>✈ 국내선 오늘 출발편</h4><div class="lg-btns">' + TRAP.map(function (a) { return '<button data-tra="' + a[0] + '" class="' + (A0.dep === a[0] ? 'on' : '') + '">' + a[1] + '</button>'; }).join('') + '</div>';
     if (A0.busy && !A0.rows.length) h += '<p class="lg-n">항공편 받는 중…</p>';
@@ -4133,7 +4183,7 @@
       h += fx.length ? '<div class="trrow wrap">' + fx.map(function (x) { return '<span class="trc"><b>' + x.t + '</b><i>→ ' + esc(x.to) + '</i><small>' + esc(x.al) + ' ' + esc(x.no) + '</small></span>'; }).join('') + '</div>' : '<div class="nil">오늘 남은 출발편이 없다.</div>'; }
     else if (A0.rows) h += '<div class="nil">오늘 운항 정보가 없다.</div>';
     else h += '<p class="lg-n">공항을 누르면 오늘 출발편(TAGO 국내항공운항정보 · 계획 시각)을 받는다.</p>';
-    h += '<small class="lg-n">출처: 국토교통부 TAGO(버스정류소·버스도착·버스위치·지하철·국내항공운항) · 한국철도공사 열차운행정보 · 공공데이터포털 — 키는 이 기기에만 있고, 받은 실시간 값은 저장하지 않는다.</small>';
+    h += '<small class="lg-n">출처: 국토교통부 TAGO(버스정류소·버스도착·버스위치·지하철·고속버스·시외버스·국내항공운항) · 한국철도공사 열차운행정보 · 공공데이터포털 — 키는 이 기기에만 있고, 받은 실시간 값은 저장하지 않는다.</small>';
     el.innerHTML = h; }
   function drawTr(dark) { if (!TR || !$('m2dTr') || !$('m2dTr').classList.contains('on')) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, sc = S(TR.c);
     ctx.beginPath(); ctx.arc(sc[0], sc[1], 7, 0, Math.PI * 2); ctx.fillStyle = '#111827'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke();
@@ -4146,13 +4196,14 @@
   setInterval(function () { if (!TR || document.hidden || !$('m2dTr') || !$('m2dTr').classList.contains('on')) return; if (TR.bus && TR.bus.stops) TR.bus.stops.forEach(function (st) { if (st.arr && !st.busy) trArr(st); }); if (TR.loc && !TR.loc.busy) trLoc(TR.loc.city, TR.loc.rid, TR.loc.no); }, 30000);
   setInterval(function () { if (TR && $('m2dTr') && $('m2dTr').classList.contains('on') && !document.hidden) trPaint(); }, 20000);
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-trhere]'); if (!b) return; var a = b.getAttribute('data-trhere').split(','); trOpen(P(+a[0], +a[1])); });
-  if ($('m2dTr')) $('m2dTr').addEventListener('click', function (e) { var el = $('m2dTr'), b = e.target.closest('[data-tx],[data-tsa],[data-tsl],[data-trl],[data-tra]'); if (!b) { if (el.classList.contains('min')) el.classList.remove('min'); return; }
+  if ($('m2dTr')) $('m2dTr').addEventListener('click', function (e) { var el = $('m2dTr'), b = e.target.closest('[data-tx],[data-tsa],[data-tsl],[data-trl],[data-tra],[data-trx]'); if (!b) { if (el.classList.contains('min')) el.classList.remove('min'); return; }
     var x = b.getAttribute('data-tx');
     if (x === 'x') { el.classList.remove('on'); document.body.classList.remove('tron'); TR = null; draw(); return; } if (x === 'min') { e.stopPropagation(); el.classList.toggle('min'); return; }
     if (x === 'key') { lkSet('dgk', '공공데이터포털'); if (LK.dgk && TR) { trBus(); trSub(); } trPaint(); return; } if (x === 'locx') { TR.loc = null; trPaint(); draw(); return; }
     var i = b.getAttribute('data-tsa'); if (i != null) { var st = TR.bus.stops[+i]; if (st) trArr(st); return; }
     var l = b.getAttribute('data-tsl'); if (l) { var p = l.split('|'); trLoc(p[0], p[1], p[2]); return; }
-    var r = b.getAttribute('data-trl'); if (r) { trRail(r); return; } var a = b.getAttribute('data-tra'); if (a) { trAir(a); return; } });
+    var r = b.getAttribute('data-trl'); if (r) { trRail(r); return; } var a = b.getAttribute('data-tra'); if (a) { trAir(a); return; } var xk = b.getAttribute('data-trx'); if (xk) { trExp(xk); return; } });
+  if ($('m2dTr')) $('m2dTr').addEventListener('change', function (e) { var w = e.target.getAttribute('data-trxd'); if (!w || !TR || !TR.exp) return; TR.exp[w] = e.target.value; TR.exp.rows = null; trExpGo(); if (!TR.exp.busy) trPaint(); });
 
   function drawBiz(dark) {   // v1.1.0 고른 업종의 점수 분포 — 상권 다각형을 점수 색으로 칠하고, 상권마다 점수 원 · 상위 3은 순위
     if (!document.body.classList.contains('bizon')) return; if (BIZ.gg) { drawGgz(dark); return; } if (!BIZ.res.length) return; var R = BIZ.res, byCd = {}, W0 = cv.clientWidth, H0 = cv.clientHeight;
@@ -4461,6 +4512,13 @@
     v.dlvfee = sal && ch && ch[2] > 0 && dc ? Math.min(60, Math.round(dc * 12 / 1e4 * (dshare || 1) / (sal * ch[2] / 100) * 1000) / 10) : 0;
     var wg = krAvg('wage', R), mw = rv('min_wage'), W = 52 / 12, hEq = wg ? wg * 1e4 / 12 / (mw * (1 + empRate())) : 0;
     v.wage = mw; if (hEq > 0) { v.staffN = Math.max(1, Math.round(hEq / W / 1.2 / 40 + 0.4)); v.staffH = Math.round(Math.min(40, hEq / W / 1.2 / v.staffN)); } else { v.staffN = 0; v.staffH = 0; }
+    // v2.72.0 KREI 표115 근로자 수 × 표119 근로시간 × 표123 근로일수(코워크 2026-10-07 원문 확인) — 있으면 이것으로(대표 1명·무급가족 빼고 · 근로형태별 사람 수로 평균)
+    PSRC.staffN = 'KREI 표98 인건비를 최저시급 시간으로'; PSRC.staffH = '같은 환산';
+    var wkr = kr('workers', R), whr = kr('work_hours', R), wdr = kr('work_days', R);
+    if (wkr && whr && wdr) { var cnt0 = [Math.max(0, (+wkr[1] || 0) - 1), +wkr[2] || 0, +wkr[3] || 0, +wkr[4] || 0, +wkr[5] || 0, +wkr[6] || 0], Hs = 0, Ns = 0;
+      for (var wi = 0; wi < 6; wi++) { var hh0 = +whr[wi + 1], dd0 = +wdr[wi + 1]; if (cnt0[wi] > 0 && hh0 > 0 && dd0 > 0) { Hs += cnt0[wi] * hh0 * dd0; Ns += cnt0[wi]; } }
+      if (Ns > 0) { v.staffN = Math.max(1, Math.round(Ns)); v.staffH = Math.round(Hs / Ns / W * 10) / 10; PSRC.staffN = 'KREI 표115 근로자 수 평균 ' + (Math.round(Ns * 100) / 100) + '명(대표 1명·무급가족 빼고) → 반올림'; PSRC.staffH = 'KREI 표119 근로시간 × 표123 근로일수 ÷ 4.35주 = 1인 한 달 ' + Math.round(Hs / Ns) + '시간(근로형태별 사람 수로 평균 · 「1일」 표기 없어 1일 기준으로 읽음 — 추정 단위)' + (v.staffH > 52 ? ' · 주 52시간 넘음 — 5인 이상이면 연장근로 1주 12시간 한도(근로기준법 제53조)' : ''); }
+      else { v.staffN = 0; v.staffH = 0; } }
     v.own = 1; v.fam = 0;
     var hol = kr('holiday', R); v.open = 10; v.close = Math.round((10 + (v.hours || 0)) * 10) / 10; v.brk = 0; v.rest = hol && hol[1] >= 50 ? 1 : 0; v.prep = 60; v.ownH = Math.round(((v.hours || 0) + 1) * 10) / 10;   // v2.36.0 사장 일정 — 영업시간·휴무는 KREI, 여는 시각·준비 시간은 가정
     ['c_util', 'c_net', 'c_clean', 'c_ins', 'c_acct', 'c_sup', 'c_ad', 'c_fix', 'c_etc'].forEach(function (q) { v[q] = 0; }); v.c_tax = krAvg('tax', R) ? Math.round(krAvg('tax', R) / 12 * 10) / 10 : 0; v.useItem = 0;

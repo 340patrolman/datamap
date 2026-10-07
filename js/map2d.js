@@ -1023,7 +1023,7 @@
       var sz2 = D.sz ? D.sz.zones.filter(function (z) { var q = P(z.lon, z.lat); return inPoly(d, q); }).length : 0; if (D.sz) h += row('어린이보호구역', sz2 + '곳');
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
-      h += facRows('11650', d.name, null);
+      h += facRows('11650', d.name, null); h += cctRows(d);
       h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -1977,7 +1977,7 @@
     else if (gg) h += '<p class="desc">' + esc(sidoOf(d.gcd)) + ' 동 — 이 지역은 <b>전국 공통 자료</b>만 있다(주민 연령·남녀·상가·실거래·사고·집계구·교차로 이름). 생활인구·카드 매출(서울시)·경기데이터드림 자료는 그 지역에만 있어 여기에는 없다.</p>';
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
-    h += facRows(d.gcd, d.name, d.k);
+    h += facRows(d.gcd, d.name, d.k); h += cctRows(d);
     h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
@@ -2298,6 +2298,31 @@
       if (il.length) h += row('상권에 많은 업종', il.map(esc).join(' · '));
       h += '<p class="cap">' + esc(T.source) + ' · ' + esc(T.note) + '</p>'; }
     return h; }
+
+  // ---------- v2.83.0 👶 어린이집·유치원 유형별(소유자 「병설유치원·구립·시립·직장 어린이집 등 동네 수요와 상관없는 것이 생겼는지 · 사립과 공립으로 · 직장 어린이집은 거의 제외」 · r/<구>/cct.json ← tools/region/cctype-bake.py) ----------
+  var CCT = {}, CCC = { '국공립': '#2563eb', '직장': '#94a3b8', '민간': '#f59e0b', '가정': '#fbbf24', '법인·단체': '#a78bfa', '공립(병설)': '#60a5fa', '공립(단설)': '#1d4ed8', '사립': '#f97316', '사립(사인)': '#f97316', '사립(법인)': '#fb923c', '국립': '#0f172a' };
+  function stackCols(Y, G, data, title) { var tot = Y.map(function (_, i) { return G.reduce(function (a, g) { return a + (data[g] ? data[g][i] : 0); }, 0); }), mx = Math.max.apply(null, tot.concat([1]));
+    return '<div class="vz"><div class="cap">' + esc(title) + '</div><div class="scol">' + Y.map(function (y, i) { return '<div title="' + y + ' · ' + G.map(function (g) { return g + ' ' + (data[g] ? data[g][i] : 0); }).join(' · ') + '"><span class="st">' + G.map(function (g) { var v = data[g] ? data[g][i] : 0; return v ? '<i style="height:' + (v / mx * 100).toFixed(1) + '%;background:' + CCC[g] + '"></i>' : ''; }).reverse().join('') + '</span><b>' + tot[i] + '</b><small>\'' + String(y).slice(2) + '</small></div>'; }).join('') + '</div><div class="hk">' + G.map(function (g) { return '<i style="background:' + CCC[g] + '"></i>' + esc(g); }).join(' ') + '</div></div>'; }
+  function cctRows(d) { var gu = d && (d.gcd || (d.k && d.k.slice(0, 5))); if (!gu || !d.k || (gu.slice(0, 2) !== '11' && gu.slice(0, 2) !== '41')) return '';
+    if (CCT[gu] === undefined) { CCT[gu] = null; rGet(gu, 'cct.json').then(function (j) { CCT[gu] = j; }).catch(function () { CCT[gu] = false; }).then(function () { if (sel && sel.it && sel.it.kind === 'dong') show(sel.it); }); return ''; }
+    var J = CCT[gu]; if (!J) return ''; var x = J.dong[d.k]; if (!x) return '';
+    var h = '<div class="dh">👶 어린이집·유치원 — 유형별 <small style="font-weight:600;color:var(--ink2)">(동네 수요로 생기는 것 vs 정책·직장으로 생기는 것)</small></div>';
+    if (x.cc) { var Y = J.ccYears, L = Y.length - 1, sum = function (gs, i) { return gs.reduce(function (a, g) { return a + x.cc[g][i]; }, 0); }, pv = sum(['민간', '가정'], 0), pn = sum(['민간', '가정'], L), gv = x.cc['국공립'][0], gn = x.cc['국공립'][L], wk = x.cc['직장'][L];
+      h += '<div class="tkpi"><span><em>🏠</em><small>민간·가정(동네 수요로 생김)</small><b>' + pn + '곳</b><u>' + Y[0] + ' ' + pv + ' → ' + (pn - pv >= 0 ? '+' : '') + (pn - pv) + '</u></span><span><em>🏛</em><small>국공립(구립·시립 — 정책)</small><b>' + gn + '곳</b><u>' + Y[0] + ' ' + gv + ' → ' + (gn - gv >= 0 ? '+' : '') + (gn - gv) + '</u></span><span><em>🏢</em><small>직장(동네 수요와 무관 · 뺌)</small><b>' + wk + '곳</b></span><span><em>🤝</em><small>법인·단체·협동</small><b>' + x.cc['법인·단체'][L] + '곳</b></span></div>';
+      h += stackCols(Y, ['국공립', '민간', '가정', '법인·단체', '직장'], x.cc, '어린이집 해마다 운영 수(그해 말) — 유형별');
+      var say = '동네 수요로 생기는 민간·가정 어린이집은 ' + Y[0] + '년 ' + pv + '곳 → ' + Y[L] + '년 ' + pn + '곳(' + (pn - pv >= 0 ? '+' : '') + (pn - pv) + ')';
+      if (gn - gv > 0) say += ' · 같은 기간 국공립이 ' + (gn - gv) + '곳 늘었다 — 정책으로 생긴 것이라 동네 아이 수요가 늘었다는 뜻이 아니다' + (pn < pv ? '(오히려 국공립이 민간·가정 아이를 흡수했을 수 있다)' : '');
+      if (wk) say += ' · 직장 어린이집 ' + wk + '곳은 그 일터 아이라 동네 수요에서 뺐다';
+      h += '<p class="desc">' + esc(say) + '</p>';
+      var ev = []; Y.forEach(function (y, i) { var o = [], c = []; J.ccGroups.forEach(function (g) { if (x.cco[g][i]) o.push(g + ' ' + x.cco[g][i]); if (x.ccc[g][i]) c.push(g + ' ' + x.ccc[g][i]); }); if (o.length || c.length) ev.push(row(String(y), (o.length ? '<b style="color:#16a34a">생김</b> ' + esc(o.join(' · ')) : '') + (o.length && c.length ? ' / ' : '') + (c.length ? '<b style="color:#dc2626">없어짐</b> ' + esc(c.join(' · ')) : ''))); });
+      if (ev.length) h += '<details class="rel"><summary>📅 해마다 생기고 없어진 어린이집 <small>' + ev.length + '해 · 유형별</small></summary><div class="rcard">' + ev.join('') + '</div></details>'; }
+    if (x.kg) { var KY = J.kgYears, K2 = KY.length - 1, pr0 = x.kg['사립'][0], prN = x.kg['사립'][K2], pb0 = x.kg['공립(병설)'][0], pbN = x.kg['공립(병설)'][K2];
+      h += stackCols(KY, ['공립(병설)', '공립(단설)', '사립'], x.kg, '유치원 해마다 수(서울시교육청 목록) — 공립 병설·단설 · 사립');
+      h += '<p class="desc">' + esc('사립 유치원 ' + KY[0] + ' ' + pr0 + ' → ' + KY[K2] + ' ' + prN + ' · 공립 병설(초등학교에 딸림 — 정책) ' + pb0 + ' → ' + pbN + (pbN > pb0 && prN < pr0 ? ' — 병설이 늘고 사립이 줄었다: 아이 수요보다 정책의 몫이 크다' : '')) + '</p>'; }
+    if (x.kgn) { var tN = J.kgGroups.reduce(function (a, g) { return a + (x.kgn[g] || 0); }, 0);
+      if (tN) { h += '<div class="tkpi">' + J.kgGroups.filter(function (g) { return x.kgn[g]; }).map(function (g) { return '<span><em>' + (/사립/.test(g) ? '🏫' : '🏛') + '</em><small>유치원 ' + esc(g) + '</small><b>' + x.kgn[g] + '곳</b></span>'; }).join('') + '</div>';
+        h += stackCols(J.kgYears, J.kgGroups.filter(function (g) { return x.kgo && x.kgo[g] && x.kgo[g].some(Boolean); }), x.kgo || {}, '지금 문 연 유치원의 개원 해(문 닫은 곳은 자료에 없다)'); } }
+    return h + '<p class="src">' + esc(J.source) + ' · ' + esc(J.note) + '</p>'; }
 
   function facRows(gcd, nm, k8) {   // 동 카드 아래 「동 현황」 — 소유자 2026-10-04 「상권이 살아나는지 죽는지 · 남녀 · 경로당·어린이집·유치원·입시학원」
     var F = RFAC[gcd]; if (!F) { fLoad(gcd, function () { if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }); return '<p class="desc">동 현황(남녀·시설·상권 추이)을 읽는 중…</p>'; }
@@ -3255,7 +3280,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.82.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.83.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }

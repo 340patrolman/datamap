@@ -224,11 +224,13 @@
   function jnCard(it) { var t = it.t;
     var h = '<h3>🏷 ' + esc(t[0]) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(JTY[t[3]] || '') + '</small></h3>';
     h += row('만나는 도로', t[5] ? esc(t[5]).replace(/·/g, ' · ') : '<em>(이름 있는 도로 없음)</em>') + row('가장 큰 도로', esc(RKN[t[4]] || '-')) + row('자리', t[2].toFixed(5) + ', ' + t[1].toFixed(5));
-    var on2 = osmNear(P(t[1], t[2]), t[0]); if (on2.length) h += row('다른 이름', esc(on2.join(' · ')) + ' <em>(바탕 지도 OSM·서울 C-ITS 이름 — 같은 자리를 다르게 부른다 · 현장 이름을 알면 알려 주세요)</em>');
+    if (t[7]) h += row('이름 출처', esc(t[7] === 'ITS' ? 'ITS 표준노드링크' : t[7]) + (t[6] && t[6] !== t[0] ? ' <em>(ITS 이름 「' + esc(t[6]) + '」 은 가까운 건물·가게 이름이라 바꿨다)</em>' : ''));
+    if (t[8]) h += row('신호 교차로 이름', esc(t[8]) + ' <em>(경찰 T-GIS · 경찰청 교차로계획 · 서울 C-ITS — 같은 자리 40m 안)</em>');
+    var on2 = osmNear(P(t[1], t[2]), t[0]).filter(function (x) { return x !== t[6] && (t[8] || '').split(' · ').indexOf(x) < 0; }); if (on2.length) h += row('다른 이름', esc(on2.join(' · ')) + ' <em>(바탕 지도 OSM — 같은 자리를 다르게 부른다 · 현장 이름을 알면 알려 주세요)</em>');
     h += '<div class="lg-btns"><button data-radhere="' + t[1].toFixed(5) + ',' + t[2].toFixed(5) + '">📐 여기서 반경 분석</button></div>';
     return h + '<p class="desc">' + esc(JCN.note || '교차로 이름은 표준노드링크를 만드는 기관이 붙인 이름이다 — 이름난 교차로가 아니면 가까운 건물·학교 이름이 붙어 있다.') + '</p>' + src(JCN.src || '국가교통정보센터(ITS) 전국 표준노드링크'); }
   function rdCard(it) { var t = it.t;
-    return '<h3>🛣 ' + esc(t[0]) + '</h3>' + row('도로 등급', esc(RKN[t[4]] || '-')) + (it.g ? row('시군구', esc(it.g)) : '') + '<p class="desc">도로 이름은 표준노드링크 구간(링크)의 도로명이다 — 「…길」은 그 대로에서 갈라진 작은 길.</p>' + src(JCN.src || '국가교통정보센터(ITS) 전국 표준노드링크'); }
+    return '<h3>🛣 ' + esc(t[6] === 'osm' && t[5] ? t[5] : t[0]) + '</h3>' + (t[5] ? row('다른 이름', esc(t[6] === 'osm' ? t[0] + ' (ITS 노선·구간 이름)' : t[5] + ' (도로명주소)')) : '') + row('도로 등급', esc(RKN[t[4]] || '-')) + (it.g ? row('시군구', esc(it.g)) : '') + '<p class="desc">도로 이름은 표준노드링크 구간(링크)의 도로명이다 — 「…길」은 그 대로에서 갈라진 작은 길.</p>' + src(JCN.src || '국가교통정보센터(ITS) 전국 표준노드링크'); }
   function jidxLoad() { if (JIDX) return Promise.resolve(JIDX); if (JIDXP) return JIDXP;
     JIDXP = fetch('data/r/jcnm-idx.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { JIDX = j; return j; }).catch(function () { JIDXP = null; return null; }); return JIDXP; }
   var RLOADI = {}, ITSL = [], RLOADC = {}, CCB = [], CCLIVE = null;   // v1.7.0 ITS 도로 선(v2.3.1 RLOADS → RLOADI — 안전 파일 RLOADS 와 이름이 겹쳐 한쪽을 받으면 다른 쪽을 안 받았다) · CCTV 목록(구운 것)
@@ -1615,9 +1617,9 @@
         ctx.fillStyle = dark ? '#fef3c7' : t[3] === 6 ? '#0f766e' : t[3] === 4 ? '#6b21a8' : t[4] <= 3 ? '#7c2d12' : '#334155'; ctx.fillText(t[0], q[0], q[1] - 11);
         hit.push({ x: q[0], y: q[1] - 6, r: 10, it: { kind: 'jcnm', t: t } }); }
       var nr = 0; for (var ri = 0; ri < RDN.length && nr < 70; ri++) { var Rd = RDN[ri], rt = Rd.t, rneed = rt[4] <= 2 ? 0.02 : rt[4] <= 3 ? 0.04 : rt[4] <= 4 ? 0.07 : rt[4] <= 6 ? 0.1 : 0.18; if (s < rneed) continue;
-        var rq = S(Rd.p); if (rq[0] < -40 || rq[0] > W + 40 || rq[1] < -20 || rq[1] > H + 20) continue; var rk2 = rt[0], rl = seen[rk2]; if (rl && rl.some(function (o) { return Math.hypot(o[0] - rq[0], o[1] - rq[1]) < 220; })) continue;
+        var rq = S(Rd.p); if (rq[0] < -40 || rq[0] > W + 40 || rq[1] < -20 || rq[1] > H + 20) continue; var rk2 = rt[6] === 'osm' ? rt[5] : rt[0], rl = seen[rk2];   // v2.88.0 한 길에 이름 하나 — 도로명주소(OSM)·노선 통칭(ITS) 중 고른 쪽(tools/region/road-audit.py) if (rl && rl.some(function (o) { return Math.hypot(o[0] - rq[0], o[1] - rq[1]) < 220; })) continue;
         var rfs = rt[4] <= 3 ? 12 : 11; ctx.font = '700 ' + rfs + 'px system-ui, sans-serif'; var rtw = ctx.measureText(rk2).width, ra = Rd.a;
-        var rhw = Math.abs(Math.cos(ra)) * rtw / 2 + 6, rhh = Math.abs(Math.sin(ra)) * rtw / 2 + 7; if (!free(rq[0] - rhw, rq[1] - rhh, rhw * 2, rhh * 2)) continue; (seen[rk2] = seen[rk2] || []).push(rq); nr++;
+        var rhw = Math.abs(Math.cos(ra)) * rtw / 2 + 6, rhh = Math.abs(Math.sin(ra)) * rtw / 2 + 7; if (!free(rq[0] - rhw, rq[1] - rhh, rhw * 2, rhh * 2)) continue; (seen[rk2] = seen[rk2] || []).push(rq); if (rt[5]) { var rk3 = rk2 === rt[5] ? rt[0] : rt[5]; (seen[rk3] = seen[rk3] || []).push(rq); } nr++;   // 다른 이름 이름표(바탕 OSM)는 이 근처에 다시 안 찍는다
         ctx.save(); ctx.translate(rq[0], rq[1]); ctx.rotate(ra); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3.2; ctx.strokeStyle = dark ? 'rgba(15,22,36,.9)' : 'rgba(255,255,255,.95)'; ctx.strokeText(rk2, 0, 0);
         ctx.fillStyle = dark ? '#bfdbfe' : '#1e3a8a'; ctx.fillText(rk2, 0, 0); ctx.restore(); }
     }
@@ -1725,7 +1727,8 @@
   var H10C = { '보행자': '#2563eb', '보행노인': '#7c3aed', '보행어린이': '#ca8a04', '자전거': '#16a34a', '이륜차': '#dc2626', '화물차': '#78350f', '결빙': '#0891b2', '지자체별(전체)': '#475569' };
   function flowCard(it) {
     if (it.kind === 'jct') { var o = it.o, r = o.r, J = o.m, a19 = 0; for (var i9 = 3; i9 < 10; i9++) a19 += r[3][i9];
-      return '<h3>🚦 ' + esc(r[0]) + '</h3>' + row('사고 2016~2025', o.t.toLocaleString() + '건 <em>· 해마다 평균 ' + Math.round(o.t / 10) + '</em>') + row('2019~2025', a19.toLocaleString() + '건') +
+      var rOrig = typeof r[r.length - 1] === 'string' && r[r.length - 1].indexOf('원래:') === 0 ? r[r.length - 1].slice(3) : '';
+      return '<h3>🚦 ' + esc(r[0]) + '</h3>' + (rOrig ? row('다른 이름', esc(rOrig) + ' <em>(이 사고 자료가 붙인 이름 — 지도 교차로 이름으로 맞췄다)</em>') : '') + row('사고 2016~2025', o.t.toLocaleString() + '건 <em>· 해마다 평균 ' + Math.round(o.t / 10) + '</em>') + row('2019~2025', a19.toLocaleString() + '건') +
         row('사람', '사망 ' + r[4] + '명 · 중상 ' + r[5] + '명 · 보행자 피해 ' + r[6] + '건') + row('밤(20~6시)', Math.round(r[7] / Math.max(1, o.t) * 100) + '%') +
         (r[8].length ? row('주 법규위반', r[8].map(function (v) { return esc(v[0]) + ' ' + v[1]; }).join(' · ') + ' <em>(칸마다 주 위반의 합 — 근사)</em>') : '') +
         '<div class="cap">해마다 교통사고 건수(건 · 2016~2025 · 교차로 가운데 70m 안 100m 칸)</div>' + bar(r[3], '#ea580c', LB_Y16) + '<p class="desc">' + esc(J.note) + '</p>' + src(J.source); }
@@ -3291,7 +3294,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.87.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.88.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4180,9 +4183,9 @@
     OSMN.filter(function (r) { return r.name.indexOf(q) >= 0; }).sort(function (a, b) { return (a.name === q ? 0 : 1) - (b.name === q ? 0 : 1) || a.name.length - b.name.length; }).forEach(function (r) { if (r.name.indexOf(q) >= 0 && !c.some(function (x) { return x.rn === r.name; })) c.push({ p: r.p, it: { kind: 'osmroad', r: r }, rn: r.name }); });
     if (PUB) { ['er', 'hosp', 'phar', 'heat', 'cold', 'bus', 'subr', 'bike', 'sigx', 'drunk'].forEach(function (k) { PUB[k].forEach(function (x) { if ((x.name || '').indexOf(q) >= 0 || (k === 'sigx' && x.o.no === q)) c.push({ p: x.p, it: { kind: 'pub', layer: k, q: x }, k: k }); }); });
       Object.keys(PUB.fac).forEach(function (k) { PUB.fac[k].forEach(function (x) { if (x.name && x.name.indexOf(q) >= 0) c.push({ p: x.p, it: { kind: 'pub', layer: k, q: x }, k: k }); }); }); }
-    if (JIDX) { var qn = q.replace(/\s/g, ''), jm = JIDX.j.filter(function (t) { return t[0].replace(/\s/g, '').indexOf(qn) >= 0; }).sort(function (a, b) { return (a[0] === q ? 0 : 1) - (b[0] === q ? 0 : 1) || a[4] - b[4] || a[0].length - b[0].length; });
-      jm.slice(0, 30).forEach(function (t) { c.push({ p: P(t[1], t[2]), it: { kind: 'jcnm', t: t }, k: 'jcnm' }); });
-      JIDX.r.filter(function (t) { return t[0] === q || (qn.length >= 2 && t[0].indexOf(qn) === 0); }).sort(function (a, b) { return (a[0] === q ? 0 : 1) - (b[0] === q ? 0 : 1) || a[0].length - b[0].length; }).slice(0, 10).forEach(function (t) { var g = rIdx().filter(function (x) { return x.gu === t[3]; })[0]; c.push({ p: P(t[1], t[2]), it: { kind: 'rdnm', t: [t[0], t[1], t[2], 0, t[4] || 0], g: g ? g.name : '' }, k: 'jcnm' }); }); }
+    if (JIDX) { var qn = q.replace(/\s/g, ''), jm = JIDX.j.filter(function (t) { return t[0].replace(/\s/g, '').indexOf(qn) >= 0 || (t[7] && String(t[7]).replace(/\s/g, '').indexOf(qn) >= 0); }).sort(function (a, b) { return (a[0] === q ? 0 : 1) - (b[0] === q ? 0 : 1) || a[4] - b[4] || a[0].length - b[0].length; });
+      jm.slice(0, 30).forEach(function (t) { c.push({ p: P(t[1], t[2]), it: { kind: 'jcnm', t: [t[0], t[1], t[2], t[3], t[4], t[5]].concat(t.length > 7 ? [t[7], t[8], t[9]] : []) }, k: 'jcnm' }); });   // 색인 꼬리(7~9)를 지도 jcnm 꼴(6~8)로
+      JIDX.r.filter(function (t) { return t[0] === q || (qn.length >= 2 && t[0].indexOf(qn) === 0) || (t[5] && (t[5] === q || (qn.length >= 2 && t[5].indexOf(qn) === 0))); }).sort(function (a, b) { return (a[0] === q ? 0 : 1) - (b[0] === q ? 0 : 1) || a[0].length - b[0].length; }).slice(0, 10).forEach(function (t) { var g = rIdx().filter(function (x) { return x.gu === t[3]; })[0]; c.push({ p: P(t[1], t[2]), it: { kind: 'rdnm', t: [t[0], t[1], t[2], 0, t[4] || 0, t[5], t[6]], g: g ? g.name : '' }, k: 'jcnm' }); }); }
     else if (!c.length) { var self = this; $('m2dFindMsg').textContent = '교차로·도로 이름 목록을 받는 중…'; jidxLoad().then(function (j) { if (j) self.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); else $('m2dFindMsg').textContent = '「' + q + '」 — 이 지도 자료에 없다'; }); return; }
     else jidxLoad();
     if (c.length && c[0].k && !on[c[0].k]) { on[c[0].k] = true; saveOn(); paintLayers(); }

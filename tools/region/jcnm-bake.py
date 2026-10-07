@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# ⚠ v2.88.0 다시 구우면 tools/region/jname-bake.py → tools/region/road-audit.py 순으로 이어서 돌린다(교차로·도로 이름 하나로)
 # 데이터 압축지도 v1.8.0 — 🏷 교차로 이름·도로 이름(서울·경기 전부) : 국가교통정보센터 전국 표준노드링크(MOCT_NODE · MOCT_LINK)
 #   원본: https://www.its.go.kr/nodelink/nodelinkRef → [날짜]NODELINKDATA.zip(공개 · 로그인 없음) → 풀어 둔 폴더를 SRC 로
 #   교차로 = MOCT_NODE 의 NODE_TYPE 101(교차로) · 104(교량·터널·지하차도 등 도로시설 시·종점) · 106(IC·연결로 접속부)

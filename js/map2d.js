@@ -29,7 +29,7 @@
     ['fuel', '⛽ 주유소', false, '생활시설', 0], ['ev', '🔌 전기차 충전', false, '생활시설', 0], ['pk', '🅿 주차장', false, '생활시설', 0],
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
     ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장 자리(전국 · OSM)', false, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
-    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0],
+    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0], ['hira', '🩺 병의원·약국(심평원 · 과목·전문의 · 전국)', false, '생활시설', 1],
     ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '날씨·계절', 0], ['hcab', '🔥 도로 열선 길', false, '날씨·계절', 0], ['advb', '❄ 제설 전진기지', false, '날씨·계절', 0],
     ['pbtn', '🚸 보행자작동신호기', false, '도로·교통', 0]
@@ -904,7 +904,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark); drawLore(dark); drawGgbrt(dark);
+    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark); drawLore(dark); drawGgbrt(dark); drawHira(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -1126,6 +1126,7 @@
     } else if (it.kind === 'lore') { h = loreCard(it.ids);
     } else if (it.kind === 'jmy') { h = jmyCard(it.e, it.link);
     } else if (it.kind === 'ggbrt') { h = ggbrtCard(it.s);
+    } else if (it.kind === 'hira') { h = hiraCard(it);
     } else if (it.kind === 'rone') { h = roneCard(it);
     } else if (it.kind === 'rally') {
       var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + r.from + '~' + r.to)) + row('자리', esc(r.p)) + row('신고 인원', (r.n || '-') + '명 <em>(신고값)</em>') + (r.approx ? row('자리 표시', '<em>근사</em> — ' + esc(r.note)) : '');
@@ -1242,6 +1243,32 @@
       (known.length ? vzPair(known.slice().sort(function (a, b) { return a[3] - b[3]; }).slice(0, 12).map(function (r) { return [r[0] + ' · ' + r[2], 60 / r[3], r[4] ? 60 / r[4] : 0]; }), ['첨두 시간당', '비첨두 시간당'], { color: '#d97706', fmt: function (v) { return (Math.round(v * 10) / 10) + '대'; } }) : '') + '</div>';
     h += '<details class="rel"><summary>🚌 노선 ' + R.length + '개 자세히 <small>배차·첫차·막차·기점→종점</small></summary><div class="rcard">' + R.slice().sort(function (a, b) { return (a[3] || 999) - (b[3] || 999); }).map(function (r) { return row(r[0] + ' (' + r[2] + ')', esc(r[1]) + ' · ' + (r[3] ? '첨두 ' + r[3] + '분' + (r[3] < 3 ? ' <b style="color:#b45309">⚠ 의심값</b>' : '') : '배차 모름') + (r[4] ? ' / 비첨두 ' + r[4] + '분' : '') + (r[5] ? ' · ' + esc(r[5]) + '~' + esc(r[6]) : '') + (r[7] ? ' <em>' + esc(r[7]) + ' → ' + esc(r[8]) + '</em>' : '')); }).join('') + '</div></details>';
     return h + src(GB.source + ' · ' + GB.collected + ' 수집 · ' + GB.note); }
+
+  // ---------- v2.76.0 🩺 병의원·약국(건강보험심사평가원 「전국 병의원 및 약국 현황」 · r/<구>/hira.json ← tools/region/hira-bake.py · 공공누리 출처표시) ----------
+  // 지방행정 인허가 병·의원 층(med · 개업·폐업 흐름)과 따로 — 이 층은 지금 문 연 곳의 진료과목·과목별 전문의·의사 수와 전국 약국
+  var HRP = {}, HRF = { h: true, p: true, sp: '' };
+  try { var hf = JSON.parse(localStorage.getItem('tg_map2d_hira') || 'null'); if (hf) HRF = hf; } catch (e) {}
+  function hrCol(t) { return /종합|상급/.test(t) ? '#dc2626' : /치과/.test(t) ? '#0891b2' : /한/.test(t) ? '#65a30d' : /요양|정신/.test(t) ? '#a16207' : /보건|조산/.test(t) ? '#475569' : t === '의원' ? '#2563eb' : '#7c3aed'; }
+  function hrLoad(gu) { if (HRP[gu]) return; var o = HRP[gu] = { j: null }; rGet(gu, 'hira.json').then(function (j) { var O = j.o, K = j.k; j.h.forEach(function (q) { q.p = P(O[0] + q[0] / K[0], O[1] + q[1] / K[1]); }); j.p.forEach(function (q) { q.p = P(O[0] + q[0] / K[0], O[1] + q[1] / K[1]); }); o.j = j; draw(); legend(); }).catch(function () { o.j = false; }); }
+  function hrSpOk(j, q) { if (!HRF.sp) return true; var i = j.specs.indexOf(HRF.sp); return i >= 0 && q[7].some(function (x) { return x[0] === i; }); }
+  function drawHira(dark) { if (!on.hira || view.s < 0.03) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, v0 = viewLL();
+    rIdx().forEach(function (g) { var x = g.box; if (!(g.bytes || {}).hira || x[2] < v0[0] || x[0] > v0[2] || x[3] < v0[1] || x[1] > v0[3]) return; hrLoad(g.gu); });
+    Object.keys(HRP).forEach(function (gu) { var j = HRP[gu].j; if (!j) return;
+      if (HRF.p && !HRF.sp) j.p.forEach(function (q) { var sx = S(q.p); if (sx[0] < -10 || sx[1] < -10 || sx[0] > W0 + 10 || sx[1] > H0 + 10) return; var r = (view.s >= 0.08 ? 3.6 : 2.6) * zk(); ctx.fillStyle = '#16a34a'; ctx.fillRect(sx[0] - r, sx[1] - r, r * 2, r * 2); ctx.lineWidth = 1; ctx.strokeStyle = '#fff'; ctx.strokeRect(sx[0] - r, sx[1] - r, r * 2, r * 2); hit.push({ x: sx[0], y: sx[1], r: Math.max(r, 8), it: { kind: 'hira', j: j, ph: q } }); });
+      if (HRF.h) j.h.forEach(function (q) { if (!hrSpOk(j, q)) return; var sx = S(q.p); if (sx[0] < -10 || sx[1] < -10 || sx[0] > W0 + 10 || sx[1] > H0 + 10) return; dot(q.p, Math.min(9, (view.s >= 0.08 ? 3.8 : 2.8) + Math.sqrt(q[4] || 0) * 0.5), hrCol(j.types[q[2]]), '#fff', { kind: 'hira', j: j, hs: q }); }); }); }
+  function hiraLegend() { var any = Object.keys(HRP).map(function (g) { return HRP[g].j; }).filter(Boolean)[0], sps = any ? any.specs : [];
+    return ['🩺 병의원·약국(심평원' + (any ? ' ' + any.ed : '') + ')', '<div class="lg-btns"><button data-hrf="h" class="' + (HRF.h ? 'on' : '') + '">● 병의원</button><button data-hrf="p" class="' + (HRF.p ? 'on' : '') + '">■ 약국</button></div>' +
+      (sps.length ? '<div class="lg-btns"><select data-hrsp aria-label="진료과목"><option value="">진료과목 — 전부</option>' + sps.map(function (n) { return '<option' + (n === HRF.sp ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></div>' : '') +
+      li('#2563eb', '의원') + li('#7c3aed', '병원') + li('#dc2626', '종합·상급종합') + li('#0891b2', '치과') + li('#65a30d', '한방') + li('#a16207', '요양·정신') + li('#475569', '보건소·조산원') + '<small class="lg-n">● 크기 = 의사 수 · 진료과목을 고르면 그 과목을 진료하는 곳만(약국은 숨김) · ' + (view.s < 0.03 ? '<b>확대하면 보인다</b> · ' : '') + '건강보험심사평가원 · 공공누리 출처표시</small>']; }
+  function hiraCard(it) { var j = it.j, tel = function (t) { return t ? '<a href="tel:' + esc(String(t).replace(/[^0-9]/g, '')) + '">' + esc(t) + '</a>' : '-'; };
+    if (it.ph) { var q = it.ph; return '<h3>💊 ' + esc(q[2]) + '</h3>' + row('개설', q[3] ? q[3] + '년' : '-') + row('전화', tel(q[4])) + src(j.source + ' · ' + j.note); }
+    var q2 = it.hs, t = j.types[q2[2]], sp = q2[7] || [], doc = sp.filter(function (x) { return x[1] > 0; });
+    var h = '<h3>🩺 ' + esc(q2[3]) + ' <small style="font-weight:600;color:var(--ink2)">' + esc(t) + '</small></h3><div class="tkpi"><span><em>👩‍⚕️</em><small>의사</small><b>' + (q2[4] || 0) + '명</b></span><span><em>🗂</em><small>진료과목</small><b>' + sp.length + '개</b></span><span><em>📅</em><small>개설</small><b>' + (q2[5] || '-') + '</b><u>' + (q2[5] ? (new Date().getFullYear() - q2[5]) + '년째' : '') + '</u></span></div>';
+    if (doc.length) h += vzH(doc.slice(0, 14).map(function (x) { return [j.specs[x[0]], x[1], '#0f766e']; }), { title: '과목별 전문의 수(명)', unit: '명' });
+    var nodoc = sp.filter(function (x) { return !x[1]; }); if (nodoc.length) h += '<p class="lg-n">전문의 없이 진료하는 과목: ' + nodoc.map(function (x) { return esc(j.specs[x[0]]); }).join(' · ') + '</p>';
+    return h + row('전화', tel(q2[6])) + src(j.source + ' · ' + j.note); }
+  if ($('m2dLeg')) { $('m2dLeg').addEventListener('click', function (e) { var b = e.target.closest('[data-hrf]'); if (!b) return; var k = b.getAttribute('data-hrf'); HRF[k] = !HRF[k]; try { localStorage.setItem('tg_map2d_hira', JSON.stringify(HRF)); } catch (e2) {} draw(); legend(); });
+    $('m2dLeg').addEventListener('change', function (e) { if (!e.target.hasAttribute('data-hrsp')) return; HRF.sp = e.target.value; try { localStorage.setItem('tg_map2d_hira', JSON.stringify(HRF)); } catch (e2) {} draw(); legend(); }); }
 
   // ---------- 공공데이터 묶음(pubdata) ----------
   var PUB = null;
@@ -2358,6 +2385,7 @@
     if (on.juris) { var jl2 = jrsLegend(); if (jl2) G(jl2[0], jl2[1]); }
     if (on.rone) { var rl2 = roneLegend(); G(rl2[0], rl2[1]); }
     if (on.lore) { var lr2 = loreLegend(); G(lr2[0], lr2[1]); }
+    if (on.hira) { var hr2 = hiraLegend(); G(hr2[0], hr2[1]); }
     if (on.ggbrt) G('🚌 중앙차로 정류장 경기버스', GB ? '<small class="lg-n">● 크기 = 출퇴근(첨두) 시간당 서는 경기버스 대수(Σ 60÷배차 · 계산값 · 3분 미만 의심값 뺌) · ' + esc(GB.collected) + ' 수집 · 서울 중앙버스전용차로 정류장 405곳 한정 · 서울 시내버스 빠짐 · 경기도 버스 API</small>' : '<small class="lg-n">받는 중…</small>');
     if (on.acad) { var al3 = acLegend(); if (al3) G(al3[0], al3[1]); }
     if (on.med) { var ml3 = mdLegend(); if (ml3) G(ml3[0], ml3[1]); }
@@ -2626,7 +2654,7 @@
     ['acc', '🚗 교통사고', ['acc', 'acc250', 'acc10', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'sz', 'szh', 'spot', 'spota'], ['acc10', 'fatal10', 'jct', 'hot10']],
     ['safe', '🛡 치안·안전', ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er', 'ger', 'aed', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'glamp', 'fw', 'hyd', 'box', 'bar', 'play', 'inn', 'dem'], ['jurk', 'pbox', 'pol', 'fire', 'er']],
     ['care', '🎒 교육·돌봄', ['edu', 'school', 'kg', 'cc', 'kids', 'aca', 'kyr', 'welf', 'dem', 'pg', 'sz'], ['edu', 'kg', 'cc', 'kyr']],
-    ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'lore', 'conv', 'bank', 'box'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
+    ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'hira', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'lore', 'conv', 'bank', 'box'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
     ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
     ['live', '📡 실시간', ['lev', 'lspd', 'lcc', 'lak', 'lkma', 'lbus', 'lwx', 'lair', 'lrad', 'crowd'], ['lev', 'lspd', 'lcc', 'lwx', 'lrad']],
     ['map', '🗺 바탕·격자', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm', 'g250', 'ri'], ['g250']]
@@ -3210,7 +3238,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.75.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.76.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -4510,7 +4538,7 @@
     box: '안심택배함.', dem: '치매안심센터.', tgis: 'T-GIS 신호 교차로(서울시 · 종속 신호 포함).',
     spot: '길목 — 지금 시각 버스·지하철 하차가 많은 곳(숫자 = 순위). 순찰·단속 자리 고르기용.',
     spota: '길목 다발지(참고).', hot10: '사고다발지 10년(2016~2025) 겹친 자리.', jct: '교차로별 10년 사고(서울·경기) — 가장 가까운 교차로 하나에 모은 값.',
-    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', ggbrt: '서울 중앙버스전용차로 정류장 405곳마다 서는 경기버스 노선과 배차간격(경기도 버스 API). 동그라미가 클수록 출퇴근 시간에 버스가 자주 선다(Σ 60÷배차 · 계산값). 정류장 사고를 볼 때 「버스가 얼마나 자주 서는가」 기준값으로 쓴다. 서울 시내버스는 이 자료에 없다.', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
+    evt: '행사·집회(서울시 문화행사 · 서울경찰청 주요 집회).', hira: '건강보험심사평가원 「전국 병의원 및 약국 현황」(분기) — 지금 문 연 병의원의 종별·의사 수·진료과목·과목별 전문의 수와 전국 약국. 진료과목을 고르면 그 과목을 진료하는 곳만 보인다(예: 소아청소년과). 개업·폐업 흐름은 「병·의원 현황」 층.', ggbrt: '서울 중앙버스전용차로 정류장 405곳마다 서는 경기버스 노선과 배차간격(경기도 버스 API). 동그라미가 클수록 출퇴근 시간에 버스가 자주 선다(Σ 60÷배차 · 계산값). 정류장 사고를 볼 때 「버스가 얼마나 자주 서는가」 기준값으로 쓴다. 서울 시내버스는 이 자료에 없다.', lore: '이야기 — 지명 유래·풍수·재난·전쟁·개발·사회·교통·정치(구조) 이야기를 그 자리(역·교차로·동)에 붙였다. 글은 코워크가 출처를 붙여 공급한 그대로이고, 출처마다 근거등급(A 1차 사료 · B 언론·공공 해설 · C 위키·통념) 배지를 단다. 확인이 덜 된 것은 「확인 필요」, 출처끼리 다르면 나란히 적는다.', her: '국가유산(문화재).',
     flt: '침수 흔적(2010~2025).', flr: '침수 이력이 있는 도로.', und: '침수 이력 지하차도.', ice: '제설함 — 결빙 우려 자리.', hcab: '도로 열선 설치 길.', advb: '제설 전진기지.',
     pbtn: '보행자 작동 신호기(누름 버튼).'
   };
@@ -5877,7 +5905,7 @@
     ['people', '👥 인구·생활', [
       ['pop', '👥 인구 구성', [['주민·가구', ['jgg', 'dong']], ['그 시각 머무는 사람', ['live', 'live250', 'lpop']], ['외국인', ['fdong', 'fl250', 'minbak', 'stay', 'flodge']]], ['jgg', 'live250', 'lpop']],
       ['move', '🚶 이동·동선', [['대중교통', ['bus', 'subr', 'sub', 'exit', 'bstop', 'ggbrt', 'msub', 'busd', 'lbus']], ['사람 흐름', ['crowd', 'spot', 'bike', 'evt', 'gfest']]], ['bus', 'subr', 'sub']],
-      ['life', '🏥 생활시설', [['의료', ['hosp', 'phar', 'er', 'ger', 'aed']], ['관공서', ['govr', 'gov', 'post', 'lib', 'dem', 'welf', 'kyr']], ['편의', ['conv', 'bank', 'box', 'wc', 'wc2', 'park', 'heat', 'cold', 'her']], ['차·연료', ['fuel', 'ev', 'gev', 'pk', 'gpark']]], ['govr', 'hosp', 'phar']],
+      ['life', '🏥 생활시설', [['의료', ['hira', 'hosp', 'phar', 'er', 'ger', 'aed']], ['관공서', ['govr', 'gov', 'post', 'lib', 'dem', 'welf', 'kyr']], ['편의', ['conv', 'bank', 'box', 'wc', 'wc2', 'park', 'heat', 'cold', 'her']], ['차·연료', ['fuel', 'ev', 'gev', 'pk', 'gpark']]], ['govr', 'hosp', 'phar']],
       ['care', '🎒 교육·돌봄', [['학교', ['edu', 'school', 'aca']], ['어린이', ['kg', 'cc', 'kids', 'pg', 'sz']]], ['edu', 'kg', 'cc']]
     ]],
     ['police', '🚓 경찰업무', [

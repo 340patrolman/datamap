@@ -3291,7 +3291,7 @@
   function taxLoad() {
     if (TAXP) return TAXP;
     TAXP = Promise.all([fetch('data/tax-rules.json').then(function (r) { if (!r.ok) throw new Error('규칙 ' + r.status); return r.json(); }),
-      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.87.0'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
+      new Promise(function (ok, no) { if (window.TaxEngine) return ok(); var sc = document.createElement('script'); sc.src = 'js/tax-engine.js?v=2.87.1'; sc.onload = function () { ok(); }; sc.onerror = function () { no(new Error('계산부')); }; document.head.appendChild(sc); })])
       .then(function (a) { TAXR = a[0]; });
     TAXP.catch(function () { TAXP = null; }); return TAXP; }
   function txWon(v) { v = Math.round(+v || 0); var a = Math.abs(v); if (a >= 1e8) return (v / 1e8).toFixed(a >= 1e10 ? 1 : 2).replace(/\.?0+$/, '') + '억'; if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return v.toLocaleString(); }
@@ -5495,11 +5495,18 @@
     if (S.GG && S.GG.card && S.GG.card['2025']) { var c25 = S.GG.card['2025'], NM = S.GGm.names || {}, tot25 = sum(Object.keys(c25).map(function (c) { return c25[c]; })), tops = Object.keys(c25).sort(function (a, b) { return c25[b] - c25[a]; }).slice(0, 5);
       var tc = '<b>돈(경기 카드 매출).</b> 2025년 1~6월 월평균 약 <b>' + won(tot25) + '</b>' + (p && p.tot ? ' — 주민 1명으로 나누면 월 ' + Math.round(tot25 / p.tot).toLocaleString() + '만 원' + (ref.ggAmtPerPopMed ? '(경기 동 중앙값 ' + ref.ggAmtPerPopMed + '만 · 상위 20% 경계 ' + ref.ggAmtPerPopP80 + '만) — ' + (tot25 / p.tot >= ref.ggAmtPerPopP80 ? '<b>주민 수에 비해 돈이 아주 많이 도는 동</b>(바깥 손님·큰 상권)' : tot25 / p.tot >= ref.ggAmtPerPopMed ? '경기 동 평균보다 돈이 많이 돈다' : '경기 동 평균보다 적다 — <b>주민 생활 지출 중심</b>') : '') : '') + '. ';
       var cyr = function (y) { var x = S.GG.card[y]; return x ? sum(Object.keys(x).map(function (c) { return x[c]; })) : null; }, t23 = cyr('2023'), t22 = cyr('2022'), cH = function (y) { var a1 = CPI && CPI.q[y + '1'] && CPI.q[y + '1'][S.sido], a2 = CPI && CPI.q[y + '2'] && CPI.q[y + '2'][S.sido]; return a1 && a2 ? (a1[0] + a2[0]) / 2 : null; };
+      var N3 = S.GGm.names3 || {}, nmc = function (c) { return NM[c] || c; };
+      if (tot25) tc += '돈이 가장 많이 도는 업종은 ' + tops.map(function (c) { return '<b>' + esc(nmc(c)) + '</b> ' + Math.round(c25[c] / tot25 * 100) + '%'; }).join(' · ') + '. ';
       if (t23) { var c23 = cH('2023'), c25p = cH('2025'); tc += '같은 1~6월끼리 2023년 ' + won(t23) + ' → 2025년 ' + won(tot25) + '(명목 ' + sgn1(pc(tot25 - t23, t23)) + '%' + (c23 && c25p ? ' · 경기 물가 ' + sgn1(pc(c25p - c23, c23), 1) + '% → <b>실질 ' + sgn1((tot25 / c25p) / (t23 / c23) * 100 - 100) + '%</b>' : '') + ')' + (t22 ? ' · 2022년 ' + won(t22) : '') + '. '; }
-      tc += '<small>(경기데이터드림 「카드매출_행정동_집계」 — 달마다 담긴 범위가 달라 빠짐없이 담긴 1~6월끼리만 견준다 · 서울시 추정매출과 만든 곳·세는 법이 달라 서울 동과 금액을 직접 견주지 않는다 · 업종 코드표가 공개되지 않아 업종 이름을 붙이지 않았다 · 시간대·요일·연령은 경기 동 단위로 쓸 만한 자료가 없다(시간대 자료는 2020년 3월 한 달뿐))</small>'; P.push(tc);
+      tc += '<small>(경기데이터드림 「카드매출_행정동_집계」 — 달마다 담긴 범위가 달라 빠짐없이 담긴 1~6월끼리만 견준다 · 서울시 추정매출과 만든 곳·세는 법이 달라 서울 동과 금액을 직접 견주지 않는다 · 업종 이름 = 카드소비 원자료의 코드·이름 짝(코워크 2026-10-07 · 83개 · 목록에 없는 코드는 원문) · 시간대·요일·연령은 경기 동 단위로 쓸 만한 자료가 없다(시간대 자료는 2020년 3월 한 달뿐))</small>'; P.push(tc);
       if (p && p.tot && ref.ggAmtPerPopMed) GL.push(['💳', '주민 1명당 한 달 카드 매출(경기)', Math.round(tot25 / p.tot).toLocaleString() + '만', '경기 동 중앙 ' + ref.ggAmtPerPopMed + '만', tot25 / p.tot - ref.ggAmtPerPopMed]);
       P.push('<div class="vzg">' + (p && p.tot && ref.ggAmtPerPopMed ? vzH([[S.name, tot25 / p.tot, '#dc2626'], ['경기 동 중앙', ref.ggAmtPerPopMed, '#94a3b8'], ['상위 20% 경계', ref.ggAmtPerPopP80, '#64748b']], { title: '주민 1명당 한 달 카드 매출(만 원)', unit: '만' }) : '') +
-        vzH([['2022', t22, '#94a3b8'], ['2023', t23, '#64748b'], ['2025', tot25, '#2563eb']].filter(function (x) { return x[1]; }), { title: '카드 매출 — 해마다 1~6월 월평균', fmt: function (x) { return won(x); } }) + '</div>'); }
+        vzH([['2022', t22, '#94a3b8'], ['2023', t23, '#64748b'], ['2025', tot25, '#2563eb']].filter(function (x) { return x[1]; }), { title: '카드 매출 — 해마다 1~6월 월평균', fmt: function (x) { return won(x); } }) + '</div>');
+      var BG = {}; Object.keys(c25).forEach(function (c) { var b = N3[c] || (NM[c] ? NM[c] : '그 밖'); BG[b] = (BG[b] || 0) + c25[c]; });
+      var top10 = Object.keys(c25).sort(function (a, b) { return c25[b] - c25[a]; }).slice(0, 10), c23o = S.GG.card['2023'] || {};
+      P.push('<div class="vzg">' + vzH(top10.map(function (c) { return [nmc(c), c25[c], '#2563eb']; }), { title: '업종별 한 달 카드 매출 상위 10(2025년 1~6월 월평균)', fmt: function (x) { return won(x); } }) +
+        (Object.keys(N3).length ? vzH(Object.keys(BG).sort(function (a, b) { return BG[b] - BG[a]; }).map(function (b) { return [b, BG[b] / tot25 * 100, '#0f766e']; }), { title: '대분류 몫(%)', fmt: function (x) { return Math.round(x) + '%'; } }) : '') +
+        (t23 ? vzDiv(top10.filter(function (c) { return c23o[c]; }).map(function (c) { return [nmc(c), (c25[c] / c23o[c] - 1) * 100, null]; }), { title: '상위 업종 2023 → 2025 매출 변화(같은 1~6월 · 명목)' }) : '') + '</div>'); }
     if (S.sido === '경기' && !S.GG && S.GGm) P.push('<b>머무는 사람·돈(경기).</b> 이 동은 최근 새로 생기거나 나뉜 동이라 경기데이터드림 유동인구·카드 자료(옛 동 기준)와 맞지 않는다 — 옛 동 값을 나눠 지어내지 않는다.');
     // 가게 구성 — 상가업소(소상공인시장진흥공단)를 이 동 안에서 세어 구 평균과
     if (S.d && S.d.polys && SPTS[S.gu] && SPTS[S.gu].a && SIDX && p && p.tot && S.guPop) { var CLs = SIDX.cls, inD = {}, inG = {}, nD = 0;

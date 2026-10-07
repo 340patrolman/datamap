@@ -14,8 +14,9 @@ for f in glob.glob(os.path.join(ROOT, 'data', 'r', '41*', 'ggdong.json')):
     for k, (b, m) in C.items(): nm[k] = m; big[k] = b
     for d in j.get('dong', {}).values():
         for y, cd in (d.get('card') or {}).items():
+            cd.pop('TO', None)   # v2.87.1 「업종전체」(= 다른 업종의 합) — 같이 두면 합계가 두 배가 된다(1,800건 모두 합과 일치 확인)
             for code in cd:
                 if code not in nm: miss.add(code)
-    j['note3'] = '세 글자 업종 코드(D01 등) 이름 = 경기데이터드림 카드소비 원자료의 코드·대분류명·중분류명 짝(코워크 2026-10-07 · 83개) — 목록에 없는 코드는 원문'
+    j['note3'] = '업종전체(TO) 칸은 다른 업종의 합이라 뺐다 · 세 글자 업종 코드(D01 등) 이름 = 경기데이터드림 카드소비 원자료의 코드·대분류명·중분류명 짝(코워크 2026-10-07 · 83개) — 목록에 없는 코드는 원문'
     json.dump(j, open(f, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':')); n += 1
 print('파일', n, '코드', len(C), '이름 없는 코드', sorted(miss))

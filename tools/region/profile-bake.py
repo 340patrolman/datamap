@@ -115,8 +115,8 @@ def main(sidos):
         if GG:
             for k, x in (GG.get('dong') or {}).items():
                 if k not in out: continue
-                c = x.get('card') or {}; tt = {y: sum(v.values()) for y, v in c.items()}
-                if tt: out[k]['카드 매출(경기)'] = {'1~6월 월평균_만원': {y: rnd(v) for y, v in sorted(tt.items())}, '비고': '경기데이터드림 가공 카드 자료 · 업종 코드표 비공개라 업종 이름 없음 · 서울 추정매출과 금액을 직접 견주지 않는다'}
+                c = x.get('card') or {}; tt = {y: sum(q for kk, q in v.items() if kk != 'TO') for y, v in c.items()}
+                if tt: out[k]['카드 매출(경기)'] = {'1~6월 월평균_만원': {y: rnd(v) for y, v in sorted(tt.items())}, '비고': '경기데이터드림 가공 카드 자료 · 업종 이름 = ggdong.json names(세 글자 코드표 · 코워크 2026-10-07) · 업종전체 칸은 빼고 더함 · 서울 추정매출과 금액을 직접 견주지 않는다'}
                 fl = x.get('flow') or {}
                 if fl:
                     y = max(fl); v = fl[y]; out[k]['유동인구(경기)'] = {'해': y, '요일 평균': v}

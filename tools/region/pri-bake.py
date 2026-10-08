@@ -3,8 +3,10 @@
 #   소유자 2026-10-08 「데이터를 어떻게 조합해야 더 좋은 결과가 나올까」 → 단위가 다른 지표는 그대로 더하지 않고
 #   같은 시도 칸들 사이의 백분위(0~1)로 바꾼 뒤 같은 무게로 평균한다. 칸 값은 지도가 이미 받는 taas250·live250 을 그대로 쓰고,
 #   여기서는 「어느 값이 몇 백분위인가」를 재는 눈금만 굽는다(새 칸 파일 없음 · 약 20KB).
+#   v2.90.0 조합 셋이 같은 눈금을 쓴다 — 🚓 지금 순찰할 칸(pri) · 🚸 보행 안전 우선 칸(pedr) · 🏪 가게 자리 기회 칸(opp)
 #   성분: ksi = 사망자+중상자(10년) · rec = 최근 3년(2023~2025) 사고 · b0~b3 = 시간대 사고(0~6 · 6~12 · 12~18 · 18~24시)
 #         · wd/we = 서울 생활인구(평일/주말 0~23시 · 서울만)
+#         · ped = 보행자 피해(10년) · old = 경로당 · kid = 어린이집+유치원+학교+어린이보호구역 대상 · ride = 정류장+역 하루 승차 · st = 상가 수(pts250) · jiga = 대지 ㎡당 공시지가 중앙값(jiga.json grid)
 #   눈금 = 0 이 아닌 값들의 분위수(0·1·…·100%) — 0 인 칸은 백분위 0.
 #   py -3.12 -X utf8 tools/region/pri-bake.py
 import json, os, glob, time
@@ -21,7 +23,7 @@ def q101(vals):
 
 S = {}; gap = []; ncell = {}
 for sd in ('11', '41'):
-    C = {'ksi': [], 'rec': [], 'b0': [], 'b1': [], 'b2': [], 'b3': []}; WD = [[] for _ in range(24)]; WE = [[] for _ in range(24)]; nc = 0
+    C = {'ksi': [], 'rec': [], 'b0': [], 'b1': [], 'b2': [], 'b3': [], 'ped': [], 'old': [], 'kid': [], 'ride': [], 'st': [], 'jiga': []}; WD = [[] for _ in range(24)]; WE = [[] for _ in range(24)]; nc = 0
     for d in sorted(glob.glob(os.path.join(R, sd + '*'))):
         gu = os.path.basename(d)
         if not os.path.isdir(d): continue
@@ -31,7 +33,15 @@ for sd in ('11', '41'):
             for k, c in json.load(open(f250, encoding='utf-8'))['cells'].items():
                 C['ksi'].append(c[12] + c[13]); C['rec'].append(c[9] + c[10] + c[11])
                 for i in range(4): C['b%d' % i].append(c[19 + i])
+                C['ped'].append(c[14])
                 nc += 1
+        fp = os.path.join(d, 'pts250.json'); fj = os.path.join(d, 'jiga.json')
+        if os.path.exists(fp):
+            for k, x in json.load(open(fp, encoding='utf-8'))['cells'].items():
+                C['old'].append(x.get('kyr', 0)); C['kid'].append(x.get('cc', 0) + x.get('kg', 0) + x.get('edu', 0) + x.get('sz', 0))
+                C['ride'].append(x.get('bon', 0) + x.get('son', 0)); C['st'].append(x.get('st', 0))
+        if os.path.exists(fj):
+            for k, v in (json.load(open(fj, encoding='utf-8')).get('grid') or {}).items(): C['jiga'].append(v[0])
         if os.path.exists(fl):
             for k, x in json.load(open(fl, encoding='utf-8'))['cells'].items():
                 for h in range(24): WD[h].append(x['wd'][h]); WE[h].append(x['we'][h])
@@ -39,9 +49,9 @@ for sd in ('11', '41'):
     if any(WD[0]): o['wd'] = [q101(a) for a in WD]; o['we'] = [q101(a) for a in WE]
     S[sd] = o; ncell[sd] = nc
 out = {'schema': 'tg-priq/1', 'built': time.strftime('%Y-%m-%d'),
-       'source': '도로교통공단 TAAS GIS 사고분석 2016~2025(250m 칸 · taas250) · 서울시 250M격자 생활인구 OA-22784(한 주 평균 · live250) — 둘 다 이 지도에 이미 구운 칸 자료',
+       'source': '도로교통공단 TAAS GIS 사고분석 2016~2025(taas250) · 서울시 250M격자 생활인구 OA-22784(live250) · 이 지도의 점 자료 250m 집계(pts250 — 상가 소상공인시장진흥공단 · 시설 표준데이터·교육청 · 승차 서울·경기 교통카드) · 국토교통부 개별공시지가 2025(jiga) — 모두 이 지도에 이미 구운 칸 자료',
        'note': '시도마다 0 이 아닌 칸 값의 분위수 101개(0~100%). 지도는 칸 값이 눈금 어디에 드는지로 백분위를 낸다(0 이면 0).',
-       'fields': 'ksi 사망+중상자(10년) · rec 최근 3년 사고 · b0~b3 시간대 사고(0~6·6~12·12~18·18~24시) · wd/we 서울 생활인구 0~23시(평일/주말)',
+       'fields': 'ksi 사망+중상자(10년) · rec 최근 3년 사고 · b0~b3 시간대 사고(0~6·6~12·12~18·18~24시) · wd/we 서울 생활인구 0~23시(평일/주말) · ped 보행자 피해(10년) · old 경로당 · kid 어린이집+유치원+학교+보호구역 · ride 정류장+역 하루 승차 · st 상가 수 · jiga 대지 ㎡당 공시지가',
        'cells': ncell, 'gap': gap, 'sido': S}
 json.dump(out, open(os.path.join(ROOT, 'data', 'pri-q.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
 print('칸', ncell, '뺀 구', gap, os.path.getsize(os.path.join(ROOT, 'data', 'pri-q.json')), 'B')

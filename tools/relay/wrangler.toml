@@ -1,0 +1,9 @@
+# 데이터 압축지도 맛보기 중계 — 배포는 tools/relay/README.md
+name = "datamap-relay"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[vars]
+ALLOW_ORIGINS = "https://340patrolman.github.io"
+DAILY = "300"

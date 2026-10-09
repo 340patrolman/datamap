@@ -498,7 +498,7 @@
   try { var vw0 = localStorage.getItem('tg_map2d_vw'); if (vw0 && VWMS[vw0]) VWM = vw0; VWKEY = localStorage.getItem('tg_map2d_vwkey') || ''; } catch (e) {}
   (function () { var m = /[#&]vwkey=([A-Za-z0-9-]{8,80})/.exec(location.hash); if (!m) return; VWKEY = m[1]; try { localStorage.setItem('tg_map2d_vwkey', VWKEY); } catch (e) {}
     var h = location.hash.replace(/[#&]vwkey=[A-Za-z0-9-]+/, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h[0] === '#' ? h : '#' + h) : '')); } catch (e) {} on.vw = true; })();
-  function vwSetKey() { var k = prompt('브이월드 인증키를 붙여 넣으세요(vworld.kr → 마이페이지 → 인증키 관리). 이 기기에만 저장됩니다. 비우면 지웁니다.', VWKEY || ''); if (k == null) return;
+  function vwSetKey() { var k = prompt('브이월드 인증키를 붙여 넣으세요(vworld.kr → 마이페이지 → 인증키 관리). 이 기기에만 저장됩니다. 비우면 지웁니다.', VWTRY ? '' : VWKEY || ''); if (k == null) return; VWTRY = 0;
     VWKEY = (k || '').replace(/\s+/g, ''); VWT = {}; VWBAD = VWOK = 0; try { if (VWKEY) localStorage.setItem('tg_map2d_vwkey', VWKEY); else localStorage.removeItem('tg_map2d_vwkey'); } catch (e) {} draw(); }
   function vwLx(lon, z) { return (lon + 180) / 360 * Math.pow(2, z); }
   function vwLy(lat, z) { var r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z); }
@@ -535,7 +535,7 @@
   function vwLegend() { if (!on.vw) return null;
     var msg = !VWKEY ? '<small class="lg-n" style="color:#b91c1c">키가 아직 없다 — 「🔑 키 넣기」에 브이월드 인증키를 넣으면 이 기기에서 보인다(저장소·다른 기기로는 안 간다)</small>'
       : (VWBAD >= 4 && !VWOK) ? '<small class="lg-n" style="color:#b91c1c">조각을 못 받았다 — 인터넷·키 확인. 키는 340patrolman.github.io 에만 묶여 있어 다른 주소(PC 시험 등)에서는 안 열린다</small>' : '';
-    return ['🛰 배경지도 — 브이월드', '<div class="lg-btns">' + Object.keys(VWMS).map(function (k) { return '<button data-vwm="' + k + '" class="' + (k === VWM ? 'on' : '') + '">' + VWMS[k] + '</button>'; }).join('') + '<button data-vwkey="1">🔑 ' + (VWKEY ? '키 바꾸기' : '키 넣기') + '</button></div>' + msg +
+    return ['🛰 배경지도 — 브이월드', '<div class="lg-btns">' + Object.keys(VWMS).map(function (k) { return '<button data-vwm="' + k + '" class="' + (k === VWM ? 'on' : '') + '">' + VWMS[k] + '</button>'; }).join('') + '<button data-vwkey="1">🔑 ' + (VWKEY && !VWTRY ? '키 바꾸기' : '키 넣기') + '</button></div>' + tryBtn(VWKEY && !VWTRY) + msg +
       '<small class="lg-n">국토교통부 브이월드(vworld.kr) 배경지도 · 위성 = 항공사진 · 인터넷이 있을 때만 보인다(끄면 통신 0) · 위성 위에서는 행정동 색을 옅게 · 「🗺 바탕」·「🏢 건물」을 끄면 사진이 더 잘 보인다</small>']; }
   // ---------- 📡 실시간 층(v1.6.0) — 켠 사람의 폰이 그때그때 직접 받는다 · 끄면 통신 0 · 받은 값은 메모리에만(저장 안 함) ----------
   // 키는 저장소에 없다. 기기마다 범례 「🔑 ITS 키」 또는 주소 #itskey=… 로 한 번 넣으면 그 기기 tg_map2d_keys 에만 남는다.
@@ -554,7 +554,29 @@
   function itsMax() { return itsTier() === 'op' ? 9500 : 90; }
   function itsQuota(add) { var pp = itsPer(), q; try { q = JSON.parse(localStorage.getItem('tg_map2d_itsn') || '{}') || {}; } catch (e) { q = {}; }
     if (q.p !== pp) q = { p: pp, n: 0 }; if (add) { q.n++; try { localStorage.setItem('tg_map2d_itsn', JSON.stringify(q)); } catch (e) {} } return q.n; }
+  // ---------- v2.94.0 🎟 맛보기(소유자 2026-10-09 「키를 직접 넣는 것은 번거롭다 — 열쇠를 터치하면 맛보기로 · 많이 쓸 사람은 직접 받으라」) ----------
+  //   중계 = Cloudflare Workers(tools/relay · 열쇠는 중계의 비밀값에만 · 폰으로 오지 않는다 — 브이월드만 340patrolman.github.io 에 묶인 키라 메모리로 받는다) · 주소는 data/relay.json {url, min}
+  //   한 번 누르면 TRY.min 분(기본 30) · 하루 횟수는 중계가 접속 주소마다 센다(기본 300) · 내 키가 있으면 내 키가 먼저 · 맛보기 상태는 tg_map2d_try 에(키는 저장 안 함)
+  var TRY = { url: '', min: 30, until: 0, left: null, max: null, err: '' }, VWTRY = 0;
+  try { var t0 = JSON.parse(localStorage.getItem('tg_map2d_try') || '{}'); if (t0 && t0.until > Date.now()) TRY.until = t0.until; } catch (e) {}
+  fetch('data/relay.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && /^https:\/\//.test(j.url || '')) { TRY.url = j.url.replace(/\/+$/, ''); TRY.min = +j.min || 30; if (tryOn()) tryVw(); try { legend(); } catch (e) {} } }).catch(function () {});
+  function tryOn() { var o = !!TRY.url && TRY.until > Date.now(); if (!o && VWTRY) { VWTRY = 0; VWKEY = ''; VWT = {}; } return o; }
+  function tryMin() { return Math.max(0, Math.ceil((TRY.until - Date.now()) / 60000)); }
+  function itsK() { return LK.its || (tryOn() ? '@try' : ''); }
+  function dgK() { return LK.dgk || (tryOn() ? '@try' : ''); }
+  function tryGet(kind, path, q) { return fetch(TRY.url + '/' + kind + '/' + path + '?' + String(q || '').replace(/^&/, '')).then(function (r) {
+      var lf = r.headers.get('X-Trial-Left'); if (lf != null) { TRY.left = +lf; TRY.max = +r.headers.get('X-Trial-Max'); }
+      if (r.status === 429) { TRY.left = 0; throw new Error('맛보기 하루 횟수를 다 썼다 — 내일 다시 · 많이 쓰면 키를 직접 받아 넣는다(🔑)'); }
+      if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error('맛보기 중계: ' + (j.err || 'HTTP ' + r.status)); });
+      return r.text(); }); }
+  function tryVw() { if (VWKEY || !TRY.url) return; fetch(TRY.url + '/vwkey').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.key && tryOn() && !VWKEY) { VWKEY = j.key; VWTRY = 1; VWT = {}; VWBAD = VWOK = 0; draw(); } }).catch(function () {}); }
+  function tryStart() { if (!TRY.url) return; TRY.until = Date.now() + TRY.min * 60000; try { localStorage.setItem('tg_map2d_try', JSON.stringify({ until: TRY.until })); } catch (e) {} tryVw(); LIVE.ev = null; LIVE.sp = null; LIVE.ak = null; LIVE.kma = null; LIVE.wrn = null; LIVE.eqk = null; LIVE.bs = null; liveGo(); draw(); try { legend(); } catch (e) {} }
+  function tryStop() { TRY.until = 0; try { localStorage.removeItem('tg_map2d_try'); } catch (e) {} tryOn(); draw(); try { legend(); } catch (e) {} }
+  function tryBtn(own) { if (!TRY.url || own) return ''; return tryOn() ? '<div class="lg-btns"><button data-ltry="stop" class="on">🎟 맛보기 중 · ' + tryMin() + '분 남음' + (TRY.left != null ? ' · 오늘 ' + TRY.left + '번 남음' : '') + ' — 끄기</button></div>'
+      : '<div class="lg-btns"><button data-ltry="go">🎟 맛보기 켜기(' + TRY.min + '분 · 키 없이)</button></div><small class="lg-n">맛보기 = 이 지도 운영자의 키로 잠깐 본다(하루 횟수 제한 · 여러 사람이 나눠 씀) · 자주 쓰면 키를 직접 받아 「🔑」에 넣는다 — 무료(data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청)</small>'; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-ltry]'); if (!b) return; e.preventDefault(); if (b.getAttribute('data-ltry') === 'stop') tryStop(); else tryStart(); });
   function itsGet(path, q) {
+    if (!LK.its && tryOn()) return tryGet('its', path, q + '&getType=json').then(function (t) { try { return JSON.parse(t); } catch (e) { throw new Error('맛보기 중계: 응답이 JSON 이 아님'); } });
     if (!LK.its) return Promise.reject(new Error('ITS 키 없음'));
     if (itsQuota() >= itsMax()) return Promise.reject(new Error(itsTier() === 'op' ? '이 기기에서 이번 달 ITS 9,500건을 다 썼다' : '이 기기에서 이번 달 ITS ' + itsMax() + '건을 다 썼다(개발키 월 100건) — 운영키(월 10,000건) 승인 뒤 「운영키」를 누른다'));
     itsQuota(1);
@@ -576,7 +598,7 @@
   function liveGo(force) {
     if (document.hidden) return; var now = Date.now(), op = itsTier() === 'op';
     // 🚧 돌발 — 지도를 열 때(층을 켤 때) 한 번 · 「🔄 다시 받기」 · 운영키면 5분마다
-    if (on.lev && LK.its && !(LIVE.ev && LIVE.ev.busy) && (force === 'ev' || !LIVE.ev || (op && now - LIVE.ev.at > 5 * 60000))) {
+    if (on.lev && itsK() && !(LIVE.ev && LIVE.ev.busy) && (force === 'ev' || !LIVE.ev || (op && now - LIVE.ev.at > 5 * 60000))) {
       var prev = LIVE.ev; LIVE.ev = { at: now, busy: 1, items: (prev || {}).items || [] };
       itsGet('eventInfo', '&type=all&eventType=all&minX=' + LBOX[0] + '&maxX=' + LBOX[2] + '&minY=' + LBOX[1] + '&maxY=' + LBOX[3])
         .then(function (j) { var b = j && j.body; if (!b || !b.items) throw new Error((j && j.header && j.header.resultMsg) || '빈 응답');
@@ -584,7 +606,7 @@
         .catch(function (e) { LIVE.ev = { at: Date.now(), items: (prev || {}).items || [], err: '받지 못함(' + (e && e.message || e) + ')' }; draw(); });
     }
     // 🚦 소통 — 지금 화면(사방 25% 더)만 · 열 때 한 번 · 받은 범위를 벗어나면: 운영키 = 저절로(3분 간격) · 개발키 = 「🔄 이 화면 소통 받기」
-    if (on.lspd && LK.its && spdSpan() && !(LIVE.sp && LIVE.sp.busy)) {
+    if (on.lspd && itsK() && spdSpan() && !(LIVE.sp && LIVE.sp.busy)) {
       var v = viewLL(), sp = LIVE.sp, inside = sp && sp.box && v[0] >= sp.box[0] && v[1] >= sp.box[1] && v[2] <= sp.box[2] && v[3] <= sp.box[3];
       if (force === 'sp' || !sp || (op && now - sp.at > 3 * 60000 && (!inside || now - sp.at > 5 * 60000))) {
         var dx = (v[2] - v[0]) * 0.25, dy = (v[3] - v[1]) * 0.25, bx = [v[0] - dx, v[1] - dy, v[2] + dx, v[3] + dy].map(function (x) { return +x.toFixed(4); }), ps = sp;
@@ -670,9 +692,9 @@
   var PMG = [['좋음', '#2563eb'], ['보통', '#16a34a'], ['나쁨', '#f59e0b'], ['매우나쁨', '#dc2626']];
   // ---------- 공공데이터포털 실시간(v1.9.0) ----------
   function dgGet(path, q) {
-    if (!LK.dgk) return Promise.reject(new Error('공공데이터포털 키 없음 — 범례 「🔑 공공데이터포털 키」'));
-    var k = LK.dgk.indexOf('%') >= 0 ? LK.dgk : encodeURIComponent(LK.dgk);
-    return fetch('https://apis.data.go.kr/' + path + '?serviceKey=' + k + q).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    if (!LK.dgk && !tryOn()) return Promise.reject(new Error('공공데이터포털 키 없음 — 범례 「🔑 공공데이터포털 키」 또는 「🎟 맛보기」'));
+    var k = LK.dgk ? (LK.dgk.indexOf('%') >= 0 ? LK.dgk : encodeURIComponent(LK.dgk)) : '';
+    return (LK.dgk ? fetch('https://apis.data.go.kr/' + path + '?serviceKey=' + k + q).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }) : tryGet('dg', path, q))
       .then(function (t) { try { return JSON.parse(t); } catch (e) { var m = /<returnAuthMsg>([^<]+)|<errMsg>([^<]+)|<resultMsg>([^<]+)/.exec(t); throw new Error(m ? (m[1] || m[2] || m[3]) : '응답이 JSON 이 아님'); } });
   }
   function dfsGrid(lat, lon) {   // 기상청 동네예보 격자(Lambert · 5km) — 기상청 공개 변환식
@@ -684,7 +706,7 @@
   function ymd(d) { return d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2); }
   var AKS = null, AKSP = null, BSTOP = {}, BSC = [], BUSR = null;
   function dgGo(now) {
-    if (!LK.dgk) return;
+    if (!dgK()) return;
     if (on.lak) {
       if (!AKS && !AKSP) AKSP = fetch('data/airkorea-stations.json').then(function (r) { return r.json(); }).then(function (j) { AKS = j; draw(); }).catch(function () { AKSP = null; });
       if (!(LIVE.ak && LIVE.ak.busy) && (!LIVE.ak || now - LIVE.ak.at > 20 * 60000)) { var pa = LIVE.ak; LIVE.ak = { at: now, busy: 1, m: (pa || {}).m || {} }; var m = {}, k2 = 0, er = '';
@@ -828,18 +850,18 @@
     h += row('받은 시각', hhmm(LIVE.air.at) + ' <em>(10분마다)</em>');
     return h + '<p class="desc">등급은 환경부 기준(PM2.5 15·35·75 · PM10 30·80·150㎍/㎥). 값은 측정소가 잰 것이 아니라 유럽 CAMS 대기 모형이 그 자리에 낸 현재값이라 측정소(에어코리아)와 다를 수 있다.</p>' + src('Open-Meteo 대기질 API(CAMS) — 키 없음 · 이 폰이 직접 받음 · 저장하지 않음'); }
   function liveLegend() { var b = [];
-    if (on.lev || on.lspd || on.lcc) b.push('<div class="lg-btns"><button data-lkey="its">🔑 ITS 키' + (LK.its ? ' 바꾸기' : ' 넣기') + '</button><button data-itst="dev" class="' + (itsTier() === 'dev' ? 'on' : '') + '">개발키(월 100)</button><button data-itst="op" class="' + (itsTier() === 'op' ? 'on' : '') + '">운영키(월 10,000)</button></div><small class="lg-n">ITS 호출 이번 달 ' + itsQuota() + '/' + itsMax() + '(이 기기) · 개발키는 지도를 열 때 한 번 받고 「🔄」로 다시 · 운영키면 저절로</small>');
+    if (on.lev || on.lspd || on.lcc) b.push('<div class="lg-btns"><button data-lkey="its">🔑 ITS 키' + (LK.its ? ' 바꾸기' : ' 넣기') + '</button>' + (LK.its || !TRY.url ? '' : '</div>' + tryBtn(false) + '<div class="lg-btns">') + '<button data-itst="dev" class="' + (itsTier() === 'dev' ? 'on' : '') + '">개발키(월 100)</button><button data-itst="op" class="' + (itsTier() === 'op' ? 'on' : '') + '">운영키(월 10,000)</button></div><small class="lg-n">ITS 호출 이번 달 ' + itsQuota() + '/' + itsMax() + '(이 기기) · 개발키는 지도를 열 때 한 번 받고 「🔄」로 다시 · 운영키면 저절로</small>');
     if (on.lspd) { var sp = LIVE.sp, vv = viewLL(), inb = sp && sp.box && vv[0] >= sp.box[0] && vv[1] >= sp.box[1] && vv[2] <= sp.box[2] && vv[3] <= sp.box[3];
       b.push('<b>🚦 소통</b> ' + li('#16a34a', '원활') + li('#f59e0b', '서행') + li('#dc2626', '정체') + '<small class="lg-n">' + (!spdSpan() ? '<b>더 확대하면(화면 가로 약 14km 안) 받는다</b>' : sp && sp.err ? '<b style="color:#b91c1c">' + esc(sp.err) + '</b>' : sp && !sp.busy ? (sp.n || 0) + '구간 · ' + hhmm(sp.at) + ' 받음' + (inb ? '' : ' · <b>지금 화면은 받은 범위 밖</b>') : LK.its ? '받는 중' : 'ITS 키 필요') + '</small><div class="lg-btns"><button data-lre="sp">🔄 이 화면 소통 받기(ITS 1건)</button></div>'); }
     if (on.lcc) b.push('<b>📹 CCTV</b> ' + li('#1d4ed8', '국도·기타') + li('#0f766e', '고속도로') + '<small class="lg-n">' + ccList().length + '대 · 목록 ' + esc(CCLIVE ? CCLIVE.at : (CCB.at || '…') + ' 구움') + ' · 누르면 영상(ITS 호출 없음)</small>');
     if (on.lrad) { var rd = LIVE.rad; b.push('<b>🌧 레이더</b><small class="lg-n">' + (rd && rd.err ? '<b style="color:#b91c1c">' + esc(rd.err) + '</b>' : rd && rd.f ? hhmm(rd.f.t) + ' 관측 · 10분마다 · 파랑(약함) → 노랑·빨강(강함)' : '받는 중') + ' · RainViewer(rainviewer.com) 레이더 합성 · 무료 판은 7단 확대까지(한 칸 약 1km)</small>'); }
-    if (on.lak || on.lkma || on.lbus) b.push('<div class="lg-btns"><button data-lkey="dgk">🔑 공공데이터포털 키' + (LK.dgk ? ' 바꾸기' : ' 넣기') + '</button></div>' + (LK.dgk ? '' : '<small class="lg-n" style="color:#b91c1c">에어코리아·기상청·경기 버스는 공공데이터포털(data.go.kr) 일반 인증키가 있어야 한다 — 이 기기에만 저장</small>'));
+    if (on.lak || on.lkma || on.lbus) b.push('<div class="lg-btns"><button data-lkey="dgk">🔑 공공데이터포털 키' + (LK.dgk ? ' 바꾸기' : ' 넣기') + '</button></div>' + tryBtn(LK.dgk) + (dgK() ? '' : '<small class="lg-n" style="color:#b91c1c">에어코리아·기상청·경기 버스는 공공데이터포털(data.go.kr) 일반 인증키가 있어야 한다 — 이 기기에만 저장</small>'));
     if (on.lak) { var ak = LIVE.ak; b.push('<b>🟢 측정소</b> ' + PMG.map(function (g) { return li(g[1], g[0]); }).join('') + li('#94a3b8', '점검·없음') + '<small class="lg-n">' + (ak && ak.err ? '<b style="color:#b91c1c">' + esc(ak.err) + '</b>' : ak && !ak.busy ? Object.keys(ak.m).length + '곳 · ' + hhmm(ak.at) + ' 받음 · 20분마다' : '받는 중') + ' · 숫자 = PM2.5 실측(㎍/㎥) · 서울·경기 168곳</small>'); }
     if (on.lkma) { var km = LIVE.kma, wr = LIVE.wrn; b.push('<b>🌡 기상청</b><small class="lg-n">' + (km && km.err ? '<b style="color:#b91c1c">' + esc(km.err) + '</b>' : km && km.v ? '실황 ' + esc(km.bt || '') + ' · 지도 가운데 격자' : '받는 중') + ' · 특보 ' + (wr && wr.err ? esc(wr.err) : kmaWarn() ? '<b style="color:#b91c1c">서울·경기 발효 있음</b>' : wr && !wr.busy ? '서울·경기 없음' : '…') + ' · 지진 3일 ' + (((LIVE.eqk || {}).items || []).length) + '건 · 윗줄 띠를 누르면 자세히</small>'); }
     if (on.lbus) { var bs = LIVE.bs; b.push('<b>🚌 경기 버스</b> ' + li('#0d9488', '정류장', 'box') + li('#ea580c', '고른 노선 버스') + '<small class="lg-n">' + (view.s < 0.04 ? '<b>더 확대하면 화면 가운데 둘레 정류장을 받는다</b>' : bs && bs.err ? '<b style="color:#b91c1c">' + esc(bs.err) + '</b>' : '정류장 ' + Object.keys(BSTOP).length + '곳 받음') + (BUSR ? ' · 노선 ' + esc(BUSR.nm) + ' 버스 ' + BUSR.v.length + '대' + (BUSR.err ? ' <b style="color:#b91c1c">' + esc(BUSR.err) + '</b>' : '') + ' <button data-busx="1">노선 지우기</button>' : '') + ' · 정류장을 누르면 도착 · 「🚌 위치」로 그 노선 버스 · ⚠ 서울 시내버스는 없음</small>'); }
     if (on.lair) { var ar = LIVE.air; b.push('<b>😷 미세먼지</b> ' + PMG.map(function (g) { return li(g[1], g[0]); }).join('') + '<small class="lg-n">' + (ar && ar.err ? '<b style="color:#b91c1c">' + esc(ar.err) + '</b>' : ar && !ar.busy ? ar.pts.length + '칸 · ' + hhmm(ar.at) + ' 받음' : '받는 중') + ' · 숫자 = 초미세먼지(PM2.5 ㎍/㎥) · 색 = PM2.5·PM10 중 나쁜 쪽 환경부 등급 · CAMS 모형값(측정소 아님)</small>'); }
     if (on.lev) { var e = LIVE.ev; b.push('<b>🚧 돌발</b> ' + Object.keys(EVC).slice(0, 3).map(function (k) { return li(EVC[k][0], EVC[k][1] + ' ' + k); }).join(''));
-      b.push(!LK.its ? '<small class="lg-n" style="color:#b91c1c">ITS 키가 아직 없다 — 「🔑 ITS 키」에 국가교통정보센터 인증키를 넣으면 이 기기에서 보인다</small>'
+      b.push(!itsK() ? '<small class="lg-n" style="color:#b91c1c">ITS 키가 아직 없다 — 「🔑 ITS 키」에 국가교통정보센터 인증키를 넣으면 이 기기에서 보인다</small>'
         : '<small class="lg-n">' + (e && e.err ? '<b style="color:#b91c1c">' + esc(e.err) + '</b> · ' : '') + (e && !e.busy ? '서울·경기 ' + (e.items || []).length + '건 · ' + hhmm(e.at) + ' 받음' : '받는 중') + '</small><div class="lg-btns"><button data-lre="ev">🔄 돌발 다시 받기(ITS 1건)</button></div>'); }
     if (on.lwx) { var w = LIVE.wx; b.push('<small class="lg-n">🌦 지금 날씨 — ' + (w && w.err ? '<b style="color:#b91c1c">' + esc(w.err) + '</b>' : w && !w.busy ? w.pts.length + '칸 · ' + hhmm(w.at) + ' 받음' : '받는 중') + ' · 파란 테 = 비·눈이 오는 칸 · Open-Meteo 모형값</small>'); }
     return b.length ? ['📡 실시간(켠 동안만 받음 · 저장 안 함)', b.join('')] : null; }
@@ -4365,7 +4387,7 @@
     TR = { c: c, ll: ll, sd: sd, bus: null, loc: null, sub: null, rail: { nm: '', rows: null }, air: { dep: (TRAP.filter(function (a) { return a[2].indexOf(sd) >= 0; })[0] || TRAP[0])[0], rows: null } };
     trPaint(); trBus(); trSub(); draw();
   }
-  function trBus() { var T = TR; if (!LK.dgk) { T.bus = { err: 'key' }; trPaint(); return; } T.bus = { busy: 1 }; trPaint();
+  function trBus() { var T = TR; if (!dgK()) { T.bus = { err: 'key' }; trPaint(); return; } T.bus = { busy: 1 }; trPaint();
     dgGet('1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList', '&_type=json&numOfRows=40&pageNo=1&gpsLati=' + T.ll[1].toFixed(6) + '&gpsLong=' + T.ll[0].toFixed(6)).then(function (j) { if (TR !== T) return;
       var seen = {}, L = []; trItems(j).forEach(function (x) { if (seen[x.nodeid]) return; seen[x.nodeid] = 1; var p = P(+x.gpslong, +x.gpslati); L.push({ id: x.nodeid, nm: x.nodenm, no: x.nodeno, city: x.citycode, p: p, d: dTrue(p, T.c), arr: null }); });
       L.sort(function (a, b) { return a.d - b.d; }); T.bus = { stops: L.slice(0, 8) }; trPaint(); draw(); T.bus.stops.slice(0, 3).forEach(trArr);
@@ -4380,7 +4402,7 @@
       if (T.loc.v.length) { var q = T.loc.v.reduce(function (a, b) { return dTrue(a.p, T.c) < dTrue(b.p, T.c) ? a : b; }); view.cx = (q.p[0] + T.c[0]) / 2; view.cy = (q.p[1] + T.c[1]) / 2; draw(); }
     }).catch(function (e) { if (TR === T && T.loc) { T.loc.busy = 0; T.loc.err = trErr(e); trPaint(); } }); }
   function trDay() { var w = new Date().getDay(); return w === 0 || holOf(new Date()) ? '03' : w === 6 ? '02' : '01'; }
-  function trSub() { var T = TR; if (!LK.dgk) return;
+  function trSub() { var T = TR; if (!dgK()) return;
     if (!TRSTP) TRSTP = stnAll().then(function (L) { TRST = L.map(function (x) { return { nm: x[0], ln: x[1], p: P(x[2], x[3]) }; }); });
     TRSTP.then(function () { if (TR !== T) return; var near = {}; (TRST || []).forEach(function (q) { var d = dTrue(q.p, T.c); if (d < 1500 && (!near[q.nm] || near[q.nm].d > d)) near[q.nm] = { nm: q.nm, d: d, p: q.p }; });
       var L = Object.keys(near).map(function (k) { return near[k]; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 2); T.sub = { st: L, lines: [], pend: L.length }; trPaint(); if (!L.length) return;
@@ -4417,7 +4439,7 @@
   function trPaint() {
     var el = $('m2dTr'); if (!el || !TR || !el.classList.contains('on')) return; var T = TR, h = '<div class="lg-h"><b>🚏 여기 대중교통</b><span><button data-tx="min">▾ 접기</button> <button data-tx="x">닫기</button></span></div>';
     h += '<p class="lg-n">지점 ' + T.ll[1].toFixed(5) + ', ' + T.ll[0].toFixed(5) + ' · 실시간 값은 누를 때마다 새로 받는다(도착은 30초마다 저절로)</p>';
-    if (!LK.dgk) { el.innerHTML = h + '<div class="nil">공공데이터포털 인증키가 이 기기에 없다 — 키를 넣으면 버스 도착·위치, 지하철 시간표, 열차·항공편이 나온다(키는 이 기기에만 저장).</div><div class="lg-btns"><button data-tx="key">🔑 공공데이터포털 키 넣기</button></div>'; return; }
+    if (!dgK()) { el.innerHTML = h + '<div class="nil">공공데이터포털 인증키가 이 기기에 없다 — 키를 넣거나 맛보기를 켜면 버스 도착·위치, 지하철 시간표, 열차·항공편이 나온다(키는 이 기기에만 저장).</div><div class="lg-btns"><button data-tx="key">🔑 공공데이터포털 키 넣기</button></div>' + tryBtn(false); return; }
     // 🚌
     h += '<h4>🚌 가까운 정류장 · 버스 도착</h4>'; var B0 = T.bus;
     if (!B0 || B0.busy) h += '<p class="lg-n">정류장을 찾는 중…</p>'; else if (B0.err) h += '<p class="lg-n">' + esc(B0.err) + '</p>';
@@ -6176,7 +6198,7 @@
   function landCard(it) {
     LCUR = it; var hd = '<h3>📐 ' + esc(it.f ? it.f.addr : '필지') + '</h3>';
     var srcT = src('국토교통부 브이월드(연속지적도 · 개별공시지가 · 토지특성 · 토지이용계획 · 건축물 · 토지임야 · 주소 — 도로명주소는 행정안전부 자료) — 누를 때 받고 저장하지 않는다 · 공시지가는 세금·보상 기준값이지 시세가 아니다');
-    if (!VWKEY) return hd + '<p class="desc">브이월드 인증키가 있어야 이 자리 필지를 받는다(vworld.kr → 마이페이지 → 인증키 · 이 기기에만 저장).</p><div class="lg-btns"><button data-vwkey="1">🔑 브이월드 키 넣기</button></div>' + srcT;
+    if (!VWKEY) return hd + '<p class="desc">브이월드 인증키가 있어야 이 자리 필지를 받는다(vworld.kr → 마이페이지 → 인증키 · 이 기기에만 저장).</p><div class="lg-btns"><button data-vwkey="1">🔑 브이월드 키 넣기</button></div>' + tryBtn(false) + srcT;
     if (it.err) return hd + '<p class="desc">⚠ ' + esc(it.err) + '</p>' + srcT;
     if (!it.f) { if (!it.q) it.q = landGet(it); return hd + '<p class="desc">브이월드에서 이 자리 필지를 받는 중…</p>' + srcT; }
     var f = it.f, h = hd, ch = (it.ch || []).slice().sort(function (a, b) { return (a.stdrYear + a.stdrMt).localeCompare(b.stdrYear + b.stdrMt); }).pop(), fr = (it.fr || [])[0];

@@ -12,6 +12,14 @@ T = [('DT_133001N_4215', 'wage'), ('DT_133N_A3212', 'inc'), ('DT_133N_A7112', 'j
 nz = lambda s: re.sub(r'\s+', '', s or '')
 SDN = {'서울': '11', '부산': '26', '대구': '27', '인천': '28', '광주': '12', '대전': '30', '울산': '31', '세종': '36', '경기': '41', '강원': '51', '충북': '43', '충남': '44', '전북': '52', '전남': '12', '경북': '47', '경남': '48', '제주': '50',
        '충청북': '43', '충청남': '44', '전라북': '52', '전라남': '12', '경상북': '47', '경상남': '48'}
+# v2.97.0 인천 2026-07 개편(국세통계는 옛 구 이름) — 옛 구 값을 새 구에 근사로: 중구 → 영종구·제물포구 · 동구 → 제물포구 · 서구 → 서해구·검단구 · 제물포구처럼 두 옛 구가 겹치면 인원·금액을 더해 1인당을 다시 낸다
+ALIAS = {('28', '중구'): ['영종구', '제물포구'], ('28', '동구'): ['제물포구'], ('28', '서구'): ['서해구', '검단구']}
+def cands(byName, sd, name):
+    n = nz(re.sub(r'\(.*?\)', '', name or ''))
+    if (sd, n) in byName: return [byName[(sd, n)]], False
+    if (sd, n) in ALIAS: return [byName[(sd, nz(x))] for x in ALIAS[(sd, n)] if (sd, nz(x)) in byName], True
+    if sd == '36': return [v for (s2, n2), v in byName.items() if s2 == '36'], False
+    return [v for (s2, n2), v in byName.items() if s2 == sd and n2.startswith(n)], False
 def sdk(name):
     n = re.sub(r'(특별자치시|특별자치도|특별시|광역시|도)$', '', nz(name))
     return SDN.get(n) or SDN.get(n[:2])
@@ -47,24 +55,24 @@ def main():
                 except Exception as e: print(tbl, y, '받지 못함', e); continue
                 if not isinstance(ry, list): print(tbl, y, str(ry)[:120]); continue
                 for r in ry:
-                    a = r['C1']; p = par.get(a); sd = sdk(nm.get(p, '') if p else '')
+                    a = r['C1']; p = par.get(a); sd = sdk(nm.get(p, '') if p else '') or ('36' if sdk(r['C1_NM']) == '36' else None)
                     if not sd: continue
-                    gu = byName.get((sd, nz(r['C1_NM'])))
-                    cand = [gu] if gu else [v for (s2, n2), v in byName.items() if s2 == sd and n2.startswith(nz(r['C1_NM']))]
-                    for gc in cand: VY[gc][(r.get('C2_NM') or r.get('ITM_NM'), r.get('ITM_NM'))] = float(r['DT']) if r['DT'] not in ('-', '') else None
+                    cand, add = cands(byName, sd, r['C1_NM'])
+                    for gc in cand:
+                        kk = (r.get('C2_NM') or r.get('ITM_NM'), r.get('ITM_NM')); vv = float(r['DT']) if r['DT'] not in ('-', '') else None
+                        VY[gc][kk] = (VY[gc].get(kk) or 0) + vv if add and vv is not None and VY[gc].get(kk) is not None else vv
                 for gc, d in VY.items():
                     v2 = per(key, d)
                     if v2: HIST[gc][key][str(y)] = v2
                 print(tbl, y, len(VY), flush=True)
         for r in rows:
-            a = r['C1']; p = par.get(a); sd = sdk(nm.get(p, '') if p else '')
+            a = r['C1']; p = par.get(a); sd = sdk(nm.get(p, '') if p else '') or ('36' if sdk(r['C1_NM']) == '36' else None)
             if not sd: continue
-            gu = byName.get((sd, nz(r['C1_NM'])))
-            if not gu:   # 일반구가 있는 시(구 없이) — 그 시의 모든 구에 같은 값
-                cand = [v for (s2, n2), v in byName.items() if s2 == sd and n2.startswith(nz(r['C1_NM']))]
-                if not cand: miss[(key, nm.get(p, ''), r['C1_NM'])] += 1; continue
-            else: cand = [gu]
-            for gc in cand: V[gc][(r.get('C2_NM') or r.get('ITM_NM'), r.get('ITM_NM'))] = float(r['DT']) if r['DT'] not in ('-', '') else None
+            cand, add = cands(byName, sd, r['C1_NM'])   # 일반구가 있는 시(구 없이) — 그 시의 모든 구에 같은 값 · 인천 옛 구 → 새 구(ALIAS)
+            if not cand: miss[(key, nm.get(p, ''), r['C1_NM'])] += 1; continue
+            for gc in cand:
+                kk = (r.get('C2_NM') or r.get('ITM_NM'), r.get('ITM_NM')); vv = float(r['DT']) if r['DT'] not in ('-', '') else None
+                V[gc][kk] = (V[gc].get(kk) or 0) + vv if add and vv is not None and V[gc].get(kk) is not None else vv
         for gc, d in V.items():
             if key == 'wage':
                 n = d.get(('과세대상근로소득(총급여)', '인원')); a2 = d.get(('과세대상근로소득(총급여)', '금액'))
@@ -82,7 +90,7 @@ def main():
             for rank, (val, gc) in enumerate(L): out[gc][key + 'R'] = [rank + 1, len(L)]
     J = {'schema': 'tg-gutax/1', 'years': yrs, 'source': '국세청 국세통계(KOSIS 133) — DT_133001N_4215 연말정산(주소지) · DT_133N_A3212 종합소득세(시군구) · DT_133N_A7112 종합부동산세(시군구)',
          'fields': 'wage = [1인당 총급여(만 원/년), 인원] · wageY·incY = [[해, 1인당(만 원/년)]…] 2016~ · inc = [1인당 종합소득금액(만 원/년), 신고인원] · jbs = [종부세 결정세액 합계, 주택분](백만 원) · *R = [순위, 개수](시도 안 순위)',
-         'note': '시군구 평균이다 — 동 주민 수로 나누면 틀린다. 주소지 기준 연말정산은 그 구에 사는 근로자 · 종부세는 공제를 넘는 사람만 · 경기 「○○시」 값은 그 시의 구마다 같은 값.', 'gu': out}
+         'note': '시군구 평균이다 — 동 주민 수로 나누면 틀린다. 인천 제물포구·영종구·서해구·검단구는 2026-07 개편 전 옛 구(중구·동구·서구) 값을 이은 근사다. 주소지 기준 연말정산은 그 구에 사는 근로자 · 종부세는 공제를 넘는 사람만 · 경기 「○○시」 값은 그 시의 구마다 같은 값.', 'gu': out}
     json.dump(J, open(os.path.join(ROOT, 'data', 'gu-tax.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print(yrs, len(out), out.get('11650'), out.get('11680'), out.get('41111'))
     print('시도별 시군구 수', dict(collections.Counter(gc[:2] for gc in out)))

@@ -987,7 +987,13 @@
     sel = best; show(best ? best.it : null); draw();
   }
   function unent(t) { return String(t == null ? '' : t).replace(/<!\[CDATA\[|\]\]>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'); }
-  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  //   v2.98.1 깨진 글자 막기(소유자 2026-10-09 「동작경찰서를 누르니 한글이 깨져 나온다」) — 원자료가 깨진 채 들어온 글(이진 조각 · � · EUC-KR 을 UTF-8 로 잘못 읽은 「媛쒗룷4??」 꼴)을 화면에 그대로 내지 않는다 · 조금 깨졌으면 □ 로 · 많이 깨졌으면 「글자 깨짐」 + 살아 있는 전화번호만
+  var BRK0 = /[\x00-\x08\x0e-\x1f]/, BRK1 = /\ufffd/, BRKH = /[\u4e00-\u9fff][\uac00-\ud7a3?]|[\uac00-\ud7a3?][\u4e00-\u9fff]/;
+  function txtFix(t) { if (!BRK0.test(t) && !BRK1.test(t) && !(t.indexOf('?') >= 0 && BRKH.test(t))) return t;
+    var bad = (t.match(/[\x00-\x08\x0e-\x1f\ufffd]|[\u00c0-\u024f\u0400-\u04ff]/g) || []).length + (BRKH.test(t) && t.indexOf('?') >= 0 ? 99 : 0), tel = t.match(/0\d{1,2}-\d{3,4}-\d{4}/);
+    if (!BRK0.test(t) && bad / t.length < 0.25) return t.replace(/\ufffd+/g, '□') + ' (글자 일부 깨짐)';
+    return '(글자 깨짐 — 원자료 인코딩 오류)' + (tel ? ' ' + tel[0] : ''); }
+  function esc(t) { return txtFix(String(t == null ? '' : t)).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function row(k, v) { return '<div class="r"><b>' + esc(k) + '</b><span>' + v + '</span></div>'; }
   function src(t) { return '<div class="src">' + esc(t) + '</div>'; }
   // v0.10.83 24시간 막대 = 아래에 시각 숫자 · 붐빔(그 막대의 가장 작은 값~가장 큰 값 사이 위쪽 25%)/보통/한산(아래쪽 30%) 색 · 지금 시각 테 — 소유자 「시간을 숫자로 · 붐비는 시간대를 색을 달리」
@@ -2021,12 +2027,15 @@
   function stKey(name) { return String(name || '').replace(/^서울/, '').replace(/경찰서$/, ''); }
   function polStats(name) { var S = D.pstat; if (!S || !name) return ''; var k = stKey(name), h = '';
     var E = S.enf[k];
+    var EB = E ? Object.keys(E).filter(function (y) { return E[y].bad || E[y].n == null; }) : [];
+    if (E && EB.length) { var E2 = {}; Object.keys(E).forEach(function (y) { if (EB.indexOf(y) < 0) E2[y] = E[y]; }); E = Object.keys(E2).length ? E2 : null; }
     if (E) { var ys = Object.keys(E).sort(), last = E[ys[ys.length - 1]];
       h += '<div class="cap">🚓 해마다 현장 단속 건수(건 · 경찰관 단속 기록 · 무인 장비 제외 · 2017~2020 파일 없음)</div>' + bar(ys.map(function (y) { return E[y].n; }), '#1d4ed8', ys.map(function (y) { return yLab(+y, 1)[0]; }));
       h += row(ys[ys.length - 1] + '년 많이 단속한 조항', last.art.slice(0, 6).map(function (a) { var m = String(a[0]).match(/(\d+)조(의\d+)?/), t = m ? S.titles[m[1] + (m[2] || '')] : ''; return esc(a[0]) + (t ? ' <em>' + esc(t) + '</em>' : '') + ' ' + a[1].toLocaleString(); }).join('<br>'));
       h += row('차종', last.veh.map(function (v) { return esc(v[0] || '-') + ' ' + v[1].toLocaleString(); }).join(' · '));
       h += row('많이 단속한 자리', last.pl.slice(0, 4).map(function (v) { return esc(v[0]) + ' ' + v[1].toLocaleString(); }).join('<br>') + ' <em>(기록 글 그대로)</em>');
       if (k === '동작' && E['2023'] && E['2023'].n < 2000) h += '<p class="desc">⚠ 동작서 2023년 파일은 건수가 다른 해의 10분의 1도 안 된다 — 원자료 그대로 둔다(빠진 기록으로 보임).</p>'; }
+    if (EB.length) h += '<p class="desc">⚠ ' + EB.join('·') + '년 단속 파일은 ' + esc((S.enf[k][EB[0]] || {}).bad || '이 앱이 읽지 못했다') + '</p>';
     var C = S.call[k];
     if (C) h += '<div class="cap">📞 해마다 112 신고 출동 건수(건 · ' + S.callYears[0] + '~' + S.callYears[S.callYears.length - 1] + ')</div>' + bar(C.map(function (v) { return v || 0; }), '#7c3aed', S.callYears.map(function (y) { return "'" + String(y).slice(2); }));
     var R = S.crime[k], ry = S.crimeYear;

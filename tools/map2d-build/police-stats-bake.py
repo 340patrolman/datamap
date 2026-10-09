@@ -13,11 +13,20 @@ def rd(fn):
         except Exception: pass
 agg = json.load(open(os.path.join(D, 'agg.json'), encoding='utf-8'))
 titles = json.load(open(os.path.join(D, 'law_titles.json'), encoding='utf-8'))
+def broken_txt(s):   # v2.98.1 깨진 글자(이진 조각 · � · EUC-KR 을 UTF-8 로 잘못 읽은 꼴) 판정 — 지도 txtFix 와 같은 기준
+    import re as _re
+    if not isinstance(s, str): return False
+    if _re.search(r'[\x00-\x08\x0e-\x1f\ufffd]', s): return True
+    if not _re.search(r'[\u4e00-\u9fff?]', s): return False
+    r = s.encode('cp949', errors='replace').decode('utf-8', errors='replace'); h = len(_re.findall(r'[\uac00-\ud7a3]', r))
+    return h >= 2 and r.count('\ufffd') <= h
 used = set()
 enf = {}
 for st, ys in agg.items():
     enf[st] = {}
     for y, v in ys.items():
+        if any(broken_txt(a) for a, _ in v['full'][:8] + v['veh'][:6]):   # v2.98.1 엑셀 이진(xls) 파일을 글자로 읽은 해(2026-10 동작 2024) — 숫자도 믿을 수 없어 통째로 뺀다
+            enf[st][y] = {'bad': '원자료(공공데이터포털 15097296 · %s %s)가 엑셀 이진 파일이라 글자로 읽지 못했다 — xls 를 CSV 로 바꿔 agg.json 을 다시 만든다' % (st, y)}; print('⚠ 깨진 해', st, y); continue
         enf[st][y] = {'n': v['n'], 'art': v['full'][:8], 'veh': v['veh'][:6], 'pl': v['pl'][:5]}   # 조항은 항·호까지(예: 제50조4항)
         for a, _ in v['full'][:8]:
             m = re.match(r'제?(\d+)조(의\d+)?', a)

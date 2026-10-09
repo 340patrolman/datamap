@@ -5537,8 +5537,8 @@
         (rw.mktc_med ? vzH([[S.name, ap[4], hi ? '#dc2626' : '#2563eb'], ['서울 동 중앙', rw.mktc_med, '#94a3b8'], ['상위 20% 경계', rw.mktc_p80, '#64748b']], { title: '공동주택 평균 시세', fmt: function (v) { return won(v); } }) : '') +
         (rw.six_med != null ? vzH([[S.name, six, '#2563eb'], ['서울 동 중앙', rw.six_med, '#94a3b8'], ['상위 20% 경계', rw.six_p80, '#64748b']], { title: '시세 6억 이상 가구 비율(%)', unit: '%' }) : '') + '</div>'); tags.push(hi ? '집값 상위 20% 동' : mid ? '집값 중간 이상' : '집값 중간 이하'); }
     if (S.GT && (S.GT.wage || S.GT.inc)) { var gv2 = '', G2 = S.GT, gn = S.guName || '이 구', tg = '<b>구 지갑(참고 · 구 평균 — 이 동에 나누지 않는다).</b> ' + esc(gn) + ' ';
-      if (G2.wage) tg += '근로자 1인당 총급여 <b>' + won(G2.wage[0]) + '</b>(' + S.GTm.years.wage + '년 · 주소지 기준 · ' + (S.sido === '서울' ? '서울 25개 구' : S.sido + ' 시군구') + ' 중 ' + G2.wageR[0] + '위)';
-      if (G2.inc) tg += ' · 종합소득 신고자 1인당 종합소득금액 <b>' + won(G2.inc[0]) + '</b>(' + S.GTm.years.inc + '년 · ' + G2.incR[0] + '위)';
+      if (G2.wage) tg += '근로자 1인당 총급여 <b>' + won(G2.wage[0]) + '</b>(' + S.GTm.years.wage + '년 · 주소지 기준 · ' + (G2.wageR ? (S.sido === '서울' ? '서울 25개 구' : S.sido + ' 시군구') + ' 중 ' + G2.wageR[0] + '위' : '2026-07 개편 전 옛 구 값을 이은 근사 · 순위 없음') + ')';
+      if (G2.inc) tg += ' · 종합소득 신고자 1인당 종합소득금액 <b>' + won(G2.inc[0]) + '</b>(' + S.GTm.years.inc + '년' + (G2.incR ? ' · ' + G2.incR[0] + '위' : '') + ')';
       if (G2.jbs && G2.jbs[1] != null) tg += ' · 종합부동산세 주택분 ' + won(G2.jbs[1] * 100) + '(' + S.GTm.years.jbs + '년)';
       if (S.GC) { var C2 = S.GC, CA = S.GCa['_' + S.sido] || {};
         tg += ' · 2020 인구주택총조사(' + esc(C2.src) + '): 사는 집이 <b>자기집 ' + C2.own + '%</b> · 전세 ' + C2.jeonse + '% · 월세 ' + C2.wolse + '%(' + S.sido + ' 평균 자기집 ' + CA.own + '% · 월세 ' + CA.wolse + '%)' + (C2.uni4 != null ? ' · 25세 이상 4년제 대학 졸업 이상 <b>' + C2.uni4 + '%</b>(평균 ' + CA.uni4 + '%)' : '');
@@ -5706,8 +5706,8 @@
   function olkGuG10(gus) { var a = [0, 0, 0, 0, 0, 0], b = [0, 0, 0, 0, 0, 0], ok = 0;
     gus.forEach(function (g) { var G = POPP && POPP.gu[g]; if (!G || !G.y['2026'] || !G.y['2036']) return; ok++; var x = olkBands(pp10(G.y['2026'].t)), y = olkBands(pp10(G.y['2036'].t)); for (var i = 0; i < 6; i++) { a[i] += x[i]; b[i] += y[i]; } });
     return ok ? a.map(function (v, i) { return v ? b[i] / v : 1; }) : null; }
-  function olkWage(gus) { if (!GTAX || !gus.length) return null; var g = gus[0], G = GTAX.gu[g]; if (!G || !G.wage) return null; var sd = g.slice(0, 2), L = Object.keys(GTAX.gu).filter(function (k) { return k.slice(0, 2) === sd && GTAX.gu[k].wage; }).map(function (k) { return GTAX.gu[k].wage[0]; }).sort(function (x, y) { return y - x; });
-    var r = L.indexOf(G.wage[0]) + 1; return L.length >= 3 ? { w: G.wage[0], r: r, n: L.length, q: r / L.length } : null; }
+  function olkWage(gus) { if (!GTAX || !gus.length) return null; var g = gus[0], G = GTAX.gu[g]; if (!G || !G.wage) return null; var sd = g.slice(0, 2), L = Object.keys(GTAX.gu).filter(function (k) { return k.slice(0, 2) === sd && GTAX.gu[k].wage && !GTAX.gu[k].alias; }).map(function (k) { return GTAX.gu[k].wage[0]; }).sort(function (x, y) { return y - x; });
+    var r = G.alias ? L.filter(function (v) { return v > G.wage[0]; }).length + 1 : L.indexOf(G.wage[0]) + 1; return L.length >= 3 ? { w: G.wage[0], r: r, n: L.length, q: r / L.length, ax: G.alias } : null; }
   function olkFrn(gus) { if (!FRN) return null; var t = 0, p = 0, t0 = 0, mix = { work: 0, stud: 0, marr: 0, kor: 0 }, seen = [];
     gus.forEach(function (g) { var F2 = FRN.gu[g]; if (!F2 || !F2['2024'] || seen.indexOf(F2.src) >= 0) return; seen.push(F2.src); var v = F2['2024']; t += v.tot || 0; p += v.pop || 0; t0 += F2['2019'] ? F2['2019'].tot || 0 : 0; Object.keys(mix).forEach(function (k) { mix[k] += v[k] || 0; }); });
     if (!t || !p) return null; var sd = FRN.sd && FRN.sd[gus[0].slice(0, 2)], ssh = sd && sd[1] ? sd[0] / sd[1] * 100 : null, sh = t / p * 100, top = Object.keys(mix).sort(function (a, b) { return mix[b] - mix[a]; })[0];
@@ -5762,7 +5762,7 @@
     if (S.wrk != null && p.tot) { var r3 = S.wrk / p.tot; fw.push('종사자 = 주민의 ' + r3.toFixed(2) + '배' + (ref.wrkPerPop ? '(' + S.sido + ' 평균 ' + ref.wrkPerPop + ')' : '')); if (r3 >= 2) flow = 1; else if (r3 < 0.8 && flow <= 0) flow = -1; }
     var inc = 0, iw = [], rw = ref.w || {}; if (S.W && S.W.apt && S.W.apt[4] && rw.mktc_med) { iw.push('공동주택 평균 시세 ' + won(S.W.apt[4]) + (S.W.apt[4] >= rw.mktc_p80 ? '(서울 동 상위 20%)' : S.W.apt[4] >= rw.mktc_med ? '(서울 동 중앙 위)' : '(서울 동 중앙 아래)')); if (S.W.apt[4] >= rw.mktc_p80) inc = 1; else if (S.W.apt[4] < rw.mktc_med) inc = -1; }
     if (!iw.length && S.HMd && S.HMd.a && S.HMd.a[0] >= 5) { var hr = olkHref(gu.slice(0, 2), S.HMd.a[1], true); if (hr) { iw.push(hr.txt + ' · 매매 ' + S.HMd.a[0] + '건'); inc = hr.lv; } }
-    var wg = olkWage([gu]); if (wg) { iw.push(esc(S.guName || '구') + ' 근로자 1인당 총급여 ' + won(wg.w) + '(' + S.sido + ' ' + wg.n + '곳 중 ' + wg.r + '위 · 구 평균)'); if (inc === 0) inc = wg.q <= 0.3 ? 1 : wg.q > 0.7 ? -1 : 0; }
+    var wg = olkWage([gu]); if (wg) { iw.push(esc(S.guName || '구') + ' 근로자 1인당 총급여 ' + won(wg.w) + '(' + S.sido + ' ' + wg.n + '곳 중 ' + wg.r + '위' + (wg.ax ? ' 자리 · 2026-07 개편 전 옛 구 값 근사' : '') + ' · 구 평균)'); if (inc === 0) inc = wg.q <= 0.3 ? 1 : wg.q > 0.7 ? -1 : 0; }
     if (!iw.length && HREF && HREF.gu[gu]) { var hg = olkHref(gu.slice(0, 2), HREF.gu[gu][1], false); if (hg) { iw.push(hg.txt + (HREF.gu[gu][2] === 'cx' ? ' · 단지 기준' : '')); inc = hg.lv; } }
     var Lst = STI[gu] && STI[gu].dong && STI[gu].dong[S.d.k], stores = null, sw = '';
     if (Lst && Lst.length) { stores = {}; var to = 0, tc = 0; Lst.forEach(function (q) { stores[q[0]] = [q[1], q[2], q[3]]; to += q[2] || 0; tc += q[3] || 0; }); sw = '서울 상권분석 점포 최근 4분기 — 개업 ' + to.toLocaleString() + ' · 폐업 ' + tc.toLocaleString() + (to > tc ? ' → 늘어나는 쪽' : to < tc ? ' → 줄어드는 쪽' : ''); }
@@ -5771,7 +5771,7 @@
   function olkSgg(it, u, gus, A) { if (!A.pop || !A.age) return ''; if (!IAGE || !POPP) { var c0 = function () { var c = $('m2dCard'); if (UCUR === it && c && c.classList.contains('on')) show(it); }; if (IAGE === null) iaLoad().then(c0); if (!POPP) ppLoad().then(c0); return IAGE === false ? '' : '<p class="desc">🧭 유력·쇠퇴 업종 계산 자료를 받는 중…</p>'; }
     var flow = 0, fw = [], vis = 0, L = LPOP && LPOP.gu[gus[0]]; if (A.hp && A.emp) { var r = A.emp / A.hp; fw.push('종사자 = 인구의 ' + r.toFixed(2) + '배(SGIS 2023)'); if (r >= 1) flow = 1; else if (r < 0.45) flow = -1; }
     if (L && L.reg) { var ms = Object.keys(L.m).sort(), v = L.m[ms[ms.length - 1]], lr = v.tot / L.reg; fw.push('생활인구 = 주민의 ' + lr.toFixed(1) + '배(통계청 · 머문 방문객 포함)'); if (lr >= 2) vis = lr; }
-    var wg = olkWage(gus), inc = 0, iw = ''; if (wg) { iw = '근로자 1인당 총급여 ' + won(wg.w) + '(' + SIDO_S[gus[0].slice(0, 2)] + ' ' + wg.n + '곳 중 ' + wg.r + '위 · 국세청)'; inc = wg.q <= 0.3 ? 1 : wg.q > 0.7 ? -1 : 0; }
+    var wg = olkWage(gus), inc = 0, iw = ''; if (wg) { iw = '근로자 1인당 총급여 ' + won(wg.w) + '(' + SIDO_S[gus[0].slice(0, 2)] + ' ' + wg.n + '곳 중 ' + wg.r + '위' + (wg.ax ? ' 자리 · 옛 구 값 근사' : '') + ' · 국세청)'; inc = wg.q <= 0.3 ? 1 : wg.q > 0.7 ? -1 : 0; }
     else if (HREF && HREF.gu[gus[0]]) { var hg = olkHref(gus[0].slice(0, 2), HREF.gu[gus[0]][1], false); if (hg) { iw = hg.txt + (HREF.gu[gus[0]][2] === 'cx' ? ' · 단지 기준' : ''); inc = hg.lv; } }
     var secR = null, secY = null, secWait = 0; gus.forEach(function (g) { var F2 = RFAC[g]; if (!F2) { secWait = 1; fLoad(g, function () { var c = $('m2dCard'); if (UCUR === it && c && c.classList.contains('on')) show(it); }); return; } Object.keys(F2.dong || {}).forEach(function (k) { var q2 = F2.dong[k]; if (!q2.bzi) return; secY = secY || q2.bziy || F2.bziy; secR = secR || {}; q2.bzi.forEach(function (x) { var a2 = secR[x[0]] = secR[x[0]] || [x[0], 0, 0]; a2[1] += x[1] || 0; a2[2] += x[2] || 0; }); }); });
     var sec = !stores && !secWait && secR ? olkSec(Object.keys(secR).map(function (k) { return secR[k]; }), secY) : null;

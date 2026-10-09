@@ -95,6 +95,36 @@ def num(s):
     except Exception: return None
 def med(a): return round(statistics.median(a)) if a else None
 
+# v2.97.1 브이월드가 행정동 코드를 주지 않는 지번(2026-10 강원·전북 5,113곳 전부 — 코워크 확인) = 좌표로 행정동 경계(SGIS hjd)를 찾아 잇는다
+HJD = os.path.join(os.path.dirname(ROOT), '13_관할경계', '원자료', 'hjd20260701.geojson')
+_HJ = None
+def _inring(x, y, ring):
+    c = False; j = len(ring) - 1
+    for i in range(len(ring)):
+        xi, yi = ring[i][0], ring[i][1]; xj, yj = ring[j][0], ring[j][1]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-12) + xi: c = not c
+        j = i
+    return c
+def hjd_at(lat, lon, gu, path=None):
+    """좌표(위도·경도)가 든 행정동 8자리 — 같은 시군구(gu) 안을 먼저 · 경계 파일이 없으면 None"""
+    global _HJ
+    if _HJ is None:
+        _HJ = []; fp = path or HJD
+        if os.path.exists(fp):
+            for f in json.load(open(fp, encoding='utf-8'))['features']:
+                gm = f['geometry']; polys = gm['coordinates'] if gm['type'] == 'MultiPolygon' else [gm['coordinates']]
+                xs = [p[0] for pg in polys for p in pg[0]]; ys = [p[1] for pg in polys for p in pg[0]]
+                _HJ.append((str(f['properties']['adm_cd2'])[:8], polys, (min(xs), min(ys), max(xs), max(ys))))
+        else: print('행정동 경계 파일 없음 — 좌표로 동 잇기를 건너뜀:', fp, flush=True)
+    other = None
+    for k, polys, b in _HJ:
+        if not (b[0] <= lon <= b[2] and b[1] <= lat <= b[3]): continue
+        for pg in polys:
+            if _inring(lon, lat, pg[0]) and not any(_inring(lon, lat, h) for h in pg[1:]):
+                if k[:5] == str(gu): return k
+                other = other or k
+    return other
+
 def build():
     IX = json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8')); geo = json.load(open(GEO, encoding='utf-8'))
     TY = {'Apt': 0, 'Offi': 1, 'RH': 2}; NMK = {'Apt': 'aptNm', 'Offi': 'offiNm', 'RH': 'mhouseNm'}
@@ -133,6 +163,8 @@ def build():
                     if not c:
                         lat = lon = k8 = cl = None
                         if gc: lat, lon, k8, cl = gc[0], gc[1], (gc[4] or '')[:8] or None, G.code_ll(gc[0], gc[1])
+                        if lat and not k8:
+                            k8 = hjd_at(lat, lon, g['gu']); tot['좌표로 행정동 이음' if k8 else '행정동 못 찾음'] += 1
                         c = cx[cid] = {'t': TY[typ], 'n': r.get(NMK[typ]) or '', 'u': U(um), 'lat': lat, 'lon': lon, 'k8': k8, 'cell': cl, 'by': num(r.get('buildYear')), 'tr': [], 'last': None, 'je': [], 'wo': [], 'wd': []}
                     if tr:
                         amt = num(r.get('dealAmount'))

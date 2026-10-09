@@ -70,6 +70,12 @@ SETS = [
     ['data/r/41591/fac.json', 92, 'auto', '경기 동 현황 — 경기 어린이집 ChildHouse·유치원 Kndrgrschoolstus(`tools/region/gg-fac-fetch.py` · ggfac 파일 지우고) · 경기 카드 매출 TB25BPTCARDDONGM(`tools/region/gg-card-fetch.py` · ggcard 폴더 비우고) · 학교·관공서·경로당 OSM(`edu_scan.py`·`gov_scan.py` — pbf 새로 받으면) → `tools/region/fac-bake.py`'],
     ['data/r/11680/jct.json', 365, 'auto', '교차로별 사고 10년 — 사고 10년(taas10) 또는 바탕 조각 교차로가 바뀌면 `py -3.12 -X utf8 tools/region/jct-bake.py`'],
     ['data/r/11680/hot10.json', 365, 'auto', '다발지 10년 서울·경기 — 새 공표 해가 나오면 `tools/region/hot10-bake.py fetch`(1개씩 · 동시 호출하면 막힘) → `build`'],
+    # v2.99.0(2026-10-09) 이번 판들에서 생긴 자료
+    ['data/mig-dong.json', 31, 'hand', '동별 전입·전출(행정안전부 지역별 인구이동 15108093 · 달마다) — 코워크가 받아 동·달 CSV(07_API키/out/mig) → `py -3.12 -X utf8 tools/region/mig-bake.py "<자료 이름 (받은 날)>"` · 지금 서초·강남만(전국은 받는 방식부터)'],
+    ['data/redev.json', 31, 'hand', '입주 예정 단지(손 목록 · 출처·checked) — 새 입주 예정(고시·국토부 15160169·언론)을 더하고, 주민 기준월보다 앞이 된 단지는 add=false 로'],
+    ['data/home-ref.json', 92, 'auto', '시도·시군구 집값 기준표 — 실거래(home.json)를 다시 구운 뒤 `py -3.12 -X utf8 tools/region/homeref-bake.py`'],
+    ['data/ind-age.json', 92, 'auto', '업종×나이 카드 비중(서울 추정매출 분기) — `py -3.12 -X utf8 tools/region/indage-bake.py`'],
+    ['data/popproj.json', 365, 'hand', '통계청 시군구 장래인구추계(KOSIS DT_1BPB002E · 몇 해에 한 번 새 기준) — 새 기준이 공표됐는지 확인 → 다시 굽고 `ppProject` 기준 해(2026·2036) 확인'],
     ['data/r/index.json', 92, 'auto', '서울 25개 구 행정동(주민 연령 매월 · 상권 매출 분기 · 생활인구 월 파일) — 07_API키/out/region 의 받은 것을 지우거나 JUMIN_YM·LOCAL_PEOPLE 달을 올리고 `py -3.12 -X utf8 tools/region/dong-bake.py fetch` → `build`'],
 ]
 
@@ -82,8 +88,19 @@ def last_commit(path):
     if os.path.exists(p): return datetime.datetime.fromtimestamp(os.path.getmtime(p)).astimezone()
     return None
 
+# v2.99.0 날짜가 정해진 일 — 기한 DUE_SOON 일 앞부터 알린다 [날짜, 누가(형님/코워크/Claude), 할 일]
+DATES = [
+    ['2027-04-04', '코워크→형님', '브이월드 개발키 만료(2027-04-04) — 3월 초까지 운영키 전환 신청 · 바뀌면 각 기기 🔑 와 맛보기 중계 VW_KEY 다시 넣기'],
+    ['2027-01-31', 'Claude', '해마다 1월 — data/biz-rates.json(최저임금·4대보험·카드 수수료·기준금리) · 세금 계산 요율(tax-rules.json) 새 해 고시 확인'],
+    ['2027-05-31', 'Claude', '해마다 4~5월 — 공동주택·개별 공시가격 새 해(hp·jiga) · 침수흔적도 전년분(season)'],
+]
+DUE_SOON = 60
+
 def main():
     now = datetime.datetime.now().astimezone()
+    for d, who, what in DATES:
+        left = (datetime.date.fromisoformat(d) - now.date()).days
+        if left <= DUE_SOON: print('⏰ ' + ('기한 지남 ' + str(-left) + '일' if left < 0 else str(left) + '일 남음') + ' [' + who + '] ' + what)
     stale, missing = [], []
     for f, days, kind, how in SETS:
         t = last_commit(f)

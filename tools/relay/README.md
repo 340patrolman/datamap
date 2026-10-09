@@ -3,6 +3,13 @@
 열쇠(ITS · 공공데이터포털 · 브이월드)를 **Cloudflare 의 비밀값**에만 두고, 지도는 이 중계를 거쳐 실시간 자료를 받는다.
 폰·저장소에는 열쇠가 가지 않는다(브이월드만 340patrolman.github.io 에 묶인 키라 맛보기 중 메모리로 받는다).
 
+## ⚠ 돈 안 나가게 — 먼저 읽기(cloudflare-docs pricing.mdx·limits.mdx 원문 확인 2026-10-09)
+- 가입하면 **Workers Free(무료)** 가 기본이다. 무료는 하루 100,000건을 넘으면 그날(UTC 자정까지) **Error 1027 로 멈출 뿐 청구되지 않는다.**
+- 돈은 **Workers Paid(월 최소 $5)** 로 올렸을 때만 나간다 → **「Upgrade」·「Workers Paid」·「Purchase」 단추를 누르지 않는다 · 결제 수단(카드)을 등록하지 않는다.**
+- 이 중계는 KV·R2·D1·Durable Objects·Queues 같은 유료가 될 수 있는 기능을 쓰지 않는다(Workers 와 무료 캐시만).
+- 도메인 구입·연결도 필요 없다(`*.workers.dev` 무료 주소를 쓴다).
+- 가입 뒤 한 번: 대시보드 → 「Billing」(결제)에서 플랜이 Free 이고 결제 수단이 비어 있는지 확인.
+
 | 항목 | 값 |
 |---|---|
 | 무료 한도(Cloudflare) | 하루 100,000건 · 요청마다 CPU 10ms (cloudflare-docs limits.mdx 2026-10 확인) |

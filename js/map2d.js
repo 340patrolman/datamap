@@ -3210,6 +3210,7 @@
   //   근거 data/sig-offset-check.json(다른 세션 tools/signal/offset-check.py — T-Data 닻과 견줘 25기록 중 23이 +0~4초) · T-Data 닻이 같은 교차로에 있으면 견줘 ±6초 넘게 어긋나면 감춘다 · 어느 현시가 어느 방향인지는 이 자료에 없다
   var SFCK = null; fetch('data/sig-field-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFCK = j; }).catch(function () {});
   function kscFv(no) { var c = SFCK && SFCK.checks ? SFCK.checks.filter(function (q) { return String(q.no) === String(no); }) : []; if (!c.length) return ''; var q = c[c.length - 1];
+    if (q.eye) return '<b style="color:#15803d">✅ 현장 눈 대조</b>(' + esc(q.day) + ' ' + esc(q.at) + ' · ' + esc(q.mv) + ') — 소유자가 현장에서 실제 신호와 맞대 보고 「' + esc(q.say || '맞다') + '」 · 초 단위로 잰 기록은 아니다(그 시각대 한 번 본 것)';
     return '<b style="color:#15803d">✅ 현장 영상 대조</b>(' + esc(q.day) + ' ' + esc(q.at) + ' · ' + esc(q.mv) + ') — 계획 ' + esc(q.plan) + ' / 영상 ' + esc(q.seen) + ' → <b>' + (Math.abs(q.d) <= q.pm ? q.pm + '초 안으로 맞음' : (q.d > 0 ? '실제가 ' + q.d + '초 늦음' : '실제가 ' + (-q.d) + '초 빠름')) + '</b>(영상 시각 ±' + q.pm + '초 · 그 시각대 한 번 본 것)'; }
   function ofckTxt() { var S = OFCK && OFCK.spots, n = 0, m = 0; if (!S) return '자정 기준 규칙은 T-Data 로 받은 값과 견줘 확인했다'; Object.keys(S).forEach(function (k) { n++; if (S[k][2] > 0 || S[k][4] > 0) m++; });
     return '자정 기준 규칙은 경찰청 계획과 T-Data 받은 값이 같은 주기인 서울 ' + n + '곳 중 <b>' + m + '곳이 맞았다</b>(±5초 · 기준 이동류가 1현시가 아닌 곳은 그 현시 시작과)(' + esc(OFCK.made || '') + ' 대조)'; }

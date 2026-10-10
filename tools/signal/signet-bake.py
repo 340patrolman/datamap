@@ -44,10 +44,12 @@ def main():
         sg = v[7] if len(v) > 7 else None
         if not sg: continue
         no = nm = None; src = []
+        if sg.get('no') is not None: no = str(sg['no'])   # navgraph-bake 가 55m 안 노드 전부에 신호 교차로 번호(no)를 붙여 준다(2026-10-10 밤부터)
         for key in ('ksc', 'sd', 'tod'):
             if sg.get(key):
                 src.append({'ksc': '교통과 현시도', 'sd': '서울시 T-Data', 'tod': '경찰청 신호계획'}[key])
-                if no is None: no, nm = str(sg[key][0]), sg[key][1]
+                if no is None: no = str(sg[key][0])
+                if nm is None: nm = sg[key][1]
         if no is None: continue
         num[nid] = no
         o = info.setdefault(no, {'nm': nm, 'll': [v[0], v[1]], 'src': [], 'its': [], 'in': v[4], '_d': 1e9})
@@ -56,6 +58,16 @@ def main():
         o['its'].append(nid)
         d = min([sg[k][-1] for k in ('ksc', 'sd', 'tod') if sg.get(k) and isinstance(sg[k][-1], (int, float))] or [1e9])
         if d < o['_d']: o['_d'] = d; o['ll'] = [v[0], v[1]]; o['in'] = v[4]
+    # 신호 자리 = 신호 자료의 좌표(교통과 → T-Data → 경찰청) — 붙은 노드의 자리는 한쪽 차로로 치우칠 수 있다(서초경찰서: 노드는 남행 쪽 · 북행 링크에서 35m 넘게 떨어짐)
+    try:
+        for x in json.load(io.open(os.path.join(ROOT, 'data', 'signal-tod-seoul.json'), encoding='utf-8'))['spots']:
+            if str(x['no']) in info: info[str(x['no'])]['ll'] = [x['lon'], x['lat']]
+        for k9, q in json.load(io.open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))['pts'].items():
+            if k9 in info: info[k9]['ll'] = [q[1], q[0]]
+        for x in json.load(io.open(os.path.join(ROOT, 'data', 'sig-ksc-seocho.json'), encoding='utf-8'))['items']:
+            if str(x['no']) in info: info[str(x['no'])]['ll'] = [x['lon'], x['lat']]
+    except Exception as e:
+        print('신호 좌표를 못 읽음', e)
     # 큰 교차로는 ITS 노드가 여럿이다(상·하행이 갈린 길 — 귀퉁이마다 노드). 신호는 그중 한 노드에만 붙어 있어, 그대로 두면 한쪽 방향만 이어진다
     #   → 신호 자리에서 55m 안의 교차로 노드(유형 101 · 링크 셋 이상)를 같은 번호로 묶는다(더 가까운 신호가 있으면 그쪽)
     def dm(a, b):
@@ -76,26 +88,51 @@ def main():
     def turn(a, b):
         d = abs(a - b) % 360
         return min(d, 360 - d)
+    # 길 가운데 신호(삼거리·건널목 신호 — 맞은편 차로에는 갈림 노드가 없어 번호가 안 붙는다 · 서초경찰서 앞 반포대로 북행) — 링크가 신호 자리 35m 안을 지나면 거기서 그 신호를 만난 것으로 본다
+    nearL = {}
+    for k, g in enumerate(G):
+        a_no, b_no = num.get(L[k][1]), num.get(L[k][2]); bd, hit = 35.0, None
+        for no, o in info.items():
+            if no == a_no or no == b_no: continue
+            if o['ll'][0] < min(q[0] for q in g) - 0.001 or o['ll'][0] > max(q[0] for q in g) + 0.001 or o['ll'][1] < min(q[1] for q in g) - 0.001 or o['ll'][1] > max(q[1] for q in g) + 0.001: continue
+            # 점에서 선분까지(m) — 곧은 긴 링크는 꼭짓점이 양 끝뿐이라 꼭짓점만 보면 놓친다
+            kx = 88800.0 * math.cos(math.radians(o['ll'][1])) / math.cos(math.radians(37.49)); px, py = o['ll'][0] * kx, o['ll'][1] * 111000.0; tot = 0.0; segs = []
+            for qi in range(1, len(g)):
+                ax, ay, bx2, by2 = g[qi - 1][0] * kx, g[qi - 1][1] * 111000.0, g[qi][0] * kx, g[qi][1] * 111000.0; sl = math.hypot(bx2 - ax, by2 - ay); segs.append((ax, ay, bx2, by2, sl, tot)); tot += sl
+            for ax, ay, bx2, by2, sl, acc in segs:
+                u = 0.0 if sl == 0 else max(0.0, min(1.0, ((px - ax) * (bx2 - ax) + (py - ay) * (by2 - ay)) / (sl * sl))); d = math.hypot(ax + (bx2 - ax) * u - px, ay + (by2 - ay) * u - py)
+                if d < bd: bd, hit = d, (no, (acc + sl * u) / max(1.0, tot))
+        if hit: nearL[k] = hit
     best = {}
+    def walk(sno, k0, fr0):
+        """sno 번 신호에서 링크 k0 을 타고(그 링크의 fr0 지점부터) 곧게 따라가 다음 신호를 찾는다"""
+        k, m, t, mid, nl, spd, name, prev, first = k0, 0.0, 0.0, 0, 0, 999, L[k0][7] or '', L[k0][1], True
+        seenk = set()
+        while True:
+            l = L[k]; v = l[2]; ln = float(l[3] or 0); sp = float(l[4] or 0) or 30.0; f0 = fr0 if first else 0.0
+            if k in nearL and nearL[k][0] != sno and nearL[k][1] > f0:
+                no2, fr = nearL[k]; m2 = m + ln * (fr - f0); t2 = t + ln * (fr - f0) / (sp / 3.6)
+                if 40 <= m2 <= MAXM:
+                    rec = [sno, no2, int(round(m2)), int(round(t2)), dir8(H0[k0]), dir8((H1[k] + 180) % 360), name, min(spd, int(sp)), mid, nl + 1]
+                    if (sno, no2) not in best or rec[3] < best[(sno, no2)][3]: best[(sno, no2)] = rec
+                return
+            m += ln * (1 - f0); t += ln * (1 - f0) / (sp / 3.6); nl += 1; spd = min(spd, int(sp)); seenk.add(k); first = False
+            if m > MAXM: return
+            if num.get(v) and num[v] != sno:
+                rec = [sno, num[v], int(round(m)), int(round(t)), dir8(H0[k0]), dir8((H1[k] + 180) % 360), name, spd, mid, nl]
+                if (sno, num[v]) not in best or rec[3] < best[(sno, num[v])][3]: best[(sno, num[v])] = rec
+                return
+            if not num.get(v) and N[v][2] == '101' and N[v][5] >= 3: mid += 1
+            cand = [(turn(H1[k], H0[q]), q) for q in out.get(v, []) if L[q][2] != prev and q not in seenk]
+            if not cand: return
+            dmin, q = min(cand)
+            if dmin > 50: return
+            prev, k = v, q
     for s in num:
         for k0 in out.get(s, []):
-            k, m, t, mid, nl, spd, name, prev = k0, 0.0, 0.0, 0, 0, 999, L[k0][7] or '', s
-            seenk = set()
-            while True:
-                l = L[k]; v = l[2]; ln = float(l[3] or 0); sp = float(l[4] or 0) or 30.0
-                m += ln; t += ln / (sp / 3.6); nl += 1; spd = min(spd, int(sp)); seenk.add(k)
-                if m > MAXM: break
-                if num.get(v) and num[v] != num[s]:
-                    key = (num[s], num[v])
-                    rec = [num[s], num[v], int(round(m)), int(round(t)), dir8(H0[k0]), dir8((H1[k] + 180) % 360), name, spd, mid, nl]
-                    if key not in best or rec[3] < best[key][3]: best[key] = rec
-                    break
-                if not num.get(v) and N[v][2] == '101' and N[v][5] >= 3: mid += 1
-                cand = [(turn(H1[k], H0[q]), q) for q in out.get(v, []) if L[q][2] != prev and q not in seenk]
-                if not cand: break
-                dmin, q = min(cand)
-                if dmin > 50: break
-                prev, k = v, q
+            walk(num[s], k0, 0.0)
+    for k0, (no2, fr) in nearL.items():
+        walk(no2, k0, fr)                                     # 길 가운데 신호에서도 떠난다(그 링크의 나머지부터)
     links = sorted(best.values(), key=lambda r: (r[0], r[3]))
     # 같은 번호에서 너무 가까운 것(같은 교차로의 다른 노드로 본 짝)은 뺀다
     links = [r for r in links if r[2] >= 40]

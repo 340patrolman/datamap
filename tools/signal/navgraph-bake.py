@@ -61,13 +61,16 @@ def main():
     # 신호 자료를 교차로에 붙인다 — 가장 가까운 「교차로」 노드(101) 60m 안
     deg = collections.Counter()
     for L in LINK: deg[L[1]] += 1; deg[L[2]] += 1
-    X = [(k, v['xy']) for k, v in NODE.items() if deg[k] >= 3]
-    def snap(lon, lat, lim=60):
-        x, y = inv.transform(lon, lat); best = None
+    X3 = [(k, v['xy']) for k, v in NODE.items() if deg[k] >= 3]; XA = [(k, v['xy']) for k, v in NODE.items()]
+    def snap(lon, lat, lim=55, X=None):
+        X = X or X3   # 신호 자리에서 lim m 안의 교차로 노드 전부(가까운 차례) — 큰 교차로는 노드가 여럿(상·하행 분리)이라 모두 같은 번호로 묶는다(게임 세션 signet-bake.py 와 같은 규칙 55m)
+        x, y = inv.transform(lon, lat); out = []
         for k, (a, b) in X:
             d = (a - x) ** 2 + (b - y) ** 2
-            if best is None or d < best[0]: best = (d, k)
-        return (best[1], round(math.sqrt(best[0]))) if best and best[0] <= lim * lim else (None, None)
+            if d <= lim * lim: out.append((round(math.sqrt(d)), k))
+        return sorted(out)
+    def put(k, kind, row, d, di):   # 한 노드에 같은 갈래 신호가 둘 닿으면 더 가까운 쪽
+        if kind not in SIG[k] or d < SIG[k][kind][di]: SIG[k][kind] = row
     SIG = collections.defaultdict(dict); lost = collections.Counter()
     def load(fn):
         try: return json.load(open(os.path.join(ROOT, 'data', fn), encoding='utf-8'))
@@ -75,23 +78,24 @@ def main():
     sd = load('sigdir-seoul.json'); its = sd.get('its', {})
     for no, p in (sd.get('pts') or {}).items():
         if not (37.40 < p[0] < 37.56 and 126.94 < p[1] < 127.13): continue
-        k, d = snap(p[1], p[0])
-        if not k: lost['sigdir'] += 1; continue
-        recs = its.get(no) or []; SIG[k]['sd'] = [no, p[2], len(recs), 1 if any('a' in x for x in recs) else 0, d]   # 서울 T-Data: [번호, 이름, 기록 수, 닻(이어 세기) 있음, 붙인 거리 m]
+        hit = snap(p[1], p[0])
+        if not hit: lost['sigdir'] += 1; continue
+        recs = its.get(no) or []
+        for d, k in hit: put(k, 'sd', [no, p[2], len(recs), 1 if any('a' in x for x in recs) else 0, d], d, 4)   # 서울 T-Data: [번호, 이름, 기록 수, 닻(이어 세기) 있음, 붙인 거리 m]
     for s in load('signal-tod-seoul.json').get('spots', []):
         if not (37.40 < s['lat'] < 37.56 and 126.94 < s['lon'] < 127.13): continue
-        k, d = snap(s['lon'], s['lat'])
-        if not k: lost['tod'] += 1; continue
-        SIG[k]['tod'] = [s['no'], s['name'], len(s['plans']), d]   # 경찰청 계획: [번호, 이름, 계획 수, 거리]
+        hit = snap(s['lon'], s['lat'])
+        if not hit: lost['tod'] += 1; continue
+        for d, k in hit: put(k, 'tod', [s['no'], s['name'], len(s['plans']), d], d, 3)   # 경찰청 계획: [번호, 이름, 계획 수, 거리]
     ks = load('sig-ksc-seocho.json')
     for it in ks.get('items') or []:
         if not it.get('lon'): lost['ksc 좌표 없음'] += 1; continue
-        k, d = snap(it['lon'], it['lat'], 90)
-        if k: SIG[k]['ksc'] = [it['no'], it.get('nm', ''), d]   # 교통과 출력물(요일·시각별 주기·현시·방향별 초)
-        else: lost['ksc'] += 1
+        hit = snap(it['lon'], it['lat']) or snap(it['lon'], it['lat'], 160)[:1] or snap(it['lon'], it['lat'], 80, XA)[:1]   # 그래도 없으면 80m 안 가장 가까운 노드(이면도로가 도로망에 없어 링크 둘만 만나는 자리 — 서초경찰서 앞)   # 55m 안에 없으면 160m 안 가장 가까운 한 곳(서초경찰서 4036 — 적힌 자리가 교차로에서 벗어나 있다)
+        if not hit: lost['ksc'] += 1; print('  교통과 못 붙임', it['no'], it.get('nm'), it['lat'], it['lon'])
+        for d, k in hit: put(k, 'ksc', [it['no'], it.get('nm', ''), d], d, 2)   # 교통과 출력물(요일·시각별 주기·현시·방향별 초)
     pm = load('sig-phmv-seoul.json').get('spots', {})
     for k, v in SIG.items():
-        no = (v.get('sd') or v.get('tod') or [None])[0]
+        no = (v.get('sd') or v.get('tod') or v.get('ksc') or [None])[0]; v['no'] = no   # 이 노드가 속한 신호 교차로 번호(서울 C-ITS·T-Data·경찰청·교통과가 같은 번호 체계)
         if no in pm: v['phmv'] = len(pm[no]['ph'])   # 현시 → 이동류를 읽은 현시 수
     nodes = {}
     for k, v in NODE.items():
@@ -103,24 +107,25 @@ def main():
     for L in LINK:
         if L[5] <= 4: big.add(L[1]); big.add(L[2])
     inbig = [k for k in inx if k in big]
-    def cov(ids): return {'교차로': len(ids), '신호 자료 있음': sum(1 for k in ids if k in SIG), '방향별 초(T-Data)': sum(1 for k in ids if 'sd' in SIG.get(k, {})), '지금 이어 셀 수 있음(닻)': sum(1 for k in ids if SIG.get(k, {}).get('sd', [0, 0, 0, 0])[3]), '요일·시각 계획(경찰청)': sum(1 for k in ids if 'tod' in SIG.get(k, {})), '교통과 출력물': sum(1 for k in ids if 'ksc' in SIG.get(k, {})), '현시 → 방향 읽음': sum(1 for k in ids if 'phmv' in SIG.get(k, {}))}
+    def cov(ids):
+        def nn(f): return len(set(SIG[k]['no'] for k in ids if k in SIG and f(SIG[k])))
+        return {'교차로 노드': len(ids), '신호 교차로(번호로 묶어)': nn(lambda v: True), '방향별 초(T-Data)': nn(lambda v: 'sd' in v), '지금 이어 셀 수 있음(닻)': nn(lambda v: v.get('sd', [0, 0, 0, 0])[3]), '요일·시각 계획(경찰청)': nn(lambda v: 'tod' in v), '교통과 출력물': nn(lambda v: 'ksc' in v), '현시 → 방향 읽음': nn(lambda v: 'phmv' in v)}
     doc = {'schema': 'tg-nav-graph/1', 'made': datetime.date.today().isoformat(), 'area': '서울특별시 서초구 + 경계 밖 2km',
            'dem': 'produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.',
            'source': '국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판(MOCT_NODE·MOCT_LINK·TURNINFO) · 신호 = data/sigdir-seoul.json · signal-tod-seoul.json · sig-ksc-seocho.json · sig-phmv-seoul.json',
            'note': ['**준비물이다 — 길을 찾아 주는 기능은 아직 없다.** 길찾기를 만들 때 이 한 파일을 읽으면 되도록 뼈대와 신호 자료의 붙음을 모아 둔 것',
                     '링크는 방향이 있다(F → T) · 제한속도 0 은 원자료에 값이 없는 것 · 회전 제한은 TURNINFO 에 적힌 것만(적히지 않은 금지가 있을 수 있다 — 현장 확인)',
-                    '신호 자료는 좌표로 가장 가까운 교차로(링크 셋 이상이 만나는 노드) 60m 안에 붙였다 — 큰 교차로는 노드가 여럿이라 한 노드에만 붙는다(나머지 노드는 같은 교차로라도 비어 보인다). 교차로를 하나로 묶는 일이 다음 단계',
+                    '신호 자료는 신호 자리에서 55m 안의 교차로 노드(링크 셋 이상이 만나는 노드) **전부**에 붙였다 — 큰 교차로는 노드가 여럿(상·하행 분리)이라 같은 no 의 노드들이 한 교차로다(한 노드에 둘이 닿으면 더 가까운 신호). data/sig-net-seocho.json(신호 교차로 이음표)과 같은 규칙',
                     'coverage = 서초구 안 교차로 가운데 신호 자료가 붙은 수 — 분모에는 신호 없는 교차로도 들어 있다(서울은 시군도 등급을 싣지 않아 대부분 등급 4 라 큰길만 따로 가르지 못한다). 붙은 「개수」를 본다',
                     '높이 = Copernicus DEM GLO-30(30m · 건물·나무가 섞인 표면 높이)을 150m 평균으로 고른 값 — **땅 높이의 근사**다. 고가·지하차도·교량·터널(도로 유형 001~004)은 길이 땅과 다른 높이로 가므로 그 링크의 오르막·내리막은 믿지 않는다. 짧은 링크의 1~2m 차이는 잡음이다',
                     '차로 수는 링크 전체의 값이다 — 교차로 앞 차로별 진행 방향(좌회전·직진·우회전 전용)은 이 자료에 없다. 「몇 차로로 가라」를 안내하려면 따로 구해야 한다',
                     '길찾기에 쓸 때의 규칙(T-Book 신호 앱과 같다): 제한속도를 넘는 값은 안 낸다 · 밤(22시~)에는 연동속도를 안 보인다 · 계획값과 실제가 다를 수 있다고 밝힌다 · 「몇 초 뒤 바뀜」은 닻이 맞는 교차로에서만'],
            'turn_types': TURN,
-           'fields': 'nodes{노드 ID: [경도, 위도, 유형(101 교차로·102 도로 시작/끝·103 속성변화점·104 도로시설·106 IC/JC 등 — 원자료 코드), 이름, 서초구 안 1/밖 0, 닿는 링크 수, 높이 m, 신호{sd[T-Data 번호, 이름, 기록 수, 닻 있음, 거리 m], tod[경찰청 번호, 이름, 계획 수, 거리], ksc[번호, 이름, 거리], phmv 방향 읽은 현시 수}(있을 때만)]} · links[[링크 ID, 시작 노드, 끝 노드, 길이 m, 제한속도, 등급 1~7, 차로, 길 이름, 연결로 1, 선 = 경도·위도×1e5 첫 점 + 차이, 오르막 합 m, 내리막 합 m(F → T 방향 · 40m 마다 읽음), 도로 유형(000 일반 · 001 고가 · 002 지하차도 · 003 교량 · 004 터널 — 원자료 코드)]] · turns[[노드, 들어오는 링크, 나가는 링크, 회전 유형 코드]]',
+           'fields': 'nodes{노드 ID: [경도, 위도, 유형(101 교차로·102 도로 시작/끝·103 속성변화점·104 도로시설·106 IC/JC 등 — 원자료 코드), 이름, 서초구 안 1/밖 0, 닿는 링크 수, 높이 m, 신호{no 신호 교차로 번호(같은 번호의 노드들이 한 교차로) · sd[T-Data 번호, 이름, 기록 수, 닻 있음, 거리 m], tod[경찰청 번호, 이름, 계획 수, 거리], ksc[번호, 이름, 거리], phmv 방향 읽은 현시 수}(있을 때만)]} · links[[링크 ID, 시작 노드, 끝 노드, 길이 m, 제한속도, 등급 1~7, 차로, 길 이름, 연결로 1, 선 = 경도·위도×1e5 첫 점 + 차이, 오르막 합 m, 내리막 합 m(F → T 방향 · 40m 마다 읽음), 도로 유형(000 일반 · 001 고가 · 002 지하차도 · 003 교량 · 004 터널 — 원자료 코드)]] · turns[[노드, 들어오는 링크, 나가는 링크, 회전 유형 코드]]',
            'coverage': {'서초구 안 교차로(링크 셋 이상이 만나는 노드)': cov(inx), '참고': '서초경찰서 관내 신호제어기는 교통과 대장으로 178대(2026-09 · 방배서 관내 제외) — 위 분모는 신호 없는 교차로까지 든 수라 비율로 읽지 않는다', '서초 밖이라 안 붙인 신호 자료(범위 상자 안)': dict(lost)},
            'nodes': nodes, 'links': LINK, 'turns': TURNS}
     p = os.path.join(ROOT, 'data', 'nav-seocho.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('노드', len(nodes), '· 링크', len(LINK), '· 회전 제한', len(TURNS), collections.Counter(TURN.get(t[3], t[3]) for t in TURNS), '· 바이트', os.path.getsize(p))
     for k, v in doc['coverage'].items(): print(' ', k, v)
-    print('  닻 있는 교차로', len([1 for v in nodes.values() if len(v) > 7 and v[4] and 'sd' in v[7] and v[7]['sd'][3]]))
 if __name__ == '__main__': main()

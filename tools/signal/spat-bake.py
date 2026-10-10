@@ -186,22 +186,22 @@ def sweep(prefer=None, api='t', cap=None):
     if pcap:
         pok_hr = datetime.datetime.now().hour                 # 끝자리를 이어받았으면 띄우자마자 끝자리 너머를 찔러 보지 않는다(다음 정각에 찌른다)
     # 두 훑기가 같이 쓰는 끝자리 장부(pend.json) — 이 시각대에 받아진 맨 뒤 자리(ok)와 500 이 난 자리들(fails [자리, 때]). 한쪽이 찔러 본 것을 다른 쪽이 또 찌르지 않는다
-    end_f, hist_f = os.path.join(RAW, 'pend.json'), os.path.join(RAW, 'sweep_hist.jsonl')
+    end_f, hist_f = os.path.join(RAW, 'pend_p.json' if api == 'p' else 'pend_t.json'), os.path.join(RAW, 'sweep_hist.jsonl')   # 장부는 API 마다 따로(2026-10-11 — 두 API 의 끝자리가 다르다)
     def end_load():
-        hr = datetime.datetime.now().strftime('%Y%m%d%H')
         try:
             e = json.load(open(end_f))
-            if e.get('hr') == hr:
+            if isinstance(e.get('oks'), list) and isinstance(e.get('fails'), list):
                 return e
         except Exception:
             pass
-        return {'hr': hr, 'ok': -1, 'fails': []}
+        return {'oks': [], 'fails': []}
     def end_note(k=None, b=None):
-        e = end_load()
+        e = end_load(); nw = time.time()
         if b is not None:
-            e['ok'] = max(e['ok'], int(b)); e['fails'] = [q for q in e['fails'] if q[0] > b]   # 받아진 자리보다 앞의 500 은 우연이었다
+            e['oks'].append([int(b), nw])
         if k is not None:
-            e['fails'].append([int(k), time.time()])
+            e['fails'].append([int(k), nw])
+        e['oks'] = [q for q in e['oks'] if nw - q[1] < 3600][-40:]; e['fails'] = [q for q in e['fails'] if nw - q[1] < 3600][-40:]
         try:
             json.dump(e, open(end_f, 'w'))
         except Exception:
@@ -252,15 +252,11 @@ def sweep(prefer=None, api='t', cap=None):
         if pcap and time.time() - pcat > 1200:
             plast, pcap = pcap, None                          # 끝자리는 20분만 믿는다 — 풀고 한 번 찔러 본다(안 되면 바로 되돌린다)
         E = end_load()
-        fl = sorted(q[0] for q in E['fails'] if q[0] > max(E['ok'], pok) and time.time() - q[1] < 1500)   # 25분 안에 500 이 난 자리(받아진 자리 너머 것만)
-        if pcap and E['ok'] >= pcap:
-            pcap = None                                       # 다른 훑기가 끝자리로 본 곳보다 뒤를 받았다
+        fl = sorted(q[0] for q in E['fails'] if time.time() - q[1] < 1500 and not any(o[0] >= q[0] and o[1] > q[1] for o in E['oks']))   # 25분 안의 500 가운데 「그 뒤에 그 자리 이상을 받은 적이 없는」 것
         if len(fl) >= 2:
-            sc = max(E['ok'] + 1, pok + 1, fl[1] - 30)        # 두 번 500 이 난 자리 = 끝자리로 본다(어느 훑기가 낸 것이든)
+            sc = max(50, fl[0] - 30)                          # 유효한 실패가 둘 — 가장 앞 실패 자리 바로 앞을 끝자리로(되는 곳 위주로 · 끝자리는 시각대 안에서도 내려간다)
             if not pcap or sc < pcap:
                 pcap, pcat = sc, time.time()
-        if not pcap and plast and fl and fl[0] >= plast * 0.97:
-            pcap, pcat, plast = plast, time.time() + 1200, None   # 다른 훑기가 방금 끝자리 너머를 찔러 봤다 — 또 찌르지 않고 되는 곳만 받는다
         av = avoid; avoid = None
         okf = lambda i: (not pcap or pos[i] < pcap * 0.97) and (av is None or abs(pos[i] - av) > 60)
         todo = pick(okf) or pick((lambda i: pos[i] < pcap * 0.97) if pcap else (lambda i: True))
@@ -304,9 +300,9 @@ def sweep(prefer=None, api='t', cap=None):
                 end_note(k=K)
                 if plast and K >= plast * 0.97:
                     # 소유자 2026-10-10 밤 「안 되는 곳보다는 되는 곳 위주로」 — 방금 풀어 준 끝자리 너머를 찔러 봤는데 또 안 된다 → 바로 되돌리고 40분은 되는 곳만 받는다(종전엔 20분마다 두 번씩 헛받았다)
-                    pcap = max(pok + 1, min(plast, K - max(1, per // 2))); pcat = time.time() + 1200; plast = None
+                    pcap = max(50, min(plast, K - max(1, per // 2))); pcat = time.time() + 1200; plast = None
                 elif nfail >= 2:
-                    pcap = max(pok + 1, min(pcap or 1e9, K - max(1, per // 2))); pcat = time.time()
+                    pcap = max(50, min(pcap or 1e9, K - max(1, per // 2))); pcat = time.time()
                 json.dump({'pos': pcap, 'at': pcat}, open(cap_f, 'w'))
             if st == 429:
                 try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5

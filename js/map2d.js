@@ -4476,7 +4476,8 @@
     tryGet('wsbus', 'stationinfo/getStationByPos', 'tmX=' + T.ll[0].toFixed(6) + '&tmY=' + T.ll[1].toFixed(6) + '&radius=350').then(function (t) { if (TR !== T) return;
       var L = (T.bus && T.bus.stops) || [], n = 0;
       wsItems(t).forEach(function (x) { if (!x.arsId || x.arsId === '0') return; var p = P(+x.gpsX, +x.gpsY), sv = { id: x.stationId, ars: x.arsId, nm: x.stationNm }, near = null, nd = 30;
-        L.forEach(function (st) { if (st.s) return; var d = dTrue(st.p, p); if (d <= nd) { nd = d; near = st; } });
+        var same = L.filter(function (st) { return !st.s && st.id && st.no != null && String(st.no) === String(x.arsId) && dTrue(st.p, p) < 150; })[0];   /* TAGO 정류소번호 = 서울 ARS 번호인 곳(같은 정류장인데 두 자료의 자리가 30m 넘게 다르기도 하다) */
+        if (same) near = same; else L.forEach(function (st) { if (st.s) return; var d = dTrue(st.p, p); if (d <= nd) { nd = d; near = st; } });
         if (near) { near.s = sv; n++; } else if (!L.some(function (st) { return st.s && st.s.ars === x.arsId; })) { L.push({ id: null, nm: x.stationNm, no: x.arsId, city: null, p: p, d: dTrue(p, T.c), arr: null, s: sv }); n++; } });
       L.sort(function (a, b) { return a.d - b.d; }); T.bus = { stops: L.slice(0, 10), sb: n }; trPaint(); draw(); T.bus.stops.slice(0, 3).forEach(trArr);
     }).catch(function (e) { if (TR !== T) return; if (!T.bus || !T.bus.stops) T.bus = { stops: [] }; T.bus.sberr = trErr(e); trPaint(); T.bus.stops.slice(0, 3).forEach(trArr); }); }
@@ -4501,7 +4502,7 @@
   function trSbNote(T) { var inS = T.ll[1] > 37.41 && T.ll[1] < 37.72 && T.ll[0] > 126.76 && T.ll[0] < 127.19; if (!inS) return '';
     if (!sbOn()) return T.sd === '11' ? '<p class="lg-n">⚠ 서울 시내버스(간선·지선)는 빠진다 — 서울시 버스 API 가 https 를 열지 않는다. 광역·인천 버스만 나온다.</p>' : '';
     if (!tryOn()) return '<p class="lg-n">🚌 <b>서울 시내버스</b> 도착·위치는 「🎟 맛보기」를 켜면 같이 나온다 — 서울시 버스 API 는 http 만 열어 중계를 거쳐야 한다(내 키로는 못 부른다).</p>' + tryBtn(false);
-    var B = T.bus || {}; return '<p class="lg-n">🚌 서울 시내버스 ' + (B.sberr ? '<b style="color:#b91c1c">' + esc(B.sberr) + '</b>' : B.sb != null ? '정류장 ' + B.sb + '곳을 이었다 — 서울·경기 정류장이 30m 안이면 한 정류장으로 묶는다' : '정류장을 찾는 중…') + ' · 서울특별시 버스정보(ws.bus.go.kr) · 중계 맛보기</p>'; }
+    var B = T.bus || {}; return '<p class="lg-n">🚌 서울 시내버스 ' + (B.sberr ? '<b style="color:#b91c1c">' + esc(B.sberr) + '</b>' : B.sb != null ? '정류장 ' + B.sb + '곳을 이었다 — 정류소 번호가 같거나 자리가 30m 안이면 한 정류장으로 묶는다' : '정류장을 찾는 중…') + ' · 서울특별시 버스정보(ws.bus.go.kr) · 중계 맛보기</p>'; }
   function trDay() { var w = new Date().getDay(); return w === 0 || holOf(new Date()) ? '03' : w === 6 ? '02' : '01'; }
   function trSub() { var T = TR; if (!dgK()) return;
     if (!TRSTP) TRSTP = stnAll().then(function (L) { TRST = L.map(function (x) { return { nm: x[0], ln: x[1], p: P(x[2], x[3]) }; }); });
@@ -4539,7 +4540,7 @@
       .catch(function (e) { if (TR === T) { E.busy = 0; E.err = trErr(e); trPaint(); } }); }
   function trPaint() {
     var el = $('m2dTr'); if (!el || !TR || !el.classList.contains('on')) return; var T = TR, h = '<div class="lg-h"><b>🚏 여기 대중교통</b><span><button data-tx="min">▾ 접기</button> <button data-tx="x">닫기</button></span></div>';
-    h += '<p class="lg-n">지점 ' + T.ll[1].toFixed(5) + ', ' + T.ll[0].toFixed(5) + ' · 실시간 값은 누를 때마다 새로 받는다(도착은 30초마다 저절로)</p>';
+    h += '<p class="lg-n">지점 ' + T.ll[1].toFixed(5) + ', ' + T.ll[0].toFixed(5) + ' · 실시간 값은 누를 때마다 새로 받는다(도착은 ' + (tryOn() ? '60' : '30') + '초마다 저절로)</p>';
     if (!dgK()) { el.innerHTML = h + '<div class="nil">공공데이터포털 인증키가 이 기기에 없다 — 키를 넣거나 맛보기를 켜면 버스 도착·위치, 지하철 시간표, 열차·항공편이 나온다(키는 이 기기에만 저장).</div><div class="lg-btns"><button data-tx="key">🔑 공공데이터포털 키 넣기</button></div>' + tryBtn(false); return; }
     // 🚌
     h += '<h4>🚌 가까운 정류장 · 버스 도착</h4>'; var B0 = T.bus;
@@ -4598,7 +4599,8 @@
     ((TR.loc && TR.loc.v) || []).forEach(function (b) { var s0 = S(b.p); if (s0[0] < -20 || s0[1] < -20 || s0[0] > W0 + 20 || s0[1] > H0 + 20) return;
       ctx.fillStyle = '#ea580c'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - 12, s0[1] - 9, 24, 18, 5); else ctx.rect(s0[0] - 12, s0[1] - 9, 24, 18); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
       ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🚌', s0[0], s0[1] + 0.5); }); }
-  setInterval(function () { if (!TR || document.hidden || !$('m2dTr') || !$('m2dTr').classList.contains('on')) return; if (TR.bus && TR.bus.stops) TR.bus.stops.forEach(function (st) { if (st.arr && !st.busy) trArr(st); }); if (TR.loc && !TR.loc.busy) trLoc(TR.loc.city, TR.loc.rid, TR.loc.no); }, 30000);
+  var TRTK = 0;   /* 맛보기(중계)로 볼 때는 60초마다 — 중계가 접속 주소마다 하루 300번을 세므로 아껴 쓴다 */
+  setInterval(function () { if (!TR || document.hidden || !$('m2dTr') || !$('m2dTr').classList.contains('on')) return; TRTK++; if (tryOn() && TRTK % 2) return; if (TR.bus && TR.bus.stops) TR.bus.stops.forEach(function (st) { if (st.arr && !st.busy) trArr(st); }); if (TR.loc && !TR.loc.busy) trLoc(TR.loc.city, TR.loc.rid, TR.loc.no); }, 30000);
   setInterval(function () { if (TR && $('m2dTr') && $('m2dTr').classList.contains('on') && !document.hidden) trPaint(); }, 20000);
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-trhere]'); if (!b) return; var a = b.getAttribute('data-trhere').split(','); trOpen(P(+a[0], +a[1])); });
   if ($('m2dTr')) $('m2dTr').addEventListener('click', function (e) { var el = $('m2dTr'), b = e.target.closest('[data-tx],[data-tsa],[data-tsl],[data-trl],[data-tra],[data-trx]'); if (!b) { if (el.classList.contains('min')) el.classList.remove('min'); return; }

@@ -43,23 +43,25 @@ def main():
         for x in variants(sido, nm, q):
             for it in RAW.get(x, []):
                 cat = it.get('category') or ''; ad = (it.get('address') or {}); addr = ad.get('road') or ad.get('parcel') or ''
-                if not cat.startswith('지방행정기관') or (it.get('title') or '').replace(' ', '') not in set(t.replace(' ', '') for t in titles) or not addr: continue
+                ti = (it.get('title') or '').replace(' ', ''); T2 = set(t.replace(' ', '') for t in titles); exact = ti in T2 or (sido and ti.startswith(sido) and any(ti.endswith(t) for t in T2))   # 「경상북도경주시청」처럼 시도 이름이 앞에 붙은 제목도 받는다
+                tier = 0 if cat.startswith('지방행정기관') else (1 if (cat.startswith('건물 > 업무시설') or cat.startswith('중앙행정기관')) and ti in T2 else None)   # 분류가 지방행정기관이 아니어도 이름이 꼭 같고 업무시설·행정기관이면 둘째 차례로(표시 1)
+                if tier is None or not exact or not addr: continue
                 if len(code) > 2 and (gu not in addr or (city and city not in addr) or (sido and sido[:2] not in addr and sido not in addr)): continue
                 if len(code) == 2 and sido[:2] not in addr: continue
-                ok.append((0 if ad.get('road') else 1, it, addr))
+                ok.append((tier, 0 if ad.get('road') else 1, it, addr))
         if not ok: miss.append((sido[:2] + ' ' if len(code) > 2 else '') + nm + '청'); continue
-        ok.sort(key=lambda z: z[0]); it, addr = ok[0][1], ok[0][2]
-        items.append([kind, nm if len(code) > 2 else sido, sido, round(float(it['point']['x']), 6), round(float(it['point']['y']), 6), addr, code, 0])
+        ok.sort(key=lambda z: (z[0], z[1])); it, addr = ok[0][2], ok[0][3]
+        items.append([kind, nm if len(code) > 2 else sido, sido, round(float(it['point']['x']), 6), round(float(it['point']['y']), 6), addr, code, ok[0][0]])
     doc = {'schema': 'tg-gov-offices/1', 'made': datetime.date.today().isoformat(),
            'source': '브이월드 검색 API(장소 · 국토교통부 공간정보 오픈플랫폼) — 분류 「지방행정기관」 · 시군구 목록 = data/r/index.json',
            'note': ['청사 이름으로 찾아, 분류가 지방행정기관이고 주소에 그 시군구 이름이 든 것만 실었다 — 찾지 못한 곳은 miss 에 있다(자리를 지어 넣지 않았다)',
                     '본청 한 곳만(별관·제2청사·민원동은 싣지 않았다) · 청사를 옮긴 곳은 검색 자료가 옛 자리일 수 있다',
-                    '마지막 칸 1 = 검색 결과에 주소가 비어 있어 이름·분류만으로 고른 곳(같은 이름의 다른 곳일 수 있다 — 확인 필요)',
+                    '마지막 칸 1 = 검색 결과의 분류가 「지방행정기관」이 아니라 「업무시설」·「행정기관」인 것을 이름·주소로 고른 곳(청사는 맞으나 한 단계 낮은 믿음)',
                     '전화번호·민원 시간은 이 자료에 없다 · 주민센터·읍면사무소는 data/agency-pts.json'],
-           'fields': 'items[[갈래(도청·시청·군청·구청), 이름, 시도, 경도, 위도, 주소, 구 코드(시도는 두 자리 · 일반구가 있는 시의 시청은 넷째 자리까지 + 0), 주소 없이 고름 1]] · miss[찾지 못한 청사 이름]',
+           'fields': 'items[[갈래(도청·시청·군청·구청), 이름, 시도, 경도, 위도, 주소, 구 코드(시도는 두 자리 · 일반구가 있는 시의 시청은 넷째 자리까지 + 0), 분류가 달라 이름·주소로 고름 1]] · miss[찾지 못한 청사 이름]',
            'miss': miss, 'items': items}
     p = os.path.join(ROOT, 'data', 'gov-offices.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     import collections
-    print('찾은 곳', len(items), collections.Counter(x[0] for x in items), '· 못 찾은 곳', len(miss), miss[:40], '· 주소 없이 고른 곳', sum(x[7] for x in items), '· 바이트', os.path.getsize(p))
+    print('찾은 곳', len(items), collections.Counter(x[0] for x in items), '· 못 찾은 곳', len(miss), miss[:40], '· 둘째 차례로 고른 곳', sum(x[7] for x in items), '· 바이트', os.path.getsize(p))
 if __name__ == '__main__': main()

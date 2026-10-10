@@ -176,7 +176,7 @@ def sweep(prefer=None, api='t', cap=None):
                 capoff, capat = c0['cap'], c0['at']
         except Exception:
             pass
-    W0 = 255 if api == 'p' else 240   # 정각 뒤 창 — 이때는 교차로마다 300줄쯤이라 한 쪽에 100곳 가까이 들고, 서울 뒤쪽(서초 1668~ · 강남 ~2248)도 20쪽 안이다
+    W0 = 300 if api == 'p' else 285   # (2026-10-10 19:04 실측 — 줄 수 = 정각 뒤 초 − 8쯤 · 240초에는 234줄이라 문턱 240 에 못 미쳤다 → 285초)  # 정각 뒤 창 — 이때는 교차로마다 300줄쯤이라 한 쪽에 100곳 가까이 들고, 서울 뒤쪽(서초 1668~ · 강남 ~2248)도 20쪽 안이다
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
     while True:
         A = anchors()
@@ -199,7 +199,7 @@ def sweep(prefer=None, api='t', cap=None):
             capoff = None                                   # 깊은 쪽이 풀렸는지 3시간마다 한 번 본다(정각 창 밖에서 — 창의 호출은 아낀다)
         if capoff:
             # 2026-10-10 16시대 — 서버가 깊은 쪽(앞선 줄이 많은 쪽)에 HTTP 500 을 줬다(얕은 쪽은 됨) → 막힌 깊이보다 얕게 닿는 교차로만 고른다
-            lim = capoff * 0.92 / (t + 66.0)
+            lim = capoff * 0.95 / max(dens * t, 1.0)   # 닿는 자리 = 막힌 깊이 ÷ 교차로마다 쌓인 줄 수(밀도는 지난 쪽에서 잰 값)
             reach = lambda L: [i for i in L if pos[i] < lim]
             todo = pick_todo(tiers, order, need1, need2, need3, lambda i: pos[i] < lim)
             if not todo:
@@ -253,15 +253,15 @@ def sweep(prefer=None, api='t', cap=None):
             red = (reduce_phase(i, by[i]) if api == 'p' else reduce_one(i, by[i])) if len(by[i]) >= 240 else None
             if red and red.get('cyc'):
                 json.dump(red, open(os.path.join(RAW, 'red', '%s_%s%s.json' % (i, stamp, 'p' if api == 'p' else '')), 'w', encoding='utf-8'), ensure_ascii=False); saved += 1
-            elif not edge:
-                tried.add(i)   # 다 받았는데 주기를 못 읽은 곳(값이 멈춤·점멸) — 다시 받지 않는다
+            elif not edge and len(by[i]) >= 420:
+                tried.add(i)   # 7분 넘게 받았는데 주기를 못 읽은 곳(값이 멈춤·점멸) — 다시 받지 않는다 · 줄이 짧은 정각 창에서는 넣지 않는다(19:04 에 100곳 넘게 잘못 들어갔다)
         json.dump(sorted(tried), open(tried_f, 'w'))
         last = {'t': t, 'a': a, 'b': b, 'base': (page - 1) * 30000, 'rows': [(pos[i], len(by[i])) for i in seq if i in pos]}
         hit = a <= K <= b
         A2 = anchors()
         if hit and order[K] not in tried and not (A2.get(order[K]) and len(A2[order[K]]) > len(A.get(order[K], []))):
             stuck[K] = stuck.get(K, 0) + 1
-            if stuck[K] >= 2:
+            if stuck[K] >= 3:
                 tried.add(order[K]); json.dump(sorted(tried), open(tried_f, 'w'))   # 두 번 받고도 주기를 못 읽은 곳은 건너뛴다
         miss = 0 if hit else miss + 1
         print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '우선 목록 — 닻 없음', len([i for i in pref if need1(i)]), '· 검증 남음', len([i for i in pref if need2(i)]), flush=True)

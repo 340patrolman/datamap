@@ -2866,6 +2866,11 @@
   function ofckTxt() { var S = OFCK && OFCK.spots, n = 0, m = 0; if (!S) return '자정 기준 규칙은 T-Data 로 받은 값과 견줘 확인했다'; Object.keys(S).forEach(function (k) { n++; if (S[k][2] > 0 || S[k][4] > 0) m++; });
     return '자정 기준 규칙은 경찰청 계획과 T-Data 받은 값이 같은 주기인 서울 ' + n + '곳 중 <b>' + m + '곳이 맞았다</b>(±5초 · 기준 이동류가 1현시가 아닌 곳은 그 현시 시작과)(' + esc(OFCK.made || '') + ' 대조)'; }
   function ofckBad(no) { var q = OFCK && OFCK.spots && OFCK.spots[String(no)]; return q && q[1] > 0 && q[2] === 0 && !(q[4] > 0) ? q : null; }
+  var PHMV = null; fetch('data/sig-phmv-seoul.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { PHMV = j; }).catch(function () {});
+  /* 현시 → 방향 글(다른 세션 phmv-bake.py — 실제 신호와 맞대어 읽은 추정) · rl = 링('' · 'A' · 'B') · 못 가린 현시는 '' */
+  function phmvTxt(PM, k, rl) { var L = PM && PM.ph && PM.ph[String(k)]; if (!L || !L.length) return ''; var G = {}, O = [];
+    L.forEach(function (q) { if (q[2] && rl && q[2] !== rl) return; if (!G[q[1]]) { G[q[1]] = []; O.push(q[1]); } if (G[q[1]].indexOf(q[0]) < 0) G[q[1]].push(q[0]); });
+    return O.map(function (m) { return G[m].sort(function (a, b) { return SDORD.indexOf(a) - SDORD.indexOf(b); }).map(function (d) { return SDN[d] || d; }).join('·') + '쪽 ' + (SDM[m] || m); }).join(' · '); }
   var OFCK = null; fetch('data/sig-offset-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OFCK = j; }).catch(function () {});
   function sodK(ms) { return ((((ms + 32400000) % 86400000) + 86400000) % 86400000) / 1000; }
   function sigTickHtml(s) { return s && s.no != null ? '<div class="sdnow" id="sigTick" data-no="' + esc(String(s.no)) + '"></div>' : ''; }
@@ -2880,10 +2885,11 @@
       if (Math.abs(dv) > 6) { el.innerHTML = '<p class="sdnt">서울시 T-Data 로 받은 값(' + hhmm(rr.a * 1000) + ')이 그때 계획의 어느 현시 시작과도 맞지 않아(가장 가까운 것과 ' + dv + '초) <b>계획으로 센 초는 감춘다</b>(다른 계획·감응 운영일 수 있다) — 아래 방향별 신호를 본다.</p>'; return; }
       chk = ' · ✔ T-Data 받은 값(' + hhmm(rr.a * 1000) + ')이 그때 계획 ' + pn9[1] + '현시 시작과 ' + (dv >= 0 ? '+' : '') + dv + '초 차이로 맞음'; }
     else { var bq = ofckBad(no); if (bq) { el.innerHTML = '<p class="sdnt">이 교차로는 T-Data 로 받은 값과 견준 대조에서 계획 계산이 <b>평균 ' + Math.round(bq[3]) + '초 어긋났다</b> → <b>계획으로 센 초는 감춘다</b>(어느 현시 시작과도 안 맞았다 · 계획은 2026-10-10 다시 받아도 같았다 — 까닭 미상) — 주기 ' + c + '초 · 현시 ' + esc(String(cur[3])) + '초.</p>'; return; } }
-    var ph = (((sod - off) % c) + c) % c, h = '<div class="sdls">', ring = function (nm, txt) { var A = String(txt || '').split(' ').map(Number).filter(function (v) { return v > 0; }), acc = 0, i = 0; if (!A.length) return ''; for (; i < A.length; i++) { if (ph < acc + A[i]) break; acc += A[i]; } if (i >= A.length) i = A.length - 1;
-        var left = Math.max(0, acc + A[i] - ph), nx = (i + 1) % A.length; return '<div class="sdl"><i style="background:#2563eb"></i><b>' + nm + ' ' + (i + 1) + '현시</b><span><strong>' + Math.ceil(left) + '</strong>초 남음</span><small>다음 ' + (nx + 1) + '현시 ' + A[nx] + '초 · 한 주기 = ' + A.map(function (v, k) { return (k === i ? '<b>' : '') + (k + 1) + '현시 ' + v + (k === i ? '</b>' : ''); }).join(' · ') + '초</small></div>'; };
+    var PM = PHMV && PHMV.spots ? PHMV.spots[String(no)] : null; if (PM && (PM.dq || PM.nph !== String(cur[3] || '').split(' ').filter(function (v) { return +v > 0; }).length)) PM = null;
+    var ph = (((sod - off) % c) + c) % c, h = '<div class="sdls">', ring = function (nm, txt) { var rl = nm === 'B링' ? 'B' : nm === 'A링' ? 'A' : ''; var A = String(txt || '').split(' ').map(Number).filter(function (v) { return v > 0; }), acc = 0, i = 0; if (!A.length) return ''; for (; i < A.length; i++) { if (ph < acc + A[i]) break; acc += A[i]; } if (i >= A.length) i = A.length - 1;
+        var left = Math.max(0, acc + A[i] - ph), nx = (i + 1) % A.length, d1 = phmvTxt(PM, i + 1, rl), d2 = phmvTxt(PM, nx + 1, rl); return '<div class="sdl"><i style="background:#2563eb"></i><b>' + nm + ' ' + (i + 1) + '현시</b><span><strong>' + Math.ceil(left) + '</strong>초 남음</span>' + (d1 ? '<em class="phd">' + esc(d1) + ' 녹색</em>' : '') + '<small>다음 ' + (nx + 1) + '현시' + (d2 ? '(' + esc(d2) + ')' : '') + ' ' + A[nx] + '초 · 한 주기 = ' + A.map(function (v, k) { return (k === i ? '<b>' : '') + (k + 1) + '현시 ' + v + (k === i ? '</b>' : ''); }).join(' · ') + '초</small></div>'; };
     h += ring(String(cur[3]) === String(cur[4]) ? '지금' : 'A링', cur[3]) + (String(cur[3]) !== String(cur[4]) ? ring('B링', cur[4]) : '') + '</div>';
-    el.innerHTML = h + '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + off + '초 · 자정 기준)으로 센 <b>추정</b> — 주기 ' + c + '초 · ' + esc(cur[0]) + ' 계획' + chk + ' · ' + ofckTxt() + ' · <b>어느 현시가 어느 방향인지는 이 자료에 없다</b> · 감응·수동 운영 중에는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>'; }
+    el.innerHTML = h + '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + off + '초 · 자정 기준)으로 센 <b>추정</b> — 주기 ' + c + '초 · ' + esc(cur[0]) + ' 계획' + chk + ' · ' + ofckTxt() + ' · ' + (PM ? '현시 옆 방향은 계획표에 적힌 것이 아니라 <b>실제 신호(T-Data)와 맞대어 읽은 추정</b>(맞댄 기록 ' + PM.n + '번 — 근거가 얇다 · 방향이 안 적힌 현시는 못 가린 것 · 보통 1현시 = 주도로 직진)' : '<b>어느 현시가 어느 방향인지는 이 자료에 없다</b> — 보통 <b>1현시 = 주도로(큰길) 직진</b>이다(현장 기준 · 예: 반포대로와 서초대로가 만나면 반포대로 남북이 1현시)') + ' · 감응·수동 운영 중에는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>'; }
   setInterval(sigTickPaint, 1000);
   function sigDir(no, planCyc) {
     var lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no); if (!o) return '';

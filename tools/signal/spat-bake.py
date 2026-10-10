@@ -171,7 +171,7 @@ def sweep(prefer=None, api='t', cap=None):
     smiss = json.load(open(smiss_f)) if os.path.exists(smiss_f) else {}
     # 끝자리(pcap) — 그 시각대에 서버가 가진 자료의 끝이 서버 순서로 몇 번째 교차로쯤인가. HTTP 500 = 「그 쪽은 자료의 끝을 넘었다」로 읽는다
     # (2026-10-10 저녁: 190쪽은 되고 229쪽은 500 · 정각 창 23쪽이 500 — 깊이(줄 수)가 아니라 끝자리(살아 있는 교차로 수 × 지난 초)가 문턱이었다).
-    pcap, pcat, seen, seen_slot, pok, pok_hr = (float(cap) if cap else None), time.time(), {}, None, -1, -1
+    pcap, pcat, seen, seen_slot, pok, pok_hr, nfail, avoid = (float(cap) if cap else None), time.time(), {}, None, -1, -1, 0, None
     cap_f = os.path.join(RAW, 'pcap_p.json' if api == 'p' else 'pcap_t.json')   # 끝자리는 파일에 남겨 다시 띄워도 잇는다
     if not pcap and os.path.exists(cap_f):
         try:
@@ -217,9 +217,11 @@ def sweep(prefer=None, api='t', cap=None):
             dens = 1.0
         if pok_hr != now.hour:
             pok_hr, pok = now.hour, -1                        # 이 시각대에 실제로 받은 맨 뒤 자리
-        if pcap and time.time() - pcat > 1800:
+        if pcap and time.time() - pcat > 1200:
             pcap = None                                       # 끝자리는 30분만 믿는다(자료가 늦게 쌓이는 것일 수 있어 다시 잰다)
-        todo = pick((lambda i: pos[i] < pcap * 0.97) if pcap else (lambda i: True))
+        av = avoid; avoid = None
+        okf = lambda i: (not pcap or pos[i] < pcap * 0.97) and (av is None or abs(pos[i] - av) > 60)
+        todo = pick(okf) or pick((lambda i: pos[i] < pcap * 0.97) if pcap else (lambda i: True))
         if not todo:
             print(now.strftime('%H:%M:%S'), '지금 받을 곳이 없다' + ('(끝자리 %d 안쪽에는)' % pcap if pcap else '') + ' — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
         ps = sorted(pos[i] for i in todo)
@@ -254,7 +256,10 @@ def sweep(prefer=None, api='t', cap=None):
             wait = GAP
             if st == 500 and page > 1:
                 # 끝자리 = 찾던 자리(K) 바로 앞 — 줄 수로 되짚으면(쪽 ÷ 밀도 × 초) 자료가 늦게 쌓일 때 너무 앞으로 잡힌다(22:25 — 1667 까지 받아 놓고 끝자리를 1617 로 봤다). 이 시각대에 실제로 받은 맨 뒤 자리(pok)보다 앞으로는 안 당긴다
-                pcap = max(pok + 1, min(pcap or 1e9, K - max(1, per // 2))); pcat = time.time(); last = None
+                # 한 번 실패로는 끝자리를 당기지 않는다 — 있는 쪽도 가끔 500 이 난다(22:39 에 1514~1527 을 받았는데 22:45 에 같은 둘레가 500). 한 번이면 그 둘레만 다음 한 번 비켜 가고, 잇달아 두 번이면 끝자리로 본다(20분)
+                nfail += 1; avoid = K; last = None
+                if nfail >= 2:
+                    pcap = max(pok + 1, min(pcap or 1e9, K - max(1, per // 2))); pcat = time.time()
                 json.dump({'pos': pcap, 'at': pcat}, open(cap_f, 'w'))
             if st == 429:
                 try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5
@@ -270,7 +275,7 @@ def sweep(prefer=None, api='t', cap=None):
             print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
             dens *= 0.8; time.sleep(GAP); continue
         a, b = min(idx), max(idx)
-        pok = max(pok, b)
+        pok = max(pok, b); nfail = 0
         if pcap and b >= pcap:
             pcap = None                                       # 끝자리로 본 곳보다 뒤가 받아졌다 — 다시 재게 둔다
         if page > 1 and a > 0:

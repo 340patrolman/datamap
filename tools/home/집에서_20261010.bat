@@ -37,6 +37,8 @@ echo [5/5] 지도 저장소에 자료 올리기 (열쇠 검사 먼저)
 git add data\gu-tax.json data\home-ref.json
 py -3.12 -X utf8 tools\keycheck.py || goto :err
 git commit -m "data: 국세청 소득 인천 개편·세종 잇기 · 강원·전북 동 실거래(좌표→행정동) · 집값 기준표"
+rem 굽는 사이 다른 세션이 먼저 올렸을 수 있다 - 받아서 그 위에 얹고 올린다(2026-10-10 push 거절 뒤 추가)
+git pull --rebase --autostash origin main || goto :err
 git push origin main || goto :err
 
 echo.

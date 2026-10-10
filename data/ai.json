@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 91개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 92개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1777,6 +1777,11 @@
    "seoul-live.json",
    "2026-10-10",
    "서울 열린데이터광장 — 서울시 공영주차장 안내 정보(GetParkInfo · 주차장 자리) · 서울시 실시간 돌발 유형 코드(AccMainCode · AccSubCode)"
+  ],
+  [
+   "sig-ksc-seocho.json",
+   "2026-10-10",
+   "서초경찰서 교통과 제공 · 표준신호제어기DB(KSC-5800SE/SEC-8400) 출력물 5장을 손으로 판독(2026-09-11 손 판독 · 따로 옮긴 두 벌 대조 96/96 일치 · 현시 합=주기 …(전문은 파일에)"
   ],
   [
    "sigdir-seoul.json",

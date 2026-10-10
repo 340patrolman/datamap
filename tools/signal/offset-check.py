@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+# 데이터 압축지도 — 🚦 신호 옵셋의 기준 가리기(소유자 2026-10-10 「초가 바뀌면서 표시를 해줄 수 있나 · 스마트폰 시간·컴퓨터 시간과 맞을 거야」)
+#   묻는 것: 신호계획의 옵셋(off)은 어느 시각을 0 으로 세나?  A = 자정 기준((하루 초 − off) ÷ 주기 의 나머지가 0 일 때 주기가 시작) · B = 그 계획이 시작한 시각 기준
+#   재료(둘 다 이미 있는 파일 · 새로 받는 것 없음): data/sigdir-seoul.json(서울 T-Data — 기준 이동류 녹색이 **실제로 켜진 시각** a) × data/signal-tod-seocho.json(경찰청 교차로계획정보 — 요일·시각별 주기·옵셋)
+#   같은 교차로 번호가 두 파일에 다 있고 받은 주기가 계획 주기와 같은 기록만 써서, 가설마다 「켜진 시각이 주기 시작에서 몇 초 어긋났나」를 잰다(±4초 안이면 맞음)
+#   py -3.12 -X utf8 tools/signal/offset-check.py → data/sig-offset-check.json   (sigdir 가 더 모이면 다시 — 판정은 사람이 본다)
+import json, os, datetime
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+KST = datetime.timezone(datetime.timedelta(hours=9))
+def main():
+    s = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8')); t = json.load(open(os.path.join(ROOT, 'data', 'signal-tod-seocho.json'), encoding='utf-8'))
+    SP = {str(e['no']): e for e in t['spots']}; rows = []
+    for k, recs in s['its'].items():
+        e = SP.get(k)
+        if not e: continue
+        for rec in recs:
+            if 'a' not in rec: continue
+            d = datetime.datetime.fromtimestamp(rec['a'], KST); sod = d.hour * 3600 + d.minute * 60 + d.second
+            plan = e['plans'].get(e['dow'].get(str(d.isoweekday() % 7 + 1)))   # 경찰청 요일 코드 1 = 일 … 7 = 토
+            if not plan: continue
+            cur = None
+            for r in plan:
+                if int(r[0][:2]) * 3600 + int(r[0][3:]) * 60 <= sod: cur = r
+            cur = cur or plan[-1]; C, off = cur[1], cur[2]
+            if rec.get('ci') != C: continue   # 받은 주기가 계획과 다르면(다른 계획·감응) 뺀다
+            ps = int(cur[0][:2]) * 3600 + int(cur[0][3:]) * 60; cen = lambda x: x if x <= C / 2 else x - C
+            rows.append([k, e['name'], rec['day'], d.strftime('%H:%M:%S'), C, off, cur[0], round(cen((sod - off) % C)), round(cen((sod - ps - off) % C))])
+    n = len(rows); okA = sum(1 for r in rows if abs(r[7]) <= 4); okB = sum(1 for r in rows if abs(r[8]) <= 4)
+    doc = {'schema': 'tg-sig-offset-check/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
+           'source': 'data/sigdir-seoul.json(서울 T-Data V2X — 기준 이동류 녹색이 실제로 켜진 시각) × data/signal-tod-seocho.json(경찰청 교차로계획정보 — 주기·옵셋)',
+           'result': {'n': n, 'A_자정 기준': okA, 'B_계획 시작 기준': okB, 'tol': 4},
+           'read': '±4초 안이면 맞음. A 가 대부분 맞고 B 는 계획 시작 시각이 주기의 배수일 때만 맞으면 → 옵셋은 자정(0시 0분 0초)을 0 으로 센다: 주기 시작 = (하루 초 − 옵셋) 이 주기로 나누어떨어지는 때. 남는 +1~+4초는 기준 이동류 녹색이 주기 시작보다 조금 늦게 켜지는 몫(전적색 등)과 잔여시간 자료의 1초 눈금.',
+           'note': ['교차로 제어기 시계가 표준시에 맞춰져 있어야 성립한다(맞지 않는 교차로는 어긋남으로 드러난다)', '맞지 않는 기록은 기준 이동류가 1현시가 아니거나 그 시간대에 다른 계획·감응 운영이었을 수 있다 — 까닭은 이 자료로 못 가린다',
+                    '경찰청 계획 자료가 있는 교차로끼리의 시험이다 — 교통과 출력물 5곳(sig-ksc-seocho.json)은 T-Data 에 값이 없어 이 시험에 들어 있지 않다(같은 규칙을 적용하면 추정)'],
+           'fields': 'rows[[교차로 번호, 이름, 받은 날, 녹색이 켜진 시각, 주기, 옵셋, 그 계획의 시작 시각, A 어긋남(초), B 어긋남(초)]]',
+           'rows': rows}
+    p = os.path.join(ROOT, 'data', 'sig-offset-check.json')
+    json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    print('기록', n, '· A 자정 기준 맞음', okA, '· B 계획 시작 기준 맞음', okB, '· 바이트', os.path.getsize(p))
+if __name__ == '__main__': main()

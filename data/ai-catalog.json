@@ -1338,6 +1338,28 @@
    }
   },
   {
+   "file": "sig-offset-check.json",
+   "url": "https://340patrolman.github.io/datamap/data/sig-offset-check.json",
+   "bytes": 3223,
+   "schema": "tg-sig-offset-check/1",
+   "date": "2026-10-10 16:28",
+   "source": "data/sigdir-seoul.json(서울 T-Data V2X — 기준 이동류 녹색이 실제로 켜진 시각) × data/signal-tod-seocho.json(경찰청 교차로계획정보 — 주기·옵셋)",
+   "fields": "rows[[교차로 번호, 이름, 받은 날, 녹색이 켜진 시각, 주기, 옵셋, 그 계획의 시작 시각, A 어긋남(초), B 어긋남(초)]]",
+   "note": "교차로 제어기 시계가 표준시에 맞춰져 있어야 성립한다(맞지 않는 교차로는 어긋남으로 드러난다) · 맞지 않는 기록은 기준 이동류가 1현시가 아니거나 그 시간대에 다른 계획·감응 운영이었을 수 있다 — 까닭은 이 자료로 못 가린다 · 경찰청 계획 자료가 있는 교차로끼리의 시험이다 — 교통과 출력물 5곳(sig-ksc-seocho.json)은 T-Data 에 값이 없어 이 시험에 들어 있지 않다(같은 규칙을 적용하면 추정)",
+   "top": {
+    "result": "{4}",
+    "note": "[3]",
+    "rows": "[25]"
+   },
+   "about": {
+    "read": "±4초 안이면 맞음. A 가 대부분 맞고 B 는 계획 시작 시각이 주기의 배수일 때만 맞으면 → 옵셋은 자정(0시 0분 0초)을 0 으로 센다: 주기 시작 = (하루 초 − 옵셋) 이 주기로 나누어떨어지는 때. 남는 +1~+4초는 기준 이동류 녹색이 주기 시작보다 조금 늦게 켜지는 몫(전적색 등)과 잔여시간 자료의 1초 눈금."
+   },
+   "sample": {
+    "rows[0]": "[\"1424\", \"교보타워사거리\", \"2026-10-10\", \"14:09:06\", 160, 128, \"09:00\", -62, 18]",
+    "result.n": "25"
+   }
+  },
+  {
    "file": "sigdir-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/sigdir-seoul.json",
    "bytes": 131821,

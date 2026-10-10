@@ -24,11 +24,15 @@ FIX = {('4034', 7): '4현시에서 북→동 좌회전은 11초 고정(출력물
        ('4036', 5): '3현시에서 서→북 좌회전은 A지점 7초 고정(출력물)',
        ('4036', 3): '2현시 남→서 좌회전은 출력물에 따로 적혀 있다: 녹17 + 황3 + 적22(북→북 유턴 포함 현시)'}
 # 초는 내되 같이 알릴 글
-WARN = {('4034', 2): '평일·금 16~20시는 시차제 — 5현시 서→동 직진은 23초(황색 포함) 뒤 적색(출력물)',
+WARN = {('4034', 2): '평일·금 16~20시는 시차제 — 5현시 서→동 직진은 23초(황색 포함) 뒤 적색(출력물) · 그 시간대 값은 tw 에',
         ('4028', 5): '도면에 27/5 로 적혀 있다(27 = 미확인 · B연등지점 우회전 신호일 가능성)',
         ('4036', 8): '남→북 직진 연장운영(출력물) — 계산값보다 길 수 있다'}
 # 소유자가 현장에서 보고 알려 준 것(날짜와 함께 · 말씀 그대로) — 판독과 맞는지의 근거로 싣는다
 FIELD = {'4034': ['2026-10-10 소유자 현장 확인: 「1현시는 반포대로 남북 간 방향, 2현시는 북에서 남 직좌 — 이렇게 흘러간다」 → 판독의 차례(남북 동시 직진 → 북쪽 진입 직진+좌회전)와 같다. 출력물은 남북 동시 직진을 1·2현시 둘로 나눠 적어, 현장에서 보는 「2현시(북 직좌)」는 출력물의 3·4현시다']}
+# 시차제 — 정해진 요일·시간대에만 한 이동류를 일찍 끊는 운영(출력물 참고 글의 값 그대로 · 까닭은 소유자 말씀)
+#   [요일 계획 번호들, 시작 HHMM, 끝 HHMM, 이동류 번호, 그 이동류가 켜져 있는 초(황색 포함), 글]
+TW = {'4034': [[['1', '2'], '1600', '2000', 2, 23,
+               '시차제(꼬리물기 해소 · 2025.11 적용): 평일·금 16~20시에는 서→동 직진(서래마을입구 → 삼호가든사거리 쪽)을 23초(황색 포함) 뒤 적색으로 끊고 서→북 좌회전만 이어 간다 — 소유자 2026-10-10: 「삼호가든사거리 방향으로 차량이 너무 많아서 직진 시간을 줄인 것 · 원래는 직좌인데 직좌 하다가 좌회전만 되게 · 내가 이렇게 했다」']]}
 def secs(s): return [int(x) for x in s.split(':')]
 
 def main():
@@ -60,7 +64,8 @@ def main():
                 rows.sort(key=lambda r: (r[6], r[8])); D[k] = rows
             it.update({'ph': ph, 'Y': Y, 'AR': AR, 'dir': D, 'rg': 1 if diff else 0,
                        'why': {str(m): t for (no, m), t in FIX.items() if no == e['no']}, 'warn': {str(m): t for (no, m), t in WARN.items() if no == e['no']},
-                       'roads': s.get('roads'), 'around': s.get('around'), 'hist': s.get('history') or [], 'pnote': s.get('phase6note') or [], 'field': FIELD.get(e['no']) or []})
+                       'roads': s.get('roads'), 'around': s.get('around'), 'hist': s.get('history') or [], 'pnote': s.get('phase6note') or [], 'field': FIELD.get(e['no']) or [],
+                       'tw': [{'tod': w[0], 'from': w[1], 'to': w[2], 'm': w[3], 'dir': MV[w[3]][0], 'mv': MV[w[3]][1], 'on': w[4], 'y': Y[max(where[w[3]]) - 1], 'g': w[4] - Y[max(where[w[3]]) - 1], 't': w[5]} for w in TW.get(e['no'], [])]})
         items.append(it)
     doc = {'schema': 'tg-sig-ksc/2', 'made': datetime.date.today().isoformat(),
            'source': '서초경찰서 교통과 제공 · 표준신호제어기DB(KSC-5800SE/SEC-8400) 출력물 5장을 손으로 판독(%s) · 현시별 이동류·황색·전적색 = 같은 출력물의 다른 판독(2026-09-11 · 주기·현시값 서로 일치) — 소유자가 이 5곳의 공개를 정함(2026-10-10)' % j.get('read', ''),
@@ -76,7 +81,7 @@ def main():
            'fields': 'items[{no 교차로 번호, nm, lat, lon, day 출력물의 날짜, dayk(시행일·작성일), tod{요일 계획 1 월~목 · 2 금 · 3 토 · 4 일·공휴일: [[시작 HHMM, 주기 초, 패턴 번호]…] — 그날 첫 계획보다 이르면 전날 마지막 계획이 이어진다}, pat{패턴: {c 주기, off 옵셋, a[A링 현시별 초], b[B링 현시별 초]}}, memo[참고 글], '
                      'ph[{p 현시, mv[켜지는 이동류 번호], t 글, ped[보행]}], Y[현시별 황색 초], AR[현시별 전적색 초], '
                      'dir{패턴: [[들어오는 쪽(nt 북 · et 동 · st 남 · wt 서), St 직진·Lt 좌회전, 나가는 쪽, g 녹색 초|null, y 황색 초, r 적색 초|null, st 녹색 시작(주기 안 · 1현시 시작 = 0), [켜지는 현시…], 이동류 번호]…] — 녹색 시작이 이른 것부터}, '
-                     'rg 1 이면 링 추정, why{이동류: 초를 비운 까닭}, warn{이동류: 같이 알릴 글}, roads{NS·EW 도로}, around{N·S·W·E 이웃}, hist[개선 이력], pnote[현시 참고 글], field[소유자 현장 확인 글]}]',
+                     'rg 1 이면 링 추정, why{이동류: 초를 비운 까닭}, warn{이동류: 같이 알릴 글}, roads{NS·EW 도로}, around{N·S·W·E 이웃}, hist[개선 이력], pnote[현시 참고 글], field[소유자 현장 확인 글], tw[시차제 — {tod[요일 계획 번호], from·to HHMM, m 이동류 번호, dir 들어오는 쪽, mv St·Lt, on 켜져 있는 초(황색 포함), g 녹색 초, y 황색 초, t 글}: 그 요일·시간대에는 dir 의 그 이동류 값을 g·y 로 바꾸고 적색 = 주기 − g − y(녹색 시작 st 는 그대로)]}]',
            'items': items}
     p = os.path.join(ROOT, 'data', 'sig-ksc-seocho.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

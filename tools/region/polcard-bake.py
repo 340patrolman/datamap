@@ -11,18 +11,22 @@ POL = json.load(open(os.path.join(ROOT, 'data', 'police.json'), encoding='utf-8'
 HF = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'polcard-hist.json')
 HIST = json.load(open(HF, encoding='utf-8')) if os.path.exists(HF) else {}
 YEARS = [str(y) for y in range(2016, 2026)]
+# 서초구 반포동 — 별표2 는 「번지로 나눔」으로만 알려 준다 → 소유자(서초서 교통관리계) 현장 기준으로 나눈다(2026-10-04 말씀 · 2026-10-10 「이 내용 맞네」 확인 · T-Book v23.50 banpoJur 와 같은 기준)
+#   반포본동·반포2동 = 방배서 · 반포1동·반포3동 = 서초서 · 반포4동 = 반포대로 서쪽 방배서(서래)·동쪽 서초서(반포) — 4동만 둘로 나눠(반씩 근사) 「경계」
+FIELD = {'11650550': ['서울방배경찰서'], '11650570': ['서울방배경찰서'], '11650560': ['서울서초경찰서'], '11650580': ['서울서초경찰서'], '11650581': ['서울서초경찰서', '서울방배경찰서']}
 
 def main():
     D = {}
     for f in glob.glob(os.path.join(R, '[0-9]' * 5, 'profile.json')):
         p = json.load(open(f, encoding='utf-8'))
         for k, v in p['dong'].items(): v['_gu'] = p['name']; D[k] = v
-    S = {s[0]: s for s in POL['stations']}; A = {}
+    S = {s[0]: s for s in POL['stations']}; A = {}; BYN = {s[1]: s[0] for s in POL['stations']}
     for i in S: A[i] = {'dongs': [], 'w': collections.Counter(), 'yr': collections.Counter(), 'age': collections.Counter(), 'fac': collections.Counter(), 'day': [0.0] * 24, 'st': [], 'nshare': 0, 'gus': collections.Counter()}
     miss = 0
     for code, li in POL['dong'].items():
         lab = str(POL['labels'][li]).split('~')   # 「21~6」 = 기본 21번 서 + 일부 번지 6번 서 · 「1,4」 = 두 서가 나눠 맡음(js polLab 과 같다)
         ids = [int(x) for x in lab[0].split(',') if x != '']; ext = [int(x) for x in (lab[1] if len(lab) > 1 else '').split(',') if x != '']
+        if code in FIELD: ids = [BYN[n] for n in FIELD[code]]; ext = []
         d = D.get(code)
         if not d: miss += 1; continue
         for i in ids:
@@ -70,7 +74,7 @@ def main():
             for r, i in enumerate(sorted(L, key=lambda i: -fn(OUT[i]))): OUT[i].setdefault('rank', {})[key] = [r + 1, len(L)]
     doc = {'schema': 'tg-police-card/1', 'made': datetime.date.today().isoformat(),
            'source': '관할 = data/police.json(경찰청과 그 소속기관 직제 시행규칙 별표2 × 행정동 경계) · 값 = r/<구>/profile.json 의 행정동 값을 서마다 더한 것(주민등록 · SGIS 2023 · 상가업소 · TAAS 2016~2025 · 250m 칸 시설 · 교통카드 · 서울 생활인구 · 행안부 외국인주민)',
-           'note': ['행정동 단위 근사다 — 둘 이상의 서가 번지로 나눠 맡는 동은 서 수로 똑같이 나눠 더했다(nshare = 그런 동 수)', '교통사고는 TAAS 공개 자료를 250m 칸으로 모아 가장 넓게 걸친 동에 몰아 센 값이다(경찰 내부 사고 통계와 다르다)',
+           'note': ['행정동 단위 근사다 — 둘 이상의 서가 번지로 나눠 맡는 동은 서 수로 똑같이 나눠 더했다(nshare = 그런 동 수)', '서초구 반포동은 별표2 가 번지로만 나눠, 현장 기준으로 넣었다: 반포본동·반포2동 = 방배서 · 반포1동·반포3동 = 서초서 · 반포4동 = 반포대로 서쪽 방배서·동쪽 서초서(반씩 근사)', '교통사고는 TAAS 공개 자료를 250m 칸으로 모아 가장 넓게 걸친 동에 몰아 센 값이다(경찰 내부 사고 통계와 다르다)',
                     '생활인구(live)·대중교통(tr)은 자료가 있는 동만 더했다(서울·경기 일부) — 없는 서는 빈칸', '연혁(hist)은 출처를 확인한 서만 싣는다 — 없는 서는 빈칸이지 「역사가 없다」가 아니다', '서 사이 차례(rank)는 같은 시도경찰청 안에서 센 것이다 — 1 이 가장 크다'],
            'fields': 'st{경찰서 번호(police.json stations 의 번호): {n 이름, gus[걸친 시군구], dongs[[행정동 코드, 이름, 넓이 ㎢, 주민, 같이 맡는 서 이름들|null]…], nshare, pop 주민, km2, hh 가구, biz 사업체, emp 종사자, shop 가게, frn 외국인주민, age[19세 이하 %, 60세 이상 %, 70세 이상 %], acc{n 10년 사고, yr[2016…2025], dead 사망자, hurt 중상자, ped 보행자 피해, bike 자전거, pm, moto 이륜 가해, night 밤(20~6시) %, per1k 주민 1천 명당 한 해}, fac{시설: 수}, tr{bus 버스 하루 승차, sub 역 하루 승차, st[역]}|null, live[평일 0~23시 생활인구]|null, rank{pop·km2·acc·per1k: [차례, 서 수]}, hist[[연도·날짜, 글, 출처]…]}}',
            'st': OUT}

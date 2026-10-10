@@ -17,7 +17,7 @@
   var LAYERS = [
     ['dong', '🏘 행정동', true, '바탕', 1], ['road', '🛣 도로', true, '바탕', 1], ['base', '🗺 바탕(물·녹지·철도)', true, '바탕', 0], ['vw', '🛰 위성·일반 지도(브이월드 · 인터넷)', false, '바탕', 1], ['jcnm', '🏷 교차로·도로 이름(서울·경기 전부)', true, '바탕', 1], ['bld', '🏢 건물', true, '바탕', 0], ['sub', '🚇 지하철역', true, '바탕', 0], ['exit', '🚪 지하철 출구 번호(전국)', true, '바탕', 0],
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
-    ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1], ['lsac', '🚧 서울 돌발·통제(TOPIS)', false, '실시간', 1], ['lsbk', '🚲 따릉이 지금 남은 대수', false, '실시간', 1], ['lspk', '🅿 서울 공영주차장 지금 빈자리', false, '실시간', 1],
+    ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1], ['lsac', '🚧 서울 돌발·통제(TOPIS)', false, '실시간', 1], ['lutic', '🚨 시내 돌발(UTIC · 받아 둔 한 장)', false, '실시간', 0], ['lsbk', '🚲 따릉이 지금 남은 대수', false, '실시간', 1], ['lspk', '🅿 서울 공영주차장 지금 빈자리', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
     ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['jiga', '🟧 공시지가·지목 지도(대지 ㎡당 · 농지·임야 비율 · 250m·동)', false, '주거·부동산', 1], ['rone', '🏘 집값·거래 흐름(시군구 · R-ONE 월간)', false, '주거·부동산', 1], ['land', '📐 필지 — 공시지가·용도·건물(누르면 · 브이월드)', false, '주거·부동산', 1], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['lpop', '👥 생활인구(인구감소지역 · 시군구 월별)', false, '인구 구성', 1], ['fdong', '🌏 외국인 현황(시군구·읍면동 · 비율·인원·유형·5년 변화)', false, '인구 구성', 1], ['minbak', '🏡 외국인관광 도시민박', false, '인구 구성', 1], ['stay', '🛏 숙박시설(호텔·호스텔·콘도·한옥·펜션·농어촌민박·모텔 · 전국)', false, '인구 구성', 1], ['flodge', '🏨 관광숙박(서울 · 호텔·호스텔)', false, '인구 구성', 0], ['msub', '🚇 대구 도시철도 하차(월별)', false, '이동·동선', 0], ['busd', '🚌 인천 버스 정류장 승하차(일평균)', false, '이동·동선', 0], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['usgg', '🗂 시군구로 나눠 보기', false, '바탕', 1], ['juris', '🏛 행정 관할(교육지원청·세무서·법원·등기소 · 전국)', false, '바탕', 1], ['rnet', '🛣 도로망 등급(전국 · 국도·지방도·시군도)', false, '도로·교통', 1], ['rpost', '🔢 도로 번호(서울 가로등 · 전국 고속도로 거리표 km)', false, '도로·교통', 1], ['volp', '🚙 시간대 교통량(서울 조사 지점)', false, '도로·교통', 1], ['exv', '🛣 고속도로 영업소 교통량(전국)', false, '도로·교통', 1], ['upb', '👮 지구대·파출소 관할(근사)', false, '치안·안전', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['pri', '🚓 지금 순찰할 칸(사고·사람 조합 · 250m)', false, '교통사고', 1], ['pedr', '🚸 보행 안전 우선 칸(보행자 피해·노인·어린이·걷는 사람 · 250m)', false, '교통사고', 1], ['opp', '🏪 가게 자리 기회 칸(사람·땅값·가게 수 조합 · 250m · 가설)', false, '소비·상권', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
     ['risk', '🟥 사고위험지역', false, '교통사고', 0], ['sz', '🏫 어린이보호구역', false, '교통사고', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통사고', 0], ['cam', '📷 단속 카메라', false, '도로·교통', 0], ['spd', '🚥 도로 소통(받은 때)', false, '도로·교통', 0], ['sig', '🚦 신호 주기', false, '도로·교통', 0], ['sigx', '🔢 신호 교차로 번호', false, '도로·교통', 0],
@@ -660,7 +660,7 @@
         .catch(function (e) { LIVE.rad = { at: Date.now(), f: (pr || {}).f, err: '받지 못함(' + (e && e.message || e) + ')' }; draw(); });
     }
   }
-  function liveOn() { return on.lev || on.lwx || on.lspd || on.lair || on.lrad || on.lak || on.lkma || on.lbus || on.lsac || on.lsbk || on.lspk; }
+  function liveOn() { return on.lutic || on.lev || on.lwx || on.lspd || on.lair || on.lrad || on.lak || on.lkma || on.lbus || on.lsac || on.lsbk || on.lspk; }
   function liveSoon() { if (!liveOn()) return; clearTimeout(LIVEW); LIVEW = setTimeout(liveGo, 1200); }
   setInterval(function () { if (liveOn()) liveGo(); if (BUSR && on.lbus && !document.hidden && Date.now() - BUSR.t0 < 15 * 60000 && BUSR.st) busPos(); if (HLS && !document.getElementById('ccv')) { try { HLS.destroy(); } catch (e) {} HLS = null; } }, 60000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) liveSoon(); });
@@ -903,7 +903,7 @@
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
-    drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawBus(dark);
+    drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark);
     if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
       var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
       ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
@@ -952,6 +952,7 @@
     if (on.lrad) { var rd = LIVE.rad; b.push('<b>🌧 레이더</b><small class="lg-n">' + (rd && rd.err ? '<b style="color:#b91c1c">' + esc(rd.err) + '</b>' : rd && rd.f ? hhmm(rd.f.t) + ' 관측 · 10분마다 · 파랑(약함) → 노랑·빨강(강함)' : '받는 중') + ' · RainViewer(rainviewer.com) 레이더 합성 · 무료 판은 7단 확대까지(한 칸 약 1km)</small>'); }
     if (on.lak || on.lkma || on.lbus) b.push('<div class="lg-btns"><button data-lkey="dgk">🔑 공공데이터포털 키' + (LK.dgk ? ' 바꾸기' : ' 넣기') + '</button></div>' + tryBtn(LK.dgk) + (dgK() ? '' : '<small class="lg-n" style="color:#b91c1c">에어코리아·기상청·경기 버스는 공공데이터포털(data.go.kr) 일반 인증키가 있어야 한다 — 이 기기에만 저장</small>'));
     seLeg(b);
+    if (on.lutic) b.push('<b>🚨 시내 돌발(UTIC)</b> ' + li('#dc2626', '사고') + li('#d97706', '공사') + li('#7c3aed', '통제') + li('#2563eb', '행사') + '<small class="lg-n">' + (UTIC ? (UTIC.items || []).length + '건 · <b>' + esc(UTIC.made || '') + ' 받음</b>' : '읽는 중') + ' · 실시간이 아니라 받아 둔 한 장 · 흐린 것 = 끝 예정 시각이 지남 · 경찰청 도시교통정보센터 · 키 없이 본다</small>');
     if (on.lak) { var ak = LIVE.ak; b.push('<b>🟢 측정소</b> ' + PMG.map(function (g) { return li(g[1], g[0]); }).join('') + li('#94a3b8', '점검·없음') + '<small class="lg-n">' + (ak && ak.err ? '<b style="color:#b91c1c">' + esc(ak.err) + '</b>' : ak && !ak.busy ? Object.keys(ak.m).length + '곳 · ' + hhmm(ak.at) + ' 받음 · 20분마다' : '받는 중') + ' · 숫자 = PM2.5 실측(㎍/㎥) · 서울·경기 168곳</small>'); }
     if (on.lkma) { var km = LIVE.kma, wr = LIVE.wrn; b.push('<b>🌡 기상청</b><small class="lg-n">' + (km && km.err ? '<b style="color:#b91c1c">' + esc(km.err) + '</b>' : km && km.v ? '실황 ' + esc(km.bt || '') + ' · 지도 가운데 격자' : '받는 중') + ' · 특보 ' + (wr && wr.err ? esc(wr.err) : kmaWarn() ? '<b style="color:#b91c1c">서울·경기 발효 있음</b>' : wr && !wr.busy ? '서울·경기 없음' : '…') + ' · 지진 3일 ' + (((LIVE.eqk || {}).items || []).length) + '건 · 윗줄 띠를 누르면 자세히</small>'); }
     if (on.lbus) { var bs = LIVE.bs; b.push('<b>🚌 경기 버스</b> ' + li('#0d9488', '정류장', 'box') + li('#ea580c', '고른 노선 버스') + '<small class="lg-n">' + (view.s < 0.04 ? '<b>더 확대하면 화면 가운데 둘레 정류장을 받는다</b>' : bs && bs.err ? '<b style="color:#b91c1c">' + esc(bs.err) + '</b>' : '정류장 ' + Object.keys(BSTOP).length + '곳 받음') + (BUSR ? ' · 노선 ' + esc(BUSR.nm) + ' 버스 ' + BUSR.v.length + '대' + (BUSR.err ? ' <b style="color:#b91c1c">' + esc(BUSR.err) + '</b>' : '') + ' <button data-busx="1">노선 지우기</button>' : '') + ' · 정류장을 누르면 도착 · 「🚌 위치」로 그 노선 버스 · ⚠ 서울 시내버스는 없음</small>'); }
@@ -1021,6 +1022,7 @@
     if (on.szh && D.sz) D.sz.hot.forEach(function (t) { var q = P(t.lon, t.lat), s = S(q); ctx.beginPath(); ctx.arc(s[0], s[1], Math.max(10, 60 * view.s), 0, Math.PI * 2); ctx.fillStyle = 'rgba(220,38,38,.18)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#dc2626'; ctx.stroke(); dot(q, 6, '#dc2626', '#fff', { kind: 'szh', t: t }); });
     if (on.cam && D.cam) D.cam.items.forEach(function (c) { dot(P(c.lon, c.lat), 4.5, camCol(c), '#fff', { kind: 'cam', c: c }); });
     if (on.sig && D.sig) D.sig.spots.forEach(function (s) { dot(P(s.lon, s.lat), 5, '#16a34a', '#fff', { kind: 'sig', s: s }); });
+    if (on.sig) { if (KSC === undefined) kscGet(); else if (KSC) (KSC.items || []).forEach(function (x) { dot(x.p, 6.5, '#1d4ed8', '#fde047', { kind: 'ksc', x: x }); }); }
     if (on.sig && D.sigd && D.sigd.pts) Object.keys(D.sigd.pts).forEach(function (k) { var q = D.sigd.pts[k]; dot(P(q[1], q[0]), 6, '#15803d', '#fde047', { kind: 'sgd', no: k, q: q }); });
     if (on.sub && F2) (F2.subways || []).forEach(function (s) { var n = nodeAt([s.i, s.j]); if (!n) return; var q = [n.p[0] + (s.side || 1) * 26, n.p[1] + 26], ls = s.lines || [];
       ls.forEach(function (l, k) { dot([q[0] + k * 13 / view.s, q[1]], 6, LINE_C[l] || '#64748b', '#fff', k ? null : { kind: 'sub', s: s, n: n }); });
@@ -1077,6 +1079,7 @@
     if (on.land && (!best || /^(g250|l250|f250|a10|rtg|hmg|jgg|jgc)$/.test(best.it.kind))) best = { x: x, y: y, r: 6, it: { kind: 'land', m: M(x, y) } };   // 필지를 켜면 칸(면) 자료보다 필지가 먼저 · 점은 그대로
     if (!best && view.s >= 0.12) { var mq = M(x, y), rq = Math.max(60, Math.min(120, 40 / view.s)), kq = sdAt(mq, rq);   /* v2.105.0 소유자 「교차로 부근을 찍으면 그곳 신호값이 즉시」 — 화면 40px(60~120m) 안 */
       if (kq) { var qq = D.sigd.pts[kq], sq = S(P(qq[1], qq[0])); best = { x: sq[0], y: sq[1], r: 8, it: { kind: 'sgd', no: kq, q: qq } }; }
+      else if (kscAt(mq, rq)) { var kx = kscAt(mq, rq), s7 = S(kx.p); best = { x: s7[0], y: s7[1], r: 8, it: { kind: 'ksc', x: kx } }; }
       else if (D.sig && D.sig.spots) { var bs2 = null, bd2 = rq; D.sig.spots.forEach(function (s9) { var d9 = dTrue(P(s9.lon, s9.lat), mq); if (d9 < bd2) { bd2 = d9; bs2 = s9; } }); if (bs2) { var s8 = S(P(bs2.lon, bs2.lat)); best = { x: s8[0], y: s8[1], r: 8, it: { kind: 'sig', s: bs2 } }; } } }
     if (!best && (UNIT ? UNIT !== 'dong' : (on.upb || on.jurk || on.usgg))) { var mu = M(x, y), uu = unitAt(mu); if (uu) { var su = S(mu); best = { x: su[0], y: su[1], r: 6, it: { kind: 'unit', u: uu } }; } }
     if (!best && on.juris && JRS) { var mj = M(x, y); if (jrsAt('edu', mj) != null || jrsAt('court', mj) != null) best = { x: x, y: y, r: 6, it: { kind: 'jrs', m: mj } }; }
@@ -1175,7 +1178,8 @@
       var sp = D.sig && D.sig.spots ? D.sig.spots.filter(function (s) { return Math.hypot(P(s.lon, s.lat)[0] - n.p[0], P(s.lon, s.lat)[1] - n.p[1]) < 120; })[0] : null;
       if (sp) h += row('신호 지금', sigNow(sp));
       var sdh = sigDir((n.sig && n.sig.no) || (sp && sp.no) || sdAt(n.p), sp ? sigPlanCyc(sp) : 0); h = sdTop(h, sdh);
-      if (!sdh && ((n.sig && n.sig.no) || sp)) h += row('방향별 신호', '<em>아직 없음 — 이 교차로는 방향별 신호값을 못 받았다(수집 전이거나 서울시 V2X 자료에 값이 없는 곳)</em>');
+      var ksh = kscRows(n.sig && n.sig.no, n.p); if (ksh) h += ksh;
+      if (!sdh && !ksh && ((n.sig && n.sig.no) || sp)) h += row('방향별 신호', '<em>아직 없음 — 이 교차로는 방향별 신호값을 못 받았다(수집 전이거나 서울시 V2X 자료에 값이 없는 곳)</em>');
       var v = D.vol && D.vol.spots ? D.vol.spots.filter(function (x) { return x.node && x.node[0] === n.i && x.node[1] === n.j; })[0] : null;
       if (v) h += volRows(v);
       h += src((n.measured ? '교차점: OSM 두 도로의 모든 선분이 만나는 자리(2026-09-28 실측) · 이름: OSM 신호·교차로 이름' : '교차점: OSM 도로 중심선이 만나는 자리') + ' · 행정동: 반경 50m 안 걸친 동 모두');
@@ -1193,7 +1197,7 @@
       var cm = it.c; h = '<h3>📷 무인 단속 카메라</h3>' + row('자리', esc(cm.at)) + row('도로', esc(cm.road)) + row('제한속도', cm.lim ? cm.lim + 'km/h' : '-') + row('설치', esc(cm.yr || '-')) + row('단속구분 코드', esc(cm.se) + ' <em>(코드 뜻은 대조 전)</em>');
       h += camEff(cm) + ledgLine('R4') + src('경찰청 전국무인교통단속카메라표준데이터(기준일 2026-04-06) · 설치 전후 사고 = TAAS 사고 10년(100m 칸)');
     } else if (it.kind === 'sgd') {
-      h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.no) + '</small></h3>' + sigDir(it.no) + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>');
+      h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.no) + '</small></h3>' + sigDir(it.no) + kscRows(it.no, P(it.q[1], it.q[0])) + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>');
     } else if (it.kind === 'sig') {
       var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + row('교차로 번호', esc(s.no)) + row('지금', sigNow(s)) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다') + sigDir(s.no, sigPlanCyc(s));
     } else if (it.kind === 'sub') {
@@ -1237,6 +1241,8 @@
     } else if (it.kind === 'store') { var so = it.s, C3 = SIDX ? SIDX.cls[so.c] : null; h = '<h3>🏬 ' + esc(so.n) + '</h3>' + (C3 ? row('업종', esc(C3[1] + ' › ' + C3[3] + ' › ' + C3[4])) : '') + (so.f ? row('층', esc(so.f) + '층') : '') + (RAD.c ? row('반경 가운데에서', Math.round(dTrue(so.p, RAD.c)) + 'm') : '') + '<p class="desc">등록된 상가 정보다 — 영업 중인지·매출은 이 자료에 없다.</p>' + src(SIDX ? SIDX.source + ' · 기준 ' + SIDX.stdrYm : '');
     } else if (it.kind === 'fst') { h = fstCard(it.f);
     } else if (it.kind === 'exit') { h = exCard(it);
+    } else if (it.kind === 'lutic') { h = uticCard(it.r);
+    } else if (it.kind === 'ksc') { h = '<h3>🚦 ' + esc(it.x.nm) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.x.no) + '</small></h3>' + kscCardHtml(it.x) + sigDir(it.x.no);
     } else if (it.kind === 'lsbk' || it.kind === 'lsac' || it.kind === 'lspk') { h = seCard(it);
     } else if (it.kind === 'lak') { h = akCard(it);
     } else if (it.kind === 'lkma') { h = kmaCard();
@@ -2740,6 +2746,40 @@
     var ph = lv.ok ? ((((now - o.a) % o.ci) + o.ci) % o.ci) / o.ci * 100 : -1; [].forEach.call(document.querySelectorAll('#m2dCard .sd .tl u'), function (u) { u.style.display = ph < 0 ? 'none' : 'block'; u.style.left = ph.toFixed(2) + '%'; }); }
   setInterval(sdNowPaint, 1000);
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-sdd]'); if (!b) return; var el = $('sdNow'); if (!el) return; SDSEL[el.getAttribute('data-no')] = b.getAttribute('data-sdd'); sdNowPaint(); });
+  // v2.114.0 🚦 교통과 신호 운영 계획(서초 5곳) — data/sig-ksc-seocho.json(tg-sig-ksc/1 · 다른 세션 tools/signal/ksc-bake.py · 서초경찰서 교통과 표준신호제어기DB 출력물 손 판독 · 소유자가 이 5곳 공개를 정함 2026-10-10)
+  //   지킬 것(파일 note · T-Book 신호 앱 원칙): 계획값이라고 밝힌다 · 어느 현시가 어느 방향인지 짐작해 적지 않는다 · 옵셋으로 「몇 초 남음」·연동 속도를 계산하지 않는다 · 밤 연동 끊김 구간을 「계속 녹색」으로 안내하지 않는다
+  var KSC, KSCP = null;
+  function kscGet() { if (KSCP) return KSCP; KSCP = fetch('data/sig-ksc-seocho.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { KSC = j; (j.items || []).forEach(function (x) { x.p = P(x.lon, x.lat); }); draw(); }).catch(function () { KSC = null; }); return KSCP; }
+  function kscOf(no) { if (KSC === undefined) { kscGet().then(function () { var c = $('m2dCard'); if (sel && sel.it && c && c.classList.contains('on')) show(sel.it); }); return null; } return KSC && no != null ? (KSC.items || []).filter(function (x) { return String(x.no) === String(no); })[0] || null : null; }
+  function kscAt(pt, r) { if (KSC === undefined) { kscGet(); return null; } if (!KSC) return null; var b = null, bd = r || 60; (KSC.items || []).forEach(function (x) { var d = dTrue(x.p, pt); if (d < bd) { bd = d; b = x; } }); return b; }
+  function kscDayType(dt) { var w = dt.getDay(); return holOf(dt) || w === 0 ? '4' : w === 6 ? '3' : w === 5 ? '2' : '1'; }
+  function kscNow(x) { var dt = new Date(pickDate() + 'T00:00:00'), now = new Date(), hm = HOUR != null ? ('0' + HOUR).slice(-2) + '00' : ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2), ty = kscDayType(dt), L = (x.tod || {})[ty] || [], cur = null;
+    L.forEach(function (r) { if (r[0] <= hm) cur = r; });
+    if (!cur) { var y = new Date(dt.getTime() - 864e5), ty2 = kscDayType(y), L2 = (x.tod || {})[ty2] || []; cur = L2[L2.length - 1] || null; return { ty: ty, hm: hm, cur: cur, prev: ty2, list: L }; }
+    return { ty: ty, hm: hm, cur: cur, list: L }; }
+  function kscCardHtml(x) { var TN = { '1': '월~목', '2': '금', '3': '토', '4': '일·공휴일' }, N = kscNow(x), h = '', f = function (t) { return t.slice(0, 2) + ':' + t.slice(2); };
+    h += '<div class="dh">🚦 교통과 운영 계획 <small style="font-weight:600;color:var(--ink2)">(출력물 ' + esc(x.day || '') + ' ' + esc(x.dayk || '') + ' · 계획값)</small></div>';
+    if (N.cur) { var pt = (x.pat || {})[String(N.cur[2])], cols = ['#2563eb', '#0d9488', '#d97706', '#7c3aed', '#db2777', '#475569'];
+      h += row('지금 도는 계획', '<b>' + TN[N.prev || N.ty] + ' 계획' + (N.prev ? '(전날 마지막 계획이 이어짐)' : '') + '</b> · ' + f(N.cur[0]) + '부터 · 패턴 ' + N.cur[2] + ' · <b>주기 ' + N.cur[1] + '초</b>' + (HOUR != null ? ' <em>(고른 시각 ' + HOUR + '시 기준)</em>' : ''));
+      if (pt) { ['a', 'b'].forEach(function (rg) { var A = pt[rg] || []; if (!A.length || (rg === 'b' && String(pt.a) === String(pt.b))) return; var tot = A.reduce(function (q, v) { return q + v; }, 0) || 1;
+          h += '<div class="cap">' + (rg === 'a' ? 'A링' : 'B링') + ' 현시별 초(합 ' + tot + '초' + (rg === 'a' && String(pt.a) === String(pt.b) ? ' · B링 같음' : '') + ')</div><div class="kscb">' + A.map(function (v, i) { return '<i style="width:' + (v / tot * 100).toFixed(2) + '%;background:' + cols[i % 6] + '"><b>' + (i + 1) + '현시</b> ' + v + '초</i>'; }).join('') + '</div>'; }); } }
+    else h += row('지금 도는 계획', '<em>이 요일 계획을 찾지 못했다</em>');
+    if (N.list.length) h += row('오늘(' + TN[N.ty] + ') 시간대', N.list.map(function (r) { return (N.cur === r ? '<b>' : '') + f(r[0]) + ' ' + r[1] + '초' + (N.cur === r ? '</b>' : ''); }).join(' → ') + ' <em>(주기가 바뀌는 시각 · 그날 첫 계획 전에는 전날 마지막 계획)</em>');
+    if (x.memo && x.memo.length) h += row('출력물 참고', x.memo.map(function (t) { return esc(t); }).join('<br>'));
+    h += '<p class="lg-n"><b>계획값</b>이다 — 감응·수동 운영·행사·공사 중에는 실제와 다르고, 시행일 뒤에 바뀌었을 수 있다. <b>어느 현시가 어느 방향인지는 이 자료에 없다</b>(현시 번호와 초만). 옵셋 기준이 확인되지 않아 「몇 초 남음」·연동 속도는 계산하지 않는다.</p>';
+    return h + '<p class="src">' + esc(KSC.source || '서초경찰서 교통과 제공 표준신호제어기DB 출력물') + '</p>'; }
+  function kscRows(no, pt) { var x = kscOf(no) || (pt ? kscAt(pt, 60) : null); return x ? kscCardHtml(x) : ''; }
+  // v2.114.0 🚨 시내 돌발(UTIC) — data/utic-ims.json(tg-utic-ims/1 · 다른 세션 tools/utic-bake.py · 경찰청 도시교통정보센터 개방데이터 · 이 PC 가 받아 구운 한 장 — 실시간 아님 · 키·중계 없이 읽는다)
+  var UTIC = null, UTICP = null, UTICAT = 0, UTC = { '사고': '#dc2626', '공사': '#d97706', '통제': '#7c3aed', '행사': '#2563eb' };
+  function uticGet() { if (UTICP && Date.now() - UTICAT < 10 * 60000) return UTICP; UTICAT = Date.now(); UTICP = fetch('data/utic-ims.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { UTIC = j; (j.items || []).forEach(function (r) { r.p = P(r[2], r[3]); }); draw(); try { legend(); } catch (e) {} }).catch(function () {}); return UTICP; }
+  function uticOld(r) { var e = r[7] ? Date.parse(String(r[7]).replace(' ', 'T') + ':00+09:00') : NaN; return isFinite(e) && e < Date.now(); }
+  function drawUtic(dark) { if (!on.lutic) return; uticGet(); if (!UTIC) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, z = view.s;
+    (UTIC.items || []).forEach(function (r) { if (!(r[2] > 120 && r[3] > 30)) return; var s0 = S(r.p); if (s0[0] < -20 || s0[1] < -20 || s0[0] > W0 + 20 || s0[1] > H0 + 20) return; var x = s0[0], y = s0[1], q = z >= 0.05 ? 9 : 6, old = uticOld(r);
+      ctx.globalAlpha = old ? 0.4 : 1; ctx.beginPath(); ctx.moveTo(x, y - q); ctx.lineTo(x + q, y); ctx.lineTo(x, y + q); ctx.lineTo(x - q, y); ctx.closePath(); ctx.fillStyle = UTC[r[1]] || '#64748b'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.globalAlpha = 1;
+      hit.push({ x: x, y: y, r: 12, it: { kind: 'lutic', r: r } }); }); }
+  function uticCard(r) { var old = uticOld(r);
+    return '<h3>🚨 ' + esc(r[1] || '돌발') + (r[5] ? ' <small style="font-weight:400;color:var(--ink2)">' + esc(r[5]) + '</small>' : '') + '</h3>' + (old ? '<p class="lg-n" style="color:#b45309">끝 예정 시각이 지났다 — 이미 풀렸을 수 있다.</p>' : '') + '<p class="desc">' + esc(r[4] || '') + '</p>' + row('시작', esc(r[6] || '-')) + row('끝(예정)', esc(r[7] || '-')) + row('고친 때', esc(r[8] || '-')) + (r[9] ? row('주소', esc(r[9])) : '') +
+      '<p class="lg-n"><b>실시간이 아니다</b> — ' + esc(UTIC.made || '') + ' 에 받아 둔 한 장이다(받는 PC 가 꺼져 있으면 낡는다).</p>' + src((UTIC.source && (typeof UTIC.source === 'string' ? UTIC.source : JSON.stringify(UTIC.source))) || '경찰청 도시교통정보센터(UTIC) 개방데이터 돌발정보'); }
   function sigDir(no, planCyc) {
     var lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no); if (!o) return '';
     var G = sdGroups(o), cyc = o.cyc, num = '①②③④⑤⑥⑦⑧', dd = o.day ? o.day.slice(5).replace('-', '/') : '';
@@ -2988,7 +3028,7 @@
     ['care', '🎒 교육·돌봄', ['edu', 'school', 'kg', 'cc', 'kids', 'aca', 'kyr', 'welf', 'dem', 'pg', 'sz'], ['edu', 'kg', 'cc', 'kyr']],
     ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'hira', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'lore', 'conv', 'bank', 'box'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
     ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
-    ['live', '📡 실시간', ['lev', 'lspd', 'lcc', 'lsac', 'lak', 'lkma', 'lbus', 'lsbk', 'lspk', 'lwx', 'lair', 'lrad', 'crowd'], ['lev', 'lspd', 'lcc', 'lwx', 'lrad']],
+    ['live', '📡 실시간', ['lev', 'lutic', 'lspd', 'lcc', 'lsac', 'lak', 'lkma', 'lbus', 'lsbk', 'lspk', 'lwx', 'lair', 'lrad', 'crowd'], ['lev', 'lspd', 'lcc', 'lwx', 'lrad']],
     ['map', '🗺 바탕·격자', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm', 'g250', 'ri'], ['g250']]
   ];
   var GORD = ['바탕', '인구 구성', '이동·동선', '소비·상권', '주거·부동산', '도로·교통', '교통사고', '치안·안전', '교육·돌봄', '생활시설', '행사·역사', '날씨·계절', '실시간'];
@@ -5035,7 +5075,7 @@
     lcc: '국도·고속도로 교통 CCTV 1,801대. 점을 누르면 카드에서 실시간 영상이 나온다(ITS 호출 없음).',
     lak: '에어코리아 측정소 168곳이 지금 잰 미세먼지. 원 안 숫자 = 초미세먼지(㎍/㎥), 색 = 환경부 등급 · 공공데이터포털 키 필요.',
     lkma: '기상청 초단기실황(지도 가운데) · 서울·경기 특보(붉은 띠) · 최근 3일 지진 · 공공데이터포털 키 필요.',
-    lsac: '서울시 교통정보센터(TOPIS)가 지금 알리는 돌발 — 사고·고장·공사·집회·행사·통제. 누르면 내용·발생·해제 예정. 「🎟 맛보기」(중계)를 켜야 받는다.', lsbk: '따릉이 대여소마다 지금 남은 자전거 수(서울시 공공자전거 실시간). 초록 3대 이상 · 주황 1~2대 · 회색 0대. 「🎟 맛보기」를 켜야 받는다.', lspk: '서울시 공영주차장(실시간 연계 약 120곳) 지금 빈자리 = 주차면 − 지금 주차 대수. 「🎟 맛보기」를 켜야 받는다.',
+    lutic: '경찰청 도시교통정보센터(UTIC) 돌발 — 사고·공사·통제·행사. 이 지도를 굽는 PC 가 받아 둔 한 장이라 실시간이 아니다(범례에 받은 시각) · 키·맛보기 없이 본다.', lsac: '서울시 교통정보센터(TOPIS)가 지금 알리는 돌발 — 사고·고장·공사·집회·행사·통제. 누르면 내용·발생·해제 예정. 「🎟 맛보기」(중계)를 켜야 받는다.', lsbk: '따릉이 대여소마다 지금 남은 자전거 수(서울시 공공자전거 실시간). 초록 3대 이상 · 주황 1~2대 · 회색 0대. 「🎟 맛보기」를 켜야 받는다.', lspk: '서울시 공영주차장(실시간 연계 약 120곳) 지금 빈자리 = 주차면 − 지금 주차 대수. 「🎟 맛보기」를 켜야 받는다.',
     lbus: '경기 버스 — 확대하면 정류장이 나오고, 누르면 몇 분 뒤 오는지, 「🚌 위치」로 그 노선 버스가 지도에. 서울 시내버스는 없다(서울시 API 가 https 를 안 받음).',
     lwx: '지금 날씨(기온·하늘·강수)를 화면 칸마다(Open-Meteo 모형값 · 키 없음).',
     lrad: '비구름 레이더(RainViewer · 한 칸 약 1km). 비가 올 때만 색이 칠해진다.',
@@ -6778,7 +6818,7 @@
     ['wx', '⛅ 날씨·실시간', [
       ['now', '🌦 지금 날씨', [['날씨', ['lwx', 'lair', 'lrad', 'lak', 'lkma']]], ['lwx', 'lair']],
       ['season', '⛅ 계절 위험', [['비·침수', ['flt', 'flr', 'und']], ['눈·결빙', ['ice', 'hcab', 'advb']], ['더위·추위', ['heat', 'cold']]], ['flt', 'ice']],
-      ['live', '📡 실시간 교통', [['도로', ['lev', 'lspd', 'lcc', 'lsac', 'lbus']], ['서울시', ['lsbk', 'lspk']], ['인파', ['crowd']]], ['lev', 'lspd']]
+      ['live', '📡 실시간 교통', [['도로', ['lev', 'lutic', 'lspd', 'lcc', 'lsac', 'lbus']], ['서울시', ['lsbk', 'lspk']], ['인파', ['crowd']]], ['lev', 'lspd']]
     ]],
     ['base', '🗺 바탕', [
       ['map', '🗺 바탕 지도', [['바탕', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm']], ['나눠 보기 경계', ['usgg', 'juris', 'jurk', 'upb', 'ri']], ['격자', ['g250']], ['역사·이야기', ['lore', 'her']]], []]

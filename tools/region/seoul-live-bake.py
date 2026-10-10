@@ -48,6 +48,7 @@ def main():
     json.dump({'schema': 'tg-seoul-live/1', 'at': datetime.date.today().isoformat(),
                'source': '서울 열린데이터광장 — 서울시 공영주차장 안내 정보(GetParkInfo · 주차장 자리) · 서울시 실시간 돌발 유형 코드(AccMainCode · AccSubCode)',
                'note': '실시간 주차 정보를 주는 %d곳 중 자리를 아는 %d곳 · 자리 없는 곳은 지도에 못 놓는다: %s' % (len(RT), len(park), ' · '.join(miss)),
+               'fields': 'park{주차장 코드(PKLT_CD): [위도, 경도]}(실시간 주차 정보가 오는 주차장만) · acc{main{돌발 유형 코드: 이름}, sub{세부 코드: 이름}}', 'made': datetime.date.today().isoformat(),
                'park': park, 'acc': {'main': main_, 'sub': sub}}, open(OUT, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print('주차장 안내', len(P), '실시간', len(RT), '자리 있음', len(park), '없음', miss, os.path.getsize(OUT), 'B')
 

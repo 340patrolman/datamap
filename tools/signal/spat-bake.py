@@ -20,6 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 RAW = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'tdata')
 BASE = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xSignalPhaseTimingInformation/1.0'
+BASEP = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xSignalPhaseInformation/1.0'   # 신호 상태(지금 무슨 색) — 잔여시간 API 와 5분 제한이 따로라 둘을 번갈아 받으면 두 배
 DIRS = ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw']
 MVS = ['St', 'Lt', 'Ut', 'Bs', 'Bc', 'Pd']
 GAP = 305
@@ -124,7 +125,7 @@ def publish():
         print('올리기 실패', str(e)[:120], flush=True)
 
 
-def sweep(prefer=None):
+def sweep(prefer=None, api='t'):
     """쪽(page)으로 훑기 — 거르지 않고 3만 줄을 받으면 서버 순서로 이어진 교차로 수십 곳의 그 시각 0분부터의 줄이 한 번에 온다.
     (itstId 로 거르면 뒤쪽 교차로는 HTTP 500 이 난다 · 2026-10-10 4031·4034) 서버 순서는 정각 목록(ids_*.json)의 차례이고,
     쪽 번호 = 앞선 교차로 수 × 교차로마다 쌓인 줄 수 ÷ 30000 — 줄 밀도(dens)는 받은 쪽에서 다시 잰다."""
@@ -132,7 +133,7 @@ def sweep(prefer=None):
     order = list(json.load(open(f[-1], encoding='utf-8'))['ids'].keys())
     pos = {k: i for i, k in enumerate(order)}
     pref = [x for x in (prefer or []) if x in pos]
-    tried_f = os.path.join(RAW, 'tried.json')
+    tried_f = os.path.join(RAW, 'tried_p.json' if api == 'p' else 'tried.json')
     tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
     dens, miss, last, stuck, ncall = DENS0, 0, None, {}, 0
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
@@ -149,7 +150,7 @@ def sweep(prefer=None):
         if now.minute < 11:
             time.sleep((11 - now.minute) * 60 - now.second + 1); continue
         t = now.minute * 60 + now.second
-        K = min(pos[i] for i in todo)
+        K = (max if api == 'p' else min)(pos[i] for i in todo)   # 신호 상태 훑기는 뒤에서부터(두 훑기가 같은 쪽을 받지 않게)
         off = None
         if last and last['t'] < t and last['a'] <= K <= last['b'] + 1:
             off = last['base'] + sum(n for q, n in last['rows'] if q < K)   # 지난 쪽에서 센 K 앞의 줄 수(정확) — 지금 시각으로 늘린다
@@ -160,7 +161,7 @@ def sweep(prefer=None):
         if off is None:
             off = K * dens * t
         page = int((off + dens * t / 2) // 30000) + 1   # K 의 줄 가운데가 드는 쪽 — K 가 쪽 끝에 걸려 되풀이되던 것을 막는다
-        u = BASE + '?apikey=' + key() + '&pageNo=%d&numOfRows=30000' % page
+        u = (BASEP if api == 'p' else BASE) + '?apikey=' + key() + '&pageNo=%d&numOfRows=30000' % page
         try:
             r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=400); st = r.status; body = r.read().decode('utf-8', 'ignore')
         except urllib.error.HTTPError as e:
@@ -182,7 +183,7 @@ def sweep(prefer=None):
             by[i].append(x)
         idx = [pos[i] for i in seq if i in pos]
         if not idx:
-            print(stamp, '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
+            print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
             dens *= 0.8; time.sleep(GAP); continue
         a, b = min(idx), max(idx)
         if page > 1 and a > 0:
@@ -190,9 +191,9 @@ def sweep(prefer=None):
         saved = 0
         for n, i in enumerate(seq):
             edge = n == 0 or n == len(seq) - 1   # 쪽 끝에 걸린 교차로는 줄이 잘렸을 수 있다
-            red = reduce_one(i, by[i]) if len(by[i]) >= 240 else None
+            red = (reduce_phase(i, by[i]) if api == 'p' else reduce_one(i, by[i])) if len(by[i]) >= 240 else None
             if red and red.get('cyc'):
-                json.dump(red, open(os.path.join(RAW, 'red', '%s_%s.json' % (i, stamp)), 'w', encoding='utf-8'), ensure_ascii=False); saved += 1
+                json.dump(red, open(os.path.join(RAW, 'red', '%s_%s%s.json' % (i, stamp, 'p' if api == 'p' else '')), 'w', encoding='utf-8'), ensure_ascii=False); saved += 1
             elif not edge:
                 tried.add(i)   # 다 받았는데 주기를 못 읽은 곳(값이 멈춤·점멸) — 다시 받지 않는다
         json.dump(sorted(tried), open(tried_f, 'w'))
@@ -204,13 +205,14 @@ def sweep(prefer=None):
             if stuck[K] >= 2:
                 tried.add(order[K]); json.dump(sorted(tried), open(tried_f, 'w'))   # 두 번 받고도 주기를 못 읽은 곳은 건너뛴다
         miss = 0 if hit else miss + 1
-        print(stamp, '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '우선 목록 — 닻 없음', len([i for i in pref if need1(i)]), '· 검증 남음', len([i for i in pref if need2(i)]), flush=True)
+        print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '우선 목록 — 닻 없음', len([i for i in pref if need1(i)]), '· 검증 남음', len([i for i in pref if need2(i)]), flush=True)
         if miss >= 4:
             tried.add(order[K]); miss = 0   # 네 번 빗나가면 그 교차로는 건너뛴다
-        build()
-        ncall += 1
-        if ncall % 3 == 0:
-            publish()
+        if api != 'p':
+            build()
+            ncall += 1
+            if ncall % 3 == 0:
+                publish()
         time.sleep(GAP)
 
 
@@ -238,6 +240,85 @@ def segments(rows, k):
 
 def med(a):
     return round(statistics.median(a), 1) if a else None
+
+
+PH_G = ('protected-Movement-Allowed', 'permissive-Movement-Allowed')
+PH_Y = ('protected-clearance', 'permissive-clearance')
+PH_R = ('stop-And-Remain', 'stop-Then-Proceed')
+
+
+def phase_runs(rows, k, ped):
+    """한 이동류의 상태 구간 [(시작 시각, 길이 초, g|y|r|?, 앞뒤가 온전한가)] — 마지막(끝이 잘린) 구간은 넣지 않는다.
+    보행(ped)은 protected = 녹색 · permissive = 녹색 점멸(y 자리)로 읽는다."""
+    out, cur, start, prev_t, bad = [], None, None, None, False
+    for r in rows:
+        v = r.get(k)
+        if v is None:
+            continue
+        t = r['trsmUtcTime'] / 1000.0
+        if ped:
+            c = 'g' if v == 'protected-Movement-Allowed' else 'y' if v in ('permissive-Movement-Allowed',) + PH_Y else 'r' if v in PH_R else '?'
+        else:
+            c = 'g' if v in PH_G else 'y' if v in PH_Y else 'r' if v in PH_R else '?'
+        gap = prev_t is not None and t - prev_t > 5
+        if cur is None:
+            cur, start, bad = c, t, True          # 첫 구간은 앞이 잘렸다
+        elif c != cur or gap:
+            out.append((start, (prev_t if gap else t) - start, cur, not bad and not gap))
+            cur, start, bad = c, t, gap
+        prev_t = t
+    return out
+
+
+def reduce_phase(itst, J):
+    """신호 상태 줄 → reduce_one 과 같은 꼴(주기 · 이동류마다 녹·황·적 초 · 녹색 시작 자리 · 닻) + 보행 신호(pd)."""
+    rows = [x for x in J if str(x.get('itstId')) == str(itst)]
+    rows.sort(key=lambda x: x['trsmUtcTime'])
+    if len(rows) < 120:
+        return None
+    t0, t1 = rows[0]['trsmUtcTime'] / 1000.0, rows[-1]['trsmUtcTime'] / 1000.0
+    mv, pd, cyc_all = [], [], []
+    for d in DIRS:
+        for m in MVS:
+            k = d + m + 'sgStatNm'
+            if not any(r.get(k) is not None for r in rows):
+                continue
+            R = phase_runs(rows, k, m == 'Pd')
+            G, Y, Rd, gs = [], [], [], []
+            for i, (st, du, c, ok) in enumerate(R):
+                if not ok or c == '?':
+                    continue
+                if c == 'g': G.append(du); gs.append(st)
+                elif c == 'y': Y.append(du)
+                elif c == 'r': Rd.append(du)
+            if len(G) < 2 or not Rd or any(c == '?' for _, _, c, _ in R):
+                (pd if m == 'Pd' else mv).append({'d': d, 'm': m, 'n': len(G)})      # 색을 못 읽은 이동류(점멸 운영 · 받은 동안 한 바퀴가 안 됨)
+                continue
+            x = {'d': d, 'm': m, 'g': med(G), 'y': med(Y) if Y else 0.0, 'r': med(Rd), 'n': len(G), 'gs': gs}
+            (pd if m == 'Pd' else mv).append(x)
+            if m != 'Pd':
+                cyc_all.append(x['g'] + x['y'] + x['r'])
+    if not cyc_all:
+        return None
+    cyc = med(cyc_all)
+    ok = [x for x in mv if 'g' in x]
+    ref = max(ok, key=lambda x: (x['g'], -DIRS.index(x['d'])))
+    rs = sorted(ref['gs'])
+    for x in ok + [q for q in pd if 'g' in q]:
+        offs = []
+        for s0 in x['gs']:
+            prev = [r for r in rs if r <= s0 + 1]
+            if prev and s0 - prev[-1] < cyc + 2:
+                offs.append(max(0, s0 - prev[-1]))
+        x['o'] = int(round(statistics.median(offs))) % int(round(cyc)) if offs else None
+    ncy = round((rs[-1] - rs[0]) / cyc) if len(rs) > 1 else 0
+    cx = (rs[-1] - rs[0]) / ncy if ncy >= 2 else cyc
+    ci = int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1)
+    for x in mv + pd:
+        x.pop('gs', None)
+    hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
+    return {'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows),
+            'cyc': cyc, 'mv': mv, 'ped': [{'d': q['d'], 'seg': [], 'n': q['n']} for q in pd], 'pd': pd, 'a': round(rs[-1], 1), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy, 'src': 'p'}
 
 
 def reduce_one(itst, J):
@@ -356,6 +437,10 @@ def build():
             o = {'day': r['day'], 'dow': r['dow'], 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
                  'mv': [mvrow(x, r['cyc']) for x in r['mv']],
                  'ped': [[p['d'], p['seg'][:8]] for p in r['ped']]}
+            if r.get('src') == 'p':
+                o['src'] = 'p'   # 신호 상태 API 로 읽은 기록(색이 추정이 아니라 상태 값 그대로)
+            if r.get('pd'):
+                o['pd'] = [[q['d'], q.get('g'), q.get('y'), q.get('r'), q.get('o'), q['n']] for q in r['pd'] if q.get('g') is not None and abs(q['g'] + q['y'] + q['r'] - r['cyc']) <= 3.5]   # 보행 신호 [방위, 녹색, 점멸, 적색, 녹색 시작, 본 횟수] — 주기와 맞는 것만
             if r.get('a'):
                 o['a'] = int(round(r['a'])); o['ci'] = r['ci']
                 # 검증 — 같은 주기로 받은 다른 닻(40분 넘게 떨어진 것)과 주기의 정수배로 맞물리는가(±3초)
@@ -392,6 +477,8 @@ def build():
            'source': '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간',
            'how': '잔여시간이 새 값으로 뛰는 자리 사이를 한 구간으로 보고, 차량 신호는 3~6초 구간을 황색으로 보아 그 앞을 녹색·뒤를 적색으로 읽었다(추정). 받은 시간대의 실제 운영값이며 다른 시간대·요일은 다르다. 보행 신호는 색을 가릴 수 없어 구간 길이만 싣는다.',
            'mvcols': ['방위(nt 북 · et 동 · st 남 · wt 서 · ne·se·sw·nw)', '이동류(St 직진 · Lt 좌회전 · Ut 유턴 · Bs 버스 · Bc 자전거)', '녹색 초', '황색 초', '적색 초', '녹색 시작(주기 안 · 가장 긴 녹색 = 0)', '본 주기 수'],
+           'fields': 'pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]}',
+           'note': '받은 시간대에 실제로 돈 값이다(하루 계획표가 아니다) · 방위 = 그 신호를 받는 차가 들어오는 쪽 · 잔여시간 API 로 읽은 기록의 색은 황색 3~6초 앞뒤로 읽은 추정이고 src p 기록은 상태 값 그대로 · 이어 센 「지금 몇 초」는 a·ci 로 지도가 계산한 추정',
            'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its, 'tod': tod}
     p = os.path.join(ROOT, 'data', 'sigdir-seoul.json')
     json.dump(doc, open(p, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
@@ -411,7 +498,11 @@ if __name__ == '__main__':
         auto()
     elif a and a[0] == 'sweep':
         pf = [x.strip() for x in open(a[2], encoding='utf-8') if x.strip() and not x.startswith('#')] if len(a) > 2 and a[1] == '--list' else None
-        sweep(pf)
+        sweep(pf, 'p' if '--api' in a and a[a.index('--api') + 1] == 'p' else 't')
+    elif a and a[0] == 'testp':
+        J = json.load(open(a[1], encoding='utf-8'))
+        for i in sorted(set(str(x['itstId']) for x in J)):
+            print(json.dumps(reduce_phase(i, J), ensure_ascii=False))
     elif a and a[0] == 'test':
         J = json.load(open(a[1], encoding='utf-8'))
         for i in sorted(set(str(x['itstId']) for x in J)):

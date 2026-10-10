@@ -2721,7 +2721,7 @@
   function sdState(m, rec, now) { var ci = rec.ci, t = (((now - rec.a - (m[5] || 0)) % ci) + ci) % ci, g = m[2], y = m[3] || 0; return t < g ? ['g', g - t] : t < g + y ? ['y', g + y - t] : ['r', ci - t]; }
   function sdNowPaint() { var el = $('sdNow'); if (!el) return; var no = el.getAttribute('data-no'), lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no), ch = $('sdCh'), nw = $('sdNw'); if (!o || !ch || !nw) return;
     if (Date.now() - SDAT > 5 * 60000 && !document.hidden) { SDAT = Date.now(); fetch(FILES.sigd).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.its) D.sigd = j; }).catch(function () {}); }
-    var dirs = SDORD.filter(function (d) { return o.mv.some(function (m) { return m[0] === d && m[2] != null; }); }); if (!dirs.length) { ch.innerHTML = ''; nw.innerHTML = ''; return; }
+    var PD = o.pd || [], dirs = SDORD.filter(function (d) { return o.mv.some(function (m) { return m[0] === d && m[2] != null; }) || PD.some(function (q) { return q[0] === d; }); }); if (!dirs.length) { ch.innerHTML = ''; nw.innerHTML = ''; return; }
     var d = SDSEL[no] && dirs.indexOf(SDSEL[no]) >= 0 ? SDSEL[no] : dirs[0], now = Date.now() / 1000, CN = { g: '녹색', y: '황색', r: '적색' }, ck = no + '|' + d + '|' + dirs.join();
     if (ch.getAttribute('data-k') !== ck) { ch.setAttribute('data-k', ck); ch.innerHTML = '<div class="sdch"><span>어느 쪽에서 오는 차?</span>' + dirs.map(function (q) { return '<button data-sdd="' + q + '"' + (q === d ? ' class="on"' : '') + '>' + SDN[q] + '쪽에서</button>'; }).join('') + '</div>'; }
     var h = '<div class="sdls">';
@@ -2729,6 +2729,10 @@
       if (lv.ok) { var st = sdState(m, o, now), nx = st[0] === 'g' ? '황색 ' + Math.round(m[3] || 0) + '초 → 적색 ' + Math.round(red) + '초' : st[0] === 'y' ? '적색 ' + Math.round(red) + '초' : '녹색 ' + Math.round(m[2]) + '초';
         h += '<div class="sdl ' + st[0] + '"><i></i><b>' + esc(nm) + '</b><span>' + CN[st[0]] + ' <strong>' + Math.ceil(st[1]) + '</strong>초 남음</span><small>다음 ' + nx + '</small></div>'; }
       else h += '<div class="sdl"><i></i><b>' + esc(nm) + '</b><span>녹색 ' + Math.round(m[2]) + '초 · 황색 ' + Math.round(m[3] || 0) + '초 · 적색 ' + Math.round(red) + '초</span></div>'; });
+    PD.filter(function (q) { return q[0] === d; }).forEach(function (q) { var m = [q[0], 'Pd', q[1], q[2] || 0, q[3], q[4] || 0], ci = lv.ok ? o.ci : Math.round(o.cyc), red = Math.max(0, ci - m[2] - m[3]), PN = { g: '녹색', y: '녹색 점멸', r: '적색' };   /* v2.113.0 보행 신호 — 「신호제어기 신호 정보」 상태 값으로 색을 가린다 */
+      if (lv.ok) { var st = sdState(m, o, now), nx = st[0] === 'g' ? '점멸 ' + Math.round(m[3]) + '초 → 적색 ' + Math.round(red) + '초' : st[0] === 'y' ? '적색 ' + Math.round(red) + '초' : '녹색 ' + Math.round(m[2]) + '초';
+        h += '<div class="sdl ' + st[0] + '"><i></i><b>🚶 ' + SDN[d] + '쪽 건널목</b><span>' + PN[st[0]] + ' <strong>' + Math.ceil(st[1]) + '</strong>초 남음</span><small>다음 ' + nx + '</small></div>'; }
+      else h += '<div class="sdl"><i></i><b>🚶 ' + SDN[d] + '쪽 건널목</b><span>녹색 ' + Math.round(m[2]) + '초 · 점멸 ' + Math.round(m[3]) + '초 · 적색 ' + Math.round(red) + '초</span></div>'; });
     var am = lv.rec ? Math.max(0, Math.round(lv.age / 60)) : 0;
     h += '</div><p class="sdnt">' + (lv.ok ? '⏱ <b>' + hhmm(o.a * 1000) + '</b>에 받은 값에서 주기 ' + o.ci + '초로 <b>이어 센 추정</b>(' + am + '분 전 수집 · ±몇 초)' + (o.v ? ' · 검증: ' + o.v[0] + '분 띄워 두 번 받은 값이 ' + o.v[1] + '초 안에서 맞음' : ' · 받은 지 12분 안이라 띄움(두 번 대조 전)') + ' · 주기가 바뀌는 시간대 · 감응·수동 운영 중에는 어긋난다'
       : '<b>지금 몇 초 남았는지는 띄우지 않는다</b> — ' + (lv.why === 'none' ? '이 교차로는 녹색이 켜진 실제 시각을 아직 못 받았다(수집 중)' : lv.why === 'bad' ? '두 번 받은 값이 서로 안 맞아(' + lv.rec.x[0] + '분 사이 ' + lv.rec.x[1] + '초 어긋남) 이어 세면 틀린다' : '받은 지 ' + (am >= 60 ? Math.floor(am / 60) + '시간 ' + (am % 60) + '분' : am + '분') + ' 지나 이어 세면 틀릴 수 있다(다시 받는 중)') + ' · 위는 한 주기 안의 길이') + '</p>';
@@ -2749,7 +2753,8 @@
     h += '<div class="ax"><span>0</span><span>' + Math.round(cyc / 2) + '</span><span>' + Math.round(cyc) + '초</span></div></div></div>';
     h += row('켜지는 차례', G.map(function (x, i) { return num.charAt(i) + ' ' + esc(sdName(x)) + ' <b>' + Math.round(x.g) + '초</b>'; }).join(' → '));
     var un = o.mv.filter(function (m) { return m[2] == null; }), pd = (o.ped || []).map(function (q) { return SDN[q[0]]; });
-    if (pd.length) h += row('보행 신호', esc(pd.join(' · ')) + '쪽에 있다 <em>(초록·빨강 구분은 이 자료로 못 가린다 — 서울시 「신호제어기 신호 정보」 신청 뒤)</em>');
+    if (o.pd && o.pd.length) h += row('🚶 보행 신호', o.pd.map(function (q) { return '<b>' + SDN[q[0]] + '쪽</b> 녹색 ' + Math.round(q[1]) + '초 · 점멸 ' + Math.round(q[2] || 0) + '초 · 적색 ' + Math.round(q[3]) + '초'; }).join('<br>') + ' <em>(서울시 「신호제어기 신호 정보」 상태 값 · 방위 = 그 건널목이 놓인 접근로)</em>');
+    else if (pd.length) h += row('보행 신호', esc(pd.join(' · ')) + '쪽에 있다 <em>(초록·빨강은 「신호 상태」로 다시 받으면 나온다 — 수집 중)</em>');
     var tw = un.filter(function (m) { return m[7] === 2; }); un = un.filter(function (m) { return m[7] !== 2; });
     if (tw.length) h += row('한 주기에 두 번', esc(tw.map(function (m) { return SDN[m[0]] + ' ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' <em>(한 주기 안에 녹색이 두 번 켜져 위 막대에 넣지 않았다)</em>');
     if (un.length) h += row('색 못 가린 신호', esc(un.map(function (m) { return SDN[m[0]] + ' ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' <em>(받은 동안 황색이 안 보였다 — 점멸 운영이거나 값이 멈춤)</em>');
@@ -2758,7 +2763,7 @@
     if (pp && typeof JCT !== 'undefined' && JCT.length) { var jb = null, jd = 100; JCT.forEach(function (o9) { if (Math.abs(o9.p[1] - pp[1]) > 100) return; var d9 = dTrue(o9.p, pp); if (d9 < jd) { jd = d9; jb = o9; } }); if (jb) h += row('이 교차로 사고', '2016~2025 <b>' + jb.t.toLocaleString() + '건</b> · 해마다 평균 ' + Math.round(jb.t / 10) + '건' + (jb.r[4] ? ' · 사망사고 있음' : '') + ' <em>(TAAS · ' + esc(jb.r[0]) + ' · 585m 안 사고를 가까운 교차로에 배정한 근사)</em>'); }
     if (pp && D.cam && D.cam.items) { var cn = D.cam.items.filter(function (c9) { return dTrue(P(c9.lon, c9.lat), pp) <= 150; }).length; if (cn) h += row('단속 카메라', '150m 안 ' + cn + '대 <em>(경찰청 무인단속카메라)</em>'); }
     if (planCyc && Math.abs(planCyc - cyc) > 2) h += row('지금 계획과 차이', '지금 계획 주기는 ' + planCyc + '초 — 위 그림은 받은 때(주기 ' + Math.round(cyc) + '초) 값이라 초가 다르다 <em>(방향·차례는 대개 같다)</em>');
-    return h + '<p class="desc">방위는 그 신호를 받는 차가 <b>들어오는 쪽</b>이다(「북→남」 = 북쪽에서 와서 남쪽으로 · 일방통행 교차로 자료로 확인). 녹색·적색은 잔여시간 흐름에서 황색(3~6초) 앞뒤로 읽은 <b>추정</b>이고, 받은 시간대의 값이라 다른 시간대·요일에는 초가 다르다. 감응·수동 운영 중에는 실제와 다르다.</p>' +
+    return h + '<p class="desc">방위는 그 신호를 받는 차가 <b>들어오는 쪽</b>이다(「북→남」 = 북쪽에서 와서 남쪽으로 · 일방통행 교차로 자료로 확인). ' + (o.src === 'p' ? '색은 신호제어기가 보낸 <b>상태 값 그대로</b>이고(서울시 「신호제어기 신호 정보」)' : '녹색·적색은 잔여시간 흐름에서 황색(3~6초) 앞뒤로 읽은 <b>추정</b>이고') + ', 받은 시간대의 값이라 다른 시간대·요일에는 초가 다르다. 감응·수동 운영 중에는 실제와 다르다.</p>' +
       src((D.sigd.source || '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보') + ' · 교차로 번호 ' + String(no));
   }
   function sigPlanCyc(s) { var d = new Date(), pn = s && s.dow && s.dow[String(d.getDay() + 1)], rows = pn && s.plans && s.plans[pn], hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), cur = null;
@@ -6896,6 +6901,12 @@
   function dnApply() { var d = MODE === 'dark' || (MODE === 'auto' && MQD && MQD.matches); document.documentElement.classList.toggle('dark', !!d);
     var b = $('m2dDN'); if (b) { b.textContent = MODE === 'auto' ? '🌓' : MODE === 'dark' ? '🌙' : '☀️'; b.setAttribute('aria-label', '화면 밝기 — 지금 ' + (MODE === 'auto' ? '자동(기기 설정)' : MODE === 'dark' ? '밤' : '낮')); b.title = b.getAttribute('aria-label'); }
     var mt = document.querySelector('meta[name="theme-color"]'); if (mt) mt.setAttribute('content', d ? '#0f1624' : '#ffffff'); draw(); }
+  // v2.113.0 🤖 AI에게 이 지도 알려 주기 — 소유자 「AI 가 여기를 보면 대한민국의 거의 모든 공공데이터가 들어 있으니 잘 쓸 수 있게」 · data/ai.json(다른 세션 · tools/region/ai-guide-bake.py)의 paste_to_ai 글을 복사
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-aiall]'); if (!b) return; e.preventDefault();
+    fetch('data/ai.json').then(function (r) { return r.json(); }).then(function (j) { var p = String(j.paste_to_ai || ''), m = /「([^」]+)」/.exec(p), raw = /(https:\/\/raw\.githubusercontent\.com\/[^\s)]+ai\.json)/.exec(p);
+      var t = (m ? m[1] : 'https://340patrolman.github.io/datamap/data/ai.json 을 먼저 읽어라.') + (raw ? ' (그 주소를 못 열면 ' + raw[1] + ' 을 읽어라.)' : '');
+      return navigator.clipboard.writeText(t).then(function () { toast('🤖 복사했다 — AI 대화창에 붙여 넣으면 이 지도의 자료 길잡이(ai.json)를 읽고 답한다'); }); })
+      .catch(function () { toast('복사하지 못했다 — 주소 340patrolman.github.io/datamap/data/ai.json 을 AI 에게 직접 알려 준다'); }); });
   function toast(t) { var el = $('m2dToast'); if (!el) { el = document.createElement('div'); el.id = 'm2dToast'; el.setAttribute('role', 'status'); document.body.appendChild(el); } el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 1600); }
   if ($('m2dDN')) $('m2dDN').onclick = function () { MODE = MODE === 'auto' ? 'light' : MODE === 'light' ? 'dark' : 'auto'; try { localStorage.setItem('tg_map2d_mode', MODE); } catch (e) {} dnApply(); toast(MODE === 'auto' ? '🌓 자동 — 기기 설정을 따른다' : MODE === 'dark' ? '🌙 밤 화면' : '☀️ 낮 화면'); };
   if (MQD && MQD.addEventListener) MQD.addEventListener('change', function () { if (MODE === 'auto') dnApply(); });

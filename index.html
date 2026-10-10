@@ -248,6 +248,7 @@
   #m2dFoot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; padding: 4px 10px calc(4px + env(safe-area-inset-bottom)); font-size: 11px; color: var(--ink2); background: linear-gradient(transparent, var(--bg) 40%); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #m2dFoot details { pointer-events: auto; display: inline; }
   #m2dFoot summary { cursor: pointer; display: inline; }
+  #m2dFoot a[data-aiall] { pointer-events: auto; color: inherit; text-decoration: none; cursor: pointer; }
   #m2dFoot .all { position: fixed; left: 8px; right: 8px; bottom: calc(26px + env(safe-area-inset-bottom)); max-height: 45vh; overflow: auto; white-space: normal; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; color: var(--ink); font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
   #m2dFoot .all li { margin: 2px 0; }
   #m2dTime { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
@@ -885,6 +886,7 @@
 <div id="m2dPnl" aria-label="손익 계산"></div>
 <div id="m2dTr" aria-label="여기 대중교통"></div>
 <div id="m2dFoot">
+  <a href="#" data-aiall="1">🤖 AI에게 이 지도 알려 주기</a> ·
   <details class="fi" data-fi="*"><summary>🔎 없는 자료 찾는 법</summary><div class="fib all">읽는 중…</div></details> ·
   <details><summary>ⓘ 자료 출처 · 한계</summary>
     <ul class="all">
@@ -938,7 +940,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.112.0"></script>
+<script src="js/map2d.js?v=2.113.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

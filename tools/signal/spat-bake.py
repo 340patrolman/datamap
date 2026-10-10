@@ -171,7 +171,7 @@ def sweep(prefer=None, api='t', cap=None):
     smiss = json.load(open(smiss_f)) if os.path.exists(smiss_f) else {}
     # 끝자리(pcap) — 그 시각대에 서버가 가진 자료의 끝이 서버 순서로 몇 번째 교차로쯤인가. HTTP 500 = 「그 쪽은 자료의 끝을 넘었다」로 읽는다
     # (2026-10-10 저녁: 190쪽은 되고 229쪽은 500 · 정각 창 23쪽이 500 — 깊이(줄 수)가 아니라 끝자리(살아 있는 교차로 수 × 지난 초)가 문턱이었다).
-    pcap, pcat, seen, seen_slot, pok, pok_hr, nfail, avoid = (float(cap) if cap else None), time.time(), {}, None, -1, -1, 0, None
+    pcap, pcat, seen, seen_slot, pok, pok_hr, nfail, avoid, plast = (float(cap) if cap else None), time.time(), {}, None, -1, -1, 0, None, None
     cap_f = os.path.join(RAW, 'pcap_p.json' if api == 'p' else 'pcap_t.json')   # 끝자리는 파일에 남겨 다시 띄워도 잇는다
     if not pcap and os.path.exists(cap_f):
         try:
@@ -217,9 +217,9 @@ def sweep(prefer=None, api='t', cap=None):
             dens = 1.0
         if pok_hr != now.hour:
             pok_hr, pok = now.hour, -1                        # 이 시각대에 실제로 받은 맨 뒤 자리
-            pcap, nfail, avoid = None, 0, None                # 시각대가 바뀌면 끝자리도 새로 잰다(23:05 창이 22시대 끝자리에 묶여 서초를 건너뛰었다)
+            plast, pcap, nfail, avoid = (pcap or plast), None, 0, None   # 시각대가 바뀌면 끝자리를 풀고 한 번 찔러 본다(안 되면 앞 시각대 끝자리로 바로 되돌린다)
         if pcap and time.time() - pcat > 1200:
-            pcap = None                                       # 끝자리는 30분만 믿는다(자료가 늦게 쌓이는 것일 수 있어 다시 잰다)
+            plast, pcap = pcap, None                          # 끝자리는 20분만 믿는다 — 풀고 한 번 찔러 본다(안 되면 바로 되돌린다)
         av = avoid; avoid = None
         okf = lambda i: (not pcap or pos[i] < pcap * 0.97) and (av is None or abs(pos[i] - av) > 60)
         todo = pick(okf) or pick((lambda i: pos[i] < pcap * 0.97) if pcap else (lambda i: True))
@@ -259,7 +259,10 @@ def sweep(prefer=None, api='t', cap=None):
                 # 끝자리 = 찾던 자리(K) 바로 앞 — 줄 수로 되짚으면(쪽 ÷ 밀도 × 초) 자료가 늦게 쌓일 때 너무 앞으로 잡힌다(22:25 — 1667 까지 받아 놓고 끝자리를 1617 로 봤다). 이 시각대에 실제로 받은 맨 뒤 자리(pok)보다 앞으로는 안 당긴다
                 # 한 번 실패로는 끝자리를 당기지 않는다 — 있는 쪽도 가끔 500 이 난다(22:39 에 1514~1527 을 받았는데 22:45 에 같은 둘레가 500). 한 번이면 그 둘레만 다음 한 번 비켜 가고, 잇달아 두 번이면 끝자리로 본다(20분)
                 nfail += 1; avoid = K; last = None
-                if nfail >= 2:
+                if plast and K >= plast * 0.97:
+                    # 소유자 2026-10-10 밤 「안 되는 곳보다는 되는 곳 위주로」 — 방금 풀어 준 끝자리 너머를 찔러 봤는데 또 안 된다 → 바로 되돌리고 40분은 되는 곳만 받는다(종전엔 20분마다 두 번씩 헛받았다)
+                    pcap = max(pok + 1, min(plast, K - max(1, per // 2))); pcat = time.time() + 1200; plast = None
+                elif nfail >= 2:
                     pcap = max(pok + 1, min(pcap or 1e9, K - max(1, per // 2))); pcat = time.time()
                 json.dump({'pos': pcap, 'at': pcat}, open(cap_f, 'w'))
             if st == 429:
@@ -277,6 +280,8 @@ def sweep(prefer=None, api='t', cap=None):
             dens *= 0.8; time.sleep(GAP); continue
         a, b = min(idx), max(idx)
         pok = max(pok, b); nfail = 0
+        if plast and b >= plast * 0.97:
+            plast = None                                      # 끝자리 너머가 받아졌다 — 옛 끝자리는 잊는다
         if pcap and b >= pcap:
             pcap = None                                       # 끝자리로 본 곳보다 뒤가 받아졌다 — 다시 재게 둔다
         if page > 1 and a > 0:

@@ -75,3 +75,9 @@ irm 'https://datamap-relay.<계정이름>.workers.dev/dg/B552584/ArpltnInforInqi
      - `SUBWAY_KEY` — 서울 열린데이터광장 **실시간 지하철** 인증키(일반 키로는 ERROR-338 · data.seoul.go.kr 에서 따로 신청)
   3. 시험: `…/quota` 에 `seoul: true, v: 2`(지하철 키를 넣었으면 `subway: true`) · `…/reach` 가 갈래마다 `ok: true` 인지(Origin 머리말 필요).
 - 2026-10-10 이 PC 에서 직접 불러 확인한 서울 자료: `citydata_ppltn`·`bikeList`·`RealtimeCityAir`·`GetParkingInfo`(json) · `AccInfo`·`TrafficInfo`(xml 만) · 서울 버스(ws.bus.go.kr · DG_KEY · 2026-10-10 13시대 소유자 활용신청 뒤 실호출) **도착 `arrive/*` · 위치 `buspos/*` · 정류소 `stationinfo/*` · 노선 `busRouteInfo/*` 네 가지 모두 승인·정상** · 지하철 실시간(ERROR-338 — 전용 키 필요).
+- **v3(2026-10-10 · 배포 대기 — 형님이 「코드 편집」에 붙여 넣고 「배포」)** — `worker.js` 11,146 B · sha256 앞 `2133afbc2d9d8417` · 비밀값은 그대로(새로 넣을 것 없음).
+  - ITS: 4.5초 안에 안 닿거나 52x 면 4번까지 다시 건다(`pull`) — 2026-10-10 재시험에서 4번 중 3번이 20초 뒤 522 였다(9443 포트만 열려 있고 443·8081·8443 은 이 PC 에서도 응답 없음). 고쳐지는지는 배포 뒤 `…/its/eventInfo…` 를 10번 불러 센다 → 8번 넘게 200 이면 `data/relay.json` 의 `"off": ["its"]` 를 뺀다.
+  - 하루 횟수: 보관해 둔 응답을 그대로 줄 때는 세지 않는다(원 기관을 부를 때만).
+  - `/reach` 목록에서 T-Data(td) 뺌 · `/quota` 의 `v: 3`.
+  - 이 PC 브라우저에서 가짜 fetch 로 흐름 확인(522 → 멈춤 → 성공 = 3번·4.5초 · 보관분은 0번 · 4번 다 522 면 522 그대로).
+- `/seoul/TrafficInfo` 는 **링크 번호 하나씩**만 준다(`TrafficInfo/1/5/<LINK_ID>` · 번호 없이 부르면 ERROR-301) — 도로 소통 층으로는 못 쓴다(서울 링크 수천 개 = 수천 번). 도로를 눌렀을 때 그 링크 하나를 받는 용도만 가능(서울시 링크 번호 ↔ 지도 도로 표가 먼저 필요).

@@ -42,7 +42,7 @@ const DG_OK = {
 const SEOUL_OK = { citydata_ppltn: 300, citydata: 300, bikeList: 60, GetParkingInfo: 300, RealtimeCityAir: 600, AccInfo: 120, TrafficInfo: 120 };
 const SEOUL_XML = { AccInfo: 1, TrafficInfo: 1 };   // 이 둘은 xml 만 준다
 const WSBUS_OK = { 'arrive/getLowArrInfoByStId': 20, 'arrive/getArrInfoByRouteAll': 20, 'buspos/getBusPosByRtid': 20, 'stationinfo/getStationByPos': 3600, 'stationinfo/getStationByUid': 20, 'busRouteInfo/getStaionByRoute': 86400 };
-const REACH = { its: 'https://openapi.its.go.kr:9443/', dg: 'https://apis.data.go.kr/', seoul: 'http://openapi.seoul.go.kr:8088/sample/json/bikeList/1/1/', wsbus: 'http://ws.bus.go.kr/api/rest/arrive/getLowArrInfoByStId', swsub: 'http://swopenapi.seoul.go.kr/api/subway/sample/json/realtimeStationArrival/0/1/%EC%84%9C%EC%9A%B8', td: 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xCrossroadMapInformation/1.0' };
+const REACH = { its: 'https://openapi.its.go.kr:9443/', dg: 'https://apis.data.go.kr/', seoul: 'http://openapi.seoul.go.kr:8088/sample/json/bikeList/1/1/', wsbus: 'http://ws.bus.go.kr/api/rest/arrive/getLowArrInfoByStId', swsub: 'http://swopenapi.seoul.go.kr/api/subway/sample/json/realtimeStationArrival/0/1/%EC%84%9C%EC%9A%B8' };
 const DROP = new Set(['apikey', 'servicekey', 'key']);
 
 function json(o, status, cors) {
@@ -50,6 +50,21 @@ function json(o, status, cors) {
 }
 function enc(x) { try { return encodeURIComponent(decodeURIComponent(x)); } catch (e) { return encodeURIComponent(x); } }
 function kstDay() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); }
+
+// v3 — 원 기관 부르기: 시간 안에 안 닿거나 52x 면 다시(ITS 9443 포트가 세 번에 두 번꼴로 522 — 2026-10-10 · 짧게 끊고 4번까지)
+async function pull(up, tries, ms) {
+  let last = null;
+  for (let i = 0; i < tries; i++) {
+    const ac = new AbortController(), tm = setTimeout(() => ac.abort(), ms);
+    try {
+      const r = await fetch(up, { signal: ac.signal, headers: { Accept: 'application/json, text/xml;q=0.9, */*;q=0.5' } });
+      clearTimeout(tm);
+      if (r.status >= 520 && r.status <= 526 && i < tries - 1) { last = new Error('HTTP ' + r.status); continue; }
+      return r;
+    } catch (e) { clearTimeout(tm); last = e; }
+  }
+  throw last || new Error('닿지 못함');
+}
 
 async function quota(ip, env, add) {
   const max = +(env.DAILY || 300), key = new Request('https://quota.relay/' + kstDay() + '/' + encodeURIComponent(ip)), c = caches.default;
@@ -70,7 +85,7 @@ export default {
     const ip = req.headers.get('CF-Connecting-IP') || '0';
     const seg = url.pathname.replace(/^\/+/, '').split('/'), kind = seg.shift(), path = seg.join('/');
 
-    if (kind === 'quota') return json({ ...(await quota(ip, env, false)), its: !!env.ITS_KEY, dg: !!env.DG_KEY, vw: !!env.VW_KEY, seoul: !!env.SEOUL_KEY, subway: !!env.SUBWAY_KEY, v: 2 }, 200, cors);
+    if (kind === 'quota') return json({ ...(await quota(ip, env, false)), its: !!env.ITS_KEY, dg: !!env.DG_KEY, vw: !!env.VW_KEY, seoul: !!env.SEOUL_KEY, subway: !!env.SUBWAY_KEY, v: 3 }, 200, cors);
     if (kind === 'reach') {
       const out = {};
       await Promise.all(Object.entries(REACH).map(async ([k, u]) => {
@@ -96,16 +111,14 @@ export default {
     }
     if (!up) return json({ err: '모르는 주소이거나 이 중계에 그 열쇠가 없다', kind, path }, 404, cors);
 
-    const q = await quota(ip, env, true);
-    if (q.blocked) {
-      const ck0 = await caches.default.match(new Request('https://cache.relay/' + kind + '/' + path + '?' + ps));
-      if (!ck0) return json({ err: '맛보기 하루 한도를 다 썼다 — 많이 쓰면 열쇠를 직접 받아 넣는다', ...q }, 429, cors);
-    }
+    // v3 — 보관해 둔 응답을 그대로 줄 때는 하루 횟수를 세지 않는다(원 기관을 부를 때만 센다)
     const ck = new Request('https://cache.relay/' + kind + '/' + path + '?' + ps), cache = caches.default;
     let res = await cache.match(ck);
+    const q = await quota(ip, env, !res);
     if (!res) {
+      if (q.blocked) return json({ err: '맛보기 하루 한도를 다 썼다 — 많이 쓰면 열쇠를 직접 받아 넣는다', ...q }, 429, cors);
       let r;
-      try { r = await fetch(up, { headers: { Accept: 'application/json, text/xml;q=0.9, */*;q=0.5' } }); }
+      try { r = await pull(up, kind === 'its' ? 4 : 1, kind === 'its' ? 4500 : 20000); }
       catch (e) { return json({ err: '원 기관에 닿지 못했다', why: String(e && e.message || e) }, 502, cors); }
       const body = await r.arrayBuffer();
       res = new Response(body, { status: r.status, headers: { 'Content-Type': r.headers.get('Content-Type') || 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=' + ttl } });

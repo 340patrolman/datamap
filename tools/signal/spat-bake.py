@@ -154,6 +154,9 @@ def sweep(prefer=None):
         if last and last['t'] < t and last['a'] <= K <= last['b'] + 1:
             off = last['base'] + sum(n for q, n in last['rows'] if q < K)   # 지난 쪽에서 센 K 앞의 줄 수(정확) — 지금 시각으로 늘린다
             off = off * t / float(last['t'])
+        if off is None and last and last['t'] < t and abs(K - last['a']) < 300:
+            blk = 30000.0 / max(1, len(last['rows']))   # 지난 쪽 둘레는 그 쪽의 교차로당 줄 수로 가늠(전체 평균 밀도보다 정확 — 쪽 하나 차이로 빗나가던 것)
+            off = (last['base'] + (K - last['a']) * blk) * t / float(last['t'])
         if off is None:
             off = K * dens * t
         page = int((off + dens * t / 2) // 30000) + 1   # K 의 줄 가운데가 드는 쪽 — K 가 쪽 끝에 걸려 되풀이되던 것을 막는다

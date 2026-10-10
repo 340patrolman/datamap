@@ -2761,7 +2761,7 @@
     var mv = [], seen = {}; Object.keys(G).sort().forEach(function (key) { var a = key.split('|'); if (seen[a[0] + a[1]]) return; var R = a[2] === 'B' && B.length === A.length ? B : A, ks = G[key].sort(function (x, y) { return x - y; }), k0 = ks[0], n = 1, st = 0, dur = 0, i; while (ks.indexOf(k0 + n) >= 0) n++;
       for (i = 0; i < k0 - 1; i++) st += R[i]; for (i = k0 - 1; i < k0 - 1 + n; i++) dur += R[i] || 0; var y = Y[a[0] + a[1]] != null ? Y[a[0] + a[1]] : 3, g = dur - y; if (!(g > 0)) return; seen[a[0] + a[1]] = 1; mv.push([a[0], a[1], g, y, c - g - y, st, 1]); });
     if (!mv.length) return null; var cp = {}; Object.keys(ob).forEach(function (k) { cp[k] = ob[k]; }); cp.mv = mv; cp.pd = null; cp.ped = []; cp.ci = c; cp.cyc = c; cp.a = ms / 1000 - ((((sodK(ms) - off) % c) + c) % c); cp.pdr = [cur[0], c, off, PM.n]; return cp; }
-  function sdLive(no) { var L = D.sigd && D.sigd.its && no != null ? D.sigd.its[String(no)] : null, r = null; if (L) L.forEach(function (o) { if (o.a && (!r || o.a > r.a)) r = o; }); if (!r) { var pd9 = planDirRec(no); return pd9 ? { rec: pd9, age: 0, ok: 1, pd: 1 } : { why: 'none' }; }
+  function sdLive(no) { if (no != null) sfldFix(no); var L = D.sigd && D.sigd.its && no != null ? D.sigd.its[String(no)] : null, r = null; if (L) L.forEach(function (o) { if (o.a && (!r || o.a > r.a)) r = o; }); if (!r) { var pd9 = planDirRec(no); return pd9 ? { rec: pd9, age: 0, ok: 1, pd: 1 } : { why: 'none' }; }
     /* v2.118.0 소유자 「아주 정확하지는 않아도 비슷은 할 거야 · 신호값이 있는 곳에 모두 잘 표현」 — 계획표(pl): 그 요일 갈래·그 시각대에 받은 주기·자정 기준 옵셋이 있으면 시계로 이어 센다(같은 계획이 날마다 같은 시각대에 돈다고 보고) */
     var PL = D.sigd.pl && D.sigd.pl[String(no)]; if (PL && HOUR == null) { var nw = new Date(), cl = sdCls(nw), hr = nw.getHours(), e = PL.filter(function (q) { return q[0] === cl && q[1] === hr; })[0] || (planDirRec(no) ? [] : PL).filter(function (q) { return q[0] === cl && Math.abs(q[1] - hr) <= 2; }).sort(function (x, y) { return Math.abs(x[1] - hr) - Math.abs(y[1] - hr); })[0];   /* 그 시각대가 없으면 앞뒤 2시간 안 가장 가까운 시각대(계획은 대개 몇 시간씩 이어진다 — 글에 그 시각대를 적는다) */
       if (e && e[2] > 0) { var rc = L.filter(function (o) { return o.cl === cl && Math.abs((o.ci || o.cyc) - e[2]) < 0.6; })[0] || L.filter(function (o) { return Math.abs((o.ci || o.cyc) - e[2]) < 0.6; })[0];
@@ -2788,7 +2788,7 @@
     var PD = o.pd || [], dirs = SDORD.filter(function (d) { return o.mv.some(function (m) { return m[0] === d && m[2] != null; }) || PD.some(function (q) { return q[0] === d; }); }); if (!dirs.length) { ch.innerHTML = ''; nw.innerHTML = ''; return; }
     var now = Date.now() / 1000, CN = { g: '녹색', y: '황색', r: '적색' }; if (ch.innerHTML) ch.innerHTML = '';
     var h = clkWarn() + (o.dq === 'dir' ? '<p class="sdnt" style="margin:0 0 7px;color:#b45309"><b>⚠ 이 교차로는 받은 자료의 방위 이름이 실제와 다르다</b> — 직각 방향 직진이 함께 녹색으로 적혀 있다(실제로는 있을 수 없다). 초 길이는 쓸 수 있어도 <b>어느 쪽 신호인지는 현장에서 확인</b>한다.</p>' : '') + '<div class="sdls">';
-    if (lv.ok) h += sdGridHtml(dirs.map(function (d) { var cells = {}, ci9 = o.ci; o.mv.filter(function (m) { return m[0] === d && m[2] != null; }).forEach(function (m) { var st = sdState(m, o, now), red = Math.max(0, ci9 - m[2] - (m[3] || 0)); if (!cells[m[1]]) cells[m[1]] = [st[0], st[1], st[0] === 'r' ? ['g', m[2]] : ['r', red], '']; });
+    if (lv.ok) h += sdGridHtml(dirs.map(function (d) { var cells = {}, ci9 = o.ci; o.mv.filter(function (m) { return m[0] === d && m[2] != null; }).forEach(function (m) { var st = sdState(m, o, now), red = Math.max(0, ci9 - m[2] - (m[3] || 0)); if (!cells[m[1]]) cells[m[1]] = [st[0], st[1], st[0] === 'r' ? ['g', m[2]] : ['r', red], m.fld ? '채움' : '']; });
       PD.filter(function (q) { return q[0] === d; }).forEach(function (q) { var m = [q[0], 'Pd', q[1], q[2] || 0, q[3], q[4] || 0], st = sdState(m, o, now); if (!cells.Pd) cells.Pd = [st[0], st[1], null, st[0] === 'y' ? '점멸' : '']; }); return { lb: SDN[d] + '쪽에서', sub: '', cells: cells }; }));
     else if (!SDOLD) h += '<p class="sdnt" style="margin:0 0 6px;color:#b45309">⏸ 이 시각대 값이 아직 없어 <b>지금 색은 못 센다</b> — 받은 때의 <b>길이</b>만 보인다(녹색 초 ▸ 적색 초).</p>' + sdGridHtml(dirs.map(function (d) { var cells = {}, cy9 = Math.round(o.cyc); o.mv.filter(function (m) { return m[0] === d && m[2] != null; }).forEach(function (m) { if (!cells[m[1]]) cells[m[1]] = ['0', m[2], ['r', Math.max(0, cy9 - m[2] - (m[3] || 0))], '녹']; });
       PD.filter(function (q) { return q[0] === d; }).forEach(function (q) { if (!cells.Pd) cells.Pd = ['0', q[1], null, '녹']; }); return { lb: SDN[d] + '쪽에서', sub: '', cells: cells }; }));
@@ -3172,7 +3172,7 @@
       R.push({ i: i, no: no, nm: nm, k: it.kind, lv: t.lv, pl: PLn, plan: hasPlan, vf: t.vf, au: (SAUD && SAUD.spots && SAUD.spots[String(no)]) || null }); }); return R.sort(function (a, b) { return String(a.nm).localeCompare(String(b.nm), 'ko'); }); }
   function sglSrc(r) { return r.k === 'ksc' ? '교통과 현시도(하루 전체 · 방향별)' : r.k === 'sgd' ? '서울시 T-Data' + (r.lv === 2 ? '(방향별 남은 초 · 받은 시각대 ' + r.pl + '개)' : '(초 길이만)') + (r.plan ? ' + 경찰청 계획' : '') : '경찰청 신호계획(하루 전체 · 방향 없음)'; }
   /* v2.144.0 맞대 본 결과(sig-audit)를 짧게 — 맞은 길 · 다른 길 */
-  var SAUK = { ksc: '현시도', pol: '경찰청 계획', api: '두 API', re: '다시 받기', perp: '방위 이름 의심', opp: '직진·좌회전 겹침', sum: '초 합' };
+  var SAUK = { fld: '현장 지식', ksc: '현시도', pol: '경찰청 계획', api: '두 API', re: '다시 받기', perp: '방위 이름 의심', opp: '직진·좌회전 겹침', sum: '초 합' };
   function sglAu(r) { var a = r.au; if (!a) return ['', '']; var u = function (L) { var o = []; (L || []).forEach(function (q) { var n = SAUK[q[0]] || q[0]; if (o.indexOf(n) < 0) o.push(n); }); return o.join('·'); }; return [u(a.ok), u(a.bad)]; }
   /* 현시도 요청 목록 — 현시도가 아직 없는 곳을 ① 맞대 보니 다른 곳 ② 받았지만 이어 세지 못하는 곳·계획만 있는 곳 ③ 그 밖 차례로 */
   function sglReq() { var R = sglRows().filter(function (r) { return r.k !== 'ksc'; }), rk = function (r) { return r.au && r.au.bad && r.au.bad.length ? 0 : r.lv !== 2 ? 1 : 2; }, d = new Date(), z = function (n) { return ('0' + n).slice(-2); };
@@ -3287,8 +3287,17 @@
   setTimeout(clkCheck, 4000); setInterval(function () { if (!document.hidden) clkCheck(); }, 30 * 60000);
   function clkWarn() { return CLK.off != null && Math.abs(CLK.off) > 3 ? '<p class="sdnt" style="margin:0 0 7px;color:#b45309"><b>⚠ 이 기기 시계가 약 ' + Math.abs(CLK.off) + '초 ' + (CLK.off > 0 ? '빠르다' : '늦다') + '</b> — 남은 초도 그만큼 ' + (CLK.off > 0 ? '일찍' : '늦게') + ' 바뀌어 보인다(기기의 「자동 날짜·시간」을 켠다).</p>' : ''; }
   /* v2.143.0 맞대 본 결과(tools/signal/sig-audit.py → data/sig-audit.json · 소유자 「신호체계가 제대로 맞는지 확인도 해야 해」) — 교통과 현시도 · 경찰청 계획 · 두 API 서로 · 다시 받은 값 · 짜임새. 어긋난 것은 접지 않고 띄운다 */
+  /* v2.145.0 현장 지식(data/sig-field.json · tg-sig-field/1 — 소유자가 현장에서 아는 것을 말한 그대로 · same = 같은 현시에 함께 켜지는 이동류 묶음 · 초는 없다).
+     받은 기록에 그 묶음의 한쪽이 빠졌으면(밤 기록에서 좌회전이 안 읽힌 곳 등) 같은 묶음의 다른 이동류 초로 채운다 — 화면에서만(자료 파일은 그대로) · 채운 줄은 m.fld = 1 → 표에 「채움」 */
+  var SFLD = null; fetch('data/sig-field.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFLD = j; }).catch(function () {});
+  function sfldFix(no) { var q = SFLD && SFLD.spots && SFLD.spots[String(no)], L = q && D.sigd && D.sigd.its && D.sigd.its[String(no)]; if (!L || !q.same) return;
+    L.forEach(function (o) { if (o._f) return; o._f = 1; q.same.forEach(function (g9) { var d = g9[0], ms = g9[1] || [], base = o.mv.filter(function (m) { return m[0] === d && ms.indexOf(m[1]) >= 0 && m[2] != null && m[5] != null; })[0]; if (!base) return;
+        ms.forEach(function (k9) { var row = o.mv.filter(function (m) { return m[0] === d && m[1] === k9; })[0]; if (row && row[2] != null) return; if (row) { row[2] = base[2]; row[3] = base[3]; row[4] = base[4]; row[5] = base[5]; row.fld = 1; } else { var nr = [d, k9, base[2], base[3], base[4], base[5], base[6]]; nr.fld = 1; o.mv.splice(o.mv.indexOf(base) + 1, 0, nr); } }); }); }); }
+  function sfldHtml(no) { var q = SFLD && SFLD.spots && SFLD.spots[String(no)]; if (!q) return ''; var L = D.sigd && D.sigd.its && D.sigd.its[String(no)], fl = [];
+    if (L) L.forEach(function (o) { o.mv.forEach(function (m) { if (m.fld) { var t = SDN[m[0]] + '쪽에서 ' + (SDM[m[1]] || m[1]); if (fl.indexOf(t) < 0) fl.push(t); } }); });
+    return '<p class="sdnt" style="margin:6px 0 0;color:#1d4ed8"><b>👮 현장 지식</b>(' + esc(q.day || '') + ') — 「' + esc(q.say || '') + '」' + (fl.length ? ' · 받은 값에 빠진 <b>' + esc(fl.join(' · ')) + '</b>은 같은 현시의 다른 이동류 초로 <b>채웠다</b>(표의 「채움」 — 받은 값이 아니다)' : '') + '</p>'; }
   var SAUD = null; fetch('data/sig-audit.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SAUD = j; }).catch(function () {});
-  function saudHtml(no) { var q = SAUD && SAUD.spots && SAUD.spots[String(no)]; if (!q) return ''; var h = '';
+  function saudHtml(no) { var q = SAUD && SAUD.spots && SAUD.spots[String(no)], h = sfldHtml(no); if (!q) return h;
     if (q.bad && q.bad.length) h += '<p class="sdnt" style="margin:6px 0 0;color:#b45309"><b>⚠ 맞대 보니 다른 것</b> — ' + q.bad.map(function (b) { return esc(b[1]); }).join(' / ') + '</p>';
     if (q.ok && q.ok.length) h += '<p class="sdnt" style="margin:6px 0 0;color:#15803d"><b>✔ 맞대 봄</b> — ' + q.ok.map(function (b) { return esc(b[1]); }).join(' · ') + '</p>';
     return h; }

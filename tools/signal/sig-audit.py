@@ -87,6 +87,8 @@ def main():
     S = D('sigdir-seoul.json'); its, pl = S['its'], S.get('pl', {})
     KSC = {str(x['no']): x for x in D('sig-ksc-seocho.json')['items']}
     POL = {str(s['no']): s for s in D('signal-tod-seoul.json')['spots']}
+    try: FLD = D('sig-field.json').get('spots', {})
+    except Exception: FLD = {}
     out, tot = {}, collections.Counter()
     R = lambda no: out.setdefault(no, {'ok': [], 'bad': []})
 
@@ -108,6 +110,23 @@ def main():
                 R(no)['bad'].append(['opp', '마주 오는 직진과 좌회전이 함께 녹색(' + ' · '.join('%s 좌회전 × %s 직진 %d초' % (a[0], b[0], v) for a, b, v in ol) + ') — 비보호·겹침 운영이거나 방위 이름이 다르다']); tot['opp_bad'] += 1
             if not perp and not ol and mv: tot['shape_ok'] += 1
         tot['its'] += 1
+
+        # ⑥ 현장 지식(sig-field · 같은 현시에 함께 켜지는 이동류 묶음) — 받은 기록마다 그 묶음이 같은 때·같은 길이로 켜지는가
+        fq = FLD.get(no)
+        if fq and fq.get('same'):
+            okf, badf, misf = 0, [], []
+            for o in L:
+                for d, ms in fq['same']:
+                    rows = {m[1]: m for m in o['mv'] if m[0] == d and m[1] in ms and m[2] is not None and m[5] is not None}
+                    lab = '%s %s %s' % (o['day'][5:], o['from'], d)
+                    if len(rows) < len(ms):
+                        if rows: misf.append(lab + ' ' + '·'.join(k for k in ms if k not in rows) + ' 빠짐')
+                        continue
+                    v = list(rows.values())
+                    if max(abs(a[2] - v[0][2]) for a in v) <= 2 and max(cdev(a[5], v[0][5], o.get('ci') or o['cyc']) for a in v) <= 2: okf += 1
+                    else: badf.append(lab + ' 함께 켜지지 않음')
+            if badf: R(no)['bad'].append(['fld', '현장 지식과 다름 — ' + ' / '.join(badf[:3])]); tot['fld_bad'] += 1
+            elif okf: R(no)['ok'].append(['fld', '현장 지식과 맞음 — 함께 켜지는 묶음 %d번 확인' % okf + (' · 받은 값에 빠진 이동류: ' + ' / '.join(misf[:2]) if misf else '')]); tot['fld_ok'] += 1
 
         # ④ 다시 받아 맞대기
         v = [o['v'] for o in L if o.get('v')]; x = [o['x'] for o in L if o.get('x')]
@@ -180,7 +199,7 @@ def main():
     n_ok = sum(1 for v in out.values() if v['ok'] and not v['bad']); n_bad = sum(1 for v in out.values() if v['bad']); n_mix = sum(1 for v in out.values() if v['ok'] and v['bad'])
     J = {'schema': 'tg-sig-audit/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
          'source': '이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)',
-         'fields': 'spots{교차로 번호: {ok[[길, 글]], bad[[길, 글]]}} — 길: ksc 교통과 현시도 · pol 경찰청 계획 · api 잔여시간×신호 상태 두 API · re 다시 받아 맞대기 · perp 직각 직진 겹침 · opp 마주 오는 직진×좌회전 겹침 · sum 녹+황+적≠주기. 아무 길로도 맞대 보지 못한 교차로는 없다(목록에 없음 = 대조 전)',
+         'fields': 'spots{교차로 번호: {ok[[길, 글]], bad[[길, 글]]}} — 길: ksc 교통과 현시도 · pol 경찰청 계획 · api 잔여시간×신호 상태 두 API · re 다시 받아 맞대기 · fld 현장 지식(sig-field) · perp 직각 직진 겹침 · opp 마주 오는 직진×좌회전 겹침 · sum 녹+황+적≠주기. 아무 길로도 맞대 보지 못한 교차로는 없다(목록에 없음 = 대조 전)',
          'tol': TOL, 'sum': dict(tot, checked=len(out), ok_only=n_ok, any_bad=n_bad, mixed=n_mix), 'spots': out}
     json.dump(J, open(os.path.join(ROOT, 'data', 'sig-audit.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print(json.dumps(J['sum'], ensure_ascii=False))

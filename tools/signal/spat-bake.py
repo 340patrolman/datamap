@@ -23,6 +23,7 @@ BASE = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xSignalPhaseTiming
 DIRS = ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw']
 MVS = ['St', 'Lt', 'Ut', 'Bs', 'Bc', 'Pd']
 GAP = 305
+DENS0 = 0.998   # 교차로 하나가 1초에 쌓는 줄 수(2026-10-10 13시대 실측 0.997~0.998) — sweep 이 받은 쪽에서 다시 잰다
 
 
 def key():
@@ -84,6 +85,74 @@ def auto(lat=37.4917, lon=127.0077):
     time.sleep(GAP)
     for n in range(0, len(todo), 6):
         fetch(todo[n:n + 6]); build(); time.sleep(GAP)
+
+
+def sweep(prefer=None):
+    """쪽(page)으로 훑기 — 거르지 않고 3만 줄을 받으면 서버 순서로 이어진 교차로 수십 곳의 그 시각 0분부터의 줄이 한 번에 온다.
+    (itstId 로 거르면 뒤쪽 교차로는 HTTP 500 이 난다 · 2026-10-10 4031·4034) 서버 순서는 정각 목록(ids_*.json)의 차례이고,
+    쪽 번호 = 앞선 교차로 수 × 교차로마다 쌓인 줄 수 ÷ 30000 — 줄 밀도(dens)는 받은 쪽에서 다시 잰다."""
+    f = sorted(glob.glob(os.path.join(RAW, 'ids_*.json')))
+    order = list(json.load(open(f[-1], encoding='utf-8'))['ids'].keys())
+    pos = {k: i for i, k in enumerate(order)}
+    pref = [x for x in (prefer or []) if x in pos]
+    tried_f = os.path.join(RAW, 'tried.json')
+    tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
+    dens, miss = DENS0, 0
+    os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
+    while True:
+        done = set(os.path.basename(x).split('_')[0] for x in glob.glob(os.path.join(RAW, 'red', '*.json'))) | tried
+        todo = [i for i in pref if i not in done] or [i for i in order if i not in done]
+        if not todo:
+            print('다 받았다', flush=True); break
+        now = datetime.datetime.now()
+        if now.minute < 11:
+            time.sleep((11 - now.minute) * 60 - now.second + 1); continue
+        t = now.minute * 60 + now.second
+        K = min(pos[i] for i in todo)
+        page = int(max(0, K - 2) * dens * t // 30000) + 1
+        u = BASE + '?apikey=' + key() + '&pageNo=%d&numOfRows=30000' % page
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=400); st = r.status; body = r.read().decode('utf-8', 'ignore')
+        except urllib.error.HTTPError as e:
+            st = e.code; body = e.read().decode('utf-8', 'ignore')
+        except Exception as e:
+            st = 0; body = str(e)
+        stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        if st != 200:
+            print(stamp, '쪽', page, 'HTTP', st, body[:160].replace(key(), '***'), flush=True)
+            wait = GAP
+            if st == 429:
+                try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5
+                except Exception: pass
+            time.sleep(wait); continue
+        J = json.loads(body); by = {}; seq = []
+        for x in J:
+            i = str(x['itstId'])
+            if i not in by: by[i] = []; seq.append(i)
+            by[i].append(x)
+        idx = [pos[i] for i in seq if i in pos]
+        if not idx:
+            print(stamp, '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
+            dens *= 0.8; time.sleep(GAP); continue
+        a, b = min(idx), max(idx)
+        if page > 1 and a > 0:
+            dens = (page - 1) * 30000.0 / (a * t)   # 앞선 a 곳이 (쪽-1)×3만 줄을 채웠다
+        saved = 0
+        for n, i in enumerate(seq):
+            edge = n == 0 or n == len(seq) - 1   # 쪽 끝에 걸린 교차로는 줄이 잘렸을 수 있다
+            red = reduce_one(i, by[i]) if len(by[i]) >= 240 else None
+            if red and red.get('cyc'):
+                json.dump(red, open(os.path.join(RAW, 'red', '%s_%s.json' % (i, stamp)), 'w', encoding='utf-8'), ensure_ascii=False); saved += 1
+            elif not edge:
+                tried.add(i)   # 다 받았는데 주기를 못 읽은 곳(값이 멈춤·점멸) — 다시 받지 않는다
+        json.dump(sorted(tried), open(tried_f, 'w'))
+        hit = a <= K <= b
+        miss = 0 if hit else miss + 1
+        print(stamp, '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '남은 우선', len([i for i in pref if i not in done]) , flush=True)
+        if miss >= 4:
+            tried.add(order[K]); miss = 0   # 네 번 빗나가면 그 교차로는 건너뛴다
+        build()
+        time.sleep(GAP)
 
 
 def segments(rows, k):
@@ -192,6 +261,13 @@ def fetch(ids):
         print(stamp, itst, '줄', red['rows'], red['from'], '~', red['to'], '주기', red['cyc'], '차량 이동류', len([x for x in red['mv'] if 'g' in x]), '/', len(red['mv']), '보행', len(red['ped']), '남은 호출', h.get('X-RateLimit-Remaining'), flush=True)
 
 
+def mvrow(x, cyc):
+    """지도에 싣는 한 줄 — 한 주기에 두 번 켜지는 이동류(녹+황+적 ≠ 주기)는 한 막대로 그리면 틀리므로 초를 비우고 끝에 2 를 단다."""
+    if x.get('g') is not None and abs(x['g'] + x['y'] + x['r'] - cyc) > 3.5:
+        return [x['d'], x['m'], None, None, None, None, x['n'], 2]
+    return [x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n']]
+
+
 def build():
     out = {}
     for f in sorted(glob.glob(os.path.join(RAW, 'red', '*.json'))):
@@ -202,7 +278,7 @@ def build():
     its = {}
     for k, v in out.items():
         its[k] = [{'day': r['day'], 'dow': r['dow'], 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
-                   'mv': [[x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n']] for x in r['mv']],
+                   'mv': [mvrow(x, r['cyc']) for x in r['mv']],
                    'ped': [[p['d'], p['seg'][:8]] for p in r['ped']]} for r in v]
     # 교차로 자리 — 서울 C-ITS 교차로 지도정보(받아 둔 xmap_*.json 이 있으면 그것, 없으면 지도 저장소의 서초 둘레 목록)
     pts = {}
@@ -236,6 +312,9 @@ if __name__ == '__main__':
         build()
     elif a and a[0] == 'auto':
         auto()
+    elif a and a[0] == 'sweep':
+        pf = [x.strip() for x in open(a[2], encoding='utf-8') if x.strip() and not x.startswith('#')] if len(a) > 2 and a[1] == '--list' else None
+        sweep(pf)
     elif a and a[0] == 'test':
         J = json.load(open(a[1], encoding='utf-8'))
         for i in sorted(set(str(x['itstId']) for x in J)):

@@ -1223,7 +1223,7 @@
     } else if (it.kind === 'acd') { h = acdCard(it);
     } else if (it.kind === 'mdx') { h = mdCard(it);
     } else if (it.kind === 'mdd') { h = mddCard(it);
-    } else if (it.kind === 'pst') { h = pstCard(it.s);
+    } else if (it.kind === 'pst') { h = unitCard(it._u || (it._u = { kind: 'unit', u: { t: 'ps', id: it.s[0] } })); if (h.indexOf('이 단위에 든 행정동 자료가 없다') >= 0) h = pstCard(it.s);   /* v2.109.0 소유자 「경찰서를 터치하면 관련 모든 내용이 다 나와야」 — 청사 점도 관할 전체 카드로 */
     } else if (it.kind === 'pbx') { h = pbxCard(it.b);
     } else if (it.kind === 'frn') { h = frnCard(it.gu);
     } else if (it.kind === 'ai') { h = aiCard(it);
@@ -3157,7 +3157,7 @@
       return '<h3>' + esc(unitTitle(u)) + '</h3><p class="desc" data-uwait="1">자료를 받는 중… (시군구 ' + gus.length + '곳의 동 프로필)</p>'; }
     var ds = unitDongs(u), A = unitAgg(ds), h = '<h3>' + esc(unitTitle(u)) + '</h3>', f1 = function (v) { return (Math.round(v * 10) / 10).toLocaleString(); };
     if (!ds.length) return h + '<p class="desc">이 단위에 든 행정동 자료가 없다(자료 밖이거나 새로 생긴 동).</p>';
-    if (u.t === 'ps') { var s2 = POL2.byI[u.id], bx = POL2.pbox.filter(function (b) { return b[6] === u.id; }); h += row('대표번호', s2[4] ? '<a href="tel:' + esc(s2[4]) + '">' + esc(s2[4]) + '</a>' : '-') + row('지구대·파출소', bx.length + '곳 — ' + bx.map(function (b) { return esc(b[0]); }).join(' · ')); }
+    if (u.t === 'ps') h += psHead(POL2.byI[u.id]);
     if (u.t === 'pb') { var b = POL2.pbox[u.id], s3 = POL2.byI[b[6]]; h += row('주소', esc(b[5])) + row('경찰서', esc(s3 ? s3[1] : b[2]) + (s3 && s3[4] ? ' · <a href="tel:' + esc(s3[4]) + '">' + esc(s3[4]) + '</a> <em>(서 대표번호)</em>' : '')); }
     h += row('행정동', A.n + '곳 · 넓이 ' + f1(A.km2) + 'km²');
     if (A.pop) { var ag = A.age, sh = function (a, b2) { var t = 0; for (var i = a; i <= b2; i++) t += ag[i]; return pct(t, A.pop); };
@@ -3446,6 +3446,15 @@
         hit.push({ x: q[0], y: q[1], r: 10, it: { kind: 'pst', s: s2 } }); }); }
     if (on.pbox && view.s >= 0.02) POL2.pbox.forEach(function (b) { dot(b.p, b[1] ? 3.6 : 4.6, b[1] ? '#0284c7' : '#1d4ed8', '#fff', { kind: 'pbx', b: b }); });
   }
+  // v2.109.0 경찰서 머리 칸 — 대표번호 · 시도청 · 청사 자리 · 지구대·파출소(누르면 그 카드) · 관할 동 · 112신고·5대범죄·지역경찰·단속(자료 있는 서만) · 연혁 등 더 넣을 자료는 다른 세션이 구워 오면 여기에
+  function psHead(s2) { if (!s2) return ''; var nd = 0, mix = 0, bx = []; POL2.pbox.forEach(function (b, i) { if (b[6] === s2[0]) bx.push([b, i]); });
+    Object.keys(POL2.dong).forEach(function (k) { var o = polLab(POL2.labels[POL2.dong[k]]); if (o.main.indexOf(s2) >= 0) { nd++; if (o.main.length > 1 || o.extra.length) mix++; } });
+    var h = row('대표번호', s2[4] ? '<a href="tel:' + esc(s2[4]) + '">' + esc(s2[4]) + '</a>' : '<em>(원자료에 없음)</em>') + row('시도청', esc(s2[5] || '-')) + (s2[2] != null ? row('청사 자리', (+s2[2]).toFixed(5) + ', ' + (+s2[3]).toFixed(5) + ' <em>(경찰민원24 좌표)</em>') : '');
+    h += row('지구대·파출소', bx.length ? bx.length + '곳 <em>(누르면 그 카드)</em><div class="lg-btns">' + bx.map(function (q) { return '<button data-upb="' + q[1] + '">' + esc(q[0][0]) + (q[0][1] ? ' 파출소' : ' 지구대') + '</button>'; }).join('') + '</div>' : '자료에 없음');
+    h += row('관할 행정동', nd + '곳' + (mix ? ' · 그중 ' + mix + '곳은 다른 서와 번지로 나눠 맡음' : '') + ' <em>(직제 시행규칙 별표2 × 행정동 — 행정동 단위 근사 · 이름은 아래 「든 동」)</em>');
+    var ps = '', en = ''; try { ps = polStats(s2[1]) || ''; } catch (e) {} try { en = enfRows(s2[1]) || ''; } catch (e2) {}
+    return h + ps + en + (ps || en ? '' : '<p class="lg-n">이 서의 112신고·범죄·단속 통계는 이 지도에 없다(서울청·경기남부청 공개분만 실었다).</p>') + fiBox(['any'], '이 서의 다른 통계 직접 찾는 법'); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-upb]'); if (!b || !POL2) return; var x = POL2.pbox[+b.getAttribute('data-upb')]; if (!x) return; var s0 = S(x.p); sel = { x: s0[0], y: s0[1], r: 8, it: { kind: 'pbx', b: x } }; show(sel.it); draw(); });
   function pstCard(s2) {
     var nd = 0, mix = 0; Object.keys(POL2.dong).forEach(function (k) { var o = polLab(POL2.labels[POL2.dong[k]]); if (o.main.indexOf(s2) >= 0) { nd++; if (o.main.length > 1 || o.extra.length) mix++; } });
     var bx = POL2.pbox.filter(function (b) { return b[6] === s2[0]; });
@@ -3518,7 +3527,7 @@
   var HPB = ['1억 아래', '1~3억', '3~6억', '6~9억', '9~12억', '12~15억', '15~20억', '20~30억', '30억 넘음'], HPA = ['40㎡ 아래(~12평)', '40~60㎡(12~18평)', '60~85㎡(18~26평)', '85~102㎡(26~31평)', '102~135㎡(31~41평)', '135㎡ 넘음(41평~)'];
   function hpRows(d) { var gu = d && (d.gcd || (d.k && d.k.slice(0, 5))); if (!gu || !d.k) return ''; if (HPJ[gu] === undefined) { hpGet(gu).then(function () { if (sel && sel.it && sel.it.d === d) show(sel.it); }); return ''; }
     var J = HPJ[gu]; if (!J) return ''; var L = Object.keys(J.bjd).map(function (b) { return [b, J.bjd[b]]; }).filter(function (x) { return (x[1][6] || []).indexOf(d.k) >= 0; }).sort(function (a, b) { return b[1][1] - a[1][1]; }); if (!L.length) return '';
-    var won = function (v) { return v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1) + '억' : Math.round(v).toLocaleString() + '만'; }, h = '<div class="dh">🏢 공동주택 공시가격 <small style="font-weight:600;color:var(--ink2)">(국토교통부 2025.1.1 정기공시 · 아파트·연립·다세대 호마다)</small></div>';
+    var won = function (v) { return v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1) + '억' : Math.round(v).toLocaleString() + '만'; }, h = '<div class="dh">🏢 공동주택 공시가격 <small style="font-weight:600;color:var(--ink2)">(국토교통부 ' + (J.year || 2025) + '.1.1 정기공시 · 아파트·연립·다세대 호마다)</small></div>';
     L.slice(0, 3).forEach(function (x) { var b = x[1], sh = (b[6] || []).length > 1;
       h += '<div class="tkpi"><span><em>🏢</em><small>' + esc(b[0]) + (sh ? ' 전체' : '') + '</small><b>' + b[1].toLocaleString() + '호</b>' + (sh ? '<u>법정동 — 행정동 ' + b[6].length + '곳에 걸침</u>' : '') + '</span><span><em>💰</em><small>공시가격 가운데</small><b>' + won(b[2]) + '</b></span>' + (b[3] ? '<span><em>📐</em><small>㎡당 가운데</small><b>' + Math.round(b[3]).toLocaleString() + '만</b><u>평당 ' + Math.round(b[3] * 3.305785).toLocaleString() + '만</u></span>' : '') + '</div>';
       h += '<div class="vzg">' + vzH(HPB.map(function (n, i) { return [n, b[4][i] || 0, '#7c3aed']; }).filter(function (q, i, A) { return q[1] || (i > 0 && i < A.length - 1); }), { title: '공시가격 띠별 호수 — ' + b[0], unit: '호' }) +
@@ -3539,6 +3548,10 @@
     if (lvl === '구') h += '<p class="lg-n">이 동은 행정동 값이 없어 <b>' + esc(guName(gu)) + ' 전체</b> 값을 보인다(읍·면·동 이름이 자료와 안 이어진 곳).</p>';
     h += '<div class="tkpi"><span><em>🏢</em><small>' + (lvl === '구' ? esc(guName(gu)) : '이 동') + ' 공동주택</small><b>' + V[0].toLocaleString() + '호</b>' + (lvl === '행정동' && V.length > 9 ? '<u>필지 좌표로 넣은 집 ' + Math.round(V[9]) + '%</u>' : lvl === '행정동' && V[8] > 1 ? '<u>법정동 ' + V[8] + '곳을 합친 근사</u>' : '') + '</span><span><em>💰</em><small>공시가격 가운데</small><b>' + ptWon(V[7]) + '</b></span><span><em>🧾</em><small>보유세 가운데(1세대 1주택)</small><b>' + ptWon(V[2][1]) + '</b><u>일반 ' + ptWon(V[1][1]) + '</u></span></div>';
     if (lvl === '행정동' && V.length > 9) h += '<p class="lg-n"' + (V[9] < 50 ? ' style="color:#b45309"' : '') + '>' + (V[9] < 50 ? '⚠ <b>이웃 동과 섞인 값</b> — ' : '') + (V[9] >= 99.5 ? '집을 모두 필지 좌표로 이 동에 넣었다' : '필지 좌표로 이 동에 넣은 집 ' + Math.round(V[9]) + '% · 나머지는 걸친 법정동의 집을 넓이 몫으로 나눈 근사' + (V[8] > 1 ? '(법정동 ' + V[8] + '곳에 걸침)' : '')) + '</p>';
+    var PV = PTX.prev, pv = PV ? (lvl === '행정동' ? (PV.hjd || {})[d.k] : (PV.gu || {})[gu]) : null, ch = function (a, b) { return b ? (a >= b ? '+' : '') + ((a / b - 1) * 100).toFixed(1) + '%' : ''; };
+    if (pv && pv[0]) { var gp = PV.gu && PV.gu[gu], gn = G5;
+      h += '<p class="ptd">📅 <b>작년(' + PV.year + ') 대비</b> — 공시가격 가운데 ' + ptWon(pv[0]) + ' → <b>' + ptWon(V[7]) + '</b>(' + ch(V[7], pv[0]) + ') · 1세대 1주택 보유세 ' + ptWon(pv[1]) + ' → <b>' + ptWon(V[2][1]) + '</b>(' + ch(V[2][1], pv[1]) + ') · 일반 ' + ptWon(pv[2]) + ' → <b>' + ptWon(V[1][1]) + '</b>(' + ch(V[1][1], pv[2]) + ')' +
+        (lvl === '행정동' && gp && gn && gp[0] ? ' · ' + esc(guName(gu)) + ' 공시가격 가운데 ' + ch(gn[7], gp[0]) : '') + ' <em>(세법이 아니라 공시가격이 바뀐 몫 — 지난해 공시가격에 같은 규칙)</em></p>'; }
     h += '<div class="ptx"><div class="pth">재산세 + 지방교육세 + 도시지역분 — 하위 10% ~ <b>가운데</b> ~ 상위 10%(만 원/년)</div>' + rng('1세대 1주택', V[2], '#2563eb') + rng('일반(그 밖)', V[1], '#7c3aed') +
       '<div class="pth" style="margin-top:8px">도시지역분을 뺀 값' + (eup ? ' — <b>읍·면은 도시지역분이 안 붙을 수 있어 이쪽이 맞을 수 있다</b>' : '(도시지역 밖 주택)') + '</div>' + rng('1세대 1주택', V[4], '#60a5fa') + rng('일반(그 밖)', V[3], '#a78bfa') + '</div>';
     h += '<div class="vzg">' + vzH([['12억 넘음', V[6], '#dc2626'], ['9억 넘음', V[5], '#f59e0b']], { title: '종합부동산세 공제액을 넘는 집(% · 공시가격 12억 = 1세대 1주택 공제 · 9억 = 일반 공제 · 한 채 기준 — 금액은 사람별 합산이라 내지 않는다)', unit: '%' });

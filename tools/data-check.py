@@ -18,6 +18,8 @@ SETS = [
     ['data/biz-bench.json', 365, 'auto', 'KOSIS 소상공인실태조사 새 해 → `tools/region/sbiz-bake.py fetch` → `build`'],
     ['data/r/11650/dongw.json', 92, 'auto', '`tools/region/dongw-bake.py fetch` → `build`(서울 아파트·직장인구-행정동 분기)'],
     ['data/gu-tax.json', 365, 'auto', '`tools/region/guTax-bake.py`(국세통계 새 해)'],
+    ['data/gu-proptax.json', 365, 'auto', '시·군·구 실제 재산세(행안부 지방세통계 · KOSIS 110 · 해마다 가을에 전년도분) — `py -3.12 -X utf8 tools/region/lofin-bake.py list R_18 R_18` → 07_API키/out/lofin 의 표 파일을 지우고 `fetch` → `build`'],
+    ['data/police-card.json', 92, 'auto', '경찰서·기관 카드 묶음 — police.json·juris.json·profile.json 을 다시 구운 뒤 `tools/region/polcard-bake.py` · `agcard-bake.py` · 소방서·주민센터 새 파일은 `dgfile.py 15048243`·`15065056`·`15059715` → `agpts-bake.py`'],
     ['data/ptax-dong.json', 365, 'auto', '동별 주택 보유세 범위(추정) — hp.json(공동주택 공시가격 새 해)이나 data/tax-rules.json 재산세·종부세 공제 규칙이 바뀌면 `py -3.12 -X utf8 tools/region/ptax-bake.py`'],
     ['data/r/41111/ggdong.json', 183, 'hand', '경기데이터드림 카드매출_행정동·유동인구 요일별 행정동 새 달 확인 → `tools/region/gg-dong-bake.py fetch` → `build`(빠짐없이 담긴 달만 MONTHS 에)'],
     ['data/cpi.json', 31, 'auto', '`tools/region/cpi-bake.py`(소비자물가 다음 달)'],

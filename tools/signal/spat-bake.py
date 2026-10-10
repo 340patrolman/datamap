@@ -150,6 +150,8 @@ def sweep(prefer=None, api='t'):
         if now.minute < 11:
             time.sleep((11 - now.minute) * 60 - now.second + 1); continue
         t = now.minute * 60 + now.second
+        if last is None:
+            dens = (t + 66.0) / t   # 첫 호출 — 교차로마다 앞 시각에서 넘어온 줄이 60여 줄 더 있어(2026-10-10 실측) 정각 가까울수록 밀도가 1 을 넘는다
         K = (max if api == 'p' else min)(pos[i] for i in todo)   # 신호 상태 훑기는 뒤에서부터(두 훑기가 같은 쪽을 받지 않게)
         off = None
         if last and last['t'] < t and last['a'] <= K <= last['b'] + 1:
@@ -318,7 +320,7 @@ def reduce_phase(itst, J):
         x.pop('gs', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
     return {'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows),
-            'cyc': cyc, 'mv': mv, 'ped': [{'d': q['d'], 'seg': [], 'n': q['n']} for q in pd], 'pd': pd, 'a': round(rs[-1], 1), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy, 'src': 'p'}
+            'cyc': cyc, 'mv': mv, 'ped': [{'d': q['d'], 'seg': [], 'n': q['n']} for q in pd], 'pd': pd, 'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy, 'src': 'p'}
 
 
 def reduce_one(itst, J):
@@ -370,7 +372,7 @@ def reduce_one(itst, J):
         ncy = round((rs[-1] - rs[0]) / cyc) if len(rs) > 1 else 0
         cx = (rs[-1] - rs[0]) / ncy if ncy >= 2 else cyc
         ci = int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1)
-        anchor = {'a': round(rs[-1], 1), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy}
+        anchor = {'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy}
     for x in mv:
         x.pop('gs', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')

@@ -259,7 +259,7 @@
     if (t[7]) h += row('이름 출처', esc(t[7] === 'ITS' ? 'ITS 표준노드링크' : t[7]) + (t[6] && t[6] !== t[0] ? ' <em>(ITS 이름 「' + esc(t[6]) + '」' + (String(t[7]).indexOf('현장 확인') === 0 ? ' 대신 현장에서 확인한 이름을 쓴다)' : ' 은 가까운 건물·가게 이름이라 바꿨다)') + '</em>' : ''));
     if (t[8]) h += row('신호 교차로 이름', esc(t[8]) + ' <em>(경찰 T-GIS · 경찰청 교차로계획 · 서울 C-ITS — 같은 자리 40m 안)</em>');
     var on2 = osmNear(P(t[1], t[2]), t[0]).filter(function (x) { return x !== t[6] && (t[8] || '').split(' · ').indexOf(x) < 0; }); if (on2.length) h += row('다른 이름', esc(on2.join(' · ')) + ' <em>(바탕 지도 OSM — 같은 자리를 다르게 부른다 · 현장 이름을 알면 알려 주세요)</em>');
-    h = sdTop(sdTop(h, kscRows(null, P(t[1], t[2]))), sigDir(sdAt(P(t[1], t[2]))));
+    h = sdTop(sdTop(h, sigDir(sdAt(P(t[1], t[2])))), kscRows(null, P(t[1], t[2])));
     h += '<div class="lg-btns"><button data-radhere="' + t[1].toFixed(5) + ',' + t[2].toFixed(5) + '">📐 여기서 반경 분석</button></div>';
     return h + '<p class="desc">' + esc(JCN.note || '교차로 이름은 표준노드링크를 만드는 기관이 붙인 이름이다 — 이름난 교차로가 아니면 가까운 건물·학교 이름이 붙어 있다.') + '</p>' + src(JCN.src || '국가교통정보센터(ITS) 전국 표준노드링크'); }
   function rdCard(it) { var t = it.t;
@@ -1216,9 +1216,9 @@
       var cm = it.c; h = '<h3>📷 무인 단속 카메라</h3>' + row('자리', esc(cm.at)) + row('도로', esc(cm.road)) + row('제한속도', cm.lim ? cm.lim + 'km/h' : '-') + row('설치', esc(cm.yr || '-')) + row('단속구분 코드', esc(cm.se) + ' <em>(코드 뜻은 대조 전)</em>');
       h += camEff(cm) + ledgLine('R4') + src('경찰청 전국무인교통단속카메라표준데이터(기준일 2026-04-06) · 설치 전후 사고 = TAAS 사고 10년(100m 칸)');
     } else if (it.kind === 'sgd') {
-      h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.no) + '</small></h3>' + sigDir(it.no) + kscRows(it.no, P(it.q[1], it.q[0])) + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>');
+      h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.no) + '</small></h3>' + kscRows(it.no, P(it.q[1], it.q[0])) + sigDir(it.no) + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>');
     } else if (it.kind === 'sig') {
-      var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + row('교차로 번호', esc(s.no)) + row('지금', sigNow(s)) + sigTickHtml(s) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다') + sigDir(s.no, sigPlanCyc(s));
+      var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + sigDir(s.no, sigPlanCyc(s)) + row('지금', sigNow(s)) + sigTickHtml(s) + row('교차로 번호', esc(s.no)) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다');
     } else if (it.kind === 'sub') {
       h = '<h3>🚇 ' + esc(it.s.name) + '</h3>' + row('노선', (it.s.lines || []).map(function (l) { return '<i class="ln" style="background:' + (LINE_C[l] || '#64748b') + '">' + esc(l) + '</i>'; }).join(' ')) + row('교차로', esc(it.n.name)) + loreStn(it.s.name, it.n.p) + src('자리는 교차로 기준(출입구 위치 아님) · 역 이름은 지도 파일');
     } else if (it.kind === 'her') {
@@ -1269,7 +1269,7 @@
     } else if (it.kind === 'sbf') { h = sbfCard(it.t);
     } else if (it.kind === 'sbc') { h = sbcCard(it.t);
     } else if (it.kind === 'lutic') { h = uticCard(it.r);
-    } else if (it.kind === 'ksc') { h = '<h3>🚦 ' + esc(it.x.nm) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.x.no) + '</small></h3>' + sigDir(it.x.no) + kscCardHtml(it.x);
+    } else if (it.kind === 'ksc') { h = '<h3>🚦 ' + esc(it.x.nm) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.x.no) + '</small></h3>' + kscCardHtml(it.x) + sigDir(it.x.no);
     } else if (it.kind === 'lsbk' || it.kind === 'lsac' || it.kind === 'lspk') { h = seCard(it);
     } else if (it.kind === 'lak') { h = akCard(it);
     } else if (it.kind === 'lkma') { h = kmaCard();
@@ -1906,7 +1906,7 @@
   function flowCard(it) {
     if (it.kind === 'jct') { var o = it.o, r = o.r, J = o.m, a19 = 0; for (var i9 = 3; i9 < 10; i9++) a19 += r[3][i9];
       var rOrig = typeof r[r.length - 1] === 'string' && r[r.length - 1].indexOf('원래:') === 0 ? r[r.length - 1].slice(3) : '';
-      return '<h3>🚦 ' + esc(r[0]) + '</h3>' + sigDir(sdAt(o.p, 60)) + kscRows(null, o.p) + (rOrig ? row('다른 이름', esc(rOrig) + ' <em>(이 사고 자료가 붙인 이름 — 지도 교차로 이름으로 맞췄다)</em>') : '') + row('사고 2016~2025', o.t.toLocaleString() + '건 <em>· 해마다 평균 ' + Math.round(o.t / 10) + '</em>') + row('2019~2025', a19.toLocaleString() + '건') +
+      return '<h3>🚦 ' + esc(r[0]) + '</h3>' + kscRows(null, o.p) + sigDir(sdAt(o.p, 60)) + (rOrig ? row('다른 이름', esc(rOrig) + ' <em>(이 사고 자료가 붙인 이름 — 지도 교차로 이름으로 맞췄다)</em>') : '') + row('사고 2016~2025', o.t.toLocaleString() + '건 <em>· 해마다 평균 ' + Math.round(o.t / 10) + '</em>') + row('2019~2025', a19.toLocaleString() + '건') +
         row('사람', '사망 ' + r[4] + '명 · 중상 ' + r[5] + '명 · 보행자 피해 ' + r[6] + '건') + row('밤(20~6시)', Math.round(r[7] / Math.max(1, o.t) * 100) + '%') +
         (r[8].length ? row('주 법규위반', r[8].map(function (v) { return esc(v[0]) + ' ' + v[1]; }).join(' · ') + ' <em>(칸마다 주 위반의 합 — 근사)</em>') : '') +
         '<div class="cap">해마다 교통사고 건수(건 · 2016~2025 · 교차로 가운데 70m 안 100m 칸)</div>' + bar(r[3], '#ea580c', LB_Y16) + '<p class="desc">' + esc(J.note) + '</p>' + src(J.source); }
@@ -2826,6 +2826,8 @@
   //   초는 출력물 값이 아니라 계산값(파일 note) · 닻(주기 시작 시각)은 현장에서 「⏱ 지금 켜졌다」를 눌러 이 기기에만(tg_map2d_ksc_anchor) — 같은 패턴이 도는 동안·2시간 안에서만 흘린다
   var KFOPEN = 0; document.addEventListener('toggle', function (e) { var d = e.target; if (d && d.matches && d.matches('details.kscfd')) KFOPEN = d.open ? 1 : 0; if (d && d.matches && d.matches('details.sdx')) SDXO[d.getAttribute('data-k')] = d.open ? 1 : 0; }, true);
   var SDXO = {};
+  /* v2.141.0 신호 카드의 「설명·자세히」 접이 — 기본 접힘 · 펼친 것은 SDXO 가 기억한다 */
+  function sdMore(inner, key, label) { return inner ? '<details class="sdx sdxm" data-k="' + key + '"' + (SDXO[key] ? ' open' : '') + '><summary>' + (label || 'ⓘ 신호 설명·자세히') + '</summary>' + inner + '</details>' : ''; }
   /* v2.139.0 한눈 표 — 줄 = 들어오는 쪽 · 칸 = 직진·좌회전·…·건널목 · 칸마다 색 바탕 + 큰 남은 초 + 작게 「▸다음 색 초」. rows[{lb, sub, cells{이동류: [색 g·y·r, 남은 초, [다음 색, 그 길이]|null, 꼬리표]}}] */
   var SDOLD = 0, SDGC = ['St', 'Lt', 'Ut', 'Bs', 'Bc', 'Pd'], SDGN = { St: '직진', Lt: '좌회전', Ut: '유턴', Bs: '버스', Bc: '자전거', Pd: '🚶 건널목' }, SDGK = { g: '녹', y: '황', r: '적' };
   function sdGridHtml(rows) { var cols = SDGC.filter(function (k) { return rows.some(function (r) { return r.cells[k]; }); }); if (!cols.length) return '';
@@ -2886,24 +2888,26 @@
       var put = function (l, wd, c) { l = ((l % 100) + 100) % 100; if (l + wd > 100) { seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + (100 - l).toFixed(2) + '%"></i><i class="' + c + '" style="left:0;width:' + (l + wd - 100).toFixed(2) + '%"></i>'; } else seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + wd.toFixed(2) + '%"></i>'; };
       put(a, w, 'g'); if (yw) put(a + w, yw, 'y');
       h += '<div class="rw"><b>' + num.charAt(i) + ' ' + esc(sdName(x)) + '</b><div class="ln"><span class="tl">' + seg + '<u></u></span><em>녹색 ' + Math.round(x.g) + '초</em></div></div>'; });
-    return h + '<div class="ax"><span>0</span><span>' + Math.round(cyc / 2) + '</span><span>' + Math.round(cyc) + '초</span></div></div></div>' + row('켜지는 차례', G.map(function (x, i) { return num.charAt(i) + ' ' + esc(sdName(x)) + ' <b>' + Math.round(x.g) + '초</b>'; }).join(' → ')); }
+    return h + '<div class="ax"><span>0</span><span>' + Math.round(cyc / 2) + '</span><span>' + Math.round(cyc) + '초</span></div></div></div>'; }
   function kscCardHtml(x) { var Pn = kscPlan(x), N = Pn ? Pn.N : kscNow(x), f = function (t) { return t.slice(0, 2) + ':' + t.slice(2); }, h = '';
     if (!Pn) return '<div class="dh">🚦 교통과 운영 계획</div>' + row('지금 도는 계획', '<em>이 요일 계획을 찾지 못했다</em>');
-    h += '<div class="sdnow" id="kscNow" data-no="' + esc(String(x.no)) + '"><div id="kscNw"></div><div id="kscCh"></div></div><div id="kscProg" data-no="' + esc(String(x.no)) + '"></div><div id="sgProg" data-no="' + esc(String(x.no)) + '" data-ksc="1"></div>';
-    h += '<div class="cap">🚦 교통과 운영 계획 — ' + KTN[Pn.ty] + ' ' + f(Pn.from) + '부터 계획(패턴 ' + Pn.pn + ')' + (N.prev ? ' · 전날 마지막 계획이 이어짐' : '') + ' · 주기 ' + Pn.c + '초 · 출력물 ' + esc(x.day || '') + ' ' + esc(x.dayk || '') + ' · <b>계산값</b>' + (HOUR != null ? ' · 고른 시각 ' + HOUR + '시 기준' : '') + ' · 가로 = 한 주기(초록 = 녹색 · 노랑 = 황색 · 붉은 바탕 = 적색 · 검은 줄 = 지금)</div>';
+    var mo = '';
+    h += '<div class="cap sdcap">🚦 교통과 운영 계획 — ' + KTN[Pn.ty] + ' ' + f(Pn.from) + '부터(패턴 ' + Pn.pn + ')' + (N.prev ? ' · 전날 마지막 계획이 이어짐' : '') + ' · 주기 ' + Pn.c + '초 · <b>계산값</b>' + (HOUR != null ? ' · 고른 시각 ' + HOUR + '시 기준' : '') + '</div>';
     var o = { cyc: Pn.c, mv: Pn.rows.map(function (r) { return [r[0], r[1], r[3], r[4], r[5], r[6], 1]; }), ped: [] }, G = sdGroups(o);
-    if (G.length) h += kscBars(o, G, Pn.c);
+    if (G.length) { h += kscBars(o, G, Pn.c); mo += row('켜지는 차례', G.map(function (g9, i9) { return '①②③④⑤⑥⑦⑧'.charAt(i9) + ' ' + esc(sdName(g9)) + ' <b>' + Math.round(g9.g) + '초</b>'; }).join(' → ')); }
+    h += '<div class="sdnow" id="kscNow" data-no="' + esc(String(x.no)) + '"><div id="kscNw"></div><div id="kscCh"></div></div><div id="kscProg" data-no="' + esc(String(x.no)) + '"></div><div id="sgProg" data-no="' + esc(String(x.no)) + '" data-ksc="1"></div>';
     if (x.rg) h += '<p class="lg-n" style="color:#b45309">⚠ 이 교차로는 A·B 링이 어느 이동류인지 도면에 명시가 없어 <b>표준 관례로 읽은 추정</b>이다 — 직진·좌회전 초가 서로 바뀌어 있을 수 있다.</p>';
-    var nul = Pn.rows.filter(function (r) { return r[3] == null; }); if (nul.length) h += row('초를 비운 이동류', nul.map(function (r) { return '<b>' + SDN[r[0]] + '→' + esc(r[2]) + ' ' + (SDM[r[1]] || r[1]) + '</b> — ' + esc((x.why || {})[String(r[8])] || '계산이 맞지 않음'); }).join('<br>'));
-    if (x.tw && x.tw.length) h += row('⏰ 시차제', x.tw.map(function (w) { var on1 = kscTwOn(w, Pn.ty, N.hm); return (on1 ? '<b style="color:#b45309">지금 적용 중</b> — ' : '') + esc(kscTwTxt(w)) + ' · ' + SDN[w.dir] + '쪽에서 오는 ' + (SDM[w.mv] || w.mv) + ' 녹색 ' + w.g + '초 + 황색 ' + w.y + '초 뒤 적색' + (w.t ? '<br><em>' + esc(w.t) + '</em>' : ''); }).join('<br>'));
-    var wn = Object.keys(x.warn || {}); if (wn.length) h += row('같이 알 것', wn.map(function (k) { return esc(x.warn[k]); }).join('<br>'));
-    if (x.ph && x.ph.length) h += row('현시 차례', x.ph.map(function (q) { var v = (Pn.pat.a || [])[q.p - 1]; return '<b>' + q.p + '현시</b>' + (v != null ? ' ' + v + '초' : '') + ' ' + esc(q.t || '') + (q.ped && q.ped.length ? ' <em>· 보행 ' + esc(q.ped.join(' · ')) + '</em>' : ''); }).join('<br>') + (Pn.pat.b && String(Pn.pat.a) !== String(Pn.pat.b) ? '<br><em>B링 현시값 ' + esc(Pn.pat.b.join(' · ')) + '초</em>' : ''));
-    if (x.pnote && x.pnote.length) h += row('🚶 보행·참고(출력물)', x.pnote.map(function (t) { return esc(t); }).join('<br>'));
-    if (x.roads) h += row('도로', esc([x.roads.NS ? '남북 ' + x.roads.NS : '', x.roads.EW ? '동서 ' + x.roads.EW : ''].filter(Boolean).join(' · ')));
-    if (N.list.length) h += row('시간대별 주기(' + KTN[N.ty] + ')', N.list.map(function (r) { return (N.cur === r ? '<b>' : '') + f(r[0]) + ' ' + r[1] + '초' + (N.cur === r ? '</b>' : ''); }).join(' → ') + ' <em>(하루 전체 계획 · 그날 첫 계획 전에는 전날 마지막 계획)</em>');
-    var more = (x.memo || []).concat(x.hist || []); if (more.length) h += '<details class="ptn"><summary>출력물 참고·개선 이력 ' + more.length + '줄</summary><ul>' + more.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></details>';
-    h += '<p class="lg-n"><b>계획값</b>이고 방향별 초는 출력물에 적힌 값이 아니라 <b>계산값</b>이다(켜지는 현시들의 현시값 합 − 황색·전적색 = 녹색). 감응·수동 운영·행사·공사 중에는 실제와 다르고, 시행일 뒤에 바뀌었을 수 있다. 밤(22시~)에는 연동을 일부러 끊어 둔 구간이 있다.</p>';
-    return h + '<p class="src">' + esc(KSC.source || '서초경찰서 교통과 제공 표준신호제어기DB 출력물') + '</p>'; }
+    var nul = Pn.rows.filter(function (r) { return r[3] == null; }); if (nul.length) mo += row('초를 비운 이동류', nul.map(function (r) { return '<b>' + SDN[r[0]] + '→' + esc(r[2]) + ' ' + (SDM[r[1]] || r[1]) + '</b> — ' + esc((x.why || {})[String(r[8])] || '계산이 맞지 않음'); }).join('<br>'));
+    if (x.tw && x.tw.length) mo += row('⏰ 시차제', x.tw.map(function (w) { var on1 = kscTwOn(w, Pn.ty, N.hm); return (on1 ? '<b style="color:#b45309">지금 적용 중</b> — ' : '') + esc(kscTwTxt(w)) + ' · ' + SDN[w.dir] + '쪽에서 오는 ' + (SDM[w.mv] || w.mv) + ' 녹색 ' + w.g + '초 + 황색 ' + w.y + '초 뒤 적색' + (w.t ? '<br><em>' + esc(w.t) + '</em>' : ''); }).join('<br>'));
+    var wn = Object.keys(x.warn || {}); if (wn.length) mo += row('같이 알 것', wn.map(function (k) { return esc(x.warn[k]); }).join('<br>'));
+    if (x.ph && x.ph.length) mo += row('현시 차례', x.ph.map(function (q) { var v = (Pn.pat.a || [])[q.p - 1]; return '<b>' + q.p + '현시</b>' + (v != null ? ' ' + v + '초' : '') + ' ' + esc(q.t || '') + (q.ped && q.ped.length ? ' <em>· 보행 ' + esc(q.ped.join(' · ')) + '</em>' : ''); }).join('<br>') + (Pn.pat.b && String(Pn.pat.a) !== String(Pn.pat.b) ? '<br><em>B링 현시값 ' + esc(Pn.pat.b.join(' · ')) + '초</em>' : ''));
+    if (x.pnote && x.pnote.length) mo += row('🚶 보행·참고(출력물)', x.pnote.map(function (t) { return esc(t); }).join('<br>'));
+    if (x.roads) mo += row('도로', esc([x.roads.NS ? '남북 ' + x.roads.NS : '', x.roads.EW ? '동서 ' + x.roads.EW : ''].filter(Boolean).join(' · ')));
+    if (N.list.length) mo += row('시간대별 주기(' + KTN[N.ty] + ')', N.list.map(function (r) { return (N.cur === r ? '<b>' : '') + f(r[0]) + ' ' + r[1] + '초' + (N.cur === r ? '</b>' : ''); }).join(' → ') + ' <em>(하루 전체 계획 · 그날 첫 계획 전에는 전날 마지막 계획)</em>');
+    var more = (x.memo || []).concat(x.hist || []); if (more.length) mo += '<details class="ptn"><summary>출력물 참고·개선 이력 ' + more.length + '줄</summary><ul>' + more.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></details>';
+    mo += row('출력물', esc(x.day || '') + ' ' + esc(x.dayk || '')) + row('그림 읽는 법', '가로 = 한 주기 · 초록 = 녹색 · 노랑 = 황색 · 붉은 바탕 = 적색 · 검은 줄 = 지금');
+    mo += '<p class="lg-n"><b>계획값</b>이고 방향별 초는 출력물에 적힌 값이 아니라 <b>계산값</b>이다(켜지는 현시들의 현시값 합 − 황색·전적색 = 녹색). 감응·수동 운영·행사·공사 중에는 실제와 다르고, 시행일 뒤에 바뀌었을 수 있다. 밤(22시~)에는 연동을 일부러 끊어 둔 구간이 있다.</p>';
+    return h + sdMore(mo + '<p class="src">' + esc(KSC.source || '서초경찰서 교통과 제공 표준신호제어기DB 출력물') + '</p>', 'kscm'); }
   function kscRows(no, pt) { var x = kscOf(no) || (pt ? kscAt(pt, 60) : null); return x ? kscCardHtml(x) : ''; }
   // v2.114.0 🚨 시내 돌발(UTIC) — data/utic-ims.json(tg-utic-ims/1 · 다른 세션 tools/utic-bake.py · 경찰청 도시교통정보센터 개방데이터 · 이 PC 가 받아 구운 한 장 — 실시간 아님 · 키·중계 없이 읽는다)
   var UTIC = null, UTICP = null, UTICAT = 0, UTC = { '사고': '#dc2626', '공사': '#d97706', '통제': '#7c3aed', '행사': '#2563eb' };
@@ -3299,27 +3303,30 @@
     var lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no); if (!o) return '';
     var G = sdGroups(o), cyc = o.cyc, num = '①②③④⑤⑥⑦⑧', dd = o.day ? o.day.slice(5).replace('-', '/') : '';
     if (!G.length) return '';
-    var h = '<div class="sdnow" id="sdNow" data-no="' + esc(String(no)) + '"><div id="sdNw"></div><div id="sdCh"></div></div>' + (KSC && (KSC.items || []).some(function (q9) { return String(q9.no) === String(no); }) ? '' : '<div id="sgProg" data-no="' + esc(String(no)) + '"></div>') + '<div class="cap">🚦 방향별 신호 — ' + esc(dd) + '(' + SDW[o.dow] + ') ' + esc(o.from) + '~' + esc(o.to) + ' 실제로 돈 값 · 주기 ' + Math.round(cyc) + '초 · 가로 = 한 주기(초록 = 녹색 · 노랑 = 황색 · 붉은 바탕 = 적색 · 검은 줄 = 지금)</div><div class="sd">';
+    var hasK = !!(KSC && (KSC.items || []).some(function (q9) { return String(q9.no) === String(no); })), mo = '', live = '<div class="sdnow" id="sdNow" data-no="' + esc(String(no)) + '"><div id="sdNw"></div><div id="sdCh"></div></div>' + (hasK ? '' : '<div id="sgProg" data-no="' + esc(String(no)) + '"></div>');
+    var h = '<div class="cap sdcap">🚦 방향별 신호 — ' + esc(dd) + '(' + SDW[o.dow] + ') ' + esc(o.from) + '~' + esc(o.to) + ' 실제로 돈 값 · 주기 ' + Math.round(cyc) + '초</div><div class="sd">';
     h += sdRose(o, G) + '<div class="sdb">';
     G.forEach(function (x, i) { var a = x.o / cyc * 100, w = x.g / cyc * 100, yw = (x.y || 0) / cyc * 100, seg = '';
       var put = function (l, wd, c) { l = ((l % 100) + 100) % 100; if (l + wd > 100) { seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + (100 - l).toFixed(2) + '%"></i><i class="' + c + '" style="left:0;width:' + (l + wd - 100).toFixed(2) + '%"></i>'; } else seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + wd.toFixed(2) + '%"></i>'; };
       put(a, w, 'g'); if (yw) put(a + w, yw, 'y');
       h += '<div class="rw"><b>' + num.charAt(i) + ' ' + esc(sdName(x)) + '</b><div class="ln"><span class="tl">' + seg + '<u></u></span><em>녹색 ' + Math.round(x.g) + '초</em></div></div>'; });
     h += '<div class="ax"><span>0</span><span>' + Math.round(cyc / 2) + '</span><span>' + Math.round(cyc) + '초</span></div></div></div>';
-    h += row('켜지는 차례', G.map(function (x, i) { return num.charAt(i) + ' ' + esc(sdName(x)) + ' <b>' + Math.round(x.g) + '초</b>'; }).join(' → '));
+    h += live;
+    mo += row('켜지는 차례', G.map(function (x, i) { return num.charAt(i) + ' ' + esc(sdName(x)) + ' <b>' + Math.round(x.g) + '초</b>'; }).join(' → '));
     var un = o.mv.filter(function (m) { return m[2] == null; }), pd = (o.ped || []).map(function (q) { return SDN[q[0]]; });
-    if (o.pd && o.pd.length) h += row('🚶 보행 신호', o.pd.map(function (q) { return '<b>' + SDN[q[0]] + '쪽</b> 녹색 ' + Math.round(q[1]) + '초 · 점멸 ' + Math.round(q[2] || 0) + '초 · 적색 ' + Math.round(q[3]) + '초'; }).join('<br>') + ' <em>(서울시 「신호제어기 신호 정보」 상태 값 · 방위 = 그 건널목이 놓인 접근로)</em>');
-    else if (pd.length) h += row('보행 신호', esc(pd.join(' · ')) + '쪽에 있다 <em>(초록·빨강은 「신호 상태」로 다시 받으면 나온다 — 수집 중)</em>');
+    if (o.pd && o.pd.length) mo += row('🚶 보행 신호', o.pd.map(function (q) { return '<b>' + SDN[q[0]] + '쪽</b> 녹색 ' + Math.round(q[1]) + '초 · 점멸 ' + Math.round(q[2] || 0) + '초 · 적색 ' + Math.round(q[3]) + '초'; }).join('<br>') + ' <em>(서울시 「신호제어기 신호 정보」 상태 값 · 방위 = 그 건널목이 놓인 접근로)</em>');
+    else if (pd.length) mo += row('보행 신호', esc(pd.join(' · ')) + '쪽에 있다 <em>(초록·빨강은 「신호 상태」로 다시 받으면 나온다 — 수집 중)</em>');
     var tw = un.filter(function (m) { return m[7] === 2; }); un = un.filter(function (m) { return m[7] !== 2; });
-    if (tw.length) h += row('한 주기에 두 번', esc(tw.map(function (m) { return SDN[m[0]] + ' ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' <em>(한 주기 안에 녹색이 두 번 켜져 위 막대에 넣지 않았다)</em>');
-    if (un.length) h += row('색 못 가린 신호', esc(un.map(function (m) { return SDN[m[0]] + ' ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' <em>(받은 동안 황색이 안 보였다 — 점멸 운영이거나 값이 멈춤)</em>');
-    var td = D.sigd.tod && D.sigd.tod[String(no)]; if (td && td.length) { var tg = {}; td.forEach(function (x) { (tg[x[0]] = tg[x[0]] || []).push(x[1] + '시 <b>' + x[2] + '초</b>'); }); h += row('시간대별 주기', [0, 1, 2].filter(function (q) { return tg[q]; }).map(function (q) { return ['평일', '토', '일'][q] + ' ' + tg[q].join(' · '); }).join('<br>') + ' <em>(받은 시간대만 · 계속 모으는 중 — 주기가 바뀌는 시각이 신호 계획이 바뀌는 때)</em>'); }
+    if (tw.length) mo += row('한 주기에 두 번', esc(tw.map(function (m) { return SDN[m[0]] + ' ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' <em>(한 주기 안에 녹색이 두 번 켜져 위 막대에 넣지 않았다)</em>');
+    if (un.length) mo += row('색 못 가린 신호', esc(un.map(function (m) { return SDN[m[0]] + ' ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' <em>(받은 동안 황색이 안 보였다 — 점멸 운영이거나 값이 멈춤)</em>');
+    var td = D.sigd.tod && D.sigd.tod[String(no)]; if (td && td.length) { var tg = {}; td.forEach(function (x) { (tg[x[0]] = tg[x[0]] || []).push(x[1] + '시 <b>' + x[2] + '초</b>'); }); mo += row('시간대별 주기', [0, 1, 2].filter(function (q) { return tg[q]; }).map(function (q) { return ['평일', '토', '일'][q] + ' ' + tg[q].join(' · '); }).join('<br>') + ' <em>(받은 시간대만 · 계속 모으는 중 — 주기가 바뀌는 시각이 신호 계획이 바뀌는 때)</em>'); }
     var pq = D.sigd.pts && D.sigd.pts[String(no)], pp = pq ? P(pq[1], pq[0]) : null;
-    if (pp && typeof JCT !== 'undefined' && JCT.length) { var jb = null, jd = 100; JCT.forEach(function (o9) { if (Math.abs(o9.p[1] - pp[1]) > 100) return; var d9 = dTrue(o9.p, pp); if (d9 < jd) { jd = d9; jb = o9; } }); if (jb) h += row('이 교차로 사고', '2016~2025 <b>' + jb.t.toLocaleString() + '건</b> · 해마다 평균 ' + Math.round(jb.t / 10) + '건' + (jb.r[4] ? ' · 사망사고 있음' : '') + ' <em>(TAAS · ' + esc(jb.r[0]) + ' · 585m 안 사고를 가까운 교차로에 배정한 근사)</em>'); }
-    if (pp && D.cam && D.cam.items) { var cn = D.cam.items.filter(function (c9) { return dTrue(P(c9.lon, c9.lat), pp) <= 150; }).length; if (cn) h += row('단속 카메라', '150m 안 ' + cn + '대 <em>(경찰청 무인단속카메라)</em>'); }
+    if (pp && typeof JCT !== 'undefined' && JCT.length) { var jb = null, jd = 100; JCT.forEach(function (o9) { if (Math.abs(o9.p[1] - pp[1]) > 100) return; var d9 = dTrue(o9.p, pp); if (d9 < jd) { jd = d9; jb = o9; } }); if (jb) mo += row('이 교차로 사고', '2016~2025 <b>' + jb.t.toLocaleString() + '건</b> · 해마다 평균 ' + Math.round(jb.t / 10) + '건' + (jb.r[4] ? ' · 사망사고 있음' : '') + ' <em>(TAAS · ' + esc(jb.r[0]) + ' · 585m 안 사고를 가까운 교차로에 배정한 근사)</em>'); }
+    if (pp && D.cam && D.cam.items) { var cn = D.cam.items.filter(function (c9) { return dTrue(P(c9.lon, c9.lat), pp) <= 150; }).length; if (cn) mo += row('단속 카메라', '150m 안 ' + cn + '대 <em>(경찰청 무인단속카메라)</em>'); }
     if (planCyc && Math.abs(planCyc - cyc) > 2) h += row('지금 계획과 차이', '지금 계획 주기는 ' + planCyc + '초 — 위 그림은 받은 때(주기 ' + Math.round(cyc) + '초) 값이라 초가 다르다 <em>(방향·차례는 대개 같다)</em>');
-    return h + '<p class="desc">방위는 그 신호를 받는 차가 <b>들어오는 쪽</b>이다(「북→남」 = 북쪽에서 와서 남쪽으로 · 일방통행 교차로 자료로 확인). ' + (o.src === 'p' ? '색은 신호제어기가 보낸 <b>상태 값 그대로</b>이고(서울시 「신호제어기 신호 정보」)' : '녹색·적색은 잔여시간 흐름에서 황색(3~6초) 앞뒤로 읽은 <b>추정</b>이고') + ', 받은 시간대의 값이라 다른 시간대·요일에는 초가 다르다. 감응·수동 운영 중에는 실제와 다르다.</p>' +
-      src((D.sigd.source || '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보') + ' · 교차로 번호 ' + String(no));
+    h += sdMore(mo + row('그림 읽는 법', '가로 = 한 주기 · 초록 = 녹색 · 노랑 = 황색 · 붉은 바탕 = 적색 · 검은 줄 = 지금') + '<p class="desc">방위는 그 신호를 받는 차가 <b>들어오는 쪽</b>이다(「북→남」 = 북쪽에서 와서 남쪽으로 · 일방통행 교차로 자료로 확인). ' + (o.src === 'p' ? '색은 신호제어기가 보낸 <b>상태 값 그대로</b>이고(서울시 「신호제어기 신호 정보」)' : '녹색·적색은 잔여시간 흐름에서 황색(3~6초) 앞뒤로 읽은 <b>추정</b>이고') + ', 받은 시간대의 값이라 다른 시간대·요일에는 초가 다르다. 감응·수동 운영 중에는 실제와 다르다.</p>' +
+      src((D.sigd.source || '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보') + ' · 교차로 번호 ' + String(no)), 'sdm');
+    return hasK ? sdMore(h, 'sdk', '📡 서울시에서 받은 실제 값 — 교통과 계획과 맞대 보기') : h;
   }
   function sigPlanCyc(s) { var d = new Date(), pn = s && s.dow && s.dow[String(d.getDay() + 1)], rows = pn && s.plans && s.plans[pn], hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), cur = null;
     if (!rows || !rows.length) return 0; rows.forEach(function (r) { if (r[0] <= hm && r[1] > 0) cur = r; }); return (cur || rows[rows.length - 1])[1] || 0; }

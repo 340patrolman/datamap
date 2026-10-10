@@ -1176,7 +1176,7 @@
         h += row('주된 경위', st.violations.slice(0, 3).map(function (v) { return esc(v[0]) + ' ' + v[1]; }).join(' · ')) + row('사고 유형', st.types.slice(0, 3).map(function (v) { return esc(v[0]) + ' ' + v[1]; }).join(' · '));
         h += src('TAAS 도로교통공단 · 반경 약 585m 안 사고를 가장 가까운 교차로에 배정(근사)'); }
       var sp = D.sig && D.sig.spots ? D.sig.spots.filter(function (s) { return Math.hypot(P(s.lon, s.lat)[0] - n.p[0], P(s.lon, s.lat)[1] - n.p[1]) < 120; })[0] : null;
-      if (sp) h += row('신호 지금', sigNow(sp));
+      if (sp) h += row('신호 지금', sigNow(sp)) + sigTickHtml(sp);
       var sdh = sigDir((n.sig && n.sig.no) || (sp && sp.no) || sdAt(n.p), sp ? sigPlanCyc(sp) : 0); h = sdTop(h, sdh);
       var ksh = kscRows(n.sig && n.sig.no, n.p); if (ksh) h += ksh;
       if (!sdh && !ksh && ((n.sig && n.sig.no) || sp)) h += row('방향별 신호', '<em>아직 없음 — 이 교차로는 방향별 신호값을 못 받았다(수집 전이거나 서울시 V2X 자료에 값이 없는 곳)</em>');
@@ -1199,7 +1199,7 @@
     } else if (it.kind === 'sgd') {
       h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.no) + '</small></h3>' + sigDir(it.no) + kscRows(it.no, P(it.q[1], it.q[0])) + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>');
     } else if (it.kind === 'sig') {
-      var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + row('교차로 번호', esc(s.no)) + row('지금', sigNow(s)) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다') + sigDir(s.no, sigPlanCyc(s));
+      var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + row('교차로 번호', esc(s.no)) + row('지금', sigNow(s)) + sigTickHtml(s) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다') + sigDir(s.no, sigPlanCyc(s));
     } else if (it.kind === 'sub') {
       h = '<h3>🚇 ' + esc(it.s.name) + '</h3>' + row('노선', (it.s.lines || []).map(function (l) { return '<i class="ln" style="background:' + (LINE_C[l] || '#64748b') + '">' + esc(l) + '</i>'; }).join(' ')) + row('교차로', esc(it.n.name)) + loreStn(it.s.name, it.n.p) + src('자리는 교차로 기준(출입구 위치 아님) · 역 이름은 지도 파일');
     } else if (it.kind === 'her') {
@@ -2723,7 +2723,12 @@
   function sdTop(h, sd) { return sd ? h.replace('</h3>', '</h3>' + sd) : h; }
   function sdLive(no) { var L = D.sigd && D.sigd.its && no != null ? D.sigd.its[String(no)] : null, r = null; if (L) L.forEach(function (o) { if (o.a && (!r || o.a > r.a)) r = o; }); if (!r) return { why: 'none' };
     var age = Date.now() / 1000 - r.a; if (r.x && !r.v) return { rec: r, age: age, why: 'bad' };
-    return age >= 0 && (age <= 12 * 60 || (r.v && age <= 120 * 60)) ? { rec: r, age: age, ok: 1 } : { rec: r, age: age, why: 'old' }; }
+    if (age >= 0 && (age <= 12 * 60 || (r.v && age <= 120 * 60))) return { rec: r, age: age, ok: 1 };
+    var pd0 = sdPlanDev(no, r); if (age >= 0 && age <= 20 * 3600 && pd0 != null && Math.abs(pd0) <= 6) return { rec: r, age: age, ok: 1, plan: pd0 };   /* v2.116.0 받은 닻이 지금 도는 경찰청 계획(같은 주기 · 옵셋 = 자정 기준)과 ±6초로 맞으면 낡아도 이어 센다 */
+    return { rec: r, age: age, why: 'old' }; }
+  function sdPlanDev(no, r) { if (HOUR != null || !D.sig || !D.sig.spots) return null; var s = D.sig.spots.filter(function (q) { return String(q.no) === String(no); })[0]; if (!s) return null; var d = new Date(), pn = s.dow && s.dow[String(d.getDay() + 1)], rows = pn && s.plans && s.plans[pn]; if (!rows || !rows.length) return null;
+    var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), cur = null; rows.forEach(function (q) { if (q[0] <= hm && q[1] > 0) cur = q; }); if (!cur) cur = rows[rows.length - 1]; var c = +cur[1], off = +cur[2] || 0; if (!(c > 0) || Math.abs(r.ci - c) > 1) return null;
+    var ps = (+cur[0].slice(0, 2)) * 3600 + (+cur[0].slice(3, 5)) * 60, since = ((sodK(Date.now()) - ps) % 86400 + 86400) % 86400; if (since < c) return null; var dv = (((sodK(r.a * 1000) - off) % c) + c) % c; if (dv > c / 2) dv -= c; return Math.round(dv); }
   function sdState(m, rec, now) { var ci = rec.ci, t = (((now - rec.a - (m[5] || 0)) % ci) + ci) % ci, g = m[2], y = m[3] || 0; return t < g ? ['g', g - t] : t < g + y ? ['y', g + y - t] : ['r', ci - t]; }
   function sdNowPaint() { var el = $('sdNow'); if (!el) return; var no = el.getAttribute('data-no'), lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no), ch = $('sdCh'), nw = $('sdNw'); if (!o || !ch || !nw) return;
     if (Date.now() - SDAT > 5 * 60000 && !document.hidden) { SDAT = Date.now(); fetch(FILES.sigd).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.its) D.sigd = j; }).catch(function () {}); }
@@ -2740,7 +2745,7 @@
         h += '<div class="sdl ' + st[0] + '"><i></i><b>🚶 ' + SDN[d] + '쪽 건널목</b><span>' + PN[st[0]] + ' <strong>' + Math.ceil(st[1]) + '</strong>초 남음</span><small>다음 ' + nx + '</small></div>'; }
       else h += '<div class="sdl"><i></i><b>🚶 ' + SDN[d] + '쪽 건널목</b><span>녹색 ' + Math.round(m[2]) + '초 · 점멸 ' + Math.round(m[3]) + '초 · 적색 ' + Math.round(red) + '초</span></div>'; });
     var am = lv.rec ? Math.max(0, Math.round(lv.age / 60)) : 0;
-    h += '</div><p class="sdnt">' + (lv.ok ? '⏱ <b>' + hhmm(o.a * 1000) + '</b>에 받은 값에서 주기 ' + o.ci + '초로 <b>이어 센 추정</b>(' + am + '분 전 수집 · ±몇 초)' + (o.v ? ' · 검증: ' + o.v[0] + '분 띄워 두 번 받은 값이 ' + o.v[1] + '초 안에서 맞음' : ' · 받은 지 12분 안이라 띄움(두 번 대조 전)') + ' · 주기가 바뀌는 시간대 · 감응·수동 운영 중에는 어긋난다'
+    h += '</div><p class="sdnt">' + (lv.ok ? '⏱ <b>' + hhmm(o.a * 1000) + '</b>에 받은 값에서 주기 ' + o.ci + '초로 <b>이어 센 추정</b>(' + (am >= 60 ? Math.floor(am / 60) + '시간 ' + (am % 60) + '분' : am + '분') + ' 전 수집 · ±몇 초)' + (lv.plan != null ? ' · 지금 도는 경찰청 계획(같은 주기 · 옵셋 자정 기준)과 ' + (lv.plan >= 0 ? '+' : '') + lv.plan + '초로 맞아 이어 셈' : o.v ? ' · 검증: ' + o.v[0] + '분 띄워 두 번 받은 값이 ' + o.v[1] + '초 안에서 맞음' : ' · 받은 지 12분 안이라 띄움(두 번 대조 전)') + ' · 주기가 바뀌는 시간대 · 감응·수동 운영 중에는 어긋난다'
       : '<b>지금 몇 초 남았는지는 띄우지 않는다</b> — ' + (lv.why === 'none' ? '이 교차로는 녹색이 켜진 실제 시각을 아직 못 받았다(수집 중)' : lv.why === 'bad' ? '두 번 받은 값이 서로 안 맞아(' + lv.rec.x[0] + '분 사이 ' + lv.rec.x[1] + '초 어긋남) 이어 세면 틀린다' : '받은 지 ' + (am >= 60 ? Math.floor(am / 60) + '시간 ' + (am % 60) + '분' : am + '분') + ' 지나 이어 세면 틀릴 수 있다(다시 받는 중)') + ' · 위는 한 주기 안의 길이') + '</p>';
     nw.innerHTML = h;
     var ph = lv.ok ? ((((now - o.a) % o.ci) + o.ci) % o.ci) / o.ci * 100 : -1; [].forEach.call(document.querySelectorAll('#m2dCard .sd:not(.ksd) .tl u'), function (u) { u.style.display = ph < 0 ? 'none' : 'block'; u.style.left = ph.toFixed(2) + '%'; }); }
@@ -2768,9 +2773,11 @@
     var dirs = SDORD.filter(function (d) { return Pn.rows.some(function (r) { return r[0] === d; }); }); if (!dirs.length) return; var d = KSEL[x.no] && dirs.indexOf(KSEL[x.no]) >= 0 ? KSEL[x.no] : dirs[0], A = kscLive(x, Pn), AR = { nt: 'N', st: 'S', wt: 'W', et: 'E' }, ar = x.around || {};
     var ck = x.no + '|' + d + '|' + Pn.pn; if (ch.getAttribute('data-k') !== ck) { ch.setAttribute('data-k', ck); ch.innerHTML = '<div class="sdch"><span>어느 쪽에서 오는 차?</span>' + dirs.map(function (q) { return '<button data-kdd="' + q + '"' + (q === d ? ' class="on"' : '') + '>' + SDN[q] + '쪽에서' + (ar[AR[q]] ? ' <small>' + esc(ar[AR[q]]) + '</small>' : '') + '</button>'; }).join('') + '</div>'; }
     var now = Date.now(), CN = { g: '녹색', y: '황색', r: '적색' }, h = '<div class="sdls">', L = Pn.rows.filter(function (r) { return r[0] === d; });
+    var C = null, TR = 0; if (!A && HOUR == null && Pn.pat.off != null) { var sd0 = sodK(now), ps0 = (+Pn.from.slice(0, 2)) * 3600 + (+Pn.from.slice(2)) * 60, sn0 = ((sd0 - ps0) % 86400 + 86400) % 86400; if (sn0 >= Pn.c) C = { a: now - ((((sd0 - (+Pn.pat.off || 0)) % Pn.c) + Pn.c) % Pn.c) * 1000 }; else TR = 1; }   /* v2.116.0 옵셋 = 자정 기준 — 계획이 바뀐 직후 한 주기는 과도 구간이라 감춘다 */
+    var AA = A || C;
     L.forEach(function (r, i) { var nm = kscMvName(r);
       if (r[3] == null) { h += '<div class="sdl"><i></i><b>' + esc(nm) + '</b><span><em>' + esc((x.why || {})[String(r[8])] || '초를 계산하지 못한 이동류') + '</em></span></div>'; return; }
-      if (A) { var t = ((((now - A.a) / 1000 - r[6]) % Pn.c) + Pn.c) % Pn.c, st = t < r[3] ? ['g', r[3] - t] : t < r[3] + r[4] ? ['y', r[3] + r[4] - t] : ['r', Pn.c - t], nx = st[0] === 'g' ? '황색 ' + r[4] + '초 → 적색 ' + r[5] + '초' : st[0] === 'y' ? '적색 ' + r[5] + '초' : '녹색 ' + r[3] + '초';
+      if (AA) { var t = ((((now - AA.a) / 1000 - r[6]) % Pn.c) + Pn.c) % Pn.c, st = t < r[3] ? ['g', r[3] - t] : t < r[3] + r[4] ? ['y', r[3] + r[4] - t] : ['r', Pn.c - t], nx = st[0] === 'g' ? '황색 ' + r[4] + '초 → 적색 ' + r[5] + '초' : st[0] === 'y' ? '적색 ' + r[5] + '초' : '녹색 ' + r[3] + '초';
         h += '<div class="sdl ' + st[0] + '"><i></i><b>' + esc(nm) + '</b><span>' + CN[st[0]] + ' <strong>' + Math.ceil(st[1]) + '</strong>초 남음</span><small>다음 ' + nx + '</small></div>'; }
       else h += '<div class="sdl"><i></i><b>' + esc(nm) + '</b><span>녹색 ' + r[3] + '초 · 황색 ' + r[4] + '초 · 적색 ' + r[5] + '초</span></div>';
       if ((x.warn || {})[String(r[8])]) h += '<small class="lg-n" style="display:block;padding-left:22px">⚠ ' + esc(x.warn[String(r[8])]) + '</small>'; });
@@ -2780,9 +2787,10 @@
     if (A) { var am = Math.round((now - A.t0) / 60000), sg = function (v) { return (v >= 0 ? '+' : '') + v; };
       h += '<p class="sdnt">⏱ <b>' + hhmm(A.t0) + '</b>에 현장에서 맞춘 값으로 주기 ' + Pn.c + '초를 이어 센 <b>추정</b>(' + am + '분 전 · ' + esc(A.mv || '') + ' 기준) · 이 계획(' + Pn.from.slice(0, 2) + ':' + Pn.from.slice(2) + '부터 패턴 ' + Pn.pn + ')이 도는 동안·2시간 안에서만 · 감응·수동 운영 중에는 다르다' +
         (A.dA != null ? '<br>옵셋 가리기 — 자정 기준 가설과 ' + sg(A.dA) + '초 · 계획 시작 기준 가설과 ' + sg(A.dB) + '초 어긋남(±4초 안이면 맞는 쪽) <button data-kfit="' + x.no + '|copy" style="margin-left:4px">결과 복사</button>' : '') + '</p>'; }
-    else h += '<p class="sdnt"><b>지금 몇 초 남았는지는 띄우지 않는다</b> — 옵셋 기준이 확인되지 않은 계획값이다. ' + (HOUR != null ? '시각을 「지금」으로 두면 현장에서 맞출 수 있다.' : '위 「⏱ 지금 맞추기」를 현장에서 한 번 누르면 이 계획이 도는 동안 초가 흐른다(이 기기에만 저장).') + '</p>';
+    else if (C) h += '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + (+Pn.pat.off || 0) + '초 · 자정 기준)으로 센 <b>추정</b> — 자정 기준 규칙은 경찰청 계획이 있는 다른 22곳에서 25번 중 23번 +0~4초로 맞았다(' + esc((OFCK && OFCK.made) || '2026-10-10') + ' 대조). <b>이 교차로는 직접 검증 전</b>이다 · 실제와 어긋나면 위 「⏱ 지금 맞추기」를 누른다 · 감응·수동 운영·행사 때는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>';
+    else h += '<p class="sdnt"><b>지금 몇 초 남았는지는 띄우지 않는다</b> — ' + (HOUR != null ? '시각을 「지금」으로 두면 초가 흐른다.' : TR ? '계획이 막 바뀌었다(바뀐 뒤 한 주기는 신호가 새 계획에 맞춰지는 중이라 감춘다).' : '이 계획에는 옵셋 값이 없다 — 위 「⏱ 지금 맞추기」를 현장에서 누르면 흐른다.') + '</p>';
     nw.innerHTML = h;
-    var ph = A ? ((((now - A.a) / 1000) % Pn.c) + Pn.c) % Pn.c / Pn.c * 100 : -1; [].forEach.call(document.querySelectorAll('#m2dCard .sd.ksd .tl u'), function (u) { u.style.display = ph < 0 ? 'none' : 'block'; u.style.left = ph.toFixed(2) + '%'; }); }
+    var ph = AA ? ((((now - AA.a) / 1000) % Pn.c) + Pn.c) % Pn.c / Pn.c * 100 : -1; [].forEach.call(document.querySelectorAll('#m2dCard .sd.ksd .tl u'), function (u) { u.style.display = ph < 0 ? 'none' : 'block'; u.style.left = ph.toFixed(2) + '%'; }); }
   setInterval(kscNowPaint, 1000);
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-kdd]'); if (b) { var el = $('kscNow'); if (el) { KSEL[el.getAttribute('data-no')] = b.getAttribute('data-kdd'); kscNowPaint(); } return; }
     b = e.target.closest('[data-kfit]'); if (!b || !KSC) return; var a2 = b.getAttribute('data-kfit').split('|'), x = (KSC.items || []).filter(function (q) { return String(q.no) === a2[0]; })[0]; if (!x) return; var M0 = kscAnc(), Pn = kscPlan(x);
@@ -2826,6 +2834,26 @@
   function uticCard(r) { var old = uticOld(r);
     return '<h3>🚨 ' + esc(r[1] || '돌발') + (r[5] ? ' <small style="font-weight:400;color:var(--ink2)">' + esc(r[5]) + '</small>' : '') + '</h3>' + (old ? '<p class="lg-n" style="color:#b45309">끝 예정 시각이 지났다 — 이미 풀렸을 수 있다.</p>' : '') + '<p class="desc">' + esc(r[4] || '') + '</p>' + row('시작', esc(r[6] || '-')) + row('끝(예정)', esc(r[7] || '-')) + row('고친 때', esc(r[8] || '-')) + (r[9] ? row('주소', esc(r[9])) : '') +
       '<p class="lg-n"><b>실시간이 아니다</b> — ' + esc(UTIC.made || '') + ' 에 받아 둔 한 장이다(받는 PC 가 꺼져 있으면 낡는다).</p>' + src((UTIC.source && (typeof UTIC.source === 'string' ? UTIC.source : JSON.stringify(UTIC.source))) || '경찰청 도시교통정보센터(UTIC) 개방데이터 돌발정보'); }
+  // v2.116.0 🕒 시계로 세는 「지금 몇 현시」 — 경찰청 교차로계획(signal-tod · 주기·옵셋·현시값)에 「옵셋 = 자정 기준」을 적용: 주기 안 자리 = (하루 초 − 옵셋) mod 주기 · 1현시 시작 = 0
+  //   근거 data/sig-offset-check.json(다른 세션 tools/signal/offset-check.py — T-Data 닻과 견줘 25기록 중 23이 +0~4초) · T-Data 닻이 같은 교차로에 있으면 견줘 ±6초 넘게 어긋나면 감춘다 · 어느 현시가 어느 방향인지는 이 자료에 없다
+  var OFCK = null; fetch('data/sig-offset-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OFCK = j; }).catch(function () {});
+  function sodK(ms) { return ((((ms + 32400000) % 86400000) + 86400000) % 86400000) / 1000; }
+  function sigTickHtml(s) { return s && s.no != null ? '<div class="sdnow" id="sigTick" data-no="' + esc(String(s.no)) + '"></div>' : ''; }
+  function sigTickPaint() { var el = $('sigTick'); if (!el || !D.sig || !D.sig.spots) return; var no = el.getAttribute('data-no'), s = D.sig.spots.filter(function (q) { return String(q.no) === no; })[0]; if (!s) return;
+    if (HOUR != null) { el.innerHTML = '<p class="sdnt">시각을 「지금」으로 두면 지금 몇 현시인지 초가 흐른다.</p>'; return; }
+    var now = Date.now(), d = new Date(now), pn = s.dow && s.dow[String(d.getDay() + 1)], rows = pn && s.plans && s.plans[pn]; if (!rows || !rows.length) { el.innerHTML = ''; return; }
+    var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), cur = null; rows.forEach(function (r) { if (r[0] <= hm && r[1] > 0) cur = r; }); if (!cur) cur = rows[rows.length - 1];
+    var c = +cur[1], off = +cur[2] || 0, sod = sodK(now), ps = (+cur[0].slice(0, 2)) * 3600 + (+cur[0].slice(3, 5)) * 60, since = ((sod - ps) % 86400 + 86400) % 86400;
+    if (!(c > 0)) { el.innerHTML = ''; return; }
+    if (since < c) { el.innerHTML = '<p class="sdnt">계획이 막 바뀌었다(' + esc(cur[0]) + ') — 바뀐 뒤 한 주기는 신호가 새 계획에 맞춰지는 중이라 초를 감춘다.</p>'; return; }
+    var chk = '', lv = sdLive(no); if (lv.rec && lv.rec.a && Math.abs(lv.rec.ci - c) <= 1) { var dv = (((sodK(lv.rec.a * 1000) - off) % c) + c) % c; if (dv > c / 2) dv -= c; dv = Math.round(dv);
+      if (Math.abs(dv) > 6) { el.innerHTML = '<p class="sdnt">서울시 T-Data 로 받은 값(' + hhmm(lv.rec.a * 1000) + ')과 계획 계산이 ' + dv + '초 어긋나 <b>계획으로 센 초는 감춘다</b>(기준 현시가 다르거나 다른 계획·감응 운영일 수 있다) — 아래 방향별 신호를 본다.</p>'; return; }
+      chk = ' · ✔ T-Data 받은 값(' + hhmm(lv.rec.a * 1000) + ')과 ' + (dv >= 0 ? '+' : '') + dv + '초 차이로 맞음'; }
+    var ph = (((sod - off) % c) + c) % c, h = '<div class="sdls">', ring = function (nm, txt) { var A = String(txt || '').split(' ').map(Number).filter(function (v) { return v > 0; }), acc = 0, i = 0; if (!A.length) return ''; for (; i < A.length; i++) { if (ph < acc + A[i]) break; acc += A[i]; } if (i >= A.length) i = A.length - 1;
+        var left = Math.max(0, acc + A[i] - ph), nx = (i + 1) % A.length; return '<div class="sdl"><i style="background:#2563eb"></i><b>' + nm + ' ' + (i + 1) + '현시</b><span><strong>' + Math.ceil(left) + '</strong>초 남음</span><small>다음 ' + (nx + 1) + '현시 ' + A[nx] + '초 · 한 주기 = ' + A.map(function (v, k) { return (k === i ? '<b>' : '') + (k + 1) + '현시 ' + v + (k === i ? '</b>' : ''); }).join(' · ') + '초</small></div>'; };
+    h += ring(String(cur[3]) === String(cur[4]) ? '지금' : 'A링', cur[3]) + (String(cur[3]) !== String(cur[4]) ? ring('B링', cur[4]) : '') + '</div>';
+    el.innerHTML = h + '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + off + '초 · 자정 기준)으로 센 <b>추정</b> — 주기 ' + c + '초 · ' + esc(cur[0]) + ' 계획' + chk + ' · 자정 기준 규칙은 T-Data 와 견준 25기록 중 23번 +0~4초로 맞았다 · <b>어느 현시가 어느 방향인지는 이 자료에 없다</b> · 감응·수동 운영 중에는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>'; }
+  setInterval(sigTickPaint, 1000);
   function sigDir(no, planCyc) {
     var lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no); if (!o) return '';
     var G = sdGroups(o), cyc = o.cyc, num = '①②③④⑤⑥⑦⑧', dd = o.day ? o.day.slice(5).replace('-', '/') : '';

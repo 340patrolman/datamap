@@ -359,12 +359,34 @@ def reduce_phase(itst, J):
         x['o'] = int(round(statistics.median(offs))) % int(round(cyc)) if offs else None
     ncy = round((rs[-1] - rs[0]) / cyc) if len(rs) > 1 else 0
     cx = (rs[-1] - rs[0]) / ncy if ncy >= 2 else cyc
-    ci = int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1)
+    ci = plan_ci(cyc, int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1))
     for x in mv + pd:
         x.pop('gs', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
     return {'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows),
             'cyc': cyc, 'mv': mv, 'ped': [{'d': q['d'], 'seg': [], 'n': q['n']} for q in pd], 'pd': pd, 'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy, 'src': 'p'}
+
+
+def dir_bad(mvrows, cyc):
+    # 방위 표기 점검 — 네 방향 직진이 다 있을 때, 직각 방향 직진끼리 녹색이 겹치는 초가 마주 보는 방향끼리보다 많으면 True
+    # (2026-10-10 교대역 4045: 동·남이 함께, 북·서가 함께 녹색 — 실제로는 있을 수 없다 → 원자료 방위 이름이 틀림)
+    S = {m[0]: m for m in mvrows if m[1] == 'St' and m[2] is not None and m[5] is not None}
+    if not all(d in S for d in ('nt', 'et', 'st', 'wt')) or not cyc:
+        return False
+    c = int(round(cyc))
+    def ov(a, b):
+        return sum(1 for t in range(c) if ((t - a[5]) % c) < a[2] and ((t - b[5]) % c) < b[2])
+    opp = ov(S['nt'], S['st']) + ov(S['et'], S['wt'])
+    per = ov(S['nt'], S['et']) + ov(S['nt'], S['wt']) + ov(S['st'], S['et']) + ov(S['st'], S['wt'])
+    return per > opp
+
+
+def plan_ci(cyc, ci):
+    # 이어 세는 주기 — 계획 주기(녹+황+적 합의 중앙값)가 정수 초에 가깝고 다시 잰 값이 그 ±2.5초 안이면 계획 주기를 쓴다.
+    # 2026-10-10 교대역(4045): 계획 170초인데 녹색 시작 간격(주기 2~3개)으로 다시 잰 값이 172 → 주기마다 2초씩 밀려 2시간 뒤 100초 어긋났다(소유자 현장 확인).
+    if cyc and abs(cyc - round(cyc)) <= 0.25 and ci and abs(ci - round(cyc)) <= 2.5:
+        return int(round(cyc))
+    return ci
 
 
 def reduce_one(itst, J):
@@ -415,7 +437,7 @@ def reduce_one(itst, J):
         # 주기는 기준 녹색 시작들 사이를 주기 수로 나눠 다시 잰다(중앙값보다 정밀) — 정수 초에 가까우면 정수로
         ncy = round((rs[-1] - rs[0]) / cyc) if len(rs) > 1 else 0
         cx = (rs[-1] - rs[0]) / ncy if ncy >= 2 else cyc
-        ci = int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1)
+        ci = plan_ci(cyc, int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1))
         anchor = {'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy}
     for x in mv:
         x.pop('gs', None)
@@ -501,6 +523,11 @@ def build():
     its, nver, nbad, tod, pl = {}, 0, 0, {}, {}
     for k, v in out.items():
         v.sort(key=lambda r: (r['day'], r['to']))
+        for r in v:
+            if r.get('ci'):
+                r['ci'] = plan_ci(r['cyc'], r['ci'])
+                if abs(r['ci'] - r['cyc']) > 2.5:
+                    r['a'] = None   # 다시 잰 주기가 계획 주기와 2.5초 넘게 다르면(계획이 바뀌는 중 등) 이어 세지 않는다 — 길이만 보인다
         keep, plan = {}, {}
         for r in v:
             ci0 = r.get('ci') or int(round(r['cyc']))
@@ -521,6 +548,8 @@ def build():
             o = {'day': r['day'], 'dow': r['dow'], 'cl': cls_of(r['dow']), 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
                  'mv': [mvrow(x, r['cyc']) for x in r['mv']],
                  'ped': [[p['d'], p['seg'][:8]] for p in r['ped']]}
+            if dir_bad(o['mv'], r['cyc']):
+                o['dq'] = 'dir'   # 방위 이름이 실제와 다르다(직각 방향이 함께 녹색) — 지도는 경고를 붙인다
             if r.get('src') == 'p':
                 o['src'] = 'p'   # 신호 상태 API 로 읽은 기록(색이 추정이 아니라 상태 값 그대로)
             if r.get('pd'):
@@ -561,7 +590,7 @@ def build():
            'source': '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간',
            'how': '잔여시간이 새 값으로 뛰는 자리 사이를 한 구간으로 보고, 차량 신호는 3~6초 구간을 황색으로 보아 그 앞을 녹색·뒤를 적색으로 읽었다(추정). 받은 시간대의 실제 운영값이며 다른 시간대·요일은 다르다. 보행 신호는 색을 가릴 수 없어 구간 길이만 싣는다.',
            'mvcols': ['방위(nt 북 · et 동 · st 남 · wt 서 · ne·se·sw·nw)', '이동류(St 직진 · Lt 좌회전 · Ut 유턴 · Bs 버스 · Bc 자전거)', '녹색 초', '황색 초', '적색 초', '녹색 시작(주기 안 · 가장 긴 녹색 = 0)', '본 주기 수'],
-           'fields': 'pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]} · pl{교차로 번호: [[요일 갈래(0 월~목 · 1 금 · 2 토 · 3 일), 시, 주기, 자정 기준 옵셋(기준 이동류 녹색이 켜지는 하루 초 mod 주기), 받은 달-날]]}(시계로 이어 세는 표 — 기록의 cl·ci 가 같은 것이 그 계획의 방향별 초)',
+           'fields': 'pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API, dq dir = 원자료의 방위 이름이 실제와 다름(직각 방향 직진이 함께 녹색 — 초는 쓸 수 있어도 어느 쪽인지는 현장 확인)} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]} · pl{교차로 번호: [[요일 갈래(0 월~목 · 1 금 · 2 토 · 3 일), 시, 주기, 자정 기준 옵셋(기준 이동류 녹색이 켜지는 하루 초 mod 주기), 받은 달-날]]}(시계로 이어 세는 표 — 기록의 cl·ci 가 같은 것이 그 계획의 방향별 초)',
            'note': '받은 시간대에 실제로 돈 값이다(하루 계획표가 아니다) · 방위 = 그 신호를 받는 차가 들어오는 쪽 · 잔여시간 API 로 읽은 기록의 색은 황색 3~6초 앞뒤로 읽은 추정이고 src p 기록은 상태 값 그대로 · 이어 센 「지금 몇 초」는 a·ci 로 지도가 계산한 추정',
            'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its, 'tod': tod, 'pl': pl}
     p = os.path.join(ROOT, 'data', 'sigdir-seoul.json')

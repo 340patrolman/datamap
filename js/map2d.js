@@ -3558,6 +3558,16 @@
   var PTX, PTXP = null;
   function ptGet() { if (PTXP) return PTXP; PTXP = fetch('data/ptax-dong.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { PTX = j; }).catch(function () { PTX = null; }); return PTXP; }
   function ptWon(v) { return v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1) + '억' : Math.round(v).toLocaleString() + '만'; }
+  // v2.111.0 🏛 우리 구가 실제로 걷은 재산세 — data/gu-proptax.json(다른 세션 · tools/region/lofin-bake.py · 행정안전부 지방세통계 「기초자치단체별 부과징수 현황」 · 백만 원) — 추정(위 칸)과 달리 실제 부과·징수 총액 · 주택·토지·건축물 합
+  var GUPT, GUPTP = null;
+  function guptGet() { if (GUPTP) return GUPTP; GUPTP = fetch('data/gu-proptax.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { GUPT = j; }).catch(function () { GUPT = null; }); return GUPTP; }
+  function guptRows(gu) { if (GUPT === undefined) { guptGet().then(function () { var c = $('m2dCard'); if (sel && sel.it && sel.it.kind === 'dong' && c && c.classList.contains('on')) show(sel.it); }); return ''; }
+    var g = GUPT && GUPT.gu && GUPT.gu[gu]; if (!g || !g.y || !g.y.length) return ''; var Y = g.y, L = Y[Y.length - 1], eok = function (v) { var e = v / 100; return e >= 10000 ? (e / 10000).toFixed(2) + '조' : Math.round(e).toLocaleString() + '억'; }, nm = g.city || guName(gu);
+    var h = '<div class="dh">🏛 ' + esc(nm) + '가 실제로 걷은 재산세 <small style="font-weight:600;color:var(--ink2)">(' + L[0] + '년 · 주택·토지·건축물 합 · 부과·징수 총액)</small></div>';
+    h += '<div class="tkpi"><span><em>🧾</em><small>부과액</small><b>' + eok(L[1]) + '</b></span><span><em>✅</em><small>징수액</small><b>' + eok(L[2]) + '</b>' + (L[1] ? '<u>징수율 ' + (L[2] / L[1] * 100).toFixed(1) + '%</u>' : '') + '</span>' + (g.pc ? '<span><em>👤</em><small>주민 1명당 부과</small><b>' + g.pc + '만</b>' + (g.r ? '<u>같은 시·도 ' + g.r[1] + '곳 중 ' + g.r[0] + '위</u>' : '') + '</span>' : '') + '</div>';
+    h += '<div class="cap">해마다 재산세 부과액(억 원)</div>' + bar(Y.map(function (q) { return Math.round(q[1] / 100); }), '#0f766e', Y.map(function (q) { return String(q[0]).slice(2); }));
+    if (g.by) h += row('세목 갈래(' + L[0] + ')', Object.keys(g.by).filter(function (k) { return g.by[k]; }).map(function (k) { return esc(k) + ' ' + eok(g.by[k]); }).join(' · '));
+    return h + '<p class="lg-n">' + (g.city ? '<b>' + esc(g.city) + ' 전체 값</b>이다(구가 있는 시는 시 단위로만 나온다). ' : '') + esc((GUPT.note || [])[0] || '') + '</p><p class="src">' + esc(typeof GUPT.source === 'string' ? GUPT.source : '행정안전부 지방세통계(KOSIS) 기초자치단체별 부과징수 현황') + '</p>'; }
   function ptRows(d) { var gu = d && (d.gcd || (d.k && d.k.slice(0, 5))); if (!gu || !d.k) return ''; if (PTX === undefined) { ptGet().then(function () { if (sel && sel.it && sel.it.d === d) show(sel.it); }); return ''; }
     if (!PTX) return ''; var V = PTX.hjd[d.k], lvl = '행정동', G5 = PTX.gu[gu]; if (!V && G5) { V = G5; lvl = '구'; } if (!V) return '';
     var mx = Math.max(V[1][2], V[2][2], 1) * 1.08, eup = /[읍면]$/.test(d.name || d.n || ''), rng = function (nm, a, col) { var l = a[0] / mx * 100, w = Math.max(1.5, (a[2] - a[0]) / mx * 100), m = a[1] / mx * 100;
@@ -3578,7 +3588,7 @@
       h += vzH(top.map(function (b) { return [(B.indexOf(b) + 1) + '. ' + b[0] + (mine(b) ? ' ◀' : ''), b[4][1], mine(b) ? '#dc2626' : '#cbd5e1']; }), { title: esc(guName(gu)) + ' 법정동 ' + B.length + '곳 — 1세대 1주택 보유세 가운데(만 원/년 · 30호 이상 · 빨강 = 이 동에 걸친 법정동' + (B.length > top.length ? ' · 위 12곳과 이 동만' : '') + ')', unit: '만' }); }
     h += '</div><p class="lg-n"><b>낸 세금이 아니다</b> — 공시가격에 지금 규칙을 적용한 추정이고, 공동주택(아파트·연립·다세대)만 셌다. 과세표준상한·세부담상한·감면은 넣지 않아 고지서와 다를 수 있다.</p>';
     h += '<details class="ptn"><summary>읽는 법·한계 ' + (PTX.note || []).length + '가지 · 근거 조문</summary><ul>' + (PTX.note || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul><p>' + ['fmv', 'house', 'houseOne', 'urban', 'eduTax', 'jbs'].map(function (k) { return PTX.rules && PTX.rules[k] ? esc(PTX.rules[k]) : ''; }).filter(Boolean).join(' · ') + (PTX.rules && PTX.rules.checked ? ' — 조문 확인 ' + esc(PTX.rules.checked) : '') + '</p></details>';
-    return h + fiBox(['ptax-own', 'ptax-single', 'jbs', 'localtax', 'law'], '실제로 낸 세금 · 단독주택 · 종부세 · 우리 구 세수는 어디서 보나') + '<p class="src">' + esc(PTX.source) + '</p>'; }
+    return h + guptRows(gu) + fiBox(['ptax-own', 'ptax-single', 'jbs', 'localtax', 'law'], '실제로 낸 세금 · 단독주택 · 종부세 · 우리 구 세수는 어디서 보나') + '<p class="src">' + esc(PTX.source) + '</p>'; }
   // v2.107.0 🔎 직접 찾는 법 — 소유자 「없는 데이터는 직접 찾는 방법도 알려주자」 · data/find-it.json(tg-findit/1 ← tools/region/findit-bake.py · 항목 18 · 창구 24)
   //   접이(details.fi)를 펼칠 때 목록을 읽어 채운다 · 바깥 사이트는 사용자가 누를 때만 새 창(rel=noopener) — 지도는 그 사이트와 통신하지 않는다
   var FIND = null, FINDP = null;

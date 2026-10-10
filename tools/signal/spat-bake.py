@@ -87,6 +87,43 @@ def auto(lat=37.4917, lon=127.0077):
         fetch(todo[n:n + 6]); build(); time.sleep(GAP)
 
 
+VGAP = 40 * 60      # 검증 = 40분 넘게 띄운 두 번의 닻이 같은 주기로 맞물리는가
+FRESH = 75 * 60     # 닻이 이보다 낡으면 다시 받는다
+_AC = {}
+
+
+def anchors():
+    """교차로마다 닻을 받은 시각들(epoch) — red 파일을 한 번만 읽어 둔다."""
+    out = {}
+    for f in glob.glob(os.path.join(RAW, 'red', '*.json')):
+        if f not in _AC:
+            try:
+                r = json.load(open(f, encoding='utf-8')); _AC[f] = (r['id'], r.get('a'))
+            except Exception:
+                _AC[f] = (None, None)
+        i, a = _AC[f]
+        if i and a:
+            out.setdefault(i, []).append(a)
+    return out
+
+
+def publish():
+    """data/sigdir-seoul.json 만 올린다(다른 파일은 건드리지 않는다) — 열쇠 검사에 걸리면 올리지 않는다."""
+    import subprocess
+    run = lambda *a: subprocess.run(a, cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='ignore')
+    try:
+        if not run('git', 'status', '--porcelain', '--', 'data/sigdir-seoul.json').stdout.strip():
+            return
+        if run(sys.executable, '-X', 'utf8', os.path.join('tools', 'keycheck.py')).returncode != 0:
+            print('열쇠 검사에 걸려 올리지 않았다', flush=True); return
+        run('git', 'pull', '-q', '--ff-only', 'origin', 'main')
+        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json')
+        p2 = run('git', 'push', '-q', 'origin', 'main')
+        print(datetime.datetime.now().strftime('%H:%M:%S'), '올림' if c.returncode == 0 and p2.returncode == 0 else '올리기 실패 ' + (c.stderr or p2.stderr)[:120], flush=True)
+    except Exception as e:
+        print('올리기 실패', str(e)[:120], flush=True)
+
+
 def sweep(prefer=None):
     """쪽(page)으로 훑기 — 거르지 않고 3만 줄을 받으면 서버 순서로 이어진 교차로 수십 곳의 그 시각 0분부터의 줄이 한 번에 온다.
     (itstId 로 거르면 뒤쪽 교차로는 HTTP 500 이 난다 · 2026-10-10 4031·4034) 서버 순서는 정각 목록(ids_*.json)의 차례이고,
@@ -97,13 +134,17 @@ def sweep(prefer=None):
     pref = [x for x in (prefer or []) if x in pos]
     tried_f = os.path.join(RAW, 'tried.json')
     tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
-    dens, miss, last, stuck = DENS0, 0, None, {}
+    dens, miss, last, stuck, ncall = DENS0, 0, None, {}, 0
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
     while True:
-        done = set(os.path.basename(x).split('_')[0] for x in glob.glob(os.path.join(RAW, 'red', '*.json'))) | tried
-        todo = [i for i in pref if i not in done] or [i for i in order if i not in done]
+        A = anchors()
+        nowt = time.time()
+        need1 = lambda i: i not in tried and not A.get(i)                                   # 닻이 아직 없는 곳
+        need2 = lambda i: i not in tried and A.get(i) and nowt - max(A[i]) >= VGAP and max(A[i]) - min(A[i]) < VGAP   # 닻은 있는데 40분 넘게 띄운 두 번째가 없는 곳(검증)
+        need3 = lambda i: i not in tried and A.get(i) and nowt - max(A[i]) >= FRESH        # 닻이 낡은 곳(다시 받아 새로)
+        todo = [i for i in pref if need1(i)] or [i for i in pref if need2(i)] or [i for i in pref if need3(i)] or [i for i in order if need1(i)]
         if not todo:
-            print('다 받았다', flush=True); break
+            print(datetime.datetime.now().strftime('%H:%M:%S'), '지금 받을 곳이 없다 — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
         now = datetime.datetime.now()
         if now.minute < 11:
             time.sleep((11 - now.minute) * 60 - now.second + 1); continue
@@ -154,15 +195,19 @@ def sweep(prefer=None):
         json.dump(sorted(tried), open(tried_f, 'w'))
         last = {'t': t, 'a': a, 'b': b, 'base': (page - 1) * 30000, 'rows': [(pos[i], len(by[i])) for i in seq if i in pos]}
         hit = a <= K <= b
-        if hit and not glob.glob(os.path.join(RAW, 'red', order[K] + '_*.json')) and order[K] not in tried:
+        A2 = anchors()
+        if hit and order[K] not in tried and not (A2.get(order[K]) and len(A2[order[K]]) > len(A.get(order[K], []))):
             stuck[K] = stuck.get(K, 0) + 1
             if stuck[K] >= 2:
                 tried.add(order[K]); json.dump(sorted(tried), open(tried_f, 'w'))   # 두 번 받고도 주기를 못 읽은 곳은 건너뛴다
         miss = 0 if hit else miss + 1
-        print(stamp, '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '남은 우선', len([i for i in pref if i not in done]) , flush=True)
+        print(stamp, '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '우선 목록 — 닻 없음', len([i for i in pref if need1(i)]), '· 검증 남음', len([i for i in pref if need2(i)]), flush=True)
         if miss >= 4:
             tried.add(order[K]); miss = 0   # 네 번 빗나가면 그 교차로는 건너뛴다
         build()
+        ncall += 1
+        if ncall % 3 == 0:
+            publish()
         time.sleep(GAP)
 
 
@@ -234,9 +279,15 @@ def reduce_one(itst, J):
                 if prev and s0 - prev[-1] < cyc + 2:
                     offs.append(max(0, s0 - prev[-1]))
             x['o'] = int(round(statistics.median(offs))) % int(round(cyc)) if offs else None
+    anchor = None
+    if ok and cyc:
+        # 닻 = 기준 이동류(녹색이 가장 긴 것)의 마지막 녹색이 켜진 실제 시각(epoch 초) — 지도가 이 시각에서 주기로 이어 센다
+        anchor = {'a': round(rs[-1], 1), 'ci': int(round(cyc)), 'end': round(t1, 1)}
     for x in mv:
         x.pop('gs', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
+    if anchor:
+        return dict({'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows), 'cyc': cyc, 'mv': mv, 'ped': ped}, **anchor)
     return {'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows), 'cyc': cyc, 'mv': mv, 'ped': ped}
 
 
@@ -286,11 +337,39 @@ def build():
         if not r.get('cyc'):
             continue
         out.setdefault(r['id'], []).append(r)
-    its = {}
+    its, nver, nbad, tod = {}, 0, 0, {}
     for k, v in out.items():
-        its[k] = [{'day': r['day'], 'dow': r['dow'], 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
-                   'mv': [mvrow(x, r['cyc']) for x in r['mv']],
-                   'ped': [[p['d'], p['seg'][:8]] for p in r['ped']]} for r in v]
+        v.sort(key=lambda r: (r['day'], r['to']))
+        keep = {}
+        for r in v:
+            keep[(r['dow'] in (0, 6), r['from'][:2])] = r          # 같은 요일 갈래·같은 시의 것은 나중 것으로
+        vv = sorted(keep.values(), key=lambda r: (r['day'], r['to']))[-6:]
+        L = []
+        for r in vv:
+            o = {'day': r['day'], 'dow': r['dow'], 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
+                 'mv': [mvrow(x, r['cyc']) for x in r['mv']],
+                 'ped': [[p['d'], p['seg'][:8]] for p in r['ped']]}
+            if r.get('a'):
+                o['a'] = int(round(r['a'])); o['ci'] = r['ci']
+                # 검증 — 같은 주기로 받은 다른 닻(40분 넘게 떨어진 것)과 주기의 정수배로 맞물리는가(±3초)
+                best, bad = None, None
+                for q in v:
+                    if not q.get('a') or q.get('ci') != r['ci'] or abs(q['a'] - r['a']) < VGAP:
+                        continue
+                    gap = abs(q['a'] - r['a']); res = gap % r['ci']; res = min(res, r['ci'] - res)
+                    if res <= 3:
+                        if not best or gap > best[0]: best = (gap, res)
+                    elif not bad or gap < bad[0]: bad = (gap, res)
+                if best: o['v'] = [int(best[0] // 60), round(best[1], 1)]
+                if bad: o['x'] = [int(bad[0] // 60), round(bad[1], 1)]
+            L.append(o)
+        its[k] = L
+        td = {}
+        for r in v:   # 시간대별 주기(받은 것만) — [요일 갈래(0 평일 · 1 토 · 2 일), 시, 주기 초]
+            td[(1 if r['dow'] == 6 else 2 if r['dow'] == 0 else 0, int(r['from'][:2]))] = int(round(r['cyc']))
+        tod[k] = [[a, b, c] for (a, b), c in sorted(td.items())]
+        if L and L[-1].get('v'): nver += 1
+        if L and L[-1].get('x') and not L[-1].get('v'): nbad += 1
     # 교차로 자리 — 서울 C-ITS 교차로 지도정보(받아 둔 xmap_*.json 이 있으면 그것, 없으면 지도 저장소의 서초 둘레 목록)
     pts = {}
     for k, v in cits().items():
@@ -306,10 +385,10 @@ def build():
            'source': '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간',
            'how': '잔여시간이 새 값으로 뛰는 자리 사이를 한 구간으로 보고, 차량 신호는 3~6초 구간을 황색으로 보아 그 앞을 녹색·뒤를 적색으로 읽었다(추정). 받은 시간대의 실제 운영값이며 다른 시간대·요일은 다르다. 보행 신호는 색을 가릴 수 없어 구간 길이만 싣는다.',
            'mvcols': ['방위(nt 북 · et 동 · st 남 · wt 서 · ne·se·sw·nw)', '이동류(St 직진 · Lt 좌회전 · Ut 유턴 · Bs 버스 · Bc 자전거)', '녹색 초', '황색 초', '적색 초', '녹색 시작(주기 안 · 가장 긴 녹색 = 0)', '본 주기 수'],
-           'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its}
+           'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its, 'tod': tod}
     p = os.path.join(ROOT, 'data', 'sigdir-seoul.json')
     json.dump(doc, open(p, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
-    print('교차로', len(its), '->', p, os.path.getsize(p), 'B')
+    print('교차로', len(its), '· 닻', sum(1 for L in its.values() if L[-1].get('a')), '· 검증됨', nver, '· 안 맞음', nbad, '->', p, os.path.getsize(p), 'B')
 
 
 if __name__ == '__main__':

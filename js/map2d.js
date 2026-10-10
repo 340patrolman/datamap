@@ -257,7 +257,7 @@
     if (t[7]) h += row('이름 출처', esc(t[7] === 'ITS' ? 'ITS 표준노드링크' : t[7]) + (t[6] && t[6] !== t[0] ? ' <em>(ITS 이름 「' + esc(t[6]) + '」' + (String(t[7]).indexOf('현장 확인') === 0 ? ' 대신 현장에서 확인한 이름을 쓴다)' : ' 은 가까운 건물·가게 이름이라 바꿨다)') + '</em>' : ''));
     if (t[8]) h += row('신호 교차로 이름', esc(t[8]) + ' <em>(경찰 T-GIS · 경찰청 교차로계획 · 서울 C-ITS — 같은 자리 40m 안)</em>');
     var on2 = osmNear(P(t[1], t[2]), t[0]).filter(function (x) { return x !== t[6] && (t[8] || '').split(' · ').indexOf(x) < 0; }); if (on2.length) h += row('다른 이름', esc(on2.join(' · ')) + ' <em>(바탕 지도 OSM — 같은 자리를 다르게 부른다 · 현장 이름을 알면 알려 주세요)</em>');
-    h += sigDir(sdAt(P(t[1], t[2])));
+    h = sdTop(h, sigDir(sdAt(P(t[1], t[2]))));
     h += '<div class="lg-btns"><button data-radhere="' + t[1].toFixed(5) + ',' + t[2].toFixed(5) + '">📐 여기서 반경 분석</button></div>';
     return h + '<p class="desc">' + esc(JCN.note || '교차로 이름은 표준노드링크를 만드는 기관이 붙인 이름이다 — 이름난 교차로가 아니면 가까운 건물·학교 이름이 붙어 있다.') + '</p>' + src(JCN.src || '국가교통정보센터(ITS) 전국 표준노드링크'); }
   function rdCard(it) { var t = it.t;
@@ -1075,6 +1075,9 @@
     hit.forEach(function (h) { var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < bd) { bd = d; best = h; } });
     if (!best && on.rnet) { var rl = rnAt(x, y); if (rl) best = { x: x, y: y, r: 6, it: { kind: 'rnl', l: rl } }; }
     if (on.land && (!best || /^(g250|l250|f250|a10|rtg|hmg|jgg|jgc)$/.test(best.it.kind))) best = { x: x, y: y, r: 6, it: { kind: 'land', m: M(x, y) } };   // 필지를 켜면 칸(면) 자료보다 필지가 먼저 · 점은 그대로
+    if (!best && view.s >= 0.12) { var mq = M(x, y), rq = Math.max(45, Math.min(90, 28 / view.s)), kq = sdAt(mq, rq);   /* v2.105.0 소유자 「교차로 부근을 찍으면 그곳 신호값이 즉시」 — 화면 28px(45~90m) 안 */
+      if (kq) { var qq = D.sigd.pts[kq], sq = S(P(qq[1], qq[0])); best = { x: sq[0], y: sq[1], r: 8, it: { kind: 'sgd', no: kq, q: qq } }; }
+      else if (D.sig && D.sig.spots) { var bs2 = null, bd2 = rq; D.sig.spots.forEach(function (s9) { var d9 = dTrue(P(s9.lon, s9.lat), mq); if (d9 < bd2) { bd2 = d9; bs2 = s9; } }); if (bs2) { var s8 = S(P(bs2.lon, bs2.lat)); best = { x: s8[0], y: s8[1], r: 8, it: { kind: 'sig', s: bs2 } }; } } }
     if (!best && (UNIT ? UNIT !== 'dong' : (on.upb || on.jurk || on.usgg))) { var mu = M(x, y), uu = unitAt(mu); if (uu) { var su = S(mu); best = { x: su[0], y: su[1], r: 6, it: { kind: 'unit', u: uu } }; } }
     if (!best && on.juris && JRS) { var mj = M(x, y); if (jrsAt('edu', mj) != null || jrsAt('court', mj) != null) best = { x: x, y: y, r: 6, it: { kind: 'jrs', m: mj } }; }
     if (!best && on.ri) { var r0 = riAtM(M(x, y)); if (r0) { var sr = S(r0.p); best = { x: sr[0], y: sr[1], r: 6, it: { kind: 'ri', r: r0 } }; } }
@@ -1171,7 +1174,7 @@
         h += src('TAAS 도로교통공단 · 반경 약 585m 안 사고를 가장 가까운 교차로에 배정(근사)'); }
       var sp = D.sig && D.sig.spots ? D.sig.spots.filter(function (s) { return Math.hypot(P(s.lon, s.lat)[0] - n.p[0], P(s.lon, s.lat)[1] - n.p[1]) < 120; })[0] : null;
       if (sp) h += row('신호 지금', sigNow(sp));
-      h += sigDir((n.sig && n.sig.no) || (sp && sp.no) || sdAt(n.p), sp ? sigPlanCyc(sp) : 0);
+      h = sdTop(h, sigDir((n.sig && n.sig.no) || (sp && sp.no) || sdAt(n.p), sp ? sigPlanCyc(sp) : 0));
       var v = D.vol && D.vol.spots ? D.vol.spots.filter(function (x) { return x.node && x.node[0] === n.i && x.node[1] === n.j; })[0] : null;
       if (v) h += volRows(v);
       h += src((n.measured ? '교차점: OSM 두 도로의 모든 선분이 만나는 자리(2026-09-28 실측) · 이름: OSM 신호·교차로 이름' : '교차점: OSM 도로 중심선이 만나는 자리') + ' · 행정동: 반경 50m 안 걸친 동 모두');
@@ -1189,7 +1192,7 @@
       var cm = it.c; h = '<h3>📷 무인 단속 카메라</h3>' + row('자리', esc(cm.at)) + row('도로', esc(cm.road)) + row('제한속도', cm.lim ? cm.lim + 'km/h' : '-') + row('설치', esc(cm.yr || '-')) + row('단속구분 코드', esc(cm.se) + ' <em>(코드 뜻은 대조 전)</em>');
       h += camEff(cm) + ledgLine('R4') + src('경찰청 전국무인교통단속카메라표준데이터(기준일 2026-04-06) · 설치 전후 사고 = TAAS 사고 10년(100m 칸)');
     } else if (it.kind === 'sgd') {
-      h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + '</h3>' + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>') + sigDir(it.no);
+      h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.no) + '</small></h3>' + sigDir(it.no) + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>');
     } else if (it.kind === 'sig') {
       var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + row('교차로 번호', esc(s.no)) + row('지금', sigNow(s)) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다') + sigDir(s.no, sigPlanCyc(s));
     } else if (it.kind === 'sub') {
@@ -2694,16 +2697,42 @@
       if (has[d] === 1) s2 += '<line x1="' + (75 + c * 46).toFixed(1) + '" y1="' + (75 + n * 46).toFixed(1) + '" x2="' + (75 + c * 20).toFixed(1) + '" y2="' + (75 + n * 20).toFixed(1) + '" stroke="#16a34a" stroke-width="3" marker-end="url(#sdAr)"/>';
       s2 += '<text x="' + tx.toFixed(1) + '" y="' + (ty + (sec[d] != null ? -1 : 4)).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">' + SDN[d] + '</text>' + (sec[d] != null ? '<text x="' + tx.toFixed(1) + '" y="' + (ty + 11).toFixed(1) + '" text-anchor="middle" font-size="10" fill="#15803d">' + Math.round(sec[d]) + '초</text>' : ''); });
     return s2 + '<defs><marker id="sdAr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="#16a34a"/></marker></defs></svg>'; }
+  // v2.105.0 「지금 몇 초」 — 소유자 「방향을 설정하면 몇 초 남았다 · 그 방향 신호가 실시간으로 어떻게 된다」
+  //   T-Data 는 키마다 5분에 한 번이라 누를 때마다 새로 받지 못한다 → 수집 때 녹색이 켜진 실제 시각(닻 a · epoch 초)에서 주기(ci)로 이어 센다
+  //   띄우는 조건(sdLive): 닻을 받은 지 20분 안 · 또는 40분 넘게 띄워 두 번 받은 닻이 ±3초로 맞물렸고(v) 2시간 안 — 그 밖에는 길이만 보이고 잔여초는 안 띄운다(틀린 초를 내지 않는다)
+  var SDSEL = {}, SDORD = ['nt', 'et', 'st', 'wt', 'ne', 'se', 'sw', 'nw'], SDAT = Date.now();
+  function sdTop(h, sd) { return sd ? h.replace('</h3>', '</h3>' + sd) : h; }
+  function sdLive(no) { var L = D.sigd && D.sigd.its && no != null ? D.sigd.its[String(no)] : null, r = null; if (L) L.forEach(function (o) { if (o.a && (!r || o.a > r.a)) r = o; }); if (!r) return { why: 'none' };
+    var age = Date.now() / 1000 - r.a; if (r.x && !r.v) return { rec: r, age: age, why: 'bad' };
+    return age >= 0 && (age <= 20 * 60 || (r.v && age <= 120 * 60)) ? { rec: r, age: age, ok: 1 } : { rec: r, age: age, why: 'old' }; }
+  function sdState(m, rec, now) { var ci = rec.ci, t = (((now - rec.a - (m[5] || 0)) % ci) + ci) % ci, g = m[2], y = m[3] || 0; return t < g ? ['g', g - t] : t < g + y ? ['y', g + y - t] : ['r', ci - t]; }
+  function sdNowPaint() { var el = $('sdNow'); if (!el) return; var no = el.getAttribute('data-no'), lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no), ch = $('sdCh'), nw = $('sdNw'); if (!o || !ch || !nw) return;
+    if (Date.now() - SDAT > 5 * 60000 && !document.hidden) { SDAT = Date.now(); fetch(FILES.sigd).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.its) D.sigd = j; }).catch(function () {}); }
+    var dirs = SDORD.filter(function (d) { return o.mv.some(function (m) { return m[0] === d && m[2] != null; }); }); if (!dirs.length) { ch.innerHTML = ''; nw.innerHTML = ''; return; }
+    var d = SDSEL[no] && dirs.indexOf(SDSEL[no]) >= 0 ? SDSEL[no] : dirs[0], now = Date.now() / 1000, CN = { g: '녹색', y: '황색', r: '적색' }, ck = no + '|' + d + '|' + dirs.join();
+    if (ch.getAttribute('data-k') !== ck) { ch.setAttribute('data-k', ck); ch.innerHTML = '<div class="sdch"><span>어느 쪽에서 오는 차?</span>' + dirs.map(function (q) { return '<button data-sdd="' + q + '"' + (q === d ? ' class="on"' : '') + '>' + SDN[q] + '쪽에서</button>'; }).join('') + '</div>'; }
+    var h = '<div class="sdls">';
+    o.mv.filter(function (m) { return m[0] === d && m[2] != null; }).forEach(function (m) { var nm = (SDM[m[1]] || m[1]) + (m[1] === 'Lt' ? ' →' + SDN[SDL[d]] : m[1] === 'St' ? ' →' + SDN[SDO[d]] : ''), ci = lv.ok ? o.ci : Math.round(o.cyc), red = Math.max(0, ci - m[2] - (m[3] || 0));
+      if (lv.ok) { var st = sdState(m, o, now), nx = st[0] === 'g' ? '황색 ' + Math.round(m[3] || 0) + '초 → 적색 ' + Math.round(red) + '초' : st[0] === 'y' ? '적색 ' + Math.round(red) + '초' : '녹색 ' + Math.round(m[2]) + '초';
+        h += '<div class="sdl ' + st[0] + '"><i></i><b>' + esc(nm) + '</b><span>' + CN[st[0]] + ' <strong>' + Math.ceil(st[1]) + '</strong>초 남음</span><small>다음 ' + nx + '</small></div>'; }
+      else h += '<div class="sdl"><i></i><b>' + esc(nm) + '</b><span>녹색 ' + Math.round(m[2]) + '초 · 황색 ' + Math.round(m[3] || 0) + '초 · 적색 ' + Math.round(red) + '초</span></div>'; });
+    var am = lv.rec ? Math.max(0, Math.round(lv.age / 60)) : 0;
+    h += '</div><p class="sdnt">' + (lv.ok ? '⏱ <b>' + hhmm(o.a * 1000) + '</b>에 받은 값에서 주기 ' + o.ci + '초로 <b>이어 센 추정</b>(' + am + '분 전 수집 · ±몇 초)' + (o.v ? ' · 검증: ' + o.v[0] + '분 띄워 두 번 받은 값이 ' + o.v[1] + '초 안에서 맞음' : ' · 받은 지 20분 안이라 띄움(두 번 대조 전)') + ' · 주기가 바뀌는 시간대 · 감응·수동 운영 중에는 어긋난다'
+      : '<b>지금 몇 초 남았는지는 띄우지 않는다</b> — ' + (lv.why === 'none' ? '이 교차로는 녹색이 켜진 실제 시각을 아직 못 받았다(수집 중)' : lv.why === 'bad' ? '두 번 받은 값이 서로 안 맞아(' + lv.rec.x[0] + '분 사이 ' + lv.rec.x[1] + '초 어긋남) 이어 세면 틀린다' : '받은 지 ' + (am >= 60 ? Math.floor(am / 60) + '시간 ' + (am % 60) + '분' : am + '분') + ' 지나 이어 세면 틀릴 수 있다(다시 받는 중)') + ' · 위는 한 주기 안의 길이') + '</p>';
+    nw.innerHTML = h;
+    var ph = lv.ok ? ((((now - o.a) % o.ci) + o.ci) % o.ci) / o.ci * 100 : -1; [].forEach.call(document.querySelectorAll('#m2dCard .sd .tl u'), function (u) { u.style.display = ph < 0 ? 'none' : 'block'; u.style.left = ph.toFixed(2) + '%'; }); }
+  setInterval(sdNowPaint, 1000);
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-sdd]'); if (!b) return; var el = $('sdNow'); if (!el) return; SDSEL[el.getAttribute('data-no')] = b.getAttribute('data-sdd'); sdNowPaint(); });
   function sigDir(no, planCyc) {
-    var o = sdObs(no); if (!o) return '';
+    var lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no); if (!o) return '';
     var G = sdGroups(o), cyc = o.cyc, num = '①②③④⑤⑥⑦⑧', dd = o.day ? o.day.slice(5).replace('-', '/') : '';
     if (!G.length) return '';
-    var h = '<div class="cap">🚦 방향별 신호 — ' + esc(dd) + '(' + SDW[o.dow] + ') ' + esc(o.from) + '~' + esc(o.to) + ' 실제로 돈 값 · 주기 ' + Math.round(cyc) + '초 · 가로 = 한 주기(초록 = 녹색 · 노랑 = 황색 · 붉은 바탕 = 적색)</div><div class="sd">';
+    var h = '<div class="sdnow" id="sdNow" data-no="' + esc(String(no)) + '"><div id="sdCh"></div><div id="sdNw"></div></div><div class="cap">🚦 방향별 신호 — ' + esc(dd) + '(' + SDW[o.dow] + ') ' + esc(o.from) + '~' + esc(o.to) + ' 실제로 돈 값 · 주기 ' + Math.round(cyc) + '초 · 가로 = 한 주기(초록 = 녹색 · 노랑 = 황색 · 붉은 바탕 = 적색 · 검은 줄 = 지금)</div><div class="sd">';
     h += sdRose(o, G) + '<div class="sdb">';
     G.forEach(function (x, i) { var a = x.o / cyc * 100, w = x.g / cyc * 100, yw = (x.y || 0) / cyc * 100, seg = '';
       var put = function (l, wd, c) { l = ((l % 100) + 100) % 100; if (l + wd > 100) { seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + (100 - l).toFixed(2) + '%"></i><i class="' + c + '" style="left:0;width:' + (l + wd - 100).toFixed(2) + '%"></i>'; } else seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + wd.toFixed(2) + '%"></i>'; };
       put(a, w, 'g'); if (yw) put(a + w, yw, 'y');
-      h += '<div class="rw"><b>' + num.charAt(i) + ' ' + esc(sdName(x)) + '</b><div class="ln"><span class="tl">' + seg + '</span><em>녹색 ' + Math.round(x.g) + '초</em></div></div>'; });
+      h += '<div class="rw"><b>' + num.charAt(i) + ' ' + esc(sdName(x)) + '</b><div class="ln"><span class="tl">' + seg + '<u></u></span><em>녹색 ' + Math.round(x.g) + '초</em></div></div>'; });
     h += '<div class="ax"><span>0</span><span>' + Math.round(cyc / 2) + '</span><span>' + Math.round(cyc) + '초</span></div></div></div>';
     h += row('켜지는 차례', G.map(function (x, i) { return num.charAt(i) + ' ' + esc(sdName(x)) + ' <b>' + Math.round(x.g) + '초</b>'; }).join(' → '));
     var un = o.mv.filter(function (m) { return m[2] == null; }), pd = (o.ped || []).map(function (q) { return SDN[q[0]]; });
@@ -2711,6 +2740,10 @@
     var tw = un.filter(function (m) { return m[7] === 2; }); un = un.filter(function (m) { return m[7] !== 2; });
     if (tw.length) h += row('한 주기에 두 번', esc(tw.map(function (m) { return SDN[m[0]] + ' ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' <em>(한 주기 안에 녹색이 두 번 켜져 위 막대에 넣지 않았다)</em>');
     if (un.length) h += row('색 못 가린 신호', esc(un.map(function (m) { return SDN[m[0]] + ' ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' <em>(받은 동안 황색이 안 보였다 — 점멸 운영이거나 값이 멈춤)</em>');
+    var td = D.sigd.tod && D.sigd.tod[String(no)]; if (td && td.length) { var tg = {}; td.forEach(function (x) { (tg[x[0]] = tg[x[0]] || []).push(x[1] + '시 <b>' + x[2] + '초</b>'); }); h += row('시간대별 주기', [0, 1, 2].filter(function (q) { return tg[q]; }).map(function (q) { return ['평일', '토', '일'][q] + ' ' + tg[q].join(' · '); }).join('<br>') + ' <em>(받은 시간대만 · 계속 모으는 중 — 주기가 바뀌는 시각이 신호 계획이 바뀌는 때)</em>'); }
+    var pq = D.sigd.pts && D.sigd.pts[String(no)], pp = pq ? P(pq[1], pq[0]) : null;
+    if (pp && typeof JCT !== 'undefined' && JCT.length) { var jb = null, jd = 100; JCT.forEach(function (o9) { if (Math.abs(o9.p[1] - pp[1]) > 100) return; var d9 = dTrue(o9.p, pp); if (d9 < jd) { jd = d9; jb = o9; } }); if (jb) h += row('이 교차로 사고', '2016~2025 <b>' + jb.t.toLocaleString() + '건</b> · 해마다 평균 ' + Math.round(jb.t / 10) + '건' + (jb.r[4] ? ' · 사망사고 있음' : '') + ' <em>(TAAS · ' + esc(jb.r[0]) + ' · 585m 안 사고를 가까운 교차로에 배정한 근사)</em>'); }
+    if (pp && D.cam && D.cam.items) { var cn = D.cam.items.filter(function (c9) { return dTrue(P(c9.lon, c9.lat), pp) <= 150; }).length; if (cn) h += row('단속 카메라', '150m 안 ' + cn + '대 <em>(경찰청 무인단속카메라)</em>'); }
     if (planCyc && Math.abs(planCyc - cyc) > 2) h += row('지금 계획과 차이', '지금 계획 주기는 ' + planCyc + '초 — 위 그림은 받은 때(주기 ' + Math.round(cyc) + '초) 값이라 초가 다르다 <em>(방향·차례는 대개 같다)</em>');
     return h + '<p class="desc">방위는 그 신호를 받는 차가 <b>들어오는 쪽</b>이다(「북→남」 = 북쪽에서 와서 남쪽으로 · 일방통행 교차로 자료로 확인). 녹색·적색은 잔여시간 흐름에서 황색(3~6초) 앞뒤로 읽은 <b>추정</b>이고, 받은 시간대의 값이라 다른 시간대·요일에는 초가 다르다. 감응·수동 운영 중에는 실제와 다르다.</p>' +
       src((D.sigd.source || '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보') + ' · 교차로 번호 ' + String(no));
@@ -6302,7 +6335,8 @@
       '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
     h = h.replace(/<\/details>$/, ledgRel(m) + '</details>');
     h += '<div class="lg-btns trbtn"><button data-trhere="' + ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + '" title="이 지점 가까운 정류장 버스 도착·위치 · 지하철 다음 열차 · 기차 · 국내선">🚏 여기 대중교통(실시간)</button></div>';
-    box.insertAdjacentHTML('beforeend', h);
+    if (it && (it.kind === 'sgd' || it.kind === 'sig') && $('m2dCard')) $('m2dCard').insertAdjacentHTML('beforeend', '<div class="relb">' + h + '</div>');   /* v2.105.0 신호 교차로 카드는 신호가 먼저 — 관계·대중교통 단추는 카드 끝으로 */
+    else box.insertAdjacentHTML('beforeend', h);
 
   }
   // ---------- v2.27.0 일터·생활업종 역추정(코워크 지시 2026-10-06) — 국민연금 사업장(행정동) · 국세청 사업자현황(시군구) · tools/region/econ-bake.py ----------

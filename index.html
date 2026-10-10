@@ -100,6 +100,20 @@
   #m2dCard .cap { font-size: 12px; color: var(--ink2); margin-top: 6px; }
   /* v2.100.0 🚦 방향별 신호 — 방위 그림 + 한 주기 막대 */
   #m2dCard .sd { display: flex; gap: 8px; align-items: center; margin: 6px 0 4px; }
+  #m2dCard .relb { margin-top: 10px; }
+  #m2dCard .sdnow { margin: 6px 0 2px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 10px; }
+  #m2dCard .sdch { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; }
+  #m2dCard .sdch span { color: var(--ink2); margin-right: 2px; }
+  #m2dCard .sdch button { min-height: 34px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 13px; font-weight: 700; }
+  #m2dCard .sdch button.on { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+  #m2dCard .sdl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 7px; font-size: 13.5px; }
+  #m2dCard .sdl i { width: 14px; height: 14px; border-radius: 50%; background: #94a3b8; flex: 0 0 14px; }
+  #m2dCard .sdl.g i { background: #16a34a; } #m2dCard .sdl.y i { background: #eab308; } #m2dCard .sdl.r i { background: #dc2626; }
+  #m2dCard .sdl b { font-weight: 800; }
+  #m2dCard .sdl strong { font-size: 20px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  #m2dCard .sdl small { color: var(--ink2); font-size: 12px; flex-basis: 100%; padding-left: 22px; }
+  #m2dCard .sdnt { margin: 7px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink2); }
+  #m2dCard .sd .tl u { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); display: none; }
   #m2dCard .sd .sdrose { flex: 0 0 122px; width: 122px; height: 122px; color: var(--ink); }
   #m2dCard .sd .sdb { flex: 1; min-width: 0; }
   #m2dCard .sd .rw { margin: 5px 0; font-size: 12.5px; }
@@ -898,7 +912,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.104.1"></script>
+<script src="js/map2d.js?v=2.105.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

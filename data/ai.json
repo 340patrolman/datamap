@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 94개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 95개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1640,7 +1640,7 @@
   ],
   [
    "live-seocho.json",
-   "2026-10-10 16:05",
+   "2026-10-10 19:05",
    "서울 열린데이터광장 「서울시 실시간 도시데이터」(OA-21285) · 장소 영역 「서울시 주요 121장소 영역」(OA-21778) — 받은 시각의 한 장(지도는 통신 0 · 다시 받으려면 tools …(전문은 파일에)"
   ],
   [
@@ -1790,18 +1790,23 @@
   ],
   [
    "sig-offset-check.json",
-   "2026-10-10 16:28",
-   "data/sigdir-seoul.json(서울 T-Data V2X — 기준 이동류 녹색이 실제로 켜진 시각) × data/signal-tod-seocho.json(경찰청 교차로계획정보 — 주기·옵셋 …(전문은 파일에)"
+   "2026-10-10 19:23",
+   "data/sigdir-seoul.json(서울 T-Data V2X — 기준 이동류 녹색이 실제로 켜진 시각) × data/signal-tod-seoul.json(경찰청 교차로계획정보 — 주기·옵셋)"
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-10 17:29",
+   "2026-10-10 19:19",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [
    "signal-tod-seocho.json",
    "",
    "경찰청_교차로계획정보서비스 · 공공데이터포털(data.go.kr) · 2026-09-10 01:00 갱신분"
+  ],
+  [
+   "signal-tod-seoul.json",
+   "2026-10-10",
+   "경찰청_교차로기반정보서비스 · 교차로계획정보서비스 · 공공데이터포털(data.go.kr 15056721·15056569) · 2026-09-10 01:00 갱신분 — 경찰청이 공개한 서울 교차로 전 …(전문은 파일에)"
   ],
   [
    "spot-seocho.json",
@@ -1885,7 +1890,7 @@
   ],
   [
    "utic-ims.json",
-   "2026-10-10 16:20",
+   "2026-10-10 19:06",
    "경찰청 도시교통정보센터(UTIC) 개방데이터 — 돌발정보(www.utic.go.kr/guide/imsOpenData.do · 인증키·등록 IP 로 받음) · 시내 도로의 사고·공사·행사·통제 등"
   ]
  ],

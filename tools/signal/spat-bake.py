@@ -24,6 +24,7 @@ BASEP = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xSignalPhaseInfor
 DIRS = ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw']
 MVS = ['St', 'Lt', 'Ut', 'Bs', 'Bc', 'Pd']
 GAP = 305
+CAP_SAFE = 26 * 30000   # 2026-10-10 16:14 부터 — 27쪽까지는 받아지고 32쪽부터 HTTP 500(앞선 줄 수 기준으로 보인다) → 막히면 이보다 얕게만
 DENS0 = 0.998   # 교차로 하나가 1초에 쌓는 줄 수(2026-10-10 13시대 실측 0.997~0.998) — sweep 이 받은 쪽에서 다시 잰다
 
 
@@ -167,6 +168,15 @@ def sweep(prefer=None, api='t', cap=None):
     tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
     dens, miss, last, stuck, ncall = DENS0, 0, None, {}, 0
     capoff, caphr, capat = cap, datetime.datetime.now().hour, time.time()   # --cap N = 처음부터 이 깊이(줄)보다 얕은 쪽만(서버가 깊은 쪽을 막을 때)
+    cap_f = os.path.join(RAW, 'cap_p.json' if api == 'p' else 'cap_t.json')   # 막힌 깊이는 파일에 남겨 다시 띄워도 잇는다(정각 창의 한 번뿐인 호출을 500 으로 버리지 않게)
+    if not capoff and os.path.exists(cap_f):
+        try:
+            c0 = json.load(open(cap_f))
+            if time.time() - c0['at'] < 6 * 3600:
+                capoff, capat = c0['cap'], c0['at']
+        except Exception:
+            pass
+    W0 = 255 if api == 'p' else 240   # 정각 뒤 창 — 이때는 교차로마다 300줄쯤이라 한 쪽에 100곳 가까이 들고, 서울 뒤쪽(서초 1668~ · 강남 ~2248)도 20쪽 안이다
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
     while True:
         A = anchors()
@@ -178,13 +188,15 @@ def sweep(prefer=None, api='t', cap=None):
         if not todo:
             print(datetime.datetime.now().strftime('%H:%M:%S'), '지금 받을 곳이 없다 — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
         now = datetime.datetime.now()
-        if now.minute < 8:
-            time.sleep((8 - now.minute) * 60 - now.second + 1); continue   # 정각 뒤 8분부터 — 이를수록 한 쪽에 교차로가 많이 들고(8분 = 55곳쯤) 쪽이 얕아 서버가 덜 막는다(2026-10-10 깊은 쪽 500)
         t = now.minute * 60 + now.second
+        if t < W0:
+            time.sleep(W0 - t + 1); continue      # 정각 뒤 4분부터 — 그 전에는 교차로마다 줄이 모자라 주기를 못 읽는다(240줄 문턱)
+        if t > 3600 + W0 - GAP - 5:
+            time.sleep(3600 - t + W0 + 1); continue   # 다음 정각 창을 5분 제한으로 놓치지 않게 — 창 바로 앞 호출은 건너뛴다
         if last is None:
             dens = (t + 66.0) / t   # 첫 호출 — 교차로마다 앞 시각에서 넘어온 줄이 60여 줄 더 있어(2026-10-10 실측) 정각 가까울수록 밀도가 1 을 넘는다
-        if capoff and (caphr != now.hour or time.time() - capat > 1800):
-            capoff = None                                   # 깊은 쪽 막힘은 그 시각대·30분만 믿는다(풀렸는지 다시 본다)
+        if capoff and time.time() - capat > 3 * 3600 and t > 900:
+            capoff = None                                   # 깊은 쪽이 풀렸는지 3시간마다 한 번 본다(정각 창 밖에서 — 창의 호출은 아낀다)
         if capoff:
             # 2026-10-10 16시대 — 서버가 깊은 쪽(앞선 줄이 많은 쪽)에 HTTP 500 을 줬다(얕은 쪽은 됨) → 막힌 깊이보다 얕게 닿는 교차로만 고른다
             lim = capoff * 0.92 / (t + 66.0)
@@ -215,11 +227,14 @@ def sweep(prefer=None, api='t', cap=None):
             print(stamp, '쪽', page, 'HTTP', st, body[:160].replace(key(), '***'), flush=True)
             wait = GAP
             if st == 500 and page > 1:
-                capoff = min(capoff or 10 ** 12, (page - 1) * 30000); caphr = now.hour; capat = time.time(); last = None
+                capoff = min(capoff or CAP_SAFE, (page - 1) * 30000, CAP_SAFE); caphr = now.hour; capat = time.time(); last = None
+                json.dump({'cap': capoff, 'at': capat}, open(cap_f, 'w'))
             if st == 429:
                 try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5
                 except Exception: pass
             time.sleep(wait); continue
+        if not capoff and (page - 1) * 30000 > CAP_SAFE and os.path.exists(cap_f):
+            os.remove(cap_f)                                # 깊은 쪽이 다시 받아졌다 — 막힘 기록을 지운다
         J = json.loads(body); by = {}; seq = []
         for x in J:
             i = str(x['itstId'])

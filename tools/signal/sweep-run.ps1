@@ -21,6 +21,9 @@ if (-not $hasT) {
 }
 if (-not $hasP) {
   if (-not $hasT) { Start-Sleep -Seconds 150 }
+  # 기다리는 사이 다른 지킴이가 이미 띄웠으면 그만둔다(2026-10-10 다시 띄우다 상태 훑기가 둘이 됐다)
+  $dup = @(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*spat-bake.py*sweep*--api p*' -and $_.Name -notlike 'powershell*' -and $_.Name -notlike 'bash*' }).Count
+  if ($dup) { Write-Output '신호 상태 훑기는 이미 돌고 있다'; exit 0 }
   Start-Process -WindowStyle Hidden -FilePath 'py' -ArgumentList ($base + @('--api', 'p')) -WorkingDirectory $root -RedirectStandardOutput (Join-Path $log 'sweep_p.log') -RedirectStandardError (Join-Path $log 'sweep_p.err')
   Write-Output '신호 상태 훑기를 띄웠다'
 }

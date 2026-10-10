@@ -125,7 +125,7 @@ def publish():
         print('올리기 실패', str(e)[:120], flush=True)
 
 
-def sweep(prefer=None, api='t'):
+def sweep(prefer=None, api='t', cap=None):
     """쪽(page)으로 훑기 — 거르지 않고 3만 줄을 받으면 서버 순서로 이어진 교차로 수십 곳의 그 시각 0분부터의 줄이 한 번에 온다.
     (itstId 로 거르면 뒤쪽 교차로는 HTTP 500 이 난다 · 2026-10-10 4031·4034) 서버 순서는 정각 목록(ids_*.json)의 차례이고,
     쪽 번호 = 앞선 교차로 수 × 교차로마다 쌓인 줄 수 ÷ 30000 — 줄 밀도(dens)는 받은 쪽에서 다시 잰다."""
@@ -136,6 +136,7 @@ def sweep(prefer=None, api='t'):
     tried_f = os.path.join(RAW, 'tried_p.json' if api == 'p' else 'tried.json')
     tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
     dens, miss, last, stuck, ncall = DENS0, 0, None, {}, 0
+    capoff, caphr, capat = cap, datetime.datetime.now().hour, time.time()   # --cap N = 처음부터 이 깊이(줄)보다 얕은 쪽만(서버가 깊은 쪽을 막을 때)
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
     while True:
         A = anchors()
@@ -152,6 +153,15 @@ def sweep(prefer=None, api='t'):
         t = now.minute * 60 + now.second
         if last is None:
             dens = (t + 66.0) / t   # 첫 호출 — 교차로마다 앞 시각에서 넘어온 줄이 60여 줄 더 있어(2026-10-10 실측) 정각 가까울수록 밀도가 1 을 넘는다
+        if capoff and (caphr != now.hour or time.time() - capat > 1800):
+            capoff = None                                   # 깊은 쪽 막힘은 그 시각대·30분만 믿는다(풀렸는지 다시 본다)
+        if capoff:
+            # 2026-10-10 16시대 — 서버가 깊은 쪽(앞선 줄이 많은 쪽)에 HTTP 500 을 줬다(얕은 쪽은 됨) → 막힌 깊이보다 얕게 닿는 교차로만 고른다
+            lim = capoff * 0.92 / (t + 66.0)
+            reach = lambda L: [i for i in L if pos[i] < lim]
+            todo = reach([i for i in pref if need1(i)]) or reach([i for i in pref if need2(i)]) or reach([i for i in order if need1(i)]) or reach([i for i in order if need3(i)])
+            if not todo:
+                print(now.strftime('%H:%M:%S'), '깊은 쪽이 막혀 닿는 곳이 없다(막힌 깊이', capoff, '줄) — 5분 뒤 다시', flush=True); time.sleep(GAP); continue
         K = (max if api == 'p' else min)(pos[i] for i in todo)   # 신호 상태 훑기는 뒤에서부터(두 훑기가 같은 쪽을 받지 않게)
         off = None
         if last and last['t'] < t and last['a'] <= K <= last['b'] + 1:
@@ -174,6 +184,8 @@ def sweep(prefer=None, api='t'):
         if st != 200:
             print(stamp, '쪽', page, 'HTTP', st, body[:160].replace(key(), '***'), flush=True)
             wait = GAP
+            if st == 500 and page > 1:
+                capoff = min(capoff or 10 ** 12, (page - 1) * 30000); caphr = now.hour; capat = time.time(); last = None
             if st == 429:
                 try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5
                 except Exception: pass
@@ -500,7 +512,7 @@ if __name__ == '__main__':
         auto()
     elif a and a[0] == 'sweep':
         pf = [x.strip() for x in open(a[2], encoding='utf-8') if x.strip() and not x.startswith('#')] if len(a) > 2 and a[1] == '--list' else None
-        sweep(pf, 'p' if '--api' in a and a[a.index('--api') + 1] == 'p' else 't')
+        sweep(pf, 'p' if '--api' in a and a[a.index('--api') + 1] == 'p' else 't', int(a[a.index('--cap') + 1]) if '--cap' in a else None)
     elif a and a[0] == 'testp':
         J = json.load(open(a[1], encoding='utf-8'))
         for i in sorted(set(str(x['itstId']) for x in J)):

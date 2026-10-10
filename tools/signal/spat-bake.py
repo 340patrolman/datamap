@@ -217,6 +217,7 @@ def sweep(prefer=None, api='t', cap=None):
             dens = 1.0
         if pok_hr != now.hour:
             pok_hr, pok = now.hour, -1                        # 이 시각대에 실제로 받은 맨 뒤 자리
+            pcap, nfail, avoid = None, 0, None                # 시각대가 바뀌면 끝자리도 새로 잰다(23:05 창이 22시대 끝자리에 묶여 서초를 건너뛰었다)
         if pcap and time.time() - pcat > 1200:
             pcap = None                                       # 끝자리는 30분만 믿는다(자료가 늦게 쌓이는 것일 수 있어 다시 잰다)
         av = avoid; avoid = None

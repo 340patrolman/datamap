@@ -62,8 +62,8 @@ def main():
     doc = {'schema': 'tg-agency-card/1', 'made': datetime.date.today().isoformat(),
            'source': '관할 = data/juris.json(기관마다 출처는 kinds[…].source) · 값 = r/<구>/profile.json 의 행정동 값을 기관마다 더한 것(주민등록 · SGIS 2023 가구·주택·사업체·종사자 · 상가업소 · TAAS 2016~2025 · 250m 칸 시설 · 행안부 외국인주민)',
            'note': ['행정동 단위 근사다 — 동이 두 기관에 걸치면 반씩 더했다(nshare = 그런 동 수)', '세무서는 사업체·종사자(SGIS 2023), 교육지원청은 0~9세(kid)·10~19세(teen) 주민과 학교·학원·유치원·어린이집(fac), 법원은 주민·넓이가 그 기관의 일감을 가늠하는 값이다 — 실제 처리 건수가 아니다',
-                    '소방서·구청·주민센터·등기소·검찰청은 아직 없다(관할·주소 자료를 받는 대로 더한다)', '서 사이 차례(rank)는 전국 같은 종류 기관 안에서 센 것이다 — 1 이 가장 크다', '관할 동 목록(dongs)은 주민 많은 순 60곳까지만 실었다(ndong = 전체 수)'],
-           'fields': 'kinds{edu·court·tax: {title, source, note, ag{기관 자리(juris.json kinds[…].o 의 차례): {n 이름, gus[걸친 시군구], ndong, dongs[[행정동 코드, 이름, ㎢, 주민, 같이 맡는 기관|null]…], nshare, pop, km2, hh 가구, house 주택, biz 사업체, emp 종사자, shop 가게, frn 외국인주민, kid 0~9세, teen 10~19세, age[19세 이하 %, 60세 이상 %, 70세 이상 %], acc{n 10년 사고, yr[2016…2025], dead}, fac{시설: 수}, rank{pop·km2·biz·emp: [차례, 기관 수]}}}}}',
+                    '등기소(reg)는 부동산등기 관할이다 — 주택·가구·사업체 수가 일감을 가늠하는 값 · 소방서·주민센터 자리는 agency-pts.json · 구청·검찰청은 아직 없다', '서 사이 차례(rank)는 전국 같은 종류 기관 안에서 센 것이다 — 1 이 가장 크다', '관할 동 목록(dongs)은 주민 많은 순 60곳까지만 실었다(ndong = 전체 수)'],
+           'fields': 'kinds{edu·court·tax·reg: {title, source, note, ag{기관 자리(juris.json kinds[…].o 의 차례): {n 이름, gus[걸친 시군구], ndong, dongs[[행정동 코드, 이름, ㎢, 주민, 같이 맡는 기관|null]…], nshare, pop, km2, hh 가구, house 주택, biz 사업체, emp 종사자, shop 가게, frn 외국인주민, kid 0~9세, teen 10~19세, age[19세 이하 %, 60세 이상 %, 70세 이상 %], acc{n 10년 사고, yr[2016…2025], dead}, fac{시설: 수}, rank{pop·km2·biz·emp: [차례, 기관 수]}}}}}',
            'kinds': K}
     p = os.path.join(ROOT, 'data', 'agency-card.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))

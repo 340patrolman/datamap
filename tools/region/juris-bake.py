@@ -8,6 +8,7 @@
 #   ⚠ 원문은 2026-07 이전 시군구 이름을 쓴 곳이 있다(인천 중구·동구·서구, 광주광역시·전라남도) — 새 이름으로 옮긴 표 RENAME 을 같이 밝힌다
 #   py -3.12 -X utf8 tools/region/juris-bake.py
 import csv, json, os, re, io, collections, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.dirname(ROOT); OUT = os.path.join(KB, '07_API키', 'out', 'juris')
 
@@ -286,12 +287,36 @@ def main():
         tr += [(i, x) for x in TAX[nm]]
     for k in TAX:
         if k not in [o[0] for o in to]: print('원문에 없는 규칙', k)
+    # ---------- 등기소(2026-10-10 · 소유자 「등기소·법원 등도 찾아서 내용 넣자」) — 「등기소의 설치와 관할구역에 관한 규칙」 [별표](대법원규칙 · 국가법령정보 DRF 원문 · tools/region/reg_parse.py) ----------
+    import reg_parse
+    RG, reg_ef, reg_pm = reg_parse.rows(); INV = {}
+    for k, v in SIDO.items(): INV.setdefault(v, k)
+    ro, rr = [], []
+    for i, (court, branch, nm, sido, area) in enumerate(RG):
+        belong = court + '지방법원' + (' ' + branch + '지원' if branch else '')
+        ro.append([(belong + ' ' + nm) if nm in ('등기국', '등기과', '등기계') else nm + '등기소', belong, area])
+        sd = INV.get(sido)
+        if not sd: print('등기소 시도 못 읽음', nm, sido); continue
+        plain = re.sub('[(][^)]*[)]', '', area).strip()
+        if plain.replace(' ', '') == '전지역':
+            rr += [(i, (sd, n2, '', [])) for n2 in sorted({a[2] for a in ADM if a[1] == sido})]; continue
+        m = re.match('^(.+?시) 중 (.+)$', plain)
+        if m:   # 원문이 옛 이름(○○면)으로 적은 곳이 읍이 된 경우를 위해 줄기도 같이 넣는다(안중면 → 안중읍)
+            lst = [t.strip() for t in m.group(2).split(',') if t.strip()]; rr.append((i, (sd, m.group(1), '+', lst + [t[:-1] for t in lst if t.endswith('면')]))); continue
+        city = ''
+        for t in [x.strip() for x in plain.split(',') if x.strip()]:
+            m2 = re.match('^(.+?시) (.+구)$', t)
+            if m2: city = m2.group(1); rr.append((i, (sd, city + m2.group(2), '', []))); continue
+            if city and t.endswith('구') and not sgg_match(sd, t): rr.append((i, (sd, city + t, '', []))); continue
+            city = ''; rr.append((i, (sd, '세종시' if t == '세종특별자치시' else t, '', [])))
     res = {'schema': 'tg-juris/1', 'fields': 'kinds[kind] = {o: 기관[…], sc: {나뉜 시군구: [기관 자리…]}, g5: {행정동 코드 앞 5자리: 기관 자리 · -1 = 동마다 다름}, sg: {「시도|시군구」(지도 다각형): 기관 자리 · -1}, d: {행정동 8자리: 기관 자리 또는 [둘](넓이 20% 넘게 걸침)}}',
            'rename': RENAME_NOTE, 'dong': '행정동 = 통계청 SGIS 행정동 경계(가공 vuski/admdongkor 2026-07 · CC BY 4.0) · 법정동 → 행정동 넓이 비율 = 브이월드 법정동 경계(data/b2a.json · 서울·경기)', 'kinds': {
         'edu': finish('edu', eo, er, '🎒 교육지원청', '「지방교육자치에 관한 법률 시행령」 종전 [별표 2](2023.6.27 개정 · 2026.5.12 삭제 · 부칙 경과조치로 조례를 정할 때까지 이 표) · 이미 조례로 옮긴 곳 = 경기 [별표 9](2026.7.13) · 강원 [별표 2](2026.10.2) · 전남광주통합특별시 [별표 1](2026.7.1) · 제주 [별표](2024.9.1) — 국가법령정보센터 원문 대조 2026-10-06',
                       '시군구 단위 법정 관할 · 학교 배정(학군·통학구역)과 다르다'),
         'court': finish('court', co, cr, '⚖ 법원(지방법원·지원)', '「각급 법원의 설치와 관할구역에 관한 법률」 [별표 3] 고등법원·지방법원과 그 지원의 관할구역(2026.3.17 개정) — 국가법령정보센터 원문 대조 2026-10-06',
                         '시군구 단위 법정 관할 · 검찰청(지검·지청)도 이 법원 관할을 따른다(검찰청법) · 가정법원·행정법원·회생법원·시군법원은 별도 별표(여기 안 넣음) · 소년보호사건 등 단서는 원문 칸에'),
+        'reg': finish('reg', ro, rr, '📑 등기소', '「등기소의 설치와 관할구역에 관한 규칙」 [별표] 등기소의 명칭 및 관할구역표(대법원규칙 제%s호 · 시행 %s) — 국가법령정보센터 원문 2026-10-10' % (reg_pm.lstrip('0'), reg_ef[:4] + '.' + str(int(reg_ef[4:6])) + '.' + str(int(reg_ef[6:]))),
+                      '부동산등기 관할이다 — 상업등기·선박등기·동산·채권담보등기는 본원 등기국·등기과가 더 넓게 맡는다(원문 칸의 「단, …」) · 동을 나눠 맡는 곳(평택시)은 행정동 이름으로 붙인 근사 · 등기소 주소·전화는 이 표에 없다'),
         'tax': finish('tax', to, tr, '🧾 세무서', '국세청 「세무서별 관할구역」(공공데이터포털 15099881 · 2026-04-08 · 이용허락 제한 없음)',
                       '국세청이 글로 적은 관할(법정동·읍면)을 행정동에 붙인 근사 — 법정동이 두 행정동에 걸치면 넓이 비율로 나누고 20% 넘게 걸친 동은 「나뉨」 · 지서(하남·안성·태백 등)는 본서에 넣었다 · 원문은 카드에 그대로')}}
     p = os.path.join(ROOT, 'data', 'juris.json'); json.dump(res, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))

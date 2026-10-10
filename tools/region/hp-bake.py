@@ -6,11 +6,13 @@
 #     pnu = {필지 19자리: [단지명, 호수, [[전용면적, 호수, 최저, 가운데, 최고](만 원) …]]} — 세금 계산이 브이월드 키 없이도 쓰는 값
 #   동·호 하나하나는 굽지 않는다(필지·면적마다 모아 최저·가운데·최고만).
 #   행정동 잇기: 서울·경기 = data/b2a.json(법정동 경계 × 행정동 경계 넓이) · 그 밖 = 이름(○○동 ↔ ○○1동·○○2동 …) — 근사
-#   py -3.12 -X utf8 tools/region/hp-bake.py
-import zipfile, io, csv, json, os, re, collections, array, statistics, time
+#   2026-10-10: 2026년 정기공시 파일(공공데이터포털 3073746 「국토교통부_주택 공시가격 정보_20260101」 · 2026-10-01 등록 · 15,851,336건 · SHA-256 BBDFE3E1…BDD27DA 대조)로 갈았다 — 07_API키/out/hp2026/hp2026.zip
+#   py -3.12 -X utf8 tools/region/hp-bake.py [zip 경로]   (기준연도는 파일의 「기준연도」 칸에서 읽는다 · 굽고 나면 ptax-bake.py 도 다시)
+import zipfile, io, csv, json, os, re, collections, array, statistics, time, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 R = os.path.join(ROOT, 'data', 'r')
-ZIP = '//NAS-baranno815/home/국토교통부_주택 공시가격 정보_20250626.zip'
+ZIP = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'hp2026', 'hp2026.zip')   # 2025 판 = //NAS-baranno815/home/국토교통부_주택 공시가격 정보_20250626.zip
+YEAR = None
 BANDS = [10000, 30000, 60000, 90000, 120000, 150000, 200000, 300000]   # 만 원 — 1억·3억·6억·9억·12억·15억·20억·30억
 AREAS = [40, 60, 85, 102, 135]
 ix = json.load(open(os.path.join(R, 'index.json'), encoding='utf-8')); GUS = {g['gu']: g['name'] for g in ix['gus']}
@@ -54,6 +56,7 @@ with z.open(inf) as f:
     rd = csv.reader(io.TextIOWrapper(f, encoding='utf-8-sig', newline=''))
     hd = next(rd); C = {h: i for i, h in enumerate(hd)}
     for n, r in enumerate(rd):
+        if YEAR is None: YEAR = int(r[C['기준연도']])
         try:
             bjd = r[C['법정동코드']]; pr = int(float(r[C['공시가격']])) // 10000; ar = float(r[C['전용면적']] or 0)
         except (ValueError, IndexError): cnt['칸 오류'] += 1; continue
@@ -83,8 +86,8 @@ for (gu, pnu, ar), A in PN.items():
     e = OUT[gu]['pnu'].setdefault(pnu, [PNM[(gu, pnu)], 0, []]); e[1] += len(A); s = sorted(A); e[2].append([ar, len(s), s[0], s[len(s) // 2], s[-1]])
 for gu, o in OUT.items():
     for e in o['pnu'].values(): e[2].sort()
-    doc = {'schema': 'tg-hp/1', 'gu': gu, 'year': 2025, 'source': '국토교통부 「주택 공시가격 정보」(2025년 1월 1일 정기공시 · 공동주택 단지·동·호 · 2025-06-26 제공) — 필지·전용면적마다 모아 최저·가운데·최고(만 원)', 'bands': BANDS, 'areas': AREAS,
-           'note': '행정동 잇기는 서울·경기 = 법정동·행정동 경계 넓이(10% 넘는 것) · 그 밖 = 이름 근사 · 2026년 공시가격은 아직 이 파일에 없다', 'bjd': o['bjd'], 'pnu': o['pnu']}
+    doc = {'schema': 'tg-hp/1', 'gu': gu, 'year': YEAR, 'source': '국토교통부 「주택 공시가격 정보」(%d년 1월 1일 정기공시 · 공동주택 단지·동·호 · 공공데이터포털) — 필지·전용면적마다 모아 최저·가운데·최고(만 원)' % YEAR, 'bands': BANDS, 'areas': AREAS,
+           'note': '행정동 잇기는 서울·경기 = 법정동·행정동 경계 넓이(10% 넘는 것) · 그 밖 = 이름 근사 · 기준연도 = 파일의 「기준연도」 칸', 'bjd': o['bjd'], 'pnu': o['pnu']}
     p = os.path.join(R, gu, 'hp.json'); os.makedirs(os.path.dirname(p), exist_ok=True)
     json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     g = next((x for x in ix['gus'] if x['gu'] == gu), None)

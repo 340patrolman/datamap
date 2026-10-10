@@ -104,6 +104,13 @@ def main():
                     '행정동 값은 필지를 지번 좌표로 그 동에 넣은 것이다 — 좌표가 없는 필지만 걸친 행정동에 넓이 몫으로 나눠 넣은 근사(동마다 좌표로 넣은 비율을 같이 싣는다 · 낮은 동은 값이 이웃 동과 섞여 있다) · 도시지역분은 도시지역 안에서만 붙는다(읍·면은 안 붙을 수 있다)'],
            'fields': '값 = [호수, 일반 합계[하위10%·가운데·상위10%], 1세대1주택 합계[같음], 일반 도시지역분 뺀[같음], 1세대1주택 도시지역분 뺀[같음], 일반 공제액 초과 %, 1세대1주택 공제액 초과 %, 공시가격 가운데] · 금액 만 원 · 합계 = 재산세 + 지방교육세 + 도시지역분 · bjd 는 앞에 [이름, 구], 끝에 [행정동 코드] · hjd 는 끝에 [걸친 법정동 수, 지번 좌표로 이 동에 넣은 호수 %(100 에 가까울수록 정확 · 나머지는 법정동 넓이·이름 근사)]',
            'bjd': BJ, 'hjd': {k: summ(U) + [len(HJB[k]), round(100 * HJX[k] / max(1, sum(w for _, w in U)))] for k, U in HJ.items()}, 'gu': GU}
+    pf = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'hp%d_r' % (year - 1), '_ptax-dong-%d.json' % (year - 1))   # 지난해 판(같은 도구·같은 규칙으로 구운 것)이 있으면 견줄 값을 싣는다
+    if os.path.exists(pf):
+        o = json.load(open(pf, encoding='utf-8'))
+        if o.get('year') == year - 1:
+            doc['prev'] = {'year': year - 1, 'fields': '[공시가격 가운데, 1세대1주택 합계 가운데, 일반 합계 가운데](만 원) — 지난해 공시가격에 같은 규칙을 적용한 값(세법이 아니라 공시가격이 바뀐 몫)',
+                           'gu': {k: [v[7], v[2][1], v[1][1]] for k, v in o['gu'].items() if k in GU},
+                           'hjd': {k: [v[7], v[2][1], v[1][1]] for k, v in o['hjd'].items() if k in doc['hjd']}}
     p = os.path.join(ROOT, 'data', 'ptax-dong.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print('법정동', len(BJ), '행정동', len(doc['hjd']), '구', len(GU), '바이트', os.path.getsize(p), dict(cnt))

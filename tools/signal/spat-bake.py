@@ -167,6 +167,8 @@ def sweep(prefer=None, api='t', cap=None):
     tried_f = os.path.join(RAW, 'tried_p.json' if api == 'p' else 'tried.json')
     tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
     dens, miss, last, stuck, ncall = DENS0, 0, None, {}, 0
+    smiss_f = os.path.join(RAW, 'smiss_p.json' if api == 'p' else 'smiss_t.json')
+    smiss = json.load(open(smiss_f)) if os.path.exists(smiss_f) else {}
     capoff, caphr, capat = cap, datetime.datetime.now().hour, time.time()   # --cap N = 처음부터 이 깊이(줄)보다 얕은 쪽만(서버가 깊은 쪽을 막을 때)
     cap_f = os.path.join(RAW, 'cap_p.json' if api == 'p' else 'cap_t.json')   # 막힌 깊이는 파일에 남겨 다시 띄워도 잇는다(정각 창의 한 번뿐인 호출을 500 으로 버리지 않게)
     if not capoff and os.path.exists(cap_f):
@@ -204,7 +206,15 @@ def sweep(prefer=None, api='t', cap=None):
             todo = pick_todo(tiers, order, need1, need2, need3, lambda i: pos[i] < lim)
             if not todo:
                 print(now.strftime('%H:%M:%S'), '깊은 쪽이 막혀 닿는 곳이 없다(막힌 깊이', capoff, '줄) — 5분 뒤 다시', flush=True); time.sleep(GAP); continue
-        K = (max if api == 'p' else min)(pos[i] for i in todo)   # 신호 상태 훑기는 뒤에서부터(두 훑기가 같은 쪽을 받지 않게)
+        ps = sorted(pos[i] for i in todo)
+        per = int(30000 / max(dens * t, 1.0))                 # 한 쪽에 드는 교차로 수(정각 창에서는 100곳 안팎)
+        if len(ps) > 2 and per >= 20:
+            # 받을 곳이 가장 많이 몰린 자리를 고른다(2026-10-10 21:04 — 맨 앞 자리만 골라 같은 쪽을 시간마다 다시 받았다) · 잔여는 앞 절반, 상태는 뒤 절반에서(두 훑기가 같은 쪽을 받지 않게)
+            mid = ps[len(ps) // 2]
+            cand = [q for q in ps if (q >= mid if api == 'p' else q <= mid)] or ps
+            K = max(cand, key=lambda q: (sum(1 for z in ps if abs(z - q) <= per * 0.45), q if api == 'p' else -q))
+        else:
+            K = (max if api == 'p' else min)(ps)   # 신호 상태 훑기는 뒤에서부터(두 훑기가 같은 쪽을 받지 않게)
         off = None
         if last and last['t'] < t and last['a'] <= K <= last['b'] + 1:
             off = last['base'] + sum(n for q, n in last['rows'] if q < K)   # 지난 쪽에서 센 K 앞의 줄 수(정확) — 지금 시각으로 늘린다
@@ -254,8 +264,12 @@ def sweep(prefer=None, api='t', cap=None):
             if red and red.get('cyc'):
                 json.dump(red, open(os.path.join(RAW, 'red', '%s_%s%s.json' % (i, stamp, 'p' if api == 'p' else '')), 'w', encoding='utf-8'), ensure_ascii=False); saved += 1
             elif not edge and len(by[i]) >= 420:
-                tried.add(i)   # 7분 넘게 받았는데 주기를 못 읽은 곳(값이 멈춤·점멸) — 다시 받지 않는다 · 줄이 짧은 정각 창에서는 넣지 않는다(19:04 에 100곳 넘게 잘못 들어갔다)
-        json.dump(sorted(tried), open(tried_f, 'w'))
+                tried.add(i)
+            elif not edge and len(by[i]) >= 240:
+                smiss[i] = smiss.get(i, 0) + 1                  # 정각 창(짧은 줄)에서 주기를 못 읽은 횟수 — 세 번이면 그만 받는다(안 그러면 그 구가 끝나지 않아 다음 구로 못 넘어간다)
+                if smiss[i] >= 3:
+                    tried.add(i)   # 7분 넘게 받았는데 주기를 못 읽은 곳(값이 멈춤·점멸) — 다시 받지 않는다 · 줄이 짧은 정각 창에서는 넣지 않는다(19:04 에 100곳 넘게 잘못 들어갔다)
+        json.dump(sorted(tried), open(tried_f, 'w')); json.dump(smiss, open(smiss_f, 'w'))
         last = {'t': t, 'a': a, 'b': b, 'base': (page - 1) * 30000, 'rows': [(pos[i], len(by[i])) for i in seq if i in pos]}
         hit = a <= K <= b
         A2 = anchors()

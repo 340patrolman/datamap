@@ -2805,7 +2805,7 @@
     if (A) { var am = Math.round((now - A.t0) / 60000), sg = function (v) { return (v >= 0 ? '+' : '') + v; };
       h += '<p class="sdnt">⏱ <b>' + hhmm(A.t0) + '</b>에 현장에서 맞춘 값으로 주기 ' + Pn.c + '초를 이어 센 <b>추정</b>(' + am + '분 전 · ' + esc(A.mv || '') + ' 기준) · 이 계획(' + Pn.from.slice(0, 2) + ':' + Pn.from.slice(2) + '부터 패턴 ' + Pn.pn + ')이 도는 동안·2시간 안에서만 · 감응·수동 운영 중에는 다르다' +
         (A.dA != null ? '<br>옵셋 가리기 — 자정 기준 가설과 ' + sg(A.dA) + '초 · 계획 시작 기준 가설과 ' + sg(A.dB) + '초 어긋남(±4초 안이면 맞는 쪽) <button data-kfit="' + x.no + '|copy" style="margin-left:4px">결과 복사</button>' : '') + '</p>'; }
-    else if (C) h += '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + (+Pn.pat.off || 0) + '초 · 자정 기준)으로 센 <b>추정</b> — 자정 기준 규칙은 경찰청 계획이 있는 다른 22곳에서 25번 중 23번 +0~4초로 맞았다(' + esc((OFCK && OFCK.made) || '2026-10-10') + ' 대조). <b>이 교차로는 직접 검증 전</b>이다 · 실제와 어긋나면 위 「⏱ 지금 맞추기」를 누른다 · 감응·수동 운영·행사 때는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>';
+    else if (C) h += '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + (+Pn.pat.off || 0) + '초 · 자정 기준)으로 센 <b>추정</b> — 자정 기준 규칙은 경찰청 계획이 있는 다른 22곳에서 25번 중 23번 +0~4초로 맞았다(' + esc((OFCK && OFCK.made) || '2026-10-10') + ' 대조). ' + (kscFv(x.no) || '<b>이 교차로는 직접 검증 전</b>이다') + ' · 실제와 어긋나면 위 「⏱ 지금 맞추기」를 누른다 · 감응·수동 운영·행사 때는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>';
     else h += '<p class="sdnt"><b>지금 몇 초 남았는지는 띄우지 않는다</b> — ' + (HOUR != null ? '시각을 「지금」으로 두면 초가 흐른다.' : TR ? '계획이 막 바뀌었다(바뀐 뒤 한 주기는 신호가 새 계획에 맞춰지는 중이라 감춘다).' : '이 계획에는 옵셋 값이 없다 — 위 「⏱ 지금 맞추기」를 현장에서 누르면 흐른다.') + '</p>';
     nw.innerHTML = h;
     var ph = AA ? ((((now - AA.a) / 1000) % Pn.c) + Pn.c) % Pn.c / Pn.c * 100 : -1; [].forEach.call(document.querySelectorAll('#m2dCard .sd.ksd .tl u'), function (u) { u.style.display = ph < 0 ? 'none' : 'block'; u.style.left = ph.toFixed(2) + '%'; }); }
@@ -2855,6 +2855,9 @@
       '<p class="lg-n"><b>실시간이 아니다</b> — ' + esc(UTIC.made || '') + ' 에 받아 둔 한 장이다(받는 PC 가 꺼져 있으면 낡는다).</p>' + src((UTIC.source && (typeof UTIC.source === 'string' ? UTIC.source : JSON.stringify(UTIC.source))) || '경찰청 도시교통정보센터(UTIC) 개방데이터 돌발정보'); }
   // v2.116.0 🕒 시계로 세는 「지금 몇 현시」 — 경찰청 교차로계획(signal-tod · 주기·옵셋·현시값)에 「옵셋 = 자정 기준」을 적용: 주기 안 자리 = (하루 초 − 옵셋) mod 주기 · 1현시 시작 = 0
   //   근거 data/sig-offset-check.json(다른 세션 tools/signal/offset-check.py — T-Data 닻과 견줘 25기록 중 23이 +0~4초) · T-Data 닻이 같은 교차로에 있으면 견줘 ±6초 넘게 어긋나면 감춘다 · 어느 현시가 어느 방향인지는 이 자료에 없다
+  var SFCK = null; fetch('data/sig-field-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFCK = j; }).catch(function () {});
+  function kscFv(no) { var c = SFCK && SFCK.checks ? SFCK.checks.filter(function (q) { return String(q.no) === String(no); }) : []; if (!c.length) return ''; var q = c[c.length - 1];
+    return '<b style="color:#15803d">✅ 현장 영상 대조</b>(' + esc(q.day) + ' ' + esc(q.at) + ' · ' + esc(q.mv) + ') — 계획 ' + esc(q.plan) + ' / 영상 ' + esc(q.seen) + ' → <b>' + (Math.abs(q.d) <= q.pm ? q.pm + '초 안으로 맞음' : (q.d > 0 ? '실제가 ' + q.d + '초 늦음' : '실제가 ' + (-q.d) + '초 빠름')) + '</b>(영상 시각 ±' + q.pm + '초 · 그 시각대 한 번 본 것)'; }
   var OFCK = null; fetch('data/sig-offset-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OFCK = j; }).catch(function () {});
   function sodK(ms) { return ((((ms + 32400000) % 86400000) + 86400000) % 86400000) / 1000; }
   function sigTickHtml(s) { return s && s.no != null ? '<div class="sdnow" id="sigTick" data-no="' + esc(String(s.no)) + '"></div>' : ''; }

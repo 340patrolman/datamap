@@ -169,13 +169,15 @@ def sweep(prefer=None, api='t', cap=None):
     dens, miss, last, stuck, ncall = DENS0, 0, None, {}, 0
     smiss_f = os.path.join(RAW, 'smiss_p.json' if api == 'p' else 'smiss_t.json')
     smiss = json.load(open(smiss_f)) if os.path.exists(smiss_f) else {}
-    capoff, caphr, capat = cap, datetime.datetime.now().hour, time.time()   # --cap N = 처음부터 이 깊이(줄)보다 얕은 쪽만(서버가 깊은 쪽을 막을 때)
-    cap_f = os.path.join(RAW, 'cap_p.json' if api == 'p' else 'cap_t.json')   # 막힌 깊이는 파일에 남겨 다시 띄워도 잇는다(정각 창의 한 번뿐인 호출을 500 으로 버리지 않게)
-    if not capoff and os.path.exists(cap_f):
+    # 끝자리(pcap) — 그 시각대에 서버가 가진 자료의 끝이 서버 순서로 몇 번째 교차로쯤인가. HTTP 500 = 「그 쪽은 자료의 끝을 넘었다」로 읽는다
+    # (2026-10-10 저녁: 190쪽은 되고 229쪽은 500 · 정각 창 23쪽이 500 — 깊이(줄 수)가 아니라 끝자리(살아 있는 교차로 수 × 지난 초)가 문턱이었다).
+    pcap, pcat, seen, seen_slot = (float(cap) if cap else None), time.time(), {}, None
+    cap_f = os.path.join(RAW, 'pcap_p.json' if api == 'p' else 'pcap_t.json')   # 끝자리는 파일에 남겨 다시 띄워도 잇는다
+    if not pcap and os.path.exists(cap_f):
         try:
             c0 = json.load(open(cap_f))
-            if time.time() - c0['at'] < 6 * 3600:
-                capoff, capat = c0['cap'], c0['at']
+            if time.time() - c0['at'] < 5400:
+                pcap, pcat = c0['pos'], c0['at']
         except Exception:
             pass
     W0 = 300 if api == 'p' else 285   # (2026-10-10 19:04 실측 — 줄 수 = 정각 뒤 초 − 8쯤 · 240초에는 234줄이라 문턱 240 에 못 미쳤다 → 285초)  # 정각 뒤 창 — 이때는 교차로마다 300줄쯤이라 한 쪽에 100곳 가까이 들고, 서울 뒤쪽(서초 1668~ · 강남 ~2248)도 20쪽 안이다
@@ -183,29 +185,41 @@ def sweep(prefer=None, api='t', cap=None):
     while True:
         A = anchors()
         nowt = time.time()
-        need1 = lambda i: i not in tried and not A.get(i)                                   # 닻이 아직 없는 곳
-        need2 = lambda i: i not in tried and A.get(i) and nowt - max(A[i]) >= VGAP and max(A[i]) - min(A[i]) < VGAP   # 닻은 있는데 40분 넘게 띄운 두 번째가 없는 곳(검증)
-        need3 = lambda i: i not in tried and A.get(i) and nowt - max(A[i]) >= FRESH        # 닻이 낡은 곳(다시 받아 새로)
-        todo = pick_todo(tiers, order, need1, need2, need3)
-        if not todo:
-            print(datetime.datetime.now().strftime('%H:%M:%S'), '지금 받을 곳이 없다 — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
         now = datetime.datetime.now()
         t = now.minute * 60 + now.second
+        slot_of = lambda ts: (cls_of((datetime.datetime.fromtimestamp(ts).weekday() + 1) % 7), datetime.datetime.fromtimestamp(ts).hour)
+        nslot = slot_of(nowt)
+        if seen_slot != nslot:
+            seen_slot, seen = nslot, {}                       # 시각대가 바뀌면 「이 시각대에 몇 번 받아 봤나」를 다시 센다
+        need1 = lambda i: i not in tried and not A.get(i) and seen.get(i, 0) < 3                                   # 닻이 아직 없는 곳
+        needS = lambda i: i not in tried and A.get(i) and seen.get(i, 0) < 2 and not any(slot_of(a) == nslot for a in A[i])   # 닻은 있는데 지금 요일 갈래·지금 시각대 값이 없는 곳(시각대 표 채우기 · 두 번 받아도 안 되면 이 시각대는 넘긴다)
+        def pick(ok=lambda i: True):
+            """받을 곳 — ① 앞 두 묶음(서초·강남) 닻 없는 곳 ② 앞 두 묶음의 이 시각대 빈 곳 ③ 나머지 묶음 닻 없는 곳 ④ 그 밖 서울 닻 없는 곳 ⑤ 나머지 묶음 이 시각대 빈 곳 ⑥ 그 밖 서울 이 시각대 빈 곳
+            (2026-10-10 소유자 「우선 서초구 전 지역 후 강남구로 · 순서대로」「수집 가능한 모든 신호값을 모아서」)"""
+            for f in (need1, needS):
+                for T in tiers[:2]:
+                    c = [i for i in T if f(i) and ok(i)]
+                    if c: return c
+            for T in tiers[2:]:
+                c = [i for i in T if need1(i) and ok(i)]
+                if c: return c
+            c = [i for i in order if need1(i) and ok(i)]
+            if c: return c
+            for T in tiers[2:]:
+                c = [i for i in T if needS(i) and ok(i)]
+                if c: return c
+            return [i for i in order if needS(i) and ok(i)]
         if t < W0:
-            time.sleep(W0 - t + 1); continue      # 정각 뒤 4분부터 — 그 전에는 교차로마다 줄이 모자라 주기를 못 읽는다(240줄 문턱)
+            time.sleep(W0 - t + 1); continue      # 정각 뒤 4분 45초부터 — 그 전에는 교차로마다 줄이 모자라 주기를 못 읽는다(240줄 문턱)
         if t > 3600 + W0 - GAP - 5:
             time.sleep(3600 - t + W0 + 1); continue   # 다음 정각 창을 5분 제한으로 놓치지 않게 — 창 바로 앞 호출은 건너뛴다
         if last is None:
-            dens = (t + 66.0) / t   # 첫 호출 — 교차로마다 앞 시각에서 넘어온 줄이 60여 줄 더 있어(2026-10-10 실측) 정각 가까울수록 밀도가 1 을 넘는다
-        if capoff and time.time() - capat > 3 * 3600 and t > 900:
-            capoff = None                                   # 깊은 쪽이 풀렸는지 3시간마다 한 번 본다(정각 창 밖에서 — 창의 호출은 아낀다)
-        if capoff:
-            # 2026-10-10 16시대 — 서버가 깊은 쪽(앞선 줄이 많은 쪽)에 HTTP 500 을 줬다(얕은 쪽은 됨) → 막힌 깊이보다 얕게 닿는 교차로만 고른다
-            lim = capoff * 0.95 / max(dens * t, 1.0)   # 닿는 자리 = 막힌 깊이 ÷ 교차로마다 쌓인 줄 수(밀도는 지난 쪽에서 잰 값)
-            reach = lambda L: [i for i in L if pos[i] < lim]
-            todo = pick_todo(tiers, order, need1, need2, need3, lambda i: pos[i] < lim)
-            if not todo:
-                print(now.strftime('%H:%M:%S'), '깊은 쪽이 막혀 닿는 곳이 없다(막힌 깊이', capoff, '줄) — 5분 뒤 다시', flush=True); time.sleep(GAP); continue
+            dens = 1.0
+        if pcap and time.time() - pcat > 5400:
+            pcap = None                                       # 끝자리는 한 시간 반만 믿는다(시각대마다 살아 있는 교차로 수가 다르다)
+        todo = pick((lambda i: pos[i] < pcap * 0.97) if pcap else (lambda i: True))
+        if not todo:
+            print(now.strftime('%H:%M:%S'), '지금 받을 곳이 없다' + ('(끝자리 %d 안쪽에는)' % pcap if pcap else '') + ' — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
         ps = sorted(pos[i] for i in todo)
         per = int(30000 / max(dens * t, 1.0))                 # 한 쪽에 드는 교차로 수(정각 창에서는 100곳 안팎)
         if len(ps) > 2 and per >= 20:
@@ -237,14 +251,13 @@ def sweep(prefer=None, api='t', cap=None):
             print(stamp, '쪽', page, 'HTTP', st, body[:160].replace(key(), '***'), flush=True)
             wait = GAP
             if st == 500 and page > 1:
-                capoff = min(capoff or CAP_SAFE, (page - 1) * 30000, CAP_SAFE); caphr = now.hour; capat = time.time(); last = None
-                json.dump({'cap': capoff, 'at': capat}, open(cap_f, 'w'))
+                pc = (page - 1) * 30000.0 / max(dens * t, 1.0)     # 그 쪽이 시작하는 자리 — 자료의 끝은 이보다 앞
+                pcap = min(pcap or 1e9, pc); pcat = time.time(); last = None
+                json.dump({'pos': pcap, 'at': pcat}, open(cap_f, 'w'))
             if st == 429:
                 try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5
                 except Exception: pass
             time.sleep(wait); continue
-        if not capoff and (page - 1) * 30000 > CAP_SAFE and os.path.exists(cap_f):
-            os.remove(cap_f)                                # 깊은 쪽이 다시 받아졌다 — 막힘 기록을 지운다
         J = json.loads(body); by = {}; seq = []
         for x in J:
             i = str(x['itstId'])
@@ -255,11 +268,15 @@ def sweep(prefer=None, api='t', cap=None):
             print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
             dens *= 0.8; time.sleep(GAP); continue
         a, b = min(idx), max(idx)
+        if pcap and b >= pcap:
+            pcap = None                                       # 끝자리로 본 곳보다 뒤가 받아졌다 — 다시 재게 둔다
         if page > 1 and a > 0:
             dens = (page - 1) * 30000.0 / (a * t)   # 앞선 a 곳이 (쪽-1)×3만 줄을 채웠다
         saved = 0
         for n, i in enumerate(seq):
             edge = n == 0 or n == len(seq) - 1   # 쪽 끝에 걸린 교차로는 줄이 잘렸을 수 있다
+            if not edge:
+                seen[i] = seen.get(i, 0) + 1
             red = (reduce_phase(i, by[i]) if api == 'p' else reduce_one(i, by[i])) if len(by[i]) >= 240 else None
             if red and red.get('cyc'):
                 json.dump(red, open(os.path.join(RAW, 'red', '%s_%s%s.json' % (i, stamp, 'p' if api == 'p' else '')), 'w', encoding='utf-8'), ensure_ascii=False); saved += 1
@@ -278,7 +295,7 @@ def sweep(prefer=None, api='t', cap=None):
             if stuck[K] >= 3:
                 tried.add(order[K]); json.dump(sorted(tried), open(tried_f, 'w'))   # 두 번 받고도 주기를 못 읽은 곳은 건너뛴다
         miss = 0 if hit else miss + 1
-        print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '우선 목록 — 닻 없음', len([i for i in pref if need1(i)]), '· 검증 남음', len([i for i in pref if need2(i)]), flush=True)
+        print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '우선 목록 — 닻 없음', len([i for i in pref if need1(i)]), '· 이 시각대 빈 곳', len([i for i in pref if needS(i)]), ('· 끝자리 %d' % pcap) if pcap else '', flush=True)
         if miss >= 4:
             tried.add(order[K]); miss = 0   # 네 번 빗나가면 그 교차로는 건너뛴다
         if api != 'p':

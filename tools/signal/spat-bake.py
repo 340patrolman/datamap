@@ -110,16 +110,18 @@ def anchors():
 
 
 def publish():
-    """data/sigdir-seoul.json 만 올린다(다른 파일은 건드리지 않는다) — 열쇠 검사에 걸리면 올리지 않는다."""
+    """data/sigdir-seoul.json 과 맞대 본 결과 data/sig-audit.json 만 올린다(다른 파일은 건드리지 않는다) — 열쇠 검사에 걸리면 올리지 않는다."""
     import subprocess
     run = lambda *a: subprocess.run(a, cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='ignore')
     try:
         if not run('git', 'status', '--porcelain', '--', 'data/sigdir-seoul.json').stdout.strip():
             return
+        run(sys.executable, '-X', 'utf8', os.path.join('tools', 'signal', 'sig-audit.py'))   # 맞대 본 결과(data/sig-audit.json)도 같이 다시 만든다
+        run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sig-audit.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
         if run(sys.executable, '-X', 'utf8', os.path.join('tools', 'keycheck.py')).returncode != 0:
             print('열쇠 검사에 걸려 올리지 않았다', flush=True); return
         run('git', 'pull', '-q', '--ff-only', 'origin', 'main')
-        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json')
+        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sig-audit.json')
         p2 = run('git', 'push', '-q', 'origin', 'main')
         print(datetime.datetime.now().strftime('%H:%M:%S'), '올림' if c.returncode == 0 and p2.returncode == 0 else '올리기 실패 ' + (c.stderr or p2.stderr)[:120], flush=True)
     except Exception as e:

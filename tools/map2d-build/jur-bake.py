@@ -83,7 +83,7 @@ d = {'schema':'tg-jur/2','area':'서울 서초구 — 경찰서 관할(서울서
  'boundary':'통계청 SGIS 행정동 경계(가공 vuski/admdongkor ver20260701 · 공공누리 1유형 · CC BY 4.0) — 행정동을 관할로 묶어 바깥 테두리만 남김 · 공유 변을 지키며 2.5m 단순화 · 반포4동은 반포대로 중심선(OSM ODbL)으로 가름',
  'method':'별표2 는 반포동을 번지로 나눈다(경계선 공개 자료 없음). 반포동 다섯 행정동을 어느 서가 맡는지는 소유자 현장 지식(2026-10-04)으로 정하고 T-GIS 교차로 관할 칸으로 맞대 봤다. 방배동 28곳 등 번지로 섞인 곳은 여전히 선으로 못 긋는다.',
  'src':SRC,
- 'split':[{'dong':'반포4동','road':'반포대로','west':'bangbae','east':'seocho','line':[[[round(x,6),round(y,6)] for x,y in g.coords] for g in sl]}],
+ 'split':[{'dong':'반포4동','road':'반포대로','west':'bangbae','east':'seocho','westBox':'서래','eastBox':'반포','boxSrc':'소유자 현장 지식 2026-10-10(반포4동은 서래·반포로 나뉜다)','line':[[[round(x,6),round(y,6)] for x,y in g.coords] for g in sl]}],
  'stations':[{'name':'서울서초경찰서','lat':37.4957,'lon':127.0052,'addr':'서초구 반포대로 179'},{'name':'서울방배경찰서','lat':37.4818,'lon':126.9828,'addr':'서초구 동작대로 204'}],
  'zones':zones}
 s = json.dumps(d, ensure_ascii=False, separators=(',', ':'))

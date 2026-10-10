@@ -1488,7 +1488,7 @@
   function jurOfDong(nm) { var z = null; if (D.jur) D.jur.zones.forEach(function (x) { if (x.dongs.indexOf(nm) >= 0) z = x; }); return z; }
   function jurSplit(nm) { return D.jur && D.jur.split ? D.jur.split.filter(function (x) { return x.dong === nm; })[0] || null : null; }   // 도로로 갈린 동(반포4동 = 반포대로 서쪽 방배서 · 동쪽 서초서)
   function jurDongLine(nm) { var z = jurOfDong(nm); if (z) return esc(z.name); var sp = jurSplit(nm); if (!sp) return ''; var zn = function (id) { return (D.jur.zones.filter(function (x) { return x.id === id; })[0] || {}).name || id; };
-    return esc(sp.road) + ' 서쪽 ' + esc(zn(sp.west)) + ' · 동쪽 ' + esc(zn(sp.east)) + ' <em>(현장 지식 · T-GIS 관할과 맞음)</em>'; }
+    return esc(sp.road) + ' 서쪽 <b>' + esc(zn(sp.west)) + '</b>' + (sp.westBox ? ' ' + esc(sp.westBox) : '') + ' · 동쪽 <b>' + esc(zn(sp.east)) + '</b>' + (sp.eastBox ? ' ' + esc(sp.eastBox) : '') + ' <em>(한 동을 두 관서가 나눠 맡는다 · 현장 지식 · T-GIS 관할과 맞음)</em>'; }
   function drawExtra(dark) {
     if (on.jur && JUR.length) {
       JUR.forEach(function (J) { var c = JUR_C[J.z.id] || ['rgba(100,116,139,.1)', '#64748b'];
@@ -3107,6 +3107,17 @@
   function pbOfP(k8, p) {   // 그 동의 관할 경찰서(번지로 나눠 맡으면 둘 다) 지구대·파출소 가운데 동 가운데에서 가장 가까운 곳 — 근사
     var st = polOf(k8); if (!st || !st.length || !p) return null; var ids = st.map(function (q) { return q[0]; }), b = null, bd = 1e12;
     POL2.pbox.forEach(function (x, i) { if (ids.indexOf(x[6]) < 0) return; var d = dTrue(x.p, p); if (d < bd) { bd = d; b = i; } }); return b; }
+  // v2.108.0 소유자 「반포4동은 서래·반포로 나뉜다 — 한 동에 경찰관서가 2개 표시되어야 할 경우」 — 이 자리(m)와 이 동의 경찰서들: [{st, tag, box}] · 첫 칸 = 누른 자리 쪽
+  //   ① 관할 경계가 그려진 곳(서초·방배 둘레 jur-seocho · 현장 지식)에서는 그 경계로 — 한 서가 통째로 맡는 동은 그 서 하나 · 도로로 갈린 동(split)은 두 서 ② 그 밖에서 별표2 가 두 서로 나눈 동은 가까운 지구대 쪽을 먼저(근사)
+  function pbNear(sid, m, want) { var b = null, bd = 1e12; POL2.pbox.forEach(function (x, i) { if (x[6] !== sid) return; if (want && x[0] === want) { b = i; bd = -1; return; } var d = dTrue(x.p, m); if (d < bd) { bd = d; b = i; } }); return b; }
+  function polHere(d, m) { if (!POL2 || !d || !d.k) return null; var st = polOf(d.k); if (!st || !st.length) return null;
+    var byName = function (nm) { return POL2.stations.filter(function (q) { return q[1] === nm; })[0] || null; }, zOf = function (id) { return D.jur ? D.jur.zones.filter(function (x) { return x.id === id; })[0] : null; };
+    var sp = jurSplit(d.name), zw = jurOfDong(d.name);
+    if (sp) { var zj = JUR.length ? jurAtM(m) : null, here = zj && zj.z && (zj.z.id === sp.west || zj.z.id === sp.east) ? zj.z.id : sp.west, oth = here === sp.west ? sp.east : sp.west, a = zOf(here), b = zOf(oth), sa = a && byName(a.name), sb = b && byName(b.name);
+      var side = function (id) { return esc(sp.road) + (id === sp.west ? ' 서쪽' : ' 동쪽'); }; if (sa && sb) return [{ st: sa, tag: side(here), box: here === sp.west ? sp.westBox : sp.eastBox }, { st: sb, tag: side(oth), box: oth === sp.west ? sp.westBox : sp.eastBox }]; }
+    if (zw) { var s1 = byName(zw.name); if (s1) return [{ st: s1, tag: '' }]; }
+    if (st.length < 2) return null;
+    var L = st.map(function (q) { var bi = pbNear(q[0], m), dd = bi != null ? dTrue(POL2.pbox[bi].p, m) : (q.p ? dTrue(q.p, m) : 1e12); return { st: q, tag: '이 동 일부', dd: dd }; }).sort(function (x, y) { return x.dd - y.dd; }); return L; }
   function sggAt(m) { for (var i = 0; i < SGG.length; i++) if (SGG[i].rings.some(function (r) { return inRing(r, m[0], m[1]); })) return i; return -1; }
   function unitAt(m) {
     if (UNIT) return unitAtU(m);
@@ -3231,8 +3242,12 @@
     var ck = cellAt(m); if (ck) steps.push(['cell', '🧊 250m 칸', { kind: 'g250', c: ck }]);
     var rr = RIS.length ? riAtM(m) : null; if (rr) steps.push(['ri', '🌾 ' + rr.name.split(' ').pop(), { kind: 'ri', r: rr }]);
     var d = dongAtM(m); if (d) steps.push(['dong', '🏘 ' + d.name, { kind: 'dong', d: d }]);
-    if (d && d.k && POL2) { if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); if (d._pb != null) steps.push(['pb', '👮 ' + POL2.pbox[d._pb][0], { kind: 'unit', u: { t: 'pb', id: d._pb } }]);
-      var st = polOf(d.k); if (st && st.length) steps.push(['ps', '🚓 ' + st[0][1].replace(/경찰서$/, '서'), { kind: 'unit', u: { t: 'ps', id: st[0][0] } }]); }
+    if (d && d.k && POL2) { var PS = polHere(d, m);
+      if (PS && PS.length) PS.forEach(function (q, i) { var bi = pbNear(q.st[0], m, q.box), tg = i ? ' · ' + q.tag : '';   /* v2.108.0 한 동을 두 서가 나눠 맡으면 누른 자리 쪽 먼저 · 다른 쪽도(열쇠 pb2·ps2) */
+        if (bi != null) steps.push([i ? 'pb2' : 'pb', '👮 ' + POL2.pbox[bi][0] + tg, { kind: 'unit', u: { t: 'pb', id: bi } }]);
+        steps.push([i ? 'ps2' : 'ps', '🚓 ' + q.st[1].replace(/경찰서$/, '서') + tg, { kind: 'unit', u: { t: 'ps', id: q.st[0] } }]); });
+      else { if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); if (d._pb != null) steps.push(['pb', '👮 ' + POL2.pbox[d._pb][0], { kind: 'unit', u: { t: 'pb', id: d._pb } }]);
+        var st = polOf(d.k); if (st && st.length) steps.push(['ps', '🚓 ' + st[0][1].replace(/경찰서$/, '서'), { kind: 'unit', u: { t: 'ps', id: st[0][0] } }]); } }
     var gi = sggAt(m); if (gi >= 0) steps.push(['sgg', '🗂 ' + SGG[gi].g.name, { kind: 'unit', u: { t: 'sgg', id: gi } }]);
     if (!POL2) polLoad();
     if (steps.length < 3) return; LADS = steps;

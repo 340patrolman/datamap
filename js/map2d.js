@@ -70,10 +70,11 @@
       RGETT[k].catch(function (e) { if (!e || e.message !== 'none') delete RGETT[k]; }); }
     return RGETT[k].then(function (t) { return JSON.parse(t); }); }
   function regionsLoad() {
-    return fetch('data/regions.json').then(function (r) { return r.json(); }).then(function (RG) { var parts = [], layers = {};
-      return Promise.all(RG.regions.map(function (g, i) { if (ONGH) RBASE[g.sido] = '/' + g.repo + '/'; var u = ONGH ? '/' + g.repo + '/manifest.json' : 'data/r/manifest-' + g.sido + '.json'; RMANU.push(u);
-        return fetch(u).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (m) { parts[i] = m.gus || []; Object.keys(m.layers || {}).forEach(function (k) { layers[k] = m.layers[k]; }); }).catch(function () { parts[i] = []; }); }))
-        .then(function () { D.ridx = { gus: [].concat.apply([], parts), layers: layers, regions: RG.regions }; REGR(); }); }).catch(function () { D.ridx = null; REGR(); });
+    return fetch('data/regions.json').then(function (r) { return r.json(); }).then(function (RG) { var parts = [], layers = {}, MF = {};   /* v2.98.2 권역 저장소 하나를 여러 시도가 같이 쓴다(경상 5·충청 4·전라 2) — manifest 는 주소마다 한 번만 받고 구는 코드로 한 번만 넣는다(찾기 결과·반경 합계가 겹치던 것) */
+      return Promise.all(RG.regions.map(function (g, i) { if (ONGH) RBASE[g.sido] = '/' + g.repo + '/'; var u = ONGH ? '/' + g.repo + '/manifest.json' : 'data/r/manifest-' + g.sido + '.json';
+        if (MF[u]) { parts[i] = []; return MF[u]; } RMANU.push(u);
+        return (MF[u] = fetch(u).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (m) { parts[i] = m.gus || []; Object.keys(m.layers || {}).forEach(function (k) { layers[k] = m.layers[k]; }); }).catch(function () { parts[i] = []; })); }))
+        .then(function () { var seen = {}, gus = [].concat.apply([], parts).filter(function (g) { if (!g || seen[g.gu]) return false; seen[g.gu] = 1; return true; }); D.ridx = { gus: gus, layers: layers, regions: RG.regions }; REGR(); }); }).catch(function () { D.ridx = null; REGR(); });
   }
   function get(k) { if (k === 'ridx') return regionsLoad(); return fetch(FILES[k]).then(function (r) { return r.json(); }).then(function (j) { D[k] = j; }).catch(function () { D[k] = null; }); }
   var LATE = ['livep', 'trend', 'hot10', 'trdar', 'safety', 'taas10', 'enf', 'season', 'pbtn', 'pstat'];   // v0.10.80 무거운 자료(상권·안전시설·사고 10년·추이)는 첫 그림 뒤에 읽는다 — 지도가 먼저 뜬다

@@ -912,7 +912,7 @@
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
-    drawReach(dark); drawStz(dark); drawBsf(dark); drawGmk(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark);
+    drawReach(dark); drawStz(dark); drawBsf(dark); drawGmk(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
     if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
       var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
       ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
@@ -1091,6 +1091,7 @@
   function tap(x, y) {
     TAPM = M(x, y);
     if (RAD.pick && document.body.classList.contains('radon')) { RAD.c = M(x, y); RAD.pick = false; radRun(); return; }
+    if (PRD.pick) { PRD.p = M(x, y); PRD.pick = false; PRD.base = Date.now(); prdGo(); return; }
     var best = null, bd = 1e9;
     hit.forEach(function (h) { var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < bd) { bd = d; best = h; } });
     if (!best && on.reach) { var rr9 = rchAt(x, y); if (rr9) best = { x: x, y: y, r: 6, it: { kind: 'reach', r: rr9 } }; }
@@ -1266,6 +1267,7 @@
     } else if (it.kind === 'gov') { h = govCard(it.g);
     } else if (it.kind === 'jmn') { h = jmnCard(it.m);
     } else if (it.kind === 'sgl') { h = sglCard();
+    } else if (it.kind === 'prd') { h = prdCard();
     } else if (it.kind === 'bsf') { h = bsfCard(it.q);
     } else if (it.kind === 'sbf') { h = sbfCard(it.t);
     } else if (it.kind === 'sbc') { h = sbcCard(it.t);
@@ -1310,7 +1312,7 @@
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
       h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>' + jmyRows(it.d));   // v2.76.1 소유자 「이야기 목록이 첫 화면을 잡아먹는다 — 이 지역 설명에 넣어라」 → 📝 이 지역 설명을 누르면 맨 아래에
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
-    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
+    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig|prd)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
@@ -1970,7 +1972,7 @@
   }
   function paintPre() {
     var el = $('m2dPre'); if (!el) return; var si = seasonInfo(); PRESETS = PRESETS.filter(function (x) { return x[0] !== 'season'; }); PRESETS.unshift(['season', si.icon + ' 지금 계절 · ' + si.short, si.keys]);
-    el.innerHTML = '<button data-x="none" class="ctl">모두 끄기</button><button data-x="reset" class="ctl">처음대로</button>' + (MY || []).map(function (m, i) { return '<button data-my="' + i + '" class="my' + (myAct(m) ? ' on' : '') + '" title="' + esc(m.ly.length + '개 레이어' + (m.v ? ' · 자리 포함' : '')) + '">' + (i === MYST ? '🏠 ' : '⭐ ') + esc(m.n) + '</button>'; }).join('') + '<button data-x="mysave" class="ctl my">＋ 지금 보기 저장</button>' + (MY && MY.length ? '<button data-x="mymgr" class="ctl">⚙ 내 보기</button>' : '') + '<button data-x="biz" class="ctl biz">🏪 창업 자리 찾기</button><button data-x="rad" class="ctl biz">📐 반경 분석</button>' + PRESETS.map(function (x) { var act = LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); return '<button data-p="' + x[0] + '" class="' + (act ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') +
+    el.innerHTML = '<button data-x="none" class="ctl">모두 끄기</button><button data-x="reset" class="ctl">처음대로</button>' + (MY || []).map(function (m, i) { return '<button data-my="' + i + '" class="my' + (myAct(m) ? ' on' : '') + '" title="' + esc(m.ly.length + '개 레이어' + (m.v ? ' · 자리 포함' : '')) + '">' + (i === MYST ? '🏠 ' : '⭐ ') + esc(m.n) + '</button>'; }).join('') + '<button data-x="mysave" class="ctl my">＋ 지금 보기 저장</button>' + (MY && MY.length ? '<button data-x="mymgr" class="ctl">⚙ 내 보기</button>' : '') + '<button data-x="biz" class="ctl biz">🏪 창업 자리 찾기</button><button data-x="rad" class="ctl biz">📐 반경 분석</button><button data-x="prd" class="ctl biz">🚨 신고 차량 예측</button>' + PRESETS.map(function (x) { var act = LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); return '<button data-p="' + x[0] + '" class="' + (act ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') +
       '';
     var pc = $('m2dPreC'); if (pc) pc.innerHTML = '<details id="m2dPreCD" class="prec"' + (PRECO ? ' open' : '') + '><summary>📋 묶음마다 켜는 레이어 — 어떻게 짜였나</summary>' + PRESETS.map(function (x) { return '<div><button data-p="' + x[0] + '" class="pk">' + x[1] + '</button> → ' + x[2].filter(hasL).map(function (k) { return esc(lname(k)); }).join(' · ') + (PRENOTE[x[0]] ? '<br><small>' + PRENOTE[x[0]] + '</small>' : '') + '</div>'; }).join('') + '<p class="lhn">묶음을 누르면 행정동·도로·바탕만 남기고 나머지는 끈 뒤 이 레이어들을 켠다 · 「처음대로」 = 레이어마다 처음 값 · 「모두 끄기」 = 바탕만</p></details>';
     preFit();
@@ -1981,7 +1983,7 @@
   // v0.10.82 모두 끄기(행정동·도로·바탕만 남김) · 처음대로(층마다 기본값) — 근무별 줄과 「☰ 모든 층」 판이 같이 쓴다
   function layersNone() { LAYERS.forEach(function (l) { on[l[0]] = false; }); on.dong = true; on.road = true; on.base = true; unitKeep(); saveOn(); paintLayers(); paintPre(); sel = null; show(null); draw(); summary(); }
   function layersReset() { LAYERS.forEach(function (l) { on[l[0]] = l[2]; }); unitKeep(); saveOn(); paintLayers(); paintPre(); draw(); summary(); }
-  if ($('m2dPre')) { $('m2dPre').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var x = b.getAttribute('data-x'), mi = b.getAttribute('data-my'); if (mi != null) { myApply(+mi, true); return; } if (x === 'mysave') { mySave(); return; } if (x === 'mymgr') { myMgr(); return; } if (x === 'biz') bizOpen(); else if (x === 'rad') radOpen(null); else if (x === 'none') layersNone(); else if (x === 'reset') layersReset(); else preset(b.getAttribute('data-p')); }); }
+  if ($('m2dPre')) { $('m2dPre').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var x = b.getAttribute('data-x'), mi = b.getAttribute('data-my'); if (mi != null) { myApply(+mi, true); return; } if (x === 'mysave') { mySave(); return; } if (x === 'mymgr') { myMgr(); return; } if (x === 'biz') bizOpen(); else if (x === 'rad') radOpen(null); else if (x === 'prd') prdOpen(); else if (x === 'none') layersNone(); else if (x === 'reset') layersReset(); else preset(b.getAttribute('data-p')); }); }
   var SUMT = [];
   function summary() {
     var el = $('m2dSum'); if (!el || !DONG.length) return; var h = nowH(), out = [], it; SUMT = [];
@@ -3222,10 +3224,71 @@
   function sgBin(a, b) { var i = DIR8K.indexOf(a), k = DIR8K.indexOf(b); if (i < 0 || k < 0) return 9; var d = Math.abs(i - k); return Math.min(d, 8 - d); }
   var DIR8K = ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw'];
   /* 번호 no 교차로에 dir 쪽에서 들어와 직진하는 신호의 T(ms) 때 상태 — 교통과 현시도 먼저, 없으면 서울시 실시간 값(닻). 방위는 한 칸(45°)까지 어긋나도 받아 준다 */
-  function sgStateAt(no, dir, T) { no = String(no); var kx = KSC && (KSC.items || []).filter(function (q) { return String(q.no) === no; })[0];
-    if (kx) { var Pn = kscPlan(kx), AA = Pn && kscAA(kx, Pn, Date.now()); if (!AA) return null; var R = Pn.rows.filter(function (r) { return r[1] === 'St' && r[3] != null && sgBin(r[0], dir) <= 1; }).sort(function (a, b) { return sgBin(a[0], dir) - sgBin(b[0], dir); })[0]; if (!R) return null; var p = kscPh(R, Pn.c, AA, T); return { st: p[0], left: p[1], since: p[2], g: R[3], y: R[4], cyc: Pn.c, red: R[5], src: 'ksc' }; }
-    var lv = sdLive(no); if (!lv.ok) return null; var o = lv.rec; if (o.dq) return null; var M9 = (o.mv || []).filter(function (m) { return m[1] === 'St' && m[2] != null && sgBin(m[0], dir) <= 1; }).sort(function (a, b) { return sgBin(a[0], dir) - sgBin(b[0], dir); })[0]; if (!M9) return null;
+  function sgStateAt(no, dir, T, mv) { no = String(no); mv = mv || 'St'; var kx = KSC && (KSC.items || []).filter(function (q) { return String(q.no) === no; })[0];
+    if (kx) { var Pn = kscPlan(kx), AA = Pn && kscAA(kx, Pn, Date.now()); if (!AA) return null; var R = Pn.rows.filter(function (r) { return r[1] === mv && r[3] != null && sgBin(r[0], dir) <= 1; }).sort(function (a, b) { return sgBin(a[0], dir) - sgBin(b[0], dir); })[0]; if (!R) return null; var p = kscPh(R, Pn.c, AA, T); return { st: p[0], left: p[1], since: p[2], g: R[3], y: R[4], cyc: Pn.c, red: R[5], src: 'ksc' }; }
+    var lv = sdLive(no); if (!lv.ok) return null; var o = lv.rec; if (o.dq) return null; var M9 = (o.mv || []).filter(function (m) { return m[1] === mv && m[2] != null && sgBin(m[0], dir) <= 1; }).sort(function (a, b) { return sgBin(a[0], dir) - sgBin(b[0], dir); })[0]; if (!M9) return null;
     var ci = o.ci, t = ((((T / 1000 - o.a - (M9[5] || 0)) % ci) + ci) % ci), g = M9[2], y = M9[3] || 0; return { st: t < g ? 'g' : t < g + y ? 'y' : 'r', left: t < g ? g - t : t < g + y ? g + y - t : ci - t, since: t, g: g, y: y, cyc: ci, red: Math.max(0, ci - g - y), src: lv.tod ? (lv.far != null ? 'far' : 'tod') : lv.stale ? 'stale' : 'live' }; }
+  /* ---------- v2.146.0 🚨 신고 차량 예측 — 소유자(2026-10-11 · 다른 세션이 받아 전함) 「112 신고 내용 중 음주 의심 차량이 어느 방향으로 진행 중 또는 신호대기 중이라고 하면 다음 위치를 예측할 수 있게 · 신호값에 의하여 갈 수 있는 거리가 정해지므로」「좋아 경찰 업무에 이 카테고리 추가 하자」 ----------
+     넣는 값 = 신고 자리(지도에서 누름) · 진행 방위(8방) · 신고 시각(지금·n분 전) · 신호대기 중 · 속도(제한속도 · 1.2배 = 용의차량이 그만큼 빨리 간다고 볼 때). 차량번호·신고 내용은 넣는 칸이 없다.
+     길 = data/sig-net-seocho.json(신호 교차로 사이 큰길 · 서초구 + 2km) — 골목은 없다. 기다림 = 그 교차로에 들어오는 쪽·나가는 방향(직진·좌회전 · 우회전 0)의 신호를 sgStateAt 으로(지금 색을 아는 곳 = 남은 초 · 모르는 곳 = 평균 (주기−녹색)²÷(2×주기) · 자료 없는 곳 = 0).
+     내는 것 = ① 곧장 갈 때 신호별 시간표 ② 1·2·3·5분 안에 닿는 길(색) ③ 적색에 걸려 서게 되는 교차로(앞질러 기다릴 자리). 「갈 수 있는 바깥 테두리」이지 「여기 있다」가 아니다. 지금 통행속도(막힘)는 아직 안 넣었다 */
+  var PRD = { p: null, hd: 'nt', ago: 0, wait: 0, k: 1, base: 0, pick: false, res: null }, PRDC = [[60, '#dc2626', '1분'], [120, '#f97316', '2분'], [180, '#eab308', '3분'], [300, '#16a34a', '5분']], PRDH = 300, PRDA = { nt: '↑', ne: '↗', et: '→', se: '↘', st: '↓', sw: '↙', wt: '←', nw: '↖' };
+  function prdNode(no) { var n = SNET && SNET.nodes[no]; if (!n) return null; return n.p || (n.p = P(n.ll[0], n.ll[1])); }
+  function prdNm(no) { var n = SNET && SNET.nodes[no]; return n ? n.nm || String(no) : String(no); }
+  function prdTurn(hIn, hOut) { var d = (DIR8K.indexOf(hOut) - DIR8K.indexOf(hIn) + 8) % 8; return d === 0 || d === 1 || d === 7 ? 'St' : d === 2 || d === 3 ? 'Rt' : d === 5 || d === 6 ? 'Lt' : 'Ut'; }
+  function prdLen(no, dir, mv) { var L = D.sigd && D.sigd.its && D.sigd.its[String(no)], o = L && L[L.length - 1]; if (!o) return null; var m = o.mv.filter(function (q) { return q[1] === mv && q[2] != null && sgBin(q[0], dir) <= 1; })[0] || o.mv.filter(function (q) { return q[2] != null && sgBin(q[0], dir) <= 1; })[0]; return m ? { g: m[2], c: o.ci || o.cyc } : null; }
+  /* 기다리는 초와 갈래 — g 녹색 통과 · y 황색(지나간다고 본다 — 바깥 테두리라서) · r 적색(남은 초를 안다) · u 색 모름(평균 기다림) · n 신호 자료 없음(0) · t 우회전(0) */
+  function prdWait(no, dir, mv, T) { if (mv === 'Rt') return [0, 't']; var st = null; try { st = sgStateAt(no, dir, T, mv); } catch (e) {} if (st) return st.st === 'r' ? [st.left, 'r'] : [0, st.st]; var q = prdLen(no, dir, mv); return q && q.c > 0 ? [Math.pow(Math.max(0, q.c - q.g), 2) / (2 * q.c), 'u'] : [0, 'n']; }
+  function prdStart() { var p = PRD.p, best = null; if (!SNET || !p) return null;
+    SNET.links.forEach(function (l, i) { var bn = sgBin(l[4], PRD.hd); if (bn > 1) return; var A = prdNode(l[0]), B = prdNode(l[1]); if (!A || !B) return; var dx = B[0] - A[0], dy = B[1] - A[1], L2 = dx * dx + dy * dy; if (!L2) return;
+      var f = PRD.wait ? 0 : Math.max(0, Math.min(1, ((p[0] - A[0]) * dx + (p[1] - A[1]) * dy) / L2)), d = dTrue(p, [A[0] + f * dx, A[1] + f * dy]) + bn * 15; if (d <= (PRD.wait ? 130 : 110) && (!best || d < best.d)) best = { i: i, l: l, f: f, d: d }; });
+    return best; }
+  function prdRun() { PRD.res = null; if (!SNET || !PRD.p) return; var T0 = PRD.base - PRD.ago * 60000, k = PRD.k, st = prdStart(); if (!st) { PRD.res = { err: 1 }; return; }
+    var seg = {}, stops = {}, unk = {}, nod = {}, Q = [], l0 = st.l, w0 = [0, ''], f0 = st.f; if (!SNET.ixd) { SNET.links.forEach(function (l, i) { l.ix = i; }); SNET.ixd = 1; }
+    if (PRD.wait) w0 = prdWait(l0[0], SDO[PRD.hd], 'St', T0);
+    var t1 = w0[0] + (1 - f0) * l0[3] / k; seg[st.i] = { a: w0[0], b: t1, f: f0 }; Q.push([t1, st.i]);
+    while (Q.length) { Q.sort(function (x, y) { return x[0] - y[0]; }); var cur = Q.shift(), t = cur[0], L = SNET.links[cur[1]]; if (t > PRDH || seg[cur[1]].b < t - 1e-6) continue; var B = L[1], hIn = SDO[L[5]], ws = prdWait(B, L[5], 'St', T0 + t * 1000);
+      if (nod[B] == null || t < nod[B]) { nod[B] = t; if (ws[1] === 'r') stops[B] = { t: t, w: ws[0] }; else delete stops[B]; if (ws[1] === 'u' || ws[1] === 'n') unk[B] = ws[1]; else delete unk[B]; }
+      (SNET.by[B] || []).forEach(function (L2) { var mv = prdTurn(hIn, L2[4]); if (mv === 'Ut') return; var w = mv === 'St' ? ws : prdWait(B, L[5], mv, T0 + t * 1000), dep = t + w[0]; if (dep >= PRDH) return; var arr = dep + L2[3] / k; if (!seg[L2.ix] || arr < seg[L2.ix].b - 1e-6) { seg[L2.ix] = { a: dep, b: arr, f: 0 }; Q.push([arr, L2.ix]); } }); }
+    /* 곧장 갈 때 — 교차로마다 가장 덜 꺾이는 길 */
+    var tt = [], cl = l0, ct = t1, dist = (1 - f0) * l0[2], guard = 0;
+    while (cl && ct <= PRDH + 90 && guard++ < 10) { var B2 = cl[1], hI = SDO[cl[5]], w2 = prdWait(B2, cl[5], 'St', T0 + ct * 1000); tt.push({ no: B2, t: ct, m: dist, w: w2, mid: cl[8] || 0 });
+      var nx = (SNET.by[B2] || []).filter(function (q) { return prdTurn(hI, q[4]) === 'St'; }).sort(function (a, b) { return sgBin(a[4], hI) - sgBin(b[4], hI); })[0]; if (!nx) break; ct += w2[0] + nx[3] / k; dist += nx[2]; cl = nx; }
+    var mid = 0; Object.keys(seg).forEach(function (ix) { mid += SNET.links[ix][8] || 0; });
+    PRD.res = { T0: T0, st: st, w0: w0, seg: seg, stops: stops, unk: unk, nod: nod, tt: tt, mid: mid }; }
+  function prdGo() { snetGet().then(function () { if (KSC === undefined) kscGet(); prdRun(); sel = null; show({ kind: 'prd' }); draw(); }); }
+  function prdOpen() { PRD.pick = true; snetGet(); if (KSC === undefined) kscGet(); if (!on.sgm) { on.sgm = true; try { paintLayers(); } catch (e) {} } toast('🚨 신고 자리를 지도에서 누른다'); sel = null; show({ kind: 'prd' }); draw(); }
+  function prdMin(t) { return '+' + (t / 60).toFixed(1) + '분'; }
+  function prdWTxt(w, t) { return w[1] === 'r' ? '<b style="color:#dc2626">적색 · ' + Math.round(w[0]) + '초 섬</b> · ' + prdMin(t + w[0]) + '에 출발' : w[1] === 'g' ? '<b style="color:#16a34a">녹색 통과</b>' : w[1] === 'y' ? '<b style="color:#a16207">황색(지나간다고 봄)</b>' : w[1] === 'u' ? '<b style="color:#64748b">색 모름</b> · 평균 ' + Math.round(w[0]) + '초 기다린다고 봄' : '<b style="color:#64748b">신호 자료 없음</b> · 기다림 0으로 봄'; }
+  function prdCard() { var R = PRD.res, bt = function (k, v, t, act) { return '<button data-prd="' + k + ':' + v + '"' + (act ? ' style="background:#1d4ed8;color:#fff;border-color:#1d4ed8"' : '') + '>' + t + '</button>'; };
+    var h = '<h3>🚨 신고 차량 예측</h3><p class="sdnt" style="margin:0 0 8px;color:#b45309"><b>갈 수 있는 바깥 테두리</b>이지 「여기 있다」가 아니다 — ' + (PRD.k > 1 ? '제한속도의 ' + PRD.k + '배' : '제한속도') + '로 달리고 신호를 지킨다고 볼 때. 신호를 안 지키면 더 멀리, 막히면 덜 간다.</p>';
+    if (!PRD.p) return h + '<p class="desc"><b>신고 자리를 지도에서 누른다</b> — 큰길(신호 교차로 사이) 위를 누른다. 그다음 진행 방위·신고 시각을 고른다.</p><div class="lg-btns">' + bt('pick', 1, '📍 지도에서 자리 고르기', PRD.pick) + '</div><p class="sdnt">서초구 둘레(신호 자료가 있는 큰길)에서 된다 · 차량번호·신고 내용은 넣는 칸이 없다(자리와 방향만).</p>';
+    h += '<div class="cap" style="margin-top:2px">진행 방위(가는 쪽)</div><div class="lg-btns">' + DIR8K.map(function (d) { return bt('hd', d, PRDA[d] + ' ' + SDN[d], PRD.hd === d); }).join('') + '</div>';
+    h += '<div class="cap">신고 시각</div><div class="lg-btns">' + [0, 1, 2, 3, 5].map(function (n) { return bt('ago', n, n ? n + '분 전' : '지금', PRD.ago === n); }).join('') + '</div>';
+    h += '<div class="lg-btns">' + bt('wait', 1, (PRD.wait ? '✅ ' : '') + '신호대기 중이었다', PRD.wait) + bt('k', 1, '제한속도', PRD.k === 1) + bt('k', 1.2, '1.2배로 본다', PRD.k === 1.2) + bt('pick', 1, '📍 자리 다시', PRD.pick) + bt('x', 1, '✕ 지우기', 0) + '</div>';
+    if (!SNET) return h + '<p class="desc">길 자료를 읽는 중…</p>';
+    if (!R || R.err) return h + '<p class="sdnt" style="color:#b45309"><b>이 자리·이 방위로 가는 큰길을 못 찾았다</b> — 신호 교차로 사이 큰길에서 ' + (PRD.wait ? '130' : '110') + 'm 안을 누르고, 방위를 그 길이 가는 쪽으로 고른다(서초구 둘레만 된다).</p>';
+    var l0 = R.st.l, el = (Date.now() - R.T0) / 1000;
+    h += row('출발', esc(prdNm(l0[0])) + ' → ' + esc(prdNm(l0[1])) + ' 쪽 · ' + esc(l0[6] || '') + ' · 제한 ' + l0[7] + 'km/h' + (PRD.wait ? '<br>신호대기: ' + prdWTxt(R.w0, 0) : '') + '<br><em>신고 시각 ' + hhmm(R.T0) + ' 기준 · 지금은 ' + prdMin(el) + '</em>');
+    h += '<div class="cap">① 곧장 갈 때 — 신호마다</div>' + R.tt.map(function (q) { return '<div class="r"><b>' + prdMin(q.t) + ' · ' + Math.round(q.m) + 'm</b><span><b>' + esc(prdNm(q.no)) + '</b> — ' + prdWTxt(q.w, q.t) + (q.mid ? ' <em>(오는 길에 신호 자료 없는 교차점 ' + q.mid + '곳)</em>' : '') + '</span></div>'; }).join('');
+    var SP = Object.keys(R.stops).map(function (no) { return { no: no, t: R.stops[no].t, w: R.stops[no].w }; }).sort(function (a, b) { return a.t - b.t; });
+    h += '<div class="cap">② 적색에 걸려 서게 되는 교차로 — 앞질러 가서 기다릴 자리(지도의 붉은 동그라미)</div>' + (SP.length ? SP.slice(0, 12).map(function (q) { return '<div class="r"><b>' + prdMin(q.t) + '부터</b><span><b>' + esc(prdNm(q.no)) + '</b> — ' + Math.round(q.w) + '초 섬(직진 신호 기준)</span></div>'; }).join('') : '<p class="desc">지금 색을 아는 교차로 가운데 적색에 걸리는 곳이 없다.</p>');
+    var nn = Object.keys(R.nod).length, nu = Object.keys(R.unk).length;
+    h += row('③ 5분 안에 닿는 곳', '신호 교차로 <b>' + nn + '곳</b> · 그중 <b>지금 색을 모르는 곳 ' + nu + '</b>(평균으로 봄 — 그만큼 덜 정확) · 길 사이 신호 자료 없는 교차점 ' + R.mid + '곳(기다림을 안 넣음 → 실제는 덜 간다)');
+    h += '<div class="lg-btns" style="pointer-events:none">' + PRDC.map(function (c) { return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12.5px;margin-right:8px"><i style="display:inline-block;width:18px;height:5px;border-radius:3px;background:' + c[1] + '"></i>' + c[2] + ' 안</span>'; }).join('') + '</div>';
+    return h + sdMore('<p class="sdnt">셈법 — 신고 자리에서 그 방위로 가는 큰길을 잡고, 교차로마다 들어오는 쪽·나가는 방향(직진·좌회전 · 우회전은 기다림 0 · 유턴은 안 봄)의 신호를 그 시각으로 센다. 지금 색을 아는 곳은 남은 초 그대로, 모르는 곳은 평균 (주기 − 녹색)² ÷ (2 × 주기), 신호 자료가 없는 곳은 0. 황색은 지나간다고 본다(바깥 테두리라서).</p><p class="sdnt">한계 — <b>신호 교차로 사이 큰길만</b>(골목·이면도로로 빠지는 길은 없다) · 지도의 선은 교차로 사이를 <b>곧게 이은 것</b>(실제 길 모양 아님) · <b>지금 통행속도(막힘)는 아직 안 넣었다</b> · 서초구 + 2km 둘레 · 신호값은 받은 값·계획에서 이어 센 추정이라 감응·수동 운영 때는 다르다 · 차량번호·신고 내용은 넣는 칸이 없고 어디에도 저장하지 않는다.</p>' + src('길 = 국가교통정보센터 표준노드링크(data/sig-net-seocho.json) · 신호 = 서울시 T-Data · 서초경찰서 교통과 현시도'), 'prd', 'ⓘ 셈법·한계'); }
+  function drawPrd(dark) { if (!PRD.p) return; ctx.save(); ctx.setLineDash([]); ctx.lineCap = 'round'; var R = PRD.res;
+    if (R && !R.err && SNET) { [0, 1].forEach(function (pass) { Object.keys(R.seg).forEach(function (ix) { var g = R.seg[ix], l = SNET.links[ix], A = prdNode(l[0]), B = prdNode(l[1]); if (!A || !B) return; var a = S(A), b = S(B), dur = g.b - g.a; if (dur <= 0) return; var lo = g.a;
+          PRDC.forEach(function (c) { var hi = Math.min(g.b, c[0]); if (hi <= lo) return; var fa = g.f + (1 - g.f) * (lo - g.a) / dur, fb = g.f + (1 - g.f) * (hi - g.a) / dur; ctx.beginPath(); ctx.moveTo(a[0] + (b[0] - a[0]) * fa, a[1] + (b[1] - a[1]) * fa); ctx.lineTo(a[0] + (b[0] - a[0]) * fb, a[1] + (b[1] - a[1]) * fb); ctx.lineWidth = pass ? 5 : 9; ctx.strokeStyle = pass ? c[1] : (dark ? 'rgba(15,22,36,.85)' : 'rgba(255,255,255,.9)'); ctx.stroke(); lo = hi; }); }); });
+      Object.keys(R.stops).forEach(function (no) { var q = prdNode(no); if (!q) return; var sp = S(q), st = R.stops[no]; ctx.beginPath(); ctx.arc(sp[0], sp[1], 15, 0, 6.2832); ctx.fillStyle = 'rgba(220,38,38,.16)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#dc2626'; ctx.stroke();
+        if (view.s >= 0.12) { var tx = prdMin(st.t) + ' · ' + Math.round(st.w) + '초 섬'; ctx.font = 'bold 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3.5; ctx.strokeStyle = dark ? 'rgba(15,22,36,.95)' : 'rgba(255,255,255,.97)'; ctx.strokeText(tx, sp[0], sp[1] - 25); ctx.fillStyle = '#dc2626'; ctx.fillText(tx, sp[0], sp[1] - 25); } }); }
+    var s0 = S(PRD.p), ang = SDA[PRD.hd] * Math.PI / 180; ctx.beginPath(); ctx.arc(s0[0], s0[1], 9, 0, 6.2832); ctx.fillStyle = '#111827'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s0[0] + Math.cos(ang) * 11, s0[1] + Math.sin(ang) * 11); ctx.lineTo(s0[0] + Math.cos(ang) * 30, s0[1] + Math.sin(ang) * 30); ctx.lineWidth = 5; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.lineWidth = 3; ctx.strokeStyle = '#111827'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s0[0] + Math.cos(ang) * 36, s0[1] + Math.sin(ang) * 36); ctx.lineTo(s0[0] + Math.cos(ang + 2.6) * 0 + Math.cos(ang) * 26 + Math.cos(ang + 1.5708) * 6, s0[1] + Math.sin(ang) * 26 + Math.sin(ang + 1.5708) * 6); ctx.lineTo(s0[0] + Math.cos(ang) * 26 - Math.cos(ang + 1.5708) * 6, s0[1] + Math.sin(ang) * 26 - Math.sin(ang + 1.5708) * 6); ctx.closePath(); ctx.fillStyle = '#111827'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.restore(); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-prd]'); if (!b) return; e.preventDefault(); var v = b.getAttribute('data-prd').split(':');
+    if (v[0] === 'hd') PRD.hd = v[1]; else if (v[0] === 'ago') { PRD.ago = +v[1]; PRD.base = Date.now(); } else if (v[0] === 'wait') PRD.wait = PRD.wait ? 0 : 1; else if (v[0] === 'k') PRD.k = +v[1]; else if (v[0] === 'pick') { PRD.pick = true; toast('🚨 신고 자리를 지도에서 누른다'); } else if (v[0] === 'x') { PRD.p = null; PRD.res = null; PRD.pick = false; }
+    if (PRD.p && !PRD.base) PRD.base = Date.now(); prdGo(); });
   function sgProgPaint() { var el = $('sgProg'); if (!el) return; snetGet(); if (!SNET || HOUR != null) { if (el.innerHTML) el.innerHTML = ''; return; } var no = el.getAttribute('data-no'), L = (SNET.by[no] || []).filter(function (l) { return l[8] === 0; }), now = Date.now(), hr = new Date(now).getHours();   /* 사이에 신호 자료 없는 교차점이 있는 짝은 안 낸다 — 거기 신호를 모르면 답이 뜻이 없다(서초역 → 성모병원 사이의 서초경찰서) */
     if (el.getAttribute('data-ksc')) { var kx = KSC && (KSC.items || []).filter(function (q) { return String(q.no) === no; })[0], skip = kx ? kscNbr(kx).map(function (q) { return String(q.y.no); }) : []; L = L.filter(function (l) { return skip.indexOf(String(l[1])) < 0; }); }
     if (!L.length) { if (el.innerHTML) el.innerHTML = ''; return; }

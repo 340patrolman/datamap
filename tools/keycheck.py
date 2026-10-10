@@ -10,7 +10,7 @@ def vals(o, path=''):
         for k, v in o.items(): yield from vals(v, path + '/' + str(k))
     elif isinstance(o, list):
         for i, v in enumerate(o): yield from vals(v, path + '/' + str(i))
-    elif isinstance(o, str) and len(o) >= 16: yield path, o
+    elif isinstance(o, str) and len(o) >= 16 and not any(c.isspace() or '가' <= c <= '힣' for c in o): yield path, o   # 열쇠는 빈칸·한글이 없는 한 덩어리다 — 메모 글(_메모·_경고)이 문서 낱말과 겹쳐 잘못 걸리던 것(2026-10-10 「한국부동산원 R-ONE」)을 뺀다
 
 def main():
     if not os.path.exists(KF): print('keys.json 없음 — 검사 못 함:', KF); sys.exit(2)

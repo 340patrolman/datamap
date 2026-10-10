@@ -16,6 +16,8 @@
 
 ## 유지보수(2026-10-09)
 * **`유지보수.md`** = 언제·누가·어떻게(달력 · 형님 직접 목록 · 고장 났을 때) · 주기와 날짜 알림의 정본은 `tools/data-check.py` 의 `SETS`·`DATES`(세션 열 때 「📋」·「⏰」) · 커밋 전 `tools/keycheck.py` · 집 배치 `tools/home/집에서_YYYYMMDD.bat` · 코워크 지시서 `tools/cowork/`.
+* **🤖 AI 길잡이 `data/ai.json`(tg-ai-guide/2 · 2026-10-10 소유자 「AI 가 여기를 보면 대한민국 공공데이터가 거의 다 있으니 잘 쓸 수 있게」)** = 자료를 쓰는 입구 한 장: start_here · keys(코드 체계) · recipes(묻는 것 → 읽는 차례) · catalog(data/*.json 을 훑어 저절로) · region_layers(권역 층) · rules_for_ai · paste_to_ai. **자료 파일을 더하거나 다시 구우면 `tools/region/ai-guide-bake.py`(1초)를 돌려 같이 커밋**(data-check 14일). 새 자료 파일에는 맨 위에 `schema`·`source`·`fields`·`note`·`made` 를 꼭 적는다 — 그래야 목록에 뜻이 실린다.
+* 2026-10-10 더한 자료(굽는 도구는 모두 `tools/region/`): `ptax-dong.json`(동별 주택 보유세 추정 · ptax-bake) · `hp.json` 2026 공시(hp-bake · 원본 07_API키/out/hp2026) · `gu-proptax.json`(시군구 실제 재산세 · lofin-bake) · `police-card.json`(경찰서 관할 한눈에·연혁 · polcard-bake · polhist-fetch · 반포동은 소유자 현장 기준 `FIELD`) · `agency-card.json`(세무서·법원·등기소·교육지원청 · agcard-bake) · `agency-pts.json`(소방서·119안전센터·주민센터 · agpts-bake · 원자료 dgfile.py) · `juris.json` reg(등기소 · reg_parse) · `find-it.json`(없는 자료의 공식 창구 · findit-bake). 화면은 게임 세션이 붙였다(MAP2D.md v2.106~v2.112).
 * data 2026-10-10: 주택 실거래 지번 좌표 `home-bake.py geo` +40,023곳(브이월드 하루 한도에서 멈춤 · 좌표 캐시 112,464) → `build`(좌표 있음 2,715,215 · 없음 164,342 · 256구 home 12.3→18.1MB) → `profile-bake.py` → `publish-data.py push`(권역 8곳 · 구-층 8,265 그대로 · 바뀐 층 home·profile·deals) · 남은 지번은 날마다 이어서.
 
 ## 이어서 할 일(2026-10-04 기준)

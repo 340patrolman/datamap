@@ -32,6 +32,11 @@ def main():
     for l in open(os.path.join(J, '결과', 'labmap.tsv'), encoding='utf-8-sig'):
         a = l.strip().split('\t')
         if len(a) == 2: dong[a[0][:8]] = int(a[1])
+    # v2.112.1 서초구 반포동 — 별표2 는 번지로만 나눔 → 소유자(서초서 교통관리계) 현장 기준(2026-10-04 말씀 · 2026-10-10 「이 내용 맞네」 · polcard-bake.py 와 같은 기준): 반포본동·반포2동 = 방배서(27) · 반포1동·반포3동 = 서초서(23) · 반포4동 = 반포대로로 갈려 「경계」 그대로(지도는 jur-seocho split 선)
+    FIELD = {'11650550': '27', '11650570': '27', '11650560': '23', '11650580': '23'}
+    for k8, lab in FIELD.items():
+        if lab not in labels: labels.append(lab)
+        if k8 in dong: dong[k8] = labels.index(lab)
     byname = {re.sub(r'경찰서$', '', s[1]): s[0] for s in stations}
     cp = os.path.join(OUT, 'geo.json'); cache = json.load(open(cp, encoding='utf-8')) if os.path.exists(cp) else {}
     rows = list(csv.reader(open(os.path.join(OUT, 'pbox.csv'), encoding='cp949')))[1:]; pbox = []; miss = []; nosm = 0
@@ -57,7 +62,7 @@ def main():
     json.dump(cache, open(cp, 'w', encoding='utf-8'), ensure_ascii=False)
     doc = {'schema': 'tg-police/1',
            'source': '관할 = 경찰청과 그 소속기관 직제 시행규칙 별표2(2026.8.31 시행 · 국가법령정보) × 행정동 경계(통계청 SGIS · 가공 admdongkor 2026-07 · CC BY 4.0) · 청사 좌표·대표번호 = 경찰민원24(2026-09-09) · 지구대·파출소 = 경찰청 「전국 지구대 파출소 주소 현황」(공공데이터포털 15077036 · 2025-12-31) · 자리 = 브이월드 주소 좌표',
-           'note': '행정동 단위 근사 — 별표2 가 번지로 나눈 동은 「경계」(labels 에 두 서) · 지구대·파출소 관할 경계는 공개 자료가 없어 자리만(가장 가까운 지구대 = 근사)',
+           'note': '행정동 단위 근사 — 별표2 가 번지로 나눈 동은 「경계」(labels 에 두 서) · 서초구 반포동 다섯 행정동은 소유자 현장 기준(반포본동·반포2동 방배서 · 반포1동·반포3동 서초서 · 반포4동 반포대로로 갈림 = 경계) · 지구대·파출소 관할 경계는 공개 자료가 없어 자리만(가장 가까운 지구대 = 근사)',
            'fields': 'stations = [번호, 이름, 위도, 경도, 대표번호, 시도청] · labels = 관서 번호 묶음(「1,4」 = 두 서가 나눠 맡음) · dong = {행정동 8자리: labels 번호} · pbox = [이름, 0 지구대·1 파출소, 경찰서, 위도, 경도, 주소, 경찰서 번호(, 1 = 자리를 OSM 이름으로 잡음)]',
            'stations': stations, 'labels': labels, 'dong': dong, 'pbox': pbox}
     json.dump(doc, open(os.path.join(ROOT, 'data', 'police.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))

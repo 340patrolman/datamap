@@ -1306,7 +1306,7 @@
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
       h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>' + jmyRows(it.d));   // v2.76.1 소유자 「이야기 목록이 첫 화면을 잡아먹는다 — 이 지역 설명에 넣어라」 → 📝 이 지역 설명을 누르면 맨 아래에
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
-    card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button><div id="m2dLad"></div>' + h + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');
+    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
@@ -2784,7 +2784,11 @@
     var PD = o.pd || [], dirs = SDORD.filter(function (d) { return o.mv.some(function (m) { return m[0] === d && m[2] != null; }) || PD.some(function (q) { return q[0] === d; }); }); if (!dirs.length) { ch.innerHTML = ''; nw.innerHTML = ''; return; }
     var now = Date.now() / 1000, CN = { g: '녹색', y: '황색', r: '적색' }; if (ch.innerHTML) ch.innerHTML = '';
     var h = clkWarn() + (o.dq === 'dir' ? '<p class="sdnt" style="margin:0 0 7px;color:#b45309"><b>⚠ 이 교차로는 받은 자료의 방위 이름이 실제와 다르다</b> — 직각 방향 직진이 함께 녹색으로 적혀 있다(실제로는 있을 수 없다). 초 길이는 쓸 수 있어도 <b>어느 쪽 신호인지는 현장에서 확인</b>한다.</p>' : '') + '<div class="sdls">';
-    dirs.forEach(function (d) { h += '<div class="sdhd">▶ ' + SDN[d] + '쪽에서 오는 차</div>';
+    if (lv.ok) h += sdGridHtml(dirs.map(function (d) { var cells = {}, ci9 = o.ci; o.mv.filter(function (m) { return m[0] === d && m[2] != null; }).forEach(function (m) { var st = sdState(m, o, now), red = Math.max(0, ci9 - m[2] - (m[3] || 0)); if (!cells[m[1]]) cells[m[1]] = [st[0], st[1], st[0] === 'r' ? ['g', m[2]] : ['r', red], '']; });
+      PD.filter(function (q) { return q[0] === d; }).forEach(function (q) { var m = [q[0], 'Pd', q[1], q[2] || 0, q[3], q[4] || 0], st = sdState(m, o, now); if (!cells.Pd) cells.Pd = [st[0], st[1], null, st[0] === 'y' ? '점멸' : '']; }); return { lb: SDN[d] + '쪽에서', sub: '', cells: cells }; }));
+    else if (!SDOLD) h += '<p class="sdnt" style="margin:0 0 6px;color:#b45309">⏸ 이 시각대 값이 아직 없어 <b>지금 색은 못 센다</b> — 받은 때의 <b>길이</b>만 보인다(녹색 초 ▸ 적색 초).</p>' + sdGridHtml(dirs.map(function (d) { var cells = {}, cy9 = Math.round(o.cyc); o.mv.filter(function (m) { return m[0] === d && m[2] != null; }).forEach(function (m) { if (!cells[m[1]]) cells[m[1]] = ['0', m[2], ['r', Math.max(0, cy9 - m[2] - (m[3] || 0))], '녹']; });
+      PD.filter(function (q) { return q[0] === d; }).forEach(function (q) { if (!cells.Pd) cells.Pd = ['0', q[1], null, '녹']; }); return { lb: SDN[d] + '쪽에서', sub: '', cells: cells }; }));
+    else dirs.forEach(function (d) { h += '<div class="sdhd">▶ ' + SDN[d] + '쪽에서 오는 차</div>';
     o.mv.filter(function (m) { return m[0] === d && m[2] != null; }).forEach(function (m) { var nm = (SDM[m[1]] || m[1]) + (m[1] === 'Lt' ? ' →' + SDN[SDL[d]] : m[1] === 'St' ? ' →' + SDN[SDO[d]] : ''), ci = lv.ok ? o.ci : Math.round(o.cyc), red = Math.max(0, ci - m[2] - (m[3] || 0));
       if (lv.ok) { var st = sdState(m, o, now), nx = st[0] === 'g' ? '황색 ' + Math.round(m[3] || 0) + '초 → 적색 ' + Math.round(red) + '초' : st[0] === 'y' ? '적색 ' + Math.round(red) + '초' : '녹색 ' + Math.round(m[2]) + '초';
         h += '<div class="sdl ' + st[0] + '"><i></i><b>' + esc(nm) + '</b><span>' + CN[st[0]] + ' <strong>' + Math.ceil(st[1]) + '</strong>초</span><small>뒤 ' + nx + '</small></div>'; }
@@ -2819,6 +2823,12 @@
   //   초는 출력물 값이 아니라 계산값(파일 note) · 닻(주기 시작 시각)은 현장에서 「⏱ 지금 켜졌다」를 눌러 이 기기에만(tg_map2d_ksc_anchor) — 같은 패턴이 도는 동안·2시간 안에서만 흘린다
   var KFOPEN = 0; document.addEventListener('toggle', function (e) { var d = e.target; if (d && d.matches && d.matches('details.kscfd')) KFOPEN = d.open ? 1 : 0; if (d && d.matches && d.matches('details.sdx')) SDXO[d.getAttribute('data-k')] = d.open ? 1 : 0; }, true);
   var SDXO = {};
+  /* v2.139.0 한눈 표 — 줄 = 들어오는 쪽 · 칸 = 직진·좌회전·…·건널목 · 칸마다 색 바탕 + 큰 남은 초 + 작게 「▸다음 색 초」. rows[{lb, sub, cells{이동류: [색 g·y·r, 남은 초, [다음 색, 그 길이]|null, 꼬리표]}}] */
+  var SDOLD = 0, SDGC = ['St', 'Lt', 'Ut', 'Bs', 'Bc', 'Pd'], SDGN = { St: '직진', Lt: '좌회전', Ut: '유턴', Bs: '버스', Bc: '자전거', Pd: '🚶 건널목' }, SDGK = { g: '녹', y: '황', r: '적' };
+  function sdGridHtml(rows) { var cols = SDGC.filter(function (k) { return rows.some(function (r) { return r.cells[k]; }); }); if (!cols.length) return '';
+    var h = '<div class="sdg" style="--n:' + cols.length + '"><span></span>' + cols.map(function (k) { return '<span class="hd">' + SDGN[k] + '</span>'; }).join('');
+    rows.forEach(function (r) { h += '<span class="dl">' + esc(r.lb) + (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + '</span>' + cols.map(function (k) { var c = r.cells[k]; if (!c) return '<span class="c0">–</span>'; if (c[0] == null) return '<span class="c0" title="' + esc(c[3] || '') + '">?</span>';
+        return '<span class="c s' + c[0] + '"><i></i><b>' + Math.ceil(c[1]) + '</b><u>초</u>' + (c[3] ? '<em>' + c[3] + '</em>' : '') + (c[2] ? '<small>▸' + SDGK[c[2][0]] + Math.round(c[2][1]) + '</small>' : '') + '</span>'; }).join(''); }); return h + '</div>'; }
   function sdxHtml(h, key) { var P9 = [], re = /<p class="sdnt">([\s\S]*?)<\/p>/g, m, last = -1, ll = 0; while ((m = re.exec(h))) { P9.push(m[0]); last = m.index; ll = m[0].length; } if (!P9.length) return h;
     var out = h.slice(0, last) + '<details class="sdx" data-k="' + key + '"' + (SDXO[key] ? ' open' : '') + '><summary>ⓘ 설명 — 이 값은 어떻게 센 것인가</summary>' + P9.join('') + '</details>' + h.slice(last + ll); P9.slice(0, -1).forEach(function (q) { out = out.replace(q, ''); }); return out; }
   var KSEL = {}, KTN = { '1': '월~목', '2': '금', '3': '토', '4': '일·공휴일' };
@@ -2836,7 +2846,11 @@
     var now = Date.now(), CN = { g: '녹색', y: '황색', r: '적색' }, h = clkWarn() + '<div class="sdls">';
     var C = null, TR = 0; if (!A && HOUR == null && Pn.pat.off != null) { var sd0 = sodK(now), ps0 = (+Pn.from.slice(0, 2)) * 3600 + (+Pn.from.slice(2)) * 60, sn0 = ((sd0 - ps0) % 86400 + 86400) % 86400; if (sn0 >= Pn.c) C = { a: now - ((((sd0 - (+Pn.pat.off || 0)) % Pn.c) + Pn.c) % Pn.c) * 1000 }; else TR = 1; }   /* v2.116.0 옵셋 = 자정 기준 — 계획이 바뀐 직후 한 주기는 과도 구간이라 감춘다 */
     var AA = A || C;
-    dirs.forEach(function (d) { h += '<div class="sdhd">▶ ' + SDN[d] + '쪽에서 오는 차' + (ar[AR[d]] ? ' <small>(' + esc(ar[AR[d]]) + ' 쪽)</small>' : '') + '</div>';
+    if (AA) { var ex9 = ''; h += sdGridHtml(dirs.map(function (d) { var cells = {}; Pn.rows.filter(function (r) { return r[0] === d; }).forEach(function (r) { if (cells[r[1]]) return; if (r[3] == null) { cells[r[1]] = [null, 0, null, (x.why || {})[String(r[8])] || '초를 계산하지 못한 이동류']; ex9 += '<small class="lg-n" style="display:block">? ' + SDN[d] + '쪽 ' + esc(kscMvName(r)) + ' — ' + esc((x.why || {})[String(r[8])] || '초를 계산하지 못한 이동류') + '</small>'; return; }
+          var t = ((((now - AA.a) / 1000 - r[6]) % Pn.c) + Pn.c) % Pn.c, st = t < r[3] ? ['g', r[3] - t] : t < r[3] + r[4] ? ['y', r[3] + r[4] - t] : ['r', Pn.c - t]; cells[r[1]] = [st[0], st[1], st[0] === 'r' ? ['g', r[3]] : ['r', r[5]], r.tw ? '⏰' : ''];
+          if (r.tw) ex9 += '<small class="lg-n" style="display:block;color:#b45309">⏰ ' + SDN[d] + '쪽 ' + esc(kscMvName(r)) + ' — <b>시차제 적용 중</b>(' + esc(kscTwTxt(r.tw)) + ') · 녹색 ' + r.tw.g + '초로 줄었다</small>'; else if ((x.warn || {})[String(r[8])]) ex9 += '<small class="lg-n" style="display:block">⚠ ' + SDN[d] + '쪽 ' + esc(kscMvName(r)) + ' — ' + esc(x.warn[String(r[8])]) + '</small>'; });
+        return { lb: SDN[d] + '쪽에서', sub: ar[AR[d]] ? ar[AR[d]] + ' 쪽' : '', cells: cells }; })) + ex9; }
+    else dirs.forEach(function (d) { h += '<div class="sdhd">▶ ' + SDN[d] + '쪽에서 오는 차' + (ar[AR[d]] ? ' <small>(' + esc(ar[AR[d]]) + ' 쪽)</small>' : '') + '</div>';
     Pn.rows.filter(function (r) { return r[0] === d; }).forEach(function (r, i) { var nm = kscMvName(r);
       if (r[3] == null) { h += '<div class="sdl"><i></i><b>' + esc(nm) + '</b><span class="lw"><em>' + esc((x.why || {})[String(r[8])] || '초를 계산하지 못한 이동류') + '</em></span></div>'; return; }
       if (AA) { var t = ((((now - AA.a) / 1000 - r[6]) % Pn.c) + Pn.c) % Pn.c, st = t < r[3] ? ['g', r[3] - t] : t < r[3] + r[4] ? ['y', r[3] + r[4] - t] : ['r', Pn.c - t], nx = st[0] === 'g' ? '황색 ' + r[4] + '초 → 적색 ' + r[5] + '초' : st[0] === 'y' ? '적색 ' + r[5] + '초' : '녹색 ' + r[3] + '초';

@@ -158,6 +158,17 @@
   #m2dCard .sdl em.phd { font-style: normal; font-weight: 800; color: #15803d; }
   #m2dCard .sdl.r { font-size: 13.5px !important; } #m2dCard .sdl.r b { flex: 0 0 auto !important; color: var(--ink); font-weight: 800; }
   #m2dCard .sdl.r span, #m2dCard .sdl.r small { flex: 0 0 auto; min-width: auto; }
+  #m2dCard .sdg { display: grid; grid-template-columns: max-content repeat(var(--n, 2), minmax(0, 1fr)); gap: 4px 5px; align-items: stretch; }
+  #m2dCard .sdg .hd { font-size: 12px; font-weight: 800; color: var(--ink2); text-align: center; align-self: end; }
+  #m2dCard .sdg .dl { font-size: 13.5px; font-weight: 800; display: flex; flex-direction: column; justify-content: center; line-height: 1.15; white-space: nowrap; }
+  #m2dCard .sdg .dl small { font-weight: 500; font-size: 10.5px; color: var(--ink2); max-width: 86px; overflow: hidden; text-overflow: ellipsis; }
+  #m2dCard .sdg .c { display: flex; align-items: baseline; gap: 2px; padding: 4px 6px; border-radius: 10px; min-height: 36px; white-space: nowrap; overflow: hidden; }
+  #m2dCard .sdg .c i { width: 11px; height: 11px; border-radius: 50%; align-self: center; flex: 0 0 11px; margin-right: 2px; }
+  #m2dCard .sdg .c b { font-size: 20px; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--ink); } #m2dCard .sdg .c u { text-decoration: none; font-size: 11px; } #m2dCard .sdg .c em { font-style: normal; font-size: 11px; font-weight: 800; color: #b45309; } #m2dCard .sdg .c small { margin-left: auto; padding-left: 2px; font-size: 11px; color: var(--ink2); }
+  #m2dCard .sdg .c.sg { background: rgba(22,163,74,.17); } #m2dCard .sdg .c.sg i { background: #16a34a; } #m2dCard .sdg .c.sy { background: rgba(234,179,8,.26); } #m2dCard .sdg .c.sy i { background: #eab308; } #m2dCard .sdg .c.sr { background: rgba(220,38,38,.10); } #m2dCard .sdg .c.sr i { background: #dc2626; }   /* 색 클래스는 sg·sy·sr — 그냥 r 로 두면 카드 공통 줄 규칙(#m2dCard .r b 폭 92px)에 걸려 적색 칸만 넘친다 */
+  #m2dCard .sdg .c.s0 { background: var(--chip); } #m2dCard .sdg .c.s0 i { background: #94a3b8; } #m2dCard .sdg .c.s0 em { color: var(--ink2); }
+  #m2dCard .sdg .c0 { color: var(--ink2); text-align: center; align-self: center; }
+  #m2dCard.sigc #m2dLad { margin-top: 10px; }
   #m2dCard details.sdx { margin-top: 6px; } #m2dCard details.sdx > summary { font-size: 12.5px; font-weight: 700; color: var(--ink2); min-height: 34px; display: flex; align-items: center; cursor: pointer; list-style: none; } #m2dCard details.sdx > summary::-webkit-details-marker { display: none; } #m2dCard details.sdx > summary::after { content: '▼'; margin-left: 6px; font-size: 11px; } #m2dCard details.sdx[open] > summary::after { content: '▲'; }
   #m2dCard .sdnt { margin: 7px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink2); }
   #m2dCard .sd .tl u { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); display: none; }
@@ -963,7 +974,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.138.1"></script>
+<script src="js/map2d.js?v=2.139.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

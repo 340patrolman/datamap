@@ -1156,7 +1156,7 @@
       var ns = NODES.filter(function (n) { return n.dong && (n.dong.dong === d.name || (n.dong.also || []).indexOf(d.name) >= 0); });
       if (ns.length) h += row('걸친 교차로', ns.map(function (n) { return esc(n.name); }).join(' · '));
       h += facRows('11650', d.name, null); h += cctRows(d);
-      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d); h += unsoldRows(d);
+      h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += ptRows(d); h += roneRows(d); h += unsoldRows(d);
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -2118,7 +2118,7 @@
     else if (!lv && !d.old) h += '<p class="desc">생활인구(2026.7) 원자료에 이 동이 없다 — 새로 생긴 동이면 옛 동에 합쳐 있다.</p>';
     var sz2 = D.sz ? D.sz.zones.filter(function (z) { return inPoly(d, P(z.lon, z.lat)); }).length : 0; if (sz2) h += row('어린이보호구역', sz2 + '곳');
     h += facRows(d.gcd, d.name, d.k); h += cctRows(d);
-    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += roneRows(d); h += unsoldRows(d);
+    h += polRows(d.k, d.c); h += jrsRows(d.k); h += acRows(d); h += mdRows(d); h += fdRows(d.k); h += econRows(d.k); h += houseRows(d); h += popProjRows(d); h += indShiftRows(d); h += bzsRows(d); h += dealRows(d); h += hpRows(d); h += ptRows(d); h += roneRows(d); h += unsoldRows(d);
     var GB = (rIdx().filter(function (g) { return g.gu === d.gcd; })[0] || {}).bytes || {};
     if (d.k) h += '<div class="lg-btns">' + '<button data-ai="' + esc(d.gcd) + '|' + esc(d.k) + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
@@ -3501,6 +3501,28 @@
         vzStack([['전용면적', b[5], b[1].toLocaleString() + '호']], HPA.map(function (n, i) { return [n, ['#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#0369a1', '#0c4a6e'][i]]; }), { title: '전용면적 구성(%)' }) + '</div>'; });
     return h + '<p class="src">' + esc(J.source) + ' · ' + esc(J.note) + '</p>'; }
 
+  // v2.106.0 🧾 주택 보유세 범위(동 카드 · 추정) — 소유자 「읍면동별로 각종 세금, 예를 들면 부동산 보유세 범위도 알 수 있을까 — 그 지역을 파악하기 좋은 방법」
+  //   data/ptax-dong.json(tg-ptax/1 ← tools/region/ptax-bake.py) = 공동주택 공시가격 2025 × data/tax-rules.json 재산세 규칙 · 금액 만 원/한 해/한 채 · 합계 = 재산세 + 지방교육세 + 도시지역분
+  //   낸 세금이 아니다 — 파일의 note(한계)를 카드에 그대로 붙인다 · 종부세는 금액을 내지 않고 공제액을 넘는 호수 비율만
+  var PTX, PTXP = null;
+  function ptGet() { if (PTXP) return PTXP; PTXP = fetch('data/ptax-dong.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { PTX = j; }).catch(function () { PTX = null; }); return PTXP; }
+  function ptWon(v) { return v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1) + '억' : Math.round(v).toLocaleString() + '만'; }
+  function ptRows(d) { var gu = d && (d.gcd || (d.k && d.k.slice(0, 5))); if (!gu || !d.k) return ''; if (PTX === undefined) { ptGet().then(function () { if (sel && sel.it && sel.it.d === d) show(sel.it); }); return ''; }
+    if (!PTX) return ''; var V = PTX.hjd[d.k], lvl = '행정동', G5 = PTX.gu[gu]; if (!V && G5) { V = G5; lvl = '구'; } if (!V) return '';
+    var mx = Math.max(V[1][2], V[2][2], 1) * 1.08, eup = /[읍면]$/.test(d.name || d.n || ''), rng = function (nm, a, col) { var l = a[0] / mx * 100, w = Math.max(1.5, (a[2] - a[0]) / mx * 100), m = a[1] / mx * 100;
+      return '<div class="ptr"><b>' + nm + '</b><div class="ptt"><i style="left:' + l.toFixed(1) + '%;width:' + w.toFixed(1) + '%;background:' + col + '"></i><u style="left:' + m.toFixed(1) + '%"></u></div><span>' + ptWon(a[0]) + ' ~ <strong>' + ptWon(a[1]) + '</strong> ~ ' + ptWon(a[2]) + '</span></div>'; };
+    var h = '<div class="dh">🧾 주택 보유세 범위 <small style="font-weight:600;color:var(--ink2)">(추정 · 한 채 · 한 해 · 공동주택 공시가격 ' + PTX.year + ' × 지금 규칙)</small></div>';
+    if (lvl === '구') h += '<p class="lg-n">이 동은 행정동 값이 없어 <b>' + esc(guName(gu)) + ' 전체</b> 값을 보인다(읍·면·동 이름이 자료와 안 이어진 곳).</p>';
+    h += '<div class="tkpi"><span><em>🏢</em><small>' + (lvl === '구' ? esc(guName(gu)) : '이 동') + ' 공동주택</small><b>' + V[0].toLocaleString() + '호</b>' + (lvl === '행정동' && V[8] > 1 ? '<u>법정동 ' + V[8] + '곳을 합친 근사</u>' : '') + '</span><span><em>💰</em><small>공시가격 가운데</small><b>' + ptWon(V[7]) + '</b></span><span><em>🧾</em><small>보유세 가운데(1세대 1주택)</small><b>' + ptWon(V[2][1]) + '</b><u>일반 ' + ptWon(V[1][1]) + '</u></span></div>';
+    h += '<div class="ptx"><div class="pth">재산세 + 지방교육세 + 도시지역분 — 하위 10% ~ <b>가운데</b> ~ 상위 10%(만 원/년)</div>' + rng('1세대 1주택', V[2], '#2563eb') + rng('일반(그 밖)', V[1], '#7c3aed') +
+      '<div class="pth" style="margin-top:8px">도시지역분을 뺀 값' + (eup ? ' — <b>읍·면은 도시지역분이 안 붙을 수 있어 이쪽이 맞을 수 있다</b>' : '(도시지역 밖 주택)') + '</div>' + rng('1세대 1주택', V[4], '#60a5fa') + rng('일반(그 밖)', V[3], '#a78bfa') + '</div>';
+    h += '<div class="vzg">' + vzH([['12억 넘음', V[6], '#dc2626'], ['9억 넘음', V[5], '#f59e0b']], { title: '종합부동산세 공제액을 넘는 집(% · 공시가격 12억 = 1세대 1주택 공제 · 9억 = 일반 공제 · 한 채 기준 — 금액은 사람별 합산이라 내지 않는다)', unit: '%' });
+    var B = Object.keys(PTX.bjd).map(function (k) { return PTX.bjd[k]; }).filter(function (b) { return b[1] === gu && b[2] >= 30; }).sort(function (a, b) { return b[4][1] - a[4][1]; });
+    if (B.length > 1) { var mine = function (b) { return (b[10] || []).indexOf(d.k) >= 0; }, top = B.filter(function (b, i) { return i < 12 || mine(b); });
+      h += vzH(top.map(function (b) { return [(B.indexOf(b) + 1) + '. ' + b[0] + (mine(b) ? ' ◀' : ''), b[4][1], mine(b) ? '#dc2626' : '#cbd5e1']; }), { title: esc(guName(gu)) + ' 법정동 ' + B.length + '곳 — 1세대 1주택 보유세 가운데(만 원/년 · 30호 이상 · 빨강 = 이 동에 걸친 법정동' + (B.length > top.length ? ' · 위 12곳과 이 동만' : '') + ')', unit: '만' }); }
+    h += '</div><p class="lg-n"><b>낸 세금이 아니다</b> — 공시가격에 지금 규칙을 적용한 추정이고, 공동주택(아파트·연립·다세대)만 셌다. 과세표준상한·세부담상한·감면은 넣지 않아 고지서와 다를 수 있다.</p>';
+    h += '<details class="ptn"><summary>읽는 법·한계 ' + (PTX.note || []).length + '가지 · 근거 조문</summary><ul>' + (PTX.note || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul><p>' + ['fmv', 'house', 'houseOne', 'urban', 'eduTax', 'jbs'].map(function (k) { return PTX.rules && PTX.rules[k] ? esc(PTX.rules[k]) : ''; }).filter(Boolean).join(' · ') + (PTX.rules && PTX.rules.checked ? ' — 조문 확인 ' + esc(PTX.rules.checked) : '') + '</p></details>';
+    return h + '<p class="src">' + esc(PTX.source) + '</p>'; }
   function jrsLoad() { if (JRSP) return JRSP; JRSP = fetch('data/juris.json').then(function (r) { return r.json(); }).then(function (j) { JRS = j; draw(); if (document.body.classList.contains('legon')) legend(); }).catch(function () { JRS = null; }); return JRSP; }
   function jrsOfK(K, k8) { if (!k8) return null; var v = K.d[k8]; if (v != null) return v; v = K.g5[k8.slice(0, 5)]; return v == null || v < 0 ? null : v; }
   function jrsAt(kind, m) { if (!JRS) return null; var K = JRS.kinds[kind], d = dongAtM(m), v = d && d.k ? jrsOfK(K, d.k) : null; if (v != null) return v;

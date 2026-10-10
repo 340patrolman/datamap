@@ -101,6 +101,18 @@
   /* v2.100.0 🚦 방향별 신호 — 방위 그림 + 한 주기 막대 */
   #m2dCard .sd { display: flex; gap: 8px; align-items: center; margin: 6px 0 4px; }
   #m2dCard .relb { margin-top: 10px; }
+  #m2dCard .ptx { margin: 6px 0 4px; }
+  #m2dCard .ptx .pth { font-size: 12px; color: var(--ink2); margin-bottom: 3px; }
+  #m2dCard .ptr { display: grid; grid-template-columns: 78px 1fr; gap: 2px 8px; align-items: center; margin: 4px 0; font-size: 12.5px; }
+  #m2dCard .ptr b { font-weight: 700; }
+  #m2dCard .ptr .ptt { position: relative; height: 12px; border-radius: 6px; background: var(--line); }
+  #m2dCard .ptr .ptt i { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
+  #m2dCard .ptr .ptt u { position: absolute; top: -3px; bottom: -3px; width: 3px; margin-left: -1.5px; background: var(--ink); border-radius: 2px; }
+  #m2dCard .ptr span { grid-column: 2; font-size: 12px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+  #m2dCard .ptr span strong { color: var(--ink); font-weight: 800; font-size: 13.5px; }
+  #m2dCard .ptn { margin: 6px 0; font-size: 12px; color: var(--ink2); }
+  #m2dCard .ptn summary { cursor: pointer; font-weight: 700; min-height: 32px; display: flex; align-items: center; }
+  #m2dCard .ptn ul { margin: 4px 0 6px; padding-left: 18px; line-height: 1.5; }
   #m2dCard .sdnow { margin: 6px 0 2px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 10px; }
   #m2dCard .sdch { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; }
   #m2dCard .sdch span { color: var(--ink2); margin-right: 2px; }
@@ -912,7 +924,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.105.2"></script>
+<script src="js/map2d.js?v=2.106.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

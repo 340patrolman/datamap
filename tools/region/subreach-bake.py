@@ -43,11 +43,11 @@ def main():
                 seen.add((sub, nm)); cur = sid_of.get((ln, nm))
                 if not cur: noname.add(ln + ' ' + r[2].strip()); prev = None; continue
                 if prev and prev[0] == sub and prev[1] != nm:
-                    km = prev[3] or (num(r[4]) if len(r) > 4 else 0.0) or None   # 「역간거리」 = 그 줄의 역에서 다음 줄의 역까지(9호선 개화 3.6 = 개화~김포공항으로 확인) · 없으면 이 줄의 「후행역간거리」(앞 역까지)
+                    km = sorted(set(x for x in (prev[3], prev[4], num(r[3]), num(r[4]) if len(r) > 4 else 0.0) if x > 0)) or None   # 파일마다 「역간거리」가 앞 역까지인지 다음 역까지인지 다르다(9호선 = 다음 역까지 · 공항철도는 반대로 보임) → 두 줄의 값을 모두 후보로 두고, 어느 하나로든 빠르기가 말이 되면 받는다
                     for a in prev[2]:
                         for b in cur:
                             if (a, b) not in PAIR or PAIR[(a, b)] is None: PAIR[(a, b)] = km; PAIR[(b, a)] = km
-                prev = (sub, nm, cur, num(r[3]))
+                prev = (sub, nm, cur, num(r[3]), num(r[4]) if len(r) > 4 else 0.0)
     import math
     XY = collections.defaultdict(list)   # 역 이름 → 좌표(서울시 역사마스터 · 전국도시철도역사정보표준데이터) — 역간거리 파일이 못 이은 자리(운영사 경계·새 역·파일 없는 노선)를 「같은 노선의 가까운 역」으로 메우는 데만 쓴다
     for fn in ('r/stations.json', 'stations-kr.json'):
@@ -65,36 +65,38 @@ def main():
             cand = sorted((dk, b) for b in ids for dk in [near_km(a, b)] if b != a and dk is not None and dk <= (30 if ln == 'GTX-A' else 6))[:2]   # 가장 가까운 두 역만(멀리 있는 역까지 후보로 넣으면 앞 열차와 짝지어진 칸이 섞인다)
             for dk, b in cand:
                 if (a, b) in PAIR: continue
-                PAIR[(a, b)] = PAIR[(b, a)] = round(max(dk, 0.3) * 1.2, 2); GEO.add((a, b)); GEO.add((b, a))   # 곧은 거리 × 1.2 를 선로 거리로 본다(가정 — 빠르기 거르기에만 쓴다)
+                PAIR[(a, b)] = PAIR[(b, a)] = [round(max(dk, 0.3) * 1.2, 2)]; GEO.add((a, b)); GEO.add((b, a))   # 곧은 거리 × 1.2 를 선로 거리로 본다(가정 — 빠르기 거르기에만 쓴다)
     print('이음 후보', len(PAIR) // 2, '· 그 가운데 가까운 역으로 메운 후보', len(GEO) // 2, '· 한쪽만 이어졌거나 안 이어진 역(노선별)', dict(nofile)); print('TAGO 에 그 이름이 없는 역간거리 줄', len(noname), sorted(noname)[:30])
     # ② 시간 — 두 방향 가운데 그 차례로 달리는 쪽에서
-    def bins(a, b):
-        out = []
+    def bins(a, b, pool=False):
+        out = []; tot = 0
         for ud in 'UD':
             da, db = dep.get((a, ud)), dep.get((b, ud))
             if not da or not db: continue
+            if pool: da = {'': sorted(x for v in da.values() for x in v)}; db = {'': sorted(x for v in db.values() for x in v)}   # 행선지를 안 가리고(운영사 경계에서 행선지 이름이 다르다 — 3호선 지축~삼송: 「오금」 과 빈 글)
             cnt = collections.Counter(); n = 0
             for e, va in da.items():
                 vb = db.get(e)
                 if not vb: continue
-                n += len(va)
+                n += len(va); tot += len(va)
                 for x in va:
                     k = bisect.bisect_right(vb, x + 0.4)
                     while k < len(vb) and vb[k] - x <= 20: cnt[int((vb[k] - x) * 2)] += 1; k += 1
             for k in cnt:
                 c = cnt[k - 1] + cnt[k] + cnt[k + 1]
                 if c >= max(5, 0.4 * n): out.append((c / n, (sum(cnt[q] * (q + 0.5) for q in (k - 1, k, k + 1)) / c) / 2))
-        return out
+        return out if (tot or pool) else None
     EDGE = {}; speeds = collections.defaultdict(list); hold = []
     for (a, b), km in PAIR.items():
         ln = info[a][1]; bs = bins(a, b)
-        if km: bs = [x for x in bs if (8 if km < 1.2 else 18) <= km / (x[1] / 60) <= (200 if ln == 'GTX-A' else 120)]   # 역 사이가 짧으면 정차 시간 때문에 시속 10km 대까지 내려간다
-        else: bs = [x for x in bs if 0.8 <= x[1] <= 6]
+        def okv(bs): return [x for x in bs if (any((8 if q < 1.2 else 18) <= q / (x[1] / 60) <= (200 if ln == 'GTX-A' else 120) for q in km) if km else 0.8 <= x[1] <= 6)]   # 역 사이가 짧으면 정차 시간 때문에 시속 10km 대까지 내려간다
+        bs = okv(bs) if bs is not None else okv(bins(a, b, True) or [])   # 행선지를 안 가리는 것은 두 역에 같은 행선지 이름이 하나도 없을 때만(그 밖에는 앞 열차와 짝지어진 칸이 섞인다)
+        pass
         if not bs: continue
         top = max(x[0] for x in bs); good = sorted(set(round(x[1], 1) for x in bs if x[0] >= top - 0.15))
         if len(good) == 1 or good[-1] - good[0] <= 1.0:
             EDGE[(a, b)] = good[0]
-            if km: speeds[ln].append(km / (good[0] / 60))
+            if km: speeds[ln].append(km[0] / (good[0] / 60))
         else: hold.append((a, b, km, good))
     for a, b, km, good in hold:   # 칸이 여럿 남은 이음
         EDGE[(a, b)] = good[0]   # 가장 짧은 칸 — 이웃 역 사이는 배차 간격보다 짧아서, 남는 칸은 뒤 열차와 짝지어진 더 긴 칸이다(앞 열차와 짝지어진 더 짧은 칸은 빠르기 상한에서 걸러진다)
@@ -139,7 +141,7 @@ def main():
         for key, _, _ in DEST:
             v = res[key].get(sid); row += [round(v[0]), v[1]] if v else [-1, -1]
         stn.append(row)
-    links = [[a, b, w, -1 if (not PAIR[(a, b)] or (a, b) in GEO) else PAIR[(a, b)]] + ([1] if (a, b) in SYM else []) for (a, b), w in sorted(EDGE.items())]
+    links = [[a, b, w, -1 if (not PAIR[(a, b)] or (a, b) in GEO) else min(PAIR[(a, b)], key=lambda q: abs(q / (w / 60) - 35))] + ([1] if (a, b) in SYM else []) for (a, b), w in sorted(EDGE.items())]
     doc = {'schema': 'tg-subway-reach/1', 'made': datetime.date.today().isoformat(),
            'source': '역의 이음·거리 = 국가철도공단 역간거리 파일 24개(공공데이터포털 15041460 등 · 2025-06-30~2026-06-30판) · 역 사이 시간 = 국토교통부 TAGO 지하철정보(1613000/SubwayInfo) 역별 평일 시간표',
            'how': '이웃한 두 역에서 같은 방향·같은 행선지 열차의 출발 시각 차이를 30초 칸에 모아 가장 많이 모인 칸을 그 구간 시간으로 읽었다(정차 포함 · 거리로 본 빠르기가 시속 18~120km(1.2km 안 되는 짧은 구간은 8부터) 안인 칸만). 갈아타기 = 같은 이름 역끼리 걷기 %d분(가정) + 옮겨 타는 역의 낮 평균 배차 간격 절반. 가장 빠른 길(다익스트라).' % WALK,
@@ -148,7 +150,7 @@ def main():
                     '처음 타는 역에서 기다리는 시간은 넣지 않았다 — 배차가 드문 역은 data/subway-freq.json 의 간격만큼 더 걸린다',
                     '급행을 가르지 못해 완행에 가까운 값이다(급행을 타면 더 짧다) · 이름이 다른 환승(걸어서 옮기는 역)은 잇지 못했다',
                     '-1 = 닿지 않음(수도권 밖 도시철도 · 시간표에서 구간 시간을 못 읽어 길이 끊긴 역) — 「멀다」가 아니라 「못 셈」',
-                    '2026-10-10 판에서 못 센 수도권 역: 3호선 일산선 10역(지축~구파발 운영사 경계가 안 이어짐) · 인천2호선 15역 · 공항철도 영종 너머 4역 · 2호선 지선 6역 · GTX-A 동탄 쪽 2역 · 자기부상 6역 — 다음 판에서 메운다',
+                    '못 센 수도권 역(2026-10-10 밤 판): 인천2호선 15역(원자료 시간표에 상행·하행이 섞여 있다) · 2호선 성수·신정 지선 6역(원자료에 시간표가 없다) · 자기부상 5역 · 경의중앙 3역 등 — 동해선·대경선은 수도권과 이어지지 않아 -1 이 맞다',
                     '눈으로 맞대 본 값(참고): 판교→강남역 14분 · 잠실→강남역 13분 · 사당→강남역 11분 · 홍대입구→서울역(공항철도) 8분 · 수원→서울시청 70분 · 인천→서울역 76분 — 흔히 아는 시간과 비슷하다. 갈아타는 길은 걷기·기다림 가정 때문에 실제보다 5~10분 길게 나오는 편이다',
                     'links 의 km -1 = 역간거리 파일이 못 이은 자리를 같은 노선의 가까운 역으로 메운 것(시간표에서 한결같은 시간이 읽힌 것만 · 한 역을 건너뛴 이음이 섞일 수 있으나 시간은 그 구간의 실제 시간표 값이다) — 노선도를 그릴 때는 km 가 있는 이음만 쓴다'],
            'dest': [[x[0], x[1]] for x in DEST],

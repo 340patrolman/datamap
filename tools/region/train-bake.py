@@ -48,10 +48,11 @@ def main():
     for nm in sorted(set(up) | set(dn)):
         stn[nm] = {'ln': [k for k, _ in line[nm].most_common(3)], 'up': pack(up[nm]), 'dn': pack(dn[nm])}
     import csv, io
-    LL = {}; lp = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'dg', '15127532', 'x.csv')   # 한국철도공사_역 위치 정보(공공데이터포털 15127532 · 2024-04-01판 · tools/region/dgfile.py 15127532)
+    ROUGH = set(); LL = {}; lp = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'dg', '15127532', 'x.csv')   # 한국철도공사_역 위치 정보(공공데이터포털 15127532 · 2024-04-01판 · tools/region/dgfile.py 15127532)
     for r in list(csv.reader(io.StringIO(open(lp, 'rb').read().decode('cp949'))))[1:]:
         try: LL[r[1].strip()] = [round(float(r[3]), 5), round(float(r[2]), 5)]
         except Exception: pass
+        if len(r[2].split('.')[-1]) <= 2 or len(r[3].split('.')[-1]) <= 2: ROUGH.add(r[1].strip())   # 소수 둘째 자리까지만 적힌 줄은 자리가 수 km 어긋난다(다시역·구례구역 등) — 둘째 표에 있으면 그쪽을 쓴다
     L2 = {}; lp2 = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'dg', '15067652', 'x.csv')   # 국가철도공단_철도역 정보(15067652 · 2025-07-11판) — 첫 표에 없는 역만
     R2 = list(csv.reader(io.StringIO(open(lp2, 'rb').read().decode('cp949')))); h2 = {k: i for i, k in enumerate(R2[0])}
     for r in R2[1:]:
@@ -66,6 +67,7 @@ def main():
         seen = set()
         for it in json.load(open(os.path.join(ROOT, 'data', 'r', 'stations.json'), encoding='utf-8'))['items']:
             n3 = it[0][:-1] if it[0].endswith('역') and len(it[0]) > 2 else it[0]; key = (n3, round(it[2], 2), round(it[3], 2))
+            if n3 in tmp and abs(tmp[n3][0] - it[2]) < 0.02 and abs(tmp[n3][1] - it[3]) < 0.02: continue   # 같은 역의 노선별 승강장(2km 안)은 한 자리로
             if key in seen: continue
             seen.add(key); cnt[n3] += 1; tmp[n3] = [it[2], it[3]]
         L3 = {k: v for k, v in tmp.items() if cnt[k] == 1}
@@ -75,9 +77,17 @@ def main():
         if v2 in LL: LL[k2] = LL[v2]
     miss = []
     for nm, v in stn.items():
-        if nm in LL: v['ll'] = LL[nm]
-        elif nm in L2: v['ll'] = L2[nm]; v['lls'] = 2
-        elif nm in L3: v['ll'] = L3[nm]; v['lls'] = 3
+        cand = [(1, LL[nm])] if nm in LL and nm not in ROUGH else []   # 출처 표마다 틀린 자리가 섞여 있다(첫 표의 행신 · 둘째 표의 청량리·철암 · 전철 표의 이름만 같은 다른 역) → 서로 3km 안으로 맞는 출처가 있으면 그것, 없으면 차례대로
+        if nm in L3: cand.append((3, L3[nm]))
+        if nm in L2: cand.append((2, L2[nm]))
+        if nm in LL and nm in ROUGH: cand.append((9, LL[nm]))
+        def agree(p, q): return abs(p[0] - q[0]) * 88.8 < 3 and abs(p[1] - q[1]) * 111 < 3
+        if len(cand) > 1: cand = [c for c in cand if c[0] != 3 or any(abs(c[1][0] - o[1][0]) * 88.8 < 20 and abs(c[1][1] - o[1][1]) * 111 < 20 for o in cand if o is not c)] or cand   # 전철 표의 자리가 다른 출처와 20km 넘게 다르면 이름만 같은 다른 역(김포골드라인 마산)
+        pick = next((c for c in cand if any(agree(c[1], o[1]) for o in cand if o is not c)), cand[0] if cand else None)
+        if pick:
+            v['ll'] = pick[1]
+            if pick[0] != 1: v['lls'] = pick[0]
+            if len(cand) > 1 and not any(agree(pick[1], o[1]) for o in cand if o is not pick): v['llq'] = 1   # 출처끼리 자리가 안 맞는 역(어느 쪽이 맞는지 모름)
         else: miss.append(nm)
     print('좌표 붙은 역', len(stn) - len(miss), '· 못 붙인 역', miss)
     d8 = '%s-%s-%s' % (day[:4], day[4:6], day[6:])
@@ -89,8 +99,8 @@ def main():
                     'SRT(수서 출발)는 한국철도공사 자료가 아니라 들어 있지 않다 · 수도권 전철(광역전철)도 이 자료가 아니다',
                     '갈아타는 길은 세지 않았다 — 한 열차로 서울 쪽 역까지 가는 것만. 직통이 없는 역은 값이 없다',
                     '예매율·승차율은 이 자료에 없다(공개 API 없음 — 역별 승하차 인원은 따로 한국철도공사 파일 자료)',
-                    '역 좌표 ll = 한국철도공사_역 위치 정보(공공데이터포털 15127532 · 2024-04-01판)를 역 이름으로 맞댄 것 — 없으면 lls 2 = 국가철도공단_철도역 정보(15067652 · 2025-07-11판) · lls 3 = 전국도시철도역사정보표준데이터·서울시 역사마스터(data/stations-kr.json · data/r/stations.json · 이름이 한 자리뿐인 역만) · 셋 다 없으면 ll 이 없다(자리를 지어 넣지 않았다)'],
-           'fields': 'stn{역 이름: {ln [노선…], up 서울로 [가장 빠른 분, 가운데값 분, 하루 편수, 첫차 출발, 막차 출발, 가장 많이 닿는 서울 쪽 역], dn 서울에서 [가장 빠른 분, 가운데값, 편수, 서울 쪽 첫 출발, 막 출발, 가장 많이 떠나는 서울 쪽 역], ll [경도, 위도](없을 수 있음)}} — 값이 없으면 null',
+                    '역 좌표 ll = 한국철도공사_역 위치 정보(공공데이터포털 15127532 · 2024-04-01판)를 역 이름으로 맞댄 것 — 없으면 lls 2 = 국가철도공단_철도역 정보(15067652 · 2025-07-11판) · lls 3 = 전국도시철도역사정보표준데이터·서울시 역사마스터(data/stations-kr.json · data/r/stations.json · 이름이 한 자리뿐인 역만) · 셋 다 없으면 ll 이 없다(자리를 지어 넣지 않았다) · lls 9 = 첫 표에 소수 둘째 자리까지만 적혀 자리가 1km 넘게 어긋날 수 있는 역(다른 표에도 없음)'],
+           'fields': 'stn{역 이름: {ln [노선…], up 서울로 [가장 빠른 분, 가운데값 분, 하루 편수, 첫차 출발, 막차 출발, 가장 많이 닿는 서울 쪽 역], dn 서울에서 [가장 빠른 분, 가운데값, 편수, 서울 쪽 첫 출발, 막 출발, 가장 많이 떠나는 서울 쪽 역], ll [경도, 위도](없을 수 있음), lls 좌표 출처, llq 1 = 출처끼리 자리가 3km 넘게 달라 믿기 어려운 역}} — 값이 없으면 null',
            'dest': DEST, 'stn': stn}
     p = os.path.join(ROOT, 'data', 'train-seoul.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

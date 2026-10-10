@@ -74,4 +74,4 @@ irm 'https://datamap-relay.<계정이름>.workers.dev/dg/B552584/ArpltnInforInqi
      - `TD_KEY` — 서울 교통빅데이터 T-Data 키(keys.json `t_data_seoul`)
      - `SUBWAY_KEY` — 서울 열린데이터광장 **실시간 지하철** 인증키(일반 키로는 ERROR-338 · data.seoul.go.kr 에서 따로 신청)
   3. 시험: `…/quota` 에 `seoul·td·subway: true, v: 2` · `…/reach` 가 갈래마다 `ok: true` 인지(Origin 머리말 필요).
-- 2026-10-10 이 PC 에서 직접 불러 확인한 서울 자료: `citydata_ppltn`·`bikeList`·`RealtimeCityAir`·`GetParkingInfo`(json) · `AccInfo`·`TrafficInfo`(xml 만) · 서울 버스 `arrive/getLowArrInfoByStId`(승인됨) · `stationinfo/getStationByPos`(401 — 활용신청 필요) · 지하철 실시간(ERROR-338 — 전용 키 필요).
+- 2026-10-10 이 PC 에서 직접 불러 확인한 서울 자료: `citydata_ppltn`·`bikeList`·`RealtimeCityAir`·`GetParkingInfo`(json) · `AccInfo`·`TrafficInfo`(xml 만) · 서울 버스(ws.bus.go.kr · 12:40 다시 확인) **도착정보조회 `arrive/*` 만 승인**(getLowArrInfoByStId·getArrInfoByRouteAll 200) · **버스위치 `buspos/*` · 정류소 `stationinfo/*` · 노선 `busRouteInfo/*` 는 401「등록되지 않은 서비스키」** — data.go.kr 에서 서비스마다 따로 활용신청(서울특별시_버스위치정보조회 · 정류소정보조회 · 노선정보조회) · 지하철 실시간(ERROR-338 — 전용 키 필요).

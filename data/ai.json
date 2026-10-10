@@ -1790,17 +1790,17 @@
   ],
   [
    "sig-offset-check.json",
-   "2026-10-10 19:25",
+   "2026-10-10 19:35",
    "data/sigdir-seoul.json(서울 T-Data V2X — 기준 이동류 녹색이 실제로 켜진 시각) × data/signal-tod-seoul.json(경찰청 교차로계획정보 — 주기·옵셋)"
   ],
   [
    "sig-phmv-seoul.json",
-   "2026-10-10 19:30",
+   "2026-10-10 19:35",
    "data/sigdir-seoul.json(서울특별시 교통빅데이터플랫폼 T-Data V2X 신호 잔여시간 — 이동류마다 녹색이 실제로 켜진 시각과 길이) × data/signal-tod-seoul.j …(전문은 파일에)"
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-10 19:29",
+   "2026-10-10 19:34",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [

@@ -65,6 +65,7 @@ def main():
         out[no] = {'name': e['name'], 'n': nrec, 'nph': nph, 'ph': {k: ph[k] for k in sorted(ph, key=int)}}
         if bad: out[no]['mix'] = bad
         if dq: out[no]['dq'] = 'dir'
+        if ph.get('1') and not any(m[1] == 'St' for m in ph['1']): out[no]['warn'] = 'p1'
         used += nrec
     doc = {'schema': 'tg-sig-phmv/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
            'source': 'data/sigdir-seoul.json(서울특별시 교통빅데이터플랫폼 T-Data V2X 신호 잔여시간 — 이동류마다 녹색이 실제로 켜진 시각과 길이) × data/signal-tod-seoul.json(경찰청 교차로계획정보서비스 — 현시별 초 · 공공데이터포털 15056569)',
@@ -76,8 +77,9 @@ def main():
                     '한 이동류가 여러 현시에 걸쳐 켜져 있으면 그 현시마다 실었다 · 한 주기에 두 번 켜지는 이동류와 주기 내내 켜진 이동류는 뺐다',
                     '현시에 이동류가 하나도 없으면 그 현시는 받은 값으로 못 가린 것이다(보행 전용·받은 값에 없는 방향) — 비어 있다고 「차 신호 없음」이 아니다',
                     'mix = 기록마다 답이 갈린 이동류[방위, 이동류, 갈린 기록 수] — 시간대 계획에 따라 현시 구성이 다를 수 있다 · dq dir = 원자료의 방위 이름이 실제와 다른 교차로(초는 맞아도 어느 쪽인지는 현장 확인)',
+                    'warn p1 = 1현시에 직진이 없고 좌회전만 읽힌 곳 — 보통 1현시는 통행이 많은 주도로 직진이다(소유자 현장 지식 2026-10-10). 좌회전이 먼저 나가는 곳인지 맞대기가 어긋난 것인지 이 자료로 못 가린다(회전 방향별 교통량 자료가 없다) → 방향을 붙이지 않는다',
                     '받은 시간대의 계획에서 읽은 것이다 — 다른 시간대 계획은 현시 수·순서가 다를 수 있다(nph = 맞댄 계획의 현시 수)'],
-           'fields': 'spots{교차로 번호: {name, n 맞댄 기록 수, nph 현시 수, ph{현시 번호: [[방위, 이동류, 링(빈 글·A·B), 맞은 기록 수, 본 기록 수]…]}, mix, dq}}',
+           'fields': 'spots{교차로 번호: {name, n 맞댄 기록 수, nph 현시 수, ph{현시 번호: [[방위, 이동류, 링(빈 글·A·B), 맞은 기록 수, 본 기록 수]…]}, mix, dq, warn}}',
            'result': {'교차로': len(out), '기록': used, '이동류 맞대기': tried, '맞음': fit}, 'spots': out}
     p = os.path.join(ROOT, 'data', 'sig-phmv-seoul.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

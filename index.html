@@ -101,6 +101,8 @@
   /* v2.100.0 🚦 방향별 신호 — 방위 그림 + 한 주기 막대 */
   #m2dCard .sd { display: flex; gap: 8px; align-items: center; margin: 6px 0 4px; }
   #m2dCard .relb { margin-top: 10px; }
+  #m2dCard .phist > div { display: grid; grid-template-columns: 86px 1fr; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; }
+  #m2dCard .phist b { font-variant-numeric: tabular-nums; }
   details.fi { margin: 8px 0; font-size: 12.5px; }
   details.fi > summary { cursor: pointer; font-weight: 700; color: #1d4ed8; min-height: 34px; display: flex; align-items: center; }
   #m2dFoot details.fi { margin: 0; font-size: 11px; } #m2dFoot details.fi > summary { display: inline; min-height: 0; color: inherit; font-weight: 400; }
@@ -936,7 +938,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.111.0"></script>
+<script src="js/map2d.js?v=2.111.1"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

@@ -24,24 +24,34 @@ def main():
             cur = cur or plan[-1]; C, off = cur[1], cur[2]
             if rec.get('ci') != C: continue   # 받은 주기가 계획과 다르면(다른 계획·감응) 뺀다
             ps = int(cur[0][:2]) * 3600 + int(cur[0][3:]) * 60; cen = lambda x: x if x <= C / 2 else x - C
-            rows.append([k, e['name'], rec['day'], d.strftime('%H:%M:%S'), C, off, cur[0], round(cen((sod - off) % C)), round(cen((sod - ps - off) % C))])
+            # 자정 기준으로 본 주기 안 자리(res)가 1현시 시작(0)이 아니어도 다른 현시의 시작과 맞으면 — 받은 값의 기준 이동류(가장 긴 녹색)가 그 현시에 켜지는 것
+            res = (sod - off) % C; hit = 0
+            for ring in (cur[3], cur[4]):
+                acc = 0
+                for i, x in enumerate(int(v) for v in ring.split()):
+                    if min((res - acc) % C, (acc - res) % C) <= 5 and not hit: hit = i + 1
+                    acc += x
+            base = [m[0] + ' ' + m[1] for m in rec.get('mv', []) if len(m) > 5 and m[5] == 0]
+            rows.append([k, e['name'], rec['day'], d.strftime('%H:%M:%S'), C, off, cur[0], round(cen((sod - off) % C)), round(cen((sod - ps - off) % C)), hit, base])
     n = len(rows); okA = sum(1 for r in rows if abs(r[7]) <= 4); okB = sum(1 for r in rows if abs(r[8]) <= 4)
     by = {}
-    for r in rows: e = by.setdefault(r[0], [r[1], 0, 0, []]); e[1] += 1; e[2] += 1 if abs(r[7]) <= 4 else 0; e[3].append(r[7])
-    spots = {k: [v[0], v[1], v[2], round(sum(v[3]) / len(v[3]), 1)] for k, v in by.items()}
+    for r in rows: e = by.setdefault(r[0], [r[1], 0, 0, [], 0, []]); e[1] += 1; e[2] += 1 if abs(r[7]) <= 4 else 0; e[3].append(r[7]); e[4] = r[9] or e[4]; e[5] = r[10] or e[5]
+    spots = {k: [v[0], v[1], v[2], round(sum(v[3]) / len(v[3]), 1), v[4], v[5]] for k, v in by.items()}
+    okP = sum(1 for r in rows if r[9])
     doc = {'schema': 'tg-sig-offset-check/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
            'source': 'data/sigdir-seoul.json(서울 T-Data V2X — 기준 이동류 녹색이 실제로 켜진 시각) × data/signal-tod-seoul.json(경찰청 교차로계획정보 — 주기·옵셋)',
-           'result': {'n': n, 'A_자정 기준': okA, 'B_계획 시작 기준': okB, 'tol': 4, '교차로': len(spots), '교차로_모두 맞음': sum(1 for v in spots.values() if v[1] == v[2]), '교차로_하나도 안 맞음': sum(1 for v in spots.values() if v[2] == 0)},
+           'result': {'n': n, 'A_자정 기준': okA, 'B_계획 시작 기준': okB, 'tol': 4, '교차로': len(spots), '교차로_모두 맞음': sum(1 for v in spots.values() if v[1] == v[2]), '교차로_하나도 안 맞음': sum(1 for v in spots.values() if v[2] == 0), '어느 현시든 시작과 맞음(±5초)': okP, '교차로_어느 현시와도 안 맞음': sum(1 for v in spots.values() if not v[4])},
            'read': '±4초 안이면 맞음. A 가 대부분 맞고 B 는 계획 시작 시각이 주기의 배수일 때만 맞으면 → 옵셋은 자정(0시 0분 0초)을 0 으로 센다: 주기 시작 = (하루 초 − 옵셋) 이 주기로 나누어떨어지는 때. 남는 +1~+4초는 기준 이동류 녹색이 주기 시작보다 조금 늦게 켜지는 몫(전적색 등)과 잔여시간 자료의 1초 눈금.',
-           'note': ['교차로 제어기 시계가 표준시에 맞춰져 있어야 성립한다(맞지 않는 교차로는 어긋남으로 드러난다)', '맞지 않는 기록은 기준 이동류가 1현시가 아니거나 그 시간대에 다른 계획·감응 운영이었을 수 있다 — 까닭은 이 자료로 못 가린다',
+           'note': ['1현시 시작과 안 맞는 곳의 대부분은 옵셋이 틀린 것이 아니라 받은 값의 기준 이동류(가장 긴 녹색)가 1현시가 아닌 다른 현시에 켜지는 곳이다 — 그 현시의 시작과는 ±5초로 맞는다(2026-10-10 · 안 맞은 11곳의 계획을 경찰청에서 다시 받아 보니 9월 10일 것과 한 줄도 다르지 않았다)', '교차로 제어기 시계가 표준시에 맞춰져 있어야 성립한다(맞지 않는 교차로는 어긋남으로 드러난다)', '맞지 않는 기록은 기준 이동류가 1현시가 아니거나 그 시간대에 다른 계획·감응 운영이었을 수 있다 — 까닭은 이 자료로 못 가린다',
                     '경찰청 계획 자료가 있는 교차로끼리의 시험이다 — 교통과 출력물 5곳(sig-ksc-seocho.json)은 T-Data 에 값이 없어 이 시험에 들어 있지 않다(같은 규칙을 적용하면 추정)'],
-           'fields': 'spots{교차로 번호: [이름, 대조한 기록 수, 자정 기준으로 맞은 수, 평균 어긋남(초)]} — 맞은 수가 0 인 교차로는 계획으로 센 초를 믿지 않는다 · rows[[교차로 번호, 이름, 받은 날, 녹색이 켜진 시각, 주기, 옵셋, 그 계획의 시작 시각, A 어긋남(초), B 어긋남(초)]]',
+           'fields': 'spots{교차로 번호: [이름, 대조한 기록 수, 1현시 시작과 맞은 수, 평균 어긋남(초), ph 받은 값의 기준 이동류가 켜지는 현시(0 = 어느 현시 시작과도 안 맞음), 기준 이동류[방위 이동류…]]} — ph ≥ 1 이면 자정 기준 옵셋이 맞는 교차로이고 「기준 이동류 = ph 현시」라는 뜻(현시와 방향을 잇는 근거) · ph = 0 인 곳만 계획으로 센 초를 믿지 않는다 · rows[[교차로 번호, 이름, 받은 날, 녹색이 켜진 시각, 주기, 옵셋, 그 계획의 시작 시각, A 어긋남(초), B 어긋남(초), 맞은 현시, 기준 이동류]]',
            'spots': spots, 'rows': rows}
     p = os.path.join(ROOT, 'data', 'sig-offset-check.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('기록', n, '· A 자정 기준 맞음', okA, '· B 계획 시작 기준 맞음', okB, '· 교차로', len(spots), '· 모두 맞음', doc['result']['교차로_모두 맞음'], '· 하나도 안 맞음', doc['result']['교차로_하나도 안 맞음'], '· 바이트', os.path.getsize(p))
     import collections
-    print('안 맞은 곳', [(v[0], v[3]) for v in spots.values() if v[2] == 0][:30])
+    print('어느 현시든 맞은 기록', okP, '/', n, '· 어느 현시와도 안 맞는 곳', [(v[0], v[3]) for v in spots.values() if not v[4]])
+    print('기준 이동류가 1현시가 아닌 곳', [(v[0], v[4], v[5]) for v in spots.values() if v[4] > 1])
     print('맞은 기록의 어긋남 분포', sorted(collections.Counter(r[7] for r in rows if abs(r[7]) <= 4).items()))
     print('받은 주기가 계획과 달라 뺀 기록은 세지 않았다')
 if __name__ == '__main__': main()

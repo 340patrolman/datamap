@@ -17,7 +17,7 @@
 //     /seoul/<서비스>/<시작>/<끝>[/인자…]  서울 열린데이터광장(openapi.seoul.go.kr:8088) · 비밀값 SEOUL_KEY
 //     /wsbus/<서비스>/<기능>?…             서울 버스(ws.bus.go.kr) · 비밀값 DG_KEY(공공데이터포털 — 서비스마다 활용신청)
 //     /swsub/<역이름>                      서울 지하철 실시간 도착(swopenapi.seoul.go.kr) · 비밀값 SUBWAY_KEY(실시간 지하철 전용 키)
-//     /td/<API이름>?…                      서울 교통빅데이터 T-Data(V2X 신호) · 비밀값 TD_KEY — 같은 API 는 키마다 5분에 한 번뿐이라(교차로가 달라도) 실시간 조회에는 못 쓴다 · 캐시 300초
+//     (T-Data V2X 신호는 중계에 두지 않는다 — 같은 API 가 키마다 5분에 한 번뿐이라 지도 사용자가 부르면 굽는 도구(tools/signal/spat-bake.py)가 막힌다)
 //   /reach = 중계에서 원 기관에 닿는지 시험(키 없이 · 상태 코드만) — 새 갈래를 붙이기 전에 한 번 본다
 //   ⚠ ITS(9443)·서울(8088)은 표준 포트가 아니다 — Worker 설정 › 런타임 › 「호환성 날짜」가 2024-09-02 뒤여야 그 포트로 나간다(앞이면 443 으로 가서 522)
 
@@ -42,7 +42,6 @@ const DG_OK = {
 const SEOUL_OK = { citydata_ppltn: 300, citydata: 300, bikeList: 60, GetParkingInfo: 300, RealtimeCityAir: 600, AccInfo: 120, TrafficInfo: 120 };
 const SEOUL_XML = { AccInfo: 1, TrafficInfo: 1 };   // 이 둘은 xml 만 준다
 const WSBUS_OK = { 'arrive/getLowArrInfoByStId': 20, 'arrive/getArrInfoByRouteAll': 20, 'buspos/getBusPosByRtid': 20, 'stationinfo/getStationByPos': 3600, 'stationinfo/getStationByUid': 20, 'busRouteInfo/getStaionByRoute': 86400 };
-const TD_OK = { v2xSignalPhaseTimingInformation: 300, v2xSignalPhaseInformation: 300, v2xCrossroadMapInformation: 86400 };
 const REACH = { its: 'https://openapi.its.go.kr:9443/', dg: 'https://apis.data.go.kr/', seoul: 'http://openapi.seoul.go.kr:8088/sample/json/bikeList/1/1/', wsbus: 'http://ws.bus.go.kr/api/rest/arrive/getLowArrInfoByStId', swsub: 'http://swopenapi.seoul.go.kr/api/subway/sample/json/realtimeStationArrival/0/1/%EC%84%9C%EC%9A%B8', td: 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xCrossroadMapInformation/1.0' };
 const DROP = new Set(['apikey', 'servicekey', 'key']);
 
@@ -71,7 +70,7 @@ export default {
     const ip = req.headers.get('CF-Connecting-IP') || '0';
     const seg = url.pathname.replace(/^\/+/, '').split('/'), kind = seg.shift(), path = seg.join('/');
 
-    if (kind === 'quota') return json({ ...(await quota(ip, env, false)), its: !!env.ITS_KEY, dg: !!env.DG_KEY, vw: !!env.VW_KEY, seoul: !!env.SEOUL_KEY, subway: !!env.SUBWAY_KEY, td: !!env.TD_KEY, v: 2 }, 200, cors);
+    if (kind === 'quota') return json({ ...(await quota(ip, env, false)), its: !!env.ITS_KEY, dg: !!env.DG_KEY, vw: !!env.VW_KEY, seoul: !!env.SEOUL_KEY, subway: !!env.SUBWAY_KEY, v: 2 }, 200, cors);
     if (kind === 'reach') {
       const out = {};
       await Promise.all(Object.entries(REACH).map(async ([k, u]) => {
@@ -91,7 +90,6 @@ export default {
       ttl = SEOUL_OK[seg[0]]; up = 'http://openapi.seoul.go.kr:8088/' + encodeURIComponent(env.SEOUL_KEY) + '/' + (SEOUL_XML[seg[0]] ? 'xml' : 'json') + '/' + seg.map(enc).join('/'); }
     else if (kind === 'wsbus' && WSBUS_OK[path] && env.DG_KEY) { ttl = WSBUS_OK[path]; const k2 = env.DG_KEY.indexOf('%') >= 0 ? env.DG_KEY : encodeURIComponent(env.DG_KEY); ps.set('resultType', 'json'); up = 'http://ws.bus.go.kr/api/rest/' + path + '?serviceKey=' + k2 + '&' + ps; }
     else if (kind === 'swsub' && seg.length === 1 && seg[0] && env.SUBWAY_KEY) { ttl = 20; up = 'http://swopenapi.seoul.go.kr/api/subway/' + encodeURIComponent(env.SUBWAY_KEY) + '/json/realtimeStationArrival/0/12/' + enc(seg[0]); }
-    else if (kind === 'td' && TD_OK[path] && env.TD_KEY) { ttl = TD_OK[path]; up = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/' + path + '/1.0?apikey=' + encodeURIComponent(env.TD_KEY) + '&' + ps; }
     else if (kind === 'vwkey' && env.VW_KEY) {
       const q = await quota(ip, env, true); if (q.blocked) return json({ err: '맛보기 하루 한도', ...q }, 429, cors);
       return json({ key: env.VW_KEY, note: '브이월드 키는 340patrolman.github.io 에 묶여 있다 — 다른 주소에서는 열리지 않는다', ...q }, 200, cors);

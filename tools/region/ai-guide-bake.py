@@ -27,7 +27,7 @@ def main():
     cat = []
     for f in sorted(glob.glob(os.path.join(ROOT, 'data', '*.json'))):
         nm = os.path.basename(f)
-        if nm in ('ai.json',): continue
+        if nm in ('ai.json', 'ai-catalog.json'): continue
         try: j = json.load(open(f, encoding='utf-8'))
         except Exception: continue
         e = {'file': nm, 'url': SITE + 'datamap/data/' + nm, 'bytes': os.path.getsize(f)}
@@ -87,6 +87,7 @@ def main():
             {'q': '여기에 없는 자료는 어디서', 'do': ['find-it.json items — 무엇이 없고 왜 없는지, 누가 볼 수 있는지, 공식 창구(sites) 주소']}],
         'paste_to_ai': '아래를 AI 에게 그대로 붙여 준다 → 「%sdatamap/data/ai.json 을 먼저 읽어라. 대한민국 시군구·행정동 공공데이터 묶음의 길잡이다. start_here·keys·recipes 대로 필요한 파일만 골라 읽고, 값을 말할 때는 그 파일의 출처와 기준 시점을 같이 말하고, 추정·근사는 그렇게 밝히고, 없는 값은 지어내지 말고 find-it.json 의 공식 창구를 알려 줘라.」 — 주소를 못 여는 AI(검색 차단 규칙을 따르는 도구)에게는 같은 파일의 원본 주소 https://raw.githubusercontent.com/340patrolman/datamap/main/data/ai.json 을 주거나 파일을 내려받아 올린다(권역 파일은 raw.githubusercontent.com/340patrolman/<repo>/main/r/<코드>/<층>.json)' % SITE,
         'not_searchable': '이 사이트는 검색에 걸리지 않게 해 두었다(noindex · robots.txt) — 주소를 아는 사람·AI 만 읽는다. 자료 자체는 모두 공개 공공데이터를 가공한 것이다.',
+        'gus_fields': '[시군구 코드, 이름, 저장소(repo)]', 'gus': gus,
         'profile_sections': {'주민': '주민등록 — 사는 사람(연령 10세·성별)', '머무는 사람(생활인구)': '서울만 — 그 시각 그 동에 있는 사람(통신 추정 · 평일/주말 0~23시)', '카드 매출(추정)': '서울만 — 추정매출(분기 · 시간대·요일·연령·성별 비중 · 업종 상위)',
                              '카드 매출(경기)': '경기만 — 1~6월 월평균 총액(업종 이름 없음)', '유동인구(경기)': '경기만 — 요일별', '가구·주택·사업체(SGIS)': '전국 — 집계구 2023 을 동으로 합', '가게(상가업소)': '전국 — 대분류별 수',
                              '이동(대중교통)': '서울·경기 — 정류장·역 하루 승하차 · 아침 하차÷승차', '교통사고(TAAS 2016~2025)': '전국 — 해마다·사망·중상·보행자·시간대', '집값(실거래)': '전국(지번 좌표 잡힌 만큼) — 평당·전세가율(추정)',
@@ -99,11 +100,14 @@ def main():
         'units': {'금액': '파일마다 다르다 — ptax-dong 만 원 · gu-proptax 백만 원 · gu-tax 만 원/년(종부세 백만 원) · hp 만 원 · 실거래 평당 만 원 · KOSIS 원자료 천 원', '넓이': '㎢(동) · ㎡(전용면적)', '사고': '건·명 — 2016~2025 열 해 합(해마다 값은 yr·해마다)'},
         'other_files': {'layers': SITE + 'datamap/data/layers.json (층 목록 — 파일·범위·출처·이용허락·추정 여부)', 'regions': SITE + 'datamap/data/regions.json (시도 → 저장소 · 범위)', 'find_it': SITE + 'datamap/data/find-it.json (없는 자료의 공식 창구)'},
         'privacy': '개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.',
-        'catalog_fields': 'catalog[{file, url, bytes, schema, date(만든 날·기준 해), source, fields(칸 설명), note, about{그 밖 설명 글}, top{맨 위 열쇠: {개수} 또는 [개수]}, sample{큰 묶음의 첫 항목 — 꼴 보기}}] — 전국 한 파일짜리 %d개' % len(cat),
-        'catalog': cat,
+        'catalog_fields': 'catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = ' + SITE + 'datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 %d개' % len(cat),
+        'catalog': [[e['file'], e.get('date') or '', cut(e.get('source') or e.get('note') or (e.get('about') and ' · '.join(e['about'].values())) or '', 110)] for e in cat],
+        'catalog_full': SITE + 'datamap/data/ai-catalog.json (파일마다 칸 설명·한계·표본까지 — 쓸 파일을 고른 뒤 그 파일 항목만 읽는다)',
         'region_layers_fields': 'region_layers{층 이름: {d 뜻, src 출처, asof 기준, gus 이 층이 있는 시군구 수(전체 %d)}} — 주소 = %s<repo>/r/<시군구 5자리>/<층>.json' % (len(gus), SITE),
         'region_layers': dict(sorted(lay.items())),
-        'gus_fields': '[시군구 코드, 이름, 저장소(repo)]', 'gus': gus}
+        }
+    json.dump({'schema': 'tg-ai-catalog/1', 'built': doc['built'], 'guide': SITE + 'datamap/data/ai.json', 'fields': 'files[{file, url, bytes, schema, date(만든 날·기준 해), source, fields(칸 설명), note, about{그 밖 설명 글}, top{맨 위 열쇠: {개수} 또는 [개수]}, sample{큰 묶음의 첫 항목 — 꼴 보기}}]', 'files': cat},
+              open(os.path.join(ROOT, 'data', 'ai-catalog.json'), 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, indent=1)
     p = os.path.join(ROOT, 'data', 'ai.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, indent=1)
     print('시군구', len(gus), '· 전국 파일', len(cat), '· 권역 층', len(lay), '· 바이트', os.path.getsize(p))

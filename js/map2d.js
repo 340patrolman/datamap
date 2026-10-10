@@ -2733,9 +2733,14 @@
     var TD = D.sigd.tod && D.sigd.tod[String(no)], dn = new Date(), tdc = TD ? TD.filter(function (q) { return q[1] === dn.getHours(); })[0] : null;
     if (HOUR == null && age >= 0 && age <= 3 * 3600 && !(tdc && Math.abs(tdc[2] - r.ci) > 1)) return { rec: r, age: age, ok: 1, stale: 1 };
     return { rec: r, age: age, why: 'old' }; }
-  function sdPlanDev(no, r) { if (HOUR != null || !D.sig || !D.sig.spots) return null; var s = D.sig.spots.filter(function (q) { return String(q.no) === String(no); })[0]; if (!s) return null; var d = new Date(), pn = s.dow && s.dow[String(d.getDay() + 1)], rows = pn && s.plans && s.plans[pn]; if (!rows || !rows.length) return null;
-    var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), cur = null; rows.forEach(function (q) { if (q[0] <= hm && q[1] > 0) cur = q; }); if (!cur) cur = rows[rows.length - 1]; var c = +cur[1], off = +cur[2] || 0; if (!(c > 0) || Math.abs(r.ci - c) > 1) return null;
-    var ps = (+cur[0].slice(0, 2)) * 3600 + (+cur[0].slice(3, 5)) * 60, since = ((sodK(Date.now()) - ps) % 86400 + 86400) % 86400; if (since < c) return null; var dv = (((sodK(r.a * 1000) - off) % c) + c) % c; if (dv > c / 2) dv -= c; return Math.round(dv); }
+  function phNear(pos, c, a, b) { var best = null; [['A', a], ['B', b]].forEach(function (R) { var A = String(R[1] || '').split(' ').map(Number).filter(function (v) { return v > 0; }), acc = 0; A.forEach(function (v, i) { var d = (((pos - acc) % c) + c) % c; if (d > c / 2) d -= c; if (!best || Math.abs(d) < Math.abs(best[0])) best = [d, i + 1, R[0]]; acc += v; }); }); return best || [pos > c / 2 ? pos - c : pos, 1, 'A']; }
+  function sigRowAt(s, ms) { var d = new Date(ms), pn = s.dow && s.dow[String(d.getDay() + 1)], rows = pn && s.plans && s.plans[pn]; if (!rows || !rows.length) return null; var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), cur = null; rows.forEach(function (q) { if (q[0] <= hm && q[1] > 0) cur = q; }); return cur || rows[rows.length - 1]; }
+  /* 받은 닻이 경찰청 계획과 맞는가 — 닻을 받은 그 시각의 계획 줄(ra)에서 어느 현시 시작과 ±6초인지 본다. 지금 도는 줄(cur)이 그 줄과 주기·옵셋·현시값이 같을 때만 「지금도 이어 셀 수 있다」(작은 값) · 계획이 바뀌었으면 99 */
+  function sdPlanDev(no, r) { if (HOUR != null || !D.sig || !D.sig.spots) return null; var s = D.sig.spots.filter(function (q) { return String(q.no) === String(no); })[0]; if (!s) return null; var cur = sigRowAt(s, Date.now()), ra = sigRowAt(s, r.a * 1000); if (!cur || !ra) return null;
+    var c = +ra[1], off = +ra[2] || 0; if (!(c > 0) || Math.abs(r.ci - c) > 1) return null;
+    var ps = (+cur[0].slice(0, 2)) * 3600 + (+cur[0].slice(3, 5)) * 60, since = ((sodK(Date.now()) - ps) % 86400 + 86400) % 86400; if (since < +cur[1]) return null;
+    if (+cur[1] !== c || (+cur[2] || 0) !== off || String(cur[3]) !== String(ra[3]) || String(cur[4]) !== String(ra[4])) return 99;
+    return Math.round(phNear((((sodK(r.a * 1000) - off) % c) + c) % c, c, ra[3], ra[4])[0]); }
   function sdState(m, rec, now) { var ci = rec.ci, t = (((now - rec.a - (m[5] || 0)) % ci) + ci) % ci, g = m[2], y = m[3] || 0; return t < g ? ['g', g - t] : t < g + y ? ['y', g + y - t] : ['r', ci - t]; }
   function sdNowPaint() { var el = $('sdNow'); if (!el) return; var no = el.getAttribute('data-no'), lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no), ch = $('sdCh'), nw = $('sdNw'); if (!o || !ch || !nw) return;
     if (Date.now() - SDAT > 5 * 60000 && !document.hidden) { SDAT = Date.now(); fetch(FILES.sigd).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.its) D.sigd = j; }).catch(function () {}); }
@@ -2858,9 +2863,9 @@
   var SFCK = null; fetch('data/sig-field-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFCK = j; }).catch(function () {});
   function kscFv(no) { var c = SFCK && SFCK.checks ? SFCK.checks.filter(function (q) { return String(q.no) === String(no); }) : []; if (!c.length) return ''; var q = c[c.length - 1];
     return '<b style="color:#15803d">✅ 현장 영상 대조</b>(' + esc(q.day) + ' ' + esc(q.at) + ' · ' + esc(q.mv) + ') — 계획 ' + esc(q.plan) + ' / 영상 ' + esc(q.seen) + ' → <b>' + (Math.abs(q.d) <= q.pm ? q.pm + '초 안으로 맞음' : (q.d > 0 ? '실제가 ' + q.d + '초 늦음' : '실제가 ' + (-q.d) + '초 빠름')) + '</b>(영상 시각 ±' + q.pm + '초 · 그 시각대 한 번 본 것)'; }
-  function ofckTxt() { var S = OFCK && OFCK.spots, n = 0, m = 0; if (!S) return '자정 기준 규칙은 T-Data 로 받은 값과 견줘 확인했다'; Object.keys(S).forEach(function (k) { n++; if (S[k][2] > 0) m++; });
-    return '자정 기준 규칙은 경찰청 계획과 T-Data 받은 값이 같은 주기인 서울 ' + n + '곳 중 <b>' + m + '곳이 ±4초 안</b>으로 맞았다(' + esc(OFCK.made || '') + ' 대조)'; }
-  function ofckBad(no) { var q = OFCK && OFCK.spots && OFCK.spots[String(no)]; return q && q[1] > 0 && q[2] === 0 ? q : null; }
+  function ofckTxt() { var S = OFCK && OFCK.spots, n = 0, m = 0; if (!S) return '자정 기준 규칙은 T-Data 로 받은 값과 견줘 확인했다'; Object.keys(S).forEach(function (k) { n++; if (S[k][2] > 0 || S[k][4] > 0) m++; });
+    return '자정 기준 규칙은 경찰청 계획과 T-Data 받은 값이 같은 주기인 서울 ' + n + '곳 중 <b>' + m + '곳이 맞았다</b>(±5초 · 기준 이동류가 1현시가 아닌 곳은 그 현시 시작과)(' + esc(OFCK.made || '') + ' 대조)'; }
+  function ofckBad(no) { var q = OFCK && OFCK.spots && OFCK.spots[String(no)]; return q && q[1] > 0 && q[2] === 0 && !(q[4] > 0) ? q : null; }
   var OFCK = null; fetch('data/sig-offset-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OFCK = j; }).catch(function () {});
   function sodK(ms) { return ((((ms + 32400000) % 86400000) + 86400000) % 86400000) / 1000; }
   function sigTickHtml(s) { return s && s.no != null ? '<div class="sdnow" id="sigTick" data-no="' + esc(String(s.no)) + '"></div>' : ''; }
@@ -2871,10 +2876,10 @@
     var c = +cur[1], off = +cur[2] || 0, sod = sodK(now), ps = (+cur[0].slice(0, 2)) * 3600 + (+cur[0].slice(3, 5)) * 60, since = ((sod - ps) % 86400 + 86400) % 86400;
     if (!(c > 0)) { el.innerHTML = ''; return; }
     if (since < c) { el.innerHTML = '<p class="sdnt">계획이 막 바뀌었다(' + esc(cur[0]) + ') — 바뀐 뒤 한 주기는 신호가 새 계획에 맞춰지는 중이라 초를 감춘다.</p>'; return; }
-    var chk = '', lv = sdLive(no); if (lv.rec && lv.rec.a && Math.abs(lv.rec.ci - c) <= 1) { var dv = (((sodK(lv.rec.a * 1000) - off) % c) + c) % c; if (dv > c / 2) dv -= c; dv = Math.round(dv);
-      if (Math.abs(dv) > 6) { el.innerHTML = '<p class="sdnt">서울시 T-Data 로 받은 값(' + hhmm(lv.rec.a * 1000) + ')과 계획 계산이 ' + dv + '초 어긋나 <b>계획으로 센 초는 감춘다</b>(기준 현시가 다르거나 다른 계획·감응 운영일 수 있다) — 아래 방향별 신호를 본다.</p>'; return; }
-      chk = ' · ✔ T-Data 받은 값(' + hhmm(lv.rec.a * 1000) + ')과 ' + (dv >= 0 ? '+' : '') + dv + '초 차이로 맞음'; }
-    else { var bq = ofckBad(no); if (bq) { el.innerHTML = '<p class="sdnt">이 교차로는 T-Data 로 받은 값과 견준 대조에서 계획 계산이 <b>평균 ' + Math.round(bq[3]) + '초 어긋났다</b> → <b>계획으로 센 초는 감춘다</b>(기준 현시가 1현시가 아니거나 계획이 그 뒤 바뀌었을 수 있다 · 계획 받은 날 2026-09-10) — 주기 ' + c + '초 · 현시 ' + esc(String(cur[3])) + '초.</p>'; return; } }
+    var chk = '', lv = sdLive(no), rr = lv.real || lv.rec, ra = rr && rr.a ? sigRowAt(s, rr.a * 1000) : null; if (ra && Math.abs(rr.ci - (+ra[1])) <= 1) { var cA = +ra[1], pn9 = phNear((((sodK(rr.a * 1000) - (+ra[2] || 0)) % cA) + cA) % cA, cA, ra[3], ra[4]), dv = Math.round(pn9[0]);
+      if (Math.abs(dv) > 6) { el.innerHTML = '<p class="sdnt">서울시 T-Data 로 받은 값(' + hhmm(rr.a * 1000) + ')이 그때 계획의 어느 현시 시작과도 맞지 않아(가장 가까운 것과 ' + dv + '초) <b>계획으로 센 초는 감춘다</b>(다른 계획·감응 운영일 수 있다) — 아래 방향별 신호를 본다.</p>'; return; }
+      chk = ' · ✔ T-Data 받은 값(' + hhmm(rr.a * 1000) + ')이 그때 계획 ' + pn9[1] + '현시 시작과 ' + (dv >= 0 ? '+' : '') + dv + '초 차이로 맞음'; }
+    else { var bq = ofckBad(no); if (bq) { el.innerHTML = '<p class="sdnt">이 교차로는 T-Data 로 받은 값과 견준 대조에서 계획 계산이 <b>평균 ' + Math.round(bq[3]) + '초 어긋났다</b> → <b>계획으로 센 초는 감춘다</b>(어느 현시 시작과도 안 맞았다 · 계획은 2026-10-10 다시 받아도 같았다 — 까닭 미상) — 주기 ' + c + '초 · 현시 ' + esc(String(cur[3])) + '초.</p>'; return; } }
     var ph = (((sod - off) % c) + c) % c, h = '<div class="sdls">', ring = function (nm, txt) { var A = String(txt || '').split(' ').map(Number).filter(function (v) { return v > 0; }), acc = 0, i = 0; if (!A.length) return ''; for (; i < A.length; i++) { if (ph < acc + A[i]) break; acc += A[i]; } if (i >= A.length) i = A.length - 1;
         var left = Math.max(0, acc + A[i] - ph), nx = (i + 1) % A.length; return '<div class="sdl"><i style="background:#2563eb"></i><b>' + nm + ' ' + (i + 1) + '현시</b><span><strong>' + Math.ceil(left) + '</strong>초 남음</span><small>다음 ' + (nx + 1) + '현시 ' + A[nx] + '초 · 한 주기 = ' + A.map(function (v, k) { return (k === i ? '<b>' : '') + (k + 1) + '현시 ' + v + (k === i ? '</b>' : ''); }).join(' · ') + '초</small></div>'; };
     h += ring(String(cur[3]) === String(cur[4]) ? '지금' : 'A링', cur[3]) + (String(cur[3]) !== String(cur[4]) ? ring('B링', cur[4]) : '') + '</div>';

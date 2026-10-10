@@ -13,6 +13,20 @@ def cut(v, n):
     if v is None: return None
     s = v if isinstance(v, str) else json.dumps(v, ensure_ascii=False)
     return s if len(s) <= n else s[:n] + ' …(전문은 파일에)'
+def deep(v, d=0):   # 칸 설명(fields)이 없는 옛 파일용 — 꼴을 저절로 적는다(열쇠 이름 · 값의 종류 · 보기 값) · 뜻을 지어 적지 않는다
+    if isinstance(v, dict):
+        ks = list(v.keys())
+        if d >= 3: return '{…%d}' % len(ks)
+        num = sum(1 for k in ks[:20] if str(k).replace('-', '').replace('.', '').isdigit() or len(str(k)) in (5, 8, 10, 19) and str(k)[:2].isdigit())
+        if len(ks) > 12 or num >= max(2, len(ks[:20]) // 2): return '{<열쇠 %d개 · 예 %s>: %s}' % (len(ks), cut(str(ks[0]), 24), deep(v[ks[0]], d + 1))
+        return '{' + ', '.join('%s: %s' % (k, deep(v[k], d + 1)) for k in ks) + '}'
+    if isinstance(v, list):
+        if not v: return '[]'
+        if d >= 3: return '[…%d]' % len(v)
+        if all(not isinstance(x, (list, dict)) for x in v[:8]): return '[%d개 · 예 %s]' % (len(v), cut(json.dumps(v[:4], ensure_ascii=False), 70))
+        return '[%d개 × %s]' % (len(v), deep(v[0], d + 1))
+    if isinstance(v, str): return '글' if len(v) > 30 else json.dumps(v, ensure_ascii=False)
+    return 'null' if v is None else ('참거짓' if isinstance(v, bool) else '수(예 %s)' % v)
 def shape(v):
     if isinstance(v, dict): return '{%d}' % len(v)
     if isinstance(v, list): return '[%d]' % len(v)
@@ -52,6 +66,7 @@ def main():
                 if isinstance(v, list): sm[k + '[0]'] = cut(v[0], 240)
                 else: k0 = next(iter(v)); sm[k + '.' + str(k0)] = cut(v[k0], 240)
             if sm: e['sample'] = sm
+            if not e.get('fields'): e['shape'] = cut(deep({k: v for k, v in j.items() if isinstance(v, (list, dict))}), 900)   # 칸 설명이 없는 파일 — 꼴만(뜻은 source·note·about 와 layers.json 을 같이 본다)
         else: e['top'] = shape(j)
         cat.append(e)
     # ② 권역 저장소의 층(시군구마다 한 파일)
@@ -106,7 +121,7 @@ def main():
         'region_layers_fields': 'region_layers{층 이름: {d 뜻, src 출처, asof 기준, gus 이 층이 있는 시군구 수(전체 %d)}} — 주소 = %s<repo>/r/<시군구 5자리>/<층>.json' % (len(gus), SITE),
         'region_layers': dict(sorted(lay.items())),
         }
-    json.dump({'schema': 'tg-ai-catalog/1', 'built': doc['built'], 'guide': SITE + 'datamap/data/ai.json', 'fields': 'files[{file, url, bytes, schema, date(만든 날·기준 해), source, fields(칸 설명), note, about{그 밖 설명 글}, top{맨 위 열쇠: {개수} 또는 [개수]}, sample{큰 묶음의 첫 항목 — 꼴 보기}}]', 'files': cat},
+    json.dump({'schema': 'tg-ai-catalog/1', 'built': doc['built'], 'guide': SITE + 'datamap/data/ai.json', 'fields': 'files[{file, url, bytes, schema, date(만든 날·기준 해), source, fields(칸 설명), note, about{그 밖 설명 글}, top{맨 위 열쇠: {개수} 또는 [개수]}, sample{큰 묶음의 첫 항목 — 꼴 보기}, shape(칸 설명이 없는 파일의 꼴 — 저절로 적은 것: 열쇠·값 종류·보기)}]', 'files': cat},
               open(os.path.join(ROOT, 'data', 'ai-catalog.json'), 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, indent=1)
     p = os.path.join(ROOT, 'data', 'ai.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, indent=1)

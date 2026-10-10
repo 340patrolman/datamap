@@ -3447,11 +3447,27 @@
     if (on.pbox && view.s >= 0.02) POL2.pbox.forEach(function (b) { dot(b.p, b[1] ? 3.6 : 4.6, b[1] ? '#0284c7' : '#1d4ed8', '#fff', { kind: 'pbx', b: b }); });
   }
   // v2.109.0 경찰서 머리 칸 — 대표번호 · 시도청 · 청사 자리 · 지구대·파출소(누르면 그 카드) · 관할 동 · 112신고·5대범죄·지역경찰·단속(자료 있는 서만) · 연혁 등 더 넣을 자료는 다른 세션이 구워 오면 여기에
+  // v2.109.1 data/police-card.json(다른 세션 · tools/region/polcard-bake.py · 서마다 관할 동 합계) — 이 카드의 합계 칸이 못 내는 것만 쓴다: 시도청 안 차례 · 관할 동 이름(같이 맡는 서) · 사고 갈래 · 생활인구 24시간 · 역 · 연혁
+  var POLC, POLCP = null;
+  function polcGet() { if (POLCP) return POLCP; POLCP = fetch('data/police-card.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { POLC = j; }).catch(function () { POLC = null; }); return POLCP; }
+  function psCardX(s2) { if (POLC === undefined) { polcGet().then(function () { var c = $('m2dCard'); if (sel && sel.it && c && c.classList.contains('on') && (sel.it.kind === 'pst' || (sel.it.kind === 'unit' && sel.it.u.t === 'ps'))) show(sel.it); }); return ''; }
+    var c = POLC && POLC.st && POLC.st[String(s2[0])]; if (!c) return ''; var h = '', R = c.rank || {}, rk = function (k, nm) { return R[k] ? nm + ' ' + R[k][0] + '위' : ''; }, ord = [rk('pop', '주민'), rk('km2', '넓이'), rk('acc', '사고'), rk('per1k', '주민당 사고')].filter(Boolean);
+    if (ord.length) h += row(esc(s2[5] || '시도청') + ' 안 차례', esc(ord.join(' · ')) + ' <em>(' + ((R.pop || R.acc || [0, 0])[1]) + '서 중 · 1위가 가장 큼)</em>');
+    if (c.dongs && c.dongs.length) h += row('관할 동 ' + c.dongs.length + '곳', '<div class="lg-btns">' + c.dongs.map(function (d) { return '<button data-udg="' + esc(d[0]) + '">' + esc(d[1]) + (d[4] ? ' <small>경계</small>' : '') + '</button>'; }).join('') + '</div>' + (c.nshare ? '<em>「경계」 = ' + c.nshare + '곳은 다른 서와 번지로 나눠 맡는 동 · 누르면 그 동 카드(지도가 그 구를 읽은 뒤)</em>' : '<em>누르면 그 동 카드(지도가 그 구를 읽은 뒤)</em>'));
+    var a = c.acc; if (a && a.n) h += row('사고 갈래(10년)', '보행자 피해 ' + (a.ped || 0).toLocaleString() + ' · 이륜 가해 ' + (a.moto || 0).toLocaleString() + ' · 자전거 ' + (a.bike || 0).toLocaleString() + ' · PM ' + (a.pm || 0).toLocaleString() + ' · 밤(20~6시) ' + a.night + '% · 주민 1천 명당 한 해 ' + a.per1k + '건 <em>(TAAS 공개 자료 — 경찰 내부 통계와 다르다)</em>');
+    if (c.tr && c.tr.st && c.tr.st.length) h += row('관할 안 역', esc(c.tr.st.join(' · ')));
+    if (c.live && c.live.length === 24) h += '<div class="cap">평일 시간대별 생활인구(명 · 0~23시 · 자료 있는 동만)</div>' + bar(c.live, '#7c3aed', c.live.map(function (v, i) { return i % 3 ? '' : String(i); }));
+    if (c.hist && c.hist.length) h += row('📜 연혁', c.hist.map(function (x) { return '<b>' + esc(x[0]) + '</b> ' + esc(x[1]) + (x[2] ? ' <em>(' + esc(x[2]) + ')</em>' : ''); }).join('<br>'));
+    else h += row('📜 연혁', '<em>아직 없음 — 출처를 확인한 서부터 싣는다(없다고 역사가 없는 것은 아니다)</em>');
+    return h; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-udg]'); if (!b) return; var k = b.getAttribute('data-udg'), nm0 = b.textContent.replace(/\s*경계\s*$/, '').trim(), AD0 = allDong(), d = AD0.filter(function (x) { return x.k === k; })[0] || AD0.filter(function (x) { return !x.k && x.name === nm0; })[0]; if (!d) { b.insertAdjacentHTML('afterend', '<small class="lg-n"> 이 동의 구 자료를 아직 안 읽었다 — 지도를 그쪽으로 옮긴 뒤 다시</small>'); return; }
+    view.cx = d.c[0]; view.cy = d.c[1]; var s0 = S(d.c); sel = { x: s0[0], y: s0[1], r: 6, it: { kind: 'dong', d: d } }; TAPM = d.c; show(sel.it); draw(); });
   function psHead(s2) { if (!s2) return ''; var nd = 0, mix = 0, bx = []; POL2.pbox.forEach(function (b, i) { if (b[6] === s2[0]) bx.push([b, i]); });
     Object.keys(POL2.dong).forEach(function (k) { var o = polLab(POL2.labels[POL2.dong[k]]); if (o.main.indexOf(s2) >= 0) { nd++; if (o.main.length > 1 || o.extra.length) mix++; } });
     var h = row('대표번호', s2[4] ? '<a href="tel:' + esc(s2[4]) + '">' + esc(s2[4]) + '</a>' : '<em>(원자료에 없음)</em>') + row('시도청', esc(s2[5] || '-')) + (s2[2] != null ? row('청사 자리', (+s2[2]).toFixed(5) + ', ' + (+s2[3]).toFixed(5) + ' <em>(경찰민원24 좌표)</em>') : '');
     h += row('지구대·파출소', bx.length ? bx.length + '곳 <em>(누르면 그 카드)</em><div class="lg-btns">' + bx.map(function (q) { return '<button data-upb="' + q[1] + '">' + esc(q[0][0]) + (q[0][1] ? ' 파출소' : ' 지구대') + '</button>'; }).join('') + '</div>' : '자료에 없음');
     h += row('관할 행정동', nd + '곳' + (mix ? ' · 그중 ' + mix + '곳은 다른 서와 번지로 나눠 맡음' : '') + ' <em>(직제 시행규칙 별표2 × 행정동 — 행정동 단위 근사 · 이름은 아래 「든 동」)</em>');
+    h += psCardX(s2);
     var ps = '', en = ''; try { ps = polStats(s2[1]) || ''; } catch (e) {} try { en = enfRows(s2[1]) || ''; } catch (e2) {}
     return h + ps + en + (ps || en ? '' : '<p class="lg-n">이 서의 112신고·범죄·단속 통계는 이 지도에 없다(서울청·경기남부청 공개분만 실었다).</p>') + fiBox(['any'], '이 서의 다른 통계 직접 찾는 법'); }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-upb]'); if (!b || !POL2) return; var x = POL2.pbox[+b.getAttribute('data-upb')]; if (!x) return; var s0 = S(x.p); sel = { x: s0[0], y: s0[1], r: 8, it: { kind: 'pbx', b: x } }; show(sel.it); draw(); });

@@ -15,7 +15,7 @@
   var D = {}, hit = [], sel = null;
   // 층 = [키, 이름, 기본 켜짐, 갈래, 위 줄 단추]. 위 줄에는 자주 쓰는 것만, 나머지는 「☰ 모든 층」 판에서(v0.10.57 · 소유자 「파출소·지구대에서 써도 좋을 만큼 — 찾을 수 있는 것 싹 다」)
   var LAYERS = [
-    ['dong', '🏘 행정동', true, '바탕', 1], ['road', '🛣 도로', true, '바탕', 1], ['base', '🗺 바탕(물·녹지·철도)', true, '바탕', 0], ['vw', '🛰 위성·일반 지도(브이월드 · 인터넷)', false, '바탕', 1], ['jcnm', '🏷 교차로·도로 이름(서울·경기 전부)', true, '바탕', 1], ['bld', '🏢 건물', true, '바탕', 0], ['sub', '🚇 지하철역', true, '바탕', 0], ['exit', '🚪 지하철 출입구', false, '바탕', 0],
+    ['dong', '🏘 행정동', true, '바탕', 1], ['road', '🛣 도로', true, '바탕', 1], ['base', '🗺 바탕(물·녹지·철도)', true, '바탕', 0], ['vw', '🛰 위성·일반 지도(브이월드 · 인터넷)', false, '바탕', 1], ['jcnm', '🏷 교차로·도로 이름(서울·경기 전부)', true, '바탕', 1], ['bld', '🏢 건물', true, '바탕', 0], ['sub', '🚇 지하철역', true, '바탕', 0], ['exit', '🚪 지하철 출구 번호(전국)', true, '바탕', 0],
     ['lev', '🚧 지금 돌발·공사·사고(ITS)', false, '실시간', 1], ['lspd', '🚦 지금 도로 소통(ITS)', false, '실시간', 1], ['lcc', '📹 교통 CCTV 영상(국도·고속)', false, '실시간', 1],
     ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
@@ -28,7 +28,7 @@
     ['gov', '🏢 관공서·주민센터', false, '생활시설', 0], ['lib', '📚 도서관', false, '생활시설', 0], ['post', '📮 우체국', false, '생활시설', 0], ['bank', '🏦 은행·ATM', false, '생활시설', 0], ['conv', '🏪 편의점', false, '생활시설', 0],
     ['fuel', '⛽ 주유소', false, '생활시설', 0], ['ev', '🔌 전기차 충전', false, '생활시설', 0], ['pk', '🅿 주차장', false, '생활시설', 0],
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
-    ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장 자리(전국 · OSM)', false, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
+    ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장(전국 · 확대하면 보임)', true, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
     ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0], ['walk', '🚶 예상 귀갓길(역·정류장 → 집 · 추정)', false, '이동·동선', 1], ['hira', '🩺 병의원·약국(심평원 · 과목·전문의 · 전국)', false, '생활시설', 1],
     ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '날씨·계절', 0], ['hcab', '🔥 도로 열선 길', false, '날씨·계절', 0], ['advb', '❄ 제설 전진기지', false, '날씨·계절', 0],
@@ -51,6 +51,7 @@
     ks.forEach(function (k) { on[k] = true; }); HASHLY = true; return true;
   }
   hashLayers();
+  try { if (HASHLY) { on.exit = true; on.bstop = true; } else if (!localStorage.getItem('tg_map2d_exb1')) { on.exit = true; on.bstop = true; localStorage.setItem('tg_map2d_exb1', '1'); saveOn(); } } catch (e) {}   /* v2.103.0 소유자 「버스정류장과 역 출구번호도 지도에 표시」 — 꺼져 있던 기기에 한 번 켠다(끄면 그대로 꺼진다) */
   try { if (!localStorage.getItem('tg_map2d_crowd1')) { on.crowd = false; localStorage.setItem('tg_map2d_crowd1', '1'); saveOn(); } } catch (e) {}   // v2.34.0 이 기기에 「켜짐」으로 남은 인파를 한 번 끈다
 
   // ---------- 자료 읽기 ----------
@@ -99,6 +100,33 @@
     rGet(gu, 'lamp.json').then(function (j) { if (!L.src) L.src = j.source; j.pts.forEach(function (r) { L[3].push({ p: P(r[1], r[0]), r: r }); }); RLOADL[gu] = 3; draw(); }).catch(function () { RLOADL[gu] = 2; });
   }
   var RLOADB = {};
+  // v2.103.0 🚪 전국 지하철·도시철도 출구 번호(data/exits-kr.json ← tools/region/exit-bake.py · OSM railway=subway_entrance) · 🚏 정류장 표지 — 0.1px/m(화면 폭 3~4km)보다 확대했을 때만
+  var EXITS = null, EXITP = null, EXSRC = '', EXB_Z = 0.1;
+  function exLoad() { if (EXITS || EXITP) return EXITP; EXITP = fetch('data/exits-kr.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { EXSRC = j.source; EXITS = j.pts.map(function (r) { return { p: P(r[1], r[0]), r: r }; }); draw(); try { if (TR && $('m2dTr') && $('m2dTr').classList.contains('on')) trPaint(); } catch (e) {} return EXITS; }).catch(function () { EXITP = null; }); return EXITP; }
+  function exNear(pt, lim) { if (!EXITS) return null; var b = null, bd = lim || 150; EXITS.forEach(function (e) { if (Math.abs(e.p[1] - pt[1]) > bd || !e.r[2]) return; var d = dTrue(e.p, pt); if (d < bd) { bd = d; b = e; } }); return b ? { e: b, d: bd } : null; }
+  function exName(e) { return (e.r[3] ? e.r[3] + '역 ' : '') + (e.r[2] ? e.r[2] + '번 출구' : '출입구'); }
+  function drawExb(dark) {
+    if (view.s < EXB_Z) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, z = view.s;
+    if (on.bstop) { var B = SAFE.filter(function (x) { return x[0] === 'bstop'; })[0], vis = [];
+      if (B) B[3].forEach(function (q) { var s0 = S(q.p); if (s0[0] < -12 || s0[1] < -12 || s0[0] > W0 + 12 || s0[1] > H0 + 12) return; vis.push([q, s0]); });
+      var big = z >= 0.22 && vis.length <= 400, lab = z >= 0.55 && vis.length <= 60, LB = [];
+      vis.forEach(function (v) { var x = v[1][0], y = v[1][1];
+        if (!big) { ctx.beginPath(); ctx.arc(x, y, 2.3, 0, Math.PI * 2); ctx.fillStyle = '#0284c7'; ctx.fill(); return; }
+        ctx.fillStyle = '#0284c7'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.roundRect(x - 6.5, y - 6.5, 13, 13, 3); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.roundRect(x - 4, y - 4.2, 8, 7, 1.5); ctx.fill(); ctx.fillStyle = '#0284c7'; ctx.fillRect(x - 3, y - 3, 6, 2.4); ctx.fillStyle = '#fff'; ctx.fillRect(x - 3.4, y + 3.2, 2, 1.6); ctx.fillRect(x + 1.4, y + 3.2, 2, 1.6);
+        hit.push({ x: x, y: y, r: 11, it: { kind: 'safe', L: B, q: v[0] } });
+        if (lab && v[0].r[2]) { ctx.font = '600 10.5px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; var tw = ctx.measureText(v[0].r[2]).width, bx = [x + 8, y - 7, x + 11 + tw, y + 7]; if (LB.some(function (b) { return bx[0] < b[2] && bx[2] > b[0] && bx[1] < b[3] && bx[3] > b[1]; })) return; LB.push(bx); ctx.lineWidth = 3; ctx.strokeStyle = dark ? 'rgba(15,23,42,.9)' : 'rgba(255,255,255,.92)'; ctx.strokeText(v[0].r[2], x + 9, y + 0.5); ctx.fillStyle = dark ? '#7dd3fc' : '#075985'; ctx.fillText(v[0].r[2], x + 9, y + 0.5); } }); }
+    if (on.exit && EXITS && z >= 0.14) { ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      EXITS.forEach(function (e) { var s0 = S(e.p); if (s0[0] < -14 || s0[1] < -14 || s0[0] > W0 + 14 || s0[1] > H0 + 14) return; var t = e.r[2];
+        if (!t || z < 0.2) { ctx.beginPath(); ctx.arc(s0[0], s0[1], 2.6, 0, Math.PI * 2); ctx.fillStyle = '#eab308'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = '#422006'; ctx.stroke(); if (z >= 0.2) hit.push({ x: s0[0], y: s0[1], r: 9, it: { kind: 'exit', e: e } }); return; }
+        var w = Math.max(13, ctx.measureText(t).width + 6); ctx.fillStyle = '#facc15'; ctx.strokeStyle = '#422006'; ctx.lineWidth = 1; ctx.beginPath(); ctx.roundRect(s0[0] - w / 2, s0[1] - 6.5, w, 13, 2.5); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#1c1917'; ctx.fillText(t, s0[0], s0[1] + 0.5);
+        hit.push({ x: s0[0], y: s0[1], r: 10, it: { kind: 'exit', e: e } }); }); }
+  }
+  function exCard(it) { var e = it.e, r = e.r, B = SAFE.filter(function (x) { return x[0] === 'bstop'; })[0], nb = [];
+    if (B) B[3].forEach(function (q) { if (Math.abs(q.p[1] - e.p[1]) > 200) return; var d = dTrue(q.p, e.p); if (d <= 200) nb.push([d, q]); }); nb.sort(function (a, b) { return a[0] - b[0]; });
+    return '<h3>🚪 ' + esc(exName(e)) + '</h3>' + (r[3] ? row('역', esc(r[3])) : '') + row('출구 번호', r[2] ? esc(r[2]) + '번' : '<em>번호 없음(OSM 에 안 적힘)</em>') +
+      (nb.length ? row('가까운 버스정류장', nb.slice(0, 4).map(function (x) { return esc(x[1].r[2] || '(이름 없음)') + (x[1].r[3] ? ' <small>' + esc(x[1].r[3]) + '</small>' : '') + ' ' + Math.round(x[0]) + 'm'; }).join('<br>')) : on.bstop ? row('가까운 버스정류장', '200m 안에 없음(OSM 기준)') : '') +
+      '<p class="desc">출구 자리·번호는 OpenStreetMap 표기다(자원봉사 지도라 빠지거나 옛 번호일 수 있다). 위 「🚏 여기 대중교통」을 누르면 이 자리의 버스 도착과 열차 도착을 함께 본다.</p>' + src(EXSRC); }
   function bsLoad(gu) {   // v2.14.0 전국 버스정류장 자리(OSM) — 층을 켰을 때만 그 구의 bstop.json
     if (RLOADB[gu]) return; RLOADB[gu] = 1; var L = SAFE.filter(function (x) { return x[0] === 'bstop'; })[0]; if (!L) { RLOADB[gu] = 0; return; }
     rGet(gu, 'bstop.json').then(function (j) { if (!L.src) L.src = j.source; j.pts.forEach(function (r) { L[3].push({ p: P(r[1], r[0]), r: r }); }); RLOADB[gu] = 3; draw(); }).catch(function () { RLOADB[gu] = 2; });
@@ -178,7 +206,8 @@
     if (view.s >= 0.03 && FAC_KEYS.some(function (k) { return on[k]; })) { var vf = viewLL(); rIdx().forEach(function (g) { if (RLOADF[g.gu] || !(g.bytes || {}).fac) return; var x = g.box; if (x[2] < vf[0] || x[0] > vf[2] || x[3] < vf[1] || x[1] > vf[3]) return; fLoad(g.gu); }); }
     if (view.s >= 0.02 && SEA && SEA_KEYS.some(function (k) { return on[k]; })) { var ve = viewLL(); rIdx().forEach(function (g) { if (RLOADE[g.gu] || !(g.bytes || {}).season) return; var x = g.box; if (x[2] < ve[0] || x[0] > ve[2] || x[3] < ve[1] || x[1] > ve[3]) return; seaLoad(g.gu); }); }
     if ((on.acc10 || on.fatal10 || on.fatal) && view.s >= 0.012) { var va = viewLL(); rIdx().forEach(function (g) { if (RLOADA[g.gu] || !(g.bytes || {}).taas10) return; var x = g.box; if (x[2] < va[0] || x[0] > va[2] || x[3] < va[1] || x[1] > va[3]) return; aLoad(g.gu); }); }
-    if (on.bstop && view.s >= 0.03) { var vb = viewLL(); rIdx().forEach(function (g) { if (RLOADB[g.gu] || !(g.bytes || {}).bstop) return; var x = g.box; if (x[2] < vb[0] || x[0] > vb[2] || x[3] < vb[1] || x[1] > vb[3]) return; bsLoad(g.gu); }); }
+    if ((on.exit && view.s >= EXB_Z) || (TR && $('m2dTr') && $('m2dTr').classList.contains('on'))) exLoad();
+    if (on.bstop && view.s >= EXB_Z) { var vb = viewLL(); rIdx().forEach(function (g) { if (RLOADB[g.gu] || !(g.bytes || {}).bstop) return; var x = g.box; if (x[2] < vb[0] || x[0] > vb[2] || x[3] < vb[1] || x[1] > vb[3]) return; bsLoad(g.gu); }); }
     if (on.glamp && view.s >= 0.06) { var vl = viewLL(); rIdx().forEach(function (g) { if (RLOADL[g.gu] || !(g.bytes || {}).lamp) return; var x = g.box; if (x[2] < vl[0] || x[0] > vl[2] || x[3] < vl[1] || x[1] > vl[3]) return; lpLoad(g.gu); }); }
     if (view.s >= 0.03 && SAFE_KEYS.some(function (k) { return on[k]; })) { var vs2 = viewLL(); rIdx().forEach(function (g) { if (RLOADS[g.gu] || !(g.bytes || {}).safety) return; var x = g.box; if (x[2] < vs2[0] || x[0] > vs2[2] || x[3] < vs2[1] || x[1] > vs2[3]) return; sfLoad(g.gu); }); }
     if ((on.bus && view.s > 0.07) || (on.subr && view.s >= 0.02)) { var vx = viewLL(); rIdx().forEach(function (g) { if (RLOADX[g.gu] || !(g.bytes || {}).transit) return; var x = g.box; if (x[2] < vx[0] || x[0] > vx[2] || x[3] < vx[1] || x[1] > vx[3]) return; xLoad(g.gu); }); }
@@ -935,7 +964,7 @@
       if (view.s > 0.1) label([q[0], q[1] + 16 / view.s], s.name, 11, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.85)'); });
     if (on.her && D.her) D.her.items.forEach(function (h) { if (h.lat && h.lon) dot(P(h.lon, h.lat), 5, '#92400e', '#fde68a', { kind: 'her', h: h }); });
     if (on.vol && D.vol) D.vol.spots.forEach(function (v) { var n = v.node && nodeAt(v.node); if (n && !v.outside) { var s2 = S(n.p); ctx.fillStyle = '#0ea5e9'; ctx.fillRect(s2[0] + 8, s2[1] - 8, 16, 16); hit.push({ x: s2[0] + 16, y: s2[1], r: 12, it: { kind: 'vol', v: v, n: n } }); } });
-    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawSeason(dark); drawWalk(dark); drawLore(dark); drawGgbrt(dark); drawHira(dark);
+    drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawExb(dark); drawSeason(dark); drawWalk(dark); drawLore(dark); drawGgbrt(dark); drawHira(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
       (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
@@ -1139,6 +1168,7 @@
     } else if (it.kind === 'ggzpin') { ggzGo(it.k); return;
     } else if (it.kind === 'rent') { h = rentCard(it.it);
     } else if (it.kind === 'store') { var so = it.s, C3 = SIDX ? SIDX.cls[so.c] : null; h = '<h3>🏬 ' + esc(so.n) + '</h3>' + (C3 ? row('업종', esc(C3[1] + ' › ' + C3[3] + ' › ' + C3[4])) : '') + (so.f ? row('층', esc(so.f) + '층') : '') + (RAD.c ? row('반경 가운데에서', Math.round(dTrue(so.p, RAD.c)) + 'm') : '') + '<p class="desc">등록된 상가 정보다 — 영업 중인지·매출은 이 자료에 없다.</p>' + src(SIDX ? SIDX.source + ' · 기준 ' + SIDX.stdrYm : '');
+    } else if (it.kind === 'exit') { h = exCard(it);
     } else if (it.kind === 'lak') { h = akCard(it);
     } else if (it.kind === 'lkma') { h = kmaCard();
     } else if (it.kind === 'leq') { h = eqCard(it);
@@ -1438,7 +1468,7 @@
       dot(q.p, q.st ? 8 : q.ctr ? 4 : 5.5, q.st ? '#1e3a8a' : q.ctr ? '#0f766e' : (q.o.approx ? '#93c5fd' : '#2563eb'), '#fff', { kind: 'pub', layer: 'pol', q: q });
       if (view.s > (q.st ? 0.06 : 0.14)) label([q.p[0], q.p[1] - (q.st ? 16 : 12) / view.s], q.name.replace(/^서울/, ''), q.st ? 11 : 10, dark ? '#bfdbfe' : '#1e3a8a', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.85)');
     });
-    Object.keys(PUB.fac).forEach(function (k) { if (!on[k] || (k === 'pol' && PUB.fac.pol[0] && PUB.fac.pol[0].off)) return; var small = PUB.fac[k].length > 80 && view.s < 0.1; PUB.fac[k].forEach(function (q) { dot(q.p, small ? 2.5 : 4.5, FAC_C[k] || '#64748b', small ? null : '#fff', small ? null : { kind: 'pub', layer: k, q: q }); }); });
+    Object.keys(PUB.fac).forEach(function (k) { if (k === 'exit' || !on[k] || (k === 'pol' && PUB.fac.pol[0] && PUB.fac.pol[0].off)) return; var small = PUB.fac[k].length > 80 && view.s < 0.1; PUB.fac[k].forEach(function (q) { dot(q.p, small ? 2.5 : 4.5, FAC_C[k] || '#64748b', small ? null : '#fff', small ? null : { kind: 'pub', layer: k, q: q }); }); });
     if (on.hosp && view.s > 0.1) PUB.hosp.forEach(function (q) { if (q.o.er) return; dot(q.p, 3.5, '#0891b2', '#fff', { kind: 'pub', layer: 'hosp', q: q }); });
     if (on.er) PUB.er.forEach(function (q) { dot(q.p, 8, '#dc2626', '#fff', { kind: 'pub', layer: 'er', q: q }); if (view.s > 0.08) label([q.p[0], q.p[1] - 16 / view.s], q.name, 11, dark ? '#fecaca' : '#7f1d1d', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.85)'); });
     if (on.phar) PUB.phar.forEach(function (q) { var op = openNow(q.o.h); dot(q.p, 4.5, op ? '#16a34a' : '#94a3b8', '#fff', { kind: 'pub', layer: 'phar', q: q }); });
@@ -2216,7 +2246,7 @@
     if (!b) return; var si = seasonInfo();
     G(si.icon + ' 계절 위험 · ' + esc(si.name), b + '<small class="lg-n">침수흔적 2010~2025(' + Sd.years.join('·') + ') · 자연재해위험개선지구: ' + Sd.danger.map(function (d) { return esc(d.DSTRCT_NM + '(' + d.PSTN + ')'); }).join(', ') + '</small>'); }
   function drawSafe(dark) {
-    SAFE.forEach(function (L) { if (!on[L[0]]) return; var dense = L[3].length > 300, small = dense && view.s < 0.25; if ((L[0] === 'fw' && view.s < 0.18) || (L[0] === 'glamp' && view.s < 0.1)) return;
+    SAFE.forEach(function (L) { if (!on[L[0]] || L[0] === 'bstop') return; var dense = L[3].length > 300, small = dense && view.s < 0.25; if ((L[0] === 'fw' && view.s < 0.18) || (L[0] === 'glamp' && view.s < 0.1)) return;
       L[3].forEach(function (q) { var c = L[0] === 'govr' ? (GOVC[q.r[3]] || L[2]) : L[0].indexOf('sr') === 0 && L[0] !== 'srsvc' ? (SRC_C[q.r[2]] || L[2]) : L[2]; dot(q.p, small ? 2.4 : 4.2, c, small ? null : '#fff', small ? null : { kind: 'safe', L: L, q: q }); }); });
   }
   function facCard(it) {
@@ -2448,7 +2478,7 @@
     else if (k === 'gev') { h += row('충전소', esc(r[2])) + row('주소', esc(r[3])) + row('운영', esc(r[4])) + row('충전기', esc(r[5])); s = SRCX.ev; }
     else if (k === 'ger') { h += row('기관', esc(r[2])) + row('구분', esc(r[3])) + row('주소', esc(r[4])) + row('대표 전화', '<a href="tel:' + esc(r[5]) + '">' + esc(r[5]) + '</a>'); s = SRCX.er; }
     else if (k === 'gfest') { h += row('축제', esc(r[2])) + row('장소', esc(r[3])) + row('기간', esc(r[4]) + ' ~ ' + esc(r[5])) + row('주최·주관', esc(r[6])) + (r[7] ? '<p class="desc">' + esc(r[7]) + '</p>' : '') + row('자료 기준', esc(r[8])); s = SRCX.fest; }
-    else if (k === 'bstop') { h += row('이름', esc(r[2] || '(이름 없음)')) + (r[3] ? row('정류장 번호', esc(r[3])) : '') + '<p class="desc">자리·이름만 있다(OSM). 승하차 인원은 서울·경기만 「🚌 버스 승차·하차」 층에 있다.</p>'; s = it.L.src; }
+    else if (k === 'bstop') { h += row('이름', esc(r[2] || '(이름 없음)')) + (r[3] ? row('정류장 번호', esc(r[3])) : '') + (function () { var x = exNear(it.q.p, 200); return x ? row('가까운 지하철 출구', esc(exName(x.e)) + ' ' + Math.round(x.d) + 'm') : ''; })() + '<p class="desc">자리·이름은 OpenStreetMap 표기다. 위 「🚏 여기 대중교통」을 누르면 이 정류장의 버스 도착(실시간)과 가까운 역 열차 도착을 함께 본다. 승하차 인원은 서울·경기만 「🚌 버스 승차·하차」 층에 있다.</p>'; s = it.L.src; }
     else if (k === 'glamp') { h += row('설치 연도', esc(r[2] || '-')) + row('설치 형태', esc(r[3] || '-')); s = it.L.src; }
     return h + src(s);
   }
@@ -4571,7 +4601,7 @@
     if (!B0 || B0.busy) h += '<p class="lg-n">정류장을 찾는 중…</p>'; else if (B0.err) h += '<p class="lg-n">' + esc(B0.err) + '</p>';
     else if (!B0.stops.length) h += '<div class="nil">근처에 정류장이 없다' + (T.sd === '11' && !sbOn() ? ' — 서울 시내버스는 서울시 API 가 https 를 열지 않아 이 지도에서 못 부른다(광역·인천 버스만 나온다)' : '') + '.</div>' + trSbNote(T);
     else { h += trSbNote(T);
-      B0.stops.forEach(function (st, i) { h += '<div class="trs"><div class="trh"><b>' + (i + 1) + '. ' + esc(st.nm) + '</b> <small>' + Math.round(st.d) + 'm' + (st.no ? ' · ' + esc(st.no) : '') + (st.s && st.id ? ' · 서울 ' + esc(st.s.ars) + ' <em>(같은 자리 — 서울·경기 도착을 함께)</em>' : st.s ? ' <em>(서울)</em>' : '') + '</small> <button data-tsa="' + i + '">' + (st.arr ? '🔄' : '⏱ 도착 보기') + '</button></div>';
+      B0.stops.forEach(function (st, i) { h += '<div class="trs"><div class="trh"><b>' + (i + 1) + '. ' + esc(st.nm) + '</b> <small>' + Math.round(st.d) + 'm' + (st.no ? ' · ' + esc(st.no) : '') + (function () { var x = exNear(st.p, 150); return x ? ' · 🚪 ' + esc(exName(x.e)) + ' ' + Math.round(x.d) + 'm' : ''; })() + (st.s && st.id ? ' · 서울 ' + esc(st.s.ars) + ' <em>(같은 자리 — 서울·경기 도착을 함께)</em>' : st.s ? ' <em>(서울)</em>' : '') + '</small> <button data-tsa="' + i + '">' + (st.arr ? '🔄' : '⏱ 도착 보기') + '</button></div>';
         if (st.busy) h += '<p class="lg-n">받는 중…</p>'; else if (st.err) h += '<p class="lg-n">' + esc(st.err) + '</p>';
         else if (st.arr) { if (!st.arr.length) h += '<p class="lg-n">지금 오는 버스 정보가 없다.</p>';
           else { var mx = Math.max(600, Math.max.apply(null, st.arr.map(function (a) { return a.sec < 99990 ? a.sec : 0; })));
@@ -4755,7 +4785,7 @@
     jcnm: '서울·경기 교차로 2.5만 곳과 도로 이름(국가교통정보센터 표준노드링크). 누르면 그 교차로에서 만나는 도로. 「찾기」에 교차로·도로 이름을 넣어도 된다.',
     bld: '건물 윤곽(OSM). 많이 확대해야 나온다.',
     sub: '지하철역 자리.',
-    exit: '지하철 출입구 번호(OSM).',
+    exit: '전국 지하철·도시철도 출구 번호(OpenStreetMap · 4,498곳) — 확대하면 노란 번호 상자로 보인다. 누르면 역 이름·가까운 버스정류장.',
     lev: '지금 고속도로·국도·시군도의 공사·사고·통제(국가교통정보센터). 켤 때 한 번 받고 범례 🔄 로 다시 · ITS 키 필요.',
     lspd: '지금 도로 속도를 원활(초록)·서행(노랑)·정체(빨강)로 칠한다(ITS 실시간). 화면 가로 약 14km 안까지 확대해야 받는다 · ITS 키 필요.',
     lcc: '국도·고속도로 교통 CCTV 1,801대. 점을 누르면 카드에서 실시간 영상이 나온다(ITS 호출 없음).',
@@ -4772,7 +4802,7 @@
     pbox: '전국 지구대·파출소 2,047곳(경찰청 2025-12-31 주소 → 좌표). 관할 경계는 공개 자료가 없어 자리만 — 동 카드의 「가까운 지구대」는 거리 근사.',
     home: '국토부 아파트·오피스텔·연립다세대 실거래(매매 24개월·전월세 12개월). 250m 칸 색을 범례에서 고른다 — 아파트 매매 평당·전세 평당·전세가율·월세·오피스텔·연립다세대. 확대하면 단지마다 점. 평당 = 전용 기준 · 전세가율은 추정.',
     rtc: '국토부 상업업무용 부동산 매매 실거래(서울·경기 24개월). 250m 칸 색 = 집합건물 ㎡당 거래금액 중앙값, 확대하면 거래 한 건씩. 평당 = 전용 기준.',
-    bstop: '전국 버스정류장 자리(OpenStreetMap · 약 10.5만) — 이름·번호만. 승하차 인원은 서울·경기만(🚌 버스 승차·하차). 확대하면 보인다.',
+    bstop: '전국 버스정류장(OpenStreetMap · 약 10.5만) — 확대하면 파란 버스 표지, 더 확대하면 이름. 누르면 가까운 지하철 출구와 「🚏 여기 대중교통」(도착). 승하차 인원은 서울·경기만(🚌 버스 승차·하차).',
     tlt: '전국 신호등(공공데이터포털 전국신호등표준데이터 · 약 9.9만) — 누르면 도로·현시 순서·현시 시간·잔여시간 표시·음향신호기. 등록값이라 실제 운영과 다를 수 있다.',
     rnet: '전국 도로를 등급별 색으로(국가교통정보센터 표준노드링크 2026-09) — 파랑 고속국도 · 보라 도시고속 · 빨강 일반국도 · 주황 특별·광역시도 · 초록 국가지원지방도 · 노랑 지방도 · 회색 시군도(크게 확대하면). 넓게 볼 때는 고속·국도만, 확대할수록 아래 등급까지. 길을 누르면 이름·등급·제한속도.',
     exv: '전국 고속도로 영업소(요금소)마다 시간당 드나든 차(입구·출구) — 한국도로공사 OpenAPI. 이 API 는 지난 시각을 주지 않아 매시간 모은 만큼만 있다(카드에 모은 시각). 본선 통행량이 아니라 영업소를 드나든 차다.',

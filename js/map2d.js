@@ -126,7 +126,7 @@
     if (B) B[3].forEach(function (q) { if (Math.abs(q.p[1] - e.p[1]) > 200) return; var d = dTrue(q.p, e.p); if (d <= 200) nb.push([d, q]); }); nb.sort(function (a, b) { return a[0] - b[0]; });
     return '<h3>🚪 ' + esc(exName(e)) + '</h3>' + (r[3] ? row('역', esc(r[3])) : '') + row('출구 번호', r[2] ? esc(r[2]) + '번' : '<em>번호 없음(OSM 에 안 적힘)</em>') +
       (nb.length ? row('가까운 버스정류장', nb.slice(0, 4).map(function (x) { return esc(x[1].r[2] || '(이름 없음)') + (x[1].r[3] ? ' <small>' + esc(x[1].r[3]) + '</small>' : '') + ' ' + Math.round(x[0]) + 'm'; }).join('<br>')) : on.bstop ? row('가까운 버스정류장', '200m 안에 없음(OSM 기준)') : '') +
-      '<p class="desc">출구 자리·번호는 OpenStreetMap 표기다(자원봉사 지도라 빠지거나 옛 번호일 수 있다). 위 「🚏 여기 대중교통」을 누르면 이 자리의 버스 도착과 열차 도착을 함께 본다.</p>' + src(EXSRC); }
+      sdLink(e.p, 120) + '<p class="desc">출구 자리·번호는 OpenStreetMap 표기다(자원봉사 지도라 빠지거나 옛 번호일 수 있다). 위 「🚏 여기 대중교통」을 누르면 이 자리의 버스 도착과 열차 도착을 함께 본다.</p>' + src(EXSRC); }
   function bsLoad(gu) {   // v2.14.0 전국 버스정류장 자리(OSM) — 층을 켰을 때만 그 구의 bstop.json
     if (RLOADB[gu]) return; RLOADB[gu] = 1; var L = SAFE.filter(function (x) { return x[0] === 'bstop'; })[0]; if (!L) { RLOADB[gu] = 0; return; }
     rGet(gu, 'bstop.json').then(function (j) { if (!L.src) L.src = j.source; j.pts.forEach(function (r) { L[3].push({ p: P(r[1], r[0]), r: r }); }); RLOADB[gu] = 3; draw(); }).catch(function () { RLOADB[gu] = 2; });
@@ -1075,7 +1075,7 @@
     hit.forEach(function (h) { var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < bd) { bd = d; best = h; } });
     if (!best && on.rnet) { var rl = rnAt(x, y); if (rl) best = { x: x, y: y, r: 6, it: { kind: 'rnl', l: rl } }; }
     if (on.land && (!best || /^(g250|l250|f250|a10|rtg|hmg|jgg|jgc)$/.test(best.it.kind))) best = { x: x, y: y, r: 6, it: { kind: 'land', m: M(x, y) } };   // 필지를 켜면 칸(면) 자료보다 필지가 먼저 · 점은 그대로
-    if (!best && view.s >= 0.12) { var mq = M(x, y), rq = Math.max(45, Math.min(90, 28 / view.s)), kq = sdAt(mq, rq);   /* v2.105.0 소유자 「교차로 부근을 찍으면 그곳 신호값이 즉시」 — 화면 28px(45~90m) 안 */
+    if (!best && view.s >= 0.12) { var mq = M(x, y), rq = Math.max(60, Math.min(120, 40 / view.s)), kq = sdAt(mq, rq);   /* v2.105.0 소유자 「교차로 부근을 찍으면 그곳 신호값이 즉시」 — 화면 40px(60~120m) 안 */
       if (kq) { var qq = D.sigd.pts[kq], sq = S(P(qq[1], qq[0])); best = { x: sq[0], y: sq[1], r: 8, it: { kind: 'sgd', no: kq, q: qq } }; }
       else if (D.sig && D.sig.spots) { var bs2 = null, bd2 = rq; D.sig.spots.forEach(function (s9) { var d9 = dTrue(P(s9.lon, s9.lat), mq); if (d9 < bd2) { bd2 = d9; bs2 = s9; } }); if (bs2) { var s8 = S(P(bs2.lon, bs2.lat)); best = { x: s8[0], y: s8[1], r: 8, it: { kind: 'sig', s: bs2 } }; } } }
     if (!best && (UNIT ? UNIT !== 'dong' : (on.upb || on.jurk || on.usgg))) { var mu = M(x, y), uu = unitAt(mu); if (uu) { var su = S(mu); best = { x: su[0], y: su[1], r: 6, it: { kind: 'unit', u: uu } }; } }
@@ -1131,7 +1131,7 @@
     if (it.kind === 'report') {
       var nn = nearestRealNode(REP.p), dd = nn ? Math.round(dTrue(nn.p, REP.p)) : 0;
       if (nn && dd <= 800) { show({ kind: 'node', n: nn, st: accOf(nn), rep: dd }); return; }
-      h = '<h3>' + (REP.here ? '📍 지금 위치' : '📋 보고 자리') + '</h3>' + row('가까운 교차로', '없음(800m 안) — 서초구 밖일 수 있음') + repAround() + hereRows() + src('T-Book 최초보고가 넘긴 좌표 — 이 기기 안에서만 쓰고 어디에도 저장하지 않는다');
+      h = '<h3>' + (REP.here ? '📍 지금 위치' : '📋 보고 자리') + '</h3>' + (function () { var k = sdAt(REP.p, 150); if (!k) return ''; var q = D.sigd.pts[k]; return row('가까운 신호 교차로', esc(q[2] || k) + ' ' + Math.round(dTrue(P(q[1], q[0]), REP.p)) + 'm') + sigDir(k); })() + row('가까운 교차로', '없음(800m 안) — 서초구 밖일 수 있음') + repAround() + hereRows() + src('T-Book 최초보고가 넘긴 좌표 — 이 기기 안에서만 쓰고 어디에도 저장하지 않는다');
     } else if (it.kind === 'near') {
       var nd = it.d, cnt = function (arr, ll) { return (arr || []).filter(function (q) { var v = ll(q); return v && inPoly(nd, P(v[0], v[1])); }).length; };
       var nS = D.sig ? cnt(D.sig.spots, function (q) { return [q.lon, q.lat]; }) : 0, nE = D.evt && D.evt.events ? cnt(D.evt.events.items, function (q) { return q.lat ? [q.lon, q.lat] : null; }) : 0, nC = D.cam ? cnt(D.cam.items, function (q) { return [q.lon, q.lat]; }) : 0;
@@ -1161,7 +1161,7 @@
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
     } else if (it.kind === 'node') {
-      var n = it.n, st = it.st; h = '<h3>' + (n.real ? '🚦 ' : '✕ ') + esc(n.name) + '</h3>' + (it.rep ? row(REP.here ? '지금 위치' : '보고 자리', (REP.here ? '지금 위치에서 ' : 'T-Book 보고 자리에서 ') + it.rep + 'm') + repAround() + hereRows() : '') + row('도로', esc(n.pair.replace('×', ' × ')));
+      var n = it.n, st = it.st; h = '<h3>' + (n.real ? '🚦 ' : '✕ ') + esc(n.name) + '</h3>' + (it.rep ? row(REP.here ? '지금 위치' : '보고 자리', (REP.here ? '지금 위치에서 ' : 'T-Book 보고 자리에서 ') + it.rep + 'm') + sdLink(REP.p, 150) + repAround() + hereRows() : '') + row('도로', esc(n.pair.replace('×', ' × ')));
       if (!n.real) { h += row('실제', '두 도로가 만나지 않는다 — ' + esc(n.why || ('최단 ' + n.gap + 'm'))) + '<p class="desc">게임 지도(격자)에는 교차로가 있지만 실제 길에는 없다. 사고·신호 자료를 이 자리에 붙이지 않는다.</p>' + src('OpenStreetMap(ODbL) · 2026-09-28 · 두 도로의 모든 선분 사이 최단 거리');
         card.classList.remove('haslad'); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + h + fbHtml(); card.classList.add('on'); $('m2dX').onclick = function () { sel = null; show(null); draw(); }; return; }
       h += row('신호 교차로', n.sig ? esc(n.sig.name) + ' <em>#' + esc(n.sig.no) + '</em>' : '<em>공개 신호 목록(C-ITS)에 없음</em>');
@@ -1174,7 +1174,8 @@
         h += src('TAAS 도로교통공단 · 반경 약 585m 안 사고를 가장 가까운 교차로에 배정(근사)'); }
       var sp = D.sig && D.sig.spots ? D.sig.spots.filter(function (s) { return Math.hypot(P(s.lon, s.lat)[0] - n.p[0], P(s.lon, s.lat)[1] - n.p[1]) < 120; })[0] : null;
       if (sp) h += row('신호 지금', sigNow(sp));
-      h = sdTop(h, sigDir((n.sig && n.sig.no) || (sp && sp.no) || sdAt(n.p), sp ? sigPlanCyc(sp) : 0));
+      var sdh = sigDir((n.sig && n.sig.no) || (sp && sp.no) || sdAt(n.p), sp ? sigPlanCyc(sp) : 0); h = sdTop(h, sdh);
+      if (!sdh && ((n.sig && n.sig.no) || sp)) h += row('방향별 신호', '<em>아직 없음 — 이 교차로는 방향별 신호값을 못 받았다(수집 전이거나 서울시 V2X 자료에 값이 없는 곳)</em>');
       var v = D.vol && D.vol.spots ? D.vol.spots.filter(function (x) { return x.node && x.node[0] === n.i && x.node[1] === n.j; })[0] : null;
       if (v) h += volRows(v);
       h += src((n.measured ? '교차점: OSM 두 도로의 모든 선분이 만나는 자리(2026-09-28 실측) · 이름: OSM 신호·교차로 이름' : '교차점: OSM 도로 중심선이 만나는 자리') + ' · 행정동: 반경 50m 안 걸친 동 모두');
@@ -2545,7 +2546,7 @@
     else if (k === 'gev') { h += row('충전소', esc(r[2])) + row('주소', esc(r[3])) + row('운영', esc(r[4])) + row('충전기', esc(r[5])); s = SRCX.ev; }
     else if (k === 'ger') { h += row('기관', esc(r[2])) + row('구분', esc(r[3])) + row('주소', esc(r[4])) + row('대표 전화', '<a href="tel:' + esc(r[5]) + '">' + esc(r[5]) + '</a>'); s = SRCX.er; }
     else if (k === 'gfest') { h += row('축제', esc(r[2])) + row('장소', esc(r[3])) + row('기간', esc(r[4]) + ' ~ ' + esc(r[5])) + row('주최·주관', esc(r[6])) + (r[7] ? '<p class="desc">' + esc(r[7]) + '</p>' : '') + row('자료 기준', esc(r[8])); s = SRCX.fest; }
-    else if (k === 'bstop') { h += row('이름', esc(r[2] || '(이름 없음)')) + (r[3] ? row('정류장 번호', esc(r[3])) : '') + (function () { var x = exNear(it.q.p, 200); return x ? row('가까운 지하철 출구', esc(exName(x.e)) + ' ' + Math.round(x.d) + 'm') : ''; })() + '<p class="desc">자리·이름은 OpenStreetMap 표기다. 위 「🚏 여기 대중교통」을 누르면 이 정류장의 버스 도착(실시간)과 가까운 역 열차 도착을 함께 본다. 승하차 인원은 서울·경기만 「🚌 버스 승차·하차」 층에 있다.</p>'; s = it.L.src; }
+    else if (k === 'bstop') { h += row('이름', esc(r[2] || '(이름 없음)')) + (r[3] ? row('정류장 번호', esc(r[3])) : '') + (function () { var x = exNear(it.q.p, 200); return x ? row('가까운 지하철 출구', esc(exName(x.e)) + ' ' + Math.round(x.d) + 'm') : ''; })() + sdLink(it.q.p, 120) + '<p class="desc">자리·이름은 OpenStreetMap 표기다. 위 「🚏 여기 대중교통」을 누르면 이 정류장의 버스 도착(실시간)과 가까운 역 열차 도착을 함께 본다. 승하차 인원은 서울·경기만 「🚌 버스 승차·하차」 층에 있다.</p>'; s = it.L.src; }
     else if (k === 'glamp') { h += row('설치 연도', esc(r[2] || '-')) + row('설치 형태', esc(r[3] || '-')); s = it.L.src; }
     return h + src(s);
   }
@@ -2701,6 +2702,8 @@
   //   T-Data 는 키마다 5분에 한 번이라 누를 때마다 새로 받지 못한다 → 수집 때 녹색이 켜진 실제 시각(닻 a · epoch 초)에서 주기(ci)로 이어 센다
   //   띄우는 조건(sdLive): 닻을 받은 지 12분 안 · 또는 40분 넘게 띄워 두 번 받은 닻이 ±3초로 맞물렸고(v) 2시간 안 — 그 밖에는 길이만 보이고 잔여초는 안 띄운다(틀린 초를 내지 않는다)
   var SDSEL = {}, SDORD = ['nt', 'et', 'st', 'wt', 'ne', 'se', 'sw', 'nw'], SDAT = Date.now();
+  function sdLink(pt, lim) { var k = sdAt(pt, lim || 120); if (!k) return ''; var q = D.sigd.pts[k]; return row('🚦 가까운 신호 교차로', '<button data-sgo="' + esc(k) + '">' + esc(q[2] || k) + ' ' + Math.round(dTrue(P(q[1], q[0]), pt)) + 'm — 신호 보기</button>'); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-sgo]'); if (!b || !D.sigd || !D.sigd.pts) return; var k = b.getAttribute('data-sgo'), q = D.sigd.pts[k]; if (!q) return; var s0 = S(P(q[1], q[0])); sel = { x: s0[0], y: s0[1], r: 8, it: { kind: 'sgd', no: k, q: q } }; show(sel.it); draw(); });
   function sdTop(h, sd) { return sd ? h.replace('</h3>', '</h3>' + sd) : h; }
   function sdLive(no) { var L = D.sigd && D.sigd.its && no != null ? D.sigd.its[String(no)] : null, r = null; if (L) L.forEach(function (o) { if (o.a && (!r || o.a > r.a)) r = o; }); if (!r) return { why: 'none' };
     var age = Date.now() / 1000 - r.a; if (r.x && !r.v) return { rec: r, age: age, why: 'bad' };

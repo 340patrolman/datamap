@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 107개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 108개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1572,6 +1572,11 @@
    "ggbrt.json",
    "",
    "경기도 버스 API(공공데이터포털 · 정류소 경유 노선·노선 정보) — gg_scan405_20261007_1315.csv · alloc_20261007_1315.csv"
+  ],
+  [
+   "gov-offices.json",
+   "2026-10-10",
+   "브이월드 검색 API(장소 · 국토교통부 공간정보 오픈플랫폼) — 분류 「지방행정기관」 · 시군구 목록 = data/r/index.json"
   ],
   [
    "gu-census.json",
@@ -1835,7 +1840,7 @@
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-10 22:39",
+   "2026-10-10 23:05",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [

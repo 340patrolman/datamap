@@ -1087,6 +1087,7 @@
       if (kq) { var qq = D.sigd.pts[kq], sq = S(P(qq[1], qq[0])); best = { x: sq[0], y: sq[1], r: 8, it: { kind: 'sgd', no: kq, q: qq } }; }
       else if (kscAt(mq, rq)) { var kx = kscAt(mq, rq), s7 = S(kx.p); best = { x: s7[0], y: s7[1], r: 8, it: { kind: 'ksc', x: kx } }; }
       else if (D.sig && D.sig.spots) { var bs2 = null, bd2 = rq; D.sig.spots.forEach(function (s9) { var d9 = dTrue(P(s9.lon, s9.lat), mq); if (d9 < bd2) { bd2 = d9; bs2 = s9; } }); if (bs2) { var s8 = S(P(bs2.lon, bs2.lat)); best = { x: s8[0], y: s8[1], r: 8, it: { kind: 'sig', s: bs2 } }; } } }
+    if (!best && view.s < 0.05 && (on.reach || on.trn || on.sbf)) best = { x: x, y: y, r: 6, it: { kind: 'acc', m: M(x, y) } };   /* v2.126.0 접근성 종합 — 빈 자리를 누르면 그 자리에서 서울까지 */
     if (!best && (UNIT ? UNIT !== 'dong' : (on.upb || on.jurk || on.usgg))) { var mu = M(x, y), uu = unitAt(mu); if (uu) { var su = S(mu); best = { x: su[0], y: su[1], r: 6, it: { kind: 'unit', u: uu } }; } }
     if (!best && on.juris && JRS) { var mj = M(x, y); if (jrsAt('edu', mj) != null || jrsAt('court', mj) != null) best = { x: x, y: y, r: 6, it: { kind: 'jrs', m: mj } }; }
     if (!best && on.ri) { var r0 = riAtM(M(x, y)); if (r0) { var sr = S(r0.p); best = { x: sr[0], y: sr[1], r: 6, it: { kind: 'ri', r: r0 } }; } }
@@ -1246,7 +1247,8 @@
     } else if (it.kind === 'store') { var so = it.s, C3 = SIDX ? SIDX.cls[so.c] : null; h = '<h3>🏬 ' + esc(so.n) + '</h3>' + (C3 ? row('업종', esc(C3[1] + ' › ' + C3[3] + ' › ' + C3[4])) : '') + (so.f ? row('층', esc(so.f) + '층') : '') + (RAD.c ? row('반경 가운데에서', Math.round(dTrue(so.p, RAD.c)) + 'm') : '') + '<p class="desc">등록된 상가 정보다 — 영업 중인지·매출은 이 자료에 없다.</p>' + src(SIDX ? SIDX.source + ' · 기준 ' + SIDX.stdrYm : '');
     } else if (it.kind === 'fst') { h = fstCard(it.f);
     } else if (it.kind === 'exit') { h = exCard(it);
-    } else if (it.kind === 'reach') { h = rchCard(it);
+    } else if (it.kind === 'reach') { h = rchCard(it) + (it.G ? accHtml(it.G.c) : '');
+    } else if (it.kind === 'acc') { h = '<h3>🧭 이 자리에서 서울까지 — 접근성 한눈에</h3>' + accHtml(it.m);
     } else if (it.kind === 'trn') { h = trnCard(it.t);
     } else if (it.kind === 'sbf') { h = sbfCard(it.t);
     } else if (it.kind === 'sbc') { h = sbcCard(it.t);
@@ -2943,9 +2945,11 @@
     var st = (show ? 1 : 0) + '|' + WIDEK.map(function (k) { return on[k[0]] ? 1 : 0; }).join('') + '|' + Math.round(cv.getBoundingClientRect().top);
     if (st === WIDEST) return; WIDEST = st; if (!show) { el.hidden = true; return; }
     el.hidden = false; el.style.top = (cv.getBoundingClientRect().top + 8) + 'px';
-    el.innerHTML = '<span>넓게 볼 때</span>' + WIDEK.map(function (k) { return '<button data-wide="' + k[0] + '"' + (on[k[0]] ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + k[1] + '</button>'; }).join('') + '<button data-wide="*">🗂 모든 레이어</button>'; }
+    var allA = on.reach && on.trn && on.sbf;
+    el.innerHTML = '<span>넓게 볼 때</span><button data-wide="+acc"' + (allA ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>🧭 접근성 종합</button>' + WIDEK.map(function (k) { return '<button data-wide="' + k[0] + '"' + (on[k[0]] ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + k[1] + '</button>'; }).join('') + '<button data-wide="*">🗂 모든 레이어</button>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-wide]'); if (!b) return; e.preventDefault(); var k = b.getAttribute('data-wide');
     if (k === '*') { var ab = document.querySelector('#m2dLayers [data-all]'); if (ab) ab.click(); return; }
+    if (k === '+acc') { var allOn = on.reach && on.trn && on.sbf; on.reach = on.trn = on.sbf = !allOn; WIDEAUTO = false; try { if (allOn) localStorage.setItem('tg_map2d_wideoff', '1'); else localStorage.removeItem('tg_map2d_wideoff'); } catch (e5) {} saveOn(); try { paintLayers(); } catch (e6) {} draw(); try { legend(); } catch (e7) {} return; }
     on[k] = !on[k]; if (k === 'reach') { WIDEAUTO = false; try { if (on.reach) localStorage.removeItem('tg_map2d_wideoff'); else localStorage.setItem('tg_map2d_wideoff', '1'); } catch (e2) {} }
     saveOn(); try { paintLayers(); } catch (e3) {} draw(); try { legend(); } catch (e4) {} });
   /* ---------- v2.125.0 🚇 지하철 배차 — 소유자 「경의중앙선은 잘 안 와 · 역세권이라 해도 그다지 좋지 않은」 · data/subway-freq.json(다른 세션 · TAGO 평일 시간표) × 역 자리(stnAll) ---------- */
@@ -2968,6 +2972,23 @@
     return h + '<p class="sdnt">국토교통부 TAGO 지하철정보의 <b>평일 시간표</b>로 센 값(받은 날 ' + esc((SBF && SBF.made) || '') + ') — 실제 지연은 모른다 · 급행·완행 구분 없음 · 「낮」 = 10~16시 · 대수는 한 방향 기준 · 한 선로를 여러 노선이 같이 쓰는 역은 노선별로 따로 적힌다.</p>'; }
   function sbfLeg() { var Ln = SBF && SBF.line ? Object.keys(SBF.line).map(function (k) { return [k, SBF.line[k]]; }).sort(function (a, b) { return a[1][1] - b[1][1]; }) : [];
     return '<b>🚇 지하철 배차 — 낮 한 시간에 몇 대</b> ' + li('#16a34a', '10대~') + li('#84cc16', '6~') + li('#eab308', '4~') + li('#f97316', '2.5~') + li('#dc2626', '2.5대 미만') + '<small class="lg-n">' + (SBF ? SBF.L.length + '역 · 평일 시간표 · 한 방향 · 갈아타는 역은 가장 자주 오는 노선 색' + (Ln.length ? ' · 드문 노선: ' + Ln.slice(0, 6).map(function (q) { return esc(q[0]) + ' ' + q[1][1] + '대(낮 간격 ' + q[1][3] + '분)'; }).join(' · ') : '') + (SBF.nomatch ? ' · 자리를 못 맞춘 줄 ' + SBF.nomatch : '') : '읽는 중…') + ' · 실제 지연은 모름</small>'; }
+  /* ---------- v2.126.0 🧭 접근성 종합 — 소유자 「도로망·철도·지하철이 있으면 접근성을 종합적으로 · 강남으로의 접근성 같은 것」 ----------
+     한 자리(m)에서: 승용차(시군구 가운데값 + 가장 가까운 고속·도시고속도로 값) · 기차(가장 가까운 역 → 서울 쪽 역) · 지하철(가장 가까운 역의 배차·혼잡). 점수로 뭉치지 않는다(근거 없는 가중치를 만들지 않으려고) — 세 가지를 같은 색 눈금으로 나란히 */
+  function accKm(d) { return d >= 10000 ? Math.round(d / 1000) + 'km' : d >= 1000 ? (d / 1000).toFixed(1) + 'km' : Math.round(d / 10) * 10 + 'm'; }
+  function accDot(c) { return '<i style="display:inline-block;width:11px;height:11px;border-radius:50%;background:' + c + ';margin-right:5px;vertical-align:-1px"></i>'; }
+  function accNear(L, m) { var b = null, bd = 1e12; (L || []).forEach(function (t) { var d = Math.hypot(t.p[0] - m[0], t.p[1] - m[1]); if (d < bd) { bd = d; b = t; } }); return b ? [b, bd] : null; }
+  function accFill(m) { var el = $('accBox'); if (!el) return; var h = '', gi = SGG.length ? sggAt(m) : -1, G = gi >= 0 ? SGG[gi] : null, gv = G ? rchGu(G) : null, D2 = (RCH && RCH.dest) || [];
+    if (RCH) { var rb = null, rd = 1e12; [RCH.roads].concat(RCH3 ? [RCH3.roads] : []).forEach(function (L) { L.forEach(function (r) { if (r[1] < 0) return; if (m[0] < r.b[0] - rd || m[0] > r.b[1] + rd || m[1] < r.b[2] - rd || m[1] > r.b[3] + rd) return; for (var i = 0; i < r.p.length; i++) { var d = Math.hypot(r.p[i][0] - m[0], r.p[i][1] - m[1]); if (d < rd) { rd = d; rb = r; } } }); });
+      h += '<div class="r"><b>🚗 승용차</b><span>' + (gv ? accDot(rchCol(gv[4])) + esc(G.g.name) + ' 가운데값 — <b>강남역 ' + rchMin(gv[4]) + '</b> · 서울시청 ' + rchMin(gv[1]) + '<br>' : '') + (rb ? '가장 가까운 ' + (rb[0] === 1 ? '고속국도' : rb[0] === 2 ? '도시고속도로' : '일반국도') + '(직선 ' + accKm(rd) + ')에서 — 강남역 ' + rchMin(rb[2]) + ' · 서울시청 ' + rchMin(rb[1]) + ' <small>(그 도로까지 가는 시간은 빠진 값)</small>' : '가까운 고속·도시고속도로 없음') + '</span></div>'; }
+    else h += '<div class="r"><b>🚗 승용차</b><span>읽는 중…</span></div>';
+    if (TRN) { var tn = accNear(TRN.L, m); if (tn) { var o = tn[0].o, u = o.up; h += '<div class="r"><b>🚆 기차</b><span>' + accDot(rchCol(tn[0].m)) + '가장 가까운 역 <b>' + esc(tn[0].n) + '</b>(직선 ' + accKm(tn[1]) + ')' + (u ? ' → ' + esc(u[5] || '서울') + '역 가장 빠른 열차 <b>' + rchMin(u[0]) + '</b> · 하루 ' + u[2] + '편 · 막차 ' + esc(u[4] || '-') : ' — 서울로 곧바로 가는 열차 없음') + (tn[1] > 15000 ? '<br><small>역이 15km 넘게 떨어져 있다 — 역까지 가는 시간이 크다</small>' : '') + '</span></div>'; } }
+    else h += '<div class="r"><b>🚆 기차</b><span>읽는 중…</span></div>';
+    if (SBF) { var sn = accNear(SBF.L, m); if (sn && sn[1] <= 5000) { var t = sn[0], ls = t.rows.slice().sort(function (a, b) { return b[1] - a[1]; }), cr = SBC ? accNear(SBC.L.filter(function (q) { return sbcKey(q.n) === sbcKey(t.n); }), t.p) : null, wk = sn[1] <= 1500 ? ' · 걸어서 약 ' + Math.max(1, Math.round(sn[1] * 1.3 / 67)) + '분' : '';
+        h += '<div class="r"><b>🚇 지하철·전철</b><span>' + accDot(sbfCol(t.mx)) + '가장 가까운 역 <b>' + esc(t.n) + '</b>(직선 ' + accKm(sn[1]) + wk + ')<br>낮 한 시간 — ' + ls.slice(0, 4).map(function (q) { return esc((q[0][5] ? q[0][5] + ' ' : '') + q[0][2]) + ' <b' + (q[1] < 4 ? ' style="color:#b91c1c"' : '') + '>' + q[1] + '대</b>'; }).join(' · ') + (cr && cr[1] < 400 ? '<br>가장 붐빌 때 <b' + (cr[0].mx >= 130 ? ' style="color:#b91c1c"' : '') + '>' + cr[0].mx + '%</b>(' + esc(cr[0].l) + ' · 100% = 정원)' : '') + '</span></div>'; }
+      else h += '<div class="r"><b>🚇 지하철·전철</b><span>5km 안에 역이 없다' + (sn ? '(가장 가까운 역 ' + esc(sn[0].n) + ' 직선 ' + accKm(sn[1]) + ')' : '') + '</span></div>'; }
+    else h += '<div class="r"><b>🚇 지하철·전철</b><span>읽는 중…</span></div>';
+    el.innerHTML = h + '<p class="sdnt">세 가지를 한 점수로 뭉치지 않고 나란히 보인다(가중치를 지어내지 않으려고). 🚗 = 제한속도로 막힘없이 달릴 때(실제보다 짧다) · 🚆 = 2026-10-08 하루 실제 운행 기록(SRT·갈아타기 없음 · 서울 쪽 역 = 서울·용산·청량리·영등포) · 🚇 = 평일 시간표(한 방향 · 지연 모름) · 거리는 직선 · 걷는 시간 = 직선 × 1.3 ÷ 분당 67m 근사. <b>지하철로 강남역까지 몇 분</b>(역 사이 소요시간)은 자료 준비 중이다.</p>'; }
+  function accHtml(m) { setTimeout(function () { var done = function () { accFill(m); }; done(); [rchGet(), trnGet(), sbfGet(), sbcGet()].forEach(function (q) { if (q && q.then) q.then(done); }); }, 0); return '<div id="accBox" style="margin-top:8px"></div>'; }
   function drawUtic(dark) { if (!on.lutic) return; uticGet(); if (!UTIC) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, z = view.s;
     (UTIC.items || []).forEach(function (r) { if (!(r[2] > 120 && r[3] > 30)) return; var s0 = S(r.p); if (s0[0] < -20 || s0[1] < -20 || s0[0] > W0 + 20 || s0[1] > H0 + 20) return; var x = s0[0], y = s0[1], q = z >= 0.05 ? 9 : 6, old = uticOld(r);
       ctx.globalAlpha = old ? 0.4 : 1; ctx.beginPath(); ctx.moveTo(x, y - q); ctx.lineTo(x + q, y); ctx.lineTo(x, y + q); ctx.lineTo(x - q, y); ctx.closePath(); ctx.fillStyle = UTC[r[1]] || '#64748b'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.globalAlpha = 1;

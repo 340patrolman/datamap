@@ -81,7 +81,9 @@ SETS = [
 
 def last_commit(path):
     try:
-        out = subprocess.run(['git', '-C', ROOT, 'log', '-1', '--format=%cI', '--', path], capture_output=True, text=True, timeout=5).stdout.strip()
+        # 지금 git 이 안 들고 있는 파일(data/r/ 는 v2.6.0 부터 권역 저장소로 나가 git 밖)은 옛 커밋 날짜가 아니라 구운 시각(파일 시각)으로 본다
+        tracked = subprocess.run(['git', '-C', ROOT, 'ls-files', '--', path], capture_output=True, text=True, timeout=5).stdout.strip()
+        out = subprocess.run(['git', '-C', ROOT, 'log', '-1', '--format=%cI', '--', path], capture_output=True, text=True, timeout=5).stdout.strip() if tracked else ''
         if out: return datetime.datetime.fromisoformat(out)
     except Exception: pass
     p = os.path.join(ROOT, path)

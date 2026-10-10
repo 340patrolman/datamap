@@ -45,9 +45,10 @@ def build():
     for s in S:
         u = one(T.get(s['subwayStationId'] + 'U') or []); d = one(T.get(s['subwayStationId'] + 'D') or [])
         if not u and not d: continue
-        stn.append([s['subwayStationId'], s['subwayStationName'], s['subwayRouteName'], u, d])
+        city = {'BS': '부산', 'DG': '대구', 'DJ': '대전', 'GJ': '광주'}.get(s['subwayStationId'][3:5], ''); ln = (city + ' ' if city else '') + s['subwayRouteName']   # 역 ID 4~5째 글자 = 운영 쪽(BS 부산 · DG 대구 · DJ 대전 · GJ 광주) — 노선 이름 「1호선」이 도시마다 겹친다
+        stn.append([s['subwayStationId'], s['subwayStationName'], s['subwayRouteName'], u, d, city])
         for x in (u, d):
-            if x: line.setdefault(s['subwayRouteName'], []).append((x[4], x[3], x[6]))
+            if x: line.setdefault(ln, []).append((x[4], x[3], x[6]))
     L = {}
     for k, v in line.items():
         a = sorted(x[0] for x in v); b = sorted(x[1] for x in v); g = sorted(x[2] for x in v if x[2] >= 0)
@@ -59,9 +60,9 @@ def build():
                     '급행·완행을 가르지 않는다(자료에 행선지만 있다) — 급행이 서지 않는 역의 값은 그 역 시간표에 든 열차만이라 그대로 맞다',
                     '한 선로를 여러 노선이 같이 쓰는 역은 노선 이름별로 따로 실려 있다 · 종점은 한 방향만 있다',
                     '차 안이 얼마나 붐비는지(혼잡도)는 이 자료에 없다 — 따로 구한다',
-                    '이 API 에 든 노선만이다 — 수도권 전철·인천·부산김해경전철·대경선·동해선은 있고 부산·대구·대전·광주 도시철도는 역 목록에 없다(「드물다」가 아니라 자료 없음)',
+                    '노선 이름 「1호선」~「4호선」은 도시마다 겹친다 — 줄 끝의 도시(부산·대구·대전·광주 · 빈 글 = 수도권)와 함께 읽는다. line 의 열쇠는 「부산 1호선」처럼 도시를 붙였다(2026-10-10 밤 바로잡음 — 처음 판은 도시를 안 갈라 1~4호선 가운데값에 지방 도시철도가 섞였다)',
                     '역 좌표는 싣지 않았다 — 역 이름 + 노선으로 맞댄다(data/r/stations.json · data/stations-kr.json)'],
-           'fields': 'stn[[역 ID, 역 이름, 노선, 상행, 하행]] 방향 값 = [하루 편수, 첫차, 막차, 출근 7~9시 한 시간에 몇 대, 낮 10~16시 한 시간에 몇 대, 저녁 18~20시 한 시간에 몇 대, 낮 가장 긴 간격 분(-1 = 낮에 한 대 이하), 행선지 많은 순 2] — 없는 방향은 null · line{노선: [방향 수, 낮 한 시간 몇 대 가운데값, 출근 가운데값, 낮 가장 긴 간격 가운데값]}',
+           'fields': 'stn[[역 ID, 역 이름, 노선, 상행, 하행, 도시(부산·대구·대전·광주 · 빈 글 = 수도권 등)]] 방향 값 = [하루 편수, 첫차, 막차, 출근 7~9시 한 시간에 몇 대, 낮 10~16시 한 시간에 몇 대, 저녁 18~20시 한 시간에 몇 대, 낮 가장 긴 간격 분(-1 = 낮에 한 대 이하), 행선지 많은 순 2] — 없는 방향은 null · line{노선: [방향 수, 낮 한 시간 몇 대 가운데값, 출근 가운데값, 낮 가장 긴 간격 가운데값]}',
            'line': L, 'stn': stn}
     p = os.path.join(ROOT, 'data', 'subway-freq.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

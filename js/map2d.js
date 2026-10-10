@@ -57,7 +57,7 @@
   // ---------- 자료 읽기 ----------
   var FILES = { ridx: 'data/regions.json', pstat: 'data/police-stats.json', season: 'data/season-seocho.json', pbtn: 'data/pedbtn-seocho.json', enf: 'data/enforce-seocho.json', dong: 'data/dong-seocho.json', pop: 'data/pop-seocho.json', roads: 'data/maps/seocho-full-roads.json', full: 'data/maps/seocho-full.json',
     base: 'data/maps/seocho.json', gu: 'data/maps/seoul-districts.json', acc: 'data/taas-nodes-seocho.json', hot: 'data/taas.json',
-    cam: 'data/cameras-seocho.json', sig: 'data/signal-tod-seocho.json', sigd: 'data/sigdir-seoul.json', evt: 'data/events-seocho.json', vol: 'data/traffic-vol-seocho.json', her: 'data/heritage-seocho.json',
+    cam: 'data/cameras-seocho.json', sig: 'data/signal-tod-seoul.json', sigd: 'data/sigdir-seoul.json', evt: 'data/events-seocho.json', vol: 'data/traffic-vol-seocho.json', her: 'data/heritage-seocho.json',
     near: 'data/dong-near.json', xing: 'data/intersections-seocho.json', pub: 'data/pubdata-seocho.json', police: 'data/police-seocho.json', sz: 'data/schoolzone-seocho.json', st: 'data/stores-seocho.json',
     jur: 'data/jur-seocho.json', tgis: 'data/tgis-seocho.json', spot: 'data/spot-seocho.json',
     bidx: 'data/base/index.json', ov: 'data/base/ov.json', sgg: 'data/base/sgg.json', flow: 'data/flow-seocho.json', livep: 'data/live-seocho.json', trend: 'data/trend-seocho.json', hot10: 'data/hot10-seocho.json', trdar: 'data/trdar-seocho.json', safety: 'data/safety-seocho.json', taas10: 'data/taas10-seocho.json' };
@@ -78,7 +78,7 @@
         .then(function () { var seen = {}, gus = [].concat.apply([], parts).filter(function (g) { if (!g || seen[g.gu]) return false; seen[g.gu] = 1; return true; }); D.ridx = { gus: gus, layers: layers, regions: RG.regions }; REGR(); }); }).catch(function () { D.ridx = null; REGR(); });
   }
   function get(k) { if (k === 'ridx') return regionsLoad(); return fetch(FILES[k]).then(function (r) { return r.json(); }).then(function (j) { D[k] = j; }).catch(function () { D[k] = null; }); }
-  var LATE = ['sigd', 'livep', 'trend', 'hot10', 'trdar', 'safety', 'taas10', 'enf', 'season', 'pbtn', 'pstat'];   // v0.10.80 무거운 자료(상권·안전시설·사고 10년·추이)는 첫 그림 뒤에 읽는다 — 지도가 먼저 뜬다
+  var LATE = ['sig', 'sigd', 'livep', 'trend', 'hot10', 'trdar', 'safety', 'taas10', 'enf', 'season', 'pbtn', 'pstat'];   // v0.10.80 무거운 자료(상권·안전시설·사고 10년·추이)는 첫 그림 뒤에 읽는다 — 지도가 먼저 뜬다
   Promise.all(Object.keys(FILES).filter(function (k) { return LATE.indexOf(k) < 0; }).map(get)).then(function () { setTimeout(gpsHere, 0); prep(); pubPrep(); extraPrep(); basePrep(); sggPrep(); flowPrep(); fit(); if (on.bld && view.s > 0.12) loadBld(); draw(); applyHash(); myStart(); $('m2dLoad').style.display = 'none'; paintTime(); summary();
     Promise.all(LATE.map(get)).then(function () { livePrep(); trdPrep(); safePrep(); a10Prep(); seasonPrep(); paintPre(); summary(); draw(); if (sel && $('m2dCard').classList.contains('on')) show(sel.it); }); });
   function loadBld() {   // 건물 593KB — 켤 때만
@@ -2805,7 +2805,7 @@
     if (A) { var am = Math.round((now - A.t0) / 60000), sg = function (v) { return (v >= 0 ? '+' : '') + v; };
       h += '<p class="sdnt">⏱ <b>' + hhmm(A.t0) + '</b>에 현장에서 맞춘 값으로 주기 ' + Pn.c + '초를 이어 센 <b>추정</b>(' + am + '분 전 · ' + esc(A.mv || '') + ' 기준) · 이 계획(' + Pn.from.slice(0, 2) + ':' + Pn.from.slice(2) + '부터 패턴 ' + Pn.pn + ')이 도는 동안·2시간 안에서만 · 감응·수동 운영 중에는 다르다' +
         (A.dA != null ? '<br>옵셋 가리기 — 자정 기준 가설과 ' + sg(A.dA) + '초 · 계획 시작 기준 가설과 ' + sg(A.dB) + '초 어긋남(±4초 안이면 맞는 쪽) <button data-kfit="' + x.no + '|copy" style="margin-left:4px">결과 복사</button>' : '') + '</p>'; }
-    else if (C) h += '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + (+Pn.pat.off || 0) + '초 · 자정 기준)으로 센 <b>추정</b> — 자정 기준 규칙은 경찰청 계획이 있는 다른 22곳에서 25번 중 23번 +0~4초로 맞았다(' + esc((OFCK && OFCK.made) || '2026-10-10') + ' 대조). ' + (kscFv(x.no) || '<b>이 교차로는 직접 검증 전</b>이다') + ' · 실제와 어긋나면 위 「⏱ 지금 맞추기」를 누른다 · 감응·수동 운영·행사 때는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>';
+    else if (C) h += '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + (+Pn.pat.off || 0) + '초 · 자정 기준)으로 센 <b>추정</b> — ' + ofckTxt() + '. ' + (kscFv(x.no) || '<b>이 교차로는 직접 검증 전</b>이다') + ' · 실제와 어긋나면 위 「⏱ 지금 맞추기」를 누른다 · 감응·수동 운영·행사 때는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>';
     else h += '<p class="sdnt"><b>지금 몇 초 남았는지는 띄우지 않는다</b> — ' + (HOUR != null ? '시각을 「지금」으로 두면 초가 흐른다.' : TR ? '계획이 막 바뀌었다(바뀐 뒤 한 주기는 신호가 새 계획에 맞춰지는 중이라 감춘다).' : '이 계획에는 옵셋 값이 없다 — 위 「⏱ 지금 맞추기」를 현장에서 누르면 흐른다.') + '</p>';
     nw.innerHTML = h;
     var ph = AA ? ((((now - AA.a) / 1000) % Pn.c) + Pn.c) % Pn.c / Pn.c * 100 : -1; [].forEach.call(document.querySelectorAll('#m2dCard .sd.ksd .tl u'), function (u) { u.style.display = ph < 0 ? 'none' : 'block'; u.style.left = ph.toFixed(2) + '%'; }); }
@@ -2858,6 +2858,9 @@
   var SFCK = null; fetch('data/sig-field-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFCK = j; }).catch(function () {});
   function kscFv(no) { var c = SFCK && SFCK.checks ? SFCK.checks.filter(function (q) { return String(q.no) === String(no); }) : []; if (!c.length) return ''; var q = c[c.length - 1];
     return '<b style="color:#15803d">✅ 현장 영상 대조</b>(' + esc(q.day) + ' ' + esc(q.at) + ' · ' + esc(q.mv) + ') — 계획 ' + esc(q.plan) + ' / 영상 ' + esc(q.seen) + ' → <b>' + (Math.abs(q.d) <= q.pm ? q.pm + '초 안으로 맞음' : (q.d > 0 ? '실제가 ' + q.d + '초 늦음' : '실제가 ' + (-q.d) + '초 빠름')) + '</b>(영상 시각 ±' + q.pm + '초 · 그 시각대 한 번 본 것)'; }
+  function ofckTxt() { var S = OFCK && OFCK.spots, n = 0, m = 0; if (!S) return '자정 기준 규칙은 T-Data 로 받은 값과 견줘 확인했다'; Object.keys(S).forEach(function (k) { n++; if (S[k][2] > 0) m++; });
+    return '자정 기준 규칙은 경찰청 계획과 T-Data 받은 값이 같은 주기인 서울 ' + n + '곳 중 <b>' + m + '곳이 ±4초 안</b>으로 맞았다(' + esc(OFCK.made || '') + ' 대조)'; }
+  function ofckBad(no) { var q = OFCK && OFCK.spots && OFCK.spots[String(no)]; return q && q[1] > 0 && q[2] === 0 ? q : null; }
   var OFCK = null; fetch('data/sig-offset-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OFCK = j; }).catch(function () {});
   function sodK(ms) { return ((((ms + 32400000) % 86400000) + 86400000) % 86400000) / 1000; }
   function sigTickHtml(s) { return s && s.no != null ? '<div class="sdnow" id="sigTick" data-no="' + esc(String(s.no)) + '"></div>' : ''; }
@@ -2871,10 +2874,11 @@
     var chk = '', lv = sdLive(no); if (lv.rec && lv.rec.a && Math.abs(lv.rec.ci - c) <= 1) { var dv = (((sodK(lv.rec.a * 1000) - off) % c) + c) % c; if (dv > c / 2) dv -= c; dv = Math.round(dv);
       if (Math.abs(dv) > 6) { el.innerHTML = '<p class="sdnt">서울시 T-Data 로 받은 값(' + hhmm(lv.rec.a * 1000) + ')과 계획 계산이 ' + dv + '초 어긋나 <b>계획으로 센 초는 감춘다</b>(기준 현시가 다르거나 다른 계획·감응 운영일 수 있다) — 아래 방향별 신호를 본다.</p>'; return; }
       chk = ' · ✔ T-Data 받은 값(' + hhmm(lv.rec.a * 1000) + ')과 ' + (dv >= 0 ? '+' : '') + dv + '초 차이로 맞음'; }
+    else { var bq = ofckBad(no); if (bq) { el.innerHTML = '<p class="sdnt">이 교차로는 T-Data 로 받은 값과 견준 대조에서 계획 계산이 <b>평균 ' + Math.round(bq[3]) + '초 어긋났다</b> → <b>계획으로 센 초는 감춘다</b>(기준 현시가 1현시가 아니거나 계획이 그 뒤 바뀌었을 수 있다 · 계획 받은 날 2026-09-10) — 주기 ' + c + '초 · 현시 ' + esc(String(cur[3])) + '초.</p>'; return; } }
     var ph = (((sod - off) % c) + c) % c, h = '<div class="sdls">', ring = function (nm, txt) { var A = String(txt || '').split(' ').map(Number).filter(function (v) { return v > 0; }), acc = 0, i = 0; if (!A.length) return ''; for (; i < A.length; i++) { if (ph < acc + A[i]) break; acc += A[i]; } if (i >= A.length) i = A.length - 1;
         var left = Math.max(0, acc + A[i] - ph), nx = (i + 1) % A.length; return '<div class="sdl"><i style="background:#2563eb"></i><b>' + nm + ' ' + (i + 1) + '현시</b><span><strong>' + Math.ceil(left) + '</strong>초 남음</span><small>다음 ' + (nx + 1) + '현시 ' + A[nx] + '초 · 한 주기 = ' + A.map(function (v, k) { return (k === i ? '<b>' : '') + (k + 1) + '현시 ' + v + (k === i ? '</b>' : ''); }).join(' · ') + '초</small></div>'; };
     h += ring(String(cur[3]) === String(cur[4]) ? '지금' : 'A링', cur[3]) + (String(cur[3]) !== String(cur[4]) ? ring('B링', cur[4]) : '') + '</div>';
-    el.innerHTML = h + '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + off + '초 · 자정 기준)으로 센 <b>추정</b> — 주기 ' + c + '초 · ' + esc(cur[0]) + ' 계획' + chk + ' · 자정 기준 규칙은 T-Data 와 견준 25기록 중 23번 +0~4초로 맞았다 · <b>어느 현시가 어느 방향인지는 이 자료에 없다</b> · 감응·수동 운영 중에는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>'; }
+    el.innerHTML = h + '<p class="sdnt">🕒 <b>이 기기 시계</b>와 계획 옵셋(' + off + '초 · 자정 기준)으로 센 <b>추정</b> — 주기 ' + c + '초 · ' + esc(cur[0]) + ' 계획' + chk + ' · ' + ofckTxt() + ' · <b>어느 현시가 어느 방향인지는 이 자료에 없다</b> · 감응·수동 운영 중에는 다르다 · 기기 시계가 틀리면 그만큼 어긋난다.</p>'; }
   setInterval(sigTickPaint, 1000);
   function sigDir(no, planCyc) {
     var lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no); if (!o) return '';

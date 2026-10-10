@@ -2699,12 +2699,12 @@
     return s2 + '<defs><marker id="sdAr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="#16a34a"/></marker></defs></svg>'; }
   // v2.105.0 「지금 몇 초」 — 소유자 「방향을 설정하면 몇 초 남았다 · 그 방향 신호가 실시간으로 어떻게 된다」
   //   T-Data 는 키마다 5분에 한 번이라 누를 때마다 새로 받지 못한다 → 수집 때 녹색이 켜진 실제 시각(닻 a · epoch 초)에서 주기(ci)로 이어 센다
-  //   띄우는 조건(sdLive): 닻을 받은 지 20분 안 · 또는 40분 넘게 띄워 두 번 받은 닻이 ±3초로 맞물렸고(v) 2시간 안 — 그 밖에는 길이만 보이고 잔여초는 안 띄운다(틀린 초를 내지 않는다)
+  //   띄우는 조건(sdLive): 닻을 받은 지 12분 안 · 또는 40분 넘게 띄워 두 번 받은 닻이 ±3초로 맞물렸고(v) 2시간 안 — 그 밖에는 길이만 보이고 잔여초는 안 띄운다(틀린 초를 내지 않는다)
   var SDSEL = {}, SDORD = ['nt', 'et', 'st', 'wt', 'ne', 'se', 'sw', 'nw'], SDAT = Date.now();
   function sdTop(h, sd) { return sd ? h.replace('</h3>', '</h3>' + sd) : h; }
   function sdLive(no) { var L = D.sigd && D.sigd.its && no != null ? D.sigd.its[String(no)] : null, r = null; if (L) L.forEach(function (o) { if (o.a && (!r || o.a > r.a)) r = o; }); if (!r) return { why: 'none' };
     var age = Date.now() / 1000 - r.a; if (r.x && !r.v) return { rec: r, age: age, why: 'bad' };
-    return age >= 0 && (age <= 20 * 60 || (r.v && age <= 120 * 60)) ? { rec: r, age: age, ok: 1 } : { rec: r, age: age, why: 'old' }; }
+    return age >= 0 && (age <= 12 * 60 || (r.v && age <= 120 * 60)) ? { rec: r, age: age, ok: 1 } : { rec: r, age: age, why: 'old' }; }
   function sdState(m, rec, now) { var ci = rec.ci, t = (((now - rec.a - (m[5] || 0)) % ci) + ci) % ci, g = m[2], y = m[3] || 0; return t < g ? ['g', g - t] : t < g + y ? ['y', g + y - t] : ['r', ci - t]; }
   function sdNowPaint() { var el = $('sdNow'); if (!el) return; var no = el.getAttribute('data-no'), lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no), ch = $('sdCh'), nw = $('sdNw'); if (!o || !ch || !nw) return;
     if (Date.now() - SDAT > 5 * 60000 && !document.hidden) { SDAT = Date.now(); fetch(FILES.sigd).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.its) D.sigd = j; }).catch(function () {}); }
@@ -2717,7 +2717,7 @@
         h += '<div class="sdl ' + st[0] + '"><i></i><b>' + esc(nm) + '</b><span>' + CN[st[0]] + ' <strong>' + Math.ceil(st[1]) + '</strong>초 남음</span><small>다음 ' + nx + '</small></div>'; }
       else h += '<div class="sdl"><i></i><b>' + esc(nm) + '</b><span>녹색 ' + Math.round(m[2]) + '초 · 황색 ' + Math.round(m[3] || 0) + '초 · 적색 ' + Math.round(red) + '초</span></div>'; });
     var am = lv.rec ? Math.max(0, Math.round(lv.age / 60)) : 0;
-    h += '</div><p class="sdnt">' + (lv.ok ? '⏱ <b>' + hhmm(o.a * 1000) + '</b>에 받은 값에서 주기 ' + o.ci + '초로 <b>이어 센 추정</b>(' + am + '분 전 수집 · ±몇 초)' + (o.v ? ' · 검증: ' + o.v[0] + '분 띄워 두 번 받은 값이 ' + o.v[1] + '초 안에서 맞음' : ' · 받은 지 20분 안이라 띄움(두 번 대조 전)') + ' · 주기가 바뀌는 시간대 · 감응·수동 운영 중에는 어긋난다'
+    h += '</div><p class="sdnt">' + (lv.ok ? '⏱ <b>' + hhmm(o.a * 1000) + '</b>에 받은 값에서 주기 ' + o.ci + '초로 <b>이어 센 추정</b>(' + am + '분 전 수집 · ±몇 초)' + (o.v ? ' · 검증: ' + o.v[0] + '분 띄워 두 번 받은 값이 ' + o.v[1] + '초 안에서 맞음' : ' · 받은 지 12분 안이라 띄움(두 번 대조 전)') + ' · 주기가 바뀌는 시간대 · 감응·수동 운영 중에는 어긋난다'
       : '<b>지금 몇 초 남았는지는 띄우지 않는다</b> — ' + (lv.why === 'none' ? '이 교차로는 녹색이 켜진 실제 시각을 아직 못 받았다(수집 중)' : lv.why === 'bad' ? '두 번 받은 값이 서로 안 맞아(' + lv.rec.x[0] + '분 사이 ' + lv.rec.x[1] + '초 어긋남) 이어 세면 틀린다' : '받은 지 ' + (am >= 60 ? Math.floor(am / 60) + '시간 ' + (am % 60) + '분' : am + '분') + ' 지나 이어 세면 틀릴 수 있다(다시 받는 중)') + ' · 위는 한 주기 안의 길이') + '</p>';
     nw.innerHTML = h;
     var ph = lv.ok ? ((((now - o.a) % o.ci) + o.ci) % o.ci) / o.ci * 100 : -1; [].forEach.call(document.querySelectorAll('#m2dCard .sd .tl u'), function (u) { u.style.display = ph < 0 ? 'none' : 'block'; u.style.left = ph.toFixed(2) + '%'; }); }

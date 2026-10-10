@@ -282,7 +282,11 @@ def reduce_one(itst, J):
     anchor = None
     if ok and cyc:
         # 닻 = 기준 이동류(녹색이 가장 긴 것)의 마지막 녹색이 켜진 실제 시각(epoch 초) — 지도가 이 시각에서 주기로 이어 센다
-        anchor = {'a': round(rs[-1], 1), 'ci': int(round(cyc)), 'end': round(t1, 1)}
+        # 주기는 기준 녹색 시작들 사이를 주기 수로 나눠 다시 잰다(중앙값보다 정밀) — 정수 초에 가까우면 정수로
+        ncy = round((rs[-1] - rs[0]) / cyc) if len(rs) > 1 else 0
+        cx = (rs[-1] - rs[0]) / ncy if ncy >= 2 else cyc
+        ci = int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1)
+        anchor = {'a': round(rs[-1], 1), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy}
     for x in mv:
         x.pop('gs', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
@@ -354,7 +358,7 @@ def build():
                 # 검증 — 같은 주기로 받은 다른 닻(40분 넘게 떨어진 것)과 주기의 정수배로 맞물리는가(±3초)
                 best, bad = None, None
                 for q in v:
-                    if not q.get('a') or q.get('ci') != r['ci'] or abs(q['a'] - r['a']) < VGAP:
+                    if not q.get('a') or abs(q.get('ci', 0) - r['ci']) > 0.3 or abs(q['a'] - r['a']) < VGAP:
                         continue
                     gap = abs(q['a'] - r['a']); res = gap % r['ci']; res = min(res, r['ci'] - res)
                     if res <= 3:

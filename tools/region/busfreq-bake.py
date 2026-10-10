@@ -50,8 +50,9 @@ def fetch(pre):
             for r in R:
                 rid = r['routeid']
                 if rid in seen: continue
-                _, inf = call('getRouteInfoIem', 'cityCode=%s&routeId=%s' % (code, rid)); i = inf[0] if inf else r
-                st = pages('getRouteAcctoThrghSttnList', 'cityCode=%s&routeId=%s' % (code, rid))
+                rq = urllib.parse.quote(str(rid), safe='')   # 노선 ID 에 한글이 든 도시가 있다
+                _, inf = call('getRouteInfoIem', 'cityCode=%s&routeId=%s' % (code, rq)); i = inf[0] if inf else r
+                st = pages('getRouteAcctoThrghSttnList', 'cityCode=%s&routeId=%s' % (code, rq))
                 w.write(json.dumps({'id': rid, 'city': code, 'no': str(i.get('routeno', '')), 'tp': i.get('routetp', ''), 'iv': [i.get('intervaltime'), i.get('intervalsattime'), i.get('intervalsuntime')], 'ft': [str(i.get('startvehicletime', '')), str(i.get('endvehicletime', ''))],
                                     'st': [[s.get('nodeid'), s.get('nodenm'), s.get('gpslong'), s.get('gpslati')] for s in st]}, ensure_ascii=False) + chr(10)); w.flush()
                 seen.add(rid); n += 1; time.sleep(0.05)

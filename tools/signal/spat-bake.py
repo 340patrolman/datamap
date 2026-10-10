@@ -178,8 +178,8 @@ def sweep(prefer=None, api='t', cap=None):
         if not todo:
             print(datetime.datetime.now().strftime('%H:%M:%S'), '지금 받을 곳이 없다 — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
         now = datetime.datetime.now()
-        if now.minute < 11:
-            time.sleep((11 - now.minute) * 60 - now.second + 1); continue
+        if now.minute < 8:
+            time.sleep((8 - now.minute) * 60 - now.second + 1); continue   # 정각 뒤 8분부터 — 이를수록 한 쪽에 교차로가 많이 들고(8분 = 55곳쯤) 쪽이 얕아 서버가 덜 막는다(2026-10-10 깊은 쪽 500)
         t = now.minute * 60 + now.second
         if last is None:
             dens = (t + 66.0) / t   # 첫 호출 — 교차로마다 앞 시각에서 넘어온 줄이 60여 줄 더 있어(2026-10-10 실측) 정각 가까울수록 밀도가 1 을 넘는다

@@ -23,7 +23,7 @@ def main():
     for r in R[1:]:
         if r[0] != '평일': continue
         p = pack(r[3].strip(), r[1].strip(), {'상선': 'U', '하선': 'D', '내선': 'I', '외선': 'O'}.get(r[4].strip(), r[4].strip()), '', slots1, [x.strip() for x in r[5:]])
-        if p: rows.append(p)
+        if p: p.append(r[2].strip()); rows.append(p)
     import openpyxl
     wb = openpyxl.load_workbook(os.path.join(DG, '15112492', 'line9_2026.xlsx'), read_only=True, data_only=True)
     for ws in wb.worksheets:
@@ -45,8 +45,9 @@ def main():
                     '방향 U 상선·D 하선·I 내선·O 외선(2호선) — 원자료 표기 그대로 · 역에서 그 방향 열차가 떠날 때의 값',
                     '9호선은 일반·급행이 따로다 — 급행이 서는 역만 급행 줄이 있다',
                     '1~9호선(서울교통공사·9호선)뿐이다 — 경의중앙·수인분당·신분당·공항철도 등 다른 운영사 노선은 이 자료에 없다(한국철도공사 수도권 전철 혼잡도는 2018년 선별 최고값 13줄뿐이라 싣지 않았다)',
+                    '같은 역 이름·노선·방향이 두 줄인 곳이 있다 — 역번호 9000번대(성수E·성수·신도림·응암S 등)는 원자료가 본선과 따로 낸 줄이다. 2호선 성수·신정 지선과 6호선 응암 순환 구간 승강장으로 보이나 원자료에 뜻 설명이 없다(추정) — 본선 값과 합치지 말고 따로 보인다',
                     '역 좌표는 싣지 않았다 — 역 이름 + 노선으로 맞댄다'],
-           'fields': 'slots1 1~8호선 시각 눈금 · slots9 9호선 시각 눈금 · stn[[역 이름, 노선, 방향, 일반·급행(9호선만), 하루 가장 높은 %, 그 시각, 출근 07:00~09:30 가장 높은 %, 퇴근 18~20시 가장 높은 %, [눈금마다 %]]] · line{노선: [가장 높은 %, 역, 방향, 시각]}',
+           'fields': 'slots1 1~8호선 시각 눈금 · slots9 9호선 시각 눈금 · stn[[역 이름, 노선, 방향, 일반·급행(9호선만), 하루 가장 높은 %, 그 시각, 출근 07:00~09:30 가장 높은 %, 퇴근 18~20시 가장 높은 %, [눈금마다 %], 역번호(1~8호선만 · 9호선은 없음)]] · line{노선: [가장 높은 %, 역, 방향, 시각]}',
            'slots1': slots1, 'slots9': slots9, 'line': line, 'stn': rows}
     p = os.path.join(ROOT, 'data', 'subway-crowd.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

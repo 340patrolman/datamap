@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 100개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 101개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1810,7 +1810,7 @@
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-10 20:15",
+   "2026-10-10 20:20",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [
@@ -1847,6 +1847,11 @@
    "subway-crowd.json",
    "2026-10-10",
    "서울교통공사_지하철혼잡도정보(공공데이터포털 15071311 · 2026-06-30판 · 1~8호선) · 서울특별시_9호선 혼잡도 정보(서울 열린데이터광장 OA-22197 · 2026년 종합 · 공공 …(전문은 파일에)"
+  ],
+  [
+   "subway-freq.json",
+   "2026-10-10",
+   "국토교통부 TAGO 지하철정보(공공데이터포털 1613000/SubwayInfo) — 역별 평일 시간표(상행·하행) · 받은 날 2026-10-10"
   ],
   [
    "taas-fatal-seocho.json",

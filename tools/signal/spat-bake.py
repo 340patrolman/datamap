@@ -1,0 +1,244 @@
+# -*- coding: utf-8 -*-
+# 🚦 방향별 신호 — 서울 교통빅데이터(T-Data) V2X 신호 잔여시간(v2xSignalPhaseTimingInformation)에서
+#    「어느 방향 · 무슨 신호 · 몇 초」를 읽어 data/sigdir-seoul.json 으로 굽는다.
+#
+#   py -3.12 -X utf8 tools/signal/spat-bake.py fetch 4034 4039 …   교차로 번호(C-ITS itstId)마다 한 번 받아 줄여 둔다
+#   py -3.12 -X utf8 tools/signal/spat-bake.py fetch --list 파일     한 줄에 번호 하나
+#   py -3.12 -X utf8 tools/signal/spat-bake.py build                 줄여 둔 것 → data/sigdir-seoul.json
+#
+# ⚠ 이 API 는 같은 키로 5분에 한 번만 불린다(V2X_REPEAT_CALL_LIMIT) · 하루 1,000건 — fetch 는 번호 사이에 305초를 쉰다.
+# 키는 ../07_API키/keys.json 의 t_data_seoul 에서만 읽는다(찍지 않는다). 원자료·줄인 것은 저장소 밖 ../07_API키/out/tdata/ 에 둔다.
+#
+# 읽는 법(자료에 「지금 무슨 색」은 없다 — 그 API 는 따로 신청해야 한다):
+#   · 한 이동류의 잔여시간은 1초마다 줄다가 상태가 바뀌면 새 값으로 뛴다 → 뛴 자리 사이가 한 구간.
+#   · 차량 신호(직진·좌회전·유턴·버스)는 황색이 3~6초다 → 「황색 바로 앞 구간 = 녹색 · 바로 뒤 = 적색」으로 읽는다(추정이라고 화면에 밝힌다).
+#   · 보행 신호는 황색이 없어 이 방법으로 색을 가릴 수 없다 → 구간 길이만 싣고 색은 비워 둔다.
+#   · 36000(= 3600초)은 「모름」 · 5초 넘게 끊긴 자리(통신 끊김)에 걸친 구간은 버린다.
+import sys, os, json, time, gzip, glob, datetime, statistics, urllib.request, urllib.error
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+RAW = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'tdata')
+BASE = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xSignalPhaseTimingInformation/1.0'
+DIRS = ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw']
+MVS = ['St', 'Lt', 'Ut', 'Bs', 'Bc', 'Pd']
+GAP = 305
+
+
+def key():
+    return json.load(open(os.path.join(os.path.dirname(ROOT), '07_API키', 'keys.json'), encoding='utf-8-sig'))['t_data_seoul']
+
+
+def call(itst, rows=1500):
+    u = BASE + '?apikey=' + key() + '&pageNo=1&numOfRows=%d&itstId=%s' % (rows, itst)
+    req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        r = urllib.request.urlopen(req, timeout=180)
+        return r.status, r.read().decode('utf-8', 'ignore'), dict(r.headers)
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode('utf-8', 'ignore'), dict(e.headers)
+
+
+def cits():
+    """서울 C-ITS 교차로 지도정보(v2xCrossroadMapInformation · 2026-09-10 받은 2,779곳) — 번호 → [위도, 경도, 이름]"""
+    out = {}
+    f = os.path.join(os.path.dirname(ROOT), '07_API키', '신호앱', 'data', 'cits_cross_2779_20260910.txt')
+    if os.path.exists(f):
+        for ln in open(f, encoding='utf-8'):
+            a = ln.strip().split('|')
+            if len(a) >= 4:
+                try: out[a[0]] = [round(float(a[2]), 6), round(float(a[3]), 6), a[1]]
+                except ValueError: pass
+    return out
+
+
+def scan():
+    """정각 직후 한 번 — 그 시각에 값을 보내는 교차로 번호를 모두 센다(교차로마다 몇 줄뿐일 때 3만 줄을 한 번에)."""
+    now = datetime.datetime.now()
+    tgt = (now + datetime.timedelta(hours=1)).replace(minute=0, second=7, microsecond=0)
+    time.sleep(max(0, (tgt - now).total_seconds()))
+    u = BASE + '?apikey=' + key() + '&pageNo=1&numOfRows=30000'
+    try:
+        r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=300); st = r.status; b = r.read().decode('utf-8', 'ignore')
+    except urllib.error.HTTPError as e:
+        st = e.code; b = e.read().decode('utf-8', 'ignore')
+    stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
+    if st != 200:
+        print(stamp, 'scan HTTP', st, b[:200].replace(key(), '***'), flush=True); return []
+    J = json.loads(b); ids = {}; comp = {}
+    for x in J:
+        i = str(x['itstId']); ids[i] = ids.get(i, 0) + 1
+        comp.setdefault(i, set()).update(kk[:4] for kk, v in x.items() if kk.endswith('RmdrCs') and v is not None)
+    json.dump({'at': stamp, 'rows': len(J), 'ids': ids, 'comp': {i: sorted(v) for i, v in comp.items()}}, open(os.path.join(RAW, 'ids_%s.json' % stamp), 'w', encoding='utf-8'))
+    print(stamp, 'scan 줄', len(J), '교차로', len(ids), '(3만 줄에 걸렸으면 더 있다)' if len(J) >= 30000 else '', flush=True)
+    return list(ids)
+
+
+def auto(lat=37.4917, lon=127.0077):
+    """다음 정각에 목록을 세고, 서초역에서 가까운 교차로부터 5분에 하나씩 받아 굽는다(끝날 때까지 돈다)."""
+    ids = scan()
+    C = cits(); done = set(os.path.basename(f).split('_')[0] for f in glob.glob(os.path.join(RAW, 'red', '*.json')))
+    dist = lambda i: ((C[i][0] - lat) * 111000) ** 2 + ((C[i][1] - lon) * 88800) ** 2 if i in C else 9e18
+    todo = sorted([i for i in ids if i not in done], key=dist)
+    print('받을 교차로', len(todo), '가까운 것부터', [(i, C.get(i, [0, 0, '?'])[2], round(dist(i) ** 0.5)) for i in todo[:8]], flush=True)
+    time.sleep(GAP)
+    for n in range(0, len(todo), 6):
+        fetch(todo[n:n + 6]); build(); time.sleep(GAP)
+
+
+def segments(rows, k):
+    """한 이동류의 구간 목록 [(시작 시각, 길이, 시작 때 잔여)] — 끊긴 자리·모름 값에 걸친 구간은 뺀다."""
+    out, prev_v, prev_t, start, start_v, bad = [], None, None, None, None, False
+    for r in rows:
+        v = r.get(k)
+        t = r['trsmUtcTime'] / 1000.0
+        if v is None:
+            continue
+        v = v / 10.0
+        if prev_t is not None and t - prev_t > 5:
+            bad = True
+        if v >= 3000:
+            bad = True
+        if prev_v is None or v > prev_v + 1.5:
+            if start is not None and not bad:
+                out.append((start, t - start, start_v))
+            start, start_v = t, v
+            bad = v >= 3000
+        prev_v, prev_t = v, t
+    return out[1:] if out else []   # 첫 구간은 앞이 잘렸을 수 있다
+
+
+def med(a):
+    return round(statistics.median(a), 1) if a else None
+
+
+def reduce_one(itst, J):
+    rows = [x for x in J if str(x.get('itstId')) == str(itst)]
+    rows.sort(key=lambda x: x['trsmUtcTime'])
+    if len(rows) < 120:
+        return None
+    t0, t1 = rows[0]['trsmUtcTime'] / 1000.0, rows[-1]['trsmUtcTime'] / 1000.0
+    mv, ped, cyc_all = [], [], []
+    for d in DIRS:
+        for m in MVS:
+            k = d + m + 'sgRmdrCs'
+            if not any(r.get(k) is not None for r in rows):
+                continue
+            sg = segments(rows, k)
+            sg = [s for s in sg if abs(s[1] - s[2]) <= 3.5]   # 구간 길이 ≈ 시작 때 잔여(끊김·튐 거르기)
+            if m == 'Pd':
+                ped.append({'d': d, 'seg': [round(s[1]) for s in sg[:12]], 'n': len(sg)})
+                continue
+            G, Y, R, gs = [], [], [], []
+            for i in range(1, len(sg) - 1):
+                if 2.5 <= sg[i][1] <= 6.5 and sg[i - 1][1] > 6.5 and sg[i + 1][1] > 6.5 and abs(sg[i - 1][0] + sg[i - 1][1] - sg[i][0]) < 2 and abs(sg[i][0] + sg[i][1] - sg[i + 1][0]) < 2:
+                    G.append(sg[i - 1][1]); Y.append(sg[i][1]); R.append(sg[i + 1][1]); gs.append(sg[i - 1][0])
+            if len(G) < 2:
+                mv.append({'d': d, 'm': m, 'n': len(G), 'seg': [round(s[1]) for s in sg[:10]]})   # 색을 못 가린 이동류(점멸 운영 등)
+                continue
+            g, y, r = med(G), med(Y), med(R)
+            mv.append({'d': d, 'm': m, 'g': g, 'y': y, 'r': r, 'n': len(G), 'gs': gs})
+            cyc_all.append(g + y + r)
+    if not mv and not ped:
+        return None
+    cyc = med(cyc_all)
+    ok = [x for x in mv if 'g' in x]
+    # 녹색 시작 자리(주기 안) — 녹색이 가장 긴 이동류의 시작을 0 으로
+    if ok and cyc:
+        ref = max(ok, key=lambda x: (x['g'], -DIRS.index(x['d'])))
+        rs = sorted(ref['gs'])
+        for x in ok:
+            offs = []
+            for s0 in x['gs']:
+                prev = [r for r in rs if r <= s0 + 1]   # 이 녹색 바로 앞의 기준 녹색 시작(주기마다 따로 재서 통신 끊김 뒤 어긋남을 피한다)
+                if prev and s0 - prev[-1] < cyc + 2:
+                    offs.append(max(0, s0 - prev[-1]))
+            x['o'] = int(round(statistics.median(offs))) % int(round(cyc)) if offs else None
+    for x in mv:
+        x.pop('gs', None)
+    hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
+    return {'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows), 'cyc': cyc, 'mv': mv, 'ped': ped}
+
+
+def fetch(ids):
+    os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
+    for n, itst in enumerate(ids):
+        if n:
+            time.sleep(GAP)
+        # 이 API 는 「그 시각의 0분부터」 쌓인 줄을 앞에서부터 준다 — 정각 직후에는 줄이 모자라 주기를 못 읽는다 → 14분까지 기다린다
+        mm = datetime.datetime.now().minute
+        if mm < 14:
+            time.sleep((14 - mm) * 60)
+        st, body, h = call(itst)
+        stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        if st != 200:
+            print(stamp, itst, 'HTTP', st, body[:160].replace(key(), '***'), flush=True)
+            if st == 429:
+                try: time.sleep(max(0, int(json.loads(body).get('retryAfterSeconds', 0))) + 5)
+                except Exception: pass
+            continue
+        try:
+            J = json.loads(body)
+        except Exception:
+            print(stamp, itst, '응답이 JSON 이 아님', body[:120], flush=True); continue
+        got = sorted(set(str(x.get('itstId')) for x in J))
+        red = reduce_one(itst, J)
+        if red is None:
+            print(stamp, itst, '줄 수', len(J), '받은 교차로', got[:5], '— 줄일 것이 없다', flush=True)
+            continue
+        json.dump(red, open(os.path.join(RAW, 'red', '%s_%s.json' % (itst, stamp)), 'w', encoding='utf-8'), ensure_ascii=False)
+        with gzip.open(os.path.join(RAW, 'raw_%s_%s.json.gz' % (itst, stamp)), 'wt', encoding='utf-8') as f:
+            f.write(body)
+        print(stamp, itst, '줄', red['rows'], red['from'], '~', red['to'], '주기', red['cyc'], '차량 이동류', len([x for x in red['mv'] if 'g' in x]), '/', len(red['mv']), '보행', len(red['ped']), '남은 호출', h.get('X-RateLimit-Remaining'), flush=True)
+
+
+def build():
+    out = {}
+    for f in sorted(glob.glob(os.path.join(RAW, 'red', '*.json'))):
+        r = json.load(open(f, encoding='utf-8'))
+        if not r.get('cyc'):
+            continue
+        out.setdefault(r['id'], []).append(r)
+    its = {}
+    for k, v in out.items():
+        its[k] = [{'day': r['day'], 'dow': r['dow'], 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
+                   'mv': [[x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n']] for x in r['mv']],
+                   'ped': [[p['d'], p['seg'][:8]] for p in r['ped']]} for r in v]
+    # 교차로 자리 — 서울 C-ITS 교차로 지도정보(받아 둔 xmap_*.json 이 있으면 그것, 없으면 지도 저장소의 서초 둘레 목록)
+    pts = {}
+    for k, v in cits().items():
+        if k in its:
+            pts[k] = v
+    try:
+        for x in json.load(open(os.path.join(ROOT, 'data', 'pubdata-seocho.json'), encoding='utf-8'))['sigx']['items']:
+            if str(x['no']) in its and str(x['no']) not in pts:
+                pts[str(x['no'])] = [x['lat'], x['lon'], x['name']]
+    except Exception:
+        pass
+    doc = {'schema': 'tg-sigdir/1',
+           'source': '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간',
+           'how': '잔여시간이 새 값으로 뛰는 자리 사이를 한 구간으로 보고, 차량 신호는 3~6초 구간을 황색으로 보아 그 앞을 녹색·뒤를 적색으로 읽었다(추정). 받은 시간대의 실제 운영값이며 다른 시간대·요일은 다르다. 보행 신호는 색을 가릴 수 없어 구간 길이만 싣는다.',
+           'mvcols': ['방위(nt 북 · et 동 · st 남 · wt 서 · ne·se·sw·nw)', '이동류(St 직진 · Lt 좌회전 · Ut 유턴 · Bs 버스 · Bc 자전거)', '녹색 초', '황색 초', '적색 초', '녹색 시작(주기 안 · 가장 긴 녹색 = 0)', '본 주기 수'],
+           'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its}
+    p = os.path.join(ROOT, 'data', 'sigdir-seoul.json')
+    json.dump(doc, open(p, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    print('교차로', len(its), '->', p, os.path.getsize(p), 'B')
+
+
+if __name__ == '__main__':
+    a = sys.argv[1:]
+    if a and a[0] == 'fetch':
+        ids = a[1:]
+        if ids and ids[0] == '--list':
+            ids = [x.strip() for x in open(ids[1], encoding='utf-8') if x.strip() and not x.startswith('#')]
+        fetch(ids)
+    elif a and a[0] == 'build':
+        build()
+    elif a and a[0] == 'auto':
+        auto()
+    elif a and a[0] == 'test':
+        J = json.load(open(a[1], encoding='utf-8'))
+        for i in sorted(set(str(x['itstId']) for x in J)):
+            print(json.dumps(reduce_one(i, J), ensure_ascii=False))
+    else:
+        print(__doc__ or 'fetch <번호…> | build')

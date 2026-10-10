@@ -587,9 +587,15 @@
     if (q.p !== pp) q = { p: pp, n: 0 }; if (add) { q.n++; try { localStorage.setItem('tg_map2d_itsn', JSON.stringify(q)); } catch (e) {} } return q.n; }
   // ---------- v2.94.0 🎟 맛보기(소유자 2026-10-09 「키를 직접 넣는 것은 번거롭다 — 열쇠를 터치하면 맛보기로 · 많이 쓸 사람은 직접 받으라」) ----------
   //   중계 = Cloudflare Workers(tools/relay · 열쇠는 중계의 비밀값에만 · 폰으로 오지 않는다 — 브이월드만 340patrolman.github.io 에 묶인 키라 메모리로 받는다) · 주소는 data/relay.json {url, min}
-  //   한 번 누르면 TRY.min 분(기본 30) · 하루 횟수는 중계가 접속 주소마다 센다(기본 300) · 내 키가 있으면 내 키가 먼저 · 맛보기 상태는 tg_map2d_try 에(키는 저장 안 함)
+  //   기기마다 하루 TRY.min 분(기본 30 · v2.129.0 — 종전엔 누를 때마다 30분) · 하루 횟수는 중계가 접속 주소마다 따로 센다(기본 300) · 내 키가 있으면 내 키가 먼저 · 맛보기 상태는 tg_map2d_try 에(키는 저장 안 함)
   var TRY = { url: '', min: 30, until: 0, left: null, max: null, err: '', off: {}, v: 1 }, VWTRY = 0;
-  try { var t0 = JSON.parse(localStorage.getItem('tg_map2d_try') || '{}'); if (t0 && t0.until > Date.now()) TRY.until = t0.until; } catch (e) {}
+  /* v2.129.0 하루 30분 — tg_map2d_try = {day 그날(한국 날짜), used 그날 쓴 밀리초, st 켠 시각, until 끝나는 시각}. 켜 둔 동안만 센다 · 다 쓰면 그날은 안 켜진다(자정에 다시) · 본인 키를 넣은 기기는 맛보기를 안 거치므로 제한 없음.
+     기기 저장값이라 지우면 다시 켜지지만, 중계가 접속 주소마다 하루 횟수를 따로 센다(막는 것은 그쪽) */
+  function tryDay() { return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10); }
+  function tryLoad() { var o = {}; try { o = JSON.parse(localStorage.getItem('tg_map2d_try') || '{}') || {}; } catch (e) {} if (o.day !== tryDay()) o = { day: tryDay(), used: 0, st: 0, until: 0 }; o.used = +o.used || 0; if (o.st && o.until && o.until <= Date.now()) { o.used += Math.max(0, o.until - o.st); o.st = 0; o.until = 0; trySave(o); } return o; }
+  function trySave(o) { try { localStorage.setItem('tg_map2d_try', JSON.stringify(o)); } catch (e) {} }
+  function tryLeftMs() { var o = tryLoad(), run = o.st && o.until > Date.now() ? Date.now() - o.st : 0; return Math.max(0, TRY.min * 60000 - o.used - run); }
+  try { var t0 = tryLoad(); if (t0.until > Date.now()) TRY.until = t0.until; } catch (e) {}
   fetch('data/relay.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && /^https:\/\//.test(j.url || '')) { TRY.url = j.url.replace(/\/+$/, ''); TRY.min = +j.min || 30; TRY.v = +j.v || 1; TRY.sw = !!j.sw; (j.off || []).forEach(function (k) { TRY.off[k] = 1; }); if (tryOn()) tryVw(); try { legend(); } catch (e) {} } }).catch(function () {});
   function tryOn() { var o = !!TRY.url && TRY.until > Date.now(); if (!o && VWTRY) { VWTRY = 0; VWKEY = ''; VWT = {}; } return o; }
   function tryMin() { return Math.max(0, Math.ceil((TRY.until - Date.now()) / 60000)); }
@@ -603,10 +609,11 @@
       if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error('맛보기 중계: ' + (j.err || 'HTTP ' + r.status)); });
       return r.text(); }); }
   function tryVw() { if (VWKEY || !TRY.url) return; fetch(TRY.url + '/vwkey').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.key && tryOn() && !VWKEY) { VWKEY = j.key; VWTRY = 1; VWT = {}; VWBAD = VWOK = 0; draw(); } }).catch(function () {}); }
-  function tryStart() { if (!TRY.url) return; TRY.until = Date.now() + TRY.min * 60000; try { localStorage.setItem('tg_map2d_try', JSON.stringify({ until: TRY.until })); } catch (e) {} tryVw(); LIVE.ev = null; LIVE.sp = null; LIVE.ak = null; LIVE.kma = null; LIVE.wrn = null; LIVE.eqk = null; LIVE.bs = null; LIVE.sbk = null; LIVE.sac = null; LIVE.spk = null; liveGo(); draw(); try { legend(); } catch (e) {} if (TR && $('m2dTr') && $('m2dTr').classList.contains('on')) { trBus(); trSub(); } }
-  function tryStop() { TRY.until = 0; try { localStorage.removeItem('tg_map2d_try'); } catch (e) {} tryOn(); draw(); try { legend(); } catch (e) {} }
+  function tryStart() { if (!TRY.url) return; var o9 = tryLoad(), left9 = Math.max(0, TRY.min * 60000 - o9.used); if (left9 < 15000) { try { legend(); } catch (e) {} return; } o9.st = Date.now(); o9.until = TRY.until = Date.now() + left9; trySave(o9); tryVw(); LIVE.ev = null; LIVE.sp = null; LIVE.ak = null; LIVE.kma = null; LIVE.wrn = null; LIVE.eqk = null; LIVE.bs = null; LIVE.sbk = null; LIVE.sac = null; LIVE.spk = null; liveGo(); draw(); try { legend(); } catch (e) {} if (TR && $('m2dTr') && $('m2dTr').classList.contains('on')) { trBus(); trSub(); } }
+  function tryStop() { var o9 = tryLoad(); if (o9.st) { o9.used += Math.max(0, Math.min(Date.now(), o9.until || Date.now()) - o9.st); o9.st = 0; o9.until = 0; trySave(o9); } TRY.until = 0; tryOn(); draw(); try { legend(); } catch (e) {} }
   function tryBtn(own) { if (!TRY.url || own) return ''; return tryOn() ? '<div class="lg-btns"><button data-ltry="stop" class="on">🎟 맛보기 중 · ' + tryMin() + '분 남음' + (TRY.left != null ? ' · 오늘 ' + TRY.left + '번 남음' : '') + ' — 끄기</button></div>'
-      : '<div class="lg-btns"><button data-ltry="go">🎟 맛보기 켜기(' + TRY.min + '분 · 키 없이)</button></div><small class="lg-n">맛보기 = 이 지도 운영자의 키로 잠깐 본다(하루 횟수 제한 · 여러 사람이 나눠 씀) · 자주 쓰면 키를 직접 받아 「🔑」에 넣는다 — 무료(data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청)</small>'; }
+      : tryLeftMs() < 15000 ? '<small class="lg-n" style="display:block"><b style="color:#b45309">🎟 오늘 맛보기 ' + TRY.min + '분을 다 썼다</b> — 내일 다시 ' + TRY.min + '분 · 실시간을 더 쓰려면 <b>본인 API 키(무료)</b>를 받아 「🔑」에 넣는다(넣은 기기는 제한 없음): data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청 — 받는 곳은 지도 아래 「🔎 없는 자료 찾는 법」에도 있다 · 받아 둔 자료로 그리는 층(신호 이어 세기 · 접근성 등)은 통신이 아니라 그대로 쓴다</small>'
+      : '<div class="lg-btns"><button data-ltry="go">🎟 맛보기 켜기(오늘 ' + Math.ceil(tryLeftMs() / 60000) + '분 남음 · 키 없이)</button></div><small class="lg-n">맛보기 = 이 지도 운영자의 키로 잠깐 본다 — <b>기기마다 하루 ' + TRY.min + '분</b>(켜 둔 동안만 센다 · 여러 사람이 나눠 씀) · 더 쓰려면 키를 직접 받아 「🔑」에 넣는다 — 무료(data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청) · 넣은 기기는 제한 없음</small>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-ltry]'); if (!b) return; e.preventDefault(); if (b.getAttribute('data-ltry') === 'stop') tryStop(); else tryStart(); });
   function itsGet(path, q) {
     if (!LK.its && tryOn() && !TRY.off.its) return tryGet('its', path, q + '&getType=json').then(function (t) { try { return JSON.parse(t); } catch (e) { throw new Error('맛보기 중계: 응답이 JSON 이 아님'); } });

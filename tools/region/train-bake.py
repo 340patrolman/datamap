@@ -47,6 +47,39 @@ def main():
     stn = {}
     for nm in sorted(set(up) | set(dn)):
         stn[nm] = {'ln': [k for k, _ in line[nm].most_common(3)], 'up': pack(up[nm]), 'dn': pack(dn[nm])}
+    import csv, io
+    LL = {}; lp = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'dg', '15127532', 'x.csv')   # 한국철도공사_역 위치 정보(공공데이터포털 15127532 · 2024-04-01판 · tools/region/dgfile.py 15127532)
+    for r in list(csv.reader(io.StringIO(open(lp, 'rb').read().decode('cp949'))))[1:]:
+        try: LL[r[1].strip()] = [round(float(r[3]), 5), round(float(r[2]), 5)]
+        except Exception: pass
+    L2 = {}; lp2 = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'dg', '15067652', 'x.csv')   # 국가철도공단_철도역 정보(15067652 · 2025-07-11판) — 첫 표에 없는 역만
+    R2 = list(csv.reader(io.StringIO(open(lp2, 'rb').read().decode('cp949')))); h2 = {k: i for i, k in enumerate(R2[0])}
+    for r in R2[1:]:
+        try:
+            n2 = r[h2['역이름']].strip(); n2 = n2[:-1] if n2.endswith('역') else n2; xy = [round(float(r[h2['경도좌표']]), 5), round(float(r[h2['위도좌표']]), 5)]
+            if 124 < xy[0] < 132 and 33 < xy[1] < 39: L2[n2] = xy   # 0 으로 비어 있는 줄이 있다
+        except Exception: pass
+    L3 = {}   # 도시·광역철도 역(전국도시철도역사정보표준데이터 — data/stations-kr.json · 서울은 data/r/stations.json) — 앞 두 표에 없는 역만 · 같은 이름이 여럿이면 쓰지 않는다
+    try:
+        cnt = collections.Counter(); tmp = {}
+        for it in json.load(open(os.path.join(ROOT, 'data', 'stations-kr.json'), encoding='utf-8'))['items']: cnt[it[0]] += 1; tmp[it[0]] = [it[2], it[3]]
+        seen = set()
+        for it in json.load(open(os.path.join(ROOT, 'data', 'r', 'stations.json'), encoding='utf-8'))['items']:
+            n3 = it[0][:-1] if it[0].endswith('역') and len(it[0]) > 2 else it[0]; key = (n3, round(it[2], 2), round(it[3], 2))
+            if key in seen: continue
+            seen.add(key); cnt[n3] += 1; tmp[n3] = [it[2], it[3]]
+        L3 = {k: v for k, v in tmp.items() if cnt[k] == 1}
+    except Exception as e: print('stations-kr 못 읽음', e)
+    ALIAS = {'경주': '신경주', '김천구미': '김천(구미)', '진부': '진부(오대산)', '판교(충남)': '판교'}   # 운행 자료의 역 이름 → 위치 표(2024-04)의 이름. 경주 = 고속철도가 서는 지금의 경주역(위치 표에는 옛 이름 신경주 · 둘째 표의 「경주역」은 문 닫은 옛 시내 역이라 쓰면 안 된다)
+    for k2, v2 in ALIAS.items():
+        if v2 in LL: LL[k2] = LL[v2]
+    miss = []
+    for nm, v in stn.items():
+        if nm in LL: v['ll'] = LL[nm]
+        elif nm in L2: v['ll'] = L2[nm]; v['lls'] = 2
+        elif nm in L3: v['ll'] = L3[nm]; v['lls'] = 3
+        else: miss.append(nm)
+    print('좌표 붙은 역', len(stn) - len(miss), '· 못 붙인 역', miss)
     d8 = '%s-%s-%s' % (day[:4], day[4:6], day[6:])
     doc = {'schema': 'tg-train-seoul/1', 'made': datetime.date.today().isoformat(), 'day': d8,
            'source': '한국철도공사_열차운행정보(공공데이터포털 B551457 travelerTrainRunInfo2) — %s 하루 모든 여객열차의 역별 실제 도착·출발 시각 %d줄 · 열차 %d대' % (d8, len(rows), len(T)),
@@ -56,8 +89,8 @@ def main():
                     'SRT(수서 출발)는 한국철도공사 자료가 아니라 들어 있지 않다 · 수도권 전철(광역전철)도 이 자료가 아니다',
                     '갈아타는 길은 세지 않았다 — 한 열차로 서울 쪽 역까지 가는 것만. 직통이 없는 역은 값이 없다',
                     '예매율·승차율은 이 자료에 없다(공개 API 없음 — 역별 승하차 인원은 따로 한국철도공사 파일 자료)',
-                    '역 좌표는 싣지 않았다 — 이름으로 맞댄다'],
-           'fields': 'stn{역 이름: {ln [노선…], up 서울로 [가장 빠른 분, 가운데값 분, 하루 편수, 첫차 출발, 막차 출발, 가장 많이 닿는 서울 쪽 역], dn 서울에서 [가장 빠른 분, 가운데값, 편수, 서울 쪽 첫 출발, 막 출발, 가장 많이 떠나는 서울 쪽 역]}} — 값이 없으면 null',
+                    '역 좌표 ll = 한국철도공사_역 위치 정보(공공데이터포털 15127532 · 2024-04-01판)를 역 이름으로 맞댄 것 — 없으면 lls 2 = 국가철도공단_철도역 정보(15067652 · 2025-07-11판) · lls 3 = 전국도시철도역사정보표준데이터·서울시 역사마스터(data/stations-kr.json · data/r/stations.json · 이름이 한 자리뿐인 역만) · 셋 다 없으면 ll 이 없다(자리를 지어 넣지 않았다)'],
+           'fields': 'stn{역 이름: {ln [노선…], up 서울로 [가장 빠른 분, 가운데값 분, 하루 편수, 첫차 출발, 막차 출발, 가장 많이 닿는 서울 쪽 역], dn 서울에서 [가장 빠른 분, 가운데값, 편수, 서울 쪽 첫 출발, 막 출발, 가장 많이 떠나는 서울 쪽 역], ll [경도, 위도](없을 수 있음)}} — 값이 없으면 null',
            'dest': DEST, 'stn': stn}
     p = os.path.join(ROOT, 'data', 'train-seoul.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

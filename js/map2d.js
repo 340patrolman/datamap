@@ -1790,6 +1790,14 @@
       return { o: o, rings: rings, c: [sx / r0.length, sy / r0.length] }; });
   }
   function pad2(n) { return ('0' + n).slice(-2); }
+  // v2.107.0 📡 실시간 인파 「지금 값」 — 서울시 실시간 도시데이터 인구(citydata_ppltn · 장소마다 1번 · 중계 /seoul) · 받은 값은 이 화면 메모리에만(구운 파일 값 위에 덮어 보임)
+  var CWB = {};
+  function cwNow(nm) { var Lp = LIVEP.filter(function (x) { return x.o.name === nm; })[0]; if (!Lp || !seOn() || CWB[nm] === 1) return; CWB[nm] = 1; if (sel && sel.it && sel.it.kind === 'crowd') show(sel.it);
+    tryGet('seoul', 'citydata_ppltn/1/5/' + encodeURIComponent(nm), '').then(function (t) { var j = JSON.parse(t), a = (j['SeoulRtd.citydata_ppltn'] || [])[0]; if (!a) throw new Error((j.RESULT && (j.RESULT['RESULT.MESSAGE'] || j.RESULT.MESSAGE)) || '빈 응답');
+      Lp.o.pop = { lvl: a.AREA_CONGEST_LVL, msg: a.AREA_CONGEST_MSG, min: +a.AREA_PPLTN_MIN, max: +a.AREA_PPLTN_MAX, male: +a.MALE_PPLTN_RATE, age: ['0', '10', '20', '30', '40', '50', '60', '70'].map(function (k) { return +a['PPLTN_RATE_' + k]; }), resnt: +a.RESNT_PPLTN_RATE, time: a.PPLTN_TIME, fcst: (a.FCST_PPLTN || []).map(function (f) { return [f.FCST_TIME, f.FCST_CONGEST_LVL, +f.FCST_PPLTN_MIN, +f.FCST_PPLTN_MAX]; }) };
+      Lp.o.liveAt = Date.now(); CWB[nm] = 0; draw(); if (sel && sel.it && sel.it.kind === 'crowd' && sel.it.L === Lp) show(sel.it); })
+      .catch(function (e) { CWB[nm] = '받지 못함(' + (e && e.message || e) + ')'; if (sel && sel.it && sel.it.kind === 'crowd' && sel.it.L === Lp) show(sel.it); }); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-cwnow]'); if (b) cwNow(b.getAttribute('data-cwnow')); });
   function crowdAt(Lp) {   // 고른 날짜·시각에 보일 값 — 받은 시각이면 그 값, 12시간 안이면 서울시 예측, 아니면 받은 때 값(옛것이라 적는다)
     var p = Lp.o.pop; if (!p) return null; var tgt = pickDate() + ' ' + pad2(nowH()) + ':00', got = (p.time || '').slice(0, 13) + ':00';
     if (tgt === got) return { kind: 'now', lvl: p.lvl, min: p.min, max: p.max, t: p.time };
@@ -1876,6 +1884,7 @@
     var o = it.L.o, cw = crowdAt(it.L), p = o.pop || {}, c = o.card;
     h = '<h3>📡 ' + esc(o.name) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(o.cat) + '</small></h3>';
     if (cw) h += row(cw.kind === 'now' ? '지금' : cw.kind === 'fcst' ? '예측(' + esc(cw.t.slice(11, 16)) + ')' : '받은 때', '<b style="color:' + (LVC[cw.lvl] || '#64748b') + '">' + esc(cw.lvl) + '</b> · ' + (cw.min ? man(cw.min) + '~' + man(cw.max) + '명' : '-') + (cw.kind === 'old' ? ' <em>(' + esc(cw.t) + ' 값 — 지금이 아니다)</em>' : cw.kind === 'fcst' ? ' <em>(서울시 예측)</em>' : ''));
+    if (seOn() || (sbOn() && !TRY.off.seoul)) h += '<div class="lg-btns">' + (seOn() ? '<button data-cwnow="' + esc(o.name) + '">📡 지금 값 받기' + (CWB[o.name] === 1 ? ' — 받는 중…' : '') + '</button>' : '<button data-ltry="go">🎟 맛보기를 켜면 지금 값을 받는다</button>') + '</div>' + (typeof CWB[o.name] === 'string' ? '<p class="lg-n" style="color:#b91c1c">' + esc(CWB[o.name]) + '</p>' : o.liveAt ? '<p class="lg-n">' + hhmm(o.liveAt) + '에 이 기기가 새로 받은 값(서울시 기준 시각 ' + esc(p.time || '-') + ') · 저장하지 않는다</p>' : '');
     if (p.msg) h += '<p class="desc">' + esc(p.msg) + '</p>';
     if (p.age) h += row('남·여', Math.round(p.male) + ' : ' + Math.round(100 - p.male) + ' · 상주 ' + Math.round(p.resnt) + '%') + '<div class="cap">지금 있는 사람의 연령대 비율(% · 10세 미만 … 70대 이상 · ' + esc(p.time) + ' 기준)</div>' + bar(p.age, '#0ea5e9', ageLab(p.age.length));
     if (p.fcst && p.fcst.length) h += '<div class="cap">앞으로 12시간 인구 예측(명 · 예측 범위의 상한 · ' + esc(p.fcst[0][0].slice(11, 16)) + '부터)</div>' + bar(p.fcst.map(function (f) { return f[3] || 0; }), '#64748b', p.fcst.map(function (f) { return String(f[0]).slice(11, 13) + '시'; }));
@@ -2233,7 +2242,7 @@
     if (!on.acc10 && !on.fatal10 && !on.acc250) return null; var ys = ['', 19]; for (var y = 2016; y <= 2025; y++) ys.push(y);
     return ['🚗 사고 10년(TAAS)', '<div class="lg-btns">' + Object.keys(A10MS).map(function (k) { return '<button data-a10m="' + k + '" class="' + (k === A10M ? 'on' : '') + '">' + A10MS[k][0] + '</button>'; }).join('') + '</div>' +
       '<div class="lg-btns"><select data-a10y aria-label="해">' + ys.map(function (y) { return '<option value="' + y + '"' + ((A10Y || '') == y ? ' selected' : '') + '>' + (y === 19 ? '2019~2025' : y ? y + '년만' : '10년 전부') + '</option>'; }).join('') + '</select></div>' +
-      li(hexA(A10MS[A10M][1], 0.8), A10M === 'rate' ? '사고율 = 10년 사고 ÷ 150m 안 하루 하차 × 1,000 · 하차 200명 미만 칸은 안 칠함' : '100m 칸 · 진할수록 많음(√) · 확대하면 숫자', 'box') + (A10M === 'rate' ? li('#facc15', '숨은 위험 — 사고율 상위 10% · 건수는 상위 10% 밖', 'line') + '<small class="lg-n">' + ledgBadge('R2') + ' 노출(하차)은 2026년 6월 한 달 값을 10년에 썼다 · 서울만(교통카드 자료)</small>' : '') + (on.fatal10 ? li('#111827', '사망사고(한 건씩)') : '') + (A10GAP.length ? '<small class="lg-n" style="color:#b45309">⚠ 준비 중 — 사고 10년 자료를 덜 모은 곳(비워 둠 · 다시 모으는 중): ' + A10GAP.map(function (g) { return esc(guName(g)); }).join(' · ') + '</small>' : '') + '<small class="lg-n">' + (D.taas10 ? D.taas10.count.toLocaleString() + '건 · 개인정보 없음' : '') + '</small>'];
+      li(hexA(A10MS[A10M][1], 0.8), A10M === 'rate' ? '사고율 = 10년 사고 ÷ 150m 안 하루 하차 × 1,000 · 하차 200명 미만 칸은 안 칠함' : '100m 칸 · 진할수록 많음(√) · 확대하면 숫자', 'box') + (A10M === 'rate' ? li('#facc15', '숨은 위험 — 사고율 상위 10% · 건수는 상위 10% 밖', 'line') + '<small class="lg-n">' + ledgBadge('R2') + ' 노출(하차)은 2026년 6월 한 달 값을 10년에 썼다 · 서울만(교통카드 자료)</small>' : '') + (on.fatal10 ? li('#111827', '사망사고(한 건씩)') : '') + (A10GAP.length ? '<small class="lg-n" style="color:#b45309">⚠ 준비 중 — 사고 10년 자료를 덜 모은 곳(비워 둠 · 다시 모으는 중): ' + A10GAP.map(function (g) { return esc(guName(g)); }).join(' · ') + '</small>' + fiBox(['acc'], '빈 곳의 사고 자료 직접 찾는 법') : '') + '<small class="lg-n">' + (D.taas10 ? D.taas10.count.toLocaleString() + '건 · 개인정보 없음' : '') + '</small>'];
   }
   // ---------- 🛡 치안·생활안전 시설(v0.10.78 · 서울 열린데이터 — 서초구) ----------
   var SAFE = [], SRCX = {};   // [층 키, 이름, 색, 점들[{p, it}]] · SRCX = 경기 구 파일이 가져온 출처(경기 생활시설)
@@ -3499,7 +3508,7 @@
       h += '<div class="tkpi"><span><em>🏢</em><small>' + esc(b[0]) + (sh ? ' 전체' : '') + '</small><b>' + b[1].toLocaleString() + '호</b>' + (sh ? '<u>법정동 — 행정동 ' + b[6].length + '곳에 걸침</u>' : '') + '</span><span><em>💰</em><small>공시가격 가운데</small><b>' + won(b[2]) + '</b></span>' + (b[3] ? '<span><em>📐</em><small>㎡당 가운데</small><b>' + Math.round(b[3]).toLocaleString() + '만</b><u>평당 ' + Math.round(b[3] * 3.305785).toLocaleString() + '만</u></span>' : '') + '</div>';
       h += '<div class="vzg">' + vzH(HPB.map(function (n, i) { return [n, b[4][i] || 0, '#7c3aed']; }).filter(function (q, i, A) { return q[1] || (i > 0 && i < A.length - 1); }), { title: '공시가격 띠별 호수 — ' + b[0], unit: '호' }) +
         vzStack([['전용면적', b[5], b[1].toLocaleString() + '호']], HPA.map(function (n, i) { return [n, ['#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#0369a1', '#0c4a6e'][i]]; }), { title: '전용면적 구성(%)' }) + '</div>'; });
-    return h + '<p class="src">' + esc(J.source) + ' · ' + esc(J.note) + '</p>'; }
+    return h + fiBox(['hp-new', 'jiga', 'deal', 'apt', 'redev'], '올해 공시가격 · 필지 공시지가 · 거래 한 건씩 · 단지 정보는 어디서 보나') + '<p class="src">' + esc(J.source) + ' · ' + esc(J.note) + '</p>'; }
 
   // v2.106.0 🧾 주택 보유세 범위(동 카드 · 추정) — 소유자 「읍면동별로 각종 세금, 예를 들면 부동산 보유세 범위도 알 수 있을까 — 그 지역을 파악하기 좋은 방법」
   //   data/ptax-dong.json(tg-ptax/1 ← tools/region/ptax-bake.py) = 공동주택 공시가격 2025 × data/tax-rules.json 재산세 규칙 · 금액 만 원/한 해/한 채 · 합계 = 재산세 + 지방교육세 + 도시지역분
@@ -3522,7 +3531,19 @@
       h += vzH(top.map(function (b) { return [(B.indexOf(b) + 1) + '. ' + b[0] + (mine(b) ? ' ◀' : ''), b[4][1], mine(b) ? '#dc2626' : '#cbd5e1']; }), { title: esc(guName(gu)) + ' 법정동 ' + B.length + '곳 — 1세대 1주택 보유세 가운데(만 원/년 · 30호 이상 · 빨강 = 이 동에 걸친 법정동' + (B.length > top.length ? ' · 위 12곳과 이 동만' : '') + ')', unit: '만' }); }
     h += '</div><p class="lg-n"><b>낸 세금이 아니다</b> — 공시가격에 지금 규칙을 적용한 추정이고, 공동주택(아파트·연립·다세대)만 셌다. 과세표준상한·세부담상한·감면은 넣지 않아 고지서와 다를 수 있다.</p>';
     h += '<details class="ptn"><summary>읽는 법·한계 ' + (PTX.note || []).length + '가지 · 근거 조문</summary><ul>' + (PTX.note || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul><p>' + ['fmv', 'house', 'houseOne', 'urban', 'eduTax', 'jbs'].map(function (k) { return PTX.rules && PTX.rules[k] ? esc(PTX.rules[k]) : ''; }).filter(Boolean).join(' · ') + (PTX.rules && PTX.rules.checked ? ' — 조문 확인 ' + esc(PTX.rules.checked) : '') + '</p></details>';
-    return h + '<p class="src">' + esc(PTX.source) + '</p>'; }
+    return h + fiBox(['ptax-own', 'ptax-single', 'jbs', 'localtax', 'law'], '실제로 낸 세금 · 단독주택 · 종부세 · 우리 구 세수는 어디서 보나') + '<p class="src">' + esc(PTX.source) + '</p>'; }
+  // v2.107.0 🔎 직접 찾는 법 — 소유자 「없는 데이터는 직접 찾는 방법도 알려주자」 · data/find-it.json(tg-findit/1 ← tools/region/findit-bake.py · 항목 18 · 창구 24)
+  //   접이(details.fi)를 펼칠 때 목록을 읽어 채운다 · 바깥 사이트는 사용자가 누를 때만 새 창(rel=noopener) — 지도는 그 사이트와 통신하지 않는다
+  var FIND = null, FINDP = null;
+  function fiGet() { if (FINDP) return FINDP; FINDP = fetch('data/find-it.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { FIND = j; }).catch(function () { FIND = null; FINDP = null; }); return FINDP; }
+  function fiBox(keys, label) { return '<details class="fi" data-fi="' + keys.join(',') + '"><summary>🔎 ' + esc(label || '여기 없는 값 직접 찾는 법') + '</summary><div class="fib">읽는 중…</div></details>'; }
+  function fiHtml(keys) { if (!FIND) return '<p>목록을 읽지 못했다 — 잠시 뒤 다시 펼쳐 본다.</p>'; var W = FIND.who || {}, S2 = FIND.sites || {}, g0 = '', all = keys === '*';
+    var L = all ? FIND.items : keys.map(function (k) { return FIND.items.filter(function (x) { return x.k === k; })[0]; }).filter(Boolean);
+    return L.map(function (x) { var hd = all && x.g !== g0 ? '<h5>' + esc(g0 = x.g) + '</h5>' : '';
+      return hd + '<div class="fii"><b>' + esc(x.what) + '</b> <i class="w-' + esc(x.who) + '">' + esc(W[x.who] || '') + '</i><p><em>왜 없나</em> ' + esc(x.why) + '</p><p><em>찾는 법</em> ' + esc(x.how) + '</p><p class="fia">' + (x.at || []).map(function (k) { return S2[k] ? '<a href="' + esc(S2[k].u) + '" target="_blank" rel="noopener noreferrer">' + esc(S2[k].n) + ' ↗</a>' : ''; }).join('') + '</p></div>'; }).join('') +
+      '<p class="lg-n">' + esc(FIND.note || '') + ' · 바깥 사이트는 누를 때만 새 창으로 열린다(' + esc(FIND.made || '') + ' 확인)</p>'; }
+  document.addEventListener('toggle', function (e) { var d = e.target; if (!d || !d.matches || !d.matches('details.fi[data-fi]') || !d.open) return; var b = d.querySelector('.fib'); if (!b || b.getAttribute('data-ok')) return;
+    fiGet().then(function () { var k = d.getAttribute('data-fi'); b.innerHTML = fiHtml(k === '*' ? '*' : k.split(',')); if (FIND) b.setAttribute('data-ok', '1'); }); }, true);
   function jrsLoad() { if (JRSP) return JRSP; JRSP = fetch('data/juris.json').then(function (r) { return r.json(); }).then(function (j) { JRS = j; draw(); if (document.body.classList.contains('legon')) legend(); }).catch(function () { JRS = null; }); return JRSP; }
   function jrsOfK(K, k8) { if (!k8) return null; var v = K.d[k8]; if (v != null) return v; v = K.g5[k8.slice(0, 5)]; return v == null || v < 0 ? null : v; }
   function jrsAt(kind, m) { if (!JRS) return null; var K = JRS.kinds[kind], d = dongAtM(m), v = d && d.k ? jrsOfK(K, d.k) : null; if (v != null) return v;
@@ -4765,7 +4786,7 @@
       h += fx.length ? '<div class="trrow wrap">' + fx.map(function (x) { return '<span class="trc"><b>' + x.t + '</b><i>→ ' + esc(x.to) + '</i><small>' + esc(x.al) + ' ' + esc(x.no) + '</small></span>'; }).join('') + '</div>' : '<div class="nil">오늘 남은 출발편이 없다.</div>'; }
     else if (A0.rows) h += '<div class="nil">오늘 운항 정보가 없다.</div>';
     else h += '<p class="lg-n">공항을 누르면 오늘 출발편(TAGO 국내항공운항정보 · 계획 시각)을 받는다.</p>';
-    h += '<small class="lg-n">출처: 국토교통부 TAGO(버스정류소·버스도착·버스위치·지하철·고속버스·시외버스·국내항공운항) · 한국철도공사 열차운행정보 · 공공데이터포털 — 키는 이 기기에만 있고, 받은 실시간 값은 저장하지 않는다.</small>';
+    h += fiBox(['transit'], '도착 정보가 안 보일 때 직접 찾는 법') + '<small class="lg-n">출처: 국토교통부 TAGO(버스정류소·버스도착·버스위치·지하철·고속버스·시외버스·국내항공운항) · 한국철도공사 열차운행정보 · 공공데이터포털 — 키는 이 기기에만 있고, 받은 실시간 값은 저장하지 않는다.</small>';
     el.innerHTML = h; }
   function drawTr(dark) { if (!TR || !$('m2dTr') || !$('m2dTr').classList.contains('on')) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, sc = S(TR.c);
     ctx.beginPath(); ctx.arc(sc[0], sc[1], 7, 0, Math.PI * 2); ctx.fillStyle = '#111827'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke();

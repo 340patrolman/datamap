@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 데이터 압축지도 — 🚌 버스가 얼마나 자주 오나(소유자 2026-10-10 「대중교통은 있어도 배차시간이 길어서 어쩌다 한두 대 온다든지 그런 데이터도 중요」) → data/bus-freq/<시도 두 자리>.json + data/bus-freq.json(머리)
+# 데이터 압축지도 — 🚌 버스가 얼마나 자주 오나(소유자 2026-10-10 「대중교통은 있어도 배차시간이 길어서 어쩌다 한두 대 온다든지 그런 데이터도 중요」) → data/bus-freq/<0.5° 조각>.json + data/bus-freq.json(머리)
 #   재료 = 국토교통부 TAGO 버스노선정보(공공데이터포털 1613000/BusRouteInfoInqireService · 키 keys.json data_go_kr)
 #     도시 목록 getCtyCodeList → 도시별 노선 getRouteNoList → 노선마다 getRouteInfoIem(배차 간격 평일·토·일 분 · 첫차·막차) + getRouteAcctoThrghSttnList(서는 정류장·좌표)
 #   셈 = 정류장마다 서는 노선의 「60 ÷ 평일 배차 간격」을 더해 한 시간에 몇 대(배차 간격이 비어 있는 노선은 대수에서 빼고 노선 수에만 넣는다 — 값을 지어 넣지 않는다)
@@ -73,13 +73,22 @@ def build():
                 e = stop.setdefault(nid, [nm, x, y, 0, 0.0, 0, 9999])
                 e[3] += 1
                 if iv > 0: e[4] += 60.0 / iv; e[5] += 1; e[6] = min(e[6], iv)
+    import math, glob
     by = collections.defaultdict(list)
     for nid, (nm, x, y, n, ph, nk, mn) in stop.items():
-        by[nid[:3]].append([round(x * 1e5), round(y * 1e5), nm, n, round(ph, 1) if nk else -1, round(mn) if nk else -1, nk])
-    os.makedirs(os.path.join(ROOT, 'data', 'bus-freq'), exist_ok=True); files = {}
-    for k, v in sorted(by.items()):
-        v.sort(); p = os.path.join(ROOT, 'data', 'bus-freq', k + '.json')
-        json.dump({'schema': 'tg-bus-freq/1', 'key': k, 'stops': v}, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); files[k] = [len(v), os.path.getsize(p)]
+        by[(math.floor(x * 2), math.floor(y * 2), 2)].append([round(x * 1e5), round(y * 1e5), nm, n, round(ph, 1) if nk else -1, round(mn) if nk else -1, nk, x, y])
+    d0 = os.path.join(ROOT, 'data', 'bus-freq'); os.makedirs(d0, exist_ok=True); files = {}
+    for f in glob.glob(os.path.join(d0, '*.json')): os.remove(f)
+    def put(name, v):
+        v.sort(); p = os.path.join(d0, name + '.json')
+        json.dump({'schema': 'tg-bus-freq/1', 'key': name, 'stops': [r[:7] for r in v]}, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); return os.path.getsize(p)
+    for (a, b, z), v in sorted(by.items()):   # 0.5° 조각(도로망 data/base/rn 과 같은 열쇠 a = floor(경도×2) · b = floor(위도×2)) — 600KB 를 넘으면 0.25° 넷으로(q_<floor(경도×4)>_<floor(위도×4)>)
+        name = '%d_%d' % (a, b); sz = put(name, v)
+        if sz <= 600000: files[name] = [len(v), sz]; continue
+        os.remove(os.path.join(d0, name + '.json')); sub = collections.defaultdict(list)
+        for r in v: sub[(math.floor(r[7] * 4), math.floor(r[8] * 4))].append(r)
+        files[name] = [len(v), 0, sorted('q_%d_%d' % k for k in sub)]
+        for (a4, b4), v4 in sub.items(): n4 = 'q_%d_%d' % (a4, b4); files[n4] = [len(v4), put(n4, v4)]
     doc = {'schema': 'tg-bus-freq/1', 'made': datetime.date.today().isoformat(),
            'source': '국토교통부 TAGO 버스노선정보(공공데이터포털 1613000/BusRouteInfoInqireService) — 노선의 배차 간격(평일)·서는 정류장',
            'how': '정류장마다 서는 노선의 「60 ÷ 평일 배차 간격(분)」을 더해 한 시간에 몇 대로 셌다. 배차 간격이 비어 있는 노선은 대수에서 빼고 노선 수에만 넣었다.',
@@ -88,10 +97,10 @@ def build():
                     '서울 시내버스는 이 API 에 없다(경기·인천 버스가 서울 안에서 서는 정류장만 나온다) — 서울 안 값은 실제보다 훨씬 작다. 화면에서 서울은 「자료 없음」으로',
                     '같은 자리라도 방향이 다르면 정류장이 따로다 · 한 노선이 한 정류장에 두 번 서면(순환) 두 번 세었다',
                     '받은 도시만 들어 있다(cities) — 하루 호출 한도 때문에 여러 날에 걸쳐 받는다. 없는 도시는 「아직 안 받음」'],
-           'fields': 'files{정류장 ID 앞 세 글자(운영 쪽 · GGB 경기 · ICB 인천 …): [정류장 수, 바이트]} → data/bus-freq/<앞 세 글자>.json 의 stops[[경도×1e5, 위도×1e5, 정류장 이름, 서는 노선 수, 한 시간에 몇 대(평일 · -1 = 모름), 가장 잦은 노선의 배차 간격 분(-1 = 모름), 간격을 아는 노선 수]]',
-           'cities': {k: C.get(k, '') for k in sorted(done)}, 'routes': nr, 'routes_no_interval': noiv, 'files': files}
+           'fields': 'tiles{「a_b」(0.5° 조각 · a = floor(경도×2) · b = floor(위도×2) — data/base/rn 과 같은 열쇠): [정류장 수, 바이트] 또는 [정류장 수, 0, [0.25° 조각 이름 「q_c_d」(c = floor(경도×4) · d = floor(위도×4))…]](600KB 를 넘어 넷으로 쪼갠 조각) · 「q_c_d」: [정류장 수, 바이트]} → data/bus-freq/<이름>.json 의 stops[[경도×1e5, 위도×1e5, 정류장 이름, 서는 노선 수, 한 시간에 몇 대(평일 · -1 = 모름), 가장 잦은 노선의 배차 간격 분(-1 = 모름), 간격을 아는 노선 수]]',
+           'cities': {k: C.get(k, '') for k in sorted(done)}, 'routes': nr, 'routes_no_interval': noiv, 'tiles': files}
     json.dump(doc, open(os.path.join(ROOT, 'data', 'bus-freq.json'), 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
-    print('도시', len(done), '· 노선', nr, '· 간격 없는 노선', noiv, '· 정류장', len(stop), '· 파일', {k: v for k, v in files.items()})
+    print('도시', len(done), '· 노선', nr, '· 간격 없는 노선', noiv, '· 정류장', len(stop), '· 조각', len(files), '· 가장 큰', max(v[1] for v in files.values()), '· 합', sum(v[1] for v in files.values()))
 if __name__ == '__main__':
     a = sys.argv[1] if len(sys.argv) > 1 else 'build'
     if a == 'fetch': fetch(sys.argv[2:])

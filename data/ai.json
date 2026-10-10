@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 103개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 104개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1477,6 +1477,11 @@
    "biz-templates.json",
    "",
    "업종 템플릿 — 숫자 기본값은 지도가 biz-krei.json(KREI 2025 외식업체 경영실태조사)의 krei 줄에서 꺼낸다. nts = 국세청 고시 제2025-6호(2024년 귀속 경비율) [ …(전문은 파일에)"
+  ],
+  [
+   "bus-freq.json",
+   "2026-10-10",
+   "국토교통부 TAGO 버스노선정보(공공데이터포털 1613000/BusRouteInfoInqireService) — 노선의 배차 간격(평일)·서는 정류장"
   ],
   [
    "bus-incheon.json",

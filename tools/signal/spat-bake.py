@@ -97,7 +97,7 @@ def sweep(prefer=None):
     pref = [x for x in (prefer or []) if x in pos]
     tried_f = os.path.join(RAW, 'tried.json')
     tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
-    dens, miss = DENS0, 0
+    dens, miss, last, stuck = DENS0, 0, None, {}
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
     while True:
         done = set(os.path.basename(x).split('_')[0] for x in glob.glob(os.path.join(RAW, 'red', '*.json'))) | tried
@@ -109,7 +109,13 @@ def sweep(prefer=None):
             time.sleep((11 - now.minute) * 60 - now.second + 1); continue
         t = now.minute * 60 + now.second
         K = min(pos[i] for i in todo)
-        page = int(max(0, K - 2) * dens * t // 30000) + 1
+        off = None
+        if last and last['t'] < t and last['a'] <= K <= last['b'] + 1:
+            off = last['base'] + sum(n for q, n in last['rows'] if q < K)   # 지난 쪽에서 센 K 앞의 줄 수(정확) — 지금 시각으로 늘린다
+            off = off * t / float(last['t'])
+        if off is None:
+            off = K * dens * t
+        page = int((off + dens * t / 2) // 30000) + 1   # K 의 줄 가운데가 드는 쪽 — K 가 쪽 끝에 걸려 되풀이되던 것을 막는다
         u = BASE + '?apikey=' + key() + '&pageNo=%d&numOfRows=30000' % page
         try:
             r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=400); st = r.status; body = r.read().decode('utf-8', 'ignore')
@@ -146,7 +152,12 @@ def sweep(prefer=None):
             elif not edge:
                 tried.add(i)   # 다 받았는데 주기를 못 읽은 곳(값이 멈춤·점멸) — 다시 받지 않는다
         json.dump(sorted(tried), open(tried_f, 'w'))
+        last = {'t': t, 'a': a, 'b': b, 'base': (page - 1) * 30000, 'rows': [(pos[i], len(by[i])) for i in seq if i in pos]}
         hit = a <= K <= b
+        if hit and not glob.glob(os.path.join(RAW, 'red', order[K] + '_*.json')) and order[K] not in tried:
+            stuck[K] = stuck.get(K, 0) + 1
+            if stuck[K] >= 2:
+                tried.add(order[K]); json.dump(sorted(tried), open(tried_f, 'w'))   # 두 번 받고도 주기를 못 읽은 곳은 건너뛴다
         miss = 0 if hit else miss + 1
         print(stamp, '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '남은 우선', len([i for i in pref if i not in done]) , flush=True)
         if miss >= 4:

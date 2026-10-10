@@ -227,6 +227,8 @@ def sweep(prefer=None, api='t', cap=None):
             ncall += 1
             if ncall % 3 == 0:
                 publish()
+            if ncall % 12 == 0:
+                prune()
         time.sleep(GAP)
 
 
@@ -432,6 +434,33 @@ def mvrow(x, cyc):
     return [x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n']]
 
 
+def cls_of(dow):
+    """요일 갈래 — 0 월~목 · 1 금 · 2 토 · 3 일(교통과 계획의 TOD 갈래와 같게)"""
+    return 2 if dow == 6 else 3 if dow == 0 else 1 if dow == 5 else 0
+
+
+def prune():
+    """red 폴더 정리 — (교차로, 요일 갈래, 시, 받은 길)마다 최신 둘만 남기고 이틀 지난 것은 지운다(하루 1만 개씩 쌓인다)."""
+    G = {}
+    now = time.time()
+    for f in glob.glob(os.path.join(RAW, 'red', '*.json')):
+        b = os.path.basename(f)[:-5]
+        try:
+            i, d, hm = b.split('_')[:3]
+            dt = datetime.datetime.strptime(d + hm[:6], '%Y%m%d%H%M%S')
+        except Exception:
+            continue
+        G.setdefault((i, cls_of(dt.isoweekday() % 7), dt.hour, b.endswith('p')), []).append((dt, f))
+    n = 0
+    for L in G.values():
+        L.sort()
+        for dt, f in L[:-2]:
+            if now - dt.timestamp() > 2 * 86400:
+                try: os.remove(f); _AC.pop(f, None); n += 1
+                except Exception: pass
+    return n
+
+
 def build():
     out = {}
     for f in sorted(glob.glob(os.path.join(RAW, 'red', '*.json'))):
@@ -439,16 +468,27 @@ def build():
         if not r.get('cyc'):
             continue
         out.setdefault(r['id'], []).append(r)
-    its, nver, nbad, tod = {}, 0, 0, {}
+    its, nver, nbad, tod, pl = {}, 0, 0, {}, {}
     for k, v in out.items():
         v.sort(key=lambda r: (r['day'], r['to']))
-        keep = {}
+        keep, plan = {}, {}
         for r in v:
-            keep[(r['dow'] in (0, 6), r['from'][:2])] = r          # 같은 요일 갈래·같은 시의 것은 나중 것으로
-        vv = sorted(keep.values(), key=lambda r: (r['day'], r['to']))[-6:]
+            ci0 = r.get('ci') or int(round(r['cyc']))
+            kk = (cls_of(r['dow']), int(round(ci0)))
+            if r.get('pd') or not (keep.get(kk) and keep[kk].get('pd')) or r.get('a'):
+                if keep.get(kk) and keep[kk].get('pd') and not r.get('pd'):
+                    r = dict(r, pd=keep[kk]['pd'], src=keep[kk].get('src'))   # 보행 신호 색은 신호 상태 API 로 읽은 것을 이어 쓴다(같은 요일 갈래·같은 주기)
+                keep[kk] = r                                    # (요일 갈래, 주기)마다 나중 것 한 장
+            if r.get('a'):
+                hh = datetime.datetime.fromtimestamp(r['a']).hour
+                sod = (r['a'] + 9 * 3600) % 86400               # 한국 시각 하루 초
+                plan[(cls_of(r['dow']), hh)] = [cls_of(r['dow']), hh, ci0, int(round(sod % ci0)) % int(round(ci0)) if ci0 == int(ci0) else round(sod % ci0, 1), r['day'][5:]]
+        vv = sorted(keep.values(), key=lambda r: (r['day'], r['to']))[-12:]
+        if plan:
+            pl[k] = [plan[q] for q in sorted(plan)]
         L = []
         for r in vv:
-            o = {'day': r['day'], 'dow': r['dow'], 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
+            o = {'day': r['day'], 'dow': r['dow'], 'cl': cls_of(r['dow']), 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
                  'mv': [mvrow(x, r['cyc']) for x in r['mv']],
                  'ped': [[p['d'], p['seg'][:8]] for p in r['ped']]}
             if r.get('src') == 'p':
@@ -491,9 +531,9 @@ def build():
            'source': '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간',
            'how': '잔여시간이 새 값으로 뛰는 자리 사이를 한 구간으로 보고, 차량 신호는 3~6초 구간을 황색으로 보아 그 앞을 녹색·뒤를 적색으로 읽었다(추정). 받은 시간대의 실제 운영값이며 다른 시간대·요일은 다르다. 보행 신호는 색을 가릴 수 없어 구간 길이만 싣는다.',
            'mvcols': ['방위(nt 북 · et 동 · st 남 · wt 서 · ne·se·sw·nw)', '이동류(St 직진 · Lt 좌회전 · Ut 유턴 · Bs 버스 · Bc 자전거)', '녹색 초', '황색 초', '적색 초', '녹색 시작(주기 안 · 가장 긴 녹색 = 0)', '본 주기 수'],
-           'fields': 'pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]}',
+           'fields': 'pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]} · pl{교차로 번호: [[요일 갈래(0 월~목 · 1 금 · 2 토 · 3 일), 시, 주기, 자정 기준 옵셋(기준 이동류 녹색이 켜지는 하루 초 mod 주기), 받은 달-날]]}(시계로 이어 세는 표 — 기록의 cl·ci 가 같은 것이 그 계획의 방향별 초)',
            'note': '받은 시간대에 실제로 돈 값이다(하루 계획표가 아니다) · 방위 = 그 신호를 받는 차가 들어오는 쪽 · 잔여시간 API 로 읽은 기록의 색은 황색 3~6초 앞뒤로 읽은 추정이고 src p 기록은 상태 값 그대로 · 이어 센 「지금 몇 초」는 a·ci 로 지도가 계산한 추정',
-           'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its, 'tod': tod}
+           'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its, 'tod': tod, 'pl': pl}
     p = os.path.join(ROOT, 'data', 'sigdir-seoul.json')
     json.dump(doc, open(p, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print('교차로', len(its), '· 닻', sum(1 for L in its.values() if L[-1].get('a')), '· 검증됨', nver, '· 안 맞음', nbad, '->', p, os.path.getsize(p), 'B')

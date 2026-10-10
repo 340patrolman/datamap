@@ -4518,7 +4518,8 @@
   // v2.102.0 🚇 서울 지하철 실시간 도착 — 중계 /swsub/<역이름>(서울 열린데이터광장 실시간 지하철 · 역 이름으로 부른다 · 「서울역」만 「서울」)
   var SWL = { 1001: '1호선', 1002: '2호선', 1003: '3호선', 1004: '4호선', 1005: '5호선', 1006: '6호선', 1007: '7호선', 1008: '8호선', 1009: '9호선', 1032: 'GTX-A', 1063: '경의중앙', 1065: '공항철도', 1067: '경춘', 1075: '수인분당', 1077: '신분당', 1081: '경강', 1092: '우이신설', 1093: '서해', 1094: '신림' },
     SWC = { 1001: '#0052A4', 1002: '#00A84D', 1003: '#EF7C1C', 1004: '#00A5DE', 1005: '#996CAC', 1006: '#CD7C2F', 1007: '#747F00', 1008: '#E6186C', 1009: '#BDB092', 1077: '#D4003B', 1075: '#F5A200', 1063: '#77C4A3', 1065: '#0090D2' };
-  function trSubRt(T, q, alt) { if (!swOn() || !tryOn() || !T.sub) return; var nm = alt || (q.nm === '서울역' ? '서울' : q.nm), R = T.sub.rt[q.nm] = T.sub.rt[q.nm] || {}; R.busy = 1; trPaint();
+  var SWA = { '서울역': '서울', '이수': '총신대입구(이수)', '이수역': '총신대입구(이수)' };
+  function trSubRt(T, q, alt) { if (!swOn() || !tryOn() || !T.sub) return; var nm = alt || SWA[q.nm] || q.nm, R = T.sub.rt[q.nm] = T.sub.rt[q.nm] || {}; R.busy = 1; trPaint();
     tryGet('swsub', encodeURIComponent(nm), '').then(function (t) { if (TR !== T) return; var j = JSON.parse(t), L = j.realtimeArrivalList;
       if (!L) { var em = j.errorMessage || j, cd = String(em.code || ''); if (!alt && /\(/.test(nm)) return trSubRt(T, q, nm.replace(/\(.*\)$/, '')); if (!alt && /역$/.test(nm) && nm.length > 2) return trSubRt(T, q, nm.replace(/역$/, ''));
         R.busy = 0; R.rows = []; R.err = cd === 'INFO-200' ? '' : (em.message || '받지 못함'); R.at = Date.now(); trPaint(); return; }

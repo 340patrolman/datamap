@@ -181,6 +181,8 @@ def sweep(prefer=None, api='t', cap=None):
                     pcap, pcat = c0['pos'], min(c0['at'], time.time())
             except Exception:
                 pass
+    if pcap:
+        pok_hr = datetime.datetime.now().hour                 # 끝자리를 이어받았으면 띄우자마자 끝자리 너머를 찔러 보지 않는다(다음 정각에 찌른다)
     # 두 훑기가 같이 쓰는 끝자리 장부(pend.json) — 이 시각대에 받아진 맨 뒤 자리(ok)와 500 이 난 자리들(fails [자리, 때]). 한쪽이 찔러 본 것을 다른 쪽이 또 찌르지 않는다
     end_f, hist_f = os.path.join(RAW, 'pend.json'), os.path.join(RAW, 'sweep_hist.jsonl')
     def end_load():

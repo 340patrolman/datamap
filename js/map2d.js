@@ -561,10 +561,11 @@
   //   한 번 누르면 TRY.min 분(기본 30) · 하루 횟수는 중계가 접속 주소마다 센다(기본 300) · 내 키가 있으면 내 키가 먼저 · 맛보기 상태는 tg_map2d_try 에(키는 저장 안 함)
   var TRY = { url: '', min: 30, until: 0, left: null, max: null, err: '', off: {}, v: 1 }, VWTRY = 0;
   try { var t0 = JSON.parse(localStorage.getItem('tg_map2d_try') || '{}'); if (t0 && t0.until > Date.now()) TRY.until = t0.until; } catch (e) {}
-  fetch('data/relay.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && /^https:\/\//.test(j.url || '')) { TRY.url = j.url.replace(/\/+$/, ''); TRY.min = +j.min || 30; TRY.v = +j.v || 1; (j.off || []).forEach(function (k) { TRY.off[k] = 1; }); if (tryOn()) tryVw(); try { legend(); } catch (e) {} } }).catch(function () {});
+  fetch('data/relay.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && /^https:\/\//.test(j.url || '')) { TRY.url = j.url.replace(/\/+$/, ''); TRY.min = +j.min || 30; TRY.v = +j.v || 1; TRY.sw = !!j.sw; (j.off || []).forEach(function (k) { TRY.off[k] = 1; }); if (tryOn()) tryVw(); try { legend(); } catch (e) {} } }).catch(function () {});
   function tryOn() { var o = !!TRY.url && TRY.until > Date.now(); if (!o && VWTRY) { VWTRY = 0; VWKEY = ''; VWT = {}; } return o; }
   function tryMin() { return Math.max(0, Math.ceil((TRY.until - Date.now()) / 60000)); }
   function sbOn() { return !!TRY.url && TRY.v >= 2 && !TRY.off.wsbus; }   // v2.101.0 서울 시내버스(ws.bus.go.kr 는 http 만 열어 중계로만 닿는다)
+  function swOn() { return !!TRY.url && TRY.v >= 2 && TRY.sw && !TRY.off.swsub; }   // v2.102.0 서울 지하철 실시간 도착(swopenapi.seoul.go.kr 는 http 만 · 전용 키는 중계 비밀값)
   function itsK() { return LK.its || (tryOn() && !TRY.off.its ? '@try' : ''); }
   function dgK() { return LK.dgk || (tryOn() ? '@try' : ''); }
   function tryGet(kind, path, q) { return fetch(TRY.url + '/' + kind + '/' + path + '?' + String(q || '').replace(/^&/, '')).then(function (r) {
@@ -4507,13 +4508,33 @@
   function trSub() { var T = TR; if (!dgK()) return;
     if (!TRSTP) TRSTP = stnAll().then(function (L) { TRST = L.map(function (x) { return { nm: x[0], ln: x[1], p: P(x[2], x[3]) }; }); });
     TRSTP.then(function () { if (TR !== T) return; var near = {}; (TRST || []).forEach(function (q) { var d = dTrue(q.p, T.c); if (d < 1500 && (!near[q.nm] || near[q.nm].d > d)) near[q.nm] = { nm: q.nm, d: d, p: q.p }; });
-      var L = Object.keys(near).map(function (k) { return near[k]; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 2); T.sub = { st: L, lines: [], pend: L.length }; trPaint(); if (!L.length) return;
+      var L = Object.keys(near).map(function (k) { return near[k]; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 2); T.sub = { st: L, lines: [], pend: L.length, rt: {} }; trPaint(); if (!L.length) return; L.forEach(function (q) { trSubRt(T, q); });
       L.forEach(function (q) { var kw = q.nm.replace(/역$/, '').replace(/\(.*\)$/, '');
         dgGet('1613000/SubwayInfo/GetKwrdFndSubwaySttnList', '&_type=json&numOfRows=30&pageNo=1&subwayStationName=' + encodeURIComponent(kw)).then(function (j) { if (TR !== T) return;
           trItems(j).filter(function (x) { return String(x.subwayStationName).replace(/\(.*\)$/, '') === kw; }).forEach(function (x) { var Ln = { st: q.nm, d: q.d, id: x.subwayStationId, route: x.subwayRouteName, u: null, dn: null }; T.sub.lines.push(Ln); trPaint();
             ['U', 'D'].forEach(function (ud) { dgGet('1613000/SubwayInfo/GetSubwaySttnAcctoSchdulList', '&_type=json&numOfRows=500&pageNo=1&subwayStationId=' + x.subwayStationId + '&dailyTypeCode=' + trDay() + '&upDownTypeCode=' + ud).then(function (j2) { if (TR !== T) return;
               Ln[ud === 'U' ? 'u' : 'dn'] = trItems(j2).map(function (y) { var t = String(y.depTime || y.arrTime || ''); return { t: t, end: y.endSubwayStationNm || '' }; }).filter(function (y) { return /^\d{6}$/.test(y.t); }).sort(function (a, b) { return a.t < b.t ? -1 : 1; }); trPaint(); }).catch(function () {}); }); });
         }).catch(function (e) { if (TR === T) T.sub.err = trErr(e); }).then(function () { if (TR === T) { T.sub.pend--; trPaint(); } }); }); }); }
+  // v2.102.0 🚇 서울 지하철 실시간 도착 — 중계 /swsub/<역이름>(서울 열린데이터광장 실시간 지하철 · 역 이름으로 부른다 · 「서울역」만 「서울」)
+  var SWL = { 1001: '1호선', 1002: '2호선', 1003: '3호선', 1004: '4호선', 1005: '5호선', 1006: '6호선', 1007: '7호선', 1008: '8호선', 1009: '9호선', 1032: 'GTX-A', 1063: '경의중앙', 1065: '공항철도', 1067: '경춘', 1075: '수인분당', 1077: '신분당', 1081: '경강', 1092: '우이신설', 1093: '서해', 1094: '신림' },
+    SWC = { 1001: '#0052A4', 1002: '#00A84D', 1003: '#EF7C1C', 1004: '#00A5DE', 1005: '#996CAC', 1006: '#CD7C2F', 1007: '#747F00', 1008: '#E6186C', 1009: '#BDB092', 1077: '#D4003B', 1075: '#F5A200', 1063: '#77C4A3', 1065: '#0090D2' };
+  function trSubRt(T, q, alt) { if (!swOn() || !tryOn() || !T.sub) return; var nm = alt || (q.nm === '서울역' ? '서울' : q.nm), R = T.sub.rt[q.nm] = T.sub.rt[q.nm] || {}; R.busy = 1; trPaint();
+    tryGet('swsub', encodeURIComponent(nm), '').then(function (t) { if (TR !== T) return; var j = JSON.parse(t), L = j.realtimeArrivalList;
+      if (!L) { var em = j.errorMessage || j, cd = String(em.code || ''); if (!alt && /\(/.test(nm)) return trSubRt(T, q, nm.replace(/\(.*\)$/, '')); if (!alt && /역$/.test(nm) && nm.length > 2) return trSubRt(T, q, nm.replace(/역$/, ''));
+        R.busy = 0; R.rows = []; R.err = cd === 'INFO-200' ? '' : (em.message || '받지 못함'); R.at = Date.now(); trPaint(); return; }
+      R.rows = L.map(function (x) { return { id: +x.subwayId, ud: String(x.updnLine || ''), to: String(x.trainLineNm || ''), sec: +x.barvlDt || 0, msg: String(x.arvlMsg2 || ''), at: String(x.arvlMsg3 || ''), last: x.lstcarAt === '1', exp: /급행|특급|ITX/.test(String(x.btrainSttus || '')) ? String(x.btrainSttus) : '' }; });
+      R.busy = 0; R.err = ''; R.at = Date.now(); trPaint();
+    }).catch(function (e) { if (TR === T) { R.busy = 0; R.err = trErr(e); trPaint(); } }); }
+  function trSubRtHtml(T) { var S0 = T.sub, h = ''; if (!S0 || !S0.st.length) return ''; var inS = T.ll[1] > 37.2 && T.ll[1] < 37.95 && T.ll[0] > 126.6 && T.ll[0] < 127.4; if (!inS) return '';
+    if (!swOn()) return '';
+    if (!tryOn()) return '<p class="lg-n">🚇 <b>서울 지하철 실시간 도착</b>은 「🎟 맛보기」를 켜면 나온다(중계를 거친다).</p>';
+    S0.st.forEach(function (q) { var R = (S0.rt || {})[q.nm]; if (!R) return;
+      h += '<div class="trs"><div class="trh"><b>' + esc(q.nm) + '</b> <small>' + Math.round(q.d) + 'm · 실시간 도착</small></div>';
+      if (R.busy && !R.rows) h += '<p class="lg-n">받는 중…</p>'; else if (R.err) h += '<p class="lg-n">' + esc(R.err) + '</p>'; else if (!R.rows || !R.rows.length) h += '<p class="lg-n">지금 들어오는 열차 정보가 없다(서울시 실시간 자료에 없는 역이거나 운행 시간 밖).</p>';
+      else { var g = {}, ks = []; R.rows.forEach(function (x) { var k = x.id + '|' + x.ud; if (!g[k]) { g[k] = []; ks.push(k); } g[k].push(x); });
+        ks.forEach(function (k) { var a = g[k], id = +k.split('|')[0]; h += '<div class="trrow"><em style="color:' + (SWC[id] || 'inherit') + '">' + esc(SWL[id] || '') + ' ' + esc(a[0].ud) + '</em>' + a.slice(0, 3).map(function (x) { return '<span class="trc' + (x.sec && x.sec <= 180 || /도착|진입|출발/.test(x.msg) ? ' soon' : '') + '"><b>' + esc(x.msg.replace(/\[(\d+)\]번째 전역/, '$1번째 전역')) + '</b><i>' + esc(x.to.replace(/ - .*$/, '')) + (x.exp ? ' · ' + esc(x.exp) : '') + (x.last ? ' · 막차' : '') + '</i><small>지금 ' + esc(x.at) + '</small></span>'; }).join('') + '</div>'; }); }
+      h += '</div>'; });
+    return h ? h + '<p class="lg-n">서울특별시 실시간 지하철 도착정보(서울 열린데이터광장) · 중계 맛보기 · 60초마다 새로 · 아래 시간표와 다르면 이쪽이 실제 운행</p>' : ''; }
   function trNext(L, n) { var d = new Date(), now = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds(), o = []; (L || []).forEach(function (y) { var s2 = +y.t.slice(0, 2) * 3600 + +y.t.slice(2, 4) * 60 + +y.t.slice(4, 6); if (s2 >= now && o.length < n) o.push({ t: y.t.slice(0, 2) + ':' + y.t.slice(2, 4), m: Math.round((s2 - now) / 60), end: y.end }); }); return o; }
   var TRRD = null;
   function trRail(nm) { var T = TR; T.rail = { nm: nm, busy: 1, rows: null }; trPaint(); var c = function (k, v) { return '&' + encodeURIComponent('cond[' + k + ']') + '=' + encodeURIComponent(v); };
@@ -4542,6 +4563,8 @@
     var el = $('m2dTr'); if (!el || !TR || !el.classList.contains('on')) return; var T = TR, h = '<div class="lg-h"><b>🚏 여기 대중교통</b><span><button data-tx="min">▾ 접기</button> <button data-tx="x">닫기</button></span></div>';
     h += '<p class="lg-n">지점 ' + T.ll[1].toFixed(5) + ', ' + T.ll[0].toFixed(5) + ' · 실시간 값은 누를 때마다 새로 받는다(도착은 ' + (tryOn() ? '60' : '30') + '초마다 저절로)</p>';
     if (!dgK()) { el.innerHTML = h + '<div class="nil">공공데이터포털 인증키가 이 기기에 없다 — 키를 넣거나 맛보기를 켜면 버스 도착·위치, 지하철 시간표, 열차·항공편이 나온다(키는 이 기기에만 저장).</div><div class="lg-btns"><button data-tx="key">🔑 공공데이터포털 키 넣기</button></div>' + tryBtn(false); return; }
+    var X0 = T.sub && T.sub.st && T.sub.st[0], XB = T.bus && T.bus.stops ? T.bus.stops.length : 0;
+    if (X0 || XB) h += '<p class="trx">🔁 <b>갈아타기</b> — ' + (X0 ? '가까운 역 <b>' + esc(X0.nm.replace(/역$/, '')) + '역</b> ' + Math.round(X0.d) + 'm' + (T.sub.st[1] ? ' · ' + esc(T.sub.st[1].nm.replace(/역$/, '')) + '역 ' + Math.round(T.sub.st[1].d) + 'm' : '') : '1.5km 안에 역 없음') + ' · 정류장 ' + XB + '곳' + (XB ? '(가장 가까운 곳 ' + Math.round(T.bus.stops[0].d) + 'm)' : '') + ' — 아래에 버스 도착과 열차 도착을 함께 본다</p>';
     // 🚌
     h += '<h4>🚌 가까운 정류장 · 버스 도착</h4>'; var B0 = T.bus;
     if (!B0 || B0.busy) h += '<p class="lg-n">정류장을 찾는 중…</p>'; else if (B0.err) h += '<p class="lg-n">' + esc(B0.err) + '</p>';
@@ -4558,7 +4581,7 @@
     // 🚇
     h += '<h4>🚇 가까운 지하철역 · 다음 열차</h4>'; var S0 = T.sub;
     if (!S0) h += '<p class="lg-n">역을 찾는 중…</p>'; else if (S0.err) h += '<p class="lg-n">' + esc(S0.err) + '</p>'; else if (!S0.st.length) h += '<div class="nil">1.5km 안에 이 지도가 아는 지하철·도시철도역이 없다(역 자리 = 서울시 역사마스터 + 전국도시철도역사정보 표준데이터).</div>';
-    else { if (!S0.lines.length) h += S0.pend > 0 ? '<p class="lg-n">시간표를 찾는 중…</p>' : '<div class="nil">TAGO 지하철 시간표에서 ' + esc(S0.st.map(function (q) { return q.nm; }).join(' · ')) + ' 역을 찾지 못했다(이름이 달라 못 이은 것일 수 있다 — 준비 중).</div>';
+    else { h += trSubRtHtml(T); if (!S0.lines.length) h += S0.pend > 0 ? '<p class="lg-n">시간표를 찾는 중…</p>' : '<div class="nil">TAGO 지하철 시간표에서 ' + esc(S0.st.map(function (q) { return q.nm; }).join(' · ')) + ' 역을 찾지 못했다(이름이 달라 못 이은 것일 수 있다 — 준비 중).</div>';
       S0.lines.forEach(function (Ln) { var U = trNext(Ln.u, 3), Dn = trNext(Ln.dn, 3), ch = function (a) { return a.length ? a.map(function (x) { return '<span class="trc' + (x.m <= 5 ? ' soon' : '') + '"><b>' + x.t + '</b><i>' + x.m + '분 뒤</i><small>' + esc(x.end) + '행</small></span>'; }).join('') : '<small class="lg-n">' + (Ln.u === null ? '받는 중…' : '오늘 남은 열차 없음') + '</small>'; };
         h += '<div class="trs"><div class="trh"><b>' + esc(Ln.st) + '</b> <small>' + esc(Ln.route) + ' · ' + Math.round(Ln.d) + 'm</small></div><div class="trrow"><em>상행</em>' + ch(U) + '</div><div class="trrow"><em>하행</em>' + ch(Dn) + '</div></div>'; });
       h += '<p class="lg-n">TAGO 지하철 시간표(' + ({ '01': '평일', '02': '토요일', '03': '일요일·공휴일' })[trDay()] + ' — 공휴일은 따로 가리지 않는다) · 실제 운행과 몇 분 다를 수 있다</p>'; }
@@ -4600,7 +4623,7 @@
       ctx.fillStyle = '#ea580c'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - 12, s0[1] - 9, 24, 18, 5); else ctx.rect(s0[0] - 12, s0[1] - 9, 24, 18); ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
       ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🚌', s0[0], s0[1] + 0.5); }); }
   var TRTK = 0;   /* 맛보기(중계)로 볼 때는 60초마다 — 중계가 접속 주소마다 하루 300번을 세므로 아껴 쓴다 */
-  setInterval(function () { if (!TR || document.hidden || !$('m2dTr') || !$('m2dTr').classList.contains('on')) return; TRTK++; if (tryOn() && TRTK % 2) return; if (TR.bus && TR.bus.stops) TR.bus.stops.forEach(function (st) { if (st.arr && !st.busy) trArr(st); }); if (TR.loc && !TR.loc.busy) trLoc(TR.loc.city, TR.loc.rid, TR.loc.no); }, 30000);
+  setInterval(function () { if (!TR || document.hidden || !$('m2dTr') || !$('m2dTr').classList.contains('on')) return; TRTK++; if (tryOn() && TRTK % 2) return; if (TR.bus && TR.bus.stops) TR.bus.stops.forEach(function (st) { if (st.arr && !st.busy) trArr(st); }); if (TR.loc && !TR.loc.busy) trLoc(TR.loc.city, TR.loc.rid, TR.loc.no); if (TR.sub && TR.sub.rt) TR.sub.st.forEach(function (q) { var R = TR.sub.rt[q.nm]; if (R && !R.busy) trSubRt(TR, q); }); }, 30000);
   setInterval(function () { if (TR && $('m2dTr') && $('m2dTr').classList.contains('on') && !document.hidden) trPaint(); }, 20000);
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-trhere]'); if (!b) return; var a = b.getAttribute('data-trhere').split(','); trOpen(P(+a[0], +a[1])); });
   if ($('m2dTr')) $('m2dTr').addEventListener('click', function (e) { var el = $('m2dTr'), b = e.target.closest('[data-tx],[data-tsa],[data-tsl],[data-trl],[data-tra],[data-trx]'); if (!b) { if (el.classList.contains('min')) el.classList.remove('min'); return; }

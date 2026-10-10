@@ -966,6 +966,7 @@
     if (on.lwx) { var w = LIVE.wx; b.push('<small class="lg-n">🌦 지금 날씨 — ' + (w && w.err ? '<b style="color:#b91c1c">' + esc(w.err) + '</b>' : w && !w.busy ? w.pts.length + '칸 · ' + hhmm(w.at) + ' 받음' : '받는 중') + ' · 파란 테 = 비·눈이 오는 칸 · Open-Meteo 모형값</small>'); }
     return b.length ? ['📡 실시간(켠 동안만 받음 · 저장 안 함)', b.join('')] : null; }
   function draw() {
+    try { wideBar(); } catch (eW) {}
     var needW = Math.round(cv.clientWidth * DPR), needH = Math.round(cv.clientHeight * DPR);
     if (cv.width !== needW || cv.height !== needH) { cv.width = needW; cv.height = needH; }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0); hit = []; viewWatch();
@@ -2930,6 +2931,21 @@
     return h + '<p class="sdnt"><b>100% = 정원</b>(앉고 선 사람이 다 찬 상태) — 넘으면 정원 초과 · 평일 값 · 제공기관 값 그대로(서울교통공사 지하철혼잡도 2026-06-30판 · 서울시 9호선 혼잡도 2026 종합) · 방향 이름 = 원자료(상선·하선 · 2호선 내선·외선).</p>'; }
   function sbcLeg() { var L = SBC && SBC.line ? Object.keys(SBC.line).map(function (k) { var v = SBC.line[k]; return [k, v]; }).sort(function (a, b) { return b[1][0] - a[1][0]; }) : [];
     return '<b>🚇 지하철 혼잡도</b> ' + li('#16a34a', '80% 미만') + li('#eab308', '80~') + li('#f97316', '100~(정원 초과)') + li('#dc2626', '130~') + li('#7c3aed', '150~') + '<small class="lg-n">' + (SBC ? SBC.L.length + '역 · 색·크기 = 평일 하루 가장 높은 값 · 역을 누르면 방향별 시간대 그래프' + (L.length ? ' · 노선 최고: ' + L.slice(0, 4).map(function (q) { return esc(q[0]) + ' ' + q[1][0] + '%(' + esc(q[1][1]) + ' ' + esc(q[1][3]) + ')'; }).join(' · ') : '') : '읽는 중…') + ' · ⚠ <b>1~9호선만</b> — 경의중앙·수인분당·신분당·공항철도 등은 <b>자료 없음</b>(안 붐빈다는 뜻이 아니다)</small>'; }
+  /* ---------- v2.124.0 넓게 볼 때 쓰는 층 띠 — 소유자 「지도를 축소하면 거기에 필요한 레이어가 떠야 하는데 · 그 레이어가 어디 있는지 모르겠어」 ----------
+     0.012 px/m 보다 넓으면 지도 위에 단추 줄(#m2dWide) · 0.006 보다 넓은데 넓게 보는 층이 하나도 안 켜져 있으면 「서울까지 승용차」를 저절로 켠다(가까이 0.02 로 돌아오면 저절로 켠 것은 끈다 · 사용자가 끄면 다시 안 켠다 tg_map2d_wideoff) */
+  var WIDEK = [['reach', '🛣 서울까지 승용차'], ['trn', '🚆 기차로 서울까지'], ['sbc', '🚇 지하철 혼잡'], ['rnet', '🛣 도로망 등급']], WIDEAUTO = false, WIDEST = '';
+  function wideOff() { try { return localStorage.getItem('tg_map2d_wideoff') === '1'; } catch (e) { return false; } }
+  function wideBar() { var el = $('m2dWide'); if (!el) return; var z = view.s, show = z < 0.012;
+    if (z < 0.006 && !WIDEAUTO && !wideOff() && !WIDEK.some(function (k) { return on[k[0]]; })) { on.reach = true; WIDEAUTO = true; try { paintLayers(); legend(); } catch (e) {} }
+    else if (z >= 0.02 && WIDEAUTO) { WIDEAUTO = false; if (on.reach) { on.reach = false; try { paintLayers(); legend(); } catch (e2) {} } }
+    var st = (show ? 1 : 0) + '|' + WIDEK.map(function (k) { return on[k[0]] ? 1 : 0; }).join('') + '|' + Math.round(cv.getBoundingClientRect().top);
+    if (st === WIDEST) return; WIDEST = st; if (!show) { el.hidden = true; return; }
+    el.hidden = false; el.style.top = (cv.getBoundingClientRect().top + 8) + 'px';
+    el.innerHTML = '<span>넓게 볼 때</span>' + WIDEK.map(function (k) { return '<button data-wide="' + k[0] + '"' + (on[k[0]] ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + k[1] + '</button>'; }).join('') + '<button data-wide="*">🗂 모든 레이어</button>'; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-wide]'); if (!b) return; e.preventDefault(); var k = b.getAttribute('data-wide');
+    if (k === '*') { var ab = document.querySelector('#m2dLayers [data-all]'); if (ab) ab.click(); return; }
+    on[k] = !on[k]; if (k === 'reach') { WIDEAUTO = false; try { if (on.reach) localStorage.removeItem('tg_map2d_wideoff'); else localStorage.setItem('tg_map2d_wideoff', '1'); } catch (e2) {} }
+    saveOn(); try { paintLayers(); } catch (e3) {} draw(); try { legend(); } catch (e4) {} });
   function drawUtic(dark) { if (!on.lutic) return; uticGet(); if (!UTIC) return; var W0 = cv.clientWidth, H0 = cv.clientHeight, z = view.s;
     (UTIC.items || []).forEach(function (r) { if (!(r[2] > 120 && r[3] > 30)) return; var s0 = S(r.p); if (s0[0] < -20 || s0[1] < -20 || s0[0] > W0 + 20 || s0[1] > H0 + 20) return; var x = s0[0], y = s0[1], q = z >= 0.05 ? 9 : 6, old = uticOld(r);
       ctx.globalAlpha = old ? 0.4 : 1; ctx.beginPath(); ctx.moveTo(x, y - q); ctx.lineTo(x + q, y); ctx.lineTo(x, y + q); ctx.lineTo(x - q, y); ctx.closePath(); ctx.fillStyle = UTC[r[1]] || '#64748b'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.globalAlpha = 1;

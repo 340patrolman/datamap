@@ -79,6 +79,11 @@
   #m2dPanel .pg button { height: 36px; padding: 0 11px; border-radius: 18px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 13px; cursor: pointer; }
   #m2dPanel .pg button.on { background: var(--chipOn); color: var(--chipOnInk); border-color: var(--chipOn); font-weight: 700; }
   #m2d { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; touch-action: none; cursor: grab; display: block; }
+  #m2dWide { position: fixed; left: 8px; max-width: calc(100% - 16px); z-index: 4; display: flex; gap: 6px; align-items: center; overflow-x: auto; padding: 6px 8px; border-radius: 14px; background: var(--panel); box-shadow: var(--sh); border: 1px solid var(--line); scrollbar-width: none; }
+  #m2dWide[hidden] { display: none; } #m2dWide::-webkit-scrollbar { display: none; }
+  #m2dWide span { flex: 0 0 auto; font-size: 12px; font-weight: 800; color: var(--ink2); }
+  #m2dWide button { flex: 0 0 auto; min-height: 36px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
+  #m2dWide button.on { background: var(--chipOn); border-color: var(--chipOn); color: var(--chipOnInk); }
   #m2dZoom { position: fixed; right: 10px; bottom: calc(46px + env(safe-area-inset-bottom)); z-index: 4; display: flex; flex-direction: column; gap: 6px; }
   #m2dZoom button { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 20px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
   #m2dZoom #m2dFit { font-size: 13px; }
@@ -885,6 +890,7 @@
     <button id="m2dFoldX" aria-label="닫고 지도 넓게">▴ 닫고 지도 넓게 보기</button>
   </div>
 </div>
+<div id="m2dWide" role="toolbar" aria-label="넓게 볼 때 쓰는 레이어" hidden></div>
 <canvas id="m2d" aria-label="서초구 지도 — 끌어서 옮기고, 두 손가락이나 휠로 확대, 눌러서 자세히"></canvas>
 <div id="m2dZoom">
   <button id="m2dIn" aria-label="확대">＋</button>
@@ -956,7 +962,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.123.0"></script>
+<script src="js/map2d.js?v=2.124.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

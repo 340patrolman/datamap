@@ -1,0 +1,6 @@
+{
+ "url": "https://datamap-relay.knpthe1cop.workers.dev",
+ "min": 30,
+ "off": ["its"],
+ "note": "2026-10-10 첫 시험 — 공공데이터포털(대기질·기상청·버스·열차·항공)과 브이월드 통과 · ITS(openapi.its.go.kr:9443)는 중계에서 닿지 않음(522)"
+}

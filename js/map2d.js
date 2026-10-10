@@ -558,12 +558,12 @@
   // ---------- v2.94.0 🎟 맛보기(소유자 2026-10-09 「키를 직접 넣는 것은 번거롭다 — 열쇠를 터치하면 맛보기로 · 많이 쓸 사람은 직접 받으라」) ----------
   //   중계 = Cloudflare Workers(tools/relay · 열쇠는 중계의 비밀값에만 · 폰으로 오지 않는다 — 브이월드만 340patrolman.github.io 에 묶인 키라 메모리로 받는다) · 주소는 data/relay.json {url, min}
   //   한 번 누르면 TRY.min 분(기본 30) · 하루 횟수는 중계가 접속 주소마다 센다(기본 300) · 내 키가 있으면 내 키가 먼저 · 맛보기 상태는 tg_map2d_try 에(키는 저장 안 함)
-  var TRY = { url: '', min: 30, until: 0, left: null, max: null, err: '' }, VWTRY = 0;
+  var TRY = { url: '', min: 30, until: 0, left: null, max: null, err: '', off: {} }, VWTRY = 0;
   try { var t0 = JSON.parse(localStorage.getItem('tg_map2d_try') || '{}'); if (t0 && t0.until > Date.now()) TRY.until = t0.until; } catch (e) {}
-  fetch('data/relay.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && /^https:\/\//.test(j.url || '')) { TRY.url = j.url.replace(/\/+$/, ''); TRY.min = +j.min || 30; if (tryOn()) tryVw(); try { legend(); } catch (e) {} } }).catch(function () {});
+  fetch('data/relay.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && /^https:\/\//.test(j.url || '')) { TRY.url = j.url.replace(/\/+$/, ''); TRY.min = +j.min || 30; (j.off || []).forEach(function (k) { TRY.off[k] = 1; }); if (tryOn()) tryVw(); try { legend(); } catch (e) {} } }).catch(function () {});
   function tryOn() { var o = !!TRY.url && TRY.until > Date.now(); if (!o && VWTRY) { VWTRY = 0; VWKEY = ''; VWT = {}; } return o; }
   function tryMin() { return Math.max(0, Math.ceil((TRY.until - Date.now()) / 60000)); }
-  function itsK() { return LK.its || (tryOn() ? '@try' : ''); }
+  function itsK() { return LK.its || (tryOn() && !TRY.off.its ? '@try' : ''); }
   function dgK() { return LK.dgk || (tryOn() ? '@try' : ''); }
   function tryGet(kind, path, q) { return fetch(TRY.url + '/' + kind + '/' + path + '?' + String(q || '').replace(/^&/, '')).then(function (r) {
       var lf = r.headers.get('X-Trial-Left'); if (lf != null) { TRY.left = +lf; TRY.max = +r.headers.get('X-Trial-Max'); }
@@ -577,7 +577,7 @@
       : '<div class="lg-btns"><button data-ltry="go">🎟 맛보기 켜기(' + TRY.min + '분 · 키 없이)</button></div><small class="lg-n">맛보기 = 이 지도 운영자의 키로 잠깐 본다(하루 횟수 제한 · 여러 사람이 나눠 씀) · 자주 쓰면 키를 직접 받아 「🔑」에 넣는다 — 무료(data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청)</small>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-ltry]'); if (!b) return; e.preventDefault(); if (b.getAttribute('data-ltry') === 'stop') tryStop(); else tryStart(); });
   function itsGet(path, q) {
-    if (!LK.its && tryOn()) return tryGet('its', path, q + '&getType=json').then(function (t) { try { return JSON.parse(t); } catch (e) { throw new Error('맛보기 중계: 응답이 JSON 이 아님'); } });
+    if (!LK.its && tryOn() && !TRY.off.its) return tryGet('its', path, q + '&getType=json').then(function (t) { try { return JSON.parse(t); } catch (e) { throw new Error('맛보기 중계: 응답이 JSON 이 아님'); } });
     if (!LK.its) return Promise.reject(new Error('ITS 키 없음'));
     if (itsQuota() >= itsMax()) return Promise.reject(new Error(itsTier() === 'op' ? '이 기기에서 이번 달 ITS 9,500건을 다 썼다' : '이 기기에서 이번 달 ITS ' + itsMax() + '건을 다 썼다(개발키 월 100건) — 운영키(월 10,000건) 승인 뒤 「운영키」를 누른다'));
     itsQuota(1);
@@ -851,7 +851,7 @@
     h += row('받은 시각', hhmm(LIVE.air.at) + ' <em>(10분마다)</em>');
     return h + '<p class="desc">등급은 환경부 기준(PM2.5 15·35·75 · PM10 30·80·150㎍/㎥). 값은 측정소가 잰 것이 아니라 유럽 CAMS 대기 모형이 그 자리에 낸 현재값이라 측정소(에어코리아)와 다를 수 있다.</p>' + src('Open-Meteo 대기질 API(CAMS) — 키 없음 · 이 폰이 직접 받음 · 저장하지 않음'); }
   function liveLegend() { var b = [];
-    if (on.lev || on.lspd || on.lcc) b.push('<div class="lg-btns"><button data-lkey="its">🔑 ITS 키' + (LK.its ? ' 바꾸기' : ' 넣기') + '</button>' + (LK.its || !TRY.url ? '' : '</div>' + tryBtn(false) + '<div class="lg-btns">') + '<button data-itst="dev" class="' + (itsTier() === 'dev' ? 'on' : '') + '">개발키(월 100)</button><button data-itst="op" class="' + (itsTier() === 'op' ? 'on' : '') + '">운영키(월 10,000)</button></div><small class="lg-n">ITS 호출 이번 달 ' + itsQuota() + '/' + itsMax() + '(이 기기) · 개발키는 지도를 열 때 한 번 받고 「🔄」로 다시 · 운영키면 저절로</small>');
+    if (on.lev || on.lspd || on.lcc) b.push('<div class="lg-btns"><button data-lkey="its">🔑 ITS 키' + (LK.its ? ' 바꾸기' : ' 넣기') + '</button>' + (LK.its || !TRY.url || TRY.off.its ? '' : '</div>' + tryBtn(false) + '<div class="lg-btns">') + '<button data-itst="dev" class="' + (itsTier() === 'dev' ? 'on' : '') + '">개발키(월 100)</button><button data-itst="op" class="' + (itsTier() === 'op' ? 'on' : '') + '">운영키(월 10,000)</button></div><small class="lg-n">ITS 호출 이번 달 ' + itsQuota() + '/' + itsMax() + '(이 기기) · 개발키는 지도를 열 때 한 번 받고 「🔄」로 다시 · 운영키면 저절로</small>');
     if (on.lspd) { var sp = LIVE.sp, vv = viewLL(), inb = sp && sp.box && vv[0] >= sp.box[0] && vv[1] >= sp.box[1] && vv[2] <= sp.box[2] && vv[3] <= sp.box[3];
       b.push('<b>🚦 소통</b> ' + li('#16a34a', '원활') + li('#f59e0b', '서행') + li('#dc2626', '정체') + '<small class="lg-n">' + (!spdSpan() ? '<b>더 확대하면(화면 가로 약 14km 안) 받는다</b>' : sp && sp.err ? '<b style="color:#b91c1c">' + esc(sp.err) + '</b>' : sp && !sp.busy ? (sp.n || 0) + '구간 · ' + hhmm(sp.at) + ' 받음' + (inb ? '' : ' · <b>지금 화면은 받은 범위 밖</b>') : LK.its ? '받는 중' : 'ITS 키 필요') + '</small><div class="lg-btns"><button data-lre="sp">🔄 이 화면 소통 받기(ITS 1건)</button></div>'); }
     if (on.lcc) b.push('<b>📹 CCTV</b> ' + li('#1d4ed8', '국도·기타') + li('#0f766e', '고속도로') + '<small class="lg-n">' + ccList().length + '대 · 목록 ' + esc(CCLIVE ? CCLIVE.at : (CCB.at || '…') + ' 구움') + ' · 누르면 영상(ITS 호출 없음)</small>');
@@ -862,7 +862,7 @@
     if (on.lbus) { var bs = LIVE.bs; b.push('<b>🚌 경기 버스</b> ' + li('#0d9488', '정류장', 'box') + li('#ea580c', '고른 노선 버스') + '<small class="lg-n">' + (view.s < 0.04 ? '<b>더 확대하면 화면 가운데 둘레 정류장을 받는다</b>' : bs && bs.err ? '<b style="color:#b91c1c">' + esc(bs.err) + '</b>' : '정류장 ' + Object.keys(BSTOP).length + '곳 받음') + (BUSR ? ' · 노선 ' + esc(BUSR.nm) + ' 버스 ' + BUSR.v.length + '대' + (BUSR.err ? ' <b style="color:#b91c1c">' + esc(BUSR.err) + '</b>' : '') + ' <button data-busx="1">노선 지우기</button>' : '') + ' · 정류장을 누르면 도착 · 「🚌 위치」로 그 노선 버스 · ⚠ 서울 시내버스는 없음</small>'); }
     if (on.lair) { var ar = LIVE.air; b.push('<b>😷 미세먼지</b> ' + PMG.map(function (g) { return li(g[1], g[0]); }).join('') + '<small class="lg-n">' + (ar && ar.err ? '<b style="color:#b91c1c">' + esc(ar.err) + '</b>' : ar && !ar.busy ? ar.pts.length + '칸 · ' + hhmm(ar.at) + ' 받음' : '받는 중') + ' · 숫자 = 초미세먼지(PM2.5 ㎍/㎥) · 색 = PM2.5·PM10 중 나쁜 쪽 환경부 등급 · CAMS 모형값(측정소 아님)</small>'); }
     if (on.lev) { var e = LIVE.ev; b.push('<b>🚧 돌발</b> ' + Object.keys(EVC).slice(0, 3).map(function (k) { return li(EVC[k][0], EVC[k][1] + ' ' + k); }).join(''));
-      b.push(!itsK() ? '<small class="lg-n" style="color:#b91c1c">ITS 키가 아직 없다 — 「🔑 ITS 키」에 국가교통정보센터 인증키를 넣으면 이 기기에서 보인다</small>'
+      b.push(!itsK() ? '<small class="lg-n" style="color:#b91c1c">' + (TRY.url && TRY.off.its ? '🎟 맛보기로는 돌발·소통·CCTV(ITS)를 못 본다 — 중계 서버에서 국가교통정보센터에 닿지 않는다(2026-10-10 시험) · ' : '') + 'ITS 키가 아직 없다 — 「🔑 ITS 키」에 국가교통정보센터 인증키를 넣으면 이 기기에서 보인다</small>'
         : '<small class="lg-n">' + (e && e.err ? '<b style="color:#b91c1c">' + esc(e.err) + '</b> · ' : '') + (e && !e.busy ? '서울·경기 ' + (e.items || []).length + '건 · ' + hhmm(e.at) + ' 받음' : '받는 중') + '</small><div class="lg-btns"><button data-lre="ev">🔄 돌발 다시 받기(ITS 1건)</button></div>'); }
     if (on.lwx) { var w = LIVE.wx; b.push('<small class="lg-n">🌦 지금 날씨 — ' + (w && w.err ? '<b style="color:#b91c1c">' + esc(w.err) + '</b>' : w && !w.busy ? w.pts.length + '칸 · ' + hhmm(w.at) + ' 받음' : '받는 중') + ' · 파란 테 = 비·눈이 오는 칸 · Open-Meteo 모형값</small>'); }
     return b.length ? ['📡 실시간(켠 동안만 받음 · 저장 안 함)', b.join('')] : null; }

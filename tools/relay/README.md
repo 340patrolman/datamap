@@ -62,3 +62,16 @@ irm 'https://datamap-relay.<계정이름>.workers.dev/dg/B552584/ArpltnInforInqi
 ## 6. 지켜볼 것
 - Cloudflare 대시보드 → Workers → datamap-relay → 「Metrics」: 하루 요청 수 · 오류
 - ITS 운영키 월 10,000건 · 공공데이터포털 서비스마다 하루 한도 — 캐시 덕에 사람 수보다 훨씬 적게 쓰지만, 많이 늘면 `DAILY` 를 낮춘다
+
+## 7. 배포 기록 · v2 올리기(2026-10-10)
+- **배포됨**: `https://datamap-relay.knpthe1cop.workers.dev` (대시보드에서 만든 Worker · 비밀값 DG_KEY·ITS_KEY·VW_KEY) → 지도 `data/relay.json` 에 등록(v2.99.0).
+- **첫 시험 결과(2026-10-10)**: 공공데이터포털(에어코리아·TAGO)·브이월드 키 = 통과 · 다른 사이트 Origin = 403 · 목록 밖 = 404 · **ITS = 522(중계에서 닿지 않음)** → `relay.json` 의 `"off": ["its"]` 로 맛보기에서 ITS 갈래만 뺐다.
+  - ITS 는 9443 포트다. Worker 「설정 › 런타임 › 호환성 날짜」가 **2024-09-02 앞**이면 표준이 아닌 포트를 무시하고 443 으로 나가 522 가 된다(이 PC 에서 443 은 응답 없음 · 9443 은 응답) → 날짜를 오늘로 바꾸고 다시 시험. 그래도 522 면 ITS 쪽이 Cloudflare 주소를 받지 않는 것.
+- **v2(서울 갈래)** — `worker.js` 가 `/seoul` · `/wsbus` · `/swsub` · `/td` · `/reach` 를 더 받는다(파일 맨 위 설명).
+  1. 대시보드 → datamap-relay → 「코드 편집」 → `tools/relay/worker.js` 내용을 통째로 붙여 넣고 「배포」.
+  2. 「설정 › 변수 및 비밀」에 비밀값 추가(없는 것은 그 갈래만 빠진다):
+     - `SEOUL_KEY` — 서울 열린데이터광장 일반 인증키(keys.json `seoul`)
+     - `TD_KEY` — 서울 교통빅데이터 T-Data 키(keys.json `t_data_seoul`)
+     - `SUBWAY_KEY` — 서울 열린데이터광장 **실시간 지하철** 인증키(일반 키로는 ERROR-338 · data.seoul.go.kr 에서 따로 신청)
+  3. 시험: `…/quota` 에 `seoul·td·subway: true, v: 2` · `…/reach` 가 갈래마다 `ok: true` 인지(Origin 머리말 필요).
+- 2026-10-10 이 PC 에서 직접 불러 확인한 서울 자료: `citydata_ppltn`·`bikeList`·`RealtimeCityAir`·`GetParkingInfo`(json) · `AccInfo`·`TrafficInfo`(xml 만) · 서울 버스 `arrive/getLowArrInfoByStId`(승인됨) · `stationinfo/getStationByPos`(401 — 활용신청 필요) · 지하철 실시간(ERROR-338 — 전용 키 필요).

@@ -1319,7 +1319,7 @@
   {
    "file": "sig-ksc-seocho.json",
    "url": "https://340patrolman.github.io/datamap/data/sig-ksc-seocho.json",
-   "bytes": 38992,
+   "bytes": 39272,
    "schema": "tg-sig-ksc/2",
    "date": "2026-10-10",
    "source": "서초경찰서 교통과 제공 · 표준신호제어기DB(KSC-5800SE/SEC-8400) 출력물 5장을 손으로 판독(2026-09-11 손 판독 · 따로 옮긴 두 벌 대조 96/96 일치 · 현시 합=주기 80/80 · TOD 주기=패턴 주기) · 현시별 이동류·황색·전적색 = 같은 출력물의 다른 판독(2026-09-11 · 주기·현시값 서로 일치) — 소유자가 이 5곳의 공개를 정함(2026-10-10)",

@@ -93,7 +93,15 @@ def build():
         la, lo = f6(r.get('LATITUDE')), f6(r.get('LONGITUDE')); put(gu_of(la, lo), 'srSvc', [la, lo, r.get('SISUL_CODE'), (r.get('REMARK') or '').strip(), r.get('DE_LOC'), r.get('INST_NM'), r.get('INST_TELNO'), r.get('WORK_DATE'), r.get('ASG_NM')])
     for r in jget('safe_tbEmgcAedInfo.json') or []:
         la, lo = f6(r.get('WGS84LAT')), f6(r.get('WGS84LON')); put(gu_of(la, lo), 'aed', [la, lo, r.get('ORG'), r.get('BUILDPLACE'), r.get('BUILDADDRESS'), r.get('CLERKTEL')])
+    def broken_txt(s):   # v2.98.1 깨진 글자(이진 조각 · � · EUC-KR 을 UTF-8 로 잘못 읽은 꼴) 판정 — 지도 txtFix 와 같은 기준
+        import re as _re
+        if not isinstance(s, str): return False
+        if _re.search(r'[\x00-\x08\x0e-\x1f\ufffd]', s): return True
+        if not _re.search(r'[\u4e00-\u9fff?]', s): return False
+        r = s.encode('cp949', errors='replace').decode('utf-8', errors='replace'); h = len(_re.findall(r'[\uac00-\ud7a3]', r))
+        return h >= 2 and r.count('\ufffd') <= h
     for r in jget('safe_tbFireItem.json') or []:
+        if broken_txt(r.get('CMPTNC_FRSTN_NM')): r['CMPTNC_FRSTN_NM'] = '(관할 소방서 이름 깨짐 — 서울시 원자료)'   # v2.98.1
         la, lo = f6(r.get('LAT')), f6(r.get('LOT')); put(gu_of(la, lo), 'fire', [la, lo, r.get('FCLT_TYPE_CD'), 1 if (r.get('USE_PSBLTY_YN') or '').strip() == 'Y' else 0, ((r.get('CMPTNC_FRSTN_NM') or '').strip() + ' ' + (r.get('CMPTNC_FRSTN_TELNO') or '').strip()).strip()])
     for r in jget('safe_TbTowCarsDepository.json') or []:
         la, lo = f6(r.get('LAT')), f6(r.get('LOT')); put(gu_of(la, lo), 'tow', [la, lo, r.get('TRCT_VHCL_LCKR_NM'), r.get('LCTN_RD_NM_ADDR'), r.get('ARCH_TEL'), r.get('ARCH_CNT'), (r.get('TRCT_BSC_CRG') or '').replace('+', ' · ')])

@@ -6,7 +6,7 @@
 #   계산: 동마다 최근 3년(달 자료면 최근 36달)을 해마다로 고친 평균 전입·전출 · 주민 = 원자료 「인구」 열 평균, 없으면 data/r/<구>/dong.json 의 주민
 #         시군구 = 그 동들을 더한 값(구 안 이사는 한 동의 전입·다른 동의 전출로 서로 지워진다)
 #   py -3.12 -X utf8 tools/region/mig-bake.py [출처 글] [원자료 폴더]
-#   지도 쪽 공식(js ppMig): d = 동 순이동률 − 구 순이동률 · 10년 배율 = (1 + d × 0.5)^10 을 0.7~1.3 으로 자름(설계값)
+#   지도 쪽 공식(js ppMig): d = 동 순이동률 − 구 순이동률 · 10년 배율 = (1 + d × 0.5)^10 을 0.85~1.15 로 자름 · 동 순이동 ±50‰ 넘으면 한때 이동으로 보고 1(설계값 · v2.97.0)
 import csv, glob, io, json, os, re, sys, collections
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.join(os.path.dirname(ROOT), '07_API키')
@@ -67,7 +67,7 @@ def main():
         g = gu[k[:5]]; g[0] += i; g[1] += o; g[2] += n
     doc = {'schema': 'tg-migdong/1', 'source': SRC, 'years': years, 'per': '%s %s~%s' % ('달' if monthly else '해', use[0], use[-1]),
            'fields': 'dong = {행정동 8자리: [해마다 전입, 해마다 전출, 주민]} · gu = {시군구 5자리: 동 합}',
-           'note': '해마다 = 최근 %s 평균 · 구 안 이사는 동 합에서 지워진다 · 지도는 (동 순이동률 − 구 순이동률)의 절반이 10년 이어진다고 보고 0.7~1.3배로 자른다(설계값)' % ('36달' if monthly else '3년'),
+           'note': '해마다 = 최근 %d%s 평균 · 구 안 이사는 동 합에서 지워진다 · 지도는 (동 순이동률 − 구 순이동률)의 절반이 10년 이어진다고 보고 0.85~1.15배로 자른다 · 해마다 ±50‰ 넘는 동(재건축 이주·입주)은 보정하지 않는다(설계값)' % (len(use), '달' if monthly else '해'),
            'dong': dong, 'gu': {g: [round(v[0]), round(v[1]), round(v[2])] for g, v in gu.items()}}
     json.dump(doc, open(OUTF, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print('동 %d · 시군구 %d · 주민 없어 뺀 동 %d · %s → %s (%.0f KB)' % (len(dong), len(doc['gu']), miss, doc['per'], OUTF, os.path.getsize(OUTF) / 1024))

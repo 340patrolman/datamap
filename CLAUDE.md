@@ -14,6 +14,9 @@
 * 판올림: `index.html` 의 `js/map2d.js?v=` · `sw.js` 의 `CACHE`·미리 저장 목록 `?v=` 를 같이 올린다.
 * 커밋 끝줄: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`
 
+## 유지보수(2026-10-09)
+* **`유지보수.md`** = 언제·누가·어떻게(달력 · 형님 직접 목록 · 고장 났을 때) · 주기와 날짜 알림의 정본은 `tools/data-check.py` 의 `SETS`·`DATES`(세션 열 때 「📋」·「⏰」) · 커밋 전 `tools/keycheck.py` · 집 배치 `tools/home/집에서_YYYYMMDD.bat` · 코워크 지시서 `tools/cowork/`.
+
 ## 이어서 할 일(2026-10-04 기준)
 * **다음 차례는 `NEXT.md`**(A 기다리는 것 · B 확인할 것 · C 다듬기 · D 인천·강원·충남·충북·대전·세종 넓히기 — 소유자 2026-10-04 「나중에」).
 * v2.8.0 **전국 17개 시도 256개 시군구**(광주·전남 = 전남광주통합특별시 12) · 권역 저장소 8개(seoul·gyeonggi·incheon·chungcheong·gangwon·gyeongsang·jeolla·jeju) + `datamap-tiles`(전국 바탕 조각) · 🌏 외국인 자세히(체류자격·국적·연령×성별·체류기간) · 🚓 전국 경찰서 관할(jurk)·👮 지구대·파출소(pbox) · 브이월드 주소 하루 한도(OVER_REQUEST_LIMIT) — 남은 지번은 날마다.

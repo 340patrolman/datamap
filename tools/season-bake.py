@@ -23,6 +23,13 @@ LON0, LON1, LAT0, LAT1 = 126.935, 127.135, 37.395, 37.535
 def inbox(lon, lat): return LON0 <= lon <= LON1 and LAT0 <= lat <= LAT1
 
 # ---------- 여름: 침수흔적 ----------
+def broken_txt(s):   # v2.98.1 깨진 글자(이진 조각 · � · EUC-KR 을 UTF-8 로 잘못 읽은 꼴) 판정 — 지도 txtFix 와 같은 기준
+    import re as _re
+    if not isinstance(s, str): return False
+    if _re.search(r'[\x00-\x08\x0e-\x1f\ufffd]', s): return True
+    if not _re.search(r'[\u4e00-\u9fff?]', s): return False
+    r = s.encode('cp949', errors='replace').decode('utf-8', errors='replace'); h = len(_re.findall(r'[\uac00-\ud7a3]', r))
+    return h >= 2 and r.count('\ufffd') <= h
 traces = []; causes = []; zones = []; CI = {}; ZI = {}
 def idx(tab, m, v):
     v = (v or '').strip()
@@ -58,6 +65,7 @@ for shp in sorted(glob.glob(os.path.join(OUT, 'flood', 'x_f*', '*.shp'))):
         cause = rec.get('F_RSN_DTL') or rec.get('TYPE2') or ''
         zone = rec.get('F_ZONE_NM') or ''
         zone = ' '.join(str(zone).split()[:2])   # 「서초구 서초동」까지만(번지는 버림 — 무게·개인 집 주소)
+        if broken_txt(zone): zone = '(이름 깨짐 — 서울시 원본 파일)'   # v2.98.1 원본 shp 에 깨진 채 든 구역 이름(되살려도 글자가 빠진다)
         traces.append([round(x), round(z), yr_of(rec, shp), round(dep, 2), idx(causes, CI, str(cause)), idx(zones, ZI, zone), date])
     print(os.path.basename(shp), len(traces) - n0)
 # 20m 칸·같은 해로 묶는다 — [x, z, 해, 흔적 수, 최대 침수심, 원인(가장 많은 것), 동(zones)]

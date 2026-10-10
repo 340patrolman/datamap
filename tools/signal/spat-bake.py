@@ -125,6 +125,34 @@ def publish():
         print('올리기 실패', str(e)[:120], flush=True)
 
 
+def pick_todo(tiers, order, need1, need2, need3, ok=lambda i: True):
+    """받을 곳 고르기 — ① 묶음 차례로 닻 없는 곳 ② 묶음 차례로 검증할 곳 ③ 그 밖 서울의 닻 없는 곳 ④ 묶음 차례로 낡은 곳(시각대 표 채우기) ⑤ 그 밖 낡은 곳"""
+    for f in (need1, need2):
+        for T in tiers:
+            c = [i for i in T if f(i) and ok(i)]
+            if c: return c
+    c = [i for i in order if need1(i) and ok(i)]
+    if c: return c
+    for T in tiers:
+        c = [i for i in T if need3(i) and ok(i)]
+        if c: return c
+    return [i for i in order if need3(i) and ok(i)]
+
+
+def read_list(path):
+    """수집 차례 파일 — 「## 」 줄마다 새 묶음 · 「#」 줄은 설명"""
+    tiers, cur = [], []
+    for ln in open(path, encoding='utf-8'):
+        ln = ln.strip()
+        if ln.startswith('## '):
+            if cur: tiers.append(cur)
+            cur = []
+        elif ln and not ln.startswith('#'):
+            cur.append(ln)
+    if cur: tiers.append(cur)
+    return tiers
+
+
 def sweep(prefer=None, api='t', cap=None):
     """쪽(page)으로 훑기 — 거르지 않고 3만 줄을 받으면 서버 순서로 이어진 교차로 수십 곳의 그 시각 0분부터의 줄이 한 번에 온다.
     (itstId 로 거르면 뒤쪽 교차로는 HTTP 500 이 난다 · 2026-10-10 4031·4034) 서버 순서는 정각 목록(ids_*.json)의 차례이고,
@@ -132,7 +160,9 @@ def sweep(prefer=None, api='t', cap=None):
     f = sorted(glob.glob(os.path.join(RAW, 'ids_*.json')))
     order = list(json.load(open(f[-1], encoding='utf-8'))['ids'].keys())
     pos = {k: i for i, k in enumerate(order)}
-    pref = [x for x in (prefer or []) if x in pos]
+    tiers = [[x for x in T if x in pos] for T in (prefer if prefer and isinstance(prefer[0], list) else [prefer or []])]   # 묶음(가까운 곳부터) — 앞 묶음이 끝나야 다음 묶음
+    tiers = [T for T in tiers if T]
+    pref = [x for T in tiers for x in T]
     tried_f = os.path.join(RAW, 'tried_p.json' if api == 'p' else 'tried.json')
     tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
     dens, miss, last, stuck, ncall = DENS0, 0, None, {}, 0
@@ -144,7 +174,7 @@ def sweep(prefer=None, api='t', cap=None):
         need1 = lambda i: i not in tried and not A.get(i)                                   # 닻이 아직 없는 곳
         need2 = lambda i: i not in tried and A.get(i) and nowt - max(A[i]) >= VGAP and max(A[i]) - min(A[i]) < VGAP   # 닻은 있는데 40분 넘게 띄운 두 번째가 없는 곳(검증)
         need3 = lambda i: i not in tried and A.get(i) and nowt - max(A[i]) >= FRESH        # 닻이 낡은 곳(다시 받아 새로)
-        todo = [i for i in pref if need1(i)] or [i for i in pref if need2(i)] or [i for i in pref if need3(i)] or [i for i in order if need1(i)]
+        todo = pick_todo(tiers, order, need1, need2, need3)
         if not todo:
             print(datetime.datetime.now().strftime('%H:%M:%S'), '지금 받을 곳이 없다 — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
         now = datetime.datetime.now()
@@ -159,7 +189,7 @@ def sweep(prefer=None, api='t', cap=None):
             # 2026-10-10 16시대 — 서버가 깊은 쪽(앞선 줄이 많은 쪽)에 HTTP 500 을 줬다(얕은 쪽은 됨) → 막힌 깊이보다 얕게 닿는 교차로만 고른다
             lim = capoff * 0.92 / (t + 66.0)
             reach = lambda L: [i for i in L if pos[i] < lim]
-            todo = reach([i for i in pref if need1(i)]) or reach([i for i in pref if need2(i)]) or reach([i for i in order if need1(i)]) or reach([i for i in order if need3(i)])
+            todo = pick_todo(tiers, order, need1, need2, need3, lambda i: pos[i] < lim)
             if not todo:
                 print(now.strftime('%H:%M:%S'), '깊은 쪽이 막혀 닿는 곳이 없다(막힌 깊이', capoff, '줄) — 5분 뒤 다시', flush=True); time.sleep(GAP); continue
         K = (max if api == 'p' else min)(pos[i] for i in todo)   # 신호 상태 훑기는 뒤에서부터(두 훑기가 같은 쪽을 받지 않게)
@@ -551,7 +581,7 @@ if __name__ == '__main__':
     elif a and a[0] == 'auto':
         auto()
     elif a and a[0] == 'sweep':
-        pf = [x.strip() for x in open(a[2], encoding='utf-8') if x.strip() and not x.startswith('#')] if len(a) > 2 and a[1] == '--list' else None
+        pf = read_list(a[2]) if len(a) > 2 and a[1] == '--list' else None
         sweep(pf, 'p' if '--api' in a and a[a.index('--api') + 1] == 'p' else 't', int(a[a.index('--cap') + 1]) if '--cap' in a else None)
     elif a and a[0] == 'testp':
         J = json.load(open(a[1], encoding='utf-8'))

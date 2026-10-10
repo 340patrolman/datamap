@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 98개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 99개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1887,6 +1887,11 @@
    "traffic-vol-seoul.json",
    "",
    "서울특별시 교통량조사(서울 열린데이터광장 SpotInfo · VolInfo) · 공공누리 1유형"
+  ],
+  [
+   "train-seoul.json",
+   "2026-10-10",
+   "한국철도공사_열차운행정보(공공데이터포털 B551457 travelerTrainRunInfo2) — 2026-10-08 하루 모든 여객열차의 역별 실제 도착·출발 시각 9852줄 · 열차 883대"
   ],
   [
    "trdar-seocho.json",

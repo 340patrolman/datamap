@@ -277,7 +277,7 @@ def sweep(prefer=None, api='t', cap=None):
         time.sleep(GAP)
 
 
-def segments(rows, k):
+def segments(rows, k, tail=False):
     """한 이동류의 구간 목록 [(시작 시각, 길이, 시작 때 잔여)] — 끊긴 자리·모름 값에 걸친 구간은 뺀다."""
     out, prev_v, prev_t, start, start_v, bad = [], None, None, None, None, False
     for r in rows:
@@ -296,7 +296,10 @@ def segments(rows, k):
             start, start_v = t, v
             bad = v >= 3000
         prev_v, prev_t = v, t
-    return out[1:] if out else []   # 첫 구간은 앞이 잘렸을 수 있다
+    res = out[1:] if out else []   # 첫 구간은 앞이 잘렸을 수 있다
+    if tail and out and start is not None and not bad and start_v < 3000 and prev_t - start <= start_v + 2:
+        res.append((start, start_v, start_v))   # 받은 줄 끝에 걸린 마지막 구간 — 시작을 봤으므로 시작 때 잔여가 곧 그 구간 길이(정각 창처럼 줄이 짧을 때 적색을 살린다)
+    return res
 
 
 def med(a):
@@ -416,7 +419,7 @@ def reduce_one(itst, J):
             k = d + m + 'sgRmdrCs'
             if not any(r.get(k) is not None for r in rows):
                 continue
-            sg = segments(rows, k)
+            sg = segments(rows, k, tail=True)
             sg = [s for s in sg if abs(s[1] - s[2]) <= 3.5]   # 구간 길이 ≈ 시작 때 잔여(끊김·튐 거르기)
             if m == 'Pd':
                 ped.append({'d': d, 'seg': [round(s[1]) for s in sg[:12]], 'n': len(sg)})
@@ -425,7 +428,7 @@ def reduce_one(itst, J):
             for i in range(1, len(sg) - 1):
                 if 2.5 <= sg[i][1] <= 6.5 and sg[i - 1][1] > 6.5 and sg[i + 1][1] > 6.5 and abs(sg[i - 1][0] + sg[i - 1][1] - sg[i][0]) < 2 and abs(sg[i][0] + sg[i][1] - sg[i + 1][0]) < 2:
                     G.append(sg[i - 1][1]); Y.append(sg[i][1]); R.append(sg[i + 1][1]); gs.append(sg[i - 1][0])
-            if len(G) < 2:
+            if len(G) < (2 if t1 - t0 > 430 else 1):   # 7분 넘게 받았으면 두 번 본 것만 · 정각 창(5분 안팎)은 한 번 본 것도 쓴다(2026-10-10 20:04 — 290줄에 103곳 중 15곳만 구워졌다)
                 mv.append({'d': d, 'm': m, 'n': len(G), 'seg': [round(s[1]) for s in sg[:10]]})   # 색을 못 가린 이동류(점멸 운영 등)
                 continue
             g, y, r = med(G), med(Y), med(R)

@@ -171,12 +171,12 @@ def sweep(prefer=None, api='t', cap=None):
     smiss = json.load(open(smiss_f)) if os.path.exists(smiss_f) else {}
     # 끝자리(pcap) — 그 시각대에 서버가 가진 자료의 끝이 서버 순서로 몇 번째 교차로쯤인가. HTTP 500 = 「그 쪽은 자료의 끝을 넘었다」로 읽는다
     # (2026-10-10 저녁: 190쪽은 되고 229쪽은 500 · 정각 창 23쪽이 500 — 깊이(줄 수)가 아니라 끝자리(살아 있는 교차로 수 × 지난 초)가 문턱이었다).
-    pcap, pcat, seen, seen_slot = (float(cap) if cap else None), time.time(), {}, None
+    pcap, pcat, seen, seen_slot, pok, pok_hr = (float(cap) if cap else None), time.time(), {}, None, -1, -1
     cap_f = os.path.join(RAW, 'pcap_p.json' if api == 'p' else 'pcap_t.json')   # 끝자리는 파일에 남겨 다시 띄워도 잇는다
     if not pcap and os.path.exists(cap_f):
         try:
             c0 = json.load(open(cap_f))
-            if time.time() - c0['at'] < 5400:
+            if time.time() - c0['at'] < 1800:
                 pcap, pcat = c0['pos'], c0['at']
         except Exception:
             pass
@@ -215,8 +215,10 @@ def sweep(prefer=None, api='t', cap=None):
             time.sleep(3600 - t + W0 + 1); continue   # 다음 정각 창을 5분 제한으로 놓치지 않게 — 창 바로 앞 호출은 건너뛴다
         if last is None:
             dens = 1.0
-        if pcap and time.time() - pcat > 5400:
-            pcap = None                                       # 끝자리는 한 시간 반만 믿는다(시각대마다 살아 있는 교차로 수가 다르다)
+        if pok_hr != now.hour:
+            pok_hr, pok = now.hour, -1                        # 이 시각대에 실제로 받은 맨 뒤 자리
+        if pcap and time.time() - pcat > 1800:
+            pcap = None                                       # 끝자리는 30분만 믿는다(자료가 늦게 쌓이는 것일 수 있어 다시 잰다)
         todo = pick((lambda i: pos[i] < pcap * 0.97) if pcap else (lambda i: True))
         if not todo:
             print(now.strftime('%H:%M:%S'), '지금 받을 곳이 없다' + ('(끝자리 %d 안쪽에는)' % pcap if pcap else '') + ' — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
@@ -251,8 +253,8 @@ def sweep(prefer=None, api='t', cap=None):
             print(stamp, '쪽', page, 'HTTP', st, body[:160].replace(key(), '***'), flush=True)
             wait = GAP
             if st == 500 and page > 1:
-                pc = (page - 1) * 30000.0 / max(dens * t, 1.0)     # 그 쪽이 시작하는 자리 — 자료의 끝은 이보다 앞
-                pcap = min(pcap or 1e9, pc); pcat = time.time(); last = None
+                # 끝자리 = 찾던 자리(K) 바로 앞 — 줄 수로 되짚으면(쪽 ÷ 밀도 × 초) 자료가 늦게 쌓일 때 너무 앞으로 잡힌다(22:25 — 1667 까지 받아 놓고 끝자리를 1617 로 봤다). 이 시각대에 실제로 받은 맨 뒤 자리(pok)보다 앞으로는 안 당긴다
+                pcap = max(pok + 1, min(pcap or 1e9, K - max(1, per // 2))); pcat = time.time(); last = None
                 json.dump({'pos': pcap, 'at': pcat}, open(cap_f, 'w'))
             if st == 429:
                 try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5
@@ -268,6 +270,7 @@ def sweep(prefer=None, api='t', cap=None):
             print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
             dens *= 0.8; time.sleep(GAP); continue
         a, b = min(idx), max(idx)
+        pok = max(pok, b)
         if pcap and b >= pcap:
             pcap = None                                       # 끝자리로 본 곳보다 뒤가 받아졌다 — 다시 재게 둔다
         if page > 1 and a > 0:

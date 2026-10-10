@@ -3128,6 +3128,7 @@
     return null; }
   function unitTitle(u) { if (u.t === 'sgg') return '🗂 ' + SGG[u.id].g.sido + ' ' + SGG[u.id].g.name; if (u.t === 'ps') return '🚓 ' + POL2.byI[u.id][1] + ' 관할'; var b = POL2.pbox[u.id]; return '👮 ' + b[0] + (b[1] ? ' 파출소' : ' 지구대') + ' 구역(근사)'; }
   function unitKeys(u) {   // 경찰서·지구대 = 그 서가 맡는 행정동 코드
+    var pc0 = u.t === 'ps' && POLC && POLC.st && POLC.st[String(u.id)]; if (pc0 && pc0.dongs && pc0.dongs.length) return pc0.dongs.map(function (d) { return d[0]; });   /* v2.111.2 경찰서 카드 자료가 있으면 그 관할 동(서초·방배 = 현장 기준)으로 — 머리 칸과 합계가 같은 동을 본다 */
     var o = []; Object.keys(POL2.dong).forEach(function (k) { var st = polOf(k); if (!st) return; var ids = st.map(function (q) { return q[0]; });
       if (u.t === 'ps' ? ids.indexOf(u.id) >= 0 : ids.indexOf(POL2.pbox[u.id][6]) >= 0) o.push(k); }); return o; }
   function unitGus(u) {
@@ -3469,7 +3470,7 @@
     Object.keys(POL2.dong).forEach(function (k) { var o = polLab(POL2.labels[POL2.dong[k]]); if (o.main.indexOf(s2) >= 0) { nd++; if (o.main.length > 1 || o.extra.length) mix++; } });
     var h = row('대표번호', s2[4] ? '<a href="tel:' + esc(s2[4]) + '">' + esc(s2[4]) + '</a>' : '<em>(원자료에 없음)</em>') + row('시도청', esc(s2[5] || '-')) + (s2[2] != null ? row('청사 자리', (+s2[2]).toFixed(5) + ', ' + (+s2[3]).toFixed(5) + ' <em>(경찰민원24 좌표)</em>') : '');
     h += row('지구대·파출소', bx.length ? bx.length + '곳 <em>(누르면 그 카드)</em><div class="lg-btns">' + bx.map(function (q) { return '<button data-upb="' + q[1] + '">' + esc(q[0][0]) + (q[0][1] ? ' 파출소' : ' 지구대') + '</button>'; }).join('') + '</div>' : '자료에 없음');
-    h += row('관할 행정동', nd + '곳' + (mix ? ' · 그중 ' + mix + '곳은 다른 서와 번지로 나눠 맡음' : '') + ' <em>(직제 시행규칙 별표2 × 행정동 — 행정동 단위 근사 · 이름은 아래 「든 동」)</em>');
+    var pc1 = POLC && POLC.st && POLC.st[String(s2[0])]; if (!(pc1 && pc1.dongs && pc1.dongs.length)) h += row('관할 행정동', nd + '곳' + (mix ? ' · 그중 ' + mix + '곳은 다른 서와 번지로 나눠 맡음' : '') + ' <em>(직제 시행규칙 별표2 × 행정동 — 행정동 단위 근사 · 이름은 아래 「든 동」)</em>');
     h += psCardX(s2);
     var ps = '', en = ''; try { ps = polStats(s2[1]) || ''; } catch (e) {} try { en = enfRows(s2[1]) || ''; } catch (e2) {}
     return h + ps + en + (ps || en ? '' : '<p class="lg-n">이 서의 112신고·범죄·단속 통계는 이 지도에 없다(서울청·경기남부청 공개분만 실었다).</p>') + fiBox(['any'], '이 서의 다른 통계 직접 찾는 법'); }

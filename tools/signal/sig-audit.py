@@ -56,7 +56,8 @@ def ksc_plan(x, cl, minute):
         prev = x['tod'].get(str({0: 4, 1: 1, 2: 2, 3: 3}[cl])) or []      # 월~목의 전날은 일(월요일 새벽)·월~목 — 섞여 있어 일요일 계획으로 본다(같으면 문제없다)
         if not prev: return None
         cur = prev[-1]; nxt = hm(L[0][0]) if L else 1440
-    return cur[2], cur[1], nxt
+        return cur[2], cur[1], nxt, -1
+    return cur[2], cur[1], nxt, hm(cur[0])
 
 
 def pol_plan(sp, cl, hour):
@@ -152,7 +153,8 @@ def main():
         sp = POL.get(no)
         if sp and pl.get(no):
             okc = badc = oko = bado = 0; ex = []
-            for cl, hr, cyc, off, day in pl[no]:
+            for prow in pl[no]:
+                cl, hr, cyc, off, day = prow[:5]
                 q = pol_plan(sp, cl, hr)
                 if not q: continue
                 if abs(q[0] - cyc) > 2.5: badc += 1; ex.append('%s %d시 계획 주기 %d · 받은 주기 %d' % ('월~목 금 토 일'.split()[cl], hr, q[0], cyc)); continue
@@ -174,7 +176,8 @@ def main():
                 m0 = hm(o['from'])
                 q = ksc_plan(x, o['cl'], m0)
                 if not q: continue
-                pn, c, nxt = q
+                pn, c, nxt, st0 = q
+                if 0 <= m0 - st0 < 6: continue                             # 계획이 막 바뀐 뒤 6분 — 신호가 새 계획에 맞춰지는 중이라 견주지 않는다(2026-10-11 일 08:00 에 160초 계획인데 142·150초로 받힘)
                 if hm(o['to']) >= nxt and hm(o['to']) >= m0: continue      # 받은 동안 계획이 바뀌었다
                 lab = '%s %s' % ('월~목 금 토 일'.split()[o['cl']], o['from'])
                 if abs(c - o['cyc']) > 2.5: ex.append('%s 주기 %d ≠ 받은 %.0f' % (lab, c, o['cyc'])); continue
@@ -192,8 +195,24 @@ def main():
                 elif od is not None and od > TOL: ex.append('%s 옵셋 %d초 어긋남' % (lab, od))
                 else: okk += 1
                 tot['ksc_slots'] += 1
-            if okk and not ex: R(no)['ok'].append(['ksc', '교통과 현시도와 맞음 — 받은 기록 %d개(주기·방향별 녹색·옵셋)' % okk])
-            elif ex: R(no)['bad'].append(['ksc', '교통과 현시도와 다름 — ' + ' / '.join(ex[:3]) + (' · 맞은 기록 %d개' % okk if okk else '')])
+            # 시각대 표(pl — 요일 갈래·시마다 받은 주기·자정 기준 옵셋)로도 견준다 — 기록은 (요일 갈래, 주기)마다 나중 것만 남아 지난 시각대의 옵셋이 사라지기 때문
+            for prow in pl.get(no, []):
+                cl, hr, cyc, off, day = prow[:5]; rk = prow[5] if len(prow) > 5 else ''
+                q0, q1 = ksc_plan(x, cl, hr * 60 + 6), ksc_plan(x, cl, hr * 60 + 59)
+                if not q0 or not q1 or q0[0] != q1[0] or 0 <= hr * 60 - q0[3] < 0: continue      # 그 시(時) 안에서 계획이 바뀌면 건너뛴다
+                pn, c = q0[0], q0[1]; lab = '%s %d시' % ('월~목 금 토 일'.split()[cl], hr)
+                if abs(c - cyc) > 2.5: continue                                             # 주기 다름은 위(기록)에서 본다 · 시각대 표는 정각 직후 값이 섞인다
+                rec = [o for o in L if o.get('cl') == cl and abs((o.get('ci') or o['cyc']) - cyc) < 0.6 and o.get('a')]
+                Kd = {(r[0], r[1]): r for r in x['dir'].get(str(pn), []) if r[3] is not None}
+                ref = [m for m in rec[-1]['mv'] if m[5] == 0 and (m[0], m[1]) in Kd] if rec else []
+                if rk:                                                                      # 그 옵셋의 기준 이동류가 적혀 있으면 그것으로(현시도에 같은 이동류가 있을 때만)
+                    kd = tuple(rk.split(':')); ref = [[kd[0], kd[1], None, None, None, 0]] if kd in Kd else []
+                if not ref or str(pn) not in x['pat']: continue
+                od = cdev(off, (x['pat'][str(pn)]['off'] + Kd[(ref[0][0], ref[0][1])][6]) % c, c); tot['ksc_slots'] += 1
+                if od > TOL: ex.append('%s 옵셋 %d초 어긋남(현시도 패턴 %s 의 옵셋 %s · 받은 값 %s)' % (lab, od, pn, x['pat'][str(pn)]['off'], off))
+                else: okk += 1
+            if okk and not ex: R(no)['ok'].append(['ksc', '교통과 현시도와 맞음 — 받은 기록·시각대 %d번(주기·방향별 녹색·옵셋)' % okk])
+            elif ex: R(no)['bad'].append(['ksc', '교통과 현시도와 다름 — ' + ' / '.join(ex[:4]) + (' · 맞은 것 %d번' % okk if okk else '')])
             tot['ksc_n'] += 1; tot['ksc_ok' if okk and not ex else 'ksc_bad' if ex else 'ksc_none'] += 1
 
     n_ok = sum(1 for v in out.values() if v['ok'] and not v['bad']); n_bad = sum(1 for v in out.values() if v['bad']); n_mix = sum(1 for v in out.values() if v['ok'] and v['bad'])

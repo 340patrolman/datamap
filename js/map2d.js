@@ -30,7 +30,7 @@
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
     ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장(전국 · 확대하면 보임)', true, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
     ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0], ['walk', '🚶 예상 귀갓길(역·정류장 → 집 · 추정)', false, '이동·동선', 1], ['hira', '🩺 병의원·약국(심평원 · 과목·전문의 · 전국)', false, '생활시설', 1],
-    ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
+    ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['fldl', '🌧 큰비 때 먼저 볼 길(잠긴 해 × 돌아가는 부담)', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '날씨·계절', 0], ['hcab', '🔥 도로 열선 길', false, '날씨·계절', 0], ['advb', '❄ 제설 전진기지', false, '날씨·계절', 0],
     ['pbtn', '🚸 보행자작동신호기', false, '도로·교통', 0]
   ];
@@ -912,7 +912,7 @@
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
-    drawReach(dark); drawStz(dark); drawBsf(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
+    drawReach(dark); drawStz(dark); drawBsf(dark); drawFldl(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
     if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
       var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
       ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
@@ -964,6 +964,7 @@
     if (on.reach) b.push(rchLeg());
     if (on.trn) b.push(trnLeg());
     if (on.gmk) b.push(gmkLeg());
+    if (on.fldl) b.push(fldlLeg());
     if (on.facs) b.push(facsLeg());
     if (on.sgm) b.push(sgmLeg());
     if (on.stz) b.push(stzLeg());
@@ -1270,6 +1271,7 @@
     } else if (it.kind === 'jmn') { h = jmnCard(it.m);
     } else if (it.kind === 'sgl') { h = sglCard();
     } else if (it.kind === 'facs') { h = facsCard(it.no);
+    } else if (it.kind === 'fldl') { h = fldlCard(it.o);
     } else if (it.kind === 'prd') { h = prdCard();
     } else if (it.kind === 'bsf') { h = bsfCard(it.q);
     } else if (it.kind === 'sbf') { h = sbfCard(it.t);
@@ -2315,7 +2317,7 @@
       un: Sd.under.map(function (u) { return { p: [u[2], u[3]], u: u }; }), ib: Sd.sbox.map(function (b) { return { p: [b[0], b[1]], b: b }; }), ad: Sd.adv.map(function (a) { return { p: [a[0], a[1]], a: a }; }),
       ht: Sd.heat.map(function (h) { return { h: h, segs: h[5].map(function (a) { return dec2(a, 0); }) }; }), pb: D.pbtn ? D.pbtn.items.map(function (b) { return { p: [b[0], b[1]], b: b }; }) : [] }; }
   function seasonInfo() { var m = +String(pickDate()).slice(5, 7) || (new Date().getMonth() + 1), hh = nowH();
-    if (m >= 6 && m <= 9) return { k: 'rain', icon: '🌧', short: '폭우', name: m + '월 장마·집중호우 철', keys: ['flt', 'flr', 'und', 'hot10'] };
+    if (m >= 6 && m <= 9) return { k: 'rain', icon: '🌧', short: '폭우', name: m + '월 장마·집중호우 철', keys: ['flt', 'flr', 'fldl', 'und', 'hot10'] };
     if (m >= 11 || m <= 3) return { k: 'ice', icon: '🧊', short: '결빙', name: m + '월 결빙 철' + (hh >= 0 && hh < 10 ? ' · 새벽·아침' : ''), keys: ['ice', 'hcab', 'advb', 'hot10'] };
     return { k: 'both', icon: '🗓', short: '침수·결빙', name: m + '월 환절기', keys: ['flr', 'und', 'ice', 'hcab'] }; }
   function seasonCount(si) { if (!SEA) return ''; var Sd = D.season;
@@ -3376,6 +3378,27 @@
       + '<small class="lg-n">' + (FACS ? esc(FACS.area || '') + ' ' + L.length + '곳' : '읽는 중…') + ' · ' + (view.s < 0.3 ? '<b>더 가까이 보면 들어오는 쪽 막대(굵기 = 차로 수)</b> · ' : '막대 굵기 = 차로 수 · ') + '누르면 시설 카드(길·차로·직진·좌회전·직좌 동시·건널목·번호·연동 부모·시설담당 자료 자리) · 방향별 초는 받은 시간대의 실제 값(계획표 아님) · 차로 표시등·가변차로 자료 없음 · 값이 없는 구는 수집이 닿으면 채워진다</small>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-facsig]'); if (!b) return; e.preventDefault(); var no = b.getAttribute('data-facsig'), kx = KSC && (KSC.items || []).filter(function (q) { return String(q.no) === no; })[0], q2 = D.sigd && D.sigd.pts && D.sigd.pts[no], s9 = D.sig && D.sig.spots ? D.sig.spots.filter(function (q) { return String(q.no) === no; })[0] : null;
     if (KSC === undefined) { kscGet(); toast('신호 자료를 읽는 중 — 한 번 더 누른다'); return; } var it9 = kx ? { kind: 'ksc', x: kx } : q2 ? { kind: 'sgd', no: no, q: q2 } : s9 ? { kind: 'sig', s: s9 } : null; if (!it9) { toast('이 교차로는 받은 신호값이 아직 없다'); return; } show(it9); });
+  /* ---------- v2.154.0 🌧 큰비 때 먼저 볼 길 — 소유자 온톨로지(ONTOLOGY.md §0) 「폭우 → 침수이력 도로 침수 → 교통통제 → 우회로 혼잡 → 출동 지연 → 『어디를 먼저 통제해야 하는가』가 계산된다」의 첫 화살표 ----------
+     자료 = data/flood-link-seocho.json(다른 세션 tools/signal/floodlink-bake.py · tg-flood-link/1 · items[[ITS 링크 ID, 길 이름, 등급, 차로, 길이, 잠긴 해 수, 마지막 해, 가장 깊은 침수심 m, 흔적 수, 돌아가는 부담 초(-1 = 못 찾음), 도로 유형, 선]]).
+     한 점수로 뭉치지 않는다 — 잠긴 해 수(일어날 법함) · 돌아가는 부담(끊겼을 때) · 차로(다니는 차의 어림)를 따로 보인다. 침수 흔적은 잠긴 건물·필지의 가운데 점이라 「그 길이 잠겼다」가 아니라 「30m 안에서 잠긴 적이 있다」 */
+  var FLDL = null, FLDLP = null, FLDC = ['', '#60a5fa', '#2563eb', '#7c3aed', '#be123c'], FLDT = { '001': '고가', '002': '지하차도', '003': '교량', '004': '터널' };
+  function fldlGet() { if (FLDLP) return FLDLP; FLDLP = fetch('data/flood-link-seocho.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { j.L = (j.items || []).map(function (q) { var a = q[11] || [], x = a[0], y = a[1], pts = [P(x / 1e5, y / 1e5)], i; for (i = 2; i + 1 < a.length; i += 2) { x += a[i]; y += a[i + 1]; pts.push(P(x / 1e5, y / 1e5)); }
+        var bb = [1e12, -1e12, 1e12, -1e12]; pts.forEach(function (c) { if (c[0] < bb[0]) bb[0] = c[0]; if (c[0] > bb[1]) bb[1] = c[0]; if (c[1] < bb[2]) bb[2] = c[1]; if (c[1] > bb[3]) bb[3] = c[1]; }); return { q: q, pts: pts, bb: bb }; }); FLDL = j; draw(); try { legend(); } catch (e) {} }).catch(function () { FLDLP = null; }); return FLDLP; }
+  function drawFldl(dark) { if (!on.fldl) return; if (!FLDL) { fldlGet(); return; } var z = view.s; if (z < 0.02) return; var a0 = M(-20, -20), b0 = M(cv.clientWidth + 20, cv.clientHeight + 20), minY = z < 0.08 ? 2 : 1; ctx.save(); ctx.setLineDash([]); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (var pass = 0; pass < 2; pass++) FLDL.L.forEach(function (o) { var q = o.q, bb = o.bb; if (q[5] < minY || bb[1] < a0[0] || bb[0] > b0[0] || bb[3] < a0[1] || bb[2] > b0[1] || o.pts.length < 2) return; var w = Math.max(2.5, Math.min(9, (1.6 + (q[3] || 1) * 1.1) * (z >= 0.3 ? 1.25 : 1)));
+        ctx.beginPath(); o.pts.forEach(function (c, i) { var sp = S(c); if (i) ctx.lineTo(sp[0], sp[1]); else ctx.moveTo(sp[0], sp[1]); }); ctx.lineWidth = pass ? w : w + 3; ctx.strokeStyle = pass ? FLDC[Math.min(4, q[5])] : (dark ? 'rgba(15,22,36,.8)' : 'rgba(255,255,255,.9)'); ctx.stroke();
+        if (pass && (q[5] >= 2 || z >= 0.2)) { var m9 = S(o.pts[o.pts.length >> 1]); hit.push({ x: m9[0], y: m9[1], r: 9, it: { kind: 'fldl', o: o } }); } });
+    ctx.restore(); }
+  function fldlCard(o) { var q = o.q, lv = typeof LIVE !== 'undefined' && LIVE.sp && LIVE.sp.m && Date.now() - (LIVE.sp.at || 0) < 15 * 60000 ? LIVE.sp.m[q[0]] : null;
+    return '<h3>🌧 ' + esc(q[1] || '이름 없는 길') + (FLDT[q[10]] ? ' <small style="font-weight:400;color:#b45309">' + FLDT[q[10]] + '</small>' : '') + '</h3>'
+      + row('잠긴 적이 있는 해', '<b>' + q[5] + '개 해</b> · 마지막 ' + q[6] + '년 · 흔적 ' + q[8] + '곳 <em>(이 길 30m 안 · 2010~2025)</em>')
+      + row('가장 깊었던 침수', q[7] > 0 ? '<b>' + q[7] + 'm</b>' + (q[10] === '002' ? ' <em>— 지하차도는 얕은 침수에도 통제된다</em>' : '') : '<em>침수심 기록 없음</em>')
+      + row('막히면 돌아가는 부담', q[9] >= 0 ? '<b>+' + (q[9] >= 90 ? (q[9] / 60).toFixed(1) + '분' : Math.round(q[9]) + '초') + '</b> <em>(이 조각 하나만 막혔을 때 · 제한속도 · 막힘 없음 — 실제보다 작게 나온다)</em>' : '<em>15분 안에 돌아갈 길을 못 찾았다</em>(정말 외길이거나 셈의 한계 — 확인 필요)')
+      + row('길', RKN[q[2]] + ' · ' + (q[3] || '?') + '차로 · 이 조각 ' + q[4] + 'm' + (lv && lv[0] > 0 ? ' · 지금 통행속도 <b>' + Math.round(lv[0]) + 'km/h</b>' : ''))
+      + '<p class="sdnt" style="color:#b45309">침수 흔적은 <b>잠긴 건물·필지의 가운데 점</b>이다 — 「이 길이 잠겼다」가 아니라 「30m 안에서 잠긴 적이 있다」. 2022·2011·2010 큰비 흔적이 대부분이고, 그 뒤 배수 시설이 고쳐진 곳은 지금은 덜 잠길 수 있다(이 자료로는 모른다).</p>'
+      + '<p class="sdnt">한 점수로 뭉치지 않았다 — 잠긴 해 수(일어날 법함) · 돌아가는 부담(끊겼을 때) · 차로(다니는 차의 어림)를 따로 보고 판단한다 · 여러 조각이 같이 막혔을 때의 혼잡은 아직 없다 · ITS 링크 ' + esc(String(q[0])) + '.</p>' + src((FLDL && FLDL.source) || ''); }
+  function fldlLeg() { var li9 = function (c, t) { return '<span><i style="display:inline-block;width:16px;height:5px;border-radius:3px;background:' + c + ';margin-right:4px;vertical-align:2px"></i>' + t + '</span> '; };
+    return '<b>🌧 큰비 때 먼저 볼 길</b> ' + li9(FLDC[1], '1개 해') + li9(FLDC[2], '2') + li9(FLDC[3], '3') + li9(FLDC[4], '4개 해~') + '<small class="lg-n">' + (FLDL ? FLDL.L.length.toLocaleString() + '조각(' + esc(FLDL.area || '') + ')' : '읽는 중…') + ' · 색 = 30m 안에서 잠긴 적이 있는 해 수 · 굵기 = 차로 · ' + (view.s < 0.08 ? '<b>넓게 볼 때는 2개 해 이상만</b> · ' : '') + '누르면 잠긴 해·침수심·막히면 돌아가는 부담 · 「잠겼다」가 아니라 「둘레에서 잠긴 적이 있다」 · 통제 기록은 공개 자료가 없다</small>'; }
   function sgProgPaint() { var el = $('sgProg'); if (!el) return; snetGet(); if (!SNET || HOUR != null) { if (el.innerHTML) el.innerHTML = ''; return; } var no = el.getAttribute('data-no'), L = (SNET.by[no] || []).filter(function (l) { return l[8] === 0; }), now = Date.now(), hr = new Date(now).getHours();   /* 사이에 신호 자료 없는 교차점이 있는 짝은 안 낸다 — 거기 신호를 모르면 답이 뜻이 없다(서초역 → 성모병원 사이의 서초경찰서) */
     if (el.getAttribute('data-ksc')) { var kx = KSC && (KSC.items || []).filter(function (q) { return String(q.no) === no; })[0], skip = kx ? kscNbr(kx).map(function (q) { return String(q.y.no); }) : []; L = L.filter(function (l) { return skip.indexOf(String(l[1])) < 0; }); }
     if (!L.length) { if (el.innerHTML) el.innerHTML = ''; return; }
@@ -3748,7 +3771,7 @@
     ['safe', '🛡 치안·안전', ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er', 'ger', 'aed', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'glamp', 'fw', 'hyd', 'box', 'bar', 'play', 'inn', 'dem'], ['jurk', 'pbox', 'pol', 'fire', 'er']],
     ['care', '🎒 교육·돌봄', ['edu', 'school', 'kg', 'cc', 'kids', 'aca', 'kyr', 'welf', 'dem', 'pg', 'sz'], ['edu', 'kg', 'cc', 'kyr']],
     ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'hira', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'lore', 'conv', 'bank', 'box'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
-    ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
+    ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'fldl', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
     ['live', '📡 실시간', ['lev', 'lutic', 'lspd', 'lcc', 'lsac', 'lak', 'lkma', 'lbus', 'lsbk', 'lspk', 'lwx', 'lair', 'lrad', 'crowd'], ['lev', 'lspd', 'lcc', 'lwx', 'lrad']],
     ['map', '🗺 바탕·격자', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm', 'g250', 'ri'], ['g250']]
   ];
@@ -7538,7 +7561,7 @@
     ['police', '🚓 경찰업무', [
       ['traf', '🚦 교통', [['교통사고', ['acc', 'pri', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh', 'spota']], ['신호·교차로', ['sgm', 'facs', 'tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['서울까지·대중교통', ['reach', 'trn', 'sbf', 'bsf', 'stz', 'sbc']], ['도로·교통량', ['rnet', 'rpost', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
       ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'play', 'inn', 'stay', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
-      ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['pedr', 'sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['lore', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
+      ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['pedr', 'sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['lore', 'flt', 'flr', 'fldl', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
     ]],
     ['biz', '💳 상권·부동산', [
       ['spend', '💳 소비·상권', [['카드·매출', ['sales', 'crowd']], ['상권', ['opp', 'trd', 'szone', 'rent']], ['가게', ['conv', 'bank', 'bar', 'play', 'inn']]], ['sales', 'trd', 'szone']],
@@ -7546,7 +7569,7 @@
     ]],
     ['wx', '⛅ 날씨·실시간', [
       ['now', '🌦 지금 날씨', [['날씨', ['lwx', 'lair', 'lrad', 'lak', 'lkma']]], ['lwx', 'lair']],
-      ['season', '⛅ 계절 위험', [['비·침수', ['flt', 'flr', 'und']], ['눈·결빙', ['ice', 'hcab', 'advb']], ['더위·추위', ['heat', 'cold']]], ['flt', 'ice']],
+      ['season', '⛅ 계절 위험', [['비·침수', ['flt', 'flr', 'fldl', 'und']], ['눈·결빙', ['ice', 'hcab', 'advb']], ['더위·추위', ['heat', 'cold']]], ['flt', 'ice']],
       ['live', '📡 실시간 교통', [['도로', ['lev', 'lutic', 'lspd', 'lcc', 'lsac', 'lbus']], ['서울시', ['lsbk', 'lspk']], ['인파', ['crowd']]], ['lev', 'lspd']]
     ]],
     ['base', '🗺 바탕', [

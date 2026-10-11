@@ -58,6 +58,7 @@ def main():
     sd = load(os.path.join(ROOT, 'data', 'sigdir-seoul.json')); its = sd.get('its', {}); pl = sd.get('pl', {})
     tod = {str(x['no']): x for x in load(os.path.join(ROOT, 'data', 'signal-tod-seoul.json')).get('spots', [])}
     ksc = {str(x['no']): x for x in load(os.path.join(ROOT, 'data', 'sig-ksc-seocho.json')).get('items', [])}
+    phmv = load(os.path.join(ROOT, 'data', 'sig-phmv-seoul.json')).get('spots', {})
     tg = (load(os.path.join(ROOT, 'data', 'tgis-seoul.json')) or load(os.path.join(ROOT, 'data', 'tgis-seocho.json'))).get('items', []); tgc = {x[0]: x for x in tg}; tgn = {x[6]: x for x in tg if x[6]}   # 서울 전체(tools/signal/tgis-bake.py) — 없으면 서초 것
     CAM = []
     for g in GUS:
@@ -114,6 +115,27 @@ def main():
              'cam': sum(1 for c in CAM if abs(c['lon'] - lon) < 0.002 and m((lon, lat), (c['lon'], c['lat'])) <= 100)}
         if t0: e['tgis'] = [t0[0], t0[1], t0[4], (tgc.get(t0[4]) or [0, ''])[1] if t0[4] else '']   # [T-GIS 코드, T-GIS 이름, 연동 부모 코드, 부모 이름]
         if rec: e['day'] = rec.get('day'); e['at'] = rec.get('from')
+        # 현시와 신호값(소유자 2026-10-11 「교통시설 레이어인데 현시와 신호값도 있으면 표현해야지」) — 받은 값에서 읽은 켜지는 차례(seq) · 계획표의 현시별 초(pv) · 현시 → 이동류(phmv)
+        if rec:
+            got = sorted([q for q in rec['mv'] if q[2] is not None and q[5] is not None], key=lambda q: q[5]); grp = []
+            for q in got:
+                if grp and abs(q[5] - grp[-1][0]) <= 2: grp[-1][2].append([q[0], q[1], round(q[2])]); grp[-1][1] = max(grp[-1][1], round(q[2]))
+                else: grp.append([round(q[5]), round(q[2]), [[q[0], q[1], round(q[2])]]])
+            if grp: e['seq'] = grp; e['seq_n'] = [len(got), len(rec['mv']), max((q[6] for q in got), default=0)]
+        hhmm = (rec.get('from') if rec else '12:00') or '12:00'; dow = (rec.get('dow') if rec.get('dow') is not None else (datetime.date.fromisoformat(rec['day']).weekday() + 1) % 7 if rec.get('day') else 3) if rec else 3   # 받은 값이 없으면 수요일 12시의 계획을 보기로
+        if no in ksc:
+            k = ksc[no]; cl = '1' if 1 <= dow <= 4 else ('2' if dow == 5 else ('3' if dow == 6 else '4')); rows = k.get('tod', {}).get(cl, []); h = hhmm.replace(':', '')
+            r0 = ([r for r in rows if r[0] <= h] or rows[-1:])
+            if r0:
+                pt = k.get('pat', {}).get(str(r0[-1][2])) or {}
+                if pt: e['pv'] = [r0[-1][0][:2] + ':' + r0[-1][0][2:], pt.get('c'), pt.get('off'), pt.get('a'), pt.get('b'), '교통과', cl, 1 if rec else 0]
+                e['phn'] = [[x.get('p'), x.get('t', '')] for x in k.get('ph', [])]
+        elif no in tod:
+            t = tod[no]; pn = str(t.get('dow', {}).get(str(dow + 1), '')); rows = t.get('plans', {}).get(pn, []); r0 = ([r for r in rows if r[0] <= hhmm] or rows[-1:])
+            if r0:
+                num = lambda v: [int(z) for z in str(v).split()] if v else []
+                e['pv'] = [r0[-1][0], r0[-1][1], r0[-1][2], num(r0[-1][3]), num(r0[-1][4]), '경찰청', pn, 1 if rec else 0]
+        if no in phmv and phmv[no].get('ph'): e['phmv'] = {k2: [[q[0], q[1], q[2]] for q in v] for k2, v in phmv[no]['ph'].items()}; e['phmv_warn'] = phmv[no].get('warn') or ''
         spots[no] = e; stat[gu] += 1; stat[gu + ' 방향별 초'] += 1 if rec else 0; stat[gu + ' 들어오는 쪽 읽음'] += 1 if S else 0; stat[gu + ' 직좌 동시 있는 곳'] += 1 if any(v[6] for v in S.values()) else 0
     doc = {'schema': 'tg-fac-signal/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'area': '서울 ' + ('전체 25구' if len(GUS) >= 25 else '·'.join(GUS)),
            'source': '교차로 목록·자리 = 교통안전 신호등 실시간 정보의 교차로 지도정보(한국지역정보개발원 · 공공데이터포털 15157604 — 서울 C-ITS 교차로) · 들어오는 쪽·차로·제한속도 = 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판 · 방향별 초·보행 = 서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간(data/sigdir-seoul.json %s) · 계획 = 경찰청 교차로계획정보서비스(공공데이터포털 15056569) · T-GIS = 서울시 T-GIS 교통안전시설물 교차로(A008_P · 서울 전체) · 카메라 = 무인교통단속카메라 표준데이터' % sd.get('made', ''),
@@ -124,8 +146,10 @@ def main():
                     'plan = 요일·시각별 계획(주기·옵셋·현시값)이 있는 곳 — 「교통과」(서초서 교통과 출력물 5곳 · data/sig-ksc-seocho.json) · 「경찰청」(공개 계획 · data/signal-tod-seoul.json). 빈 글 = 계획 없음(시설담당 자료가 들어갈 자리 · data/fac-plan-schema.json)',
                     'cells = 요일 4갈래 × 24시 = 96칸 가운데 실시간 값으로 채운 칸 수 · yd 1 = 이름에 (연등)이 있는 딸린 신호 · tgis 의 연동 부모는 T-GIS 연동교차로코드(C-ITS 번호가 15m 안에서 맞은 곳만 붙는다)',
                     '들어오는 쪽이 비어 있으면 그 자리 55m 안에 갈림길 마디가 없는 것(이면도로 건널목 등) · 대각 교차로는 방위가 한 칸(45°) 어긋날 수 있다',
+                    '**seq(켜지는 차례)는 현시도가 아니다** — 받은 값에서 녹색이 같은 때 켜지는 이동류끼리 묶은 것이다. 안 읽힌 이동류가 있으면(seq_n 의 첫 두 수가 다르면) 차례에 빈 데가 있다 · 한두 번 본 값(seq_n 셋째 수 ≤ 2)은 주기가 바뀌는 사이의 값일 수 있다',
+                    'pv(계획표 현시별 초)는 「몇 현시가 몇 초」까지만 말한다 — 어느 현시가 어느 방향인지는 경찰청 공개 자료에 없다(교통과 5곳은 phn 현시 글 · 그 밖은 phmv 로 맞댄 66곳뿐) · 계획값이라 감응·수동 운영 중에는 실제와 다르다',
                     '차로 표시등·차로제어신호기(가변차로)는 공개 자료를 찾지 못해 없다 — 시설담당 자료가 오면 넣는다'],
-           'fields': 'spots{교차로 번호: {nm, ll[경도, 위도], gu, in[[들어오는 쪽(nt 북쪽에서 오는 차 …), 길 이름, 차로 합, 제한속도, 직진 녹색 초, 좌회전 녹색 초, 직좌 동시 1, 보행 녹색 초]…], cyc[받은 주기 초…], cells, plan, yd, cam 100m 안 단속 카메라 수, tgis[T-GIS 코드, 이름, 연동 부모 코드, 부모 이름], day, at}}',
+           'fields': 'spots{교차로 번호: {nm, ll[경도, 위도], gu, in[[들어오는 쪽(nt 북쪽에서 오는 차 …), 길 이름, 차로 합, 제한속도, 직진 녹색 초, 좌회전 녹색 초, 직좌 동시 1, 보행 녹색 초]…], cyc[받은 주기 초…], cells, plan, yd, cam 100m 안 단속 카메라 수, tgis[T-GIS 코드, 이름, 연동 부모 코드, 부모 이름], day, at, seq[[녹색 시작(주기 안 초), 그 묶음의 가장 긴 녹색 초, [[들어오는 쪽, St 직진·Lt 좌회전, 녹색 초]…]]…](받은 값에서 같은 때(±2초) 켜지는 이동류끼리 묶은 **켜지는 차례** — 현시도가 아니다), seq_n[읽힌 이동류 수, 받은 이동류 수, 가장 많이 본 횟수], pv[시작 HH:MM, 주기, 옵셋, A링 현시별 초[], B링 현시별 초[], 출처(교통과·경찰청), 계획 번호, 1 = 받은 값의 요일·시각에 맞춘 줄 · 0 = 받은 값이 없어 수요일 12시 줄을 보기로], phn[[현시 번호, 현시 글]…](교통과 5곳), phmv{현시 번호: [[들어오는 쪽, 이동류, 링]…]}(계획표 현시값과 받은 값을 맞대 찾은 것 · data/sig-phmv-seoul.json), phmv_warn}}',
            'stat': dict(stat), 'spots': spots}
     p = os.path.join(ROOT, 'data', 'fac-signal.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('교차로', len(spots), '· 바이트', os.path.getsize(p))

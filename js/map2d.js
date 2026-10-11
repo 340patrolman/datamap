@@ -1228,9 +1228,9 @@
       var cm = it.c; h = '<h3>📷 무인 단속 카메라</h3>' + row('자리', esc(cm.at)) + row('도로', esc(cm.road)) + row('제한속도', cm.lim ? cm.lim + 'km/h' : '-') + row('설치', esc(cm.yr || '-')) + row('단속구분 코드', esc(cm.se) + ' <em>(코드 뜻은 대조 전)</em>');
       h += camEff(cm) + ledgLine('R4') + src('경찰청 전국무인교통단속카메라표준데이터(기준일 2026-04-06) · 설치 전후 사고 = TAAS 사고 10년(100m 칸)');
     } else if (it.kind === 'sgd') {
-      h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.no) + '</small></h3>' + kscRows(it.no, P(it.q[1], it.q[0])) + sigDir(it.no) + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>');
+      h = '<h3>🚦 ' + esc(it.q[2] || '신호 교차로') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.no) + '</small></h3>' + kscRows(it.no, P(it.q[1], it.q[0])) + sigDir(it.no) + sdAccHtml(P(it.q[1], it.q[0])) + row('교차로 번호', esc(it.no) + ' <em>(서울 C-ITS)</em>');
     } else if (it.kind === 'sig') {
-      var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + sigDir(s.no, sigPlanCyc(s)) + row('지금', sigNow(s)) + sigTickHtml(s) + row('교차로 번호', esc(s.no)) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다');
+      var s = it.s; h = '<h3>🚦 ' + esc(s.name) + '</h3>' + sigDir(s.no, sigPlanCyc(s)) + row('지금', sigNow(s)) + sigTickHtml(s) + sdAccHtml(P(s.lon, s.lat)) + row('교차로 번호', esc(s.no)) + src('경찰청 교차로계획정보(공공데이터포털) · 계획값 — 감응·수동 운영 중에는 다르다');
     } else if (it.kind === 'sub') {
       h = '<h3>🚇 ' + esc(it.s.name) + '</h3>' + row('노선', (it.s.lines || []).map(function (l) { return '<i class="ln" style="background:' + (LINE_C[l] || '#64748b') + '">' + esc(l) + '</i>'; }).join(' ')) + row('교차로', esc(it.n.name)) + loreStn(it.s.name, it.n.p) + src('자리는 교차로 기준(출입구 위치 아님) · 역 이름은 지도 파일');
     } else if (it.kind === 'her') {
@@ -1290,7 +1290,7 @@
     } else if (it.kind === 'sbf') { h = sbfCard(it.t);
     } else if (it.kind === 'sbc') { h = sbcCard(it.t);
     } else if (it.kind === 'lutic') { h = uticCard(it.r);
-    } else if (it.kind === 'ksc') { h = '<h3>🚦 ' + esc(it.x.nm) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.x.no) + '</small></h3>' + kscCardHtml(it.x) + sigDir(it.x.no);
+    } else if (it.kind === 'ksc') { h = '<h3>🚦 ' + esc(it.x.nm) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(it.x.no) + '</small></h3>' + kscCardHtml(it.x) + sigDir(it.x.no) + sdAccHtml(it.x.p);
     } else if (it.kind === 'lsbk' || it.kind === 'lsac' || it.kind === 'lspk') { h = seCard(it);
     } else if (it.kind === 'lak') { h = akCard(it);
     } else if (it.kind === 'lkma') { h = kmaCard();
@@ -3031,6 +3031,28 @@
     mo += row('출력물', esc(x.day || '') + ' ' + esc(x.dayk || '')) + row('그림 읽는 법', '가로 = 한 주기 · 초록 = 녹색 · 노랑 = 황색 · 붉은 바탕 = 적색 · 검은 줄 = 지금');
     mo += '<p class="lg-n"><b>계획값</b>이고 방향별 초는 출력물에 적힌 값이 아니라 <b>계산값</b>이다(켜지는 현시들의 현시값 합 − 황색·전적색 = 녹색). 감응·수동 운영·행사·공사 중에는 실제와 다르고, 시행일 뒤에 바뀌었을 수 있다. 밤(22시~)에는 연동을 일부러 끊어 둔 구간이 있다.</p>';
     return h + sdMore(mo + '<p class="src">' + esc(KSC.source || '서초경찰서 교통과 제공 표준신호제어기DB 출력물') + '</p>', 'kscm'); }
+  /* v2.187.0 💥 이 교차로 사고 10년 — 온톨로지 Phase 2 「교차로 한 번 눌러 다 보기」의 남은 반(사고 이력이 따로 있었다). 새 자료 없이 사고 10년 층(TAAS 100m 칸 A10 · 사망사고 F10)을 교차로 가운데에서 SDACR m 안으로 더한다.
+     칸 가운데가 그 안에 든 100m 칸만 — 칸 단위라 교차로를 벗어난 길 위 사고가 섞이고 큰 교차로는 가장자리가 빠질 수 있다(그 말은 접지 않는다). 사고 한 건 한 건의 자리가 아니다.
+     그 구의 taas10.json 을 아직 안 읽었으면 읽고 다시 그린다(SDACD = 다 읽은 구) · 수집이 덜 된 구(A10GAP)는 「준비 중」. 신호 카드(sgd·sig·ksc)와 시설 카드(facs)에 같은 접이 */
+  var SDACR = 75, SDACD = { '11650': 1 };
+  function sdAccLL(pt) { return [LAT0 - pt[1] / KY, pt[0] / KX + LON0]; }
+  function sdAccHtml(pt) { if (!pt) return ''; var ll = sdAccLL(pt), lat = ll[0], lon = ll[1], wait = [], gap = 0;
+    rIdx().forEach(function (g) { var x = g.box; if (!x || lon < x[0] - 0.002 || lon > x[2] + 0.002 || lat < x[1] - 0.002 || lat > x[3] + 0.002) return; if (A10GAP.indexOf(g.gu) >= 0) gap++; if (SDACD[g.gu] || !(g.bytes || {}).taas10) return; wait.push(aLoad(g.gu).then(function () { SDACD[g.gu] = 1; })); });
+    if (wait.length) { var it0 = sel && sel.it; Promise.all(wait).then(function () { if (sel && sel.it === it0) agReshow(); }); return ''; }
+    if (!A10.length) return '';
+    var y = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], tb = [0, 0, 0, 0], o = { dead: 0, ser: 0, ped: 0, bike: 0, pm: 0, two: 0, night: 0 }, V = {}, nc = 0;
+    A10.forEach(function (x) { if (dTrue(x.p, pt) > SDACR) return; var q = x.c, k; nc++; for (k = 0; k < 10; k++) y[k] += q[2 + k]; for (k = 0; k < 4; k++) tb[k] += q[19 + k]; o.dead += q[12]; o.ser += q[13]; o.ped += q[14]; o.bike += q[15]; o.pm += q[16]; o.two += q[17]; o.night += q[18];
+      var dv = (x.m || D.taas10 || {}).dic, vn = dv && dv.v ? dv.v[q[23]] || q[23] : q[23]; if (vn) V[vn] = (V[vn] || 0) + q[24]; });
+    var F = F10.filter(function (x) { return dTrue(x.p, pt) <= SDACR; }).sort(function (a, b) { return b.f[0] - a.f[0] || b.f[1] - a.f[1]; }), tot = y.reduce(function (a, b) { return a + b; }, 0);
+    var nt = '<p class="sdnt" style="margin:4px 0;color:#b45309">교차로 가운데에서 <b>' + SDACR + 'm 안</b>에 가운데가 든 100m 칸 ' + nc + '개를 더한 값이다 — 칸 단위라 교차로를 벗어난 길 위 사고가 섞이고, 큰 교차로는 가장자리 사고가 빠질 수 있다. 사고 한 건 한 건의 자리가 아니다.</p>';
+    if (!tot && !F.length) return sdMore((gap ? '<p class="sdnt">이 구의 사고 10년 자료는 <b>준비 중</b>이다(수집이 덜 됐다) — 「없다」가 아니다.</p>' : '<p class="sdnt">이 둘레의 100m 칸에 2016~2025 사고 기록이 없다.</p>' + nt), 'sdacc', '💥 이 교차로 사고 10년 — ' + (gap ? '준비 중' : '기록 없음'));
+    var vs = Object.keys(V).sort(function (a, b) { return V[b] - V[a]; }).slice(0, 3), T0 = D.taas10 || {};
+    var h = row('2016~2025', '<b>' + tot.toLocaleString() + '건</b> · 사망자 ' + o.dead + '명 · 중상자 ' + o.ser + '명') + row('누가', '보행자 피해 ' + o.ped + ' · 자전거 ' + o.bike + ' · PM ' + o.pm + ' · 이륜·원동기 가해 ' + o.two) + row('밤(20~6시)', o.night + '건 (' + pct(o.night, tot) + '%)');
+    if (vs.length) h += row('많은 법규위반', vs.map(function (k) { return esc(String(k)) + ' ' + V[k]; }).join(' · ') + ' <em>(칸마다 가장 많은 위반만 더한 것)</em>');
+    h += '<div class="cap">해마다 교통사고 건수(건 · 2016~2025)</div>' + bar(y, '#ea580c', LB_Y16) + '<div class="cap">시간대별 교통사고 건수(건 · 10년 합 · 0~6 · 6~12 · 12~18 · 18~24시)</div>' + bar(tb, '#1e3a8a', LB_TB4);
+    if (F.length) h += '<div class="cap">🕯 사망사고 ' + F.length + '건(한 건씩 · 연·월·요일·시만)</div>' + F.map(function (x) { var f = x.f, T = x.m || T0, dc = T.dic || {}, g = function (k, v) { return (dc[k] || {})[v] || v || '-'; };
+      return '<div class="r"><b>' + f[0] + '.' + (f[1] < 10 ? '0' : '') + f[1] + '</b><span>' + esc((T.dow || [])[f[2]] || '') + '요일 ' + f[3] + '시 · ' + esc(g('t', f[5])) + ' · ' + esc(g('v', f[6])) + ' · ' + esc(g('k', f[10]) + ' → ' + g('k', f[11])) + ' · 사망 ' + f[12] + (f[13] ? ' · 중상 ' + f[13] : '') + '</span></div>'; }).join('');
+    return sdMore(h + nt + (gap ? '<p class="sdnt">둘레의 한 구는 사고 자료가 준비 중이라 그쪽 칸은 빠져 있다.</p>' : '') + src(T0.source ? T0.source.replace(/ — .*$/, '') + ' — 100m 칸으로 묶은 것' : '도로교통공단 교통사고분석시스템(TAAS)'), 'sdacc', '💥 이 교차로 사고 10년 — <b>' + tot.toLocaleString() + '건</b>' + (o.dead ? ' · 사망 ' + o.dead : '') + (o.ser ? ' · 중상 ' + o.ser : '')); }
   function kscRows(no, pt) { var x = kscOf(no) || (pt ? kscAt(pt, 60) : null); return x ? kscCardHtml(x) : ''; }
   // v2.114.0 🚨 시내 돌발(UTIC) — data/utic-ims.json(tg-utic-ims/1 · 다른 세션 tools/utic-bake.py · 경찰청 도시교통정보센터 개방데이터 · 이 PC 가 받아 구운 한 장 — 실시간 아님 · 키·중계 없이 읽는다)
   var UTIC = null, UTICP = null, UTICAT = 0, UTC = { '사고': '#dc2626', '공사': '#d97706', '통제': '#7c3aed', '행사': '#2563eb' };
@@ -3496,6 +3518,7 @@
     h += row('사고', jb ? '2016~2025 <b>' + jb.t.toLocaleString() + '건</b> · 해마다 평균 ' + Math.round(jb.t / 10) + '건' + (jb.r[4] ? ' · <b style="color:#dc2626">사망사고 있음</b>' : '') + ' <em>(TAAS · ' + esc(jb.r[0]) + ' · 반경 약 585m 안 사고를 가장 가까운 교차로에 모은 근사)</em>' : (function () { var nn = nearestRealNode(q.p), ac = nn && dTrue(nn.p, q.p) <= 150 ? accOf(nn) : null; return ac ? '2023~2025 <b>' + ac.total.toLocaleString() + '건</b>' + (ac.death ? ' · <b style="color:#dc2626">사망 ' + ac.death + '</b>' : '') + ' · 중상 ' + ac.serious + ' · 경상 ' + ac.slight + ' <em>(TAAS · ' + esc(nn.name) + ' 둘레 약 600m — 서초구 주요 교차로 25곳 집계)</em>' : '<em>이 교차로에 붙은 사고 집계가 없다(100m 안에 이름 있는 교차로 집계 없음 · 또는 읽는 중)</em>'; })());
     if (!SNET) snetGet().then(function () { if (SNET && sel && sel.it && sel.it.kind === 'facs' && String(sel.it.no) === String(no)) agReshow(); }); var nb = SNET && SNET.by[String(no)]; if (nb && nb.length) h += row('이웃 신호', nb.map(function (l) { return PRDA[l[4]] + ' <b>' + esc((SNET.nodes[l[1]] || {}).nm || l[1]) + '</b> ' + l[2] + 'm' + (l[8] ? ' <em>(사이 교차점 ' + l[8] + ')</em>' : ''); }).join(' · ') + ' <em>(이 길로 곧장 가면 다음에 만나는 신호 · 서초 둘레만)</em>');
     h += '<div class="lg-btns" style="margin-top:6px"><button data-facsig="' + esc(String(no)) + '">🚦 지금 신호·남은 초 보기</button></div>' + saudHtml(no);
+    if (q.ll) h += sdAccHtml(P(q.ll[0], q.ll[1]));
     return h + '<p class="sdnt" style="color:#b45309">방향별 초는 <b>받은 시간대의 실제 값</b>이다(계획표가 아니다 · 감응·수동 운영 때는 다르다) · 차로 수는 링크 전체 값(교차로 앞 좌회전 포켓·차로별 방향은 없다) · 직·좌 동시는 받은 값으로 읽은 것(현시도로 확인한 것이 아니다) · <b>시설담당 자료가 오면 보완</b>한다.</p>' + src((FACS.source || '') + ' · 이용조건: 유형을 확인하지 못한 것은 「확인 필요」'); }
   function facsLeg() { var sw9 = function (c, t) { return '<span><i style="display:inline-block;width:11px;height:11px;border-radius:50%;background:' + c + ';margin-right:4px;vertical-align:-1px"></i>' + t + '</span> '; }, L = FACS ? FACS.L : [], n1 = L.filter(function (q) { return q.plan; }).length, n2 = L.filter(function (q) { return !q.plan && q.sec; }).length;
     return '<b>🚥 신호 교차로 시설</b> ' + sw9('#15803d', '요일·시각 계획 있음 ' + (FACS ? n1 : '…')) + sw9('#84cc16', '방향별 초만 ' + (FACS ? n2 : '…')) + sw9('#94a3b8', '자리만 ' + (FACS ? L.length - n1 - n2 : '…')) + '<span><i style="display:inline-block;width:16px;height:0;border-top:2px dashed #4338ca;margin-right:4px;vertical-align:3px"></i>딸린 신호(연등) → 연동 부모</span> <span><i style="display:inline-block;width:14px;height:5px;background:#7c3aed;margin-right:4px;vertical-align:1px"></i>직·좌 동시인 쪽</span>'

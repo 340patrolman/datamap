@@ -30,7 +30,7 @@
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
     ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장(전국 · 확대하면 보임)', true, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
     ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0], ['walk', '🚶 예상 귀갓길(역·정류장 → 집 · 추정)', false, '이동·동선', 1], ['hira', '🩺 병의원·약국(심평원 · 과목·전문의 · 전국)', false, '생활시설', 1],
-    ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['fldl', '🌧 큰비 때 먼저 볼 길(잠긴 해 × 돌아가는 부담)', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
+    ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['fldl', '🌧 큰비 때 먼저 볼 길(잠긴 해 × 돌아가는 부담)', false, '날씨·계절', 0], ['fmap', '🌊 홍수위험지도(환경부 · 켜는 층 · 열쇠)', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '날씨·계절', 0], ['hcab', '🔥 도로 열선 길', false, '날씨·계절', 0], ['advb', '❄ 제설 전진기지', false, '날씨·계절', 0],
     ['pbtn', '🚸 보행자작동신호기', false, '도로·교통', 0]
   ];
@@ -578,6 +578,8 @@
     var h = location.hash.replace(/[#&]itskey=[A-Za-z0-9-]+/, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h[0] === '#' ? h : '#' + h) : '')); } catch (e) {} on.lev = true; })();
   (function () { var m = /[#&]dgkey=([A-Za-z0-9%+\/=_-]{20,200})/.exec(location.hash); if (!m) return; LK.dgk = decodeURIComponent(m[1]); try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {}
     var h = location.hash.replace(/[#&]dgkey=[A-Za-z0-9%+\/=_-]+/, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h[0] === '#' ? h : '#' + h) : '')); } catch (e) {} })();
+  (function () { var m = /[#&]fmkey=([A-Za-z0-9-]{8,80})/.exec(location.hash); if (!m) return; LK.floodmap = m[1]; try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {}
+    var h = location.hash.replace(/[#&]fmkey=[A-Za-z0-9-]+/, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h[0] === '#' ? h : '#' + h) : '')); } catch (e) {} on.fmap = true; })();
   var LBOX = [126.3, 36.85, 127.9, 38.35];   // 서울·경기
   function lkSet(k, name) { var v = prompt(name + ' 인증키를 붙여 넣으세요. 이 기기에만 저장됩니다(저장소·다른 기기로 안 감). 비우면 지웁니다.', LK[k] || ''); if (v == null) return;
     v = v.replace(/\s+/g, ''); if (v) LK[k] = v; else delete LK[k]; try { localStorage.setItem('tg_map2d_keys', JSON.stringify(LK)); } catch (e) {} LIVE.ev = null; LIVE.sp = null; LIVE.ak = null; LIVE.kma = null; LIVE.wrn = null; LIVE.eqk = null; LIVE.bs = null; LIVE.sbk = null; LIVE.sac = null; LIVE.spk = null; liveGo(); draw(); }
@@ -965,6 +967,7 @@
     if (on.trn) b.push(trnLeg());
     if (on.gmk) b.push(gmkLeg());
     if (on.fldl) b.push(fldlLeg());
+    if (on.fmap) b.push(fmapLeg());
     if (on.tdg) b.push(tdgLeg());
     if (on.duir) b.push(duirLeg());
     if (on.facs) b.push(facsLeg());
@@ -1009,6 +1012,7 @@
     });
     if (BASE) { if (!VW) drawBaseAreas(dark); DONG.concat(RVIS).forEach(function (d) { d.polys.forEach(function (Pg) { ctx.beginPath(); Pg.forEach(function (r) { r.forEach(function (q, n) { var s = S(q); if (n) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); ctx.closePath(); });
       ctx.lineWidth = (on.dong ? 1.8 : 0.8) * (d.rg ? 0.65 : 1); ctx.setLineDash(on.dong ? [] : [4, 4]); ctx.strokeStyle = dark ? 'rgba(167,139,250,.65)' : 'rgba(109,40,217,.45)'; ctx.stroke(); ctx.setLineDash([]); }); }); }
+    drawFmap();
     // 구 경계(서초·동작·관악·강남)
     GU.forEach(function (g) { path(g.pts); ctx.lineWidth = 2.4; ctx.setLineDash([8, 5]); ctx.strokeStyle = dark ? '#9fb3d1' : '#475569'; ctx.stroke(); ctx.setLineDash([]); });
     // 도로 — 바탕 지도가 있으면 OSM 도로 전부(종류별 폭·색 · 지하차도 점선 · 다리 테), 없으면 간선 10개
@@ -3509,6 +3513,38 @@
     var st = FDL && FDL.stat ? FDL.stat[FDLW + FDLS] : null, d9 = function (i) { return '<span><i style="display:inline-block;width:10px;height:10px;border-radius:' + (i === 3 ? '0' : '50%') + ';background:' + FDLC[i] + ';margin-right:4px;vertical-align:-1px"></i>' + (i === 3 ? '✕ ' : '') + FDLK[i] + (st ? ' ' + (st[FDLK[i]] || 0) : '') + '</span> '; };
     return h + [0, 1, 2, 3].map(d9).join('') + '<small class="lg-n"><b>견주는 값 — 실제 출동 시간이 아니다</b>(제한속도 · 막힘 없음 · 신호 없음) · 흔적이 있는 길이 한꺼번에 다 막힌다고 본 <b>가장 나쁜 쪽</b> · 가장 빨리 오는 관서 = 관할이 아니다 · 순찰 중인 차는 세지 않았다 · ' + (st ? '서초구 교차로 ' + (st['교차로'] || 0).toLocaleString() + '곳 가운데 30초 이상 늦는 곳만' : '읽는 중…') + (view.s < 0.06 ? ' · <b>더 당기면 눌러 볼 수 있다</b>' : ' · 점을 누르면 어느 관서에서 몇 초') + (FDLW === 'fire' ? ' · 119안전센터 가운데 좌표가 없는 곳은 빠졌다(소방 쪽은 실제보다 크게 나올 수 있다)' : '') + '</small>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-fdl],[data-fdls]'); if (!b) return; e.preventDefault(); if (b.hasAttribute('data-fdl')) FDLW = b.getAttribute('data-fdl'); else FDLS = b.getAttribute('data-fdls'); if (FDLW && !FDL) fdlGet(); draw(); try { legend(); } catch (e2) {} });
+  /* v2.170.0 🌊 홍수위험지도(층 fmap · 켜는 층) — 소유자가 포털(data.floodmap.go.kr) 인증키를 받아 옴(다른 세션이 전함 · 2026-10-11 「저장하고 충분한 지도와 데이터를 만들자」).
+     원자료 = 환경부 한강홍수통제소 홍수위험지도 · **공공누리 4유형(출처표시 · 상업적 이용금지 · 변경금지)** → 굽지 않는다 · 포털 WMS 그림을 **원본 그대로**(색·투명도 손대지 않음) 바탕 면 위·길 아래에 띄운다 · 받은 그림은 저장하지 않는다 · 맛보기 중계에 얹지 않는다(재배포).
+     열쇠 = 기기마다 tg_map2d_keys 의 floodmap(주소 #fmkey=… 또는 범례 「🔑 열쇠」) — 저장소·코드에 없다.
+     요청 = https://data.floodmap.go.kr/api/wms-service/<서비스>?ServiceKey=…&Freq=<빈도>&SAREA_CD=1&Format=image/png&Bbox=<경도 먼저 xmin,ymin,xmax,ymax>&width&height&transparent=TRUE&srs=EPSG:4326
+     ⚠ Bbox 는 문서(4326 이면 위도 먼저)와 달리 **경도 먼저**여야 그림이 온다(문서대로면 빈 투명 그림이 와서 고장으로 안 보인다) · 없는 빈도·틀린 열쇠는 그림 대신 XML → onerror · SAREA_CD=1 = 한강권역만 확인(서울·경기 화면만 그린다).
+     지도가 멈추고 0.6초 뒤 보이는 범위(둘레 20% 덧댐)로 한 장 · 가로 0.9° 넘게 넓으면 안 받는다 · 이 지도의 평면 근사(P)가 경위도에 1차식이라 4326 그림이 그대로 맞는다 */
+  var FMS = { cty: ['도시침수', 'sa-cty-wms', ['030', '050', '080', '100']], ntn: ['한강 범람(국가하천)', 'sa-ntn-wms', ['100', '200', '500']], rgn: ['지방하천', 'sa-rgn-wms', ['050', '080', '100', '200']] };
+  var FMAP = { svc: 'cty', fq: '100', im: null, box: null, sig: '', want: '', tm: 0, st: '' };
+  var FMCL = [['0.5m 미만', '253,251,199'], ['0.5~1m', '230,255,153'], ['1~2m', '56,254,253'], ['2~5m', '206,154,254'], ['5m 이상', '206,63,135']];
+  function fmapBox() { var a = M(0, 0), b = M(cv.clientWidth, cv.clientHeight); return [a[0] / KX + LON0, LAT0 - b[1] / KY, b[0] / KX + LON0, LAT0 - a[1] / KY]; }
+  function fmapReset() { FMAP.im = null; FMAP.box = null; FMAP.sig = ''; FMAP.want = ''; FMAP.st = ''; clearTimeout(FMAP.tm); }
+  function fmapLoad() { if (!on.fmap || !LK.floodmap) return; var v = fmapBox(), w = v[2] - v[0], h = v[3] - v[1]; if (w > 0.9 || w <= 0 || h <= 0) return;
+    var bx = [v[0] - w * 0.2, v[1] - h * 0.2, v[2] + w * 0.2, v[3] + h * 0.2], sc = Math.min(2000 / (cv.clientWidth * 1.4), 2000 / (cv.clientHeight * 1.4), Math.min(2, window.devicePixelRatio || 1)), pw = Math.round(cv.clientWidth * 1.4 * sc), ph = Math.round(cv.clientHeight * 1.4 * sc);
+    var sig = FMAP.svc + '|' + FMAP.fq + '|' + bx.map(function (x) { return x.toFixed(5); }).join(','); if (sig === FMAP.want) return; FMAP.want = sig; FMAP.st = 'load'; try { legend(); } catch (e) {}
+    var im = new Image(); im.onload = function () { if (FMAP.want !== sig) return; FMAP.im = im; FMAP.box = bx; FMAP.sig = FMAP.svc + '|' + FMAP.fq; FMAP.vs = view.s; FMAP.st = 'ok'; draw(); try { legend(); } catch (e) {} };
+    im.onerror = function () { if (FMAP.want !== sig) return; FMAP.st = 'bad'; try { legend(); } catch (e) {} };
+    im.src = 'https://data.floodmap.go.kr/api/wms-service/' + FMS[FMAP.svc][1] + '?ServiceKey=' + encodeURIComponent(LK.floodmap) + '&Freq=' + FMAP.fq + '&SAREA_CD=1&Format=image/png&Bbox=' + bx.map(function (x) { return x.toFixed(6); }).join(',') + '&width=' + pw + '&height=' + ph + '&transparent=TRUE&srs=EPSG:4326'; }
+  function drawFmap() { if (!on.fmap) return; var v = fmapBox(), w = v[2] - v[0], cx = (v[0] + v[2]) / 2, cy = (v[1] + v[3]) / 2, cur = FMAP.svc + '|' + FMAP.fq;
+    FMAP.wide = w > 0.9; FMAP.out = cx < LBOX[0] || cx > LBOX[2] || cy < LBOX[1] || cy > LBOX[3];
+    if (FMAP.im && FMAP.sig === cur && FMAP.box) { var b = FMAP.box, p0 = S(P(b[0], b[3])), p1 = S(P(b[2], b[1])); try { ctx.drawImage(FMAP.im, p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]); } catch (e) {} }
+    if (!LK.floodmap || FMAP.wide || FMAP.out) return;
+    var ok = FMAP.box && FMAP.sig === cur && v[0] >= FMAP.box[0] && v[1] >= FMAP.box[1] && v[2] <= FMAP.box[2] && v[3] <= FMAP.box[3] && view.s <= (FMAP.vs || 0) * 1.6;
+    if (!ok) { clearTimeout(FMAP.tm); FMAP.tm = setTimeout(fmapLoad, 600); } }
+  function fmapLeg() { var sv = FMS[FMAP.svc], bt = function (a, v, t, onv) { return '<button ' + a + '="' + v + '"' + (onv ? ' class="on"' : '') + '>' + t + '</button>'; };
+    var h = '<b>🌊 홍수위험지도 — ' + sv[0] + ' · ' + (+FMAP.fq) + '년 빈도</b> ';
+    h += '<div class="lg-btns" style="margin:4px 0 2px">' + Object.keys(FMS).map(function (k) { return bt('data-fms', k, FMS[k][0], k === FMAP.svc); }).join('') + '</div><div class="lg-btns" style="margin:2px 0">' + sv[2].map(function (f) { return bt('data-fmf', f, (+f) + '년 빈도', f === FMAP.fq); }).join('') + '<button data-fmkey="1">🔑 ' + (LK.floodmap ? '열쇠 바꾸기' : '열쇠 넣기') + '</button></div>';
+    h += FMCL.map(function (c) { return '<span><i style="display:inline-block;width:14px;height:10px;background:rgb(' + c[1] + ');border:1px solid var(--line);margin-right:4px;vertical-align:-1px"></i>' + c[0] + '</span> '; }).join('');
+    var st = !LK.floodmap ? '<b>열쇠가 있어야 그린다</b> — <a href="https://data.floodmap.go.kr" target="_blank" rel="noopener">data.floodmap.go.kr</a> 에서 인증키를 받아 「🔑 열쇠 넣기」(이 기기에만 저장)' : FMAP.out ? '<b>서울·경기 화면에서만 그린다</b>(한강권역만 확인)' : FMAP.wide ? '<b>가까이 보면 그린다</b>(화면이 너무 넓다)' : FMAP.st === 'load' ? '받는 중…' : FMAP.st === 'bad' ? '<b style="color:#dc2626">그림이 오지 않았다</b> — 열쇠가 맞지 않거나 이 빈도의 지도가 없다' : FMAP.st === 'ok' ? '받음 · 지도를 옮기고 멈추면 그 범위로 다시 한 장 받는다' : '';
+    return h + '<small class="lg-n">' + st + ' · <b>환경부 한강홍수통제소 홍수위험지도 · 공공누리 4유형(출처표시 · 상업적 이용금지 · 변경금지) — 원본 그림을 그대로 띄운다</b>(색 = 침수 깊이 · 위 범례는 원본 범례를 옮긴 것) · 제방이 무너지거나 넘치는 가장 나쁜 경우(하천 범람) · 하수도·펌프장이 감당 못 하는 비(도시침수)를 <b>가정한 계산</b>이다 — 실제로 그렇게 잠긴다는 뜻이 아니다 · 제방의 안전성과 무관 · 받은 그림은 저장하지 않는다 · 「🌧 큰비 때 먼저 볼 길」·「🌊 침수 흔적」과 같이 켜면 실제로 잠겼던 곳과 잠길 수 있다고 계산된 곳이 겹쳐 보인다 · <a href="https://www.floodmap.go.kr" target="_blank" rel="noopener">공식 홍수위험지도 보기</a></small>'; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-fms],[data-fmf],[data-fmkey]'); if (!b) return; e.preventDefault();
+    if (b.hasAttribute('data-fmkey')) lkSet('floodmap', '홍수위험지도 포털(data.floodmap.go.kr)'); else if (b.hasAttribute('data-fms')) { FMAP.svc = b.getAttribute('data-fms'); if (FMS[FMAP.svc][2].indexOf(FMAP.fq) < 0) FMAP.fq = '100'; } else FMAP.fq = b.getAttribute('data-fmf');
+    fmapReset(); draw(); try { legend(); } catch (e2) {} });
   function fldlLeg() { var li9 = function (c, t) { return '<span><i style="display:inline-block;width:16px;height:5px;border-radius:3px;background:' + c + ';margin-right:4px;vertical-align:2px"></i>' + t + '</span> '; };
     return '<b>🌧 큰비 때 먼저 볼 길</b> ' + li9(FLDC[1], '1개 해') + li9(FLDC[2], '2') + li9(FLDC[3], '3') + li9(FLDC[4], '4개 해~') + '<small class="lg-n">' + (FLDL ? FLDL.L.length.toLocaleString() + '조각(' + esc(FLDL.area || '') + ')' : '읽는 중…') + ' · 색 = 30m 안에서 잠긴 적이 있는 해 수 · 굵기 = 차로 · ' + (view.s < 0.08 ? '<b>넓게 볼 때는 2개 해 이상만</b> · ' : '') + '누르면 잠긴 해·침수심·막히면 돌아가는 부담 · 「잠겼다」가 아니라 「둘레에서 잠긴 적이 있다」 · 통제 기록은 공개 자료가 없다</small>' + fdlLegHtml(); }
   /* ---------- v2.155.0 🔎 상권 지금 진단 — 소유자 온톨로지 마스터 문서 8장(부동산·경제·미래 · 단계 A 지금 진단 · 원칙 「예언이 아니라 조기 신호」) ----------
@@ -4058,7 +4094,7 @@
     ['safe', '🛡 치안·안전', ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er', 'ger', 'aed', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'glamp', 'fw', 'hyd', 'box', 'bar', 'play', 'inn', 'dem'], ['jurk', 'pbox', 'pol', 'fire', 'er']],
     ['care', '🎒 교육·돌봄', ['edu', 'school', 'kg', 'cc', 'kids', 'aca', 'kyr', 'welf', 'dem', 'pg', 'sz'], ['edu', 'kg', 'cc', 'kyr']],
     ['life', '🏥 생활시설', ['govr', 'gov', 'post', 'lib', 'park', 'hira', 'hosp', 'phar', 'wc', 'wc2', 'heat', 'cold', 'her', 'lore', 'conv', 'bank', 'box'], ['govr', 'hosp', 'phar', 'park', 'wc2']],
-    ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'fldl', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
+    ['season', '⛅ 날씨·계절', ['lwx', 'lair', 'lak', 'lkma', 'lrad', 'flt', 'flr', 'fldl', 'fmap', 'und', 'ice', 'hcab', 'advb', 'heat', 'cold'], ['lwx', 'lair', 'flt', 'ice']],
     ['live', '📡 실시간', ['lev', 'lutic', 'lspd', 'lcc', 'lsac', 'lak', 'lkma', 'lbus', 'lsbk', 'lspk', 'lwx', 'lair', 'lrad', 'crowd'], ['lev', 'lspd', 'lcc', 'lwx', 'lrad']],
     ['map', '🗺 바탕·격자', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm', 'g250', 'ri'], ['g250']]
   ];
@@ -7848,7 +7884,7 @@
     ['police', '🚓 경찰업무', [
       ['traf', '🚦 교통', [['교통사고', ['acc', 'pri', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'duir', 'risk', 'szh', 'spota']], ['신호·교차로', ['sgm', 'facs', 'tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['서울까지·대중교통', ['reach', 'trn', 'sbf', 'bsf', 'stz', 'sbc']], ['도로·교통량', ['rnet', 'rpost', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
       ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'duir', 'play', 'inn', 'stay', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
-      ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['pedr', 'sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['lore', 'flt', 'flr', 'fldl', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
+      ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['pedr', 'sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['lore', 'flt', 'flr', 'fldl', 'fmap', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
     ]],
     ['biz', '💳 상권·부동산', [
       ['spend', '💳 소비·상권', [['카드·매출', ['sales', 'crowd']], ['상권', ['opp', 'trd', 'tdg', 'szone', 'rent']], ['가게', ['conv', 'bank', 'bar', 'play', 'inn']]], ['sales', 'trd', 'szone']],

@@ -2266,6 +2266,27 @@
    }
   },
   {
+   "file": "traffic-snap-seocho.json",
+   "url": "https://340patrolman.github.io/datamap/data/traffic-snap-seocho.json",
+   "bytes": 16373,
+   "schema": "tg-traffic-snap/1",
+   "date": "2026-10-11 12:24",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261011122000",
+   "fields": "spd{ITS 링크 ID: 통행속도 km/h} — data/sig-approach-seocho.json 의 링크 ID 와 맞댄다 · n = 값이 온 링크 수 · want = 찾는 링크 수",
+   "note": "**실시간이 아니다 — 이 PC 가 10분마다 한 번 받아 올린 값이다**(made · at = 받은 때). 올라가 보이기까지 1~2분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 25분 넘게 지났으면 「오래된 값」으로 보고 쓰지 않는다 · 통행속도는 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 제한속도와 견줘 읽는다(sig-approach 의 제한속도 칸) · 링크마다 값이 안 오는 때가 있다(그 사이 지난 차가 없음) — 없는 링크는 「값 없음」이지 「원활」이 아니다",
+   "top": {
+    "note": "[4]",
+    "spd": "{842}"
+   },
+   "about": {
+    "area": "서초구 + 경계 밖 2km(data/sig-approach-seocho.json 의 신호 교차로에 들어오는 길)"
+   },
+   "sample": {
+    "spd.1020002406": "21.0",
+    "note[0]": "**실시간이 아니다 — 이 PC 가 10분마다 한 번 받아 올린 값이다**(made · at = 받은 때). 올라가 보이기까지 1~2분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 25분 넘게 지났으면 「오래된 값」으로 보고 쓰지 않는다"
+   }
+  },
+  {
    "file": "traffic-vol-seocho.json",
    "url": "https://340patrolman.github.io/datamap/data/traffic-vol-seocho.json",
    "bytes": 6201,

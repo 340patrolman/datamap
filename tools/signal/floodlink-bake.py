@@ -34,35 +34,62 @@ def main():
                             seen.add((tx, tz, yr)); yrs.add(yr); cnt += 1; dmax = max(dmax, dep or 0)
         if not yrs: continue
         rows.append([i, len(yrs), max(yrs), round(dmax, 1), cnt])
-    # 돌아가는 부담 — 그 링크를 빼고 양 끝을 잇는 가장 빠른 길(초) − 그 링크를 달리는 시간
+    # 돌아가는 부담 — **길 한 구간(갈림길에서 갈림길까지)** 이 막힐 때로 센다(게임 세션 2026-10-11 지적: 조각 하나만 빼면 큰길은 방향마다 마디가 따로라 「돌아갈 길 없음」이 77% 나왔다 — 조각 하나는 옆 조각으로 못 돌아간다)
     def t(x): return x[3] / (max(x[4], 20) / 3.6)
-    def detour(i):
-        x = L[i]; src, dst = x[1], x[2]; D = {src: 0.0}; h = [(0.0, src)]; lim = t(x) + 900
+    indeg = collections.Counter(); outdeg = collections.Counter(); inl = collections.defaultdict(list)
+    for k, x in enumerate(L): outdeg[x[1]] += 1; indeg[x[2]] += 1; inl[x[2]].append(k)
+    def thru(n): return indeg[n] == 1 and outdeg[n] == 1   # 지나가기만 하는 마디(갈림이 없다)
+    sec_of = {}; SEC = []
+    for k, x in enumerate(L):
+        if k in sec_of or x[5] > 6: continue
+        chain = [k]; a = x[1]
+        while thru(a) and len(chain) < 80:   # 거슬러 올라가 구간의 처음을 찾는다
+            pk = inl[a][0]
+            if pk in sec_of or pk in chain: break
+            chain.insert(0, pk); a = L[pk][1]
+        b = x[2]
+        while thru(b) and len(chain) < 80:
+            nk = out[b][0]
+            if nk in sec_of or nk in chain: break
+            chain.append(nk); b = L[nk][2]
+        sid = len(SEC); SEC.append(chain)
+        for q in chain: sec_of[q] = sid
+    def detour(sid):
+        ch = SEC[sid]; ban = set(ch); src, dst = L[ch[0]][1], L[ch[-1]][2]; base = sum(t(L[q]) for q in ch); D = {src: 0.0}; h = [(0.0, src)]; lim = base + 900
+        if src == dst: return None
         while h:
             d, u = heapq.heappop(h)
             if d > D.get(u, 1e18) or d > lim: continue
-            if u == dst: return d - t(x)
-            for j in out.get(u, ()):
-                if j == i: continue
-                nd = d + t(L[j])
-                if nd < D.get(L[j][2], 1e18): D[L[j][2]] = nd; heapq.heappush(h, (nd, L[j][2]))
+            if u == dst: return d - base
+            for q in out.get(u, ()):
+                if q in ban: continue
+                nd = d + t(L[q])
+                if nd < D.get(L[q][2], 1e18): D[L[q][2]] = nd; heapq.heappush(h, (nd, L[q][2]))
         return None
+    agg = {}   # 구간마다 — 잠긴 해(조각들의 합집합을 못 가지므로 가장 큰 값) · 가장 깊이 · 흔적 수 합
+    for i2, ny, last, dmax, cnt in rows:
+        sid = sec_of.get(i2)
+        if sid is None: continue
+        e = agg.setdefault(sid, [0, 0, 0.0, 0]); e[0] = max(e[0], ny); e[1] = max(e[1], last); e[2] = max(e[2], dmax); e[3] += cnt
+    DT = {}
     items = []
-    for i, ny, last, dmax, cnt in rows:
-        x = L[i]
-        if ny < 2 and x[5] > 4: continue   # 큰길(등급 1~4)은 한 해라도, 그 밖은 두 해 이상 찍힌 곳만
-        dt = detour(i)
-        items.append([x[0], x[7], x[5], x[6], x[3], ny, last, dmax, cnt, -1 if dt is None else round(dt), x[12] if len(x) > 12 else '000', x[9]])
+    for i2, ny, last, dmax, cnt in rows:
+        x = L[i2]; sid = sec_of.get(i2); e = agg.get(sid, [ny, last, dmax, cnt])
+        if e[0] < 2 and x[5] > 4: continue   # 큰길(등급 1~4)은 한 해라도, 그 밖은 두 해 이상 찍힌 구간만
+        if sid not in DT: DT[sid] = detour(sid) if sid is not None else None
+        dt = DT[sid]; slen = round(sum(L[q][3] for q in SEC[sid])) if sid is not None else x[3]
+        items.append([x[0], x[7], x[5], x[6], x[3], ny, last, dmax, cnt, -1 if dt is None else round(dt), x[12] if len(x) > 12 else '000', x[9], sid, slen, e[0]])
     items.sort(key=lambda r: (-r[5], -(r[9] if r[9] >= 0 else 9999), -r[3]))
     doc = {'schema': 'tg-flood-link/1', 'made': datetime.date.today().isoformat(), 'area': '서초구 + 경계 밖 2km',
            'chain': '폭우(자연) → 침수 이력이 있는 길(만든 조건) → 통제 → 돌아가는 길(구성원의 움직임) → 출동 지연 — ONTOLOGY.md §0 의 겹을 잇는 첫 화살표',
            'source': '서울시 침수흔적도(OA-15636 · 서울특별시 물순환안전국 치수안전과 · 2010~2025 · 2015·2021 자료 없음 · 공공누리 1유형 — data/season-seocho.json) × 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판(data/nav-seocho.json)',
            'note': ['침수 흔적은 **잠긴 건물·필지 범위의 가운데 점**이다 — 「그 길이 잠겼다」는 기록이 아니라 「그 길 30m 안에서 잠긴 적이 있다」다. 길 자체의 통제 기록은 공개 자료가 없다',
-                    '돌아가는 부담 = 그 길 조각 하나가 막혔을 때 양 끝을 잇는 가장 빠른 다른 길이 더 걸리는 초(제한속도 · 막힘 없음 · 회전 제한을 보지 않음 — 실제보다 작게 나온다) · -1 = 15분 안에 돌아갈 길이 없다',
+                    '돌아가는 부담 = 그 조각이 든 **길 한 구간(갈림길에서 갈림길까지 · 한 방향)** 이 통째로 막혔을 때 구간의 처음과 끝을 잇는 가장 빠른 다른 길이 더 걸리는 초(제한속도 · 막힘 없음 · 회전 제한을 보지 않음 — 실제보다 작게 나온다) · -1 = 15분 안에 돌아갈 길을 못 찾았다(외길이거나 자료의 가장자리)',
+                    '같은 구간의 조각들은 돌아가는 부담이 같다(끝의 세 칸 — 구간 번호 · 구간 길이 · 구간의 잠긴 해 수)',
                     '한 점수로 뭉치지 않았다 — 「잠긴 해 수」(일어날 법함) · 「돌아가는 부담」(끊겼을 때) · 「차로」(다니는 차의 어림)를 따로 보고 판단한다',
                     '2022·2011·2010 의 큰비 흔적이 대부분이다(해마다 고르게 찍힌 것이 아니다) · 그 뒤 배수 시설이 고쳐진 곳은 지금은 덜 잠길 수 있다(이 자료로 모른다)',
                     '도로 유형 002 = 지하차도 · 003 = 교량 · 004 = 터널(원자료 코드) — 지하차도는 얕은 침수에도 통제된다'],
-           'fields': 'items[[ITS 링크 ID, 길 이름, 등급, 차로, 길이 m, 침수 흔적이 찍힌 해 수, 마지막 해, 가장 깊었던 침수심 m, 흔적 수, 돌아가는 부담 초(-1 = 돌아갈 길 없음), 도로 유형, 선 = 경도·위도×1e5 첫 점 + 차이]] — 잠긴 해 수가 많은 차례',
+           'fields': 'items[[ITS 링크 ID, 길 이름, 등급, 차로, 길이 m, 침수 흔적이 찍힌 해 수, 마지막 해, 가장 깊었던 침수심 m, 흔적 수, 돌아가는 부담 초(-1 = 돌아갈 길 없음), 도로 유형, 선 = 경도·위도×1e5 첫 점 + 차이, 구간 번호, 구간 길이 m, 구간의 잠긴 해 수(조각들 가운데 가장 큰 값)]] — 잠긴 해 수가 많은 차례',
            'items': items}
     p = os.path.join(ROOT, 'data', 'flood-link-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('침수 흔적 30m 안 길 조각', len(rows), '· 실은 것', len(items), '· 바이트', os.path.getsize(p))

@@ -991,8 +991,8 @@ def build():
             pt, used = [], set()
             for z in r['ped']:
                 sg8 = [v for v in (z.get('seg') or []) if v > 6]
-                if not sg8 or DIRS.index(z['d']) % 4 in axs:
-                    continue
+                if not sg8 or (len(axs) > 1 and DIRS.index(z['d']) % 4 in axs):
+                    continue                                   # 차량 축이 하나뿐인 곳(건널목만 있는 연등)은 보행 방위가 그 축과 같게 적혀 있어도 넣는다 — 이수교차로(연등): 차 북동·남서 131초 · 보행 「남서」 33초 = 빈 35초
                 for g0, gl in gaps:
                     cand = sorted(((sum(1 for v in sg8 if abs(v - L) <= 2), L) for L in set(sg8) if gl - 12 <= L <= gl + 2), reverse=True)
                     if cand and (cand[0][0] >= 2 or len(sg8) <= 3):

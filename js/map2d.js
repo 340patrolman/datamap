@@ -2788,9 +2788,10 @@
     /* v2.177.0 종전엔 「받은 시각이 지금과 가장 가까운 기록」 하나만 봤다 — 서초 164곳을 훑으니 16시에 15:00~15:05 창(계획이 바뀌는 사이 · 주기 168·171·178초 같은 한 번뿐인 값 · 이동류 여섯이 못 읽힘)이 뽑히는 곳이 여럿.
        차례 = ① 오늘과 같은 요일 갈래 ② 약한 기록이 아닌 것(약함 = 정각 뒤 5분 안에 시작해 8분도 안 되는 창이고, 주기가 정수가 아니거나 그 교차로의 다른 기록에 같은 주기가 없다) ③ 받은 시각이 가까운 것 ④ 읽힌 이동류가 많은 것 */
     var h = nowH(), cl = HOUR == null ? sdCls(new Date()) : null, mn = function (t) { return +t.slice(0, 2) * 60 + +t.slice(3, 5); };
-    var wk = function (o) { var a = mn(o.from), b = mn(o.to); if (a % 60 > 5 || b - a >= 8 || b < a) return 0; if (Math.abs(o.cyc - Math.round(o.cyc)) > 0.3) return 1; return L.some(function (q) { return q !== o && Math.round(q.cyc) === Math.round(o.cyc); }) ? 0 : 1; };
+    /* v2.185.0 약한 기록 = **주기가 정수가 아닌 것**(184.8 · 176.8 · 167.8초 — 계획이 바뀌는 사이에 잰 값 · 창 길이와 상관없이) 또는 「한 주기에 두 번」 표시가 셋 넘는 것. 종전의 「정각 직후 짧은 창 + 그 주기가 한 번뿐」은 뺐다 — 신반포역 15:00~15:05(주기 170 · 다 읽힘)가 약한 것으로 밀리고 13:00~13:15(주기 184.8 · 빈 자리 98초)가 뽑혔다. 그다음은 받은 시각이 가까운 것 → 읽힌 이동류가 많은 것 → 닻이 있는 것 */
+    var wk = function (o) { if (Math.abs(o.cyc - Math.round(o.cyc)) > 0.3) return 1; return o.mv.filter(function (m) { return m[7] === 2; }).length >= 3 ? 1 : 0; };
     var rd = function (o) { return o.mv.filter(function (m) { return m[2] != null; }).length; };
-    return L.slice().sort(function (a, b) { return (cl == null ? 0 : (a.cl === cl ? 0 : 1) - (b.cl === cl ? 0 : 1)) || wk(a) - wk(b) || Math.abs(+a.from.slice(0, 2) - h) - Math.abs(+b.from.slice(0, 2) - h) || rd(b) - rd(a); })[0]; }
+    return L.slice().sort(function (a, b) { return (cl == null ? 0 : (a.cl === cl ? 0 : 1) - (b.cl === cl ? 0 : 1)) || wk(a) - wk(b) || Math.abs(+a.from.slice(0, 2) - h) - Math.abs(+b.from.slice(0, 2) - h) || rd(b) - rd(a) || (a.a ? 0 : 1) - (b.a ? 0 : 1); })[0]; }
   function sdAt(pt, r) { var best = null, bd = r || 45; if (!D.sigd || !D.sigd.pts) return null;
     Object.keys(D.sigd.pts).forEach(function (k) { var q = D.sigd.pts[k], d = dTrue(P(q[1], q[0]), pt); if (d < bd) { bd = d; best = k; } }); return best; }
   function sdGroups(o) {   // 같은 방위·같은 때에 켜지는 이동류를 한 줄로 · 마주 보는 두 방위가 똑같으면 「동↔서」로

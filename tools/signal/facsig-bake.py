@@ -7,13 +7,14 @@
 #     교차로 목록·자리 = 교통안전 신호등 실시간 정보의 교차로 지도정보(한국지역정보개발원 · 공공데이터포털 15157604 · 07_API키/out/rti/crsrd_map_info.json — 서울 2,779곳 = 서울 C-ITS 교차로)
 #     들어오는 쪽·차로·제한속도 = 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판(C:/Users/knpth/regionwork/nl)
 #     방향별 초·보행 = data/sigdir-seoul.json(서울 T-Data V2X) · 계획 = data/signal-tod-seoul.json(경찰청) · data/sig-ksc-seocho.json(서초서 교통과 5곳)
-#     T-GIS 코드·연동 부모 = data/tgis-seocho.json(서초구만 — 다른 구는 아직 굽지 않았다) · 카메라 = data/r/<구>/safety.json 의 cam
+#     T-GIS 코드·연동 부모 = data/tgis-seoul.json(서울 전체 · tools/signal/tgis-bake.py) · 카메라 = data/r/<구>/safety.json 의 cam
 #   **한계**: 방향별 초는 받은 시간대의 실제 값이고 계획표가 아니다 · 차로 수는 링크 전체의 값이라 교차로 앞에서 늘어나는 좌회전 포켓·차로별 방향은 없다 · 「직좌 동시」는 받은 값으로 읽은 것(현시도 확인 아님)
 #   py -3.12 -X utf8 tools/signal/facsig-bake.py [구 이름…]   (기본 = 서초구 강남구 동작구 관악구)
 import json, os, sys, math, datetime, collections, warnings
 warnings.filterwarnings('ignore')
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); KB = os.path.dirname(ROOT); SRC = 'C:/Users/knpth/regionwork/nl'
-GUS = [x for x in sys.argv[1:] if not x.startswith('-')] or ['서초구', '강남구', '동작구', '관악구']; CODE = {'서초구': '11650', '강남구': '11680', '동작구': '11590', '관악구': '11620'}
+CODE = {g['name']: g['gu'] for g in json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))['gus'] if g['sido'] == '11'}   # 서울 25구 이름 → 구 코드
+GUS = [x for x in sys.argv[1:] if not x.startswith('-')] or sorted(CODE)   # 기본 = 서울 전체(2026-10-11 「서울 전지역 확대」) · 구 이름을 주면 그 구만
 RANK = {'101': 1, '102': 2, '103': 3, '104': 4, '105': 5, '106': 6, '107': 7}; DIRS = ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw']
 def m(a, b): return math.hypot((a[0] - b[0]) * 88400.0, (a[1] - b[1]) * 111000.0)
 def main():
@@ -57,7 +58,7 @@ def main():
     sd = load(os.path.join(ROOT, 'data', 'sigdir-seoul.json')); its = sd.get('its', {}); pl = sd.get('pl', {})
     tod = {str(x['no']): x for x in load(os.path.join(ROOT, 'data', 'signal-tod-seoul.json')).get('spots', [])}
     ksc = {str(x['no']): x for x in load(os.path.join(ROOT, 'data', 'sig-ksc-seocho.json')).get('items', [])}
-    tg = load(os.path.join(ROOT, 'data', 'tgis-seocho.json')).get('items', []); tgc = {x[0]: x for x in tg}
+    tg = (load(os.path.join(ROOT, 'data', 'tgis-seoul.json')) or load(os.path.join(ROOT, 'data', 'tgis-seocho.json'))).get('items', []); tgc = {x[0]: x for x in tg}; tgn = {x[6]: x for x in tg if x[6]}   # 서울 전체(tools/signal/tgis-bake.py) — 없으면 서초 것
     CAM = []
     for g in GUS:
         CAM += load(os.path.join(ROOT, 'data', 'r', CODE.get(g, ''), 'safety.json')).get('cam', [])
@@ -108,26 +109,26 @@ def main():
             S[d] = row
         yd = 1 if '(연등)' in nm or '연등' in nm else 0
         cyc = sorted(set(int(q.get('ci') or q.get('cyc') or 0) for q in recs if (q.get('ci') or q.get('cyc'))))
-        t0 = next((v for v in tg if v[6] == int(no)), None) if no.isdigit() else None
+        t0 = tgn.get(int(no)) if no.isdigit() else None
         e = {'nm': nm, 'll': [round(lon, 6), round(lat, 6)], 'gu': gu, 'in': list(S.values()), 'cyc': cyc, 'cells': len(set((q[0], q[1]) for q in pl.get(no, []))), 'plan': ('교통과' if no in ksc else '') + ('경찰청' if no in tod else ''), 'yd': yd,
              'cam': sum(1 for c in CAM if abs(c['lon'] - lon) < 0.002 and m((lon, lat), (c['lon'], c['lat'])) <= 100)}
         if t0: e['tgis'] = [t0[0], t0[1], t0[4], (tgc.get(t0[4]) or [0, ''])[1] if t0[4] else '']   # [T-GIS 코드, T-GIS 이름, 연동 부모 코드, 부모 이름]
         if rec: e['day'] = rec.get('day'); e['at'] = rec.get('from')
         spots[no] = e; stat[gu] += 1; stat[gu + ' 방향별 초'] += 1 if rec else 0; stat[gu + ' 들어오는 쪽 읽음'] += 1 if S else 0; stat[gu + ' 직좌 동시 있는 곳'] += 1 if any(v[6] for v in S.values()) else 0
-    doc = {'schema': 'tg-fac-signal/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'area': '서울 ' + '·'.join(GUS),
-           'source': '교차로 목록·자리 = 교통안전 신호등 실시간 정보의 교차로 지도정보(한국지역정보개발원 · 공공데이터포털 15157604 — 서울 C-ITS 교차로) · 들어오는 쪽·차로·제한속도 = 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판 · 방향별 초·보행 = 서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간(data/sigdir-seoul.json %s) · 계획 = 경찰청 교차로계획정보서비스(공공데이터포털 15056569) · T-GIS = 서울시 T-GIS 교통안전시설물 교차로(A008_P · 서초구만) · 카메라 = 무인교통단속카메라 표준데이터' % sd.get('made', ''),
+    doc = {'schema': 'tg-fac-signal/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'area': '서울 ' + ('전체 25구' if len(GUS) >= 25 else '·'.join(GUS)),
+           'source': '교차로 목록·자리 = 교통안전 신호등 실시간 정보의 교차로 지도정보(한국지역정보개발원 · 공공데이터포털 15157604 — 서울 C-ITS 교차로) · 들어오는 쪽·차로·제한속도 = 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판 · 방향별 초·보행 = 서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간(data/sigdir-seoul.json %s) · 계획 = 경찰청 교차로계획정보서비스(공공데이터포털 15056569) · T-GIS = 서울시 T-GIS 교통안전시설물 교차로(A008_P · 서울 전체) · 카메라 = 무인교통단속카메라 표준데이터' % sd.get('made', ''),
            'note': ['**방향별 초는 받은 시간대에 실제로 돈 값이다(계획표가 아니다)** — 다른 시간대·요일은 다르고, 감응·수동 운영 중에는 또 다르다. day·at = 그 값을 받은 날·시각',
                     '차로 수 = 표준노드링크 LANES(링크 전체의 값)를 그 쪽으로 들어오는 링크끼리 더한 것 — 교차로 앞에서 늘어나는 좌회전 포켓·버스전용·차로별 진행 방향은 이 자료에 없다(시설담당 자료로 보완할 자리)',
                     '「직좌 동시」 = 같은 쪽의 직진과 좌회전이 같은 때(±2초) 같은 길이(±2초)로 켜진 것을 받은 값에서 읽은 것 — 현시도로 확인한 것이 아니다',
                     '보행 녹색 초 -1 = 그 쪽에 보행 신호가 있다고만 받았고 초는 모른다 · null = 받은 값에 없다(보행 신호가 없다는 뜻이 아니다)',
                     'plan = 요일·시각별 계획(주기·옵셋·현시값)이 있는 곳 — 「교통과」(서초서 교통과 출력물 5곳 · data/sig-ksc-seocho.json) · 「경찰청」(공개 계획 · data/signal-tod-seoul.json). 빈 글 = 계획 없음(시설담당 자료가 들어갈 자리 · data/fac-plan-schema.json)',
-                    'cells = 요일 4갈래 × 24시 = 96칸 가운데 실시간 값으로 채운 칸 수 · yd 1 = 이름에 (연등)이 있는 딸린 신호 · tgis 의 연동 부모는 T-GIS 연동교차로코드(서초구만)',
+                    'cells = 요일 4갈래 × 24시 = 96칸 가운데 실시간 값으로 채운 칸 수 · yd 1 = 이름에 (연등)이 있는 딸린 신호 · tgis 의 연동 부모는 T-GIS 연동교차로코드(C-ITS 번호가 15m 안에서 맞은 곳만 붙는다)',
                     '들어오는 쪽이 비어 있으면 그 자리 55m 안에 갈림길 마디가 없는 것(이면도로 건널목 등) · 대각 교차로는 방위가 한 칸(45°) 어긋날 수 있다',
                     '차로 표시등·차로제어신호기(가변차로)는 공개 자료를 찾지 못해 없다 — 시설담당 자료가 오면 넣는다'],
            'fields': 'spots{교차로 번호: {nm, ll[경도, 위도], gu, in[[들어오는 쪽(nt 북쪽에서 오는 차 …), 길 이름, 차로 합, 제한속도, 직진 녹색 초, 좌회전 녹색 초, 직좌 동시 1, 보행 녹색 초]…], cyc[받은 주기 초…], cells, plan, yd, cam 100m 안 단속 카메라 수, tgis[T-GIS 코드, 이름, 연동 부모 코드, 부모 이름], day, at}}',
            'stat': dict(stat), 'spots': spots}
     p = os.path.join(ROOT, 'data', 'fac-signal.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('교차로', len(spots), '· 바이트', os.path.getsize(p))
-    for g in GUS: print('  %s: %d곳 · 방향별 초 %d · 들어오는 쪽 읽음 %d · 직좌 동시 있는 곳 %d' % (g, stat[g], stat[g + ' 방향별 초'], stat[g + ' 들어오는 쪽 읽음'], stat[g + ' 직좌 동시 있는 곳']))
+    for g in GUS[:30]: print('  %s: %d곳 · 방향별 초 %d · 들어오는 쪽 읽음 %d · 직좌 동시 있는 곳 %d' % (g, stat[g], stat[g + ' 방향별 초'], stat[g + ' 들어오는 쪽 읽음'], stat[g + ' 직좌 동시 있는 곳']))
     for k in ('4039', '4916'): print(k, json.dumps(spots.get(k), ensure_ascii=False)[:700])
 if __name__ == '__main__': main()

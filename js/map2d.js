@@ -3523,7 +3523,15 @@
   var FMAP = { svc: 'cty', fq: '100', sa: 0, im: null, box: null, sig: '', want: '', tm: 0, st: '' };
   /* v2.171.0 권역은 다섯(다른 세션이 지역별로 불러 확인) — 다른 권역 코드로 부르면 오류가 아니라 **빈 투명 그림**이 온다(고장으로 안 보인다). FMAP.sa = 0 이면 화면 가운데 자리로 어림(경계 근처는 틀릴 수 있어 손으로 고르는 단추를 둔다) · 강원 영동·제주는 확인하지 않았다 */
   var FMSA = ['자동', '한강', '낙동강', '금강', '섬진강', '영산강'];
-  function fmapSa(cx, cy) { if (FMAP.sa) return FMAP.sa; if (cx >= 127.85 && cy < 37.05) return 2; if (cy >= 36.95) return 1; if (cy >= 35.6) return 3; return cx >= 127.1 ? 4 : 5; }
+  /* v2.172.0 문턱을 다른 세션이 전국 0.5° 칸마다 다섯 권역을 불러 잰 표(국가하천 500년 · 원본은 저장소 밖)에 맞췄다 — 권역이 섞이는 띠(아산·천안·평택 남쪽 = 1·3 / 보성강 쪽 = 4·5 / 하동·진주 쪽 = 2·4 / 거창·함양 쪽 = 3·2)는 **두 권역 그림을 함께 받아 겹친다**
+     (다른 권역 그림은 빈 투명 그림이라 겹쳐도 원본 그대로다 · 이 띠에서만 요청이 두 번). 돌려주는 값 = '3,1' 같은 글 */
+  function fmapSa(cx, cy) { if (FMAP.sa) return String(FMAP.sa);
+    if (cy >= 37.0) return '1';
+    if (cy >= 36.5) return cx >= 128.0 ? '2' : cx >= 127.5 ? '1' : '3,1';
+    if (cy >= 35.5) return cx >= 128.0 ? '2' : cx >= 127.75 ? '3,2' : '3';
+    if (cy >= 35.0) return cx >= 128.0 ? '2' : cx >= 127.5 ? '2,4' : cx >= 127.0 ? '4' : '5';
+    return cx >= 128.0 ? '2' : cx >= 127.5 ? '2,4' : cx >= 127.0 ? '4' : cx >= 126.5 ? '4,5' : '5'; }
+  function fmapSaName(k) { return String(k || '1').split(',').map(function (c) { return FMSA[+c] || c; }).join('·'); }
   var FMCL = [['0.5m 미만', '253,251,199'], ['0.5~1m', '230,255,153'], ['1~2m', '56,254,253'], ['2~5m', '206,154,254'], ['5m 이상', '206,63,135']];
   function fmapBox() { var a = M(0, 0), b = M(cv.clientWidth, cv.clientHeight); return [a[0] / KX + LON0, LAT0 - b[1] / KY, b[0] / KX + LON0, LAT0 - a[1] / KY]; }
   function fmapReset() { FMAP.im = null; FMAP.box = null; FMAP.sig = ''; FMAP.want = ''; FMAP.st = ''; clearTimeout(FMAP.tm); }
@@ -3531,21 +3539,21 @@
     var bx = [v[0] - w * 0.2, v[1] - h * 0.2, v[2] + w * 0.2, v[3] + h * 0.2], sc = Math.min(2000 / (cv.clientWidth * 1.4), 2000 / (cv.clientHeight * 1.4), Math.min(2, window.devicePixelRatio || 1)), pw = Math.round(cv.clientWidth * 1.4 * sc), ph = Math.round(cv.clientHeight * 1.4 * sc);
     var sa = fmapSa((v[0] + v[2]) / 2, (v[1] + v[3]) / 2); FMAP.saNow = sa;
     var sig = FMAP.svc + '|' + FMAP.fq + '|' + sa + '|' + bx.map(function (x) { return x.toFixed(5); }).join(','); if (sig === FMAP.want) return; FMAP.want = sig; FMAP.st = 'load'; try { legend(); } catch (e) {}
-    var im = new Image(); im.onload = function () { if (FMAP.want !== sig) return; FMAP.im = im; FMAP.box = bx; FMAP.sig = FMAP.svc + '|' + FMAP.fq + '|' + sa; FMAP.vs = view.s; FMAP.st = 'ok'; draw(); try { legend(); } catch (e) {} };
-    im.onerror = function () { if (FMAP.want !== sig) return; FMAP.st = 'bad'; try { legend(); } catch (e) {} };
-    im.src = 'https://data.floodmap.go.kr/api/wms-service/' + FMS[FMAP.svc][1] + '?ServiceKey=' + encodeURIComponent(LK.floodmap) + '&Freq=' + FMAP.fq + '&SAREA_CD=' + sa + '&Format=image/png&Bbox=' + bx.map(function (x) { return x.toFixed(6); }).join(',') + '&width=' + pw + '&height=' + ph + '&transparent=TRUE&srs=EPSG:4326'; }
+    var codes = sa.split(','), got = [], left = codes.length, vs0 = view.s, done = function () { if (--left > 0 || FMAP.want !== sig) return; if (got.length) { FMAP.im = got; FMAP.box = bx; FMAP.sig = FMAP.svc + '|' + FMAP.fq + '|' + sa; FMAP.vs = vs0; FMAP.st = 'ok'; draw(); } else FMAP.st = 'bad'; try { legend(); } catch (e) {} };
+    codes.forEach(function (c) { var im = new Image(); im.onload = function () { got.push(im); done(); }; im.onerror = done;
+      im.src = 'https://data.floodmap.go.kr/api/wms-service/' + FMS[FMAP.svc][1] + '?ServiceKey=' + encodeURIComponent(LK.floodmap) + '&Freq=' + FMAP.fq + '&SAREA_CD=' + c + '&Format=image/png&Bbox=' + bx.map(function (x) { return x.toFixed(6); }).join(',') + '&width=' + pw + '&height=' + ph + '&transparent=TRUE&srs=EPSG:4326'; }); }
   function drawFmap() { if (!on.fmap) return; var v = fmapBox(), w = v[2] - v[0], cx = (v[0] + v[2]) / 2, cy = (v[1] + v[3]) / 2, sa0 = fmapSa(cx, cy), cur = FMAP.svc + '|' + FMAP.fq + '|' + sa0;
     FMAP.wide = w > 0.9; FMAP.out = false; if (FMAP.saNow !== sa0) { FMAP.saNow = sa0; setTimeout(function () { try { legend(); } catch (e) {} }, 0); }
-    if (FMAP.im && FMAP.sig === cur && FMAP.box) { var b = FMAP.box, p0 = S(P(b[0], b[3])), p1 = S(P(b[2], b[1])); try { ctx.drawImage(FMAP.im, p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]); } catch (e) {} }
+    if (FMAP.im && FMAP.sig === cur && FMAP.box) { var b = FMAP.box, p0 = S(P(b[0], b[3])), p1 = S(P(b[2], b[1])); FMAP.im.forEach(function (im) { try { ctx.drawImage(im, p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]); } catch (e) {} }); }
     if (!LK.floodmap || FMAP.wide || FMAP.out) return;
     var ok = FMAP.box && FMAP.sig === cur && v[0] >= FMAP.box[0] && v[1] >= FMAP.box[1] && v[2] <= FMAP.box[2] && v[3] <= FMAP.box[3] && view.s <= (FMAP.vs || 0) * 1.6;
     if (!ok) { clearTimeout(FMAP.tm); FMAP.tm = setTimeout(fmapLoad, 600); } }
   function fmapLeg() { var sv = FMS[FMAP.svc], bt = function (a, v, t, onv) { return '<button ' + a + '="' + v + '"' + (onv ? ' class="on"' : '') + '>' + t + '</button>'; };
-    var h = '<b>🌊 홍수위험지도 — ' + sv[0] + ' · ' + (+FMAP.fq) + '년 빈도 · ' + FMSA[FMAP.saNow || 1] + '권역</b> ';
+    var h = '<b>🌊 홍수위험지도 — ' + sv[0] + ' · ' + (+FMAP.fq) + '년 빈도 · ' + fmapSaName(FMAP.saNow) + '권역</b> ';
     h += '<div class="lg-btns" style="margin:4px 0 2px">' + Object.keys(FMS).map(function (k) { return bt('data-fms', k, FMS[k][0], k === FMAP.svc); }).join('') + '</div><div class="lg-btns" style="margin:2px 0">' + sv[2].map(function (f) { return bt('data-fmf', f, (+f) + '년 빈도', f === FMAP.fq); }).join('') + '<button data-fmkey="1">🔑 ' + (LK.floodmap ? '열쇠 바꾸기' : '열쇠 넣기') + '</button></div><div class="lg-btns" style="margin:2px 0">' + FMSA.map(function (n, i) { return bt('data-fmsa', i, i ? n : '권역 자동', FMAP.sa === i); }).join('') + '</div>';
     h += FMCL.map(function (c) { return '<span><i style="display:inline-block;width:14px;height:10px;background:rgb(' + c[1] + ');border:1px solid var(--line);margin-right:4px;vertical-align:-1px"></i>' + c[0] + '</span> '; }).join('');
     var st = !LK.floodmap ? '<b>열쇠가 있어야 그린다</b> — <a href="https://data.floodmap.go.kr" target="_blank" rel="noopener">data.floodmap.go.kr</a> 에서 인증키를 받아 「🔑 열쇠 넣기」(이 기기에만 저장)' : FMAP.wide ? '<b>가까이 보면 그린다</b>(화면이 너무 넓다)' : FMAP.st === 'load' ? '받는 중…' : FMAP.st === 'bad' ? '<b style="color:#dc2626">그림이 오지 않았다</b> — 열쇠가 맞지 않거나 이 빈도의 지도가 없다' : FMAP.st === 'ok' ? '받음 · 지도를 옮기고 멈추면 그 범위로 다시 한 장 받는다' : '';
-    return h + '<small class="lg-n">' + st + ' · <b>환경부 한강홍수통제소 홍수위험지도 · 공공누리 4유형(출처표시 · 상업적 이용금지 · 변경금지) — 원본 그림을 그대로 띄운다</b>(색 = 침수 깊이 · 위 범례는 원본 범례를 옮긴 것) · 제방이 무너지거나 넘치는 가장 나쁜 경우(하천 범람) · 하수도·펌프장이 감당 못 하는 비(도시침수)를 <b>가정한 계산</b>이다 — 실제로 그렇게 잠긴다는 뜻이 아니다 · 제방의 안전성과 무관 · 받은 그림은 저장하지 않는다 · <b>비어 보이는 곳 = 그 갈래의 지도가 아직 없다는 뜻이지 「안 잠긴다」가 아니다</b>(도시침수지도는 서울에서 서초·강남·영등포·관악·동작·구로·은평·서대문 쪽 등 일부 구에만 있다 · 지방하천 갈래는 서울 범위가 통째로 비어 있다) · 국가하천 = 한강만이 아니라 안양천·중랑천 같은 국가하천도 든다 · 권역(한강·낙동강·금강·섬진강·영산강)은 화면 가운데 자리로 어림한다 — 권역 경계 근처에서 비어 보이면 옆 권역 단추를 눌러 본다(다른 권역 그림은 오류가 아니라 빈 그림으로 온다 · 강원 영동·제주는 확인하지 않았다) · 「🌧 큰비 때 먼저 볼 길」·「🌊 침수 흔적」과 같이 켜면 실제로 잠겼던 곳과 잠길 수 있다고 계산된 곳이 겹쳐 보인다 · <a href="https://www.floodmap.go.kr" target="_blank" rel="noopener">공식 홍수위험지도 보기</a></small>'; }
+    return h + '<small class="lg-n">' + st + ' · <b>환경부 한강홍수통제소 홍수위험지도 · 공공누리 4유형(출처표시 · 상업적 이용금지 · 변경금지) — 원본 그림을 그대로 띄운다</b>(색 = 침수 깊이 · 위 범례는 원본 범례를 옮긴 것) · 제방이 무너지거나 넘치는 가장 나쁜 경우(하천 범람) · 하수도·펌프장이 감당 못 하는 비(도시침수)를 <b>가정한 계산</b>이다 — 실제로 그렇게 잠긴다는 뜻이 아니다 · 제방의 안전성과 무관 · 받은 그림은 저장하지 않는다 · <b>비어 보이는 곳 = 그 갈래의 지도가 아직 없다는 뜻이지 「안 잠긴다」가 아니다</b>(도시침수지도는 서울에서 서초·강남·영등포·관악·동작·구로·은평·서대문 쪽 등 일부 구에만 있다 · 지방하천 갈래는 서울 범위가 통째로 비어 있다) · 국가하천 = 한강만이 아니라 안양천·중랑천 같은 국가하천도 든다 · 권역(한강·낙동강·금강·섬진강·영산강)은 화면 가운데 자리로 고른다 — 권역이 섞이는 띠(아산·천안·평택 남쪽 · 보성강 · 하동·진주 · 거창·함양 쪽)에서는 두 권역 그림을 함께 받는다 · 그래도 비어 보이면 옆 권역 단추를 눌러 본다(다른 권역 그림은 오류가 아니라 빈 그림으로 온다) · 강원 영동·제주는 국가하천 지도가 없다 · 「🌧 큰비 때 먼저 볼 길」·「🌊 침수 흔적」과 같이 켜면 실제로 잠겼던 곳과 잠길 수 있다고 계산된 곳이 겹쳐 보인다 · <a href="https://www.floodmap.go.kr" target="_blank" rel="noopener">공식 홍수위험지도 보기</a></small>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-fms],[data-fmf],[data-fmsa],[data-fmkey]'); if (!b) return; e.preventDefault();
     if (b.hasAttribute('data-fmkey')) lkSet('floodmap', '홍수위험지도 포털(data.floodmap.go.kr)'); else if (b.hasAttribute('data-fms')) { FMAP.svc = b.getAttribute('data-fms'); if (FMS[FMAP.svc][2].indexOf(FMAP.fq) < 0) FMAP.fq = '100'; } else if (b.hasAttribute('data-fmsa')) FMAP.sa = +b.getAttribute('data-fmsa'); else FMAP.fq = b.getAttribute('data-fmf');
     fmapReset(); draw(); try { legend(); } catch (e2) {} });

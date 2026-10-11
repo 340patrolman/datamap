@@ -3399,7 +3399,8 @@
     h += row('번호', 'C-ITS·T-Data <b>' + esc(String(no)) + '</b>' + (q.tgis && q.tgis[0] ? ' · T-GIS <b>' + esc(String(q.tgis[0])) + '</b>' + (q.tgis[1] && q.tgis[1] !== q.nm ? ' (' + esc(q.tgis[1]) + ')' : '') : ' · T-GIS <em>못 맞댐(15m 안에 같은 신호 없음)</em>') + (q.tgis && q.tgis[2] ? '<br>연동 부모 <b>' + esc(q.tgis[3] || '') + '</b> (' + esc(String(q.tgis[2])) + ') <em>— 지도의 보라 점선</em>' : ''));
     h += row('주기', (q.cyc && q.cyc.length ? '받은 값 <b>' + q.cyc.join(' · ') + '초</b>' : '<em>받은 값 없음</em>') + ' <em>(' + esc(q.day || '') + ' ' + esc(q.at || '') + ' · 요일 4갈래 × 24시 = 96칸 중 ' + (q.cells || 0) + '칸 받음)</em>');
     var fp = FPLN && FPLN.spots && FPLN.spots[String(no)];
-    h += row('요일·시각 계획', q.plan ? '<b style="color:#15803d">있음</b> — ' + esc(q.plan === '교통과' ? '서초경찰서 교통과 현시도(하루 전체 · 방향별)' : '경찰청 공개 계획(주기·옵셋·현시값 · 방향 없음)') : '<b style="color:#b45309">없음</b> — 시설담당 자료가 들어갈 자리');
+    var s9 = q.plan === '경찰청' && D.sig && D.sig.spots ? D.sig.spots.filter(function (x) { return String(x.no) === String(no); })[0] : null, nod = s9 && s9.plans && !sigRowAt(s9, Date.now());
+    h += row('요일·시각 계획', nod ? '<b style="color:#b45309">있으나 못 씀</b> — 경찰청 공개 계획의 요일 칸이 계획표에 없는 번호다(어느 계획이 도는지 모름 · 받은 값과도 안 맞음) → 시설담당 자료가 필요한 자리' : q.plan ? '<b style="color:#15803d">있음</b> — ' + esc(q.plan === '교통과' ? '서초경찰서 교통과 현시도(하루 전체 · 방향별)' : '경찰청 공개 계획(주기·옵셋·현시값 · 방향 없음)') : '<b style="color:#b45309">없음</b> — 시설담당 자료가 들어갈 자리');
     h += row('📁 시설담당 자료', fp ? '<b>' + esc(fp.day || '') + '</b> ' + esc(fp.by || '') + ' · 계획 ' + (fp.rows || []).length + '줄<br>' + (fp.rows || []).slice(0, 12).map(function (r) { return esc(['월~목', '금', '토', '일·공휴일'][r[0]] || String(r[0])) + ' ' + esc(String(r[1])) + '부터 주기 <b>' + r[2] + '</b> · 옵셋 ' + r[3]; }).join('<br>') : '<em>아직 없음</em> — 신호주기 표(요일·시각별 주기·옵셋·현시)를 받으면 이 자리에 뜨고, 받은 값과 맞대 본다');
     h += row('차로 표시등·가변차로', '<em>자료 없음</em> — 공개 자료를 찾지 못했다(시설담당 자료가 오면)') + row('단속 카메라', (q.cam || 0) + '대 <em>(100m 안)</em>');
     /* v2.153.0 한 카드에 잇기(소유자 온톨로지 문서 Phase 2 「교차로를 한 번 누르면 신호·사고·카메라·연동이 한 패널에」) — 사고 10년(가까운 교차로 집계 jct) · 이웃 신호 교차로(sig-net · 서초 둘레) */
@@ -3644,7 +3645,7 @@
     if (!rows || !rows.length) return 0; rows.forEach(function (r) { if (r[0] <= hm && r[1] > 0) cur = r; }); return (cur || rows[rows.length - 1])[1] || 0; }
   function sigNow(s) {
     var d = new Date(), dk = String(d.getDay() + 1), pn = s.dow && s.dow[dk], rows = pn && s.plans && s.plans[pn], hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), cur = null;
-    if (!rows || !rows.length) return '계획 없음';
+    if (!rows || !rows.length) return s.plans && Object.keys(s.plans).length ? '<b style="color:#b45309">요일 계획 지정 없음</b> <em>(공개 자료의 요일 칸이 계획표에 없는 번호다 — 어느 계획이 도는지 모른다 · 받은 값과 맞대도 맞는 계획이 없었다 · 받은 값으로만 본다)</em>' : '계획 없음';
     rows.forEach(function (r) { if (r[0] <= hm && r[1] > 0) cur = r; });
     if (!cur) cur = rows[rows.length - 1];
     return '주기 ' + cur[1] + '초 · ' + String(cur[3] || '').split(' ').filter(function (x) { return +x > 0; }).length + '현시 (' + esc(cur[0]) + ' 계획)';

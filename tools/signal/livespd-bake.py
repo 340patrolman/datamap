@@ -5,6 +5,7 @@
 #   **이 도구는 커밋하지 않는다** — 신호 수집기(tools/signal/spat-bake.py sweep · 게임 세션)가 두 번에 한 번 불러 그 파일을 같이 올린다(예약 작업을 따로 두지 않는다)
 #   싣는 것 = 신호 교차로에 들어오는 길의 링크(data/sig-approach-seocho.json) + 큰길(data/nav-seocho.json 의 등급 1~4 링크) — {ITS 링크 ID: 통행속도 km/h 정수}
 #   실패하거나 받은 것이 너무 적으면 파일을 건드리지 않고 1 로 끝난다
+#   받을 때마다 저장소 밖 ../07_API키/out/livespd/<날짜>.jsonl.gz 에 한 줄씩 쌓는다 → tools/signal/spdnormal-bake.py 가 「평소 속도」로 굽는다
 #   py -3.12 -X utf8 tools/signal/livespd-bake.py
 import json, os, sys, time, datetime, urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); KB = os.path.dirname(ROOT)
@@ -36,5 +37,10 @@ def main():
            'n': len(m), 'want': len(want), 'm': dict(sorted(m.items()))}
     p = os.path.join(ROOT, 'data', 'live-spd-seocho.json'); tmp = p + '.tmp'
     json.dump(doc, open(tmp, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); os.replace(tmp, p)
+    try:   # 쌓아 두기(저장소 밖) — 「평소 속도」의 바탕(링크 × 요일 × 시각)을 만들려는 것. 하루 한 파일 · 한 번 받을 때마다 한 줄(gzip 이어 붙이기) · 실패해도 위 파일은 이미 썼다
+        import gzip
+        ad = os.path.join(KB, '07_API키', 'out', 'livespd'); os.makedirs(ad, exist_ok=True)
+        with gzip.open(os.path.join(ad, datetime.date.today().strftime('%Y%m%d') + '.jsonl.gz'), 'at', encoding='utf-8') as f: f.write(json.dumps({'at': doc['at'], 'm': doc['m']}, separators=(',', ':')) + chr(10))
+    except Exception as e: print('쌓아 두기 실패', type(e).__name__)
     print(doc['made'], '· 값이 온 링크', len(m), '/', len(want), '· 상자 안 전부', len(items), '· 바이트', os.path.getsize(p)); return 0
 if __name__ == '__main__': sys.exit(main())

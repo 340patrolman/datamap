@@ -274,7 +274,7 @@ def sweep(prefer=None, api='t', cap=None):
         nowt = time.time()
         now = datetime.datetime.now()
         t = now.minute * 60 + now.second
-        slot_of = lambda ts: (cls_of((datetime.datetime.fromtimestamp(ts).weekday() + 1) % 7), datetime.datetime.fromtimestamp(ts).hour)
+        slot_of = lambda ts: (cls_of((datetime.datetime.fromtimestamp(ts).weekday() + 1) % 7, datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')), datetime.datetime.fromtimestamp(ts).hour)
         nslot = slot_of(nowt)
         if seen_slot != nslot:
             seen_slot, seen = nslot, {}                       # 시각대가 바뀌면 「이 시각대에 몇 번 받아 봤나」를 다시 센다
@@ -787,8 +787,26 @@ def mvrow(x, cyc):
     return [x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n']]
 
 
-def cls_of(dow):
-    """요일 갈래 — 0 월~목 · 1 금 · 2 토 · 3 일(교통과 계획의 TOD 갈래와 같게)"""
+_HOL = None
+
+
+def holidays():
+    """공휴일 날짜 집합(data/holidays.json — 천문연 특일 · 대체공휴일·선거일 포함) — 없으면 빈 집합"""
+    global _HOL
+    if _HOL is None:
+        try:
+            _HOL = set(json.load(open(os.path.join(ROOT, 'data', 'holidays.json'), encoding='utf-8')).get('days', {}).keys())
+        except Exception:
+            _HOL = set()
+    return _HOL
+
+
+def cls_of(dow, day=None):
+    """요일 갈래 — 0 월~목 · 1 금 · 2 토 · 3 일·공휴일(교통과 계획의 TOD 갈래와 같게).
+    (2026-10-11 소유자 「신호값이 평일과 휴일이 달라 — 통행량이 다르니까」) day('YYYY-MM-DD')가 공휴일이면 요일과 상관없이 3 —
+    종전엔 요일만 봐서 평일 공휴일에 받은 기록이 평일 표를 휴일 값으로 덮었고, 지도(sdCls = 공휴일 → 3)는 그날 그 값을 찾지 못했다"""
+    if day and day in holidays():
+        return 3
     return 2 if dow == 6 else 3 if dow == 0 else 1 if dow == 5 else 0
 
 
@@ -803,7 +821,7 @@ def prune():
             dt = datetime.datetime.strptime(d + hm[:6], '%Y%m%d%H%M%S')
         except Exception:
             continue
-        G.setdefault((i, cls_of(dt.isoweekday() % 7), dt.hour, b.endswith('p')), []).append((dt, f))
+        G.setdefault((i, cls_of(dt.isoweekday() % 7, dt.strftime('%Y-%m-%d')), dt.hour, b.endswith('p')), []).append((dt, f))
     n = 0
     for L in G.values():
         L.sort()
@@ -839,7 +857,7 @@ def build():
         keep, plan, pinfo = {}, {}, {}
         for r in v:
             ci0 = r.get('ci') or int(round(r['cyc']))
-            kk = (cls_of(r['dow']), int(round(ci0)))
+            kk = (cls_of(r['dow'], r['day']), int(round(ci0)))
             if r.get('pd') or not (keep.get(kk) and keep[kk].get('pd')) or r.get('a'):
                 if keep.get(kk) and keep[kk].get('pd') and not r.get('pd'):
                     # 보행 신호 색은 신호 상태 API 로 읽은 것을 이어 쓴다(같은 요일 갈래·같은 주기) —
@@ -859,8 +877,8 @@ def build():
                 sod = (r['a'] + 9 * 3600) % 86400               # 한국 시각 하루 초
                 okm = [x for x in r['mv'] if x.get('g') is not None]
                 rf = max(okm, key=lambda x: (x['g'], -DIRS.index(x['d']))) if okm else None      # 닻(a)의 기준 이동류 = 녹색이 가장 긴 이동류(reduce_one·reduce_phase 와 같은 규칙)
-                pinfo[(cls_of(r['dow']), hh)] = (r['day'], int(r['from'][:2]) * 60 + int(r['from'][3:5]), int(r['to'][:2]) * 60 + int(r['to'][3:5]))
-                plan[(cls_of(r['dow']), hh)] = [cls_of(r['dow']), hh, ci0, int(round(sod % ci0)) % int(round(ci0)) if ci0 == int(ci0) else round(sod % ci0, 1), r['day'][5:], (rf['d'] + ':' + rf['m']) if rf else '']
+                pinfo[(cls_of(r['dow'], r['day']), hh)] = (r['day'], int(r['from'][:2]) * 60 + int(r['from'][3:5]), int(r['to'][:2]) * 60 + int(r['to'][3:5]))
+                plan[(cls_of(r['dow'], r['day']), hh)] = [cls_of(r['dow'], r['day']), hh, ci0, int(round(sod % ci0)) % int(round(ci0)) if ci0 == int(ci0) else round(sod % ci0, 1), r['day'][5:], (rf['d'] + ':' + rf['m']) if rf else '']
         # (2026-10-11 소유자 「이수역사거리 비는 초는 북남 양직진이네」) 못 읽은 이동류를 **같은 요일 갈래·같은 주기의 다른 기록**에서 채운다 —
         #  이수역 일 15시: 신호 상태 기록(나중 것 · 보행 신호가 있어 남는다)은 북·남 직진을 못 읽고, 23초 앞서 받은 잔여시간 기록은 남쪽 직진 74초(0초)·동 46·서 55초(88초)를 읽었다.
         #  두 기록에 함께 읽힌 이동류(녹색 길이 ±2초)로 자리를 맞춘다: 밀림 = 남는 기록의 자리 − 주는 기록의 자리(녹색이 가장 긴 공통 이동류) · 다른 공통 이동류가 모두 ±3초 안으로 맞아야 쓴다.
@@ -876,12 +894,12 @@ def build():
             add = {}
             # (2026-10-11 소유자 「빈자리를 없애야지 · 이수역처럼 신호값이 불완전하면 곤란해」) 같은 요일 갈래를 먼저 보고, 없으면 **다른 요일 갈래의 같은 주기** 기록도 본다 —
             #  그때는 함께 읽힌 이동류가 둘 이상이고 모두 녹색 ±2초·자리 ±3초로 맞아야 한다(같은 주기라도 요일마다 현시값이 다를 수 있다)
-            for q in sorted(sorted(v, key=lambda z: (z['day'], z['to']), reverse=True), key=lambda z: 0 if cls_of(z['dow']) == kk[0] else 1):
+            for q in sorted(sorted(v, key=lambda z: (z['day'], z['to']), reverse=True), key=lambda z: 0 if cls_of(z['dow'], z['day']) == kk[0] else 1):
                 if (q['day'], q['from'], q['to'], q.get('src')) == (r['day'], r['from'], r['to'], r.get('src')):
                     continue
                 if int(round(q.get('ci') or int(round(q['cyc'])))) != kk[1]:
                     continue
-                xcl = cls_of(q['dow']) != kk[0]
+                xcl = cls_of(q['dow'], q['day']) != kk[0]
                 qm = {(x['d'], x['m']): x for x in q['mv'] if x.get('g') is not None and x.get('o') is not None and abs(x['g'] + x['y'] + x['r'] - q['cyc']) <= 3.5}
                 com = [k2 for k2 in qm if isread(have.get(k2)) and abs(have[k2]['g'] - qm[k2]['g']) <= 2]
                 if not com or (xcl and len(com) < 2):
@@ -906,7 +924,7 @@ def build():
         OPP9 = {'nt': 'st', 'st': 'nt', 'et': 'wt', 'wt': 'et', 'ne': 'sw', 'sw': 'ne', 'se': 'nw', 'nw': 'se'}
         for kk, r in list(keep.items()):
             cur = {(x['d'], x['m']): x for x in r['mv']}
-            same = [q for q in v if (cls_of(q['dow']), int(round(q.get('ci') or int(round(q['cyc']))))) == kk]
+            same = [q for q in v if (cls_of(q['dow'], q['day']), int(round(q.get('ci') or int(round(q['cyc']))))) == kk]
             add = {}
             for d in DIRS:
                 x, o = cur.get((d, 'St')), cur.get((OPP9[d], 'St'))
@@ -926,12 +944,12 @@ def build():
             if r.get('pd') or c8 < 20:
                 continue
             hv = {(x['d'], x['m']): x for x in r['mv'] if x.get('g') is not None and x.get('o') is not None and not x.get('fl')}
-            for q9 in sorted(sorted(v, key=lambda z: (z['day'], z['to']), reverse=True), key=lambda z: 0 if cls_of(z['dow']) == kk[0] else 1):
+            for q9 in sorted(sorted(v, key=lambda z: (z['day'], z['to']), reverse=True), key=lambda z: 0 if cls_of(z['dow'], z['day']) == kk[0] else 1):
                 if not q9.get('pd') or int(round(q9.get('ci') or int(round(q9['cyc'])))) != kk[1]:
                     continue
                 qv = {(x['d'], x['m']): x for x in q9['mv'] if x.get('g') is not None and x.get('o') is not None and not x.get('fl')}
                 cm = [k2 for k2 in qv if k2 in hv and abs(hv[k2]['g'] - qv[k2]['g']) <= 2]
-                if len(cm) < (1 if cls_of(q9['dow']) == kk[0] else 2) or any(k2 in hv and abs(hv[k2]['g'] - qv[k2]['g']) > 2 for k2 in qv):
+                if len(cm) < (1 if cls_of(q9['dow'], q9['day']) == kk[0] else 2) or any(k2 in hv and abs(hv[k2]['g'] - qv[k2]['g']) > 2 for k2 in qv):
                     continue
                 b8 = max(cm, key=lambda k2: qv[k2]['g']); sh8 = (hv[b8]['o'] - qv[b8]['o']) % c8
                 if all(min(((qv[k2]['o'] + sh8) - hv[k2]['o']) % c8, (hv[k2]['o'] - (qv[k2]['o'] + sh8)) % c8) <= 3 for k2 in cm):
@@ -1086,7 +1104,7 @@ def build():
             pl[k] = [plan[q] for q in sorted(plan)]
         L = []
         for r in vv:
-            o = {'day': r['day'], 'dow': r['dow'], 'cl': cls_of(r['dow']), 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
+            o = {'day': r['day'], 'dow': r['dow'], 'cl': cls_of(r['dow'], r['day']), 'from': r['from'], 'to': r['to'], 'cyc': r['cyc'],
                  'mv': [mvrow(x, r['cyc']) for x in r['mv']],
                  'ped': [[p['d'], p['seg'][:8]] for p in r['ped']]}
             if dir_bad(o['mv'], r['cyc']):
@@ -1109,7 +1127,7 @@ def build():
                     gap = abs(q['a'] - r['a']); offq = ((q['a'] + 32400) % 86400) % r['ci']; res = abs(offq - offr); res = min(res, r['ci'] - res)
                     if res <= 3:
                         if not best or gap > best[0]: best = (gap, res)
-                    elif cls_of(q['dow']) == cls_of(r['dow']) and datetime.datetime.fromtimestamp(q['a']).hour == hr_r and (not bad or gap < bad[0]): bad = (gap, res)
+                    elif cls_of(q['dow'], q['day']) == cls_of(r['dow'], r['day']) and datetime.datetime.fromtimestamp(q['a']).hour == hr_r and (not bad or gap < bad[0]): bad = (gap, res)
                 if best: o['v'] = [int(best[0] // 60), round(best[1], 1)]
                 if bad: o['x'] = [int(bad[0] // 60), round(bad[1], 1)]
             L.append(o)

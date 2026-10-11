@@ -535,7 +535,7 @@ def reduce_one(itst, J):
                 if 2.5 <= sg[i][1] <= 6.5 and sg[i - 1][1] > 6.5 and sg[i + 1][1] > 6.5 and abs(sg[i - 1][0] + sg[i - 1][1] - sg[i][0]) < 2 and abs(sg[i][0] + sg[i][1] - sg[i + 1][0]) < 2:
                     G.append(sg[i - 1][1]); Y.append(sg[i][1]); R.append(sg[i + 1][1]); gs.append(sg[i - 1][0])
             if len(G) < (2 if t1 - t0 > 430 else 1):   # 7분 넘게 받았으면 두 번 본 것만 · 정각 창(5분 안팎)은 한 번 본 것도 쓴다(2026-10-10 20:04 — 290줄에 103곳 중 15곳만 구워졌다)
-                mv.append({'d': d, 'm': m, 'n': len(G), 'seg': [round(s[1]) for s in sg[:10]]})   # 색을 못 가린 이동류(점멸 운영 등)
+                mv.append({'d': d, 'm': m, 'n': len(G), 'seg': [round(s[1]) for s in sg[:10]], '_sg': sg})   # 색을 못 가린 이동류(점멸 운영 등)
                 continue
             g, y, r = med(G), med(Y), med(R)
             mv.append({'d': d, 'm': m, 'g': g, 'y': y, 'r': r, 'n': len(G), 'gs': gs})
@@ -543,10 +543,59 @@ def reduce_one(itst, J):
     if not mv and not ped:
         return None
     cyc = med(cyc_all)
+    # (2026-10-11 소유자 「이수역 … 중간에 붕 뜬다 올레드 … 40초가 넘는다」) 적색 구간이 걸러진 이동류 살리기 —
+    #  이수역(1552) 일 14시: 동쪽 직진 구간이 [46, 4, 46, 4 …] · 서쪽 [55, 4, 55, 4 …] = 녹색·황색은 읽혔는데 적색의 잔여시간이 모름 값이라 적색 구간이 통째로 빠져
+    #  「긴 구간 — 황색 — 긴 구간」 규칙에 못 들었다(그 59초가 지도에서 올레드처럼 비었다). 다른 이동류로 주기를 알면:
+    #  ① 긴 구간 바로 뒤에 황색(2.5~6.5초)이 붙고 ② 그 황색 뒤는 비어 있고(적색이 걸러진 자리 — 뒤가 붙어 있으면 짧은 녹색+황색일 수 있어 안 쓴다)
+    #  ③ 그런 쌍이 두 번 이상 · 녹색 길이가 서로 2.5초 안 · 녹색 시작 간격이 주기의 정수배(±2.5초)면 녹색·황색을 그 값으로, 적색 = 주기 − 녹색 − 황색.
+    if not cyc:
+        # 온전한 「녹 — 황 — 적」 한 벌을 이동류마다 한 번씩만 본 긴 창(600줄에 주기 160초 = 세 주기 남짓인데 앞뒤가 잘림) — 여러 이동류의 한 벌 합이 서로 같으면(±2초 · 셋 이상) 그 값이 주기다
+        sums = []
+        for x in mv:
+            sg = x.get('_sg') or []
+            for i in range(1, len(sg) - 1):
+                if 2.5 <= sg[i][1] <= 6.5 and sg[i - 1][1] > 6.5 and sg[i + 1][1] > 6.5 and abs(sg[i - 1][0] + sg[i - 1][1] - sg[i][0]) < 2 and abs(sg[i][0] + sg[i][1] - sg[i + 1][0]) < 2:
+                    sums.append(sg[i - 1][1] + sg[i][1] + sg[i + 1][1])
+        if len(sums) >= 3 and max(sums) - min(sums) <= 2:
+            cyc = med(sums)
+    if cyc:
+        for x in mv:
+            sg = x.get('_sg')
+            if 'g' in x or not sg:
+                continue
+            # (같은 날) 둘째 규칙 — 「긴 구간 — 짧은 구간(1.5~6.5초) — 긴 구간」이 붙어 있고 **셋을 더하면 주기**(±2.5초)인 한 벌.
+            #  황색이 2초쯤으로 읽히는 곳(3001 = [15, 2, 113] · 주기 130)과, 8분 넘는 창에서 온전한 한 벌을 한 번만 본 곳(1483 = [35, 5, 140] · 주기 180)이 여기서 산다.
+            #  주기와 맞는다는 것이 「두 번 봤다」를 대신한다 — 여러 벌이면 녹색 길이가 서로 2.5초 안이어야 한다.
+            G, Y, R, gs = [], [], [], []
+            for i in range(1, len(sg) - 1):
+                if (1.5 <= sg[i][1] <= 6.5 and sg[i - 1][1] > 6.5 and sg[i + 1][1] > 6.5 and abs(sg[i - 1][0] + sg[i - 1][1] - sg[i][0]) < 2
+                        and abs(sg[i][0] + sg[i][1] - sg[i + 1][0]) < 2 and abs(sg[i - 1][1] + sg[i][1] + sg[i + 1][1] - cyc) <= 2.5):
+                    G.append(sg[i - 1][1]); Y.append(sg[i][1]); R.append(sg[i + 1][1]); gs.append(sg[i - 1][0])
+            if G and max(G) - min(G) <= 2.5:
+                x.update({'g': med(G), 'y': med(Y), 'r': med(R), 'n': len(G), 'gs': gs, 'rx': 2})
+                x.pop('seg', None)
+                continue
+            G, Y, gs = [], [], []
+            for i in range(1, len(sg)):
+                if not (2.5 <= sg[i][1] <= 6.5 and sg[i - 1][1] > 6.5 and abs(sg[i - 1][0] + sg[i - 1][1] - sg[i][0]) < 2):
+                    continue
+                if i + 1 < len(sg) and abs(sg[i][0] + sg[i][1] - sg[i + 1][0]) < 2:
+                    continue
+                G.append(sg[i - 1][1]); Y.append(sg[i][1]); gs.append(sg[i - 1][0])
+            if len(G) < 2 or max(G) - min(G) > 2.5:
+                continue
+            sp = [gs[i + 1] - gs[i] for i in range(len(gs) - 1)]
+            if not all(round(q / cyc) >= 1 and abs(q - round(q / cyc) * cyc) <= 2.5 for q in sp):
+                continue
+            g, y = med(G), med(Y)
+            if cyc - g - y <= 6.5:
+                continue
+            x.update({'g': g, 'y': y, 'r': round(cyc - g - y, 1), 'n': len(G), 'gs': gs, 'rx': 1})
+            x.pop('seg', None)
     ok = [x for x in mv if 'g' in x]
     # 녹색 시작 자리(주기 안) — 녹색이 가장 긴 이동류의 시작을 0 으로
     if ok and cyc:
-        ref = max(ok, key=lambda x: (x['g'], -DIRS.index(x['d'])))
+        ref = max(ok, key=lambda x: (x['g'], -DIRS.index(x['d'])))   # 기준 이동류 = 녹색이 가장 긴 것(살린 이동류도 같은 규칙 — build() 의 기준 이동류 열쇠·지도의 plShift 와 한결같아야 한다)
         rs = sorted(ref['gs'])
         for x in ok:
             offs = []
@@ -554,6 +603,12 @@ def reduce_one(itst, J):
                 prev = [r for r in rs if r <= s0 + 1]   # 이 녹색 바로 앞의 기준 녹색 시작(주기마다 따로 재서 통신 끊김 뒤 어긋남을 피한다)
                 if prev and s0 - prev[-1] < cyc + 2:
                     offs.append(max(0, s0 - prev[-1]))
+            if not offs:
+                # (2026-10-11) 앞선 기준 녹색을 못 본 이동류(창이 짧아 이 녹색이 기준 녹색보다 먼저 한 번만 보인 것) — 바로 뒤 기준 녹색에서 거꾸로 센다(주기 − 간격). 없으면 지도가 자리를 0 으로 잘못 놓는다
+                for s0 in x['gs']:
+                    nxt = [r for r in rs if r > s0 + 1]
+                    if nxt and nxt[0] - s0 < cyc + 2:
+                        offs.append((cyc - (nxt[0] - s0)) % cyc)
             x['o'] = int(round(statistics.median(offs))) % int(round(cyc)) if offs else None
     anchor = None
     if ok and cyc:
@@ -570,7 +625,7 @@ def reduce_one(itst, J):
             ci = plan_ci(cyc, int(round(cyc)))
         anchor = {'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy}
     for x in mv:
-        x.pop('gs', None)
+        x.pop('gs', None); x.pop('_sg', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
     if anchor:
         return dict({'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows), 'cyc': cyc, 'mv': mv, 'ped': ped}, **anchor)

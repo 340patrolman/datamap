@@ -20,7 +20,7 @@
     ['lak', '🟢 미세먼지 측정소(에어코리아)', false, '실시간', 1], ['lkma', '🌡 기상청 실황·특보·지진', false, '실시간', 1], ['lbus', '🚌 경기 버스 도착·위치', false, '실시간', 1], ['lsac', '🚧 서울 돌발·통제(TOPIS)', false, '실시간', 1], ['lutic', '🚨 시내 돌발(UTIC · 받아 둔 한 장)', false, '실시간', 0], ['lsbk', '🚲 따릉이 지금 남은 대수', false, '실시간', 1], ['lspk', '🅿 서울 공영주차장 지금 빈자리', false, '실시간', 1],
     ['lwx', '🌦 지금 날씨(격자)', false, '실시간', 1], ['lrad', '🌧 비구름 레이더', false, '실시간', 0], ['lair', '😷 지금 미세먼지(격자)', false, '실시간', 0],
     ['acc', '🚗 교차로 사고(2019~)', true, '교통사고', 1], ['acc10', '🚗 사고 10년(100m 칸)', false, '교통사고', 1], ['fatal10', '🕯 사망사고 10년', false, '교통사고', 0], ['fatal', '🕯 사망사고', false, '교통사고', 0], ['jiga', '🟧 공시지가·지목 지도(대지 ㎡당 · 농지·임야 비율 · 250m·동)', false, '주거·부동산', 1], ['rone', '🏘 집값·거래 흐름(시군구 · R-ONE 월간)', false, '주거·부동산', 1], ['land', '📐 필지 — 공시지가·용도·건물(누르면 · 브이월드)', false, '주거·부동산', 1], ['home', '🏠 주택 실거래 — 평당·전세가율(250m)', false, '주거·부동산', 1], ['jurk', '🚓 경찰서 관할(전국 · 행정동)', false, '치안·안전', 1], ['pbox', '👮 지구대·파출소(전국)', false, '치안·안전', 1], ['rtc', '🏢 상가·업무 매매 실거래(250m)', false, '주거·부동산', 1], ['live250', '👥 생활인구 250m(서울)', false, '인구 구성', 1], ['fl250', '🌏 지금 머무는 외국인 250m(서울)', false, '인구 구성', 1], ['lpop', '👥 생활인구(인구감소지역 · 시군구 월별)', false, '인구 구성', 1], ['fdong', '🌏 외국인 현황(시군구·읍면동 · 비율·인원·유형·5년 변화)', false, '인구 구성', 1], ['minbak', '🏡 외국인관광 도시민박', false, '인구 구성', 1], ['stay', '🛏 숙박시설(호텔·호스텔·콘도·한옥·펜션·농어촌민박·모텔 · 전국)', false, '인구 구성', 1], ['flodge', '🏨 관광숙박(서울 · 호텔·호스텔)', false, '인구 구성', 0], ['msub', '🚇 대구 도시철도 하차(월별)', false, '이동·동선', 0], ['busd', '🚌 인천 버스 정류장 승하차(일평균)', false, '이동·동선', 0], ['ri', '🌾 리(里) 경계 · 가게·사고', false, '바탕', 1], ['usgg', '🗂 시군구로 나눠 보기', false, '바탕', 1], ['juris', '🏛 행정 관할(교육지원청·세무서·법원·등기소 · 전국)', false, '바탕', 1], ['reach', '🛣 서울까지 승용차 몇 분(전국 · 고속도로 따라)', false, '도로·교통', 0], ['trn', '🚆 기차로 서울까지 몇 분(전국 역)', false, '도로·교통', 0], ['sbc', '🚇 지하철 혼잡도(서울 1~9호선 · 평일)', false, '도로·교통', 0], ['sbf', '🚇 지하철 배차(낮 한 시간 몇 대 · 전국)', false, '도로·교통', 0], ['stz', '🚶 역·정류장 영향권(걷는 시간 · 길 따라)', false, '도로·교통', 0], ['bsf', '🚌 버스 배차(정류장 한 시간 몇 대)', false, '도로·교통', 0], ['rnet', '🛣 도로망 등급(전국 · 국도·지방도·시군도)', false, '도로·교통', 1], ['rpost', '🔢 도로 번호(서울 가로등 · 전국 고속도로 거리표 km)', false, '도로·교통', 1], ['volp', '🚙 시간대 교통량(서울 조사 지점)', false, '도로·교통', 1], ['exv', '🛣 고속도로 영업소 교통량(전국)', false, '도로·교통', 1], ['upb', '👮 지구대·파출소 관할(근사)', false, '치안·안전', 1], ['g250', '🧊 250m 격자(국가표준)', false, '바탕', 0], ['acc250', '🚗 사고 10년(250m 격자)', false, '교통사고', 1], ['pri', '🚓 지금 순찰할 칸(사고·사람 조합 · 250m)', false, '교통사고', 1], ['pedr', '🚸 보행 안전 우선 칸(보행자 피해·노인·어린이·걷는 사람 · 250m)', false, '교통사고', 1], ['opp', '🏪 가게 자리 기회 칸(사람·땅값·가게 수 조합 · 250m · 가설)', false, '소비·상권', 1], ['hot', '⚠ 사고다발지', false, '교통사고', 0], ['drunk', '🍺 음주 사고 다발지', false, '교통사고', 1],
-    ['risk', '🟥 사고위험지역', false, '교통사고', 0], ['sz', '🏫 어린이보호구역', false, '교통사고', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통사고', 0], ['cam', '📷 단속 카메라', false, '도로·교통', 0], ['spd', '🚥 도로 소통(받은 때)', false, '도로·교통', 0], ['sgm', '🚦 신호값 있는 교차로(신호등 표시)', true, '도로·교통', 0], ['gmk', '🏛 관공서 표시(경찰·소방·시청·구청 · 전국)', true, '치안·안전', 0], ['sig', '🚦 신호 주기', false, '도로·교통', 0], ['sigx', '🔢 신호 교차로 번호', false, '도로·교통', 0],
+    ['risk', '🟥 사고위험지역', false, '교통사고', 0], ['sz', '🏫 어린이보호구역', false, '교통사고', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통사고', 0], ['cam', '📷 단속 카메라', false, '도로·교통', 0], ['spd', '🚥 도로 소통(받은 때)', false, '도로·교통', 0], ['sgm', '🚦 신호값 있는 교차로(신호등 표시)', true, '도로·교통', 0], ['facs', '🚥 신호 교차로 시설(차로·직좌·건널목·연동)', false, '도로·교통', 0], ['gmk', '🏛 관공서 표시(경찰·소방·시청·구청 · 전국)', true, '치안·안전', 0], ['sig', '🚦 신호 주기', false, '도로·교통', 0], ['sigx', '🔢 신호 교차로 번호', false, '도로·교통', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '소비·상권', 1], ['rent', '💰 상가 임대료·공실률', false, '소비·상권', 0], ['szone', '🏬 소진공 주요상권(전국)', false, '소비·상권', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '인구 구성', 1], ['crowd', '📡 실시간 인파·카드', false, '이동·동선', 1], ['live', '👥 생활인구(지금)', false, '인구 구성', 1], ['sales', '💳 카드 매출(시간대)', false, '소비·상권', 1], ['bus', '🚌 버스 승차·하차', false, '이동·동선', 1], ['subr', '🚇 지하철 승차·하차', false, '이동·동선', 0], ['vol', '🚙 교통량', false, '이동·동선', 0], ['bike', '🚲 따릉이', false, '이동·동선', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방서·119안전센터(전국)', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
     ['bar', '🍺 주점(밤 순찰)', false, '치안·안전', 0], ['play', '🎤 노래방·PC방', false, '치안·안전', 0], ['inn', '🏨 숙박', false, '치안·안전', 0], ['heat', '🥵 무더위쉼터', false, '치안·안전', 0], ['cold', '🥶 한파쉼터', false, '치안·안전', 0], ['hyd', '🧯 소화전', false, '치안·안전', 0], ['wc', '🚻 화장실', false, '치안·안전', 0],
@@ -912,7 +912,7 @@
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
-    drawReach(dark); drawStz(dark); drawBsf(dark); drawGmk(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
+    drawReach(dark); drawStz(dark); drawBsf(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
     if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
       var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
       ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
@@ -964,6 +964,7 @@
     if (on.reach) b.push(rchLeg());
     if (on.trn) b.push(trnLeg());
     if (on.gmk) b.push(gmkLeg());
+    if (on.facs) b.push(facsLeg());
     if (on.sgm) b.push(sgmLeg());
     if (on.stz) b.push(stzLeg());
     if (on.bsf) b.push(bsfLeg());
@@ -1094,6 +1095,7 @@
     if (PRD.pick) { PRD.p = M(x, y); PRD.pick = false; PRD.base = Date.now(); prdGo(); return; }
     var best = null, bd = 1e9;
     hit.forEach(function (h) { var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < bd) { bd = d; best = h; } });
+    if (on.facs) { var fb9 = null, fd9 = 1e9; hit.forEach(function (h) { if (!h.it || h.it.kind !== 'facs') return; var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < fd9) { fd9 = d; fb9 = h; } }); if (fb9) best = fb9; }   /* 교통시설 층이 켜져 있으면 같은 자리의 다른 점(번호·신호등)보다 시설 카드가 먼저 */
     if (!best && on.reach) { var rr9 = rchAt(x, y); if (rr9) best = { x: x, y: y, r: 6, it: { kind: 'reach', r: rr9 } }; }
     if (!best && on.rnet) { var rl = rnAt(x, y); if (rl) best = { x: x, y: y, r: 6, it: { kind: 'rnl', l: rl } }; }
     if (on.land && (!best || /^(g250|l250|f250|a10|rtg|hmg|jgg|jgc)$/.test(best.it.kind))) best = { x: x, y: y, r: 6, it: { kind: 'land', m: M(x, y) } };   // 필지를 켜면 칸(면) 자료보다 필지가 먼저 · 점은 그대로
@@ -1267,6 +1269,7 @@
     } else if (it.kind === 'gov') { h = govCard(it.g);
     } else if (it.kind === 'jmn') { h = jmnCard(it.m);
     } else if (it.kind === 'sgl') { h = sglCard();
+    } else if (it.kind === 'facs') { h = facsCard(it.no);
     } else if (it.kind === 'prd') { h = prdCard();
     } else if (it.kind === 'bsf') { h = bsfCard(it.q);
     } else if (it.kind === 'sbf') { h = sbfCard(it.t);
@@ -1954,6 +1957,7 @@
   var PRESETS = [
     ['basic', '🔎 지역 기본 파악', ['jgg', 'live250', 'sales', 'bus', 'subr', 'home', 'acc10', 'jurk']],
     ['traffic', '🚦 교통근무', ['acc', 'cam', 'sig', 'spd', 'vol', 'sz', 'risk', 'bus']],
+    ['fac', '🚥 교통시설', ['facs', 'tgis', 'sigx', 'sig', 'pbtn', 'cam']],
     ['night', '🌙 야간순찰', ['trd', 'bar', 'play', 'inn', 'er', 'pol', 'drunk', 'srcctv', 'srbell', 'srsvc']],
     ['shop', '🏪 상권분석', ['trd', 'szone', 'rent', 'bus', 'subr', 'live']],
     ['acc10', '🚗 사고 10년', ['acc10', 'fatal10', 'hot10', 'jct', 'cam', 'sz']],
@@ -3321,6 +3325,50 @@
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-prd]'); if (!b) return; e.preventDefault(); var v = b.getAttribute('data-prd').split(':');
     if (v[0] === 'hd') PRD.hd = v[1]; else if (v[0] === 'ago') { PRD.ago = +v[1]; PRD.base = Date.now(); } else if (v[0] === 'wait') PRD.wait = PRD.wait ? 0 : 1; else if (v[0] === 'k') PRD.k = +v[1]; else if (v[0] === 'pick') { PRD.pick = true; toast('🚨 신고 자리를 지도에서 누른다'); } else if (v[0] === 'x') { PRD.p = null; PRD.res = null; PRD.pick = false; }
     if (PRD.p && !PRD.base) PRD.base = Date.now(); prdGo(); });
+  /* ---------- v2.151.0 🚥 교통시설 — 소유자(2026-10-11 · 다른 세션이 받아 전함) 「교차로별 진행방향별 총 차로수에 직진 좌회전 직좌 동시 횡단보도 연등신호등 — 시설이 보고 놀랄만한 레이어를 만들자 · 우선 서초 강남 동작 관악 · 그리고 서울 전 지역」 ----------
+     시설담당(신호기·표지·노면표시를 관리하는 부서)에게 쓸모 있는 시설 관리용 지도 + 시설담당의 신호주기 자료가 들어올 자리(빈 틀).
+     자료 = data/fac-signal.json(다른 세션 tools/signal · tg-fac-signal/1 · spots{번호: {nm, ll, gu, in[[들어오는 쪽, 길 이름, 차로 합, 제한속도, 직진 녹색, 좌회전 녹색, 직좌 동시 1, 보행 녹색(-1 = 있으나 초 모름 · null = 받은 값에 없음)]], cyc, cells, plan, yd, cam, tgis[코드, 이름, 연동 부모 코드, 부모 이름], day, at}}) · 시설담당 자료 = data/fac-plan.json(아직 없음 — 있으면 읽는다).
+     방향별 초는 받은 시간대의 실제 값(계획표가 아니다) · 차로 수는 링크 전체 값(교차로 앞 포켓·차로별 방향 없음) · 직좌 동시는 받은 값으로 읽은 것 · 차로 표시등·가변차로 자료 없음 */
+  var FACS = null, FACSP = null, FPLN = null;
+  function facsGet() { if (FACSP) return FACSP; FACSP = fetch('data/fac-signal.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { j.L = Object.keys(j.spots || {}).map(function (no) { var q = j.spots[no]; q.no = no; q.p = P(q.ll[0], q.ll[1]); q.sec = (q.in || []).some(function (r) { return r[4] != null || r[5] != null; }); return q; }); j.byT = {}; j.L.forEach(function (q) { if (q.tgis && q.tgis[0]) j.byT[q.tgis[0]] = q; }); FACS = j; draw(); try { legend(); } catch (e) {} }).catch(function () { FACSP = null; });
+    fetch('data/fac-plan.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { FPLN = j; }).catch(function () {}); return FACSP; }
+  function facsCol(q) { return q.plan ? '#15803d' : q.sec ? '#84cc16' : '#94a3b8'; }
+  function drawFacs(dark) { if (!on.facs) return; if (!FACS) { facsGet(); return; } var z = view.s; if (z < 0.012) return; var W0 = cv.clientWidth, H0 = cv.clientHeight; ctx.save(); ctx.setLineDash([]); ctx.lineCap = 'butt';
+    if (z >= 0.05) FACS.L.forEach(function (q) { if (!q.yd || !q.tgis || !q.tgis[2]) return; var par = FACS.byT[q.tgis[2]]; if (!par) return; var a = S(q.p), b = S(par.p); if ((a[0] < 0 && b[0] < 0) || (a[0] > W0 && b[0] > W0) || (a[1] < 0 && b[1] < 0) || (a[1] > H0 && b[1] > H0)) return; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineWidth = 1.6; ctx.strokeStyle = dark ? '#a5b4fc' : '#4338ca'; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]); });
+    FACS.L.forEach(function (q) { var sp = S(q.p); if (sp[0] < -30 || sp[0] > W0 + 30 || sp[1] < -30 || sp[1] > H0 + 30) return;
+      if (z >= 0.3) (q.in || []).forEach(function (r) { var a = SDA[r[0]]; if (a == null) return; a = a * Math.PI / 180; var w = Math.min(13, 2.5 + (r[2] || 1) * 1.7); ctx.beginPath(); ctx.moveTo(sp[0] + Math.cos(a) * 7, sp[1] + Math.sin(a) * 7); ctx.lineTo(sp[0] + Math.cos(a) * 30, sp[1] + Math.sin(a) * 30); ctx.lineWidth = w + 2; ctx.strokeStyle = dark ? 'rgba(15,22,36,.9)' : 'rgba(255,255,255,.95)'; ctx.stroke(); ctx.lineWidth = w; ctx.strokeStyle = r[6] ? '#7c3aed' : (dark ? '#cbd5e1' : '#334155'); ctx.stroke(); });
+      var rr = q.yd ? 3.6 : z >= 0.1 ? 6.5 : 4.5; ctx.beginPath(); ctx.arc(sp[0], sp[1], rr, 0, 6.2832); ctx.fillStyle = facsCol(q); ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = dark ? '#0f1624' : '#fff'; ctx.stroke();
+      if (z >= 0.35) { ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = dark ? 'rgba(15,22,36,.92)' : 'rgba(255,255,255,.96)'; ctx.strokeText(q.nm, sp[0], sp[1] + 42); ctx.fillStyle = dark ? '#f8fafc' : '#0f172a'; ctx.fillText(q.nm, sp[0], sp[1] + 42); }
+      hit.push({ x: sp[0], y: sp[1], r: 10, it: { kind: 'facs', no: q.no } }); });
+    ctx.restore(); }
+  /* 약도 — 들어오는 쪽마다 길(굵기 = 차로 수) · 직진 ↑ 초 · 좌회전 ↰ 초 · 직좌 동시는 보라 「↑↰ 초」 · 건널목(흰 줄) */
+  function facsRose(q) { var s2 = '<svg viewBox="0 0 240 240" role="img" aria-label="교차로 약도" style="width:100%;max-width:300px;height:auto;display:block;margin:4px auto 0"><rect x="98" y="98" width="44" height="44" rx="5" fill="var(--line)"/>';
+    (q.in || []).forEach(function (r) { var a = SDA[r[0]]; if (a == null) return; a = a * Math.PI / 180; var c = Math.cos(a), n = Math.sin(a), px = -n, py = c, w = Math.min(40, 10 + (r[2] || 1) * 5), X = function (d, o) { return (120 + c * d + px * (o || 0)).toFixed(1); }, Y = function (d, o) { return (120 + n * d + py * (o || 0)).toFixed(1); };
+      s2 += '<line x1="' + X(22) + '" y1="' + Y(22) + '" x2="' + X(98) + '" y2="' + Y(98) + '" stroke="var(--line)" stroke-width="' + w + '"/>';
+      if (r[7] != null) s2 += '<line x1="' + X(30, -w / 2) + '" y1="' + Y(30, -w / 2) + '" x2="' + X(30, w / 2) + '" y2="' + Y(30, w / 2) + '" stroke="#fff" stroke-width="6" stroke-dasharray="2.5 2.5"/>';
+      var t1 = r[6] ? '↑↰ ' + Math.round(r[4] != null ? r[4] : r[5]) : (r[4] != null ? '↑' + Math.round(r[4]) : '') + (r[5] != null ? (r[4] != null ? ' ' : '') + '↰' + Math.round(r[5]) : '');
+      if (t1) s2 += '<text x="' + X(62) + '" y="' + Y(62) + '" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="800" fill="' + (r[6] ? '#7c3aed' : '#15803d') + '" stroke="var(--bg, #fff)" stroke-width="3" paint-order="stroke">' + t1 + '</text>';
+      s2 += '<text x="' + X(108) + '" y="' + (+Y(108) - 5).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor">' + SDN[r[0]] + '</text><text x="' + X(108) + '" y="' + (+Y(108) + 7).toFixed(1) + '" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".8">' + (r[2] ? r[2] + '차로' : '') + '</text>'; });
+    return s2 + '</svg>'; }
+  function facsCard(no) { var q = FACS && FACS.spots[String(no)]; if (!q) return '<h3>🚥 신호 교차로 시설</h3><p class="desc">자료를 읽는 중…</p>';
+    var h = '<h3>🚥 ' + esc(q.nm) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(String(no)) + ' · ' + esc(q.gu || '') + (q.yd ? ' · 딸린 신호(연등)' : '') + '</small></h3>';
+    if ((q.in || []).length) { h += '<div class="cap sdcap">들어오는 쪽마다 — 길 · 차로 · 직진 ↑ · 좌회전 ↰ · 건널목</div>' + facsRose(q);
+      h += (q.in || []).map(function (r) { var mv = r[6] ? '<b style="color:#7c3aed">직·좌 동시 ' + Math.round(r[4] != null ? r[4] : r[5]) + '초</b>' : [(r[4] != null ? '직진 <b>' + Math.round(r[4]) + '초</b>' : ''), (r[5] != null ? '좌회전 <b>' + Math.round(r[5]) + '초</b>' : '')].filter(Boolean).join(' · ') || '<em>방향별 초를 아직 못 받음</em>';
+        return '<div class="r"><b>' + SDN[r[0]] + '쪽에서</b><span><b>' + esc(r[1] || '이름 없는 길') + '</b> · ' + (r[2] ? r[2] + '차로' : '차로 값 없음') + (r[3] ? ' · 제한 ' + r[3] : '') + '<br>' + mv + (r[7] != null ? ' · 🚶 건널목' + (r[7] > 0 ? ' 녹색 <b>' + Math.round(r[7]) + '초</b>' : '(초 모름)') : '') + '</span></div>'; }).join(''); }
+    else h += '<p class="desc">이 자리 55m 안에 갈림길 마디가 없어 들어오는 쪽을 읽지 못했다(이면도로 건널목 등).</p>';
+    h += row('번호', 'C-ITS·T-Data <b>' + esc(String(no)) + '</b>' + (q.tgis && q.tgis[0] ? ' · T-GIS <b>' + esc(String(q.tgis[0])) + '</b>' + (q.tgis[1] && q.tgis[1] !== q.nm ? ' (' + esc(q.tgis[1]) + ')' : '') : ' · T-GIS <em>' + (q.gu === '서초구' ? '못 맞댐' : '이 구는 아직 안 구움') + '</em>') + (q.tgis && q.tgis[2] ? '<br>연동 부모 <b>' + esc(q.tgis[3] || '') + '</b> (' + esc(String(q.tgis[2])) + ') <em>— 지도의 보라 점선</em>' : ''));
+    h += row('주기', (q.cyc && q.cyc.length ? '받은 값 <b>' + q.cyc.join(' · ') + '초</b>' : '<em>받은 값 없음</em>') + ' <em>(' + esc(q.day || '') + ' ' + esc(q.at || '') + ' · 요일 4갈래 × 24시 = 96칸 중 ' + (q.cells || 0) + '칸 받음)</em>');
+    var fp = FPLN && FPLN.spots && FPLN.spots[String(no)];
+    h += row('요일·시각 계획', q.plan ? '<b style="color:#15803d">있음</b> — ' + esc(q.plan === '교통과' ? '서초경찰서 교통과 현시도(하루 전체 · 방향별)' : '경찰청 공개 계획(주기·옵셋·현시값 · 방향 없음)') : '<b style="color:#b45309">없음</b> — 시설담당 자료가 들어갈 자리');
+    h += row('📁 시설담당 자료', fp ? '<b>' + esc(fp.day || '') + '</b> ' + esc(fp.by || '') + ' · 계획 ' + (fp.rows || []).length + '줄<br>' + (fp.rows || []).slice(0, 12).map(function (r) { return esc(['월~목', '금', '토', '일·공휴일'][r[0]] || String(r[0])) + ' ' + esc(String(r[1])) + '부터 주기 <b>' + r[2] + '</b> · 옵셋 ' + r[3]; }).join('<br>') : '<em>아직 없음</em> — 신호주기 표(요일·시각별 주기·옵셋·현시)를 받으면 이 자리에 뜨고, 받은 값과 맞대 본다');
+    h += row('차로 표시등·가변차로', '<em>자료 없음</em> — 공개 자료를 찾지 못했다(시설담당 자료가 오면)') + row('단속 카메라', (q.cam || 0) + '대 <em>(100m 안)</em>');
+    h += '<div class="lg-btns" style="margin-top:6px"><button data-facsig="' + esc(String(no)) + '">🚦 지금 신호·남은 초 보기</button></div>' + saudHtml(no);
+    return h + '<p class="sdnt" style="color:#b45309">방향별 초는 <b>받은 시간대의 실제 값</b>이다(계획표가 아니다 · 감응·수동 운영 때는 다르다) · 차로 수는 링크 전체 값(교차로 앞 좌회전 포켓·차로별 방향은 없다) · 직·좌 동시는 받은 값으로 읽은 것(현시도로 확인한 것이 아니다) · <b>시설담당 자료가 오면 보완</b>한다.</p>' + src((FACS.source || '') + ' · 이용조건: 유형을 확인하지 못한 것은 「확인 필요」'); }
+  function facsLeg() { var sw9 = function (c, t) { return '<span><i style="display:inline-block;width:11px;height:11px;border-radius:50%;background:' + c + ';margin-right:4px;vertical-align:-1px"></i>' + t + '</span> '; }, L = FACS ? FACS.L : [], n1 = L.filter(function (q) { return q.plan; }).length, n2 = L.filter(function (q) { return !q.plan && q.sec; }).length;
+    return '<b>🚥 신호 교차로 시설</b> ' + sw9('#15803d', '요일·시각 계획 있음 ' + (FACS ? n1 : '…')) + sw9('#84cc16', '방향별 초만 ' + (FACS ? n2 : '…')) + sw9('#94a3b8', '자리만 ' + (FACS ? L.length - n1 - n2 : '…')) + '<span><i style="display:inline-block;width:16px;height:0;border-top:2px dashed #4338ca;margin-right:4px;vertical-align:3px"></i>딸린 신호(연등) → 연동 부모</span> <span><i style="display:inline-block;width:14px;height:5px;background:#7c3aed;margin-right:4px;vertical-align:1px"></i>직·좌 동시인 쪽</span>'
+      + '<small class="lg-n">' + (FACS ? esc(FACS.area || '') + ' ' + L.length + '곳' : '읽는 중…') + ' · ' + (view.s < 0.3 ? '<b>더 가까이 보면 들어오는 쪽 막대(굵기 = 차로 수)</b> · ' : '막대 굵기 = 차로 수 · ') + '누르면 시설 카드(길·차로·직진·좌회전·직좌 동시·건널목·번호·연동 부모·시설담당 자료 자리) · 방향별 초는 받은 시간대의 실제 값(계획표 아님) · 차로 표시등·가변차로 자료 없음 · T-GIS·연동 부모는 지금 서초구만</small>'; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-facsig]'); if (!b) return; e.preventDefault(); var no = b.getAttribute('data-facsig'), kx = KSC && (KSC.items || []).filter(function (q) { return String(q.no) === no; })[0], q2 = D.sigd && D.sigd.pts && D.sigd.pts[no], s9 = D.sig && D.sig.spots ? D.sig.spots.filter(function (q) { return String(q.no) === no; })[0] : null;
+    if (KSC === undefined) { kscGet(); toast('신호 자료를 읽는 중 — 한 번 더 누른다'); return; } var it9 = kx ? { kind: 'ksc', x: kx } : q2 ? { kind: 'sgd', no: no, q: q2 } : s9 ? { kind: 'sig', s: s9 } : null; if (!it9) { toast('이 교차로는 받은 신호값이 아직 없다'); return; } show(it9); });
   function sgProgPaint() { var el = $('sgProg'); if (!el) return; snetGet(); if (!SNET || HOUR != null) { if (el.innerHTML) el.innerHTML = ''; return; } var no = el.getAttribute('data-no'), L = (SNET.by[no] || []).filter(function (l) { return l[8] === 0; }), now = Date.now(), hr = new Date(now).getHours();   /* 사이에 신호 자료 없는 교차점이 있는 짝은 안 낸다 — 거기 신호를 모르면 답이 뜻이 없다(서초역 → 성모병원 사이의 서초경찰서) */
     if (el.getAttribute('data-ksc')) { var kx = KSC && (KSC.items || []).filter(function (q) { return String(q.no) === no; })[0], skip = kx ? kscNbr(kx).map(function (q) { return String(q.y.no); }) : []; L = L.filter(function (l) { return skip.indexOf(String(l[1])) < 0; }); }
     if (!L.length) { if (el.innerHTML) el.innerHTML = ''; return; }
@@ -3688,7 +3736,7 @@
     ['move', '🚶 이동·동선', ['volp', 'live250', 'lpop', 'walk', 'bus', 'ggbrt', 'bstop', 'msub', 'busd', 'subr', 'sub', 'exit', 'bike', 'lbus', 'spot', 'crowd', 'vol', 'evt', 'gfest'], ['bus', 'subr', 'sub', 'live250']],
     ['spend', '💳 소비·상권', ['sales', 'trd', 'szone', 'rent', 'crowd', 'rtc', 'conv', 'bank', 'bar', 'play', 'inn'], ['sales', 'trd', 'szone']],
     ['estate', '🏠 주거·부동산', ['home', 'rtc', 'rone', 'rent', 'jgg', 'bld'], ['home', 'rtc']],
-    ['traffic', '🚦 도로·교통', ['reach', 'trn', 'sbc', 'sbf', 'bsf', 'stz', 'rnet', 'volp', 'exv', 'tlt', 'road', 'jcnm', 'lspd', 'spd', 'lev', 'lcc', 'vol', 'sgm', 'sig', 'sigx', 'tgis', 'pbtn', 'cam', 'pkcctv', 'pk', 'gpark', 'ev', 'gev', 'fuel', 'tow'], ['rnet', 'volp', 'jcnm', 'lspd', 'cam']],
+    ['traffic', '🚦 도로·교통', ['reach', 'trn', 'sbc', 'sbf', 'bsf', 'stz', 'rnet', 'volp', 'exv', 'tlt', 'road', 'jcnm', 'lspd', 'spd', 'lev', 'lcc', 'vol', 'sgm', 'facs', 'sig', 'sigx', 'tgis', 'pbtn', 'cam', 'pkcctv', 'pk', 'gpark', 'ev', 'gev', 'fuel', 'tow'], ['rnet', 'volp', 'jcnm', 'lspd', 'cam']],
     ['acc', '🚗 교통사고', ['acc', 'pri', 'acc250', 'acc10', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'sz', 'szh', 'spot', 'spota'], ['acc10', 'fatal10', 'jct', 'hot10']],
     ['safe', '🛡 치안·안전', ['jurk', 'pbox', 'jur', 'pol', 'fire', 'er', 'ger', 'aed', 'srbell', 'srcctv', 'srlamp', 'sr112', 'srsvc', 'glamp', 'fw', 'hyd', 'box', 'bar', 'play', 'inn', 'dem'], ['jurk', 'pbox', 'pol', 'fire', 'er']],
     ['care', '🎒 교육·돌봄', ['edu', 'school', 'kg', 'cc', 'kids', 'aca', 'kyr', 'welf', 'dem', 'pg', 'sz'], ['edu', 'kg', 'cc', 'kyr']],
@@ -7481,7 +7529,7 @@
       ['care', '🎒 교육·돌봄', [['학교', ['edu', 'school', 'aca']], ['어린이', ['kg', 'cc', 'kids', 'pg', 'sz']]], ['edu', 'kg', 'cc']]
     ]],
     ['police', '🚓 경찰업무', [
-      ['traf', '🚦 교통', [['교통사고', ['acc', 'pri', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh', 'spota']], ['신호·교차로', ['sgm', 'tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['서울까지·대중교통', ['reach', 'trn', 'sbf', 'bsf', 'stz', 'sbc']], ['도로·교통량', ['rnet', 'rpost', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
+      ['traf', '🚦 교통', [['교통사고', ['acc', 'pri', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh', 'spota']], ['신호·교차로', ['sgm', 'facs', 'tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['서울까지·대중교통', ['reach', 'trn', 'sbf', 'bsf', 'stz', 'sbc']], ['도로·교통량', ['rnet', 'rpost', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
       ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'play', 'inn', 'stay', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
       ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['pedr', 'sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['lore', 'flt', 'flr', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
     ]],

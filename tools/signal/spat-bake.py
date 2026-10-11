@@ -668,6 +668,8 @@ def mvrow(x, cyc):
     """지도에 싣는 한 줄 — 한 주기에 두 번 켜지는 이동류(녹+황+적 ≠ 주기)는 한 막대로 그리면 틀리므로 초를 비우고 끝에 2 를 단다."""
     if x.get('g') is not None and abs(x['g'] + x['y'] + x['r'] - cyc) > 3.5:
         return [x['d'], x['m'], None, None, None, None, x['n'], 2]
+    if x.get('fl'):
+        return [x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n'], 3]   # 3 = 같은 요일 갈래·같은 주기의 다른 기록에서 채운 줄(지도는 「채움」이라 적는다)
     return [x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n']]
 
 
@@ -709,6 +711,11 @@ def build():
     for k, v in out.items():
         v.sort(key=lambda r: (r['day'], r['to']))
         for r in v:
+            # (2026-10-11) 한 번만 본 이동류의 적색이 주기보다 길게 잡힌 것 — 받은 줄 끝에 걸린 적색은 「시작 때 잔여」를 길이로 쓰는데(segments tail) 그 잔여가 틀린 곳이 있다
+            #  (이수역 동쪽 직진 46 + 4 + 170.7 = 220.7 · 주기 200). 녹+황+적이 주기를 넘으면 한 주기에 두 번 켜지는 것일 수 없으니 적색 = 주기 − 녹 − 황 으로 바로잡는다
+            for x in r['mv']:
+                if x.get('g') is not None and x.get('n') == 1 and x['g'] + x['y'] + x['r'] - r['cyc'] > 3.5 and r['cyc'] - x['g'] - x['y'] > 6.5:
+                    x['r'] = round(r['cyc'] - x['g'] - x['y'], 1)
             if r.get('ci'):
                 r['ci'] = plan_ci(r['cyc'], r['ci'])
                 if abs(r['ci'] - r['cyc']) > 2.5:
@@ -730,6 +737,59 @@ def build():
                 rf = max(okm, key=lambda x: (x['g'], -DIRS.index(x['d']))) if okm else None      # 닻(a)의 기준 이동류 = 녹색이 가장 긴 이동류(reduce_one·reduce_phase 와 같은 규칙)
                 pinfo[(cls_of(r['dow']), hh)] = (r['day'], int(r['from'][:2]) * 60 + int(r['from'][3:5]), int(r['to'][:2]) * 60 + int(r['to'][3:5]))
                 plan[(cls_of(r['dow']), hh)] = [cls_of(r['dow']), hh, ci0, int(round(sod % ci0)) % int(round(ci0)) if ci0 == int(ci0) else round(sod % ci0, 1), r['day'][5:], (rf['d'] + ':' + rf['m']) if rf else '']
+        # (2026-10-11 소유자 「이수역사거리 비는 초는 북남 양직진이네」) 못 읽은 이동류를 **같은 요일 갈래·같은 주기의 다른 기록**에서 채운다 —
+        #  이수역 일 15시: 신호 상태 기록(나중 것 · 보행 신호가 있어 남는다)은 북·남 직진을 못 읽고, 23초 앞서 받은 잔여시간 기록은 남쪽 직진 74초(0초)·동 46·서 55초(88초)를 읽었다.
+        #  두 기록에 함께 읽힌 이동류(녹색 길이 ±2초)로 자리를 맞춘다: 밀림 = 남는 기록의 자리 − 주는 기록의 자리(녹색이 가장 긴 공통 이동류) · 다른 공통 이동류가 모두 ±3초 안으로 맞아야 쓴다.
+        #  채운 줄은 끝에 3 을 단다(받은 기록 그대로가 아니라 겹쳐 맞춘 값) — 닻·기준 이동류·pl 줄은 건드리지 않는다
+        for kk, r in list(keep.items()):
+            c9 = int(round(kk[1]))
+            if c9 < 20:
+                continue
+            have = {(x['d'], x['m']): x for x in r['mv']}
+            isread = lambda x: x is not None and x.get('g') is not None and x.get('o') is not None and abs(x['g'] + x['y'] + x['r'] - r['cyc']) <= 3.5
+            if not any(isread(x) for x in have.values()):
+                continue
+            add = {}
+            for q in sorted(v, key=lambda z: (z['day'], z['to']), reverse=True):
+                if (q['day'], q['from'], q['to'], q.get('src')) == (r['day'], r['from'], r['to'], r.get('src')):
+                    continue
+                if (cls_of(q['dow']), int(round(q.get('ci') or int(round(q['cyc']))))) != kk:
+                    continue
+                qm = {(x['d'], x['m']): x for x in q['mv'] if x.get('g') is not None and x.get('o') is not None and abs(x['g'] + x['y'] + x['r'] - q['cyc']) <= 3.5}
+                com = [k2 for k2 in qm if isread(have.get(k2)) and abs(have[k2]['g'] - qm[k2]['g']) <= 2]
+                if not com:
+                    continue
+                b9 = max(com, key=lambda k2: qm[k2]['g'])
+                sh = (have[b9]['o'] - qm[b9]['o']) % c9
+                cd = lambda a, b: min((a - b) % c9, (b - a) % c9)
+                if any(cd((qm[k2]['o'] + sh) % c9, have[k2]['o']) > 3 for k2 in com):
+                    continue
+                for k2, x in qm.items():
+                    if k2[1] in ('St', 'Lt') and not isread(have.get(k2)) and k2 not in add and not (have.get(k2) and have[k2].get('g') is not None):
+                        add[k2] = {'d': x['d'], 'm': x['m'], 'g': x['g'], 'y': x['y'], 'r': x['r'], 'o': int(round((x['o'] + sh) % c9)), 'n': x['n'], 'fl': 1}
+            if add:
+                nm = [x for x in r['mv'] if (x['d'], x['m']) not in add] + list(add.values())
+                nm.sort(key=lambda x: (DIRS.index(x['d']), MVS.index(x['m']) if x['m'] in MVS else 9))
+                keep[kk] = dict(r, mv=nm)
+        # (같은 날) 적색만 읽힌 직진 — 받은 구간이 전부 **마주 보는 직진의 적색 길이**(±2초)와 같으면 그 직진과 같이 켜지는 것으로 보고 같은 초·같은 자리로 채운다(끝에 3).
+        #  이수역 북쪽 직진: 구간 [121] 뿐(녹색·황색 구간이 걸러진다) · 남쪽 직진 74 + 5 + 121 = 주기 200 → 소유자 현장 확인 「비는 초는 북남 양직진」과 같다.
+        #  구간은 같은 요일 갈래·같은 주기의 기록들에서 모은다(신호 상태 기록에는 구간이 없다). 적색 길이가 같은 것이 근거라 좌회전에는 쓰지 않는다
+        OPP9 = {'nt': 'st', 'st': 'nt', 'et': 'wt', 'wt': 'et', 'ne': 'sw', 'sw': 'ne', 'se': 'nw', 'nw': 'se'}
+        for kk, r in list(keep.items()):
+            cur = {(x['d'], x['m']): x for x in r['mv']}
+            same = [q for q in v if (cls_of(q['dow']), int(round(q.get('ci') or int(round(q['cyc']))))) == kk]
+            add = {}
+            for d in DIRS:
+                x, o = cur.get((d, 'St')), cur.get((OPP9[d], 'St'))
+                if (x is not None and x.get('g') is not None) or o is None or o.get('g') is None or o.get('o') is None or abs(o['g'] + o['y'] + o['r'] - r['cyc']) > 3.5:
+                    continue
+                segs = [t for q in same for z in q['mv'] if z['d'] == d and z['m'] == 'St' and z.get('g') is None for t in (z.get('seg') or [])]
+                if segs and all(abs(t - o['r']) <= 2 for t in segs):
+                    add[(d, 'St')] = {'d': d, 'm': 'St', 'g': o['g'], 'y': o['y'], 'r': o['r'], 'o': o['o'], 'n': (x or {}).get('n', 0), 'fl': 1}
+            if add:
+                nm = [x for x in r['mv'] if (x['d'], x['m']) not in add] + list(add.values())
+                nm.sort(key=lambda x: (DIRS.index(x['d']), MVS.index(x['m']) if x['m'] in MVS else 9))
+                keep[kk] = dict(r, mv=nm)
         vv = sorted(keep.values(), key=lambda r: (r['day'], r['to']))[-12:]
         # 약한 줄(일곱째 칸 1) — 정각 뒤 5분 안에 시작해 8분도 안 되는 창에서 받았고, 같은 날 바로 앞 시각대의 주기와 다르다 = 계획이 바뀌는 사이의 헛값일 수 있다(이수역 일 8시 237초 — 앞은 180 · 계획은 190).
         #  그 시각대를 뒤에 다시 받으면(창이 길어지면) 덮어써져 풀린다. 지도·맞대 보기는 약한 줄을 쓰지 않는다
@@ -737,6 +797,12 @@ def build():
             inf, prev, pin = pinfo.get((c9, h9)), plan.get((c9, h9 - 1)), pinfo.get((c9, h9 - 1))
             if inf and prev and pin and pin[0] == inf[0] and abs(prev[2] - row[2]) > 0.6 and inf[1] % 60 <= 5 and 0 <= inf[2] - inf[1] < 8:
                 row.append(1)
+            elif inf and not (prev and pin and pin[0] == inf[0]) and inf[1] % 60 <= 5 and 0 <= inf[2] - inf[1] < 8:
+                # (2026-10-11) 앞 시각대를 못 받았을 때는 **뒤 시각대**와 견준다 — 사당역 일 01시: 정각 직후 5분 창에서 주기 180(00시 계획이 아직 도는 중) · 02시는 160 · 경찰청 계획도 01시 160.
+                #  정각 직후의 짧은 창은 앞 시각대의 계획을 보고 있을 수 있다 → 뒤 시각대와 주기가 다르면 약한 줄(지도는 안 쓴다 · 다시 길게 받으면 풀린다)
+                nxt, nin = plan.get((c9, h9 + 1)), pinfo.get((c9, h9 + 1))
+                if nxt and nin and nin[0] == inf[0] and abs(nxt[2] - row[2]) > 0.6:
+                    row.append(1)
         if plan:
             pl[k] = [plan[q] for q in sorted(plan)]
         L = []

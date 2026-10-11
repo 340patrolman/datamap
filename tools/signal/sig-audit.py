@@ -139,7 +139,7 @@ def main():
         best = None
         for a in A:
             for b in B:
-                if a.get('cl') != b.get('cl') or abs(a['cyc'] - b['cyc']) > 2.5: continue
+                if a.get('cl') != b.get('cl') or abs(a['cyc'] - b['cyc']) > 0.6: continue   # (2026-10-11) 2.5 → 0.6 — 사당역: 01시 신호 상태 기록(주기 192 · 바뀌는 사이)과 08시 잔여시간 기록(190)을 같은 계획으로 보고 「녹색 17초 다름」이라 했다
                 ga = {(m[0], m[1]): m[2] for m in a['mv'] if m[2] is not None}; gb = {(m[0], m[1]): m[2] for m in b['mv'] if m[2] is not None}
                 ks = [k for k in ga if k in gb]
                 if not ks: continue

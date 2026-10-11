@@ -29,7 +29,7 @@
     ['fuel', '⛽ 주유소', false, '생활시설', 0], ['ev', '🔌 전기차 충전', false, '생활시설', 0], ['pk', '🅿 주차장', false, '생활시설', 0],
     ['jur', '🚓 경찰서 관할(서초·방배)', false, '치안·안전', 0], ['srcctv', '📹 CCTV(안심귀갓길)', false, '치안·안전', 0], ['srbell', '🔔 안심벨', false, '치안·안전', 0], ['srlamp', '💡 보안등(안심귀갓길)', false, '치안·안전', 0], ['sr112', '🆘 112 위치 신고 안내', false, '치안·안전', 0], ['srsvc', '🏪 안심 서비스·지킴이집', false, '치안·안전', 0],
     ['aed', '❤️ AED(서울·경기)', false, '치안·안전', 0], ['fw', '🧯 소방용수(서울시)', false, '치안·안전', 0], ['pkcctv', '📸 불법주정차 단속 CCTV', false, '도로·교통', 0], ['tow', '🛻 견인차량보관소', false, '도로·교통', 0], ['wc2', '🚻 공중화장실(서울·경기)', false, '생활시설', 0], ['gpark', '🅿 주차장(공식 목록 · 전국)', false, '생활시설', 0], ['tlt', '🚦 신호등(전국 · 현시 시간)', false, '도로·교통', 1], ['bstop', '🚏 버스정류장(전국 · 확대하면 보임)', true, '이동·동선', 0], ['gev', '🔌 전기차 충전소(경기)', false, '생활시설', 0], ['ger', '🏥 응급의료기관(경기)', false, '치안·안전', 0], ['gfest', '🎪 문화축제(경기)', false, '행사·역사', 0], ['glamp', '💡 보안등(경기 29만)', false, '치안·안전', 0], ['box', '📦 안심택배함', false, '생활시설', 0], ['dem', '🧠 치매안심센터', false, '교육·돌봄', 0], ['tgis', '🚥 T-GIS 신호 교차로', false, '도로·교통', 0], ['spot', '🎯 길목 — 이 시각 하차', false, '이동·동선', 0], ['spota', '🗂 길목 다발지(참고)', false, '교통사고', 0], ['hot10', '🗂 다발지 10년(2016~2025)', false, '교통사고', 1], ['jct', '🚦 교차로 사고 10년(서울·경기)', false, '교통사고', 0],
-    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0], ['walk', '🚶 예상 귀갓길(역·정류장 → 집 · 추정)', false, '이동·동선', 1], ['hira', '🩺 병의원·약국(심평원 · 과목·전문의 · 전국)', false, '생활시설', 1],
+    ['evt', '📅 행사·집회', true, '행사·역사', 1], ['her', '🏛 국가유산', false, '행사·역사', 0], ['lore', '📜 이야기(지명·재난·전쟁 · 출처 붙음)', false, '행사·역사', 1], ['evb', '🏗 큰 사건(이전·개통·재개발 — 계획·진행중·완료)', false, '행사·역사', 0], ['ggbrt', '🚌 중앙차로 정류장 경기버스(노선·배차)', false, '이동·동선', 0], ['walk', '🚶 예상 귀갓길(역·정류장 → 집 · 추정)', false, '이동·동선', 1], ['hira', '🩺 병의원·약국(심평원 · 과목·전문의 · 전국)', false, '생활시설', 1],
     ['flt', '🌊 침수 흔적(2010~2025)', false, '날씨·계절', 0], ['flr', '🌧 침수 이력 도로', false, '날씨·계절', 0], ['fldl', '🌧 큰비 때 먼저 볼 길(잠긴 해 × 돌아가는 부담)', false, '날씨·계절', 0], ['fmap', '🌊 홍수위험지도(환경부 · 켜는 층 · 열쇠)', false, '날씨·계절', 0], ['und', '🚇 지하차도(침수 이력)', false, '날씨·계절', 0],
     ['ice', '🧊 제설함(결빙 우려 자리)', false, '날씨·계절', 0], ['hcab', '🔥 도로 열선 길', false, '날씨·계절', 0], ['advb', '❄ 제설 전진기지', false, '날씨·계절', 0],
     ['pbtn', '🚸 보행자작동신호기', false, '도로·교통', 0]
@@ -914,7 +914,7 @@
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
-    drawReach(dark); drawStz(dark); drawBsf(dark); drawFldl(dark); drawFdl(dark); drawTdg(dark); drawDuir(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
+    drawReach(dark); drawStz(dark); drawBsf(dark); drawFldl(dark); drawFdl(dark); drawTdg(dark); drawEvb(dark); drawDuir(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
     if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
       var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
       ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
@@ -968,6 +968,7 @@
     if (on.gmk) b.push(gmkLeg());
     if (on.fldl) b.push(fldlLeg());
     if (on.fmap) b.push(fmapLeg());
+    if (on.evb) b.push(evbLeg());
     if (on.tdg) b.push(tdgLeg());
     if (on.duir) b.push(duirLeg());
     if (on.facs) b.push(facsLeg());
@@ -1281,6 +1282,7 @@
     } else if (it.kind === 'fldl') { h = fldlCard(it.o);
     } else if (it.kind === 'fdl') { h = fdlCard(it);
     } else if (it.kind === 'tdg') { h = tdgCard(it.o);
+    } else if (it.kind === 'evb') { h = evbCard(it.e);
     } else if (it.kind === 'duir') { h = duirCard(it.o);
     } else if (it.kind === 'gdr') { h = gtrCard();
     } else if (it.kind === 'prd') { h = prdCard();
@@ -3716,6 +3718,34 @@
     return h + '<p class="desc">결제한 사람이 운전한다는 뜻이 아니다. 어디서 단속할지는 길의 모양·빠져나가는 길·현장 경험이 같이 정한다.</p>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-duirst]'); if (!b) return; e.preventDefault(); var st = b.getAttribute('data-duirst'); b.textContent = '받는 중…';
     duisGet().then(function () { var has = st && DUIS && DUIS.years && Object.keys(DUIS.years).some(function (y) { return DUIS.years[y][st]; }); if (has) DUIST = st; else if (st) toast(st.replace(/경찰서$/, '서') + '는 적발 표에 없다(새로 생겼거나 이름이 바뀐 서) — 서를 골라 본다'); sel = { it: { kind: 'gdr' } }; show({ kind: 'gdr' }); }); });
+  /* v2.176.0 🏗 큰 사건(층 evb) — data/events-big.json(다른 세션 tools/story/event-bake.py ← event-seed.json · tg-event/1 · ONTOLOGY.md 객체 11 「사건」 · 소유자 온톨로지 마스터 문서 「세대는 느린 변수, 사건은 빠른 변수」).
+     items[{id, nm, kind 이전·재개발·개통·개장·폐점, state 계획·진행중·완료, ll [경도, 위도](자리를 아는 것만), area, d_plan, d_start, d_done, size, what(출처의 말), src[{t, u, d}], prev, next}].
+     자리를 아는 것은 마름모(계획 = 빈 보라 · 진행중 = 주황 · 완료 = 회색), 자리가 없는 것은 범례의 단추로 연다. 같은 자리의 사건은 옆으로 16px 씩 비킨다.
+     **「무엇이 바뀌나」는 출처의 말이고 이 지도의 예측이 아니다** · 날짜·규모는 출처에 적힌 것만(빈 글 = 모름) · 사건이 둘레에 준 영향은 이 자료에 없다 · 상태는 구운 날 기준 */
+  var EVB = null, EVBP = null, EVBC = { '계획': '#7c3aed', '진행중': '#ea580c', '완료': '#64748b' };
+  function evbGet() { if (EVBP) return EVBP; EVBP = fetch('data/events-big.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { var seen = {}; j.by = {}; (j.items || []).forEach(function (e) { j.by[e.id] = e; if (e.ll && e.ll.length === 2) { var k = e.ll.join(','); e._p = P(e.ll[0], e.ll[1]); e._dx = (seen[k] || 0) * 16; seen[k] = (seen[k] || 0) + 1; } }); EVB = j; draw(); try { legend(); } catch (e2) {} }).catch(function () { EVBP = null; }); return EVBP; }
+  function drawEvb(dark) { if (!on.evb) return; if (!EVB) { evbGet(); return; } var z = view.s, W0 = cv.clientWidth, H0 = cv.clientHeight, r = z >= 0.05 ? 8 : 6; ctx.save(); ctx.setLineDash([]);
+    (EVB.items || []).forEach(function (e) { if (!e._p) return; var sp = S(e._p), x = sp[0] + e._dx, y = sp[1]; if (x < -30 || x > W0 + 30 || y < -30 || y > H0 + 30) return; var c = EVBC[e.state] || '#64748b';
+      ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); ctx.fillStyle = e.state === '계획' ? (dark ? '#0f1624' : '#fff') : c; ctx.fill(); ctx.lineWidth = 2.2; ctx.strokeStyle = c; ctx.stroke();
+      hit.push({ x: x, y: y, r: r + 3, it: { kind: 'evb', e: e } });
+      if (z >= 0.03) { var t = e.nm.length > 16 ? e.nm.slice(0, 15) + '…' : e.nm; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; var w = ctx.measureText(t).width; ctx.fillStyle = dark ? 'rgba(15,22,36,.8)' : 'rgba(255,255,255,.9)'; ctx.fillRect(x + r + 3, y - 8 + (e._dx ? 15 : 0), w + 6, 16); ctx.fillStyle = dark ? '#e2e8f0' : '#1f2937'; ctx.fillText(t, x + r + 6, y + (e._dx ? 15 : 0)); } });
+    ctx.restore(); }
+  function evbDate(d) { return d ? esc(String(d).replace(/^(\d{4})-(\d\d)-(\d\d)$/, '$1.$2.$3').replace(/^(\d{4})-(\d\d)$/, '$1.$2')) : '<em>모름</em>'; }
+  function evbMd(t) { return esc(t || '').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }
+  function evbCard(e) { var c = EVBC[e.state] || '#64748b', by = EVB ? EVB.by : {};
+    var h = '<h3>🏗 ' + esc(e.nm) + '</h3><p style="margin:0 0 6px"><span style="display:inline-block;padding:2px 8px;border-radius:999px;background:' + c + ';color:#fff;font-size:12px;font-weight:800">' + esc(e.state) + '</span> <span style="font-size:12.5px;color:var(--ink2)">' + esc(e.kind) + '</span></p>';
+    if (e.area) h += row('어디', esc(e.area) + (e._p ? '' : ' <em>(지도에 찍을 자리가 정해지지 않아 점이 없다)</em>'));
+    h += row('발표 · 착수 · 완료', evbDate(e.d_plan) + ' · ' + evbDate(e.d_start) + ' · ' + evbDate(e.d_done));
+    if (e.size) h += row('규모', esc(e.size));
+    if (e.what) h += '<div class="cap sdcap" style="margin-top:8px">무엇이 바뀌나 — <b>출처의 말</b>(이 지도의 예측이 아니다)</div><p class="desc" style="margin:2px 0 6px">' + evbMd(e.what) + '</p>';
+    var ch = [['앞 사건', e.prev], ['뒤 사건', e.next]].filter(function (x) { return x[1] && by[x[1]]; }); if (ch.length) h += '<div class="lg-btns" style="margin:6px 0">' + ch.map(function (x) { return '<button data-evb="' + esc(x[1]) + '">' + (x[0] === '앞 사건' ? '◀ ' : '') + x[0] + ': ' + esc(by[x[1]].nm.slice(0, 18)) + (x[0] === '뒤 사건' ? ' ▶' : '') + '</button>'; }).join('') + '</div>';
+    if (e.src && e.src.length) h += '<div class="cap sdcap">출처</div>' + e.src.map(function (q) { return '<p class="sdnt" style="margin:2px 0">' + (q.u ? '<a href="' + esc(q.u) + '" target="_blank" rel="noopener">' + esc(q.t) + '</a>' : esc(q.t)) + (q.d ? ' <em>(' + esc(q.d) + ' 봄)</em>' : '') + '</p>'; }).join('');
+    return h + '<p class="desc">날짜·규모는 출처에 적힌 것만 실었다(「모름」 = 출처에 없다). 상태는 ' + esc(EVB && EVB.made || '') + ' 기준이라 시간이 지나면 바뀐다. 이 사건이 둘레의 집값·상권·교통에 준 영향은 이 자료에 없다.</p>'; }
+  function evbLeg() { var d9 = function (st) { var c = EVBC[st]; return '<span><i style="display:inline-block;width:9px;height:9px;transform:rotate(45deg);border:2px solid ' + c + ';background:' + (st === '계획' ? 'transparent' : c) + ';margin:0 6px 0 2px;vertical-align:0"></i>' + st + (EVB ? ' ' + EVB.items.filter(function (e) { return e.state === st; }).length : '') + '</span> '; };
+    var no = EVB ? EVB.items.filter(function (e) { return !e._p; }) : [];
+    return '<b>🏗 큰 사건 — 이전·개통·재개발</b> ' + ['계획', '진행중', '완료'].map(d9).join('') + (no.length ? '<div class="lg-btns" style="margin:4px 0 2px">' + no.map(function (e) { return '<button data-evb="' + esc(e.id) + '" title="' + esc(e.nm) + '">' + esc(e.nm.length > 14 ? e.nm.slice(0, 13) + '…' : e.nm) + '</button>'; }).join('') + '</div>' : '') +
+      '<small class="lg-n">' + (EVB ? EVB.items.length + '건 · ' + esc(EVB.made || '') + ' 기준' : '읽는 중…') + ' · 계획 = 앞날의 신호 · 진행중 = 지켜볼 대상 · 완료 = 뒤돌아 맞대 볼 것' + (no.length ? ' · <b>위 단추 = 지도에 찍을 자리가 정해지지 않은 사건</b>' : '') + ' · 출처가 붙은 것만 한 건씩 넣는다 · 「무엇이 바뀌나」는 출처의 말이고 이 지도의 예측이 아니다</small>'; }
+  document.addEventListener('click', function (ev) { var b = ev.target.closest('[data-evb]'); if (!b || !EVB) return; ev.preventDefault(); var e = EVB.by[b.getAttribute('data-evb')]; if (!e) return; var sp = e._p ? S(e._p) : [-99, -99]; if (e._p && (sp[0] < 0 || sp[0] > cv.clientWidth || sp[1] < 0 || sp[1] > cv.clientHeight)) { view.cx = e._p[0]; view.cy = e._p[1]; sp = S(e._p); } sel = { x: sp[0] + (e._dx || 0), y: sp[1], r: 10, it: { kind: 'evb', e: e } }; show(sel.it); draw(); });
   function gtrCard() { var h = '<h3>🍺 음주운전 — 무엇이 바뀌었나</h3><p class="sdnt" style="margin:0 0 8px;color:#b45309"><b>잰 값만</b> — 왜 줄었는지는 이 자료에 없다(세대 · 단속 기준 · 대리운전 · 회식 문화가 같이 움직였다). 조사 값(%)은 표본이라 구·나이대 단위는 해마다 흔들린다 — 여러 해의 흐름으로 본다.</p>';
     if (!GTR) { gtrGet().then(function () { if (GTR && sel && sel.it && sel.it.kind === 'gdr') agReshow(); }); return h + '<p class="desc">자료를 읽는 중…</p>'; }
     var E = '연간 음주운전 경험률(자동차·오토바이 운전자)|전체|', A9 = ['19-29세', '30-39세', '40-49세', '50-59세', '60-69세', '70세이상'];
@@ -7920,7 +7950,7 @@
     ]],
     ['biz', '💳 상권·부동산', [
       ['spend', '💳 소비·상권', [['카드·매출', ['sales', 'crowd']], ['상권', ['opp', 'trd', 'tdg', 'szone', 'rent']], ['가게', ['conv', 'bank', 'bar', 'play', 'inn']]], ['sales', 'trd', 'szone']],
-      ['estate', '🏠 주거·부동산', [['토지 · 공시지가', ['jiga', 'land']], ['실거래', ['home', 'rtc']], ['집값 흐름', ['rone']], ['집·건물', ['jgg', 'bld']]], ['land', 'home']]
+      ['estate', '🏠 주거·부동산', [['토지 · 공시지가', ['jiga', 'land']], ['실거래', ['home', 'rtc']], ['집값 흐름', ['rone']], ['집·건물', ['jgg', 'bld']], ['바뀌는 것', ['evb']]], ['land', 'home']]
     ]],
     ['wx', '⛅ 날씨·실시간', [
       ['now', '🌦 지금 날씨', [['날씨', ['lwx', 'lair', 'lrad', 'lak', 'lkma']]], ['lwx', 'lair']],
@@ -7928,7 +7958,7 @@
       ['live', '📡 실시간 교통', [['도로', ['lev', 'lutic', 'lspd', 'lcc', 'lsac', 'lbus']], ['서울시', ['lsbk', 'lspk']], ['인파', ['crowd']]], ['lev', 'lspd']]
     ]],
     ['base', '🗺 바탕', [
-      ['map', '🗺 바탕 지도', [['바탕', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm']], ['나눠 보기 경계', ['usgg', 'juris', 'jurk', 'upb', 'ri']], ['격자', ['g250']], ['역사·이야기', ['lore', 'her']]], []]
+      ['map', '🗺 바탕 지도', [['바탕', ['dong', 'road', 'base', 'bld', 'vw', 'jcnm']], ['나눠 보기 경계', ['usgg', 'juris', 'jurk', 'upb', 'ri']], ['격자', ['g250']], ['역사·이야기', ['lore', 'her', 'evb']]], []]
     ]],
     ['all', '전체', null]
   ];

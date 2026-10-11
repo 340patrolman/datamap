@@ -110,17 +110,20 @@ FRESH = 75 * 60     # 닻이 이보다 낡으면 다시 받는다
 _AC = {}
 
 
-def anchors():
-    """교차로마다 닻을 받은 시각들(epoch) — red 파일을 한 번만 읽어 둔다."""
+def anchors(strong=False):
+    """교차로마다 닻을 받은 시각들(epoch) — red 파일을 한 번만 읽어 둔다.
+    strong=True 면 8분 넘게 받은 창의 닻만(2026-10-11 — 정각 직후 5분 창은 계획이 바뀌는 사이의 값이 섞인다: 서울고교 일 13·14·15시가 모두 4~10분 창이라 주기 197·160·168 · 옵셋 122·83·153)."""
     out = {}
     for f in glob.glob(os.path.join(RAW, 'red', '*.json')):
         if f not in _AC:
             try:
-                r = json.load(open(f, encoding='utf-8')); _AC[f] = (r['id'], r.get('a'))
+                r = json.load(open(f, encoding='utf-8'))
+                w9 = (int(r['to'][:2]) * 60 + int(r['to'][3:5])) - (int(r['from'][:2]) * 60 + int(r['from'][3:5]))
+                _AC[f] = (r['id'], r.get('a'), w9 >= 8)
             except Exception:
-                _AC[f] = (None, None)
-        i, a = _AC[f]
-        if i and a:
+                _AC[f] = (None, None, False)
+        i, a, st9 = _AC[f]
+        if i and a and (st9 or not strong):
             out.setdefault(i, []).append(a)
     return out
 
@@ -267,7 +270,7 @@ def sweep(prefer=None, api='t', cap=None):
         if api != 'p' and time.time() - spd_at >= 600:
             spd_at = time.time()                              # 10분에 한 번 통행속도 한 장 — 신호를 받았든 못 받았든(잔여시간 훑기 쪽에서만)
             if livespd(): publish()
-        A = anchors()
+        A = anchors(); AS = anchors(True)
         nowt = time.time()
         now = datetime.datetime.now()
         t = now.minute * 60 + now.second
@@ -276,7 +279,7 @@ def sweep(prefer=None, api='t', cap=None):
         if seen_slot != nslot:
             seen_slot, seen = nslot, {}                       # 시각대가 바뀌면 「이 시각대에 몇 번 받아 봤나」를 다시 센다
         need1 = lambda i: i not in tried and not A.get(i) and seen.get(i, 0) < 3                                   # 닻이 아직 없는 곳
-        needS = lambda i: i not in tried and A.get(i) and seen.get(i, 0) < 2 and not any(slot_of(a) == nslot for a in A[i])   # 닻은 있는데 지금 요일 갈래·지금 시각대 값이 없는 곳(시각대 표 채우기 · 두 번 받아도 안 되면 이 시각대는 넘긴다)
+        needS = lambda i: i not in tried and A.get(i) and seen.get(i, 0) < 2 and not any(slot_of(a) == nslot for a in AS.get(i, []))   # 닻은 있는데 지금 요일 갈래·지금 시각대 값이 없는 곳(시각대 표 채우기 · 두 번 받아도 안 되면 이 시각대는 넘긴다)
         def pick(ok=lambda i: True):
             """받을 곳 — ① 앞 두 묶음(서초·강남) 닻 없는 곳 ② 앞 두 묶음의 이 시각대 빈 곳 ③ 나머지 묶음 닻 없는 곳 ④ 그 밖 서울 닻 없는 곳 ⑤ 나머지 묶음 이 시각대 빈 곳 ⑥ 그 밖 서울 이 시각대 빈 곳
             (2026-10-10 소유자 「우선 서초구 전 지역 후 강남구로 · 순서대로」「수집 가능한 모든 신호값을 모아서」)"""
@@ -865,6 +868,9 @@ def build():
             inf, prev, pin = pinfo.get((c9, h9)), plan.get((c9, h9 - 1)), pinfo.get((c9, h9 - 1))
             if inf and prev and pin and pin[0] == inf[0] and abs(prev[2] - row[2]) > 0.6 and inf[1] % 60 <= 5 and 0 <= inf[2] - inf[1] < 8:
                 row.append(1)
+            elif inf and prev and pin and pin[0] == inf[0] and abs(prev[2] - row[2]) <= 0.6 and inf[1] % 60 <= 5 and 0 <= inf[2] - inf[1] < 8 and row[5] == prev[5] and pin[2] - pin[1] >= 8 \
+                    and min((row[3] - prev[3]) % row[2], (prev[3] - row[3]) % row[2]) > 3:
+                row.append(1)   # (2026-10-11) 앞 시각대(8분 넘게 받은 것)와 주기·기준 이동류는 같은데 옵셋이 3초 넘게 다른 짧은 창 — 옵셋을 옮기는 사이의 값으로 본다
             elif inf and not (prev and pin and pin[0] == inf[0]) and inf[1] % 60 <= 5 and 0 <= inf[2] - inf[1] < 8:
                 # (2026-10-11) 앞 시각대를 못 받았을 때는 **뒤 시각대**와 견준다 — 사당역 일 01시: 정각 직후 5분 창에서 주기 180(00시 계획이 아직 도는 중) · 02시는 160 · 경찰청 계획도 01시 160.
                 #  정각 직후의 짧은 창은 앞 시각대의 계획을 보고 있을 수 있다 → 뒤 시각대와 주기가 다르면 약한 줄(지도는 안 쓴다 · 다시 길게 받으면 풀린다)

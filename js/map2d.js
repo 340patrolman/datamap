@@ -2785,7 +2785,12 @@
     SDL = { nt: 'et', ne: 'se', et: 'st', se: 'sw', st: 'wt', sw: 'nw', wt: 'nt', nw: 'ne' }, SDM = { St: '직진', Lt: '좌회전', Ut: '유턴', Bs: '버스', Bc: '자전거' },
     SDA = { nt: -90, ne: -45, et: 0, se: 45, st: 90, sw: 135, wt: 180, nw: -135 }, SDW = ['일', '월', '화', '수', '목', '금', '토'];
   function sdObs(no) { var L = D.sigd && D.sigd.its && no != null ? D.sigd.its[String(no)] : null; if (!L || !L.length) return null;
-    var h = nowH(); return L.slice().sort(function (a, b) { return Math.abs(+a.from.slice(0, 2) - h) - Math.abs(+b.from.slice(0, 2) - h); })[0]; }
+    /* v2.177.0 종전엔 「받은 시각이 지금과 가장 가까운 기록」 하나만 봤다 — 서초 164곳을 훑으니 16시에 15:00~15:05 창(계획이 바뀌는 사이 · 주기 168·171·178초 같은 한 번뿐인 값 · 이동류 여섯이 못 읽힘)이 뽑히는 곳이 여럿.
+       차례 = ① 오늘과 같은 요일 갈래 ② 약한 기록이 아닌 것(약함 = 정각 뒤 5분 안에 시작해 8분도 안 되는 창이고, 주기가 정수가 아니거나 그 교차로의 다른 기록에 같은 주기가 없다) ③ 받은 시각이 가까운 것 ④ 읽힌 이동류가 많은 것 */
+    var h = nowH(), cl = HOUR == null ? sdCls(new Date()) : null, mn = function (t) { return +t.slice(0, 2) * 60 + +t.slice(3, 5); };
+    var wk = function (o) { var a = mn(o.from), b = mn(o.to); if (a % 60 > 5 || b - a >= 8 || b < a) return 0; if (Math.abs(o.cyc - Math.round(o.cyc)) > 0.3) return 1; return L.some(function (q) { return q !== o && Math.round(q.cyc) === Math.round(o.cyc); }) ? 0 : 1; };
+    var rd = function (o) { return o.mv.filter(function (m) { return m[2] != null; }).length; };
+    return L.slice().sort(function (a, b) { return (cl == null ? 0 : (a.cl === cl ? 0 : 1) - (b.cl === cl ? 0 : 1)) || wk(a) - wk(b) || Math.abs(+a.from.slice(0, 2) - h) - Math.abs(+b.from.slice(0, 2) - h) || rd(b) - rd(a); })[0]; }
   function sdAt(pt, r) { var best = null, bd = r || 45; if (!D.sigd || !D.sigd.pts) return null;
     Object.keys(D.sigd.pts).forEach(function (k) { var q = D.sigd.pts[k], d = dTrue(P(q[1], q[0]), pt); if (d < bd) { bd = d; best = k; } }); return best; }
   function sdGroups(o) {   // 같은 방위·같은 때에 켜지는 이동류를 한 줄로 · 마주 보는 두 방위가 똑같으면 「동↔서」로

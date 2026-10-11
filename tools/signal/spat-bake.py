@@ -576,6 +576,16 @@ def dir_bad(mvrows, cyc):
     return per > opp
 
 
+def cyc_key(r):
+    """build() 가 기록을 묶는 주기(정수 초) — 다시 잰 주기(ci)가 받은 주기(cyc)의 ±2.5초 안이면 ci, 아니면 받은 주기.
+    (2026-10-11) 종전엔 늘 ci 였다: 영등포구청앞(139) 16시 = 받은 주기 100초인데 녹색 시작 간격으로 다시 잰 값이 80초 → 닻은 버리면서(build 앞머리) 묶는 열쇠는 80 으로 남아,
+    ① 빈 구간을 80초 주기로 재서 보행 신호(30초)가 들어갈 33초 구간이 13초로 보였고 ② 주기가 다른 기록끼리 한 열쇠로 겹쳐 하나가 사라졌다(같은 곳 04시 70초 · 09시 75초)"""
+    ci = r.get('ci')
+    if ci and abs(ci - r['cyc']) <= 2.5:
+        return int(round(ci))
+    return int(round(r['cyc']))
+
+
 def plan_ci(cyc, ci):
     # 이어 세는 주기 — 계획 주기(녹+황+적 합의 중앙값)가 정수 초에 가깝고 다시 잰 값이 그 ±2.5초 안이면 계획 주기를 쓴다.
     # 2026-10-10 교대역(4045): 계획 170초인데 녹색 시작 간격(주기 2~3개)으로 다시 잰 값이 172 → 주기마다 2초씩 밀려 2시간 뒤 100초 어긋났다(소유자 현장 확인).
@@ -858,8 +868,11 @@ def build():
         keep, plan, pinfo = {}, {}, {}
         for r in v:
             ci0 = r.get('ci') or int(round(r['cyc']))
-            kk = (cls_of(r['dow'], r['day']), int(round(ci0)))
-            if r.get('pd') or not (keep.get(kk) and keep[kk].get('pd')) or r.get('a'):
+            kk = (cls_of(r['dow'], r['day']), cyc_key(r))
+            k9 = keep.get(kk)
+            if k9 and k9.get('a') and k9.get('pd') and not r.get('a') and sum(1 for x in k9['mv'] if x.get('g') is not None) >= sum(1 for x in r['mv'] if x.get('g') is not None):
+                pass                                            # (2026-10-11) 닻도 보행 색도 있는 기록을, 닻 없는 나중 기록이 덮지 않는다 — 열쇠를 받은 주기로 바로잡자 같은 주기의 기록이 한 열쇠로 모여 닻 16개가 사라졌다
+            elif r.get('pd') or not (keep.get(kk) and keep[kk].get('pd')) or r.get('a'):
                 if keep.get(kk) and keep[kk].get('pd') and not r.get('pd'):
                     # 보행 신호 색은 신호 상태 API 로 읽은 것을 이어 쓴다(같은 요일 갈래·같은 주기) —
                     # (2026-10-11) 보행 신호의 자리(o)는 **그 기록의 기준 이동류**에서 잰 것이라, 두 기록의 기준이 다르면(이수역: 상태 = 서쪽 직진 · 잔여 = 남쪽 직진) 그대로 옮기면 어긋난다.
@@ -898,7 +911,7 @@ def build():
             for q in sorted(sorted(v, key=lambda z: (z['day'], z['to']), reverse=True), key=lambda z: 0 if cls_of(z['dow'], z['day']) == kk[0] else 1):
                 if (q['day'], q['from'], q['to'], q.get('src')) == (r['day'], r['from'], r['to'], r.get('src')):
                     continue
-                if int(round(q.get('ci') or int(round(q['cyc'])))) != kk[1]:
+                if cyc_key(q) != kk[1]:
                     continue
                 xcl = cls_of(q['dow'], q['day']) != kk[0]
                 qm = {(x['d'], x['m']): x for x in q['mv'] if x.get('g') is not None and x.get('o') is not None and abs(x['g'] + x['y'] + x['r'] - q['cyc']) <= 3.5}
@@ -925,7 +938,7 @@ def build():
         OPP9 = {'nt': 'st', 'st': 'nt', 'et': 'wt', 'wt': 'et', 'ne': 'sw', 'sw': 'ne', 'se': 'nw', 'nw': 'se'}
         for kk, r in list(keep.items()):
             cur = {(x['d'], x['m']): x for x in r['mv']}
-            same = [q for q in v if (cls_of(q['dow'], q['day']), int(round(q.get('ci') or int(round(q['cyc']))))) == kk]
+            same = [q for q in v if (cls_of(q['dow'], q['day']), cyc_key(q)) == kk]
             add = {}
             for d in DIRS:
                 x, o = cur.get((d, 'St')), cur.get((OPP9[d], 'St'))
@@ -946,7 +959,7 @@ def build():
                 continue
             hv = {(x['d'], x['m']): x for x in r['mv'] if x.get('g') is not None and x.get('o') is not None and not x.get('fl')}
             for q9 in sorted(sorted(v, key=lambda z: (z['day'], z['to']), reverse=True), key=lambda z: 0 if cls_of(z['dow'], z['day']) == kk[0] else 1):
-                if not q9.get('pd') or int(round(q9.get('ci') or int(round(q9['cyc'])))) != kk[1]:
+                if not q9.get('pd') or cyc_key(q9) != kk[1]:
                     continue
                 qv = {(x['d'], x['m']): x for x in q9['mv'] if x.get('g') is not None and x.get('o') is not None and not x.get('fl')}
                 cm = [k2 for k2 in qv if k2 in hv and abs(hv[k2]['g'] - qv[k2]['g']) <= 2]

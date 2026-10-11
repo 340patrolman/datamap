@@ -44,12 +44,14 @@ def main():
         same = [k for k, v in indp.items() if v and k in ind and ind[k]]   # 두 분기에 다 값이 있는 업종
         dsal = sorted(((ind[k] - indp[k], k) for k in same), key=lambda z: z[0])[:3]
         dsto = sorted((((stor[k][1] or 0) - v, k) for k, v in storp.items() if v and k in stor), key=lambda z: z[0])[:3]
+        usal = sorted(((ind[k] - indp[k], k) for k in same), key=lambda z: -z[0])[:3]   # 느는 업종(게임 세션 2026-10-11 — 소유자 A-2 「빠지는 업종 / 느는 업종」)
+        usto = sorted((((stor[k][1] or 0) - v, k) for k, v in storp.items() if v and k in stor), key=lambda z: -z[0])[:3]
         miss = [k for k, v in indp.items() if v and not ind.get(k)]   # 1년 전에는 매출이 있었는데 이번 분기에 값이 없는 업종(가게가 적으면 가려진다)
         c = x['rings'][0]
         R.append({'cd': x['cd'], 'nm': x['name'], 'se': x.get('se', ''), 'gu': x.get('gu', ''), 'dong': x.get('dong', ''), 'll': [round(sum(p[0] for p in c) / len(c), 5), round(sum(p[1] for p in c) / len(c), 5)],
                   'sal': round(now), 'sy': pc(sum(ind[k] for k in same), sum(indp[k] for k in same)), 'sy_all': pc(now, old), 'miss': len(miss), 'sn': sn, 'ty': pc(sn, so), 'op': op, 'cl': cl,
                   'clr': round(cl / sn * 100, 1) if sn else None, 'opr': round(op / sn * 100, 1) if sn else None, 'ix': ix[0], 'om': ix[1], 'cm': ix[2], 'fl': fl, 'fy': pc(fl, fo), 'night': round(tr[2] / tr[0] * 100) if tr and tr[0] else None,
-                  'dsal': [[k, round(v)] for v, k in dsal if v < 0], 'dsto': [[k, v] for v, k in dsto if v < 0]})
+                  'dsal': [[k, round(v)] for v, k in dsal if v < 0], 'dsto': [[k, v] for v, k in dsto if v < 0], 'usal': [[k, round(v)] for v, k in usal if v > 0], 'usto': [[k, v] for v, k in usto if v > 0]})
     Q = {k: [quart([r[k] for r in R], f) for f in (0.25, 0.5, 0.75)] for k in ('sy', 'ty', 'clr', 'fy')}
     items = []; st = collections.Counter()
     for r in R:
@@ -62,7 +64,7 @@ def main():
         sup = [s for s in S if s[0] == 'S']; dem = 'D1' in S
         kind = 0 if not S else (3 if sup and dem else (1 if sup else 2))   # 1 = 가게 쪽만(사람은 그대로 — 와도 덜 산다·가게가 빠진다) · 2 = 사람 쪽만 · 3 = 둘 다
         items.append([r['cd'], r['nm'], r['se'], r['gu'], r['dong'], r['ll'][0], r['ll'][1], r['sal'], r['sy'], None if r['sy'] is None or Q['sy'][1] is None else round(r['sy'] - Q['sy'][1], 1), r['sy_all'], r['miss'],
-                      r['sn'], r['ty'], r['op'], r['cl'], r['opr'], r['clr'], r['fl'], r['fy'], r['ix'], r['om'], r['cm'], r['night'], S, kind, r['dsal'], r['dsto']])
+                      r['sn'], r['ty'], r['op'], r['cl'], r['opr'], r['clr'], r['fl'], r['fy'], r['ix'], r['om'], r['cm'], r['night'], S, kind, r['dsal'], r['dsto'], r['usal'], r['usto']])
         st['신호 %d개' % len(S)] += 1; st['갈래 %d' % kind] += 1
         for s in S: st[s] += 1
     items.sort(key=lambda r: str(r[0]))
@@ -79,7 +81,7 @@ def main():
                     '「무엇이 빠지나」 = 매출·점포가 가장 많이 준 업종 셋(준 것만 · 업종 코드는 서울시 상권분석서비스의 서비스 업종 코드 — 이름은 data/r/bizidx.json)',
                     '「왜」는 이 자료에 없다(재개발·공사·큰 가게의 이전·새 상권) — 현장을 아는 사람이 가설을 붙일 자리다',
                     '사고팔기·창업을 권하거나 말리는 자료가 아니다. 상권 이름을 「지는 상권」으로 찍지 않는다 — 잰 값만 보인다'],
-           'fields': 'items[[0 상권 코드, 1 이름, 2 갈래, 3 구 코드, 4 행정동, 5 가운데 경도, 6 위도, 7 한 달 평균 매출 만원, 8 매출 변화 %(두 분기에 다 있는 업종끼리), 9 그 값 − 서울 가운데값(%p), 10 매출 변화 %(빠진 업종까지 다 넣어), 11 이번 분기에 값이 빠진 업종 수, 12 점포 수, 13 점포 변화 %, 14 개업, 15 폐업, 16 개업률 %, 17 폐업률 %, 18 분기 유동인구, 19 유동인구 변화 %, 20 상권변화지표, 21 운영 가게 평균 영업 개월, 22 폐업 가게 평균 영업 개월, 23 밤(21~06시) 매출 %, 24 신호[S1·S2·S3·S4·D1 가운데 해당하는 것], 25 풀이 갈래(kinds), 26 매출이 준 업종[[업종 코드, 만원]…], 27 점포가 준 업종[[업종 코드, 곳]…]]] — 상권 코드 차례',
+           'fields': 'items[[0 상권 코드, 1 이름, 2 갈래, 3 구 코드, 4 행정동, 5 가운데 경도, 6 위도, 7 한 달 평균 매출 만원, 8 매출 변화 %(두 분기에 다 있는 업종끼리), 9 그 값 − 서울 가운데값(%p), 10 매출 변화 %(빠진 업종까지 다 넣어), 11 이번 분기에 값이 빠진 업종 수, 12 점포 수, 13 점포 변화 %, 14 개업, 15 폐업, 16 개업률 %, 17 폐업률 %, 18 분기 유동인구, 19 유동인구 변화 %, 20 상권변화지표, 21 운영 가게 평균 영업 개월, 22 폐업 가게 평균 영업 개월, 23 밤(21~06시) 매출 %, 24 신호[S1·S2·S3·S4·D1 가운데 해당하는 것], 25 풀이 갈래(kinds), 26 매출이 준 업종[[업종 코드, 만원]…], 27 점포가 준 업종[[업종 코드, 곳]…], 28 매출이 는 업종[[업종 코드, 만원]…](두 분기에 다 값이 있는 업종 가운데 · 많이 는 차례 셋까지), 29 점포가 는 업종[[업종 코드, 곳]…]]] — 상권 코드 차례',
            'stat': dict(st), 'items': items}
     p = os.path.join(ROOT, 'data', 'trade-diag2-seoul.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('분기', q, '← 1년 전', prev, '· 상권', len(items), '· 1년 전 유동인구 받은 상권', len(FP), '· 바이트', os.path.getsize(p)); print('서울 분포', doc['seoul']); print({k: v for k, v in sorted(st.items())})

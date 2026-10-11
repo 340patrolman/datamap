@@ -2818,7 +2818,15 @@
   function sdLink(pt, lim) { var k = sdAt(pt, lim || 120); if (!k) return ''; var q = D.sigd.pts[k]; return row('🚦 가까운 신호 교차로', '<button data-sgo="' + esc(k) + '">' + esc(q[2] || k) + ' ' + Math.round(dTrue(P(q[1], q[0]), pt)) + 'm — 신호 보기</button>'); }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-sgo]'); if (!b || !D.sigd || !D.sigd.pts) return; var k = b.getAttribute('data-sgo'), q = D.sigd.pts[k]; if (!q) return; var s0 = S(P(q[1], q[0])); sel = { x: s0[0], y: s0[1], r: 8, it: { kind: 'sgd', no: k, q: q } }; show(sel.it); draw(); });
   function sdTop(h, sd) { return sd ? h.replace('</h3>', '</h3>' + sd) : h; }
-  function sdCls(dt) { var w = dt.getDay(); return holOf(dt) || w === 0 ? 3 : w === 6 ? 2 : w === 5 ? 1 : 0; }
+  /* v2.183.0 소유자 「평일 · 금요일 · 토요일 · 일요일 · 특수일 해서 조금씩 달라 · 내가 붙인 pdf 보면 알 거야」 — 교통과 현시도(KSC-5800SE)의 특수일 표는 **15종**(신정 · 설날 전·당일·후 · 삼일절 · 어린이날 · 석탄일 · 현충일 · 광복절 · 추석 전·당일·후 · 개천절 · 한글날 · 성탄일)이고 전부 TOD 4(일요일 계획).
+     표에 없는 쉬는 날(대체공휴일 · 선거일 · 제헌절 · 노동절 · 임시공휴일)은 제어기가 특수일로 알지 못해 **그 요일의 계획**으로 돈다고 본다. data/sig-special.json(다른 세션 · tg-sig-special/1) days{날짜: 이름} = 일요일 갈래 · other{날짜: 이름} = 그 요일 그대로.
+     종전 sdCls·kscDayType 은 holOf(쉬는 날 전부)를 일요일로 봤다. 표를 못 읽었으면 종전대로(holOf). 근거는 현시도 한 장(다섯 장 모두 같게 전사) — 대체공휴일에 교통과가 따로 바꾸는지는 그날 받은 값으로 가린다 */
+  var SGSP = null; fetch('data/sig-special.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.days) SGSP = j; }).catch(function () {});
+  function sgspDay(dt) { return SGSP ? !!SGSP.days[ymdOf(dt)] : !!holOf(dt); }
+  function sgspNote() { var d = new Date(), k = ymdOf(d), o = SGSP && SGSP.other && SGSP.other[k], sp = SGSP && SGSP.days[k]; if (HOUR != null) return '';
+    return o ? '<p class="sdnt" style="margin:4px 0 0;color:#b45309"><b>오늘은 ' + esc(o) + '</b> — 신호는 <b>' + ['일', '월', '화', '수', '목', '금', '토'][d.getDay()] + '요일 계획</b>으로 도는 것으로 본다(신호제어기의 특수일 표 15종에 없는 날) · 통행량은 휴일 같을 수 있다.</p>'
+      : sp && d.getDay() !== 0 ? '<p class="sdnt" style="margin:4px 0 0;color:#1d4ed8"><b>오늘은 ' + esc(sp) + '</b>(특수일) — 신호는 <b>일요일 계획</b>으로 돈다.</p>' : ''; }
+  function sdCls(dt) { var w = dt.getDay(); return sgspDay(dt) || w === 0 ? 3 : w === 6 ? 2 : w === 5 ? 1 : 0; }
   /* v2.136.0 경찰청 계획(요일·시각별 주기·옵셋·현시값) + 현시→방향 표(sig-phmv · 실제 신호와 맞대어 읽은 것) → 그 교차로의 방향별 초를 **하루 종일** 만든다(받은 시각대 값이 없는 시간에 쓴다).
      이동류의 녹색 = 그 이동류가 켜지는 현시들의 현시값 합 − 황색(받은 값 · 없으면 3초) · 현시값에는 전적색 1~2초가 들어 있어 녹색이 그만큼 길게 나온다. 방향 표에 읽힌 이동류만 나온다 */
   function planDirRec(no) { if (HOUR != null || !D.sig || !D.sig.spots || !PHMV || !PHMV.spots) return null; no = String(no); var PM = PHMV.spots[no]; if (!PM || PM.dq || PM.warn || !PM.ph || ofckBad(no)) return null;
@@ -2920,7 +2928,7 @@
   function kscGet() { if (KSCP) return KSCP; KSCP = fetch('data/sig-ksc-seocho.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { KSC = j; (j.items || []).forEach(function (x) { x.p = P(x.lon, x.lat); }); draw(); }).catch(function () { KSC = null; }); return KSCP; }
   function kscOf(no) { if (KSC === undefined) { kscGet().then(function () { var c = $('m2dCard'); if (sel && sel.it && c && c.classList.contains('on')) show(sel.it); }); return null; } return KSC && no != null ? (KSC.items || []).filter(function (x) { return String(x.no) === String(no); })[0] || null : null; }
   function kscAt(pt, r) { if (KSC === undefined) { kscGet(); return null; } if (!KSC) return null; var b = null, bd = r || 60; (KSC.items || []).forEach(function (x) { var d = dTrue(x.p, pt); if (d < bd) { bd = d; b = x; } }); return b; }
-  function kscDayType(dt) { var w = dt.getDay(); return holOf(dt) || w === 0 ? '4' : w === 6 ? '3' : w === 5 ? '2' : '1'; }
+  function kscDayType(dt) { var w = dt.getDay(); return sgspDay(dt) || w === 0 ? '4' : w === 6 ? '3' : w === 5 ? '2' : '1'; }
   function kscNow(x) { var dt = new Date(pickDate() + 'T00:00:00'), now = new Date(), hm = HOUR != null ? ('0' + HOUR).slice(-2) + '00' : ('0' + now.getHours()).slice(-2) + ('0' + now.getMinutes()).slice(-2), ty = kscDayType(dt), L = (x.tod || {})[ty] || [], cur = null;
     L.forEach(function (r) { if (r[0] <= hm) cur = r; });
     if (!cur) { var y = new Date(dt.getTime() - 864e5), ty2 = kscDayType(y), L2 = (x.tod || {})[ty2] || []; cur = L2[L2.length - 1] || null; return { ty: ty, hm: hm, cur: cur, prev: ty2, list: L }; }
@@ -3984,7 +3992,7 @@
       h += '<p class="sdnt" style="margin:4px 0 0;color:#1d4ed8"><b>ⓘ 채움</b> — ' + esc(f3.map(function (m) { return SDN[m[0]] + '쪽 ' + (SDM[m[1]] || m[1]) + ' ' + Math.round(m[2]) + '초'; }).join(' · ')) + ' = 이 기록에서는 못 읽어 <b>같은 요일·같은 주기의 다른 기록에서 읽힌 값</b>을 자리 맞춰 옮겼거나, 적색만 읽힌 직진을 마주 보는 직진과 같게 둔 것이다(받은 기록 그대로가 아니다).</p>'; })();
     (function () { var f4 = o.mv.filter(function (m) { return m[7] === 4 && m[2] != null; }); if (!f4.length) return;
       h += '<p class="sdnt" style="margin:4px 0 0;color:#b45309"><b>ⓘ 추정</b> — ' + esc(f4.map(function (m) { return SDN[m[0]] + '쪽 ' + (SDM[m[1]] || m[1]) + ' ' + Math.round(m[2]) + '초'; }).join(' · ')) + ' = <b>받은 값이 아니다</b>. 이 기록에서 못 읽은 신호를 ① 다른 기록에서 늘 같이 켜지던 신호와 같게 두었거나 ② 비어 있던 자리에 다른 기록의 켜지는 차례대로 맞춰 넣은 것이다(초는 빈 자리 길이에서 황색을 뺀 값) — 현장과 다르면 알려 주십시오.</p>'; })();
-    h += live + (hasK ? '' : saudHtml(no));
+    h += sgspNote() + live + (hasK ? '' : saudHtml(no));
     mo += row('켜지는 차례', G.map(function (x, i) { return num.charAt(i) + ' ' + esc(sdName(x)) + ' <b>' + Math.round(x.g) + '초</b>'; }).join(' → '));
     var un = o.mv.filter(function (m) { return m[2] == null; }), pd = (o.ped || []).map(function (q) { return SDN[q[0]]; });
     if (o.pd && o.pd.length) mo += row('🚶 보행 신호', o.pd.map(function (q) { return '<b>' + SDN[q[0]] + '쪽</b> 녹색 ' + Math.round(q[1]) + '초 · 점멸 ' + Math.round(q[2] || 0) + '초 · 적색 ' + Math.round(q[3]) + '초'; }).join('<br>') + ' <em>(서울시 「신호제어기 신호 정보」 상태 값 · 방위 = 보행자가 걷는 축 — 북·남 = 남북으로 건넌다 · 같은 축의 차량 직진과 함께 켜진다)</em>');

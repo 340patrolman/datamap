@@ -791,11 +791,12 @@ _HOL = None
 
 
 def holidays():
-    """공휴일 날짜 집합(data/holidays.json — 천문연 특일 · 대체공휴일·선거일 포함) — 없으면 빈 집합"""
+    """일요일 계획으로 도는 **특수일** 날짜 집합(data/sig-special.json 의 days — 교통과 현시도의 특수일 표 15종 · tools/signal/sigspecial-bake.py) — 없으면 빈 집합.
+    쉬는 날 전부가 아니다: 대체공휴일·선거일·제헌절·노동절은 표에 없어 그 요일 계획으로 본다(소유자 「평일·금·토·일·특수일 해서 조금씩 달라」 · 2026-10-11 다른 세션이 현시도에서 읽음)"""
     global _HOL
     if _HOL is None:
         try:
-            _HOL = set(json.load(open(os.path.join(ROOT, 'data', 'holidays.json'), encoding='utf-8')).get('days', {}).keys())
+            _HOL = set(json.load(open(os.path.join(ROOT, 'data', 'sig-special.json'), encoding='utf-8')).get('days', {}).keys())
         except Exception:
             _HOL = set()
     return _HOL
@@ -803,7 +804,7 @@ def holidays():
 
 def cls_of(dow, day=None):
     """요일 갈래 — 0 월~목 · 1 금 · 2 토 · 3 일·공휴일(교통과 계획의 TOD 갈래와 같게).
-    (2026-10-11 소유자 「신호값이 평일과 휴일이 달라 — 통행량이 다르니까」) day('YYYY-MM-DD')가 공휴일이면 요일과 상관없이 3 —
+    (2026-10-11 소유자 「신호값이 평일과 휴일이 달라 — 통행량이 다르니까」) day('YYYY-MM-DD')가 특수일 15종이면 요일과 상관없이 3 —
     종전엔 요일만 봐서 평일 공휴일에 받은 기록이 평일 표를 휴일 값으로 덮었고, 지도(sdCls = 공휴일 → 3)는 그날 그 값을 찾지 못했다"""
     if day and day in holidays():
         return 3

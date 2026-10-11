@@ -58,8 +58,24 @@ def main():
         imp = (min(lanes, 40) + (6 if phn >= 4 else 3 if phn == 3 else 0)) * (0.5 if ped else 1.0)   # 이름에 (보)가 붙은 것은 보행 신호(건널목) — 절반으로
         need = {'A': 1.0, 'B': 0.35 * (1 - cells / 96.0), 'C': 0.0}[kind]
         have = ' · '.join(x for x in ('교통과 출력물' if has_k else '', '경찰청 계획' if has_t else '', ('실시간 방향별 초(%d/96칸)' % cells) if has_d else '') if x) or '없음'
-        rows.append({'no': no, 'nm': nm, 'ph': ph, 'sys': r['시스템'].strip(), 'kind': kind, 'lanes': lanes, 'roads': names, 'imp': imp, 'score': round(imp * need, 1), 'have': have, 'xy': bool(lon), 'approx': approx, 'ped': ped})
+        rows.append({'no': no, 'nm': nm, 'ph': ph, 'sys': r['시스템'].strip(), 'kind': kind, 'lanes': lanes, 'roads': names, 'imp': imp, 'score': round(imp * need, 1), 'have': have, 'xy': bool(lon), 'approx': approx, 'ped': ped, 'll': (lon, lat) if lon else None})
     json.dump(GC, open(gp, 'w', encoding='utf-8'), ensure_ascii=False)
+    # 대장에 번호 없는 줄이 번호 있는 줄·이미 자료가 있는 신호와 **같은 교차로**인지 가린다(「서초역」 = 서초역사거리 4039 — 이미 교통과 출력물이 있다 · 소유자 2026-10-11 지적)
+    import re
+    def nz(x): return re.sub('[(].*?[)]|앞|입구|사거리|삼거리|교차로|역$|[ ]', '', x)
+    KN = []   # 자료가 있거나 번호가 있는 신호: (이름, 경도, 위도, 번호, 갈래, 가진 것)
+    for x in rows:
+        if x['no'] and x.get('ll'): KN.append((x['nm'], x['ll'][0], x['ll'][1], x['no'], x['kind'], x['have']))
+    for k, v in pts.items():
+        if 37.40 < v[0] < 37.56 and 126.94 < v[1] < 127.13: KN.append((v[2], v[1], v[0], k, 'B', '실시간 방향별 초'))
+    for it in json.load(open(os.path.join(ROOT, 'data', 'sig-ksc-seocho.json'), encoding='utf-8'))['items']: KN.append((it['nm'], it['lon'], it['lat'], str(it['no']), 'C', '교통과 출력물'))
+    for x in rows:
+        if x['no'] or not x.get('ll'): continue
+        a0 = nz(x['nm']); best = None
+        for nm2, lo, la, no2, kd, hv in KN:
+            b0 = nz(nm2); d = m(x['ll'], (lo, la))
+            if d <= 250 and a0 and b0 and (a0 == b0 or (min(len(a0), len(b0)) >= 3 and (a0 in b0 or b0 in a0))) and (best is None or d < best[0]): best = (d, nm2, no2, kd, hv)   # 이름이 같거나, 세 글자 넘게 겹칠 때만(「양재」·「반포」 두 글자 겹침으로 다른 곳을 묶지 않게)
+        if best: x['same'] = '%s(%s)' % (best[1], best[2]); x['kind'] = 'S'; x['score'] = 0.0; x['have'] = '같은 교차로로 봄 → ' + best[4]
     rows.sort(key=lambda x: (-x['score'], -x['imp'], x['nm'])); day = datetime.date.today().strftime('%Y%m%d'); c = collections.Counter(x['kind'] for x in rows)
     A = [x for x in rows if x['kind'] == 'A']; Axy = [x for x in A if x['xy']]; Ano = [x for x in A if not x['xy']]
     md = ['# 신호값 우선순위표 — 서초경찰서 관내 신호제어기 %d대 (%s 기준)' % (len(rows), datetime.date.today().isoformat()), '',
@@ -67,12 +83,14 @@ def main():
           '| 갈래 | 뜻 | 대수 |', '|---|---|---|',
           '| A | **교통과 출력물이 유일한 길** — 서울 실시간 장비도 경찰청 공개 계획도 없음 | %d |' % c['A'],
           '| B | 기다리면 채워짐 — 서울 실시간 값이 들어옴(요일 4갈래 × 24시 = 96칸을 채우는 중) | %d |' % c['B'],
-          '| C | 이미 요일·시각 계획이 있음(교통과 출력물 5 · 경찰청 공개 계획) | %d |' % c['C'], '',
+          '| C | 이미 요일·시각 계획이 있음(교통과 출력물 5 · 경찰청 공개 계획) | %d |' % c['C'],
+          '| (겹침) | 대장에 번호 없이 한 번 더 적힌 줄 — 번호 있는 교차로와 같은 곳으로 봄 | %d |' % c['S'], '',
           '## 1. 교통과에서 받아 올 차례 (갈래 A %d대 가운데 자리를 알거나 찾은 %d대 · 위에서부터 45)' % (len(A), len(Axy)), '',
           '차례는 「그 자리에서 만나는 큰길의 차로 수 + 현시 수」로 매긴 **어림**입니다(출동 빈도·사고는 넣지 않았습니다 — 현장 판단으로 바꾸십시오).', '',
           '| 차례 | 번호 | 제어기 이름 | 현시 | 만나는 큰길 | 큰길 차로 합 | 시스템 |', '|---|---|---|---|---|---|---|']
     for i, x in enumerate(Axy[:45], 1): md.append('| %d | %s | %s | %s | %s | %d | %s |' % (i, x['no'] or '-', x['nm'] + (' ※' if x['approx'] else ''), x['ph'], ' · '.join(x['roads']) or '(큰길 아님)', x['lanes'], x['sys']))
     md.append(''); md.append('※ = 대장에 좌표가 없어 이름의 시설 자리를 찾아 넣은 **근사 자리**(120m 안의 큰길을 봄) — 실제 교차로와 다를 수 있습니다. 이름에 (보)가 붙은 보행 신호는 중요도를 절반으로 낮췄습니다.')
+    md += ['', '## 겹친 줄(받을 차례에서 뺌) — 같은 교차로로 본 것이 맞는지 봐 주십시오', '', ', '.join('%s → %s' % (x['nm'], x['same']) for x in rows if x['kind'] == 'S') or '없음']
     md += ['', '## 2. 갈래 A 인데 자리를 못 찾아 중요도를 못 매긴 %d대' % len(Ano), '', '이름을 보고 큰 교차로를 골라 주십시오.', '', ', '.join('%s(%s%s)' % (x['nm'], x['ph'], ' · ' + x['no'] if x['no'] else '') for x in sorted(Ano, key=lambda x: x['nm'])), '',
            '## 3. 기다리면 채워지는 곳 (갈래 B %d대) — 지금 채운 칸이 적은 큰 교차로' % c['B'], '', '| 번호 | 제어기 이름 | 현시 | 만나는 큰길 | 채운 칸 |', '|---|---|---|---|---|']
     for x in sorted([x for x in rows if x['kind'] == 'B'], key=lambda x: -x['imp'])[:25]: md.append('| %s | %s | %s | %s | %s |' % (x['no'], x['nm'], x['ph'], ' · '.join(x['roads']), x['have'].split('(')[-1].rstrip(')')))

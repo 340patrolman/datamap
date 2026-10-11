@@ -31,6 +31,19 @@ def main():
         n0, n1 = nb(ys[0]), nb(fy); t0, t1 = sum(d[ys[0]]) / M[ys[0]], sum(d[fy]) / M[fy]
         items.append([st, sorted(LN[st]), [x[0] if x else None for x in r], [x[3] if x else None for x in r], round(r[-1][0] - r[0][0], 2), round(r[-1][0] / r[0][0] * 100 - 100) if r[0][0] else None,
                       n0, n1, round(n1 / n0 * 100 - 100) if n0 and n1 else None, round(t1 / t0 * 100 - 100) if t0 else None])
+    LL = {}   # 역 좌표 — 이름으로 맞춘다(괄호와 「역」을 뗌 · 서울 r/stations.json 먼저, 없으면 stations-kr.json)
+    cut = lambda n: n.split('(')[0].replace('역', '') if n.split('(')[0] not in ('역삼', '역곡', '서울역', '역촌') else n.split('(')[0].replace('서울역', '서울')
+    try:
+        for x in json.load(open(os.path.join(ROOT, 'data', 'stations-kr.json'), encoding='utf-8')).get('items', []): LL.setdefault(cut(str(x[0])), [x[2], x[3]])
+    except Exception as e: print('stations-kr', type(e).__name__)
+    try:
+        for x in json.load(open(os.path.join(ROOT, 'data', 'r', 'stations.json'), encoding='utf-8')).get('items', []): LL[cut(str(x[0]))] = [x[2], x[3]]
+    except Exception as e: print('stations', type(e).__name__)
+    miss = []
+    for x in items:
+        ll = LL.get(cut(x[0])); x += ll if ll else [None, None]
+        if not ll: miss.append(x[0])
+    print('좌표를 못 붙인 역', len(miss), miss[:30])
     items.sort(key=lambda x: -x[2][0])
     fy = [y for y in ys if M[y] == 12][-1]; hours = {y: [round(Y[y][h] / M[y]) for h in range(24)] for y in ys}
     doc = {'schema': 'tg-night-ride/1', 'made': datetime.date.today().isoformat(), 'months': [yms[0], yms[-1]], 'years': ys, 'late_hours': '22~03시(22 · 23 · 0 · 1 · 2 · 3시대)',
@@ -43,7 +56,7 @@ def main():
                     '**전체 승차가 크게 준 것이 아니다** — 2019년의 94~96% 까지 돌아왔다. 크게 준 것은 늦은 시간이다(2019 → 2025: 낮 −4% 안팎 · 18시대 −9 · 19시대 −13 · 21시대 −14 · 22시대 −21 · 23시대 −26% / 17시대는 +5% — 저녁이 앞당겨졌다). 밤 22~03시 승차는 한 달 1,262만 → 976만 명',
                     '강남·신사·논현·양재는 2022년 5월 신분당선 연장으로 일부 손님이 그쪽(이 자료에 없는 노선) 개찰구로 옮겨 갔을 수 있다 — 이 네 역의 감소는 실제보다 크게 보일 수 있다 · 달 단위 자료라 평일과 주말을 가르지 못한다',
                     '밤에 지하철을 덜 탄다고 술을 덜 마신다는 뜻은 아니다(다른 수단으로 돌아갈 수 있다) — 여러 자료를 같이 본다'],
-           'fields': 'seoul[[해, 밤 22~03시 승차 몫 %, 21시대 %, 저녁 18~20시 %, 한 달 평균 승차]…] · items[[역 이름, [호선…], [해마다 밤 승차 몫 %](years 차례), [해마다 한 달 평균 승차], 첫 해 → 마지막 해 %p, 그 변화율 %, 첫 해 밤 22~03시 승차 한 달 평균(명), full_year 의 그 값, 그 변화 %, 전체 승차의 변화 %(첫 해 → full_year)]] — 첫 해의 밤 몫이 큰 차례 · hours{해: [0시…23시 한 달 평균 승차(서울 전체)]} · full_year = 열두 달이 다 찬 마지막 해',
+           'fields': 'seoul[[해, 밤 22~03시 승차 몫 %, 21시대 %, 저녁 18~20시 %, 한 달 평균 승차]…] · items[[역 이름, [호선…], [해마다 밤 승차 몫 %](years 차례), [해마다 한 달 평균 승차], 첫 해 → 마지막 해 %p, 그 변화율 %, 첫 해 밤 22~03시 승차 한 달 평균(명), full_year 의 그 값, 그 변화 %, 전체 승차의 변화 %(첫 해 → full_year), 경도, 위도(이름으로 맞춘 역 좌표 · 못 맞춘 역은 null)]] — 첫 해의 밤 몫이 큰 차례 · hours{해: [0시…23시 한 달 평균 승차(서울 전체)]} · full_year = 열두 달이 다 찬 마지막 해',
            'full_year': fy, 'hours': hours, 'seoul': seoul, 'items': items}
     p = os.path.join(ROOT, 'data', 'night-ride-seoul.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('역', len(items), '· 바이트', os.path.getsize(p)); [print('  ', r) for r in seoul]

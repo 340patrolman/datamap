@@ -154,6 +154,7 @@ def main():
         if sp and pl.get(no):
             okc = badc = oko = bado = 0; ex = []
             for prow in pl[no]:
+                if len(prow) > 6 and prow[6]: continue                     # 약한 줄
                 cl, hr, cyc, off, day = prow[:5]
                 q = pol_plan(sp, cl, hr)
                 if not q: continue
@@ -197,6 +198,7 @@ def main():
                 tot['ksc_slots'] += 1
             # 시각대 표(pl — 요일 갈래·시마다 받은 주기·자정 기준 옵셋)로도 견준다 — 기록은 (요일 갈래, 주기)마다 나중 것만 남아 지난 시각대의 옵셋이 사라지기 때문
             for prow in pl.get(no, []):
+                if len(prow) > 6 and prow[6]: continue
                 cl, hr, cyc, off, day = prow[:5]; rk = prow[5] if len(prow) > 5 else ''
                 q0, q1 = ksc_plan(x, cl, hr * 60 + 6), ksc_plan(x, cl, hr * 60 + 59)
                 if not q0 or not q1 or q0[0] != q1[0] or 0 <= hr * 60 - q0[3] < 0: continue      # 그 시(時) 안에서 계획이 바뀌면 건너뛴다

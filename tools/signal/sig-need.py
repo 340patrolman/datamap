@@ -62,7 +62,7 @@ def main():
     json.dump(GC, open(gp, 'w', encoding='utf-8'), ensure_ascii=False)
     # 대장에 번호 없는 줄이 번호 있는 줄·이미 자료가 있는 신호와 **같은 교차로**인지 가린다(「서초역」 = 서초역사거리 4039 — 이미 교통과 출력물이 있다 · 소유자 2026-10-11 지적)
     import re
-    def nz(x): return re.sub('[(].*?[)]|앞|입구|사거리|삼거리|교차로|역$|[ ]', '', x)
+    def nz(x): return re.sub('역$', '', re.sub('[(].*?[)]|앞|입구|사거리|삼거리|교차로|[ ]', '', x))   # 꼬리말을 뗀 뒤에 끝의 「역」을 뗀다(서초역사거리 → 서초역 → 서초)
     KN = []   # 자료가 있거나 번호가 있는 신호: (이름, 경도, 위도, 번호, 갈래, 가진 것)
     for x in rows:
         if x['no'] and x.get('ll'): KN.append((x['nm'], x['ll'][0], x['ll'][1], x['no'], x['kind'], x['have']))

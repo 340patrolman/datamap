@@ -944,6 +944,44 @@ def build():
             pt = [{'d': z['d'], 'g': z['g'], 'y': 0.0, 'r': round(r['cyc'] - z['g'], 1), 'o': z['o'], 'n': z.get('gn', 1), 'cx': 2} for z in (r.get('ped') or []) if z.get('g') is not None and z.get('o') is not None]
             if pt:
                 keep[kk] = dict(r, pd=pt)
+        # 아직도 보행 신호가 없는 기록(구간 시각을 안 남긴 옛 잔여시간 기록) — 못 읽은 차량 이동류가 없고, 차량 신호가 없는 12초 넘는 구간에
+        #  **길이가 맞는**(구간 − 12초 ~ 구간 + 2초) 보행 구간이 되풀이되면 그 보행 신호를 그 구간 가운데에 놓는다(끝에 3 — 길이는 받은 값 · 자리는 어림).
+        #  같은 축 차량 직진이 읽힌 보행 신호는 그 직진과 함께 켜지므로(818쌍 대 7쌍) 빈 구간에 넣지 않는다 — 건널목만 있는 연등과 보행 전용 현시에만 맞는다
+        for kk, r in list(keep.items()):
+            c8 = int(round(kk[1]))
+            if r.get('pd') or c8 < 20 or not r.get('ped'):
+                continue
+            rdv = [x for x in r['mv'] if x.get('g') is not None and x.get('o') is not None]
+            if not rdv or any(x['m'] in ('St', 'Lt') and x.get('g') is None for x in r['mv']):
+                continue
+            cov = [0] * c8
+            for x in rdv:
+                for t in range(int(round(x['o'])), int(round(x['o'] + x['g'] + x['y']))):
+                    cov[t % c8] = 1
+            gaps, st8 = [], None
+            for t in range(2 * c8):
+                if not cov[t % c8] and st8 is None:
+                    st8 = t
+                if cov[t % c8] and st8 is not None:
+                    if st8 < c8 and t - st8 >= 12:
+                        gaps.append((st8 % c8, t - st8))
+                    st8 = None
+            if not gaps:
+                continue
+            axs = set(DIRS.index(x['d']) % 4 for x in rdv if x['m'] == 'St')
+            pt, used = [], set()
+            for z in r['ped']:
+                sg8 = [v for v in (z.get('seg') or []) if v > 6]
+                if not sg8 or DIRS.index(z['d']) % 4 in axs:
+                    continue
+                for g0, gl in gaps:
+                    cand = sorted(((sum(1 for v in sg8 if abs(v - L) <= 2), L) for L in set(sg8) if gl - 12 <= L <= gl + 2), reverse=True)
+                    if cand and (cand[0][0] >= 2 or len(sg8) <= 3):
+                        L = float(cand[0][1])
+                        pt.append({'d': z['d'], 'g': L, 'y': 0.0, 'r': round(r['cyc'] - L, 1), 'o': int(round(g0 + max(0.0, gl - L) / 2.0)) % c8, 'n': cand[0][0], 'cx': 3})
+                        break
+            if pt:
+                keep[kk] = dict(r, pd=pt)
         # ── 추정으로 채우기(끝에 4 · 지도는 「추정」이라 적는다) — 위의 채움으로도 남은 것만 ──
         RD = lambda x, cyc: x is not None and x.get('g') is not None and x.get('o') is not None and abs(x['g'] + x['y'] + x['r'] - cyc) <= 3.5
         for kk, r in list(keep.items()):

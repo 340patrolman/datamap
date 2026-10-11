@@ -596,6 +596,33 @@
    "shape": "{who: {any: \"누구나\", self: \"본인만(로그인·인증)\", fee: \"누구나(수수료)\", none: \"동 단위 공개 자료 없음\"}, sites: {<열쇠 24개 · 예 wetax>: {n: \"위택스(행정안전부 지방세)\", u: \"https://www.wetax.go.kr/\"}}, items: [18개 × {k: \"ptax-own\", g: \"세금\", what: \"내 집에 실제로 나온 재산세(고지서 금액)\", why: 글, who: \"self\", at: […1], how: 글}]}"
   },
   {
+   "file": "flood-delay-seocho.json",
+   "url": "https://340patrolman.github.io/datamap/data/flood-delay-seocho.json",
+   "bytes": 304688,
+   "schema": "tg-flood-delay/1",
+   "date": "2026-10-11",
+   "source": "data/nav-seocho.json(국가교통정보센터 표준노드링크 2026-09-14판) × data/flood-link-seocho.json(서울시 침수흔적도 2010~2025) × data/police-seocho.json(지구대·파출소 23곳) × data/agency-pts.json(소방서·119안전센터 24곳 — 좌표가 있는 곳만)",
+   "fields": "{polA·polB·fireA·fireB: [[경도, 위도, 평소 초, 통제 때 초(-1 = 닿지 못함), 평소 가장 빨리 오는 관서, 통제 때 바뀐 관서(같으면 빈 글), 교차로 이름, 통제된 길에 붙어 있음 1]…]} — 30초 이상 늦어지는 교차로만 · 많이 늦는 차례",
+   "note": "**견주는 값이다 — 실제 출동 시간이 아니다.** 제한속도로 달리고 · 막히지 않고 · 신호가 없고 · 회전 제한을 보지 않는다고 셌다. 통제 때는 돌아가는 길도 막혀 실제로는 더 늦다 · 침수 흔적은 잠긴 건물·필지의 가운데 점이다 — 「그 길이 잠겼다」가 아니라 「30m 안에서 잠긴 적이 있다」 · 그런 길이 **한꺼번에 다** 막힌다고 본 가장 나쁜 쪽의 그림이다(실제 통제는 그 일부) · 출동하는 곳 = 그 교차로에 평소 가장 빨리 닿는 관서(관할이 아니다 — 법정 관할·출동 배정과 다를 수 있다) · 순찰 중인 차는 세지 않았다(관서에서 떠난다고 봄)",
+   "top": {
+    "scenarios": "{2}",
+    "note": "[5]",
+    "stat": "{4}",
+    "polA": "[696]",
+    "polB": "[919]",
+    "fireA": "[837]",
+    "fireB": "[1218]"
+   },
+   "about": {
+    "area": "서초구(길은 경계 밖 2km 까지)",
+    "chain": "폭우(자연) → 침수 이력 길(만든 조건) → 통제 → 돌아가는 길 → **출동 지연** — ONTOLOGY.md §0 겹을 잇는 화살표의 끝 고리 · 앞 고리는 data/flood-link-seocho.json"
+   },
+   "sample": {
+    "fireB[0]": "[127.01785, 37.50073, 224, -1, \"서초소방서\", \"\", \"반포동 131-3\", 1]",
+    "polB[0]": "[127.01785, 37.50073, 173, -1, \"서초3파출소\", \"\", \"반포동 131-3\", 1]"
+   }
+  },
+  {
    "file": "flood-link-seocho.json",
    "url": "https://340patrolman.github.io/datamap/data/flood-link-seocho.json",
    "bytes": 142328,
@@ -1050,10 +1077,10 @@
   {
    "file": "live-spd-seocho.json",
    "url": "https://340patrolman.github.io/datamap/data/live-spd-seocho.json",
-   "bytes": 40581,
+   "bytes": 40591,
    "schema": "tg-live-spd/1",
-   "date": "13:36",
-   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261011133500",
+   "date": "13:46",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261011134500",
    "fields": "m{ITS 링크 ID: 통행속도 km/h(정수)} — data/sig-approach-seocho.json 의 링크와 data/nav-seocho.json 의 등급 1~4 링크 · n 값이 온 링크 수 · want 찾는 링크 수",
    "note": "실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다 · 통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다 · 자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다",
    "top": {
@@ -1816,14 +1843,14 @@
   {
    "file": "sig-audit.json",
    "url": "https://340patrolman.github.io/datamap/data/sig-audit.json",
-   "bytes": 92048,
+   "bytes": 92157,
    "schema": "tg-sig-audit/1",
-   "date": "2026-10-11 13:36",
+   "date": "2026-10-11 13:46",
    "source": "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)",
    "fields": "spots{교차로 번호: {ok[[길, 글]], bad[[길, 글]]}} — 길: ksc 교통과 현시도 · pol 경찰청 계획 · api 잔여시간×신호 상태 두 API · re 다시 받아 맞대기 · fld 현장 지식(sig-field) · perp 직각 직진 겹침 · opp 마주 오는 직진×좌회전 겹침 · sum 녹+황+적≠주기. 아무 길로도 맞대 보지 못한 교차로는 없다(목록에 없음 = 대조 전)",
    "top": {
     "sum": "{25}",
-    "spots": "{778}"
+    "spots": "{779}"
    },
    "sample": {
     "spots.1057": "{\"ok\": [[\"re\", \"다시 받아 맞음 1번(가장 길게 49분 뒤 · 어긋남 0.0초)\"]], \"bad\": []}",

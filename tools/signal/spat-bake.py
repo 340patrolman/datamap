@@ -114,18 +114,30 @@ def publish():
     import subprocess
     run = lambda *a: subprocess.run(a, cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='ignore')
     try:
-        if not run('git', 'status', '--porcelain', '--', 'data/sigdir-seoul.json').stdout.strip():
+        if not run('git', 'status', '--porcelain', '--', 'data/sigdir-seoul.json', 'data/live-spd-seocho.json').stdout.strip():
             return
         run(sys.executable, '-X', 'utf8', os.path.join('tools', 'signal', 'sig-audit.py'))   # 맞대 본 결과(data/sig-audit.json)도 같이 다시 만든다
-        run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sig-audit.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
+        run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sig-audit.json', 'data/live-spd-seocho.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
         if run(sys.executable, '-X', 'utf8', os.path.join('tools', 'keycheck.py')).returncode != 0:
             print('열쇠 검사에 걸려 올리지 않았다', flush=True); return
         run('git', 'pull', '-q', '--ff-only', 'origin', 'main')
-        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sig-audit.json')
+        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sig-audit.json', 'data/live-spd-seocho.json')
         p2 = run('git', 'push', '-q', 'origin', 'main')
         print(datetime.datetime.now().strftime('%H:%M:%S'), '올림' if c.returncode == 0 and p2.returncode == 0 else '올리기 실패 ' + (c.stderr or p2.stderr)[:120], flush=True)
     except Exception as e:
         print('올리기 실패', str(e)[:120], flush=True)
+
+
+def livespd():
+    """서초 둘레 지금 통행속도 한 장(data/live-spd-seocho.json) — 굽는 도구(tools/signal/livespd-bake.py · ITS trafficInfo 한 번)를 부른다. 열쇠 없는 기기가 맛보기 30분 동안 방향별 막힘을 보는 바탕(2026-10-11 소유자).
+    ITS 월 한도 10,000건 — 10분에 한 번이면 4,320건. 실패해도 수집은 그대로 간다"""
+    import subprocess
+    try:
+        r = subprocess.run([sys.executable, '-X', 'utf8', os.path.join(ROOT, 'tools', 'signal', 'livespd-bake.py')], cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='ignore', timeout=90)
+        print(datetime.datetime.now().strftime('%H:%M:%S'), '[소통]', (r.stdout or r.stderr or '').strip()[:140], flush=True)
+        return r.returncode == 0
+    except Exception as e:
+        print('[소통] 실패', type(e).__name__, flush=True); return False
 
 
 def pick_todo(tiers, order, need1, need2, need3, ok=lambda i: True):
@@ -213,7 +225,11 @@ def sweep(prefer=None, api='t', cap=None):
             pass
     W0 = 300 if api == 'p' else 285   # (2026-10-10 19:04 실측 — 줄 수 = 정각 뒤 초 − 8쯤 · 240초에는 234줄이라 문턱 240 에 못 미쳤다 → 285초)  # 정각 뒤 창 — 이때는 교차로마다 300줄쯤이라 한 쪽에 100곳 가까이 들고, 서울 뒤쪽(서초 1668~ · 강남 ~2248)도 20쪽 안이다
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
+    spd_at = 0
     while True:
+        if api != 'p' and time.time() - spd_at >= 600:
+            spd_at = time.time()                              # 10분에 한 번 통행속도 한 장 — 신호를 받았든 못 받았든(잔여시간 훑기 쪽에서만)
+            if livespd(): publish()
         A = anchors()
         nowt = time.time()
         now = datetime.datetime.now()

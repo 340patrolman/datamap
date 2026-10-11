@@ -32,6 +32,22 @@ def key():
     return json.load(open(os.path.join(os.path.dirname(ROOT), '07_API키', 'keys.json'), encoding='utf-8-sig'))['t_data_seoul']
 
 
+def key2():
+    """둘째 열쇠(2026-10-11 소유자가 하나 더 받음 · keys.json 의 t_data_seoul2) — 없으면 None. 값은 찍지 않는다."""
+    try:
+        v = json.load(open(os.path.join(os.path.dirname(ROOT), '07_API키', 'keys.json'), encoding='utf-8-sig')).get('t_data_seoul2')
+        return v if isinstance(v, str) and len(v) > 8 else None
+    except Exception:
+        return None
+
+
+def mask(t):
+    """기록에 찍기 전에 열쇠 값을 가린다(두 열쇠 모두)."""
+    t = t.replace(key(), '***')
+    k = key2()
+    return t.replace(k, '***') if k else t
+
+
 def call(itst, rows=1500):
     u = BASE + '?apikey=' + key() + '&pageNo=1&numOfRows=%d&itstId=%s' % (rows, itst)
     req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
@@ -223,6 +239,27 @@ def sweep(prefer=None, api='t', cap=None):
             open(hist_f, 'a', encoding='utf-8').write(json.dumps(kw, ensure_ascii=False) + '\n')
         except Exception:
             pass
+    # 둘째 열쇠 — 살아 있으면(200 · 429 = 알아보는 열쇠) 두 열쇠를 번갈아 쓴다: 열쇠마다 GAP(5분 제한)을 지키고 호출 사이는 GAP ÷ 2.
+    #  ⚠ 5분 제한이 열쇠마다 따로인지는 **확인되지 않았다**(계정이 같으면 같이 쓸 수도) — 번갈아 쓰기 시작한 뒤 429 가 세 번 나면 같이 쓰는 것으로 보고 둘째 열쇠를 여섯 시간 쉰다.
+    #  발급 직후에는 404(「관리자에게 문의」 — 가짜 열쇠와 같은 응답)가 온다 → 30분마다 작은 요청(3줄)으로 다시 본다. 둘째 열쇠가 없거나 죽어도 수집은 첫 열쇠로 그대로 돈다
+    k2 = {'ok': False, 'chk': 0.0, 'last': {1: 0.0, 2: 0.0}, 'n': 0, 'n200': 0, 'n429': 0, 'nemp': 0, 'rest': 0.0}
+    def k2probe():
+        kv = key2(); k2['chk'] = time.time()
+        if not kv or time.time() < k2['rest']:
+            return
+        try:
+            r9 = urllib.request.urlopen(urllib.request.Request((BASEP if api == 'p' else BASE) + '?apikey=' + kv + '&pageNo=1&numOfRows=3', headers={'User-Agent': 'Mozilla/5.0'}), timeout=60); st9 = r9.status; r9.read()
+        except urllib.error.HTTPError as e9:
+            st9 = e9.code
+        except Exception:
+            st9 = 0
+        st8 = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        if st9 in (200, 429):
+            k2['ok'] = True; k2['last'][2] = time.time()
+            print(st8, '둘째 열쇠가 살아 있다(HTTP %d) — 두 열쇠를 번갈아 쓴다(열쇠마다 %d초 · 호출 사이 %d초)' % (st9, GAP, GAP // 2), flush=True)
+        else:
+            print(st8, '둘째 열쇠 아직 안 됨(HTTP %d) — 30분 뒤 다시 본다 · 첫 열쇠로 그대로 돈다' % st9, flush=True)
+        hist(at=st8, api=api, k=2, probe=1, st=st9)
     W0 = 300 if api == 'p' else 285   # (2026-10-10 19:04 실측 — 줄 수 = 정각 뒤 초 − 8쯤 · 240초에는 234줄이라 문턱 240 에 못 미쳤다 → 285초)  # 정각 뒤 창 — 이때는 교차로마다 300줄쯤이라 한 쪽에 100곳 가까이 들고, 서울 뒤쪽(서초 1668~ · 강남 ~2248)도 20쪽 안이다
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
     spd_at = 0
@@ -297,7 +334,19 @@ def sweep(prefer=None, api='t', cap=None):
         if off is None:
             off = K * dens * t
         page = int((off + dens * t / 2) // 30000) + 1   # K 의 줄 가운데가 드는 쪽 — K 가 쪽 끝에 걸려 되풀이되던 것을 막는다
-        u = (BASEP if api == 'p' else BASE) + '?apikey=' + key() + '&pageNo=%d&numOfRows=30000' % page
+        if not k2['ok'] and time.time() - k2['chk'] > 1800:
+            k2probe()
+        kn = 1
+        if k2['ok']:
+            kn = 1 if k2['last'][1] <= k2['last'][2] else 2      # 더 오래 쉰 열쇠
+            w9 = k2['last'][kn] + GAP - time.time()
+            if w9 > 0:
+                time.sleep(w9 + 1); continue                   # 그 열쇠의 5분이 안 찼다 — 기다렸다가 처음부터 다시 고른다(시각·쪽이 달라졌다)
+        kv = key2() if kn == 2 else key()
+        if not kv:
+            k2['ok'] = False; kv, kn = key(), 1
+        k2['last'][kn] = time.time()
+        u = (BASEP if api == 'p' else BASE) + '?apikey=' + kv + '&pageNo=%d&numOfRows=30000' % page
         try:
             r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=400); st = r.status; body = r.read().decode('utf-8', 'ignore')
         except urllib.error.HTTPError as e:
@@ -306,9 +355,19 @@ def sweep(prefer=None, api='t', cap=None):
             st = 0; body = str(e)
         stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         if st != 200:
-            print(stamp, '쪽', page, 'HTTP', st, body[:160].replace(key(), '***'), flush=True)
-            hist(at=stamp, api=api, t=t, page=page, K=K, st=st)
-            wait = GAP
+            print(stamp, '쪽', page, 'HTTP', st, mask(body[:160]) + (' [열쇠 2]' if kn == 2 else ''), flush=True)
+            hist(at=stamp, api=api, t=t, page=page, K=K, st=st, k=kn)
+            wait = GAP // 2 if k2['ok'] else GAP
+            if k2['ok']:
+                k2['n'] += 1
+                if st == 429:
+                    k2['n429'] += 1
+                    if k2['n429'] >= 3:
+                        k2['ok'] = False; k2['rest'] = time.time() + 6 * 3600; k2['n429'] = 0
+                        print(stamp, '번갈아 쓰는 동안 429 가 세 번 — 두 열쇠가 5분 제한을 같이 쓰는 것으로 본다 · 둘째 열쇠를 여섯 시간 쉰다(첫 열쇠로 그대로)', flush=True)
+                elif kn == 2 and st in (401, 403, 404):
+                    k2['ok'] = False; k2['chk'] = time.time()
+                    print(stamp, '둘째 열쇠가 안 받아진다(HTTP %d) — 첫 열쇠로 돌아간다 · 30분 뒤 다시 본다' % st, flush=True)
             if st == 500 and page > 1:
                 # 끝자리 = 찾던 자리(K) 바로 앞 — 줄 수로 되짚으면(쪽 ÷ 밀도 × 초) 자료가 늦게 쌓일 때 너무 앞으로 잡힌다(22:25 — 1667 까지 받아 놓고 끝자리를 1617 로 봤다). 이 시각대에 실제로 받은 맨 뒤 자리(pok)보다 앞으로는 안 당긴다
                 # 한 번 실패로는 끝자리를 당기지 않는다 — 있는 쪽도 가끔 500 이 난다(22:39 에 1514~1527 을 받았는데 22:45 에 같은 둘레가 500). 한 번이면 그 둘레만 다음 한 번 비켜 가고, 잇달아 두 번이면 끝자리로 본다(20분)
@@ -323,6 +382,9 @@ def sweep(prefer=None, api='t', cap=None):
             if st == 429:
                 try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5
                 except Exception: pass
+                if k2['ok']:
+                    k2['last'][kn] = time.time() + wait - GAP        # 그 열쇠는 서버가 말한 때까지 쉰다 — 다른 열쇠는 제 차례에 그대로
+                    wait = min(wait, GAP // 2)
             time.sleep(wait); continue
         J = json.loads(body); by = {}; seq = []
         for x in J:
@@ -332,10 +394,16 @@ def sweep(prefer=None, api='t', cap=None):
         idx = [pos[i] for i in seq if i in pos]
         if not idx:
             print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
-            dens *= 0.8; time.sleep(GAP); continue
+            if k2['ok']:
+                k2['n'] += 1; k2['nemp'] += 1
+            dens *= 0.8; time.sleep(GAP // 2 if k2['ok'] else GAP); continue
         a, b = min(idx), max(idx)
         pok = max(pok, b); nfail = 0
-        end_note(b=b); hist(at=stamp, api=api, t=t, page=page, K=K, st=200, a=a, b=b, n=len(seq))
+        end_note(b=b); hist(at=stamp, api=api, t=t, page=page, K=K, st=200, a=a, b=b, n=len(seq), k=kn)
+        if k2['ok']:
+            k2['n'] += 1; k2['n200'] += 1
+            if k2['n'] in (6, 24):
+                print(stamp, '두 열쇠 번갈아 %d번 — 받음 %d · 429 %d · 빈 응답 %d' % (k2['n'], k2['n200'], k2['n429'], k2['nemp']), flush=True)
         if plast and b >= plast * 0.97:
             plast = None                                      # 끝자리 너머가 받아졌다 — 옛 끝자리는 잊는다
         if pcap and b >= pcap:
@@ -375,7 +443,7 @@ def sweep(prefer=None, api='t', cap=None):
                 publish()
             if ncall % 12 == 0:
                 prune()
-        time.sleep(GAP)
+        time.sleep(GAP // 2 if k2['ok'] else GAP)
 
 
 def segments(rows, k, tail=False):

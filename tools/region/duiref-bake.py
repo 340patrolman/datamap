@@ -20,7 +20,7 @@ def bake(sd, out, area):
     PO = json.load(open(os.path.join(ROOT, 'data', 'police.json'), encoding='utf-8')); PN = {x[0]: x[1] for x in PO['stations']}
     def stn(k):   # 동 → 관할 경찰서 이름들(둘이 나눠 맡는 동은 둘 다) — data/dui-catch-st.json 의 열쇠와 같은 꼴
         i = PO['dong'].get(k)
-        return [PN[int(z)] for z in str(PO['labels'][i]).split(',') if z.strip().isdigit() and int(z) in PN] if i is not None and i < len(PO['labels']) else []
+        return [PN[int(z)] for z in str(PO['labels'][i]).replace('~', ',').split(',') if z.strip().isdigit() and int(z) in PN] if i is not None and i < len(PO['labels']) else []
     SC = json.load(open(os.path.join(ROOT, 'data', 'storecls', sd + '.json'), encoding='utf-8'))['dong']; rows = []; thin = []
     for dp in sorted(glob.glob(os.path.join(ROOT, 'data', 'r', sd + '*', 'dong.json'))):
         gd = os.path.dirname(dp); gu = os.path.basename(gd); D = json.load(open(dp, encoding='utf-8')); dongs = D.get('dong') or []
@@ -64,7 +64,7 @@ def bake(sd, out, area):
                     '결제한 사람이 운전한다는 뜻이 아니다 · 백분위는 그 시도 동들 가운데의 자리(100 = 가장 많은 쪽)일 뿐 좋고 나쁨이 아니다',
                     '사고 값 null = 그 구의 사고 자료가 비어 있다(다시 모으는 중인 구: %s)' % ' '.join(thin)],
            'bars': list(BAR.values()),
-           'fields': 'items[[0 행정동 코드, 1 이름, 2 구 코드, 3 [경도, 위도], 4 주점 점포 수, 5 [일반 유흥, 무도 유흥, 생맥주 전문, 요리 주점], 6 노래방, 7 호프·간이주점 한 달 매출 만원, 8 그 결제 가운데 21~06시 %, 9 21~24시 결제 건수, 10 0~6시 결제 건수, 11 호프 매출의 20·30대 %, 12 사고 10년 건수, 13 그 가운데 밤 20~6시, 14 0~6시, 15 서울 동 가운데 백분위[주점 수, 호프 매출, 0~6시 결제, 밤 사고, 0~6시 사고], 16 주점 매출 3년 전(경기만 · 2022년 같은 달 평균 만원 — 7 과 견준다), 17 관할 경찰서 이름[…](data/police.json 의 동 → 관서 · 두 서가 나눠 맡으면 둘 · data/dui-catch-st.json 의 열쇠와 같은 꼴)]] · 경기 = 7 이 간이주점 + 유흥주점 카드 매출(2025년 1~6월 평균)이고 8~11(시간대·연령)은 null · 인천 = 7~11 null(동 단위 업종 매출 자료 없음)',
+           'fields': 'items[[0 행정동 코드, 1 이름, 2 구 코드, 3 [경도, 위도], 4 주점 점포 수, 5 [일반 유흥, 무도 유흥, 생맥주 전문, 요리 주점], 6 노래방, 7 호프·간이주점 한 달 매출 만원, 8 그 결제 가운데 21~06시 %, 9 21~24시 결제 건수, 10 0~6시 결제 건수, 11 호프 매출의 20·30대 %, 12 사고 10년 건수, 13 그 가운데 밤 20~6시, 14 0~6시, 15 서울 동 가운데 백분위[주점 수, 호프 매출, 0~6시 결제, 밤 사고, 0~6시 사고], 16 주점 매출 3년 전(경기만 · 2022년 같은 달 평균 만원 — 7 과 견준다), 17 관할 경찰서 이름[…](data/police.json 의 동 → 관서 · 두 서가 나눠 맡으면 둘 — 「27~23」처럼 일부 번지만 다른 서인 동도 둘(앞이 주 관서) · data/dui-catch-st.json 의 열쇠와 같은 꼴)]] · 경기 = 7 이 간이주점 + 유흥주점 카드 매출(2025년 1~6월 평균)이고 8~11(시간대·연령)은 null · 인천 = 7~11 null(동 단위 업종 매출 자료 없음)',
            'items': items}
     p = os.path.join(ROOT, 'data', out); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print(area, '· 동', len(items), '· 바이트', os.path.getsize(p), '· 사고 자료가 빈 구', thin, '· 주점 매출 있는 동', sum(1 for r in items if r[7] is not None))

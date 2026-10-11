@@ -912,7 +912,7 @@
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
-    drawReach(dark); drawStz(dark); drawBsf(dark); drawFldl(dark); drawTdg(dark); drawDuir(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
+    drawReach(dark); drawStz(dark); drawBsf(dark); drawFldl(dark); drawFdl(dark); drawTdg(dark); drawDuir(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
     if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
       var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
       ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
@@ -1099,6 +1099,7 @@
     var best = null, bd = 1e9;
     hit.forEach(function (h) { var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < bd) { bd = d; best = h; } });
     if (on.facs) { var fb9 = null, fd9 = 1e9; hit.forEach(function (h) { if (!h.it || h.it.kind !== 'facs') return; var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < fd9) { fd9 = d; fb9 = h; } }); if (fb9) best = fb9; }   /* 교통시설 층이 켜져 있으면 같은 자리의 다른 점(번호·신호등)보다 시설 카드가 먼저 */
+    if (on.fldl && FDLW) { var fb8 = null, fd8 = 1e9; hit.forEach(function (h) { if (!h.it || h.it.kind !== 'fdl') return; var d = Math.hypot(h.x - x, h.y - y); if (d <= h.r + 4 && d < fd8) { fd8 = d; fb8 = h; } }); if (fb8) best = fb8; }   /* v2.168.0 출동 지연 점이 켜져 있으면 그 밑의 길 조각보다 점이 먼저 */
     if (!best && on.reach) { var rr9 = rchAt(x, y); if (rr9) best = { x: x, y: y, r: 6, it: { kind: 'reach', r: rr9 } }; }
     if (!best && on.rnet) { var rl = rnAt(x, y); if (rl) best = { x: x, y: y, r: 6, it: { kind: 'rnl', l: rl } }; }
     if (on.land && (!best || /^(g250|l250|f250|a10|rtg|hmg|jgg|jgc)$/.test(best.it.kind))) best = { x: x, y: y, r: 6, it: { kind: 'land', m: M(x, y) } };   // 필지를 켜면 칸(면) 자료보다 필지가 먼저 · 점은 그대로
@@ -1274,6 +1275,7 @@
     } else if (it.kind === 'sgl') { h = sglCard();
     } else if (it.kind === 'facs') { h = facsCard(it.no);
     } else if (it.kind === 'fldl') { h = fldlCard(it.o);
+    } else if (it.kind === 'fdl') { h = fdlCard(it);
     } else if (it.kind === 'tdg') { h = tdgCard(it.o);
     } else if (it.kind === 'duir') { h = duirCard(it.o);
     } else if (it.kind === 'gdr') { h = gtrCard();
@@ -3480,8 +3482,35 @@
       + row('길', RKN[q[2]] + ' · ' + (q[3] || '?') + '차로 · 이 조각 ' + q[4] + 'm' + (lv && lv[0] > 0 ? ' · 지금 통행속도 <b>' + Math.round(lv[0]) + 'km/h</b>' : ''))
       + '<p class="sdnt" style="color:#b45309">침수 흔적은 <b>잠긴 건물·필지의 가운데 점</b>이다 — 「이 길이 잠겼다」가 아니라 「30m 안에서 잠긴 적이 있다」. 2022·2011·2010 큰비 흔적이 대부분이고, 그 뒤 배수 시설이 고쳐진 곳은 지금은 덜 잠길 수 있다(이 자료로는 모른다).</p>'
       + '<p class="sdnt">한 점수로 뭉치지 않았다 — 잠긴 해 수(일어날 법함) · 돌아가는 부담(끊겼을 때) · 차로(다니는 차의 어림)를 따로 보고 판단한다 · 여러 구간이 같이 막혔을 때의 혼잡은 아직 없다 · ITS 링크 ' + esc(String(q[0])) + '.</p>' + src((FLDL && FLDL.source) || ''); }
+  /* v2.168.0 폭우 연쇄의 끝 고리 「출동 지연」 — data/flood-delay-seocho.json(다른 세션 · tg-flood-delay/1 · polA·polB·fireA·fireB = [[경도, 위도, 평소 초, 통제 때 초(-1 = 닿지 못함), 평소 가장 빨리 오는 관서, 통제 때 바뀐 관서, 교차로 이름, 통제된 길에 붙음 1]…] · 30초 이상 늦는 서초구 교차로만).
+     fldl 층을 켠 채 범례 단추로 고른다(FDLW = '' 끔 · pol · fire / FDLS = A 두 해 이상 흔적 구간이 다 막힘 · B 2022년 흔적 구간이 다 막힘). 점 색 넷 = 30~60초 · 1~3분 · 3분 넘게 · 닿지 못함(✕).
+     **견주는 값 — 실제 출동 시간이 아니다**(제한속도 · 막힘 없음 · 신호 없음) · 한꺼번에 다 막힌다고 본 가장 나쁜 쪽 · 가장 빨리 오는 관서 = 관할이 아니다 · 순찰 중인 차는 세지 않았다 */
+  var FDL = null, FDLP = null, FDLW = '', FDLS = 'A', FDLC = ['#eab308', '#f97316', '#dc2626', '#111827'], FDLK = ['30~60초 늦음', '1~3분 늦음', '3분 넘게 늦음', '닿지 못함'];
+  function fdlGet() { if (FDLP) return FDLP; FDLP = fetch('data/flood-delay-seocho.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) { ['polA', 'polB', 'fireA', 'fireB'].forEach(function (k) { j[k] = (j[k] || []).map(function (q) { var d = q[3] < 0 ? -1 : q[3] - q[2]; return { q: q, p: P(q[0], q[1]), d: d, k: d < 0 ? 3 : d >= 180 ? 2 : d >= 60 ? 1 : 0 }; }); }); FDL = j; draw(); try { legend(); } catch (e) {} }).catch(function () { FDLP = null; }); return FDLP; }
+  function fdlSec(v) { return v >= 60 ? Math.floor(v / 60) + '분' + (v % 60 ? ' ' + (v % 60) + '초' : '') : v + '초'; }
+  function drawFdl(dark) { if (!on.fldl || !FDLW) return; if (!FDL) { fdlGet(); return; } var z = view.s; if (z < 0.02) return; var L = FDL[FDLW + FDLS] || [], W0 = cv.clientWidth, H0 = cv.clientHeight, r = z >= 0.2 ? 6 : z >= 0.08 ? 4.5 : 3.2; ctx.save(); ctx.setLineDash([]);
+    [3, 0, 1, 2].forEach(function (kk) { L.forEach(function (o) { if (o.k !== kk) return; var sp = S(o.p); if (sp[0] < -10 || sp[0] > W0 + 10 || sp[1] < -10 || sp[1] > H0 + 10) return;
+        if (kk === 3) { ctx.lineWidth = z >= 0.08 ? 2 : 1.4; ctx.strokeStyle = dark ? '#f8fafc' : FDLC[3]; ctx.beginPath(); ctx.moveTo(sp[0] - r, sp[1] - r); ctx.lineTo(sp[0] + r, sp[1] + r); ctx.moveTo(sp[0] + r, sp[1] - r); ctx.lineTo(sp[0] - r, sp[1] + r); ctx.stroke(); }
+        else { ctx.beginPath(); ctx.arc(sp[0], sp[1], r, 0, 6.2832); ctx.fillStyle = FDLC[kk]; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = dark ? '#0f1624' : '#fff'; ctx.stroke(); }
+        if (z >= 0.06) hit.push({ x: sp[0], y: sp[1], r: r + 3, it: { kind: 'fdl', o: o, w: FDLW, s: FDLS } }); }); });
+    ctx.restore(); }
+  function fdlCard(it) { var q = it.o.q, pol = it.w === 'pol', who = pol ? '🚓 경찰(지구대·파출소)' : '🚒 소방(소방서·119안전센터)', sc = FDL && FDL.scenarios ? FDL.scenarios[it.s] : '';
+    var h = '<h3>' + (pol ? '🚓' : '🚒') + ' ' + esc(q[6] || '교차로') + ' <small style="font-weight:400;color:var(--ink2)">큰비 통제 때 출동</small></h3><p class="sdnt" style="margin:0 0 6px;color:#b45309"><b>견주는 값이다 — 실제 출동 시간이 아니다</b>(제한속도로 달리고 · 막히지 않고 · 신호가 없다고 셌다 · 통제 때는 돌아가는 길도 막혀 실제로는 더 늦다).</p>';
+    h += row('평소', '<b>' + esc(q[4]) + '</b>에서 ' + fdlSec(q[2]));
+    h += row('통제 때', q[3] < 0 ? '<b style="color:#dc2626">닿지 못함</b> — 통제된 길을 지나지 않고는 갈 수 없다' : '<b>' + esc(q[5] || q[4]) + '</b>에서 <b>' + fdlSec(q[3]) + '</b> <em>(+' + fdlSec(q[3] - q[2]) + (q[5] ? ' · 가장 빨리 오는 관서가 바뀐다' : ' · 같은 관서가 돌아서 온다') + ')</em>');
+    if (q[3] > 0) { var mx = Math.max(q[3], 1); h += '<div class="vz"><div class="vzr"><span class="vzl">평소</span><span class="vzb"><i style="width:' + Math.max(1, q[2] / mx * 100).toFixed(1) + '%;background:#64748b"></i></span><b>' + fdlSec(q[2]) + '</b></div><div class="vzr"><span class="vzl">통제 때</span><span class="vzb"><i style="width:100%;background:' + FDLC[it.o.k] + '"></i></span><b>' + fdlSec(q[3]) + '</b></div></div>'; }
+    if (q[7]) h += row('이 자리', '통제된 길에 붙어 있다 <em>(잠긴 자리 자체일 수 있다)</em>');
+    h += row('가정', esc(who) + ' · ' + esc(it.s) + ' = ' + esc(sc));
+    h += sdMore('<p class="sdnt">' + (FDL && FDL.note ? FDL.note.map(function (t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }).join('</p><p class="sdnt">') : '') + '</p>', 'fdln', 'ⓘ 읽는 법 — 어떻게 센 값인가');
+    return h + '<p class="desc">가장 빨리 오는 관서 = 관할이 아니다(법정 관할·출동 배정과 다를 수 있다) · 순찰 중인 차는 세지 않았다(관서에서 떠난다고 봄) · 흔적이 있는 길이 <b>한꺼번에 다</b> 막힌다고 본 가장 나쁜 쪽의 그림이다.</p>'; }
+  function fdlLegHtml() { var bt = function (a, v, t, onv) { return '<button ' + a + '="' + v + '"' + (onv ? ' class="on"' : '') + '>' + t + '</button>'; };
+    var h = '<div class="lg-btns" style="margin:6px 0 2px">' + bt('data-fdl', 'pol', '🚓 경찰 출동이 늦어지는 곳', FDLW === 'pol') + bt('data-fdl', 'fire', '🚒 소방', FDLW === 'fire') + (FDLW ? bt('data-fdl', '', '끄기', false) : '') + '</div>'; if (!FDLW) return h;
+    h += '<div class="lg-btns" style="margin:2px 0">' + bt('data-fdls', 'A', 'A 되풀이 잠기는 곳이 다 막힘', FDLS === 'A') + bt('data-fdls', 'B', 'B 2022년 큰비 모양', FDLS === 'B') + '</div>';
+    var st = FDL && FDL.stat ? FDL.stat[FDLW + FDLS] : null, d9 = function (i) { return '<span><i style="display:inline-block;width:10px;height:10px;border-radius:' + (i === 3 ? '0' : '50%') + ';background:' + FDLC[i] + ';margin-right:4px;vertical-align:-1px"></i>' + (i === 3 ? '✕ ' : '') + FDLK[i] + (st ? ' ' + (st[FDLK[i]] || 0) : '') + '</span> '; };
+    return h + [0, 1, 2, 3].map(d9).join('') + '<small class="lg-n"><b>견주는 값 — 실제 출동 시간이 아니다</b>(제한속도 · 막힘 없음 · 신호 없음) · 흔적이 있는 길이 한꺼번에 다 막힌다고 본 <b>가장 나쁜 쪽</b> · 가장 빨리 오는 관서 = 관할이 아니다 · 순찰 중인 차는 세지 않았다 · ' + (st ? '서초구 교차로 ' + (st['교차로'] || 0).toLocaleString() + '곳 가운데 30초 이상 늦는 곳만' : '읽는 중…') + (view.s < 0.06 ? ' · <b>더 당기면 눌러 볼 수 있다</b>' : ' · 점을 누르면 어느 관서에서 몇 초') + (FDLW === 'fire' ? ' · 119안전센터 가운데 좌표가 없는 곳은 빠졌다(소방 쪽은 실제보다 크게 나올 수 있다)' : '') + '</small>'; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-fdl],[data-fdls]'); if (!b) return; e.preventDefault(); if (b.hasAttribute('data-fdl')) FDLW = b.getAttribute('data-fdl'); else FDLS = b.getAttribute('data-fdls'); if (FDLW && !FDL) fdlGet(); draw(); try { legend(); } catch (e2) {} });
   function fldlLeg() { var li9 = function (c, t) { return '<span><i style="display:inline-block;width:16px;height:5px;border-radius:3px;background:' + c + ';margin-right:4px;vertical-align:2px"></i>' + t + '</span> '; };
-    return '<b>🌧 큰비 때 먼저 볼 길</b> ' + li9(FLDC[1], '1개 해') + li9(FLDC[2], '2') + li9(FLDC[3], '3') + li9(FLDC[4], '4개 해~') + '<small class="lg-n">' + (FLDL ? FLDL.L.length.toLocaleString() + '조각(' + esc(FLDL.area || '') + ')' : '읽는 중…') + ' · 색 = 30m 안에서 잠긴 적이 있는 해 수 · 굵기 = 차로 · ' + (view.s < 0.08 ? '<b>넓게 볼 때는 2개 해 이상만</b> · ' : '') + '누르면 잠긴 해·침수심·막히면 돌아가는 부담 · 「잠겼다」가 아니라 「둘레에서 잠긴 적이 있다」 · 통제 기록은 공개 자료가 없다</small>'; }
+    return '<b>🌧 큰비 때 먼저 볼 길</b> ' + li9(FLDC[1], '1개 해') + li9(FLDC[2], '2') + li9(FLDC[3], '3') + li9(FLDC[4], '4개 해~') + '<small class="lg-n">' + (FLDL ? FLDL.L.length.toLocaleString() + '조각(' + esc(FLDL.area || '') + ')' : '읽는 중…') + ' · 색 = 30m 안에서 잠긴 적이 있는 해 수 · 굵기 = 차로 · ' + (view.s < 0.08 ? '<b>넓게 볼 때는 2개 해 이상만</b> · ' : '') + '누르면 잠긴 해·침수심·막히면 돌아가는 부담 · 「잠겼다」가 아니라 「둘레에서 잠긴 적이 있다」 · 통제 기록은 공개 자료가 없다</small>' + fdlLegHtml(); }
   /* ---------- v2.155.0 🔎 상권 지금 진단 — 소유자 온톨로지 마스터 문서 8장(부동산·경제·미래 · 단계 A 지금 진단 · 원칙 「예언이 아니라 조기 신호」) ----------
      v2.156.0 둘째 판 = data/trade-diag2-seoul.json(다른 세션 tools/region/tradediag2-bake.py · tg-trade-diag/2 — 소유자 보강 다섯: 수요 쪽(유동인구)을 따로 · 폐업률 · 서울 전체 사분위가 문턱 · 실명을 쇠퇴 프레임으로 찍지 않기 · 업종 분해).
      items[[0 코드, 1 이름, 2 갈래, 3 구, 4 행정동, 5 경도, 6 위도, 7 한 달 평균 매출 만원, 8 매출 변화 %(두 분기에 다 있는 업종끼리), 9 그 값 − 서울 가운데값 %p, 10 매출 변화 %(빠진 업종까지), 11 빠진 업종 수, 12 점포, 13 점포 변화 %, 14 개업, 15 폐업, 16 개업률, 17 폐업률, 18 분기 유동인구, 19 유동인구 변화 %, 20 상권변화지표, 21 운영 개월, 22 폐업 개월, 23 밤 매출 %, 24 신호[S1·S2·S3·S4·D1], 25 풀이 갈래(0 없음 · 1 가게 쪽만 · 2 사람 쪽만 · 3 둘 다), 26 매출이 준 업종, 27 점포가 준 업종]]

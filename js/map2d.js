@@ -1177,7 +1177,7 @@
       var lv = liveNow(d);
       if (lv) { h += row('생활인구 지금', lv.n.toLocaleString() + '명 <em>(' + (lv.we ? '주말' : '평일') + ' ' + lv.h + '시 평균)</em>') + row('하루 폭', Math.min.apply(null, lv.arr).toLocaleString() + ' ~ ' + Math.max.apply(null, lv.arr).toLocaleString() + '명') +
         '<div class="cap">시간대별 생활인구(명 · 그 시각 동 안에 있는 사람 · 0~23시 ' + (lv.we ? '주말' : '평일') + ' 평균)</div>' + bar(lv.arr, '#f97316'); }
-      h += salesRows(d) + dongIndRows(d);
+      h += salesRows(d) + dongIndRows(d) + sclsRows(null, d.name, '11650');
       var ag = D.st && D.st.agg && D.st.agg[d.name];   // 🏪 등록 상가(소상공인시장진흥공단 · v0.10.65)
       if (ag) h += row('등록 상가', (ag.all || 0).toLocaleString() + '곳 · 음식 ' + (ag.food || 0) + ' · 주점 ' + (ag.bar || 0) + ' · 노래방·PC방 ' + (ag.play || 0) + ' · 숙박 ' + (ag.inn || 0) + ' · 편의점 ' + (ag.conv || 0));
       var sz2 = D.sz ? D.sz.zones.filter(function (z) { var q = P(z.lon, z.lat); return inPoly(d, q); }).length : 0; if (D.sz) h += row('어린이보호구역', sz2 + '곳');
@@ -2066,11 +2066,34 @@
     });
   }
   function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
-  function indTable(ind, mode, n) {   // 업종 × (연령|시간대) — 칸 = 그 업종 안 비중(%) · 가장 큰 칸은 진하게
-    var top = ind.slice().sort(function (a, b) { return b[1] - a[1]; }).slice(0, n || 8), cols = mode === 'age' ? AGEL : TBL, o = mode === 'age' ? 9 : 3, hh = bandOf(nowH());
-    return '<table class="it"><tr><th>업종</th>' + cols.map(function (c, i) { return '<th' + (mode === 'tb' && i === hh ? ' class="now"' : '') + '>' + c + '</th>'; }).join('') + '</tr>' +
+  /* v2.166.0 소유자가 동 카드를 보고 물은 셋(다른 세션이 옮김) — 「시간대별로 어느 연령대가」「업종이 이렇게밖에 안 되나」「육류판매가 뭐냐」.
+     ① indMix — 원자료(서울 상권분석 추정매출)는 업종마다 시간대 6칸 · 연령 6칸이 **따로**라 시간대 × 연령 값이 없다. 그 시간에 팔리는 업종들의 연령 구성으로 어림한다(업종 안에서 시간과 나이가 무관하다고 가정 — 화면에 밝힌다)
+     ② indRest — 매출 많은 8 밖의 업종을 접이 안에 다 보인다 ③ indSkew — 한 요일이 매출의 50% 이상(서울 3,000만원 넘는 칸의 3%)이면 ⚠ · 한 시간대 70% 이상은 따로 적는다(호프·학원처럼 본디 몰리는 업종이 있다) · 한 요일에 쏠린 업종은 어림에서 뺀다 */
+  var IGL = { '육류판매': '정육점(식육 소매 · 식당 납품 결제가 섞일 수 있다)', '의약품': '약국', '일반의원': '동네 병의원', '일반교습학원': '보습·입시 학원', '호프-간이주점': '호프집·간이주점', '커피-음료': '카페', '화초': '꽃집·화원', '서적': '서점', '핸드폰': '휴대폰 매장', '미곡판매': '쌀가게', '수산물판매': '생선가게', '청과상': '과일·채소 가게', '컴퓨터및주변장치판매': '컴퓨터·부품 가게', '전자상거래업': '온라인 판매 사업장(주소지 기준)' };
+  function indSkew(r) { var tot = r[1] || 0; if (!tot || r.length < 24) return null; var dm = 0, tm = 0, i; for (i = 1; i < 7; i++) if (r[17 + i] > r[17 + dm]) dm = i; for (i = 1; i < 6; i++) if (r[3 + i] > r[3 + tm]) tm = i;
+    var d = r[17 + dm] / tot, t = r[3 + tm] / tot; return d >= 0.5 || t >= 0.7 ? { d: d >= 0.5, dn: LB_DW[dm], dp: Math.round(d * 100), tn: TBL[tm], tp: Math.round(t * 100) } : null; }
+  function indSorted(ind) { return ind.slice().sort(function (a, b) { return b[1] - a[1]; }); }
+  function indNotes(rows) { var w = [], g = [];
+    rows.forEach(function (r) { var k = indSkew(r); if (k) w.push('<b>' + esc(r[0]) + '</b> — ' + (k.d ? k.dn + '요일에 매출의 ' + k.dp + '% · ' + k.tn + '시에 ' + k.tp + '%' : k.tn + '시에 매출의 ' + k.tp + '%') + (r[2] ? '(건당 평균 ' + (r[1] / r[2] >= 10 ? (r[1] / r[2]).toFixed(1) + '만원' : Math.round(r[1] / r[2] * 10000).toLocaleString() + '원') + ')' : '') + (k.d ? ' — <b>큰 결제 몇 건(납품·도매성)이 몰린 값일 수 있다</b>' : ' — 본디 그 시간에 몰리는 업종일 수도, 큰 결제 몇 건일 수도 있다')); if (IGL[r[0]]) g.push(esc(r[0]) + ' = ' + IGL[r[0]]); });
+    return (w.length ? '<p class="sdnt" style="margin:3px 0;color:#b45309">⚠ ' + w.join('<br>⚠ ') + '</p>' : '') + (g.length ? '<p class="sdnt" style="margin:3px 0">낱말(서울시 업종 이름 그대로 — 쉬운 말로): ' + g.join(' · ') + '</p>' : ''); }
+  function indRest(ind) { var all = indSorted(ind), n = all.length - 8; if (n <= 0) return indNotes(all);
+    return indNotes(all.slice(0, 8)) + sdMore('<div class="cap">업종 × 연령(%) — 9번째부터 · 오른쪽 끝 = 한 달 매출</div>' + '<div style="overflow-x:auto">' + indTable(ind, 'age', 99, 8, 1) + '</div><div class="cap">업종 × 시간대(%)</div><div style="overflow-x:auto">' + indTable(ind, 'tb', 99, 8) + '</div>' + indNotes(all.slice(8)) + '<p class="sdnt" style="margin:3px 0">서울 상권분석의 「생활밀접업종」(100개 안)만 있다 — 이보다 잔 갈래(한식 안의 고깃집·국밥집 등)는 매출 자료에 없다. 매출이 작은 업종은 결제 몇 건에 비중이 크게 흔들린다.</p>', 'indr', '➕ 나머지 ' + n + '업종 펼치기'); }
+  function indMixRows(rows) { return [0, 1, 2, 3, 4, 5].map(function (t) { var tot = 0, ag = [0, 0, 0, 0, 0, 0]; rows.forEach(function (r) { var sm = 0, a; for (a = 0; a < 6; a++) sm += r[9 + a]; if (!sm) return; tot += r[3 + t]; for (a = 0; a < 6; a++) ag[a] += r[3 + t] * r[9 + a] / sm; }); return [tot, ag]; }); }
+  function indMixTable(M) { var hh = bandOf(nowH());
+    return '<table class="it"><tr><th>시간대 · 매출</th>' + AGEL.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr>' + M.map(function (m, t) { var mxi = 0, i; for (i = 1; i < 6; i++) if (m[1][i] > m[1][mxi]) mxi = i;
+      return '<tr><td' + (t === hh ? ' style="font-weight:800"' : '') + '>' + TBL[t] + '시 · ' + (m[0] ? wonS(m[0]) : '-') + '</td>' + [0, 1, 2, 3, 4, 5].map(function (i) { var q = m[0] ? pct(m[1][i], m[0]) : 0; return '<td style="background:rgba(13,148,136,' + (q / 100 * 0.9).toFixed(2) + ')' + (i === mxi && m[0] ? ';font-weight:800' : '') + '">' + (m[0] ? q : '-') + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>'; }
+  function indMix(ind, unit) { if (!ind.length || ind[0].length < 24) return ''; var out = [], use = ind.filter(function (r) { var k = indSkew(r); if (k && k.d) { out.push(r[0]); return false; } return true; });
+    var food = use.filter(function (r) { return /음식점|주점|유흥|치킨|분식|패스트푸드|커피|제과/.test(r[0]); }), A = indMixRows(use), F = indMixRows(food);
+    if (!A.some(function (m) { return m[0]; })) return '';
+    return '<div class="cap">🕒 시간대마다 누가 쓰나 — <b>어림</b>(% · ' + unit + ' 모든 업종 · 굵은 줄 = 지금)</div>' + indMixTable(A) +
+      (food.length ? '<div class="cap">🍽 음식점·주점·카페·제과만 — <b>어림</b>(%)</div>' + indMixTable(F) : '') +
+      '<p class="sdnt" style="margin:3px 0"><b>원자료에 시간대 × 연령 값은 없다</b> — 업종마다 시간대와 연령이 따로 있어, 그 시간에 팔리는 업종들의 연령 구성으로 어림한 것이다(한 업종 안에서는 시간과 나이가 무관하다고 가정 · 연령을 모르는 결제(법인카드 등)는 빠진다).' + (out.length ? ' 한 요일에 매출의 절반 넘게 쏠린 업종은 빼고 셌다: ' + esc(out.join('·')) + '.' : '') + '</p>'; }
+  function indTable(ind, mode, n, from, amt) {   // 업종 × (연령|시간대) — 칸 = 그 업종 안 비중(%) · 가장 큰 칸은 진하게 · from = 몇 번째부터 · amt = 오른쪽 끝에 한 달 매출
+    var top = indSorted(ind).slice(from || 0, (from || 0) + (n || 8)), cols = mode === 'age' ? AGEL : TBL, o = mode === 'age' ? 9 : 3, hh = bandOf(nowH());
+    return '<table class="it"><tr><th>업종</th>' + cols.map(function (c, i) { return '<th' + (mode === 'tb' && i === hh ? ' class="now"' : '') + '>' + c + '</th>'; }).join('') + (amt ? '<th>매출</th>' : '') + '</tr>' +
       top.map(function (r) { var tot = 0; for (var i = 0; i < 6; i++) tot += r[o + i]; var mxi = 0; for (i = 1; i < 6; i++) if (r[o + i] > r[o + mxi]) mxi = i;
-        return '<tr' + (isBar(r[0]) ? ' class="bar"' : '') + '><td>' + esc(r[0]) + '</td>' + [0, 1, 2, 3, 4, 5].map(function (i) { var p = pct(r[o + i], tot); return '<td style="background:rgba(124,58,237,' + (p / 100 * 0.9).toFixed(2) + ')' + (i === mxi ? ';font-weight:800' : '') + '">' + p + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>';
+        var sk = indSkew(r);
+        return '<tr' + (isBar(r[0]) ? ' class="bar"' : '') + '><td title="' + esc(r[0] + (IGL[r[0]] ? ' = ' + IGL[r[0]] : '')) + '">' + (sk && sk.d ? '⚠ ' : '') + esc(r[0]) + '</td>' + [0, 1, 2, 3, 4, 5].map(function (i) { var p = pct(r[o + i], tot); return '<td style="background:rgba(124,58,237,' + (p / 100 * 0.9).toFixed(2) + ')' + (i === mxi ? ';font-weight:800' : '') + '">' + p + '</td>'; }).join('') + (amt ? '<td style="white-space:nowrap">' + wonS(r[1]) + '</td>' : '') + '</tr>'; }).join('') + '</table>';
   }
   function barRows(ind, unit) {   // 🍺 주점·유흥 — 음주운전 예방에 쓰는 줄
     var bars = ind.filter(function (r) { return isBar(r[0]); }); if (!bars.length) return row('🍺 주점·유흥', '이 자료에 없음');
@@ -2102,7 +2125,7 @@
       h += rentRows(it.x.c, '임대료(가까운 표본)');
       h += '<div class="cap">업종별 객단가 · 피크 · 점포(매출 많은 업종 8)</div>' + indCompare(t);
       h += barRows(ind, '이 상권');
-      h += '<div class="cap">업종 × 연령(그 업종 매출 안 비중 % · 매출 많은 업종 8)</div>' + indTable(ind, 'age') + '<div class="cap">업종 × 시간대(그 업종 매출 안 비중 % · 테두리 = 지금)</div>' + indTable(ind, 'tb'); }
+      h += '<div class="cap">업종 × 연령(그 업종 매출 안 비중 % · 매출 많은 업종 8)</div>' + indTable(ind, 'age') + '<div class="cap">업종 × 시간대(그 업종 매출 안 비중 % · 테두리 = 지금)</div>' + indTable(ind, 'tb') + indRest(ind) + indMix(ind, '이 상권'); }
     if (t.se === '골목상권') h += hlRows(t);
     else h += row('카드 매출', '이 상권은 매출 자료가 없다');
     if (t.flp) { var f = t.flp; h += row('유동인구', '분기 ' + man(f[0]) + '명 · 하루 약 ' + man(f[0] / 91) + ' · 남 ' + pct(f[1], f[0]) + '%') + '<div class="cap">시간대별 유동인구(명/시 · 하루 평균 · 0~6 … 21~24시)</div>' + bar([0, 1, 2, 3, 4, 5].map(function (i) { return f[9 + i] / TBH[i] / 91; }), '#0284c7', LB_TB6) + '<div class="cap">연령대별 유동인구(명 · 한 분기 합 · 10대 … 60세 이상)</div>' + bar(f.slice(3, 9), '#38bdf8', LB_AGE6); }
@@ -2163,7 +2186,7 @@
     var lv = liveNow(d);
     if (lv) h += row('생활인구 지금', lv.n.toLocaleString() + '명 <em>(' + (lv.we ? '주말' : '평일') + ' ' + lv.h + '시 평균)</em>') + row('하루 폭', Math.min.apply(null, lv.arr).toLocaleString() + ' ~ ' + Math.max.apply(null, lv.arr).toLocaleString() + '명') +
       '<div class="cap">시간대별 생활인구(명 · 그 시각 동 안에 있는 사람 · 0~23시 ' + (lv.we ? '주말' : '평일') + ' 평균)</div>' + bar(lv.arr, '#f97316');
-    h += salesRows(d) + dongIndRows(d);
+    h += salesRows(d) + dongIndRows(d) + sclsRows(d.k);
     if (d.old) { var o = { name: '옛 ' + d.old.name, live: d.old.live, sales: d.old.sales, pre: R };
       h += '<p class="desc">이 동은 옛 ' + esc(d.old.name) + '에서 나뉘었다 — 생활인구(2026.7)·카드 매출 원자료가 옛 동 하나로만 있어 아래는 <b>옛 ' + esc(d.old.name) + ' 전체</b> 값이다(나눠 지어내지 않는다).</p>';
       var lo = liveNow(o); if (lo) h += row('옛 ' + esc(d.old.name) + ' 생활인구', lo.n.toLocaleString() + '명 <em>(' + lo.h + '시)</em>') + '<div class="cap">옛 ' + esc(d.old.name) + ' 시간대별 생활인구(명 · 0~23시 ' + (lo.we ? '주말' : '평일') + ' 평균)</div>' + bar(lo.arr, '#fdba74');
@@ -2180,9 +2203,28 @@
     var F3 = FRN && FRN.gu[d.gcd]; if (F3 && F3['2024']) h += row('외국인 주민(구)', (F3['2024'].tot || 0).toLocaleString() + '명 <em>(' + esc(F3.src) + ' · 2024)</em>') + '<div class="lg-btns"><button data-frn="' + esc(d.gcd) + '">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
     return h + src('경계: ' + R.source['경계'] + ' · 주민: ' + R.source['주민'] + (gg ? '' : ' · 생활인구: ' + R.source['생활인구']));
   }
+  /* v2.166.0 등록 상가를 소분류로 — data/storecls/<시도 2자리>.json(tg-store-cls/1 · dong{행정동 8자리: [이름, 점포 수, [[소분류 번호, 점포 수]…]]}) + data/storecls/cls.json(cls[번호] = [대분류 코드, 대분류, 중분류 코드, 중분류, 소분류, 소분류 코드]).
+     단추를 눌러야 그 시도 것만 받는다(서울 517KB · 경기 695KB). 대분류마다 묶고 소분류 막대(많은 차례 여덟 + 더 보기) · 주점(중분류)은 음식에서 떼어 따로 한 묶음 — 단속 참고.
+     **등록된 점포 수다 — 지금 영업하는지·매출은 모른다** · 업종은 사업자가 등록한 대표 업종 하나 · 매출 표(100업종)와 분류가 달라 맞대지지 않는다 */
+  var SCLS = {}, SCLSP = {}, SCLSC = null, SCLSW = 0;
+  function sclsGet(sd) { if (SCLSP[sd]) return SCLSP[sd]; SCLSP[sd] = Promise.all([fetch('data/storecls/' + sd + '.json').then(function (r) { return r.ok ? r.json() : null; }), SCLSC ? SCLSC : fetch('data/storecls/cls.json').then(function (r) { return r.ok ? r.json() : null; })]).then(function (a) { if (a[0] && a[1]) { SCLS[sd] = a[0]; SCLSC = a[1]; } else SCLS[sd] = { dong: {}, bad: 1 }; }).catch(function () { SCLS[sd] = { dong: {}, bad: 1 }; delete SCLSP[sd]; }); return SCLSP[sd]; }
+  function sclsBars(L, col) { var mx = Math.max.apply(null, L.map(function (x) { return x[1]; }).concat([1])); return '<div class="vz">' + L.map(function (x) { return '<div class="vzr"><span class="vzl" title="' + esc(x[0]) + '">' + esc(x[0]) + '</span><span class="vzb"><i style="width:' + Math.max(1, x[1] / mx * 100).toFixed(1) + '%;background:' + col + '"></i></span><b>' + x[1].toLocaleString() + '</b></div>'; }).join('') + '</div>'; }
+  function sclsRows(k, nm, gp) {   // k = 행정동 8자리 · 없으면(서초 바탕 동) 이름 + 구 코드로 찾는다
+    if (!k && !(nm && gp)) return ''; var sd = String(k || gp).slice(0, 2), J = SCLS[sd];
+    if (J && !k) k = Object.keys(J.dong).filter(function (c) { return c.indexOf(gp) === 0 && J.dong[c][0] === nm; })[0];
+    if (!J) return '<div class="lg-btns" style="margin:6px 0 0"><button data-scls="' + sd + '">🏬 등록 상가를 소분류로 보기(고깃집·카페·세무사 … 몇 곳)' + (SCLSW === sd ? ' — 받는 중…' : '') + '</button></div>';
+    var q = J.dong[k]; if (!q || !SCLSC) return J.bad ? '<p class="sdnt">등록 상가 소분류 자료를 받지 못했다.</p>' : '<p class="sdnt">이 동은 등록 상가 소분류 자료에 없다.</p>';
+    var C = SCLSC.cls, G = {}, ord = [], COL = { '음식': '#ea580c', '🍺 주점': '#b45309', '소매': '#2563eb', '교육': '#7c3aed', '과학·기술': '#0d9488', '보건의료': '#dc2626', '숙박': '#be123c' };
+    q[2].forEach(function (x) { var c = C[x[0]]; if (!c) return; var g = c[3] === '주점' ? '🍺 주점' : c[1]; if (!G[g]) { G[g] = { n: 0, L: [] }; ord.push(g); } G[g].n += x[1]; G[g].L.push([c[4], x[1]]); });
+    ord.sort(function (a, b) { return G[b].n - G[a].n; });
+    var h = '<div class="cap">🏬 등록 상가 ' + q[1].toLocaleString() + '곳 — 소분류(곳 · ' + esc(String(J.stdrYm || '').replace(/^(\d{4})(\d\d)$/, '$1.$2')) + ' 기준)</div>';
+    ord.forEach(function (g) { var L = G[g].L, col = COL[g] || '#475569'; h += '<div class="cap sdcap" style="margin-top:6px"><b>' + esc(g) + '</b> ' + G[g].n.toLocaleString() + '곳' + (g === '🍺 주점' ? ' <em style="font-weight:400">(음식 가운데 따로 뗀 묶음)</em>' : '') + '</div>' + sclsBars(L.slice(0, 8), col) + (L.length > 8 ? '<details class="sdx"><summary>➕ ' + esc(g) + ' 나머지 ' + (L.length - 8) + '갈래</summary>' + sclsBars(L.slice(8), col) + '</details>' : ''); });
+    h += '<p class="sdnt" style="margin:4px 0"><b>등록된 점포 수다 — 지금 영업하는지 · 얼마나 파는지는 모른다.</b> 업종은 사업자가 등록한 대표 업종 하나다(고깃집이 「백반/한정식」으로 등록돼 있기도 하다). 위 매출 표(서울 상권분석 100업종)와는 분류가 달라 서로 맞대지지 않는다. 소상공인시장진흥공단 상가(상권)정보를 행정동 경계로 나눠 센 것.</p>';
+    return sdMore(h, 'scls', '🏬 등록 상가 ' + q[1].toLocaleString() + '곳 — 소분류로 보기'); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-scls]'); if (!b) return; e.preventDefault(); var sd = b.getAttribute('data-scls'); SCLSW = sd; SDXO.scls = 1; b.textContent = '받는 중…'; sclsGet(sd).then(function () { SCLSW = 0; agReshow(); }); });
   function dongIndRows(x) {   // 행정동 — 업종 × 연령 · 업종 × 시간대 · 주점·유흥
     var d = typeof x === 'string' ? { name: x } : x, ind = d.rg ? d.x && d.x.ind : D.trdar && D.trdar.dong && D.trdar.dong[d.name]; if (!ind || !ind.length) return d.rg && d.x === null ? '<p class="desc">업종 표를 받는 중…</p>' : '';
-    return barRows(ind, '이 동') + '<div class="cap">업종 × 연령(%) — 이 동 매출 많은 업종 8</div>' + indTable(ind, 'age') + '<div class="cap">업종 × 시간대(%)</div>' + indTable(ind, 'tb');
+    return barRows(ind, '이 동') + indMix(ind, '이 동') + '<div class="cap">업종 × 연령(%) — 이 동 매출 많은 업종 8' + (ind.length > 8 ? ' · 모두 ' + ind.length + '업종' : '') + '</div>' + indTable(ind, 'age') + '<div class="cap">업종 × 시간대(%)</div>' + indTable(ind, 'tb') + indRest(ind);
   }
   // ---------- 🚗 교통사고 10년(v0.10.79 · TAAS 2016~2025 서초 22,546건 · 100m 칸 + 사망사고 한 건씩) ----------
   // v0.10.89 경찰서 통계 — 소유자 「단속 실적도 5년치 · 범죄나 생활에 필요한 정보」: 현장 단속 5개 해 · 112 출동 15년 · 5대 범죄 · 지구대·파출소

@@ -23,7 +23,7 @@
     ['risk', '🟥 사고위험지역', false, '교통사고', 0], ['sz', '🏫 어린이보호구역', false, '교통사고', 1], ['szh', '🧒 보호구역 어린이 사고', false, '교통사고', 0], ['cam', '📷 단속 카메라', false, '도로·교통', 0], ['spd', '🚥 도로 소통(받은 때)', false, '도로·교통', 0], ['sgm', '🚦 신호값 있는 교차로(신호등 표시)', true, '도로·교통', 0], ['facs', '🚥 신호 교차로 시설(차로·직좌·건널목·연동)', false, '도로·교통', 0], ['gmk', '🏛 관공서 표시(경찰·소방·시청·구청 · 전국)', true, '치안·안전', 0], ['sig', '🚦 신호 주기', false, '도로·교통', 0], ['sigx', '🔢 신호 교차로 번호', false, '도로·교통', 0],
     ['trd', '🏪 상권분석(카드·유동·점포)', false, '소비·상권', 1], ['tdg', '🔎 상권 지금 진단(조기 신호 · 서울)', false, '소비·상권', 0], ['rent', '💰 상가 임대료·공실률', false, '소비·상권', 0], ['szone', '🏬 소진공 주요상권(전국)', false, '소비·상권', 0], ['jgg', '🧩 집계구 인구·가구·사업체(SGIS)', false, '인구 구성', 1], ['crowd', '📡 실시간 인파·카드', false, '이동·동선', 1], ['live', '👥 생활인구(지금)', false, '인구 구성', 1], ['sales', '💳 카드 매출(시간대)', false, '소비·상권', 1], ['bus', '🚌 버스 승차·하차', false, '이동·동선', 1], ['subr', '🚇 지하철 승차·하차', false, '이동·동선', 0], ['vol', '🚙 교통량', false, '이동·동선', 0], ['bike', '🚲 따릉이', false, '이동·동선', 0],
     ['pol', '👮 경찰 관서', false, '치안·안전', 1], ['fire', '🚒 소방서·119안전센터(전국)', false, '치안·안전', 0], ['er', '🏥 응급실', false, '치안·안전', 1], ['hosp', '🩺 병원·의원', false, '치안·안전', 0], ['phar', '💊 약국', false, '치안·안전', 1],
-    ['bar', '🍺 주점(밤 순찰)', false, '치안·안전', 0], ['play', '🎤 노래방·PC방', false, '치안·안전', 0], ['inn', '🏨 숙박', false, '치안·안전', 0], ['heat', '🥵 무더위쉼터', false, '치안·안전', 0], ['cold', '🥶 한파쉼터', false, '치안·안전', 0], ['hyd', '🧯 소화전', false, '치안·안전', 0], ['wc', '🚻 화장실', false, '치안·안전', 0],
+    ['bar', '🍺 주점(밤 순찰)', false, '치안·안전', 0], ['duir', '🍺 술자리·밤 사고 나란히(동마다 막대 다섯 · 서울·경기·인천)', false, '치안·안전', 0], ['play', '🎤 노래방·PC방', false, '치안·안전', 0], ['inn', '🏨 숙박', false, '치안·안전', 0], ['heat', '🥵 무더위쉼터', false, '치안·안전', 0], ['cold', '🥶 한파쉼터', false, '치안·안전', 0], ['hyd', '🧯 소화전', false, '치안·안전', 0], ['wc', '🚻 화장실', false, '치안·안전', 0],
     ['school', '🏫 학교', false, '교육·돌봄', 0], ['kids', '🧸 유치원·어린이집', false, '교육·돌봄', 0], ['pg', '🛝 놀이터', false, '교육·돌봄', 0], ['park', '🌳 공원', false, '생활시설', 0], ['welf', '🧓 복지시설', false, '교육·돌봄', 0], ['kyr', '🧓 경로당(서울시)', false, '교육·돌봄', 0], ['cc', '👶 어린이집(서울시)', false, '교육·돌봄', 0], ['kg', '🎒 유치원(교육청)', false, '교육·돌봄', 0], ['aca', '📚 입시·교과학원', false, '교육·돌봄', 0], ['acad', '🎒 학원 현황(전국 · 입시·외국어·미술·음악·태권도 등)', false, '교육·돌봄', 1], ['med', '🏥 병·의원 현황(전국 · 개업·폐업 흐름)', false, '생활시설', 1], ['edu', '🏫 학교(초·중·고·대학)', false, '교육·돌봄', 0], ['govr', '🏛 관공서(서울·경기)', false, '생활시설', 0],
     ['gov', '🏢 관공서·주민센터', false, '생활시설', 0], ['lib', '📚 도서관', false, '생활시설', 0], ['post', '📮 우체국', false, '생활시설', 0], ['bank', '🏦 은행·ATM', false, '생활시설', 0], ['conv', '🏪 편의점', false, '생활시설', 0],
     ['fuel', '⛽ 주유소', false, '생활시설', 0], ['ev', '🔌 전기차 충전', false, '생활시설', 0], ['pk', '🅿 주차장', false, '생활시설', 0],
@@ -912,7 +912,7 @@
   function wmo(c, cc) { c = +c; if (c <= 3 && cc != null) return cc < 20 ? ['☀️', '맑음'] : cc < 50 ? ['🌤', '구름조금'] : cc < 80 ? ['⛅', '구름많음'] : ['☁️', '흐림']; return c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤', '구름조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫', '안개'] : c <= 57 ? ['🌦', '이슬비'] : c <= 67 ? ['🌧', '비'] : c <= 77 ? ['🌨', '눈'] : c <= 82 ? ['🌧', '소나기'] : c <= 86 ? ['🌨', '눈 소나기'] : c >= 95 ? ['⛈', '뇌우'] : ['·', '?']; }
   function drawLive(dark) {
     var W0 = cv.clientWidth, H0 = cv.clientHeight;
-    drawReach(dark); drawStz(dark); drawBsf(dark); drawFldl(dark); drawTdg(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
+    drawReach(dark); drawStz(dark); drawBsf(dark); drawFldl(dark); drawTdg(dark); drawDuir(dark); drawGmk(dark); drawFacs(dark); drawSgm(dark); drawTrn(dark); drawSbf(dark); drawSbc(dark); drawRadar(); drawSpd(); drawCc(); drawAk(); drawSe(dark); drawUtic(dark); drawBus(dark); drawPrd(dark);
     if (on.lair && LIVE.air && LIVE.air.pts) LIVE.air.pts.forEach(function (o) { var s0 = S(P(o.lon, o.lat)), c = o.c; s0[1] += on.lwx ? 25 : 0; if (s0[0] < -40 || s0[1] < -40 || s0[0] > W0 + 40 || s0[1] > H0 + 40 || c.pm2_5 == null) return;
       var g = Math.max(pmGrade(c.pm2_5, 1), pmGrade(c.pm10, 0)), t = String(Math.round(c.pm2_5)); ctx.font = 'bold 12px system-ui, sans-serif'; var tw = Math.max(26, ctx.measureText(t).width + 14);
       ctx.fillStyle = PMG[g][1]; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s0[0] - tw / 2, s0[1] - 10, tw, 20, 10); else ctx.rect(s0[0] - tw / 2, s0[1] - 10, tw, 20); ctx.fill();
@@ -966,6 +966,7 @@
     if (on.gmk) b.push(gmkLeg());
     if (on.fldl) b.push(fldlLeg());
     if (on.tdg) b.push(tdgLeg());
+    if (on.duir) b.push(duirLeg());
     if (on.facs) b.push(facsLeg());
     if (on.sgm) b.push(sgmLeg());
     if (on.stz) b.push(stzLeg());
@@ -1274,6 +1275,7 @@
     } else if (it.kind === 'facs') { h = facsCard(it.no);
     } else if (it.kind === 'fldl') { h = fldlCard(it.o);
     } else if (it.kind === 'tdg') { h = tdgCard(it.o);
+    } else if (it.kind === 'duir') { h = duirCard(it.o);
     } else if (it.kind === 'gdr') { h = gtrCard();
     } else if (it.kind === 'prd') { h = prdCard();
     } else if (it.kind === 'bsf') { h = bsfCard(it.q);
@@ -3591,6 +3593,39 @@
     return h + '<p class="sdnt" style="margin:2px 0 6px">짙은 막대·숫자 = 이 서의 건수 · 옅은 막대 = 전국의 같은 칸 몫 · 표의 숫자는 그 요일·그 2시간대의 한 해 건수(단속을 그때 했다는 뜻이기도 하다) · 농도 구간은 이 지도가 나눈 것(0.03% 정지 · 0.08% 취소 · 0.2% 가중) · 출처: ' + esc((DUIS && DUIS.source) || DUIC.source || '') + '.</p>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-dui]'); if (!b) return; e.preventDefault(); var v = b.getAttribute('data-dui'); if (v === 'st') { b.textContent = '받는 중…'; duisGet().then(function () { if (sel && sel.it && sel.it.kind === 'gdr') agReshow(); }); return; } if (v.indexOf('y:') === 0) { DUIY = v.slice(2); if (sel && sel.it && sel.it.kind === 'gdr') agReshow(); } });
   document.addEventListener('change', function (e) { var t = e.target; if (!t || t.id !== 'duiSel') return; DUIST = t.value; if (sel && sel.it && sel.it.kind === 'gdr') agReshow(); });
+  /* v2.167.0 🍺 술자리·밤 사고 나란히(층 duir) — data/dui-ref-seoul.json · dui-ref-gg.json · dui-ref-incheon.json(다른 세션 · tg-dui-ref/1 · 소유자 「서울에 전부 적용 가능하겠네」「경기 인천도 확장해서 적용」).
+     items[[0 동 코드, 1 이름, 2 구 코드, 3 [경도, 위도], 4 주점 수, 5 [일반 유흥, 무도 유흥, 생맥주, 요리 주점], 6 노래방, 7 주점 매출 만원, 8 21~06시 %, 9 21~24시 결제, 10 0~6시 결제, 11 20·30대 %, 12 사고 10년, 13 밤 20~6시, 14 0~6시, 15 백분위[주점 수, 매출, 새벽 결제, 밤 사고, 새벽 사고], 16 3년 전 매출(경기만)]].
+     **한 색으로 칠하지 않는다 — 막대 다섯을 따로**(한 점수가 아니다). 왼쪽 셋(주황) = 술자리 · 오른쪽 둘(파랑) = 밤 사고 · 백분위는 그 시도 안의 자리(시도끼리 견주지 않는다) · null 은 바닥 금만.
+     경기 매출은 크기를 믿지 않는다(인계동 주점 313곳에 7,390만원) → 금액 대신 백분위와 2022 → 2025 변화만 · 인천은 매출 없음 */
+  var DUIR = null, DUIRP = null, DUIRC = ['#c2410c', '#ea580c', '#f59e0b', '#1d4ed8', '#4338ca'], DUIRN = ['주점 수', '주점 매출', '새벽 결제', '밤 사고', '새벽 사고'], DUIRS = { '11': '서울', '41': '경기', '28': '인천' };
+  function duirGet() { if (DUIRP) return DUIRP; DUIRP = Promise.all(['seoul', 'gg', 'incheon'].map(function (f) { return fetch('data/dui-ref-' + f + '.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); })).then(function (A) { var L = [], N = {}, nt = null; A.forEach(function (j) { if (!j) return; nt = nt || j.note; (j.items || []).forEach(function (q) { var sd = String(q[0]).slice(0, 2); N[sd] = (N[sd] || 0) + 1; L.push({ q: q, p: P(q[3][0], q[3][1]), sd: sd }); }); }); if (!L.length) { DUIRP = null; return; } DUIR = { L: L, N: N, note: nt }; draw(); try { legend(); } catch (e) {} }); return DUIRP; }
+  function drawDuir(dark) { if (!on.duir) return; if (!DUIR) { duirGet(); return; } var z = view.s; if (z < 0.018) return; var big = z >= 0.045, bw = big ? 5 : 3, bh = big ? 22 : 13, W = bw * 5 + 4 + 3, W0 = cv.clientWidth, H0 = cv.clientHeight; ctx.save(); ctx.setLineDash([]);
+    DUIR.L.forEach(function (o) { var sp = S(o.p); if (sp[0] < -24 || sp[0] > W0 + 24 || sp[1] < -24 || sp[1] > H0 + 24) return; var x0 = Math.round(sp[0] - W / 2), y0 = Math.round(sp[1] - bh / 2), pc = o.q[15] || [];
+      ctx.fillStyle = dark ? 'rgba(15,22,36,.84)' : 'rgba(255,255,255,.9)'; ctx.fillRect(x0 - 2, y0 - 2, W + 4, bh + 4); ctx.lineWidth = 0.8; ctx.strokeStyle = dark ? '#64748b' : '#94a3b8'; ctx.strokeRect(x0 - 1.5, y0 - 1.5, W + 3, bh + 3);
+      for (var i = 0; i < 5; i++) { var x = x0 + i * (bw + 1) + (i >= 3 ? 3 : 0), v = pc[i]; if (v == null) { ctx.fillStyle = dark ? '#475569' : '#cbd5e1'; ctx.fillRect(x, y0 + bh - 1, bw, 1); continue; } var hg = Math.max(1, Math.round(v / 100 * bh)); ctx.fillStyle = DUIRC[i]; ctx.fillRect(x, y0 + bh - hg, bw, hg); }
+      hit.push({ x: sp[0], y: sp[1], r: big ? 15 : 10, it: { kind: 'duir', o: o } });
+      if (z >= 0.09) label([o.p[0], o.p[1] + (bh / 2 + 10) / z], o.q[1], 10, dark ? '#e2e8f0' : '#1f2937', dark ? 'rgba(15,22,36,.75)' : 'rgba(255,255,255,.88)'); });
+    ctx.restore(); }
+  function duirLeg() { var sw = function (c, t) { return '<span><i style="display:inline-block;width:6px;height:12px;background:' + c + ';margin-right:4px;vertical-align:-2px"></i>' + t + '</span> '; };
+    return '<b>🍺 술자리·밤 사고 나란히 — 동마다 막대 다섯</b> ' + DUIRN.map(function (n, i) { return sw(DUIRC[i], n); }).join('') + '<small class="lg-n"><b>한 점수가 아니다</b> · 왼쪽 셋(주황) = 술자리가 몰리는 정도 · 오른쪽 둘(파랑) = 밤 사고 · 막대 높이 = 그 시도 동들 가운데 백분위(시도끼리는 견주지 않는다) · <b>밤 사고는 음주 사고가 아니다</b>(20~6시 모든 사고) · 마신 동과 사고 난 동은 다를 수 있다 · 바닥 금만 있는 칸 = 자료 없음(경기 새벽 결제 · 인천 매출 · 사고를 다시 모으는 구) · ' + (DUIR ? Object.keys(DUIR.N).map(function (k) { return (DUIRS[k] || k) + ' ' + DUIR.N[k] + '동'; }).join(' · ') : '읽는 중…') + (view.s < 0.018 ? ' · <b>더 당겨 보면 뜬다</b>' : '') + ' · 동을 누르면 잰 값</small>'; }
+  function duirCard(o) { var q = o.q, pc = q[15] || [], sdn = DUIRS[o.sd] || '', nf = function (v) { return v == null ? '-' : (+v).toLocaleString(); }, gg = o.sd === '41';
+    var bars = function (ix, vals) { return '<div class="vz">' + ix.map(function (i, k) { var v = pc[i]; return '<div class="vzr"><span class="vzl">' + DUIRN[i] + '</span><span class="vzb">' + (v == null ? '' : '<i style="width:' + Math.max(1, v) + '%;background:' + DUIRC[i] + '"></i>') + '</span><b style="white-space:nowrap">' + (v == null ? '<small>자료 없음</small>' : v + ' <small>· ' + vals[k] + '</small>') + '</b></div>'; }).join('') + '</div>'; };
+    var h = '<h3>🍺 ' + esc(q[1]) + ' <small style="font-weight:400;color:var(--ink2)">' + sdn + ' · 술자리와 밤 사고</small></h3><p class="sdnt" style="margin:0 0 6px;color:#b45309"><b>한 점수가 아니다</b> — 두 묶음을 나란히 본다. 숫자 = ' + sdn + ' 동들 가운데 백분위(100 = 가장 많은 쪽 · 좋고 나쁨이 아니다).</p>';
+    h += '<div class="cap sdcap">🍺 술자리가 몰리는 정도</div>' + bars([0, 1, 2], [nf(q[4]) + '곳', gg ? '금액은 안 보임' : q[7] == null ? '' : won(q[7]), nf(q[10]) + '건']);
+    h += '<div class="cap sdcap">🚗 밤 사고(음주 사고가 아니다 — 20~6시 모든 사고)</div>' + bars([3, 4], [nf(q[13]) + '건', nf(q[14]) + '건']);
+    var A = [pc[0], pc[1], pc[2]].filter(function (v) { return v != null; }), a = A.length ? A.reduce(function (x, y) { return x + y; }, 0) / A.length : null, b = pc[3];
+    if (a != null && b != null) h += row('견줘 보면', (a >= 75 && b >= 75 ? '술자리도 많고 밤 사고도 많은 쪽' : a >= 75 && b < 50 ? '<b>술자리는 많은데 밤 사고는 적은 쪽</b>' : a < 50 && b >= 75 ? '<b>술자리는 적은데 밤 사고가 많은 쪽</b> — 지나가는 길일 수 있다' : '어느 쪽으로도 두드러지지 않는다') + ' <em>(술자리 평균 ' + Math.round(a) + ' · 밤 사고 ' + b + ' — 75·50 은 이 지도의 가름 · 공식 아님)</em>');
+    h += row('주점', nf(q[4]) + '곳 <em>(일반 유흥 ' + q[5][0] + ' · 무도 유흥 ' + q[5][1] + ' · 생맥주 전문 ' + q[5][2] + ' · 요리 주점 ' + q[5][3] + ')</em> · 노래방 ' + nf(q[6]) + '곳');
+    if (gg) { if (q[7] != null && q[16]) h += row('주점 매출 변화', '2022 → 2025 <b>' + (q[7] >= q[16] ? '+' : '−') + Math.abs(Math.round((q[7] / q[16] - 1) * 100)) + '%</b> <em>(간이주점 + 유흥주점 카드 매출 · <b>금액은 보이지 않는다</b> — 점포 수에 견줘 값이 너무 작아 단위·표본 범위를 확인하지 못했다)</em>'); }
+    else if (q[7] != null) { h += row('호프·간이주점', '한 달 ' + won(q[7]) + (q[8] != null ? ' · 21~06시 ' + q[8] + '%' : '') + (q[11] != null ? ' · 20·30대 ' + q[11] + '%' : '')); if (q[9] != null) h += row('결제 건수', '21~24시 ' + nf(q[9]) + '건 · <b>0~6시 ' + nf(q[10]) + '건</b> <em>(한 달 · 카드 추정)</em>'); }
+    else h += row('주점 매출', '<em>이 시도는 동 단위 업종 매출 자료가 없다</em>');
+    h += q[12] == null ? row('사고 10년', '<em>이 구의 사고 자료를 다시 모으는 중</em>') : row('사고 10년', nf(q[12]) + '건 · 밤 20~6시 <b>' + nf(q[13]) + '건</b>(' + pct(q[13], q[12]) + '%) · 0~6시 ' + nf(q[14]) + '건 <em>(2016~2025 · TAAS)</em>');
+    var J = typeof jurAtM === 'function' ? jurAtM(o.p) : null, stn = J && J.z && J.z.name ? '서울' + String(J.z.name).replace(/^서울/, '') : '';
+    h += '<div class="lg-btns" style="margin:8px 0 4px"><button data-duirst="' + esc(stn) + '">🚔 관할서 적발 — 요일 × 시간대 표 보기' + (stn ? '(' + esc(stn.replace(/경찰서$/, '서')) + ')' : '(서를 골라 본다)') + '</button></div>';
+    h += sdMore('<p class="sdnt">' + (DUIR && DUIR.note ? DUIR.note.map(function (t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }).join('</p><p class="sdnt">') : '') + '</p>', 'duirn', 'ⓘ 읽는 법 — 밤 사고와 음주 · 자료의 한계');
+    return h + '<p class="desc">결제한 사람이 운전한다는 뜻이 아니다. 어디서 단속할지는 길의 모양·빠져나가는 길·현장 경험이 같이 정한다.</p>'; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-duirst]'); if (!b) return; e.preventDefault(); var st = b.getAttribute('data-duirst'); b.textContent = '받는 중…';
+    duisGet().then(function () { if (st && DUIS && DUIS.years && Object.keys(DUIS.years).some(function (y) { return DUIS.years[y][st]; })) DUIST = st; sel = { it: { kind: 'gdr' } }; show({ kind: 'gdr' }); }); });
   function gtrCard() { var h = '<h3>🍺 음주운전 — 무엇이 바뀌었나</h3><p class="sdnt" style="margin:0 0 8px;color:#b45309"><b>잰 값만</b> — 왜 줄었는지는 이 자료에 없다(세대 · 단속 기준 · 대리운전 · 회식 문화가 같이 움직였다). 조사 값(%)은 표본이라 구·나이대 단위는 해마다 흔들린다 — 여러 해의 흐름으로 본다.</p>';
     if (!GTR) { gtrGet().then(function () { if (GTR && sel && sel.it && sel.it.kind === 'gdr') agReshow(); }); return h + '<p class="desc">자료를 읽는 중…</p>'; }
     var E = '연간 음주운전 경험률(자동차·오토바이 운전자)|전체|', A9 = ['19-29세', '30-39세', '40-49세', '50-59세', '60-69세', '70세이상'];
@@ -7780,8 +7815,8 @@
       ['care', '🎒 교육·돌봄', [['학교', ['edu', 'school', 'aca']], ['어린이', ['kg', 'cc', 'kids', 'pg', 'sz']]], ['edu', 'kg', 'cc']]
     ]],
     ['police', '🚓 경찰업무', [
-      ['traf', '🚦 교통', [['교통사고', ['acc', 'pri', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'risk', 'szh', 'spota']], ['신호·교차로', ['sgm', 'facs', 'tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['서울까지·대중교통', ['reach', 'trn', 'sbf', 'bsf', 'stz', 'sbc']], ['도로·교통량', ['rnet', 'rpost', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
-      ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'play', 'inn', 'stay', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
+      ['traf', '🚦 교통', [['교통사고', ['acc', 'pri', 'acc10', 'acc250', 'fatal', 'fatal10', 'jct', 'hot', 'hot10', 'drunk', 'duir', 'risk', 'szh', 'spota']], ['신호·교차로', ['sgm', 'facs', 'tlt', 'sig', 'sigx', 'tgis', 'pbtn', 'jcnm']], ['단속·시설', ['cam', 'pkcctv', 'sz', 'tow', 'pk', 'gpark']], ['서울까지·대중교통', ['reach', 'trn', 'sbf', 'bsf', 'stz', 'sbc']], ['도로·교통량', ['rnet', 'rpost', 'volp', 'exv', 'vol', 'spd', 'road']], ['지금 도로(실시간)', ['lev', 'lspd', 'lcc']]], ['acc', 'cam', 'sig', 'rnet', 'volp']],
+      ['local', '👮 지역경찰', [['관할·관서', ['jurk', 'upb', 'pbox', 'pol', 'jur', 'fire', 'er']], ['야간 순찰', ['bar', 'duir', 'play', 'inn', 'stay', 'srcctv', 'srbell', 'srlamp', 'glamp']], ['행사·인파', ['evt', 'crowd', 'spot', 'live']]], ['jurk', 'pbox', 'pol', 'bar', 'play']],
       ['safety', '🛡 생활안전', [['안심 귀갓길', ['srcctv', 'srbell', 'srlamp', 'sr112', 'srsvc', 'glamp', 'box']], ['어린이·노인', ['pedr', 'sz', 'szh', 'school', 'kids', 'pg', 'kyr', 'dem']], ['재난·계절', ['lore', 'flt', 'flr', 'fldl', 'und', 'ice', 'hcab', 'advb', 'hyd', 'fw', 'heat', 'cold']]], ['srcctv', 'srbell', 'sz']]
     ]],
     ['biz', '💳 상권·부동산', [

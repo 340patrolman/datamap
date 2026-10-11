@@ -463,6 +463,11 @@ def reduce_phase(itst, J):
     ncy = round((rs[-1] - rs[0]) / cyc) if len(rs) > 1 else 0
     cx = (rs[-1] - rs[0]) / ncy if ncy >= 2 else cyc
     ci = plan_ci(cyc, int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1))
+    # (2026-10-11) 창 앞쪽에 계획이 바뀌는 사이의 늘어난 주기가 섞이면 처음~끝을 주기 수로 나눈 값이 틀어져 닻을 버렸다(이수교차로 일 08:00~08:33 = 가운데값 160초 · 나눈 값 167.3초).
+    #  닻은 **끝**에서 이어 세는 것이니 끝의 세 주기가 가운데값 주기와 같으면(±1.5초) 그 주기로 닻을 잡는다
+    iv = [rs[i + 1] - rs[i] for i in range(len(rs) - 1)]
+    if len(iv) >= 3 and all(abs(q - cyc) <= 1.5 for q in iv[-3:]) and abs(cyc - round(cyc)) <= 0.3:
+        ci = plan_ci(cyc, int(round(cyc)))
     for x in mv + pd:
         x.pop('gs', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
@@ -541,6 +546,11 @@ def reduce_one(itst, J):
         ncy = round((rs[-1] - rs[0]) / cyc) if len(rs) > 1 else 0
         cx = (rs[-1] - rs[0]) / ncy if ncy >= 2 else cyc
         ci = plan_ci(cyc, int(round(cx)) if abs(cx - round(cx)) <= 0.25 else round(cx, 1))
+        # (2026-10-11) 창 앞쪽에 계획이 바뀌는 사이의 늘어난 주기가 섞이면 처음~끝을 주기 수로 나눈 값이 틀어져 닻을 버렸다(이수교차로 일 08:00~08:33 = 가운데값 160초 · 나눈 값 167.3초).
+        #  닻은 **끝**에서 이어 세는 것이니 끝의 세 주기가 가운데값 주기와 같으면(±1.5초) 그 주기로 닻을 잡는다
+        iv = [rs[i + 1] - rs[i] for i in range(len(rs) - 1)]
+        if len(iv) >= 3 and all(abs(q - cyc) <= 1.5 for q in iv[-3:]) and abs(cyc - round(cyc)) <= 0.3:
+            ci = plan_ci(cyc, int(round(cyc)))
         anchor = {'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy}
     for x in mv:
         x.pop('gs', None)

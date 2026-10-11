@@ -111,7 +111,7 @@ def main():
         yd = 1 if '(연등)' in nm or '연등' in nm else 0
         cyc = sorted(set(int(q.get('ci') or q.get('cyc') or 0) for q in recs if (q.get('ci') or q.get('cyc'))))
         t0 = tgn.get(int(no)) if no.isdigit() else None
-        e = {'nm': nm, 'll': [round(lon, 6), round(lat, 6)], 'gu': gu, 'in': list(S.values()), 'cyc': cyc, 'cells': len(set((q[0], q[1]) for q in pl.get(no, []))), 'plan': ('교통과' if no in ksc else '') + ('경찰청' if no in tod else ''), 'yd': yd,
+        e = {'nm': nm, 'll': [round(lon, 6), round(lat, 6)], 'gu': gu, 'in': list(S.values()), 'cyc': cyc, 'cells': len(set((q[0], q[1]) for q in pl.get(no, []) if not (len(q) > 6 and q[6]))), 'plan': ('교통과' if no in ksc else '') + ('경찰청' if no in tod else ''), 'yd': yd,
              'cam': sum(1 for c in CAM if abs(c['lon'] - lon) < 0.002 and m((lon, lat), (c['lon'], c['lat'])) <= 100)}
         if t0: e['tgis'] = [t0[0], t0[1], t0[4], (tgc.get(t0[4]) or [0, ''])[1] if t0[4] else '']   # [T-GIS 코드, T-GIS 이름, 연동 부모 코드, 부모 이름]
         if rec: e['day'] = rec.get('day'); e['at'] = rec.get('from')

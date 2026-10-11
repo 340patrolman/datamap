@@ -26,7 +26,7 @@ def main():
     for c, nm, la, lo, par, pe, cits, gu in T:
         dc, dn, sgg = dong(lo, la); no = str(cits) if cits else ''; f = F.get(no) if no else None
         has = (1 if (no and its.get(no)) else 0) | (2 if no in tod else 0) | (4 if no in ksc else 0) | (8 if (f and f.get('in')) else 0) | (16 if cits else 0)
-        items.append([c, nm, la, lo, cits, pe, sgg, dc, dn, GR.code_ll(la, lo), par, has, len(set((q[0], q[1]) for q in pl.get(no, []))) if no else 0])
+        items.append([c, nm, la, lo, cits, pe, sgg, dc, dn, GR.code_ll(la, lo), par, has, len(set((q[0], q[1]) for q in pl.get(no, []) if not (len(q) > 6 and q[6]))) if no else 0])
         st['모두'] += 1; st['실시간 장비 번호 있음'] += 1 if cits else 0; st['방향별 초 있음'] += 1 if has & 1 else 0; st['경찰청 계획 있음'] += 1 if has & 2 else 0; st['교통과 출력물 있음'] += 1 if has & 4 else 0; st['방향별 차로 읽음'] += 1 if has & 8 else 0; st['연동 부모 있음'] += 1 if par else 0; st['행정동 못 찾음'] += 0 if dc else 1
     doc = {'schema': 'tg-onto-int/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'object': '교차로(Intersection) — ONTOLOGY.md 의 Object 1',
            'id': 'INT-<T-GIS 교차로코드>(예: INT-548 = 서울성모병원 · C-ITS 4034)',

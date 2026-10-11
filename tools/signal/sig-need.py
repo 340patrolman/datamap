@@ -50,7 +50,7 @@ def main():
             g = place(nm, GC)
             if g: lon, lat, approx = g[0], g[1], g[2]
         has_k = no in ksc; has_t = no in tod or r['주기자료'].strip() == '있음'; has_d = no in its and bool(its[no])
-        cells = len(set((x[0], x[1]) for x in pl.get(no, []))) if no else 0
+        cells = len(set((x[0], x[1]) for x in pl.get(no, []) if not (len(x) > 6 and x[6]))) if no else 0
         kind = 'C' if (has_k or has_t) else ('B' if has_d else 'A')
         lanes, names = roads(lon, lat, 120 if approx else 55) if lon else (0, [])   # 이름으로 찾은 근사 자리는 120m 안의 큰길까지 본다
         ped = '(보)' in nm

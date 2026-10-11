@@ -3649,12 +3649,14 @@
     else if (q[7] != null) { h += row('호프·간이주점', '한 달 ' + won(q[7]) + (q[8] != null ? ' · 21~06시 ' + q[8] + '%' : '') + (q[11] != null ? ' · 20·30대 ' + q[11] + '%' : '')); if (q[9] != null) h += row('결제 건수', '21~24시 ' + nf(q[9]) + '건 · <b>0~6시 ' + nf(q[10]) + '건</b> <em>(한 달 · 카드 추정)</em>'); }
     else h += row('주점 매출', '<em>이 시도는 동 단위 업종 매출 자료가 없다</em>');
     h += q[12] == null ? row('사고 10년', '<em>이 구의 사고 자료를 다시 모으는 중</em>') : row('사고 10년', nf(q[12]) + '건 · 밤 20~6시 <b>' + nf(q[13]) + '건</b>(' + pct(q[13], q[12]) + '%) · 0~6시 ' + nf(q[14]) + '건 <em>(2016~2025 · TAAS)</em>');
-    var J = typeof jurAtM === 'function' ? jurAtM(o.p) : null, stn = J && J.z && J.z.name ? '서울' + String(J.z.name).replace(/^서울/, '') : '';
-    h += '<div class="lg-btns" style="margin:8px 0 4px"><button data-duirst="' + esc(stn) + '">🚔 관할서 적발 — 요일 × 시간대 표 보기' + (stn ? '(' + esc(stn.replace(/경찰서$/, '서')) + ')' : '(서를 골라 본다)') + '</button></div>';
+    /* v2.169.0 [17] = 관할 경찰서 이름들(dui-catch-st 의 열쇠 꼴 · 앞이 주 관서 · 둘이면 동 일부를 다른 서가 맡는다) — 없으면(옛 파일) 이 지도가 그린 관할(서초·방배)로 */
+    var J = typeof jurAtM === 'function' ? jurAtM(o.p) : null, ST = q[17] && q[17].length ? q[17] : (J && J.z && J.z.name ? ['서울' + String(J.z.name).replace(/^서울/, '')] : []), stn = ST[0] || '', sv = function (n) { return esc(String(n).replace(/경찰서$/, '서')); };
+    if (ST.length) h += row('관할', '<b>' + sv(ST[0]) + '</b>' + (ST.length > 1 ? ' <em>(이 동 일부는 ' + ST.slice(1).map(sv).join('·') + ')</em>' : ''));
+    h += '<div class="lg-btns" style="margin:8px 0 4px"><button data-duirst="' + esc(stn) + '">🚔 관할서 적발 — 요일 × 시간대 표 보기' + (stn ? '(' + sv(stn) + ')' : '(서를 골라 본다)') + '</button>' + ST.slice(1).map(function (n) { return '<button data-duirst="' + esc(n) + '">' + sv(n) + ' 표</button>'; }).join('') + '</div>';
     h += sdMore('<p class="sdnt">' + (DUIR && DUIR.note ? DUIR.note.map(function (t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }).join('</p><p class="sdnt">') : '') + '</p>', 'duirn', 'ⓘ 읽는 법 — 밤 사고와 음주 · 자료의 한계');
     return h + '<p class="desc">결제한 사람이 운전한다는 뜻이 아니다. 어디서 단속할지는 길의 모양·빠져나가는 길·현장 경험이 같이 정한다.</p>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-duirst]'); if (!b) return; e.preventDefault(); var st = b.getAttribute('data-duirst'); b.textContent = '받는 중…';
-    duisGet().then(function () { if (st && DUIS && DUIS.years && Object.keys(DUIS.years).some(function (y) { return DUIS.years[y][st]; })) DUIST = st; sel = { it: { kind: 'gdr' } }; show({ kind: 'gdr' }); }); });
+    duisGet().then(function () { var has = st && DUIS && DUIS.years && Object.keys(DUIS.years).some(function (y) { return DUIS.years[y][st]; }); if (has) DUIST = st; else if (st) toast(st.replace(/경찰서$/, '서') + '는 적발 표에 없다(새로 생겼거나 이름이 바뀐 서) — 서를 골라 본다'); sel = { it: { kind: 'gdr' } }; show({ kind: 'gdr' }); }); });
   function gtrCard() { var h = '<h3>🍺 음주운전 — 무엇이 바뀌었나</h3><p class="sdnt" style="margin:0 0 8px;color:#b45309"><b>잰 값만</b> — 왜 줄었는지는 이 자료에 없다(세대 · 단속 기준 · 대리운전 · 회식 문화가 같이 움직였다). 조사 값(%)은 표본이라 구·나이대 단위는 해마다 흔들린다 — 여러 해의 흐름으로 본다.</p>';
     if (!GTR) { gtrGet().then(function () { if (GTR && sel && sel.it && sel.it.kind === 'gdr') agReshow(); }); return h + '<p class="desc">자료를 읽는 중…</p>'; }
     var E = '연간 음주운전 경험률(자동차·오토바이 운전자)|전체|', A9 = ['19-29세', '30-39세', '40-49세', '50-59세', '60-69세', '70세이상'];

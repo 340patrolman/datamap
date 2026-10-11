@@ -17,6 +17,10 @@ def inside(px, py, ring):
         j = i
     return c
 def bake(sd, out, area):
+    PO = json.load(open(os.path.join(ROOT, 'data', 'police.json'), encoding='utf-8')); PN = {x[0]: x[1] for x in PO['stations']}
+    def stn(k):   # 동 → 관할 경찰서 이름들(둘이 나눠 맡는 동은 둘 다) — data/dui-catch-st.json 의 열쇠와 같은 꼴
+        i = PO['dong'].get(k)
+        return [PN[int(z)] for z in str(PO['labels'][i]).split(',') if z.strip().isdigit() and int(z) in PN] if i is not None and i < len(PO['labels']) else []
     SC = json.load(open(os.path.join(ROOT, 'data', 'storecls', sd + '.json'), encoding='utf-8'))['dong']; rows = []; thin = []
     for dp in sorted(glob.glob(os.path.join(ROOT, 'data', 'r', sd + '*', 'dong.json'))):
         gd = os.path.dirname(dp); gu = os.path.basename(gd); D = json.load(open(dp, encoding='utf-8')); dongs = D.get('dong') or []
@@ -49,7 +53,7 @@ def bake(sd, out, area):
         v = sorted(r[key] for r in rows if r[key] is not None)
         for r in rows: r['p_' + key] = round(bisect.bisect_right(v, r[key]) / len(v) * 100) if r[key] is not None and v else None
     for key in ('bar', 'sal', 'n0006', 'accN', 'acc06'): pct(key)
-    items = [[r['k'], r['nm'], r['gu'], r['ll'], r['bar'], r['bars'], r['kara'], r['sal'], r['late'], r['n2124'], r['n0006'], r['young'], r['acc'], r['accN'], r['acc06'], [r['p_bar'], r['p_sal'], r['p_n0006'], r['p_accN'], r['p_acc06']], r['old']] for r in rows]
+    items = [[r['k'], r['nm'], r['gu'], r['ll'], r['bar'], r['bars'], r['kara'], r['sal'], r['late'], r['n2124'], r['n0006'], r['young'], r['acc'], r['accN'], r['acc06'], [r['p_bar'], r['p_sal'], r['p_n0006'], r['p_accN'], r['p_acc06']], r['old'], stn(r['k'])] for r in rows]
     doc = {'schema': 'tg-dui-ref/1', 'made': datetime.date.today().isoformat(), 'area': area,
            'source': '소상공인시장진흥공단 상가(상권)정보(등록 상가 소분류 · data/storecls) · 서울시 상권분석서비스 추정매출-행정동(호프·간이주점 · data/r/<구>/dongx.json) · 도로교통공단 TAAS 사고 10년(2016~2025 · 100m 칸 · data/r/<구>/taas10.json)',
            'note': ['**한 점수가 아니다** — 술자리가 몰리는 곳(주점 수 · 호프 매출 · 심야 결제)과 밤 사고가 난 곳을 나란히 본다. 어디서 단속할지는 길의 모양·빠져나가는 길·현장 경험이 같이 정한다',
@@ -60,7 +64,7 @@ def bake(sd, out, area):
                     '결제한 사람이 운전한다는 뜻이 아니다 · 백분위는 그 시도 동들 가운데의 자리(100 = 가장 많은 쪽)일 뿐 좋고 나쁨이 아니다',
                     '사고 값 null = 그 구의 사고 자료가 비어 있다(다시 모으는 중인 구: %s)' % ' '.join(thin)],
            'bars': list(BAR.values()),
-           'fields': 'items[[0 행정동 코드, 1 이름, 2 구 코드, 3 [경도, 위도], 4 주점 점포 수, 5 [일반 유흥, 무도 유흥, 생맥주 전문, 요리 주점], 6 노래방, 7 호프·간이주점 한 달 매출 만원, 8 그 결제 가운데 21~06시 %, 9 21~24시 결제 건수, 10 0~6시 결제 건수, 11 호프 매출의 20·30대 %, 12 사고 10년 건수, 13 그 가운데 밤 20~6시, 14 0~6시, 15 서울 동 가운데 백분위[주점 수, 호프 매출, 0~6시 결제, 밤 사고, 0~6시 사고], 16 주점 매출 3년 전(경기만 · 2022년 같은 달 평균 만원 — 7 과 견준다)]] · 경기 = 7 이 간이주점 + 유흥주점 카드 매출(2025년 1~6월 평균)이고 8~11(시간대·연령)은 null · 인천 = 7~11 null(동 단위 업종 매출 자료 없음)',
+           'fields': 'items[[0 행정동 코드, 1 이름, 2 구 코드, 3 [경도, 위도], 4 주점 점포 수, 5 [일반 유흥, 무도 유흥, 생맥주 전문, 요리 주점], 6 노래방, 7 호프·간이주점 한 달 매출 만원, 8 그 결제 가운데 21~06시 %, 9 21~24시 결제 건수, 10 0~6시 결제 건수, 11 호프 매출의 20·30대 %, 12 사고 10년 건수, 13 그 가운데 밤 20~6시, 14 0~6시, 15 서울 동 가운데 백분위[주점 수, 호프 매출, 0~6시 결제, 밤 사고, 0~6시 사고], 16 주점 매출 3년 전(경기만 · 2022년 같은 달 평균 만원 — 7 과 견준다), 17 관할 경찰서 이름[…](data/police.json 의 동 → 관서 · 두 서가 나눠 맡으면 둘 · data/dui-catch-st.json 의 열쇠와 같은 꼴)]] · 경기 = 7 이 간이주점 + 유흥주점 카드 매출(2025년 1~6월 평균)이고 8~11(시간대·연령)은 null · 인천 = 7~11 null(동 단위 업종 매출 자료 없음)',
            'items': items}
     p = os.path.join(ROOT, 'data', out); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print(area, '· 동', len(items), '· 바이트', os.path.getsize(p), '· 사고 자료가 빈 구', thin, '· 주점 매출 있는 동', sum(1 for r in items if r[7] is not None))

@@ -242,6 +242,16 @@ def sweep(prefer=None, api='t', cap=None):
             open(hist_f, 'a', encoding='utf-8').write(json.dumps(kw, ensure_ascii=False) + '\n')
         except Exception:
             pass
+    # (2026-10-11) 다시 띄울 때의 헛호출 막기 — 호출할 때마다 시각을 lastcall_<api>.txt 에 남기고, 뜰 때 그 시각에서 GAP 이 안 지났으면 남은 만큼 기다린다.
+    #  종전엔 뜨자마자 불러서, 멈추기 직전의 호출과 5분 안에 겹쳐 두 훑기가 한 번씩 429(V2X_REPEAT_CALL_LIMIT)를 받았다(19:50 · 19:52)
+    stamp_f = os.path.join(RAW, 'lastcall_%s.txt' % api)
+    try:
+        w9 = GAP + 3 - (time.time() - float(open(stamp_f, encoding='utf-8').read().strip()))
+        if 0 < w9 <= GAP + 3:
+            print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '직전 호출에서 5분이 안 지났다 — %d초 기다린 뒤 시작' % int(w9), flush=True)
+            time.sleep(w9)
+    except Exception:
+        pass
     # 둘째 열쇠 — 살아 있으면(200 · 429 = 알아보는 열쇠) 두 열쇠를 번갈아 쓴다: 열쇠마다 GAP(5분 제한)을 지키고 호출 사이는 GAP ÷ 2.
     #  ⚠ 5분 제한이 열쇠마다 따로인지는 **확인되지 않았다**(계정이 같으면 같이 쓸 수도) — 번갈아 쓰기 시작한 뒤 429 가 세 번 나면 같이 쓰는 것으로 보고 둘째 열쇠를 여섯 시간 쉰다.
     #  발급 직후에는 404(「관리자에게 문의」 — 가짜 열쇠와 같은 응답)가 온다 → 30분마다 작은 요청(3줄)으로 다시 본다. 둘째 열쇠가 없거나 죽어도 수집은 첫 열쇠로 그대로 돈다
@@ -351,6 +361,10 @@ def sweep(prefer=None, api='t', cap=None):
         k2['last'][kn] = time.time()
         u = (BASEP if api == 'p' else BASE) + '?apikey=' + kv + '&pageNo=%d&numOfRows=30000' % page
         try:
+            try:
+                open(stamp_f, 'w', encoding='utf-8').write(str(time.time()))
+            except Exception:
+                pass
             r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=400); st = r.status; body = r.read().decode('utf-8', 'ignore')
         except urllib.error.HTTPError as e:
             st = e.code; body = e.read().decode('utf-8', 'ignore')

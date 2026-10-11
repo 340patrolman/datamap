@@ -26,8 +26,13 @@ def main():
     for st, d in ST.items():
         r = [row(d[y], y) if y in d else None for y in ys]
         if not r[0] or not r[-1] or r[-1][3] < 30000: continue   # 2019년과 마지막 해에 다 있고 한 달 승차 3만 넘는 역만(작은 역은 비율이 흔들린다)
-        items.append([st, sorted(LN[st]), [x[0] if x else None for x in r], [x[3] if x else None for x in r], round(r[-1][0] - r[0][0], 2), round(r[-1][0] / r[0][0] * 100 - 100) if r[0][0] else None])
+        nb = lambda y: round(sum(d[y][h] for h in LATE) / M[y]) if y in d else None   # 밤 22~03시 승차 한 달 평균(명)
+        fy = [y for y in ys if M[y] == 12][-1]   # 열두 달이 다 찬 마지막 해
+        n0, n1 = nb(ys[0]), nb(fy); t0, t1 = sum(d[ys[0]]) / M[ys[0]], sum(d[fy]) / M[fy]
+        items.append([st, sorted(LN[st]), [x[0] if x else None for x in r], [x[3] if x else None for x in r], round(r[-1][0] - r[0][0], 2), round(r[-1][0] / r[0][0] * 100 - 100) if r[0][0] else None,
+                      n0, n1, round(n1 / n0 * 100 - 100) if n0 and n1 else None, round(t1 / t0 * 100 - 100) if t0 else None])
     items.sort(key=lambda x: -x[2][0])
+    fy = [y for y in ys if M[y] == 12][-1]; hours = {y: [round(Y[y][h] / M[y]) for h in range(24)] for y in ys}
     doc = {'schema': 'tg-night-ride/1', 'made': datetime.date.today().isoformat(), 'months': [yms[0], yms[-1]], 'years': ys, 'late_hours': '22~03시(22 · 23 · 0 · 1 · 2 · 3시대)',
            'source': '서울 열린데이터광장 「서울시 지하철 호선별 역별 시간대별 승하차 인원 정보」(CardSubwayTime · 교통카드 · 달마다)',
            'chain': '바깥 충격(빠른 변수 — 2020~2021 영업시간 제한) · 세대·회식 문화(느린 변수) → 밤까지 머무는 사람 → 밤 상권 · 밤 사고 · 단속의 전제 — ONTOLOGY.md §0 「느린 변수와 빠른 변수」 · 짝: data/night-trend-seoul.json(주점·밤 매출) · data/gen-trend.json(음주·음주운전)',
@@ -35,9 +40,11 @@ def main():
                     '몫 = 그 해 그 역의 승차 가운데 22~03시에 탄 사람 % — 승차 수가 아니라 비율이라 손님이 준 것과 밤 손님만 준 것을 가른다(한 달 평균 승차는 따로 실었다)',
                     '2020~2021년은 영업시간·모임 제한으로 눌려 있다 · 마지막 해는 그 해에 받은 달까지만의 값이다(months 의 끝 달) — 달 수가 달라 계절이 조금 섞인다',
                     '민자 노선(신분당선 · GTX)은 없다 · 호선을 더한 값이다(같은 이름의 역) · 한 달 승차 3만 미만 역은 뺐다',
+                    '**전체 승차가 크게 준 것이 아니다** — 2019년의 94~96% 까지 돌아왔다. 크게 준 것은 늦은 시간이다(2019 → 2025: 낮 −4% 안팎 · 18시대 −9 · 19시대 −13 · 21시대 −14 · 22시대 −21 · 23시대 −26% / 17시대는 +5% — 저녁이 앞당겨졌다). 밤 22~03시 승차는 한 달 1,262만 → 976만 명',
+                    '강남·신사·논현·양재는 2022년 5월 신분당선 연장으로 일부 손님이 그쪽(이 자료에 없는 노선) 개찰구로 옮겨 갔을 수 있다 — 이 네 역의 감소는 실제보다 크게 보일 수 있다 · 달 단위 자료라 평일과 주말을 가르지 못한다',
                     '밤에 지하철을 덜 탄다고 술을 덜 마신다는 뜻은 아니다(다른 수단으로 돌아갈 수 있다) — 여러 자료를 같이 본다'],
-           'fields': 'seoul[[해, 밤 22~03시 승차 몫 %, 21시대 %, 저녁 18~20시 %, 한 달 평균 승차]…] · items[[역 이름, [호선…], [해마다 밤 승차 몫 %](years 차례), [해마다 한 달 평균 승차], 첫 해 → 마지막 해 %p, 그 변화율 %]] — 첫 해의 밤 몫이 큰 차례',
-           'seoul': seoul, 'items': items}
+           'fields': 'seoul[[해, 밤 22~03시 승차 몫 %, 21시대 %, 저녁 18~20시 %, 한 달 평균 승차]…] · items[[역 이름, [호선…], [해마다 밤 승차 몫 %](years 차례), [해마다 한 달 평균 승차], 첫 해 → 마지막 해 %p, 그 변화율 %, 첫 해 밤 22~03시 승차 한 달 평균(명), full_year 의 그 값, 그 변화 %, 전체 승차의 변화 %(첫 해 → full_year)]] — 첫 해의 밤 몫이 큰 차례 · hours{해: [0시…23시 한 달 평균 승차(서울 전체)]} · full_year = 열두 달이 다 찬 마지막 해',
+           'full_year': fy, 'hours': hours, 'seoul': seoul, 'items': items}
     p = os.path.join(ROOT, 'data', 'night-ride-seoul.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('역', len(items), '· 바이트', os.path.getsize(p)); [print('  ', r) for r in seoul]
     print('밤 몫이 컸던 역(2019 → 마지막 해):', [(x[0], x[2][0], x[2][-1], x[5]) for x in items[:14]])

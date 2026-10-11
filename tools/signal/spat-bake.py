@@ -599,7 +599,7 @@ def reduce_one(itst, J):
             sg = segments(rows, k, tail=True)
             sg = [s for s in sg if abs(s[1] - s[2]) <= 3.5]   # 구간 길이 ≈ 시작 때 잔여(끊김·튐 거르기)
             if m == 'Pd':
-                ped.append({'d': d, 'seg': [round(s[1]) for s in sg[:12]], 'n': len(sg)})
+                ped.append({'d': d, 'seg': [round(s[1]) for s in sg[:12]], 'n': len(sg), '_sg': sg})
                 continue
             G, Y, R, gs = [], [], [], []
             for i in range(1, len(sg) - 1):
@@ -681,6 +681,49 @@ def reduce_one(itst, J):
                     if nxt and nxt[0] - s0 < cyc + 2:
                         offs.append((cyc - (nxt[0] - s0)) % cyc)
             x['o'] = int(round(statistics.median(offs))) % int(round(cyc)) if offs else None
+    # (2026-10-11 소유자 「빈자리를 없애야지」) 보행 신호 시간 — 잔여시간 기록에는 색이 없지만, 되풀이되는 구간 가운데 **같은 축 차량 직진의 녹색 안에 드는 것**이 보행 시간이다
+    #  (서울 신호 상태 기록 1,036쌍 가운데 818쌍에서 보행 녹색이 같은 축 직진 녹색 안 · 직각 축은 7쌍). 같은 축 직진이 없으면(건널목만 있는 연등) 직각 축 직진의 녹색과 겹치지 않는 구간.
+    #  녹색과 점멸을 나눠 읽지는 못한다 → 합(g)과 자리(o)만 · build 가 pd 줄 일곱째 칸 2 로 싣는다
+    if ok and cyc:
+        c7 = int(round(cyc)); ref7 = max(ok, key=lambda x: (x['g'], -DIRS.index(x['d']))); rs7 = sorted(ref7.get('gs') or [])
+        gset = {}
+        for x in ok:
+            if x['m'] == 'St' and x.get('o') is not None:
+                gset.setdefault(DIRS.index(x['d']) % 4, set()).update(t % c7 for t in range(int(x['o']), int(x['o'] + x['g'])))
+        need7 = 2 if t1 - t0 > 430 else 1
+        for q in ped:
+            cl7 = []                                        # [길이 합, 자리들, 수]
+            for s0, ln, sv in (q.get('_sg') or []):
+                if not (6.5 < ln < 0.75 * cyc):
+                    continue
+                prev = [r for r in rs7 if r <= s0 + 1]
+                nxt = [r for r in rs7 if r > s0 + 1]
+                if prev and s0 - prev[-1] < cyc + 2:
+                    of7 = (s0 - prev[-1]) % cyc
+                elif nxt and nxt[0] - s0 < cyc + 2:
+                    of7 = (cyc - (nxt[0] - s0)) % cyc
+                else:
+                    continue
+                for c in cl7:
+                    if abs(c[0] / c[2] - ln) <= 2 and min((c[1][0] - of7) % cyc, (of7 - c[1][0]) % cyc) <= 3:
+                        c[0] += ln; c[1].append(of7); c[2] += 1; break
+                else:
+                    cl7.append([ln, [of7], 1])
+            ax7 = DIRS.index(q['d']) % 4
+            good = []
+            for c in cl7:
+                if c[2] < need7:
+                    continue
+                L7, o7 = c[0] / c[2], c[1][0]
+                P7 = set(t % c7 for t in range(int(round(o7)), int(round(o7 + L7))))
+                fs = len(P7 & gset[ax7]) / float(len(P7)) if gset.get(ax7) and P7 else None
+                fp = len(P7 & gset[(ax7 + 2) % 4]) / float(len(P7)) if gset.get((ax7 + 2) % 4) and P7 else None
+                if (fs is not None and fs >= 0.8 and (fp is None or fp <= 0.2)) or (fs is None and fp is not None and fp <= 0.1):
+                    good.append((round(L7, 1), int(round(o7)) % c7, c[2]))
+            if len(good) == 1:
+                q['g'], q['o'], q['gn'] = good[0]
+    for q in ped:
+        q.pop('_sg', None)
     anchor = None
     if ok and cyc:
         # 닻 = 기준 이동류(녹색이 가장 긴 것)의 마지막 녹색이 켜진 실제 시각(epoch 초) — 지도가 이 시각에서 주기로 이어 센다
@@ -740,7 +783,7 @@ def mvrow(x, cyc):
     if x.get('g') is not None and abs(x['g'] + x['y'] + x['r'] - cyc) > 3.5:
         return [x['d'], x['m'], None, None, None, None, x['n'], 2]
     if x.get('fl'):
-        return [x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n'], 3]   # 3 = 같은 요일 갈래·같은 주기의 다른 기록에서 채운 줄(지도는 「채움」이라 적는다)
+        return [x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n'], 4 if x['fl'] == 2 else 3]   # 3 = 같은 요일 갈래·같은 주기의 다른 기록에서 채운 줄(지도는 「채움」이라 적는다)
     return [x['d'], x['m'], x.get('g'), x.get('y'), x.get('r'), x.get('o'), x['n']]
 
 
@@ -799,7 +842,17 @@ def build():
             kk = (cls_of(r['dow']), int(round(ci0)))
             if r.get('pd') or not (keep.get(kk) and keep[kk].get('pd')) or r.get('a'):
                 if keep.get(kk) and keep[kk].get('pd') and not r.get('pd'):
-                    r = dict(r, pd=keep[kk]['pd'], src=keep[kk].get('src'))   # 보행 신호 색은 신호 상태 API 로 읽은 것을 이어 쓴다(같은 요일 갈래·같은 주기)
+                    # 보행 신호 색은 신호 상태 API 로 읽은 것을 이어 쓴다(같은 요일 갈래·같은 주기) —
+                    # (2026-10-11) 보행 신호의 자리(o)는 **그 기록의 기준 이동류**에서 잰 것이라, 두 기록의 기준이 다르면(이수역: 상태 = 서쪽 직진 · 잔여 = 남쪽 직진) 그대로 옮기면 어긋난다.
+                    #  함께 읽힌 이동류로 밀림을 구해 옮기고, 못 맞추면 옮기지 않는다. src 는 그 기록의 것을 그대로 둔다(차량 신호 색은 여전히 잔여시간에서 읽은 것)
+                    q9, c8 = keep[kk], int(round(kk[1]))
+                    hv = {(x['d'], x['m']): x for x in r['mv'] if x.get('g') is not None and x.get('o') is not None}
+                    qv = {(x['d'], x['m']): x for x in q9['mv'] if x.get('g') is not None and x.get('o') is not None}
+                    cm = [k2 for k2 in qv if k2 in hv and abs(hv[k2]['g'] - qv[k2]['g']) <= 2]
+                    if cm and c8 >= 20:
+                        b8 = max(cm, key=lambda k2: qv[k2]['g']); sh8 = (hv[b8]['o'] - qv[b8]['o']) % c8
+                        if all(min(((qv[k2]['o'] + sh8) - hv[k2]['o']) % c8, (hv[k2]['o'] - (qv[k2]['o'] + sh8)) % c8) <= 3 for k2 in cm):
+                            r = dict(r, pd=[dict(z, o=(int(round((z['o'] + sh8) % c8)) if z.get('o') is not None else None)) for z in q9['pd']])
                 keep[kk] = r                                    # (요일 갈래, 주기)마다 나중 것 한 장
             if r.get('a'):
                 hh = datetime.datetime.fromtimestamp(r['a']).hour
@@ -821,15 +874,20 @@ def build():
             if not any(isread(x) for x in have.values()):
                 continue
             add = {}
-            for q in sorted(v, key=lambda z: (z['day'], z['to']), reverse=True):
+            # (2026-10-11 소유자 「빈자리를 없애야지 · 이수역처럼 신호값이 불완전하면 곤란해」) 같은 요일 갈래를 먼저 보고, 없으면 **다른 요일 갈래의 같은 주기** 기록도 본다 —
+            #  그때는 함께 읽힌 이동류가 둘 이상이고 모두 녹색 ±2초·자리 ±3초로 맞아야 한다(같은 주기라도 요일마다 현시값이 다를 수 있다)
+            for q in sorted(sorted(v, key=lambda z: (z['day'], z['to']), reverse=True), key=lambda z: 0 if cls_of(z['dow']) == kk[0] else 1):
                 if (q['day'], q['from'], q['to'], q.get('src')) == (r['day'], r['from'], r['to'], r.get('src')):
                     continue
-                if (cls_of(q['dow']), int(round(q.get('ci') or int(round(q['cyc']))))) != kk:
+                if int(round(q.get('ci') or int(round(q['cyc'])))) != kk[1]:
                     continue
+                xcl = cls_of(q['dow']) != kk[0]
                 qm = {(x['d'], x['m']): x for x in q['mv'] if x.get('g') is not None and x.get('o') is not None and abs(x['g'] + x['y'] + x['r'] - q['cyc']) <= 3.5}
                 com = [k2 for k2 in qm if isread(have.get(k2)) and abs(have[k2]['g'] - qm[k2]['g']) <= 2]
-                if not com:
+                if not com or (xcl and len(com) < 2):
                     continue
+                if xcl and any(isread(have.get(k2)) and abs(have[k2]['g'] - qm[k2]['g']) > 2 for k2 in qm):
+                    continue                                   # 다른 요일 갈래 — 함께 읽힌 것 가운데 녹색이 다른 이동류가 하나라도 있으면 다른 계획으로 본다
                 b9 = max(com, key=lambda k2: qm[k2]['g'])
                 sh = (have[b9]['o'] - qm[b9]['o']) % c9
                 cd = lambda a, b: min((a - b) % c9, (b - a) % c9)
@@ -861,6 +919,115 @@ def build():
                 nm = [x for x in r['mv'] if (x['d'], x['m']) not in add] + list(add.values())
                 nm.sort(key=lambda x: (DIRS.index(x['d']), MVS.index(x['m']) if x['m'] in MVS else 9))
                 keep[kk] = dict(r, mv=nm)
+        # 보행 신호 색이 없는 기록(잔여시간 기록) — **같은 주기**의 다른 기록(요일 갈래가 달라도)에 신호 상태로 읽은 보행 신호가 있으면 자리를 맞춰 옮긴다.
+        #  함께 읽힌 차량 이동류가 모두 녹색 ±2초·자리 ±3초로 맞아야 한다(같은 요일 갈래는 하나 이상 · 다른 갈래는 둘 이상). 옮긴 줄은 끝에 1 을 단다(pd 일곱째 칸)
+        for kk, r in list(keep.items()):
+            c8 = int(round(kk[1]))
+            if r.get('pd') or c8 < 20:
+                continue
+            hv = {(x['d'], x['m']): x for x in r['mv'] if x.get('g') is not None and x.get('o') is not None and not x.get('fl')}
+            for q9 in sorted(sorted(v, key=lambda z: (z['day'], z['to']), reverse=True), key=lambda z: 0 if cls_of(z['dow']) == kk[0] else 1):
+                if not q9.get('pd') or int(round(q9.get('ci') or int(round(q9['cyc'])))) != kk[1]:
+                    continue
+                qv = {(x['d'], x['m']): x for x in q9['mv'] if x.get('g') is not None and x.get('o') is not None and not x.get('fl')}
+                cm = [k2 for k2 in qv if k2 in hv and abs(hv[k2]['g'] - qv[k2]['g']) <= 2]
+                if len(cm) < (1 if cls_of(q9['dow']) == kk[0] else 2) or any(k2 in hv and abs(hv[k2]['g'] - qv[k2]['g']) > 2 for k2 in qv):
+                    continue
+                b8 = max(cm, key=lambda k2: qv[k2]['g']); sh8 = (hv[b8]['o'] - qv[b8]['o']) % c8
+                if all(min(((qv[k2]['o'] + sh8) - hv[k2]['o']) % c8, (hv[k2]['o'] - (qv[k2]['o'] + sh8)) % c8) <= 3 for k2 in cm):
+                    keep[kk] = dict(r, pd=[dict(z, o=(int(round((z['o'] + sh8) % c8)) if z.get('o') is not None else None), cx=1) for z in q9['pd']])
+                    break
+        # 그래도 보행 신호 색이 없는 기록 — 잔여시간에서 읽은 보행 시간(녹색+점멸 합 · reduce_one 의 ped g·o)이 있으면 그것으로(끝에 2)
+        for kk, r in list(keep.items()):
+            if r.get('pd'):
+                continue
+            pt = [{'d': z['d'], 'g': z['g'], 'y': 0.0, 'r': round(r['cyc'] - z['g'], 1), 'o': z['o'], 'n': z.get('gn', 1), 'cx': 2} for z in (r.get('ped') or []) if z.get('g') is not None and z.get('o') is not None]
+            if pt:
+                keep[kk] = dict(r, pd=pt)
+        # ── 추정으로 채우기(끝에 4 · 지도는 「추정」이라 적는다) — 위의 채움으로도 남은 것만 ──
+        RD = lambda x, cyc: x is not None and x.get('g') is not None and x.get('o') is not None and abs(x['g'] + x['y'] + x['r'] - cyc) <= 3.5
+        for kk, r in list(keep.items()):
+            c9 = int(round(kk[1]))
+            if c9 < 20:
+                continue
+            cd = lambda a, b: min((a - b) % c9, (b - a) % c9)
+            cur = {(x['d'], x['m']): x for x in r['mv']}
+            unk = [k2 for k2, x in cur.items() if k2[1] in ('St', 'Lt') and x.get('g') is None]
+            if not unk or not any(RD(x, r['cyc']) for x in cur.values()):
+                continue
+            others = [q for q in v if (q['day'], q['from'], q['to'], q.get('src')) != (r['day'], r['from'], r['to'], r.get('src'))]
+            add = {}
+            # C. 늘 같이 켜지는 짝 — 다른 기록(받은 그대로 읽힌 것만)에서 이 이동류와 녹색 ±2초·자리 ±3초로 **늘** 같이 켜진 이동류가 이 기록에 읽혀 있으면 그 값으로
+            #  (마주 보는 직진 · 직좌 동시 · 버스 신호 — 한 번이라도 어긋난 기록이 있으면 짝으로 보지 않는다 · 이수역 동·서 직진은 주기 200초에서 46·55초로 달라 짝이 아니다)
+            for k2 in unk:
+                votes = {}
+                for q in others:
+                    qc = int(round(q['cyc']))
+                    qm = {(x['d'], x['m']): x for x in q['mv'] if RD(x, q['cyc']) and not x.get('fl')}
+                    if k2 not in qm or qc < 20:
+                        continue
+                    for k3, y in qm.items():
+                        if k3 == k2 or k3[1] not in ('St', 'Lt'):
+                            continue
+                        if k2[1] == 'St' and k3[1] == 'St' and (DIRS.index(k2[0]) - DIRS.index(k3[0])) % 8 in (2, 6):
+                            continue                           # 직각 방향 직진은 함께 켜질 수 없다(을지로4가 — 방위 이름이 섞인 기록에서 서쪽 직진이 북쪽 직진과 「늘 같이」로 잡혔다)
+                        same = abs(y['g'] - qm[k2]['g']) <= 2 and min((y['o'] - qm[k2]['o']) % qc, (qm[k2]['o'] - y['o']) % qc) <= 3
+                        w = votes.setdefault(k3, [0, 0]); w[0 if same else 1] += 1
+                cand = [k3 for k3, w in votes.items() if w[0] >= 1 and w[1] == 0 and RD(cur.get(k3), r['cyc']) and not cur[k3].get('fl')]
+                if cand:
+                    k3 = max(cand, key=lambda z: (votes[z][0], z[1] == k2[1]))
+                    y = cur[k3]
+                    add[k2] = {'d': k2[0], 'm': k2[1], 'g': y['g'], 'y': y['y'], 'r': y['r'], 'o': y['o'], 'n': 0, 'fl': 2}
+            # B. 빈 자리에 차례로 맞춰 넣기 — 읽힌 녹색·황색이 하나도 없는 12초 넘는 구간이 있고, 못 읽은 이동류가 다른 기록에서 **같은 앞 신호 바로 뒤 ~ 같은 뒤 신호 바로 앞**(±4초)을 채웠으면
+            #  그 구간 전체를 그 이동류로(녹색 = 구간 − 그 기록의 황색). 주기가 달라 초를 옮길 수 없을 때 쓴다(이수역 일 07시 주기 180 — 북·남 좌회전 뒤 87초가 비었고, 160초·200초 기록에서 그 자리는 북·남 직진)
+            cov = [0] * c9
+            for x in list(cur.values()) + list(add.values()):
+                if RD(x, r['cyc']) or x.get('fl') == 2:
+                    for t in range(int(round(x['o'])), int(round(x['o'] + x['g'] + x['y']))):
+                        cov[t % c9] = 1
+            gaps, st9 = [], None
+            for t in range(2 * c9):
+                if not cov[t % c9] and st9 is None:
+                    st9 = t
+                if cov[t % c9] and st9 is not None:
+                    if st9 < c9 and t - st9 >= 12:
+                        gaps.append((st9 % c9, t - st9))
+                    st9 = None
+            rdm = {k2: x for k2, x in cur.items() if RD(x, r['cyc'])}
+            for g0, gl in gaps:
+                pred = [k2 for k2, x in rdm.items() if cd((x['o'] + x['g'] + x['y']) % c9, g0) <= 4]
+                succ = [k2 for k2, x in rdm.items() if cd(x['o'], (g0 + gl) % c9) <= 4]
+                if not pred or not succ:
+                    continue
+                for k2 in unk:
+                    if k2 in add:
+                        continue
+                    yy = None
+                    for q in others:
+                        qc = int(round(q['cyc']))
+                        qm = {(x['d'], x['m']): x for x in q['mv'] if RD(x, q['cyc']) and not x.get('fl')}
+                        x = qm.get(k2)
+                        qp, qs = [qm[z] for z in pred if z in qm], [qm[z] for z in succ if z in qm]
+                        if x is None or not qp or not qs or qc < 20:
+                            continue
+                        dq = lambda a, b: min((a - b) % qc, (b - a) % qc)
+                        if all(dq((z['o'] + z['g'] + z['y']) % qc, x['o']) <= 4 for z in qp) and all(dq((x['o'] + x['g'] + x['y']) % qc, z['o']) <= 4 for z in qs):
+                            yy = x['y']; break
+                    if yy is not None and gl - yy > 6.5:
+                        add[k2] = {'d': k2[0], 'm': k2[1], 'g': float(gl - yy), 'y': yy, 'r': float(c9 - gl), 'o': g0, 'n': 0, 'fl': 2}
+            if add:
+                nm = [x for x in r['mv'] if (x['d'], x['m']) not in add] + list(add.values())
+                nm.sort(key=lambda x: (DIRS.index(x['d']), MVS.index(x['m']) if x['m'] in MVS else 9))
+                keep[kk] = dict(r, mv=nm)
+        for kk, r in list(keep.items()):
+            c9 = int(round(kk[1]))
+            if c9 < 20 or not any(x.get('fl') for x in r['mv']):
+                continue
+            span = lambda x: set(t % c9 for t in range(int(round(x['o'])) + 2, int(round(x['o'] + x['g'])) - 2))
+            real = [x for x in r['mv'] if x['m'] == 'St' and x.get('g') is not None and x.get('o') is not None and not x.get('fl')]
+            bad = [x for x in r['mv'] if x.get('fl') and x['m'] == 'St' and any((DIRS.index(x['d']) - DIRS.index(y['d'])) % 8 in (2, 6) and len(span(x) & span(y)) > 5 for y in real)]
+            if bad:
+                keep[kk] = dict(r, mv=[({'d': x['d'], 'm': x['m'], 'n': 0} if any(x is z for z in bad) else x) for x in r['mv']])   # 채운 직진이 받은 그대로의 직각 직진과 겹친다 — 채움을 물린다(못 읽음으로)
         vv = sorted(keep.values(), key=lambda r: (r['day'], r['to']))[-12:]
         # 약한 줄(일곱째 칸 1) — 정각 뒤 5분 안에 시작해 8분도 안 되는 창에서 받았고, 같은 날 바로 앞 시각대의 주기와 다르다 = 계획이 바뀌는 사이의 헛값일 수 있다(이수역 일 8시 237초 — 앞은 180 · 계획은 190).
         #  그 시각대를 뒤에 다시 받으면(창이 길어지면) 덮어써져 풀린다. 지도·맞대 보기는 약한 줄을 쓰지 않는다
@@ -889,7 +1056,7 @@ def build():
             if r.get('src') == 'p':
                 o['src'] = 'p'   # 신호 상태 API 로 읽은 기록(색이 추정이 아니라 상태 값 그대로)
             if r.get('pd'):
-                o['pd'] = [[q['d'], q.get('g'), q.get('y'), q.get('r'), q.get('o'), q['n']] for q in r['pd'] if q.get('g') is not None and abs(q['g'] + q['y'] + q['r'] - r['cyc']) <= 3.5]   # 보행 신호 [방위, 녹색, 점멸, 적색, 녹색 시작, 본 횟수] — 주기와 맞는 것만
+                o['pd'] = [[q['d'], q.get('g'), q.get('y'), q.get('r'), q.get('o'), q['n']] + ([q['cx']] if q.get('cx') else []) for q in r['pd'] if q.get('g') is not None and abs(q['g'] + q['y'] + q['r'] - r['cyc']) <= 3.5]   # 보행 신호 [방위, 녹색, 점멸, 적색, 녹색 시작, 본 횟수] — 주기와 맞는 것만
             if r.get('a'):
                 o['a'] = int(round(r['a'])); o['ci'] = r['ci']
                 # 검증 — 같은 주기로 받은 다른 닻(40분 넘게 떨어진 것)과 **자정 기준 옵셋**(하루 초 mod 주기)이 맞는가(±3초).

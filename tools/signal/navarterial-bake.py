@@ -31,11 +31,16 @@ def main():
         return D
     DF = dij(FWD); DR = dij(REV); near = set(k for k, v in DF.items() if v <= LIM) | set(k for k, v in DR.items() if v <= LIM)   # 서초에서 가거나 서초로 오는 데 LIM 분 안
     r = shapefile.Reader(os.path.join(SRC, 'MOCT_LINK.shp'), encoding='cp949'); fi = {f[0]: k for k, f in enumerate(r.fields[1:])}; keep = []
+    bigname = set()   # 큰길로 뽑힌 적이 있는 길 이름 — 같은 이름의 좁은 구간(차로 2)도 남겨 길이 중간에 끊기지 않게(게임 세션 2026-10-11 「성남대로·양재대로가 중간에 끊겨 『여기로 나감』으로 뜬다」)
+    for rec in r.iterRecords():
+        if RANK.get(rec[fi['ROAD_RANK']]) == 4 and (rec[fi['F_NODE']] in near or rec[fi['T_NODE']] in near):
+            nm0 = (rec[fi['ROAD_NAME']] or '').strip().replace('-', '')
+            if nm0 and (int(rec[fi['LANES']] or 0) >= 3 or nm0.endswith('대로')): bigname.add(nm0)
     for k, rec in enumerate(r.iterRecords()):
         rk = RANK.get(rec[fi['ROAD_RANK']]); f, t = rec[fi['F_NODE']], rec[fi['T_NODE']]
         if not rk or rk > 4 or (f not in near and t not in near): continue
         lanes = int(rec[fi['LANES']] or 0); nm = (rec[fi['ROAD_NAME']] or '').strip().replace('-', ''); con = 1 if rec[fi['CONNECT']] == '1' else 0
-        if rk == 4 and not (lanes >= 3 or nm.endswith('대로') or con): continue
+        if rk == 4 and not (lanes >= 3 or nm.endswith('대로') or con or nm in bigname): continue
         keep.append((k, rec[fi['LINK_ID']], f, t, round(float(rec[fi['LENGTH']] or 0)), int(rec[fi['MAX_SPD']] or 0), rk, lanes, nm, con))
     LINK = []; used = set()
     for k, lid, f, t, ln, spd, rk, lanes, nm, con in keep:
@@ -69,7 +74,7 @@ def main():
            'source': '국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판 · 신호 자리 = data/sigdir-seoul.json · data/signal-tod-seoul.json',
            'note': ['data/nav-seocho.json 과 같은 꼴(같은 노드·링크 ID)이다 — 서초 그래프·data/nav-express.json 에 이어 붙여 쓴다(겹치는 링크는 ID 로 한 번만)',
                     '범위는 구 경계가 아니라 길로 이어진 시간 권역이다(소유자 2026-10-11) — 「제한속도로 막힘없이」 잰 %d분이라 실제 시간 권역보다 넓다' % LIM,
-                    '큰길만: 등급 1 고속 · 2 도시고속 · 3 일반국도 + 등급 4 가운데 차로 3 이상이거나 이름이 「…대로」인 길 + 연결로 — 그 밖의 길(골목·2차로 길)은 없다',
+                    '큰길만: 등급 1 고속 · 2 도시고속 · 3 일반국도 + 등급 4 가운데 차로 3 이상이거나 이름이 「…대로」인 길(그 길 이름의 좁은 구간도 함께 — 중간에 끊기지 않게) + 연결로 — 그 밖의 길(골목·2차로 길)은 없다',
                     '신호는 서울 T-Data·경찰청 자료가 있는 자리만 붙였다(경기도 쪽은 신호 자료가 없어 붙지 않는다 — 「신호 없음」이 아니라 「신호 자료 없음」)',
                     '높이·회전 제한은 없다(높이 칸 null · turns 빈 목록) · 선은 약 30m 로 성기게'],
            'fields': 'nodes{노드 ID: [경도, 위도, 유형, 이름, 0, 닿는 링크 수, null, 신호{no 신호 교차로 번호, sd[T-Data 번호, 이름, 기록 수, 닻 있음, 거리 m], tod[경찰청 번호, 이름, 계획 수, 거리]}(있을 때만)]} · links[[링크 ID, 시작, 끝, 길이 m, 제한속도, 등급, 차로, 길 이름, 연결로 1, 선 = 경도·위도×1e5 첫 점 + 차이]]',

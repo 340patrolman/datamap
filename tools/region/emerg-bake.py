@@ -53,6 +53,12 @@ def main():
             if 0 <= mm <= 120: d['m'].append(mm)
         except Exception: pass
     items = [[k[0], k[1], k[2], sum(d['h']), d['h'], d['g'], d['t'], (round(statistics.median(d['m']), 1) if len(d['m']) >= 20 else None)] for k, d in sorted(D.items()) if k[2]]
+    B = json.load(open(os.path.join(ROOT, 'data', 'b2a.json'), encoding='utf-8'))['b2a']; GN = {g['gu']: g['name'].replace(' ', '') for g in json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))['gus']}; BK = {}
+    for c, v in B.items(): BK[(c[:2], GN.get(v['gu'], ''), v['n'])] = [c, [[a[0], a[2]] for a in v['a'][:3]]]
+    hit = 0
+    for it in items:
+        m = BK.get(({'서울': '11', '경기': '41', '인천': '28'}[it[0]], it[1].replace(' ', ''), it[2])); it.append(m[0] if m else None); it.append(m[1] if m else None); hit += 1 if m else 0
+    print('법정동 코드 붙음', hit, '/', len(items), {sd: sum(1 for i in items if i[0] == sd and i[8]) for sd in ('서울', '경기', '인천')}, '안 붙은 서울', [(i[1], i[2]) for i in items if i[0] == '서울' and not i[8]][:15], '안 붙은 경기', [(i[1], i[2]) for i in items if i[0] == '경기' and not i[8]][:15])
     doc = {'schema': 'tg-rescue119/1', 'made': td, 'year': 2025, 'source': '공공데이터포털 「소방청_구조활동현황」(15062386 · 2025-01-01 ~ 12-31 · 전국 613,150건 가운데 서울·경기·인천 %d건)' % n,
            'note': ['**119 구조대 출동**이다(화재 확인·교통사고 구조·승강기 갇힘·수난·산악·위치 확인 등) — **구급차 출동(환자 이송)은 여기에 없다**. 구급의 동 × 시간대 공개 자료는 찾지 못했다(서울은 2019년 동 × 해뿐 · more-sources.json)',
                     '자리는 신고가 적힌 **법정동**(시·구·동 이름)이다 — 행정동이 아니다. 동 이름이 빈 줄은 뺐다 · 시각은 신고 시각의 시(0~23)',
@@ -60,7 +66,7 @@ def main():
                     '「화재」 갈래는 화재 현장에 구조대가 같이 나간 건(화재확인 포함)이라 화재 발생 건수가 아니다',
                     '신고 → 출동 시간(분)은 그 동의 가운데값이고 20건이 안 되는 동은 null — 「도착」 시간이 아니다(출동 지령까지)',
                     '시각 칸이 깨진 %d줄은 뺐다' % bad],
-           'fields': {'groups': '갈래 여섯(이 차례)', 'sido': '{시도: {h [시 0~23 건수], g [갈래 6][시 0~23]}}', 'items': '[[시도, 시군구, 법정동, 한 해 건수, 시간대별 건수[24], 갈래별 건수[6], 교통 갈래의 시간대별 건수[24], 신고→출동 가운데값(분) 또는 null]]'},
+           'fields': {'groups': '갈래 여섯(이 차례)', 'sido': '{시도: {h [시 0~23 건수], g [갈래 6][시 0~23]}}', 'items': '[[시도, 시군구, 법정동, 한 해 건수, 시간대별 건수[24], 갈래별 건수[6], 교통 갈래의 시간대별 건수[24], 신고→출동 가운데값(분) 또는 null, 법정동 8자리 코드 또는 null, [[이 법정동이 걸친 행정동 8자리, 넓이 %]…넓은 셋] 또는 null(b2a.json · 서울·경기만 — 인천과 이름이 안 맞은 동은 null)]]'},
            'groups': GRP, 'sido': {k: {'h': ALLH[k], 'g': ALLG[k]} for k in ALLH}, 'items': items}
     p = os.path.join(ROOT, 'data', 'rescue119.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); print('119 바이트', os.path.getsize(p), '동', len(items), '건', n, '깨짐', bad)
     print('서울 시간대', ALLH['서울']); print('서울 교통 시간대', ALLG['서울'][1])

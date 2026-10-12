@@ -3772,6 +3772,16 @@
   function yspHtml(q, again) { if (YSP === undefined) { yspGet().then(again); return ''; } if (!YSP || !YSP.items) return ''; var K = YSP.kinds || [], km = function (d) { return d >= 1000 ? (d / 1000).toFixed(1) + 'km' : Math.round(d / 10) * 10 + 'm'; }, R = [];
     K.forEach(function (nm, i) { var b = null, bd = 1e12; YSP.items.forEach(function (x) { if (x[0] !== i || !x.p) return; var d = dTrue(x.p, q.p); if (d < bd) { bd = d; b = x; } }); if (b) R.push('<div class="r"><b>' + esc(nm) + '</b><span>' + esc(b[1]) + (b[7] ? ' <small>' + esc(b[7]) + '</small>' : '') + ' · <b>' + km(bd) + '</b>' + (b[6] ? ' · <a href="tel:' + esc(String(b[6]).replace(/[^0-9+]/g, '')) + '">' + esc(b[6]) + '</a>' : '') + ' <em>(' + esc(b[2] + ' ' + b[3]) + ')</em></span></div>'); });
     return R.length ? '<div class="cap sdcap" style="margin-top:8px">🤝 가까운 청소년 지원기관 — 갈래마다 가장 가까운 한 곳(직선 거리)</div>' + R.join('') + '<p class="sdnt" style="margin:2px 0 6px">밤·휴일에는 <b>청소년전화 1388</b>(24시간). 쉼터는 정원·성별·나이 조건이 있어 <b>받아 줄 수 있는지는 전화로</b> 묻는다(빈자리는 자료에 없다) · 전화는 기관 대표번호이고 옮겼거나 문 닫은 곳이 있을 수 있다 · 자리는 주소를 좌표로 바꾼 것. <em>(' + esc(String(YSP.source || '').split(' · 자리')[0]) + ')</em></p>' : ''; }
+  /* v2.204.0 🚸 어린이보호구역 — data/child-zone/<시도 코드>.json(다른 세션 b5db464 · tg-child-zone/1 · 전국어린이보호구역표준데이터): items[[경도, 위도, 시설 종류, 대상 시설 이름, 관할 경찰서, CCTV 대수|null, 도로 폭 m|null, 기준일, SCHUL_CODE|null]].
+     학교 카드 = 이 학교 코드가 붙은 줄(지정 · 관할서 · CCTV · 도로 폭 · 기준일) + 고른 반경 안의 다른 보호구역(유치원·어린이집 등) 수. 구역 경계선·제한속도·단속 카메라는 자료에 없다 · CCTV null = 적지 않음 · 줄이 없다고 지정이 안 됐다는 뜻이 아니다 */
+  var CZN = {}, CZNP = {};
+  function cznGet(sd) { if (CZNP[sd]) return CZNP[sd]; CZNP[sd] = fetch('data/child-zone/' + sd + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.items) j.items.forEach(function (x) { x.p = P(x[0], x[1]); }); CZN[sd] = j || null; }).catch(function () { CZN[sd] = null; }); return CZNP[sd]; }
+  function cznHtml(q, R, again) { var sd = String(q.gu).slice(0, 2), J = CZN[sd]; if (J === undefined) { cznGet(sd).then(again); return ''; } if (!J || !J.items) return ''; var mine = J.items.filter(function (x) { return x[8] && x[8] === q.s.SCHUL_CODE; }), near = {}, nn = 0, rk = R >= 1000 ? R / 1000 + 'km' : R + 'm';
+    J.items.forEach(function (x) { if (x[8] === q.s.SCHUL_CODE || dTrue(x.p, q.p) > R) return; near[x[2]] = (near[x[2]] || 0) + 1; nn++; });
+    var h = mine.length ? row('🚸 어린이보호구역', '<b>지정</b>' + (mine.length > 1 ? ' <em>(자료에 ' + mine.length + '줄)</em>' : '') + mine.map(function (x) { return ' · 관할 ' + esc(x[4] || '모름') + ' · CCTV ' + (x[5] == null ? '<em>적지 않음</em>' : x[5] + '대') + ' · 도로 폭 ' + (x[6] == null ? '<em>모름</em>' : x[6] + 'm') + ' <em>(기준일 ' + esc(x[7] || '모름') + ')</em>'; }).join('<br>'))
+      : row('🚸 어린이보호구역', '<em>이 자료에 이 학교 이름으로 된 줄이 없다 — 지정이 안 됐다는 뜻이 아니다(이름이 달리 적혔을 수 있다 · 중·고등학교는 대상이 아닌 경우가 많다)</em>');
+    if (nn) h += row('둘레의 다른 보호구역', nn + '곳 <em>(반경 ' + rk + ' · ' + Object.keys(near).sort(function (a, b) { return near[b] - near[a]; }).map(function (k) { return esc(k) + ' ' + near[k]; }).join(' · ') + ' — 대상 시설의 점 기준)</em>');
+    return h + '<p class="sdnt" style="margin:2px 0 6px">구역의 경계선(도로 구간)·제한속도·단속 카메라는 이 자료에 없다(카메라는 위 줄 — 카메라 층에서 센 것) · 정본은 지자체·경찰서의 지정 대장. <em>(' + esc(String(J.source || '').split('(')[0]) + ')</em></p>'; }
   var EZB = {}, EZBP = {};
   function ezbGet(sd) { if (EZBP[sd]) return EZBP[sd]; EZBP[sd] = fetch('data/edu-zone-biz/' + sd + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.items) j.items.forEach(function (x) { x.p = P(x[0], x[1]); }); EZB[sd] = j || null; }).catch(function () { EZB[sd] = null; }); return EZBP[sd]; }
   function ezbHtml(q, again) { var sd = String(q.gu).slice(0, 2), J = EZB[sd]; if (J === undefined) { ezbGet(sd).then(again); return '<p class="sdnt">학교 둘레 업소를 읽는 중…</p>'; } if (!J || !J.items) return '';
@@ -3788,6 +3798,7 @@
     if (wait.length) { Promise.all(wait).then(again); h += '<p class="sdnt">사고 자료를 읽는 중…</p>'; } else if (A10.length) { var t = 0, ped = 0, sev = 0, nc = 0; A10.forEach(function (x) { if (dTrue(x.p, q.p) > R) return; nc++; for (var k = 0; k < 10; k++) t += x.c[2 + k]; ped += x.c[14]; sev += x.c[12] + x.c[13]; });
       h += row('🚗 사고 10년', '<b>' + t.toLocaleString() + '건</b> · 보행자 피해 ' + ped.toLocaleString() + ' · 사망·중상자 ' + sev.toLocaleString() + '명 <em>(2016~2025 · 반경 ' + rk(R) + ' 안 100m 칸 ' + nc + '개 · 어린이 사고만 가른 수가 아니다' + (gap ? ' · 둘레의 한 구는 사고 자료 준비 중' : '') + ')</em>'); }
     if (D.cam && D.cam.items) { var nc2 = D.cam.items.filter(function (c) { return dTrue(P(c.lon, c.lat), q.p) <= R; }).length; h += row('📷 단속 카메라', nc2 + '대 <em>(반경 ' + rk(R) + ')</em>'); }
+    h += cznHtml(q, R, again);
     h += sclLine(q.kd);
     h += '<p class="sdnt" style="margin:2px 0 6px">학원 = 소상공인시장진흥공단 상가(상권)정보의 교육 업종(등록 상가 — 교육청 등록 학원·교습소 수와 다를 수 있다). 「🕐 이 자리의 하루」 단추로 이 학교 둘레의 시간대 흐름을 본다.</p>';
     return h + ezbHtml(q, again) + yspHtml(q, again); }

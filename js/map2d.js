@@ -3971,8 +3971,9 @@
     NCLAB = '값 없음'; if (!v) return cap + '<p class="sdnt">이 동은 교육청 등록 자료에 값이 없다 — 등록된 학원·교습소가 없거나 주소로 동을 찾지 못한 것이다(학원이 없다는 뜻이 아니다).' + farN + '</p>';
     var C = J.courses || [], ta = 0, tb = 0; (v[0] || []).forEach(function (r) { ta += r[1]; tb += r[2]; });
     var top = (v[0] || []).map(function (r) { return [C[r[0]] || '과정 ' + r[0], r[1] + r[2]]; }).filter(function (q) { return q[1] >= 0.5; }).sort(function (a, b) { return b[1] - a[1]; }), show = top.slice(0, 12), rest = top.slice(12), rn = 0; rest.forEach(function (q) { rn += q[1]; });
+    var frac9 = (v[0] || []).some(function (r) { return Math.abs(r[1] - Math.round(r[1])) > 0.01 || Math.abs(r[2] - Math.round(r[2])) > 0.01; });   /* 소수가 있다 = 법정동을 넓이로 나눈 동 */
     NCLAB = '약 ' + rd(ta + tb) + '곳' + (show.length ? '(' + show.slice(0, 3).map(function (q) { return q[0].replace(/ — 과정 미기재$/, '') + ' ' + rd(q[1]); }).join(' · ') + ')' : '');
-    var h = cap + row('모두', '<b>약 ' + rd(ta + tb) + '곳</b> · 학원 ' + rd(ta) + ' · 교습소 ' + rd(tb) + ' <em>(교습과정 ' + top.length + '가지)</em>');
+    var h = cap + (frac9 ? '<p class="sdnt" style="margin:2px 0 6px;color:#b91c1c"><b>⚠ 이 동의 수는 크게 어긋날 수 있다.</b> 등록 주소에는 법정동(봉천동·신림동처럼 여러 행정동에 걸친 동)만 있어 <b>넓이 비율로 나눈 어림</b>이다 — 학원이 한쪽에 몰려 있으면 실제와 다르다(확인: 관악구 은천동은 주소로 자리를 찾으면 음악 17곳인데 여기서는 5곳으로 나온다). 주소로 자리를 찾아 다시 굽는 중이다.</p>' : '') + row('모두', '<b>약 ' + rd(ta + tb) + '곳</b> · 학원 ' + rd(ta) + ' · 교습소 ' + rd(tb) + ' <em>(교습과정 ' + top.length + '가지)</em>');
     if (show.length) h += vzH(show.map(function (q) { return [q[0], r1(q[1]), '#7c3aed']; }), { title: '교습과정마다(곳 · 많은 차례' + (rest.length ? ' · 위 12가지' : '') + ' · 교육청에 등록한 과정 이름 그대로)', unit: '곳' });
     if (rest.length) h += '<p class="sdnt" style="margin:0 0 4px">그 밖 ' + rest.length + '가지 약 ' + rd(rn) + '곳 — ' + rest.slice(0, 12).map(function (q) { return esc(q[0]) + ' ' + rd(q[1]); }).join(' · ') + (rest.length > 12 ? ' …' : '') + '</p>';
     var B = v[1]; if (B && B[0] >= 1) { h += row('보습 — 과목', '보습 <b>' + rd(B[0]) + '곳</b> 가운데 과목을 알 수 있는 <b>' + rd(B[1]) + '곳</b>');

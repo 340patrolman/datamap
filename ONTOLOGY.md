@@ -283,7 +283,7 @@
 | 통행속도 | 링크 · 시 | `live-spd-seocho.json`(지금) · `spd-normal`(평소 — 모으는 중) | 요일 갈래 |
 | 따릉이 대여(떠나는 사람) | 대여소 · 시 | `bike-hour-seoul.json` | 평일·주말(한 달 평균 · 철을 탄다) |
 | 119 구조 출동(갈래 6) | 법정동 · 시 | `rescue119.json` | 2025년 한 해 |
-| **공연·행사 시작·끝** | 장소 · 날 · 시각 | `venue-events-seoul.json` | 그 날만 |
+| **공연·행사 시작·끝** | 장소 · 날 · 시각 | `venue-events-kopis.json`(공연장 · 객석 수 · 끝 = 시작 + 공연 시간) · `venue-events-seoul.json`(시·구 행사) | 그 날만 |
 
 - **달력(그 날이 어떤 날인가)** 은 축 위에 얹는 조건이다: 공휴일 `holidays.json` · 신호 특수일 `sig-special.json` · **학교 달력 `school-cal-seoul.json`**(방학 몫 · 재량휴업 · 개학 · 수능) · 큰 사건 `events-big.json`.
 - **읽는 법**: 줄마다 단위(칸·역·동·서)와 기간(달·분기·10년)이 다르다 — 겹쳐 놓되 **한 점수로 뭉치지 않는다**. 줄 옆에 단위와 기준 기간을 늘 적는다.

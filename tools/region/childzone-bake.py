@@ -3,6 +3,7 @@
 #   소유자 2026-10-12 「학교 담당 경찰관이 공공데이터를 충분히 이용할 수 있게」 → 학교 카드에서 그 학교의 보호구역(관할 경찰서 · CCTV 대수 · 도로 폭)을 본다
 #   원자료: 전국어린이보호구역표준데이터(행정안전부 공공데이터 표준 · 공공데이터포털 15012891 · 제공 = 각 지자체 · 오픈API api.data.go.kr/openapi/tn_pubr_public_child_prtc_zn_api · 열쇠 data_go_kr)
 #     받은 것 = 07_API키/out/childzone/all_<날짜>.json(다시 받으려면 fetch)
+#   시도 파일: 지도의 시도 코드대로(광주·전남 = 12 한 파일) + 옛 꼴 29·46 도 같이 낸다
 #   학교 잇기: 학교알리미 학교기본정보의 학교 자리(07_API키/out/schoolinfo/api/<해>_0_<학교급>_<구>.json)와 300m 안에서 이름이 맞는 초·중·고 → 정보공시 학교코드. 이름이 안 맞으면 잇지 않는다(null)
 #   ⚠ 이 자료의 자리는 **대상 시설의 점**이다 — 구역의 경계선(도로 구간)·제한속도·단속 카메라는 없다. CCTV 대수는 지자체가 적은 값(빈칸 = 모름)
 #   py -3.12 -X utf8 tools/region/childzone-bake.py [fetch]
@@ -40,7 +41,7 @@ def main():
         a = (r.get('rdnmadr') or r.get('lnmadr') or r.get('insttNm') or '').strip(); sd = next((v for k, v in SD.items() if a.startswith(k)), None)
         if not sd: sd = next((v for k, v in SD.items() if (r.get('insttNm') or '').replace('전남광주통합특별시', '전남').startswith(k)), '00')
         code = None; kind = (r.get('fcltyKnd') or '').strip(); nm = (r.get('trgetFcltyNm') or '').strip()
-        if sd in ('11', '41', '28') and kind in KN:
+        if kind in KN:
             best = None
             for dx in (-1, 0, 1):
                 for dy in (-1, 0, 1):
@@ -55,13 +56,14 @@ def main():
         except Exception: rw = None
         OUT[sd].append([round(lo, 5), round(la, 5), kind, nm, (r.get('cmptncPolcsttnNm') or '').strip(), cn, rw, (r.get('referenceDate') or '').strip(), code])
     os.makedirs(os.path.join(ROOT, 'data', 'child-zone'), exist_ok=True); td = datetime.date.today().isoformat()
+    OUT['12'] = OUT.get('29', []) + OUT.get('46', []); link['12'] = link.get('29', 0) + link.get('46', 0)   # 지도의 시도 코드(전남광주통합특별시 12) — 옛 꼴 29·46 파일도 그대로 둔다
     for sd, items in sorted(OUT.items()):
         if sd == '00': continue
         items.sort(key=lambda x: (x[4], x[3])); kc = collections.Counter(i[2] for i in items)
         doc = {'schema': 'tg-child-zone/1', 'made': td, 'sido': sd, 'source': '전국어린이보호구역표준데이터(행정안전부 공공데이터 표준 · 제공 각 지자체 · 공공데이터포털 15012891 오픈API · %s 받음)' % os.path.basename(f)[4:14],
                'note': ['자리는 **대상 시설(학교·유치원·어린이집 등)의 점**이다 — 구역의 경계선(도로 구간)은 이 자료에 없다. 제한속도·단속 카메라도 없다(카메라는 카메라 층)',
                         'CCTV 대수는 지자체가 적은 값이다 — null = 적지 않음(없다는 뜻이 아니다) · 도로 폭은 m(null = 모름) · 기준일은 지자체마다 다르다(오래된 곳이 있다)',
-                        '학교 코드는 학교알리미 학교 자리와 300m 안에서 이름이 맞는 초·중·고에만 붙였다(서울·경기·인천) — 안 붙은 곳은 이름이 달리 적혔거나 유치원·어린이집·학원이다',
+                        '학교 코드는 학교알리미 학교 자리와 300m 안에서 이름이 맞는 초·중·고에만 붙였다(전국 · 2026-10-12) — 안 붙은 곳은 이름이 달리 적혔거나 유치원·어린이집·학원이다',
                         '지정이 풀렸거나 새로 지정된 곳이 반영되지 않았을 수 있다 — 정본은 지자체·경찰서의 지정 대장'],
                'fields': {'kinds': '{시설 종류: 곳 수}', 'items': '[[경도, 위도, 시설 종류, 대상 시설 이름, 관할 경찰서, CCTV 대수|null, 보호구역 도로 폭 m|null, 기준일, 정보공시 학교코드|null]] — 관할 경찰서·이름 차례'},
                'kinds': dict(kc.most_common()), 'items': items}

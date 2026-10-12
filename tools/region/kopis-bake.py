@@ -116,6 +116,16 @@ def build():
     for sd, vs in sorted(bysd.items()):
         if not sd: continue
         dd = dict(doc); dd['sido_code'] = sd; dd['venues'] = vs; dd['source'] = doc['source'].replace('서울·경기·인천', '전국 가운데 이 시도'); ps = os.path.join(ROOT, 'data', 'venue-events-kopis', sd + '.json'); json.dump(dd, open(ps, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); print('  ', sd, len(vs), sum(len(v['day']) for v in vs), os.path.getsize(ps))
+    # 서울은 구마다 한 장 더(폰이 2.3MB 를 통째로 받지 않게 · 2026-10-13) — data/venue-events-kopis/g/<구 코드>.json · 꼴은 시도 파일 그대로 · 공연장이 없는 구도 빈 venues 로 한 장
+    GU = {g['name']: g['gu'] for g in json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))['gus'] if g['gu'][:2] == '11'}; os.makedirs(os.path.join(ROOT, 'data', 'venue-events-kopis', 'g'), exist_ok=True); big = 0; lost = 0
+    for nm, code in GU.items():
+        vs = [v for v in bysd.get('11', []) if v.get('gu') == nm]; dd = dict(doc); dd['sido_code'] = '11'; dd['gu'] = code; dd['venues'] = vs; dd['source'] = doc['source'].replace('서울·경기·인천', '서울 ' + nm)
+        pg = os.path.join(ROOT, 'data', 'venue-events-kopis', 'g', code + '.json'); json.dump(dd, open(pg, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+        if os.path.getsize(pg) > 1000000:   # 대학로가 든 종로구처럼 1MB 를 넘으면 회차를 오늘 앞 30일 · 뒤 60일로 줄인다(note 에 적는다 · 시도 한 장에는 95일 그대로)
+            d0 = (today - datetime.timedelta(days=30)).isoformat(); d1 = (today + datetime.timedelta(days=60)).isoformat(); dd['venues'] = [dict(v, day=[x for x in v['day'] if d0 <= x[0] <= d1]) for v in vs]; dd['note'] = doc['note'] + ['이 구는 공연이 많아 회차(day)를 오늘 앞 30일 · 뒤 60일만 실었다(그 밖의 구와 시도 파일은 앞뒤 95일)']; dd['day_window'] = [d0, d1]
+            json.dump(dd, open(pg, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+        big = max(big, os.path.getsize(pg))
+    lost = sum(1 for v in bysd.get('11', []) if v.get('gu') not in GU); print('   서울 구 파일', len(GU), '가장 큰', big, '구를 못 가른 공연장', lost)
     venues = [v for v in allv if v['sido']]; doc['venues'] = venues
     p = os.path.join(ROOT, 'data', 'venue-events-kopis.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('바이트', os.path.getsize(p), '공연장', len(venues), '공연', np, '공연 시간 있음', nrt, '회차', nd, '끝 시각 있음', ne)

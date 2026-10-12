@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 140개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 141개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1725,8 +1725,8 @@
   ],
   [
    "live-spd-seocho.json",
-   "09:44",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261012094000"
+   "09:55",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261012095000"
   ],
   [
    "livepop.json",
@@ -1757,6 +1757,11 @@
    "more-sources.json",
    "2026-10-12",
    "이 세션이 2026-10-12 에 공공데이터포털·서울 열린데이터광장·나이스·각 기관 누리집을 찾아보고 적었다 — 「받음」「받을 수 있음」은 실제로 불러 본 것"
+  ],
+  [
+   "move-mode-seoul.json",
+   "2026-10-12",
+   "서울 열린데이터광장 OA-22655 「수도권 생활이동 (도착 행정동 기준 시간대별 성연령별 수단 데이터 (내국인))」 2026-09 (서울특별시·KT · 공공누리 1유형)"
   ],
   [
    "name-map.json",
@@ -1940,7 +1945,7 @@
   ],
   [
    "sig-audit.json",
-   "2026-10-12 09:44",
+   "2026-10-12 09:55",
    "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)"
   ],
   [
@@ -1985,7 +1990,7 @@
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-12 09:44",
+   "2026-10-12 09:55",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [

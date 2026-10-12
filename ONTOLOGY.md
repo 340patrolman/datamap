@@ -180,6 +180,8 @@
 | **차로별 진행 방향 · 좌회전 포켓 · 차로 표시등** | 정적 | **없음 — 시설담당 자료 자리** | 0 |
 | 설비(제어기 번호·설치일·시스템) | 정적 | 내부 대장(저장소 밖) — 공개 칸 없음 | — |
 
+- **지도가 읽는 꼴(2026-10-12 · v2.210.0)** 한 장 `sigdir-seoul.json`(굽는 도구·가르고가 읽는다 — 그대로 둔다)을 지도용으로 나눈 것: `sigdir/index.json`(tg-sigdir-idx/1 — its 를 뺀 나머지 pts·tod·pl·mvcols + fl{교차로 번호: 1 확인된 기록 있음 + 2 닻 있음} · cell[0.03, 0.04] · cells{칸: 교차로 수}) · `sigdir/c/<칸>.json`(tg-sigdir-cell/1 — {cell, its{번호: [기록…]}} · 칸 = floor(위도/0.03)_floor(경도/0.04) · 자리 없는 교차로는 x). 굽는 곳 = `tools/signal/spat-bake.py` split_write(바뀐 칸만 다시 씀 · 게임 세션).
+
 ### Object 3. 도로 구간 (Road) — 이 작업판에서 더함
 - **ID** `RD-<ITS 링크 ID>`(방향 있음 · 전국 표준노드링크). 신호 교차로 사이를 묶은 것은 `SEG-<떠나는 번호>-<닿는 번호>`.
 - **정본 파일** `data/nav-seocho.json`(서초 + 2km · 골목까지 · 높이·회전 제한) · `data/nav-arterial.json`(서초에서 15분 권역의 큰길) · `data/nav-express.json`(수도권 고속·도시고속) · `data/sig-net-seocho.json`(신호 교차로 사이 이음표)

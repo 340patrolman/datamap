@@ -99,6 +99,7 @@ DATES = [
     ['2027-04-04', '코워크→형님', '브이월드 개발키 만료(2027-04-04) — 3월 초까지 운영키 전환 신청 · 바뀌면 각 기기 🔑 와 맛보기 중계 VW_KEY 다시 넣기'],
     ['2027-01-31', 'Claude', '해마다 1월 — data/biz-rates.json(최저임금·4대보험·카드 수수료·기준금리) · 세금 계산 요율(tax-rules.json) 새 해 고시 확인'],
     ['2027-05-31', 'Claude', '해마다 4~5월 — 공동주택·개별 공시가격 새 해(hp·jiga) · 침수흔적도 전년분(season)'],
+    ['2027-10-08', 'Claude', '해마다 10월 초 — 학교알리미 공시 다시 받기(OpenAPI 는 최근 3년만 준다 — 07_API키/out/schoolinfo/fetch_api.py <시도> → tools/region/schoolraw-pack.py · 값·칸을 고치지 않는다) · 학교 달력(schoolcal-bake)도 새 학년도로'],
 ]
 DUE_SOON = 60
 

@@ -1204,8 +1204,8 @@
    "url": "https://340patrolman.github.io/datamap/data/live-spd-seocho.json",
    "bytes": 40665,
    "schema": "tg-live-spd/1",
-   "date": "22:56",
-   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261012225500",
+   "date": "23:10",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261012230500",
    "fields": "m{ITS 링크 ID: 통행속도 km/h(정수)} — data/sig-approach-seocho.json 의 링크와 data/nav-seocho.json 의 등급 1~4 링크 · n 값이 온 링크 수 · want 찾는 링크 수",
    "note": "실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다 · 통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다 · 자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다",
    "top": {
@@ -1214,7 +1214,7 @@
     "m": "{2483}"
    },
    "sample": {
-    "m.1020000101": "69",
+    "m.1020000101": "72",
     "box[0]": "126.955"
    }
   },
@@ -2179,18 +2179,18 @@
   {
    "file": "sig-audit.json",
    "url": "https://340patrolman.github.io/datamap/data/sig-audit.json",
-   "bytes": 126484,
+   "bytes": 126993,
    "schema": "tg-sig-audit/1",
-   "date": "2026-10-12 22:56",
+   "date": "2026-10-12 23:10",
    "source": "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)",
    "fields": "spots{교차로 번호: {ok[[길, 글]], bad[[길, 글]]}} — 길: ksc 교통과 현시도 · pol 경찰청 계획 · api 잔여시간×신호 상태 두 API · re 다시 받아 맞대기 · fld 현장 지식(sig-field) · perp 직각 직진 겹침 · opp 마주 오는 직진×좌회전 겹침 · sum 녹+황+적≠주기. 아무 길로도 맞대 보지 못한 교차로는 없다(목록에 없음 = 대조 전)",
    "top": {
     "sum": "{23}",
-    "spots": "{1065}"
+    "spots": "{1069}"
    },
    "sample": {
     "spots.1041": "{\"ok\": [[\"re\", \"다시 받아 맞음 1번(가장 길게 51분 뒤 · 어긋남 0.1초)\"]], \"bad\": []}",
-    "sum.shape_ok": "2107"
+    "sum.shape_ok": "2108"
    }
   },
   {

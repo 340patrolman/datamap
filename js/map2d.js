@@ -2253,7 +2253,7 @@
       if (k === '동작' && E['2023'] && E['2023'].n < 2000) h += '<p class="desc">⚠ 동작서 2023년 파일은 건수가 다른 해의 10분의 1도 안 된다 — 원자료 그대로 둔다(빠진 기록으로 보임).</p>'; }
     if (EB.length) h += '<p class="desc">⚠ ' + EB.join('·') + '년 단속 파일은 ' + esc((S.enf[k][EB[0]] || {}).bad || '이 앱이 읽지 못했다') + '</p>';
     var C = S.call[k];
-    if (C) h += '<div class="cap">📞 해마다 112 신고 출동 건수(건 · ' + S.callYears[0] + '~' + S.callYears[S.callYears.length - 1] + ')</div>' + bar(C.map(function (v) { return v || 0; }), '#7c3aed', S.callYears.map(function (y) { return "'" + String(y).slice(2); }));
+    if (C) h += '<div class="cap">📞 해마다 112 신고 출동 건수(건 · ' + S.callYears[0] + '~' + S.callYears[S.callYears.length - 1] + ')</div>' + bar(C.map(function (v) { return v || 0; }), '#7c3aed', S.callYears.map(function (y) { return "'" + String(y).slice(2); })) + '<p class="lg-n">접수 뒤 <b>출동한</b> 사건 수다(비출동 신고는 빠져 있다). 112 의 공개 범위는 <b>경찰서 × 해</b>까지 — 시간대·요일·동·지구대·도착 시간은 공개 자료에 없다(「112신고의 운영 및 처리에 관한 법률」 제10조 제2항 · 정보공개법 제9조 제1항 제3·4호).</p>';
     var R = S.crime[k], ry = S.crimeYear;
     if (!R && S.gn) { R = S.gn[k]; ry = S.gnYear; }
     if (R) { var KS = ['살인', '강도', '강간·추행', '절도', '폭력'];
@@ -7622,8 +7622,8 @@
       for (var k2 = 0; k2 < GGT.length; k2++) { var Y = GGT[k2], b2 = trdBB(Y); if (q[0] < b2[0] || q[0] > b2[1] || q[1] < b2[2] || q[1] > b2[3]) continue; if (Y.rings.some(function (rr) { return inRing(rr, q[0], q[1]); })) gc.set(Y, (gc.get(Y) || 0) + 1); }
       for (var k = 0; k < TRD.length; k++) { var X = TRD[k], b = trdBB(X); if (q[0] < b[0] || q[0] > b[1] || q[1] < b[2] || q[1] > b[3]) continue; if (X.rings.some(function (rr) { return inRing(rr, q[0], q[1]); })) tc.set(X, (tc.get(X) || 0) + 1); } });
     var h = nowH(), dt2 = new Date(pickDate() + 'T00:00'), we = weOf(dt2), key = we ? 'we' : 'wd';
-    o.pop = 0; o.age = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; o.live = []; for (var i = 0; i < 24; i++) o.live.push(0); o.dongs = [];
-    dc.forEach(function (n, d) { if (d.area == null) d.area = polyA(d.polys); var w = Math.min(1, n * cell / (d.area || 1)); o.dongs.push([(d.gu ? d.gu + ' ' : '') + d.name, Math.round(w * 100)]);
+    o.pop = 0; o.age = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; o.live = []; for (var i = 0; i < 24; i++) o.live.push(0); o.dongs = []; o.dk = [];
+    dc.forEach(function (n, d) { if (d.area == null) d.area = polyA(d.polys); var w = Math.min(1, n * cell / (d.area || 1)); o.dongs.push([(d.gu ? d.gu + ' ' : '') + d.name, Math.round(w * 100)]); o.dk.push([d.k || '', w, d.name || '', d.gu || '서초구']);
       if (d.pop) { o.pop += d.pop.tot * w; d.pop.age.forEach(function (v, k) { o.age[k] += v * w; }); } var A = liveArr(d); if (A) A[key].forEach(function (v, k) { o.live[k] += v * w; }); });
     o.we = we; o.dongs.sort(function (a, b) { return b[1] - a[1]; });
     o.amt = 0; o.cnt = 0; o.tb = [0, 0, 0, 0, 0, 0]; o.ag = [0, 0, 0, 0, 0, 0]; o.ind = {}; o.bi = {}; o.flp = 0; o.wrc = 0; o.trd = [];
@@ -7674,8 +7674,8 @@
   /* v2.193.0 겹쳐 볼 자료 셋(다른 세션 · ONTOLOGY.md 「겹쳐 보기 — 자리 × 시각」): night-bus-seoul.json(올빼미버스 정류장 1,489곳 · items[[ID, 이름, 경도, 위도, 달마다 [승차, 하차]×4, 마지막 달 시간대별 승차[7], 하차[7], 노선]] · hours [23,0,1,2,3,4,5] · **한 달 합계**)
      · venue-events-seoul.json(서울 문화행사 장소 1,250곳 · venues[{n, gu, lat, lon, yr, kind, day[[날짜, 시작, 끝|null, 갈래]], up[[제목, 갈래, 시작일, 끝일, 시작|null, 끝|null, 시각 글, 주소]]}] — 서울시·자치구 행사가 대부분 · 「행사 없음」으로 읽으면 안 된다)
      · school-cal-seoul.json(days[[날짜, 초·중·고 방학 몫 %, 재량휴업 학교 수, 개학, 졸업식, 입학식]] · csat[[날짜, 학교 수]]). 반경 분석을 처음 열 때 한 번 읽는다(undefined = 아직 · null = 못 읽음) */
-  var OVX = { nb: undefined, ve: undefined, sc: undefined }, OVXP = null;
-  function ovxGet() { if (OVXP) return OVXP; OVXP = Promise.all([['nb', 'night-bus-seoul'], ['ve', 'venue-events-seoul'], ['sc', 'school-cal-seoul']].map(function (q) { return fetch('data/' + q[1] + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OVX[q[0]] = j || null; }).catch(function () { OVX[q[0]] = null; }); })); return OVXP; }
+  var OVX = { nb: undefined, ve: undefined, sc: undefined, rs: undefined, mv: undefined }, OVXP = null;
+  function ovxGet() { if (OVXP) return OVXP; OVXP = Promise.all([['nb', 'night-bus-seoul'], ['ve', 'venue-events-seoul'], ['sc', 'school-cal-seoul'], ['rs', 'rescue119'], ['mv', 'move-mode-seoul']].map(function (q) { return fetch('data/' + q[1] + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OVX[q[0]] = j || null; }).catch(function () { OVX[q[0]] = null; }); })); return OVXP; }
   function radDay(o) { if (!o || !RAD.c) return ''; var R = [], hr = function (A) { return A && A.some(function (v) { return v > 0; }); };
     if (OVX.nb === undefined) ovxGet().then(function () { if (RAD.res && !RAD.busy) radPaint(); });
     if (o.sub && o.sub.n && hr(o.sub.off)) R.push({ lb: '🚇 지하철 하차', sm: o.sub.names.slice(0, 3).join('·') + ' · 옅은 줄 = 승차', A: o.sub.off, B: o.sub.on, c: '#2563eb', u: '명' });
@@ -7693,6 +7693,15 @@
         (v.day || []).forEach(function (d) { veDay++; var a = d[1] ? +String(d[1]).slice(0, 2) : null, b = d[2] ? +String(d[2]).slice(0, 2) : null; if (a != null && a >= 0 && a < 24) veS[a]++; if (b != null && b >= 0 && b < 24) { veE[b]++; veEnd++; } });
         (v.up || []).forEach(function (u) { if ((u[3] || u[2]) >= td9) veUp.push([u, v.n]); }); });
       if (veN && (hr(veS) || hr(veE))) R.push({ lb: '🎭 행사 시각', sm: '행사장 ' + veN + '곳(' + veNm.slice(0, 2).join(' · ') + (veN > 2 ? ' 등' : '') + ') · 하루짜리 ' + veDay.toLocaleString() + '건 가운데 끝 시각이 적힌 ' + veEnd.toLocaleString() + '건 · 진한 막대 = 끝나는 시 · 옅은 막대 = 시작하는 시', H: hr(veE) ? veE : veS, H2: hr(veE) ? veS : null, c: '#db2777', u: '건' }); }
+    /* v2.194.0 🚙 차량으로 도착(move-mode-seoul.json · 수도권 생활이동 — 도착한 동 × 시 × 수단 · items[[도착 코드, 평일 [시][차량·지하철·버스·도보·그 밖], 주말]] · 통신 어림 · 수단 구분은 **추정**) — 반경에 걸친 행정동을 넓이 무게로 더한다(생활인구와 같은 식).
+       🚒 119 구조 출동(rescue119.json · 소방청 구조활동현황 2025 · items[[시도, 시군구, 법정동, 건수, 시간대[24], 갈래[6], 교통 갈래 시간대[24], 신고→출동 분]]) — **법정동 전체 값**이라 반경보다 넓다(가장 많이 걸친 동 하나 · 행정동 이름에서 숫자·「본」을 떼어 법정동 이름으로 맞춘다 — 안 맞으면 줄을 안 그린다). 구급차(환자 이송)가 아니다 */
+    if (OVX.mv && OVX.mv.items && o.dk && o.dk.length) { if (!OVX.mv.by) { OVX.mv.by = {}; OVX.mv.items.forEach(function (x) { OVX.mv.by[String(x[0])] = x; }); } var mvA = [], mvN = 0; for (k9 = 0; k9 < 24; k9++) mvA.push(0);
+      o.dk.forEach(function (q) { var x = OVX.mv.by[String(q[0]).slice(0, 8)]; if (!x) return; var T9 = x[o.we ? 2 : 1]; if (!T9 || T9.length < 24) return; mvN++; for (var k = 0; k < 24; k++) mvA[k] += (T9[k][0] || 0) * q[1]; });
+      if (mvN && hr(mvA)) R.push({ lb: '🚙 차량 도착(추정)', sm: '수도권 생활이동 ' + String(OVX.mv.month || '').slice(0, 4) + '.' + String(OVX.mv.month || '').slice(4) + ' · ' + (o.we ? '주말' : '평일') + ' 하루 평균 · 통신 자료 어림 · 수단 구분은 추정 · 택시·자가용·대리운전이 섞여 있다', A: mvA, c: '#b45309', u: '건' }); }
+    if (OVX.rs && OVX.rs.items && o.dk && o.dk.length) { var top9 = o.dk.slice().sort(function (a, b) { return b[1] - a[1]; })[0], ln9 = String(top9[2]).replace(/제?[0-9]+(\.[0-9]+)*가?동$/, '동').replace(/본동$/, '동'), gu9 = String(top9[3]).split(' ').pop();
+      var rx = OVX.rs.items.filter(function (x) { return x[2] === ln9 && (x[1] === gu9 || String(x[1]).split(' ').pop() === gu9); })[0];
+      if (rx && hr(rx[4])) { var G9 = OVX.rs.groups || [], gi9 = rx[5].map(function (v, i) { return [v, G9[i] || '']; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, 3);
+        R.push({ lb: '🚒 119 구조 출동', sm: '법정동 ' + rx[2] + ' 전체(반경보다 넓다) · ' + (OVX.rs.year || '') + '년 ' + rx[3].toLocaleString() + '건 · ' + gi9.map(function (q) { return q[1] + ' ' + q[0].toLocaleString(); }).join(' · ') + ' · 옅은 줄 = 교통 갈래 · 구급차(환자 이송)는 없다', A: rx[4], B: rx[6] && hr(rx[6]) ? rx[6] : null, c: '#dc2626', u: '건' }); } }
     if (R.length < 2) return '<div class="rcard"><div class="cap"><b>🕐 이 자리의 하루</b></div><p class="lg-n">이 반경에는 시간대 자료가 한 가지뿐이거나 없다(지하철·버스 시간대 승하차는 지금 서초 둘레만 · 생활인구는 서울 · 시간대 매출은 서울 상권).</p></div>';
     var RH = 30, W = 240, X = function (t) { return 34 + t / 24 * 196; }, H = 16 + R.length * RH + 14, dn = new Date(), now = HOUR != null ? HOUR + 0.5 : dn.getHours() + dn.getMinutes() / 60, pk = [];
     var h = '<div class="rcard"><div class="cap"><b>🕐 이 자리의 하루</b> — 서로 따로 모인 자료를 같은 시간축에 겹쳐 본다(반경 ' + (o.r >= 1000 ? o.r / 1000 + 'km' : o.r + 'm') + ' · 줄마다 자기 최고값 = 100)</div><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="이 자리의 하루 — 시간대마다" style="width:100%;max-width:420px;height:auto;display:block;margin:2px auto">';
@@ -7719,7 +7728,7 @@
       if (tdy) bits.push('<b>오늘</b> 방학 몫 초 ' + tdy[1] + ' · 중 ' + tdy[2] + ' · 고 ' + tdy[3] + '%' + (tdy[4] ? ' · 재량휴업 ' + tdy[4] + '교' : ''));
       if (nx9) bits.push('다음 재량휴업 큰 날 <b>' + (+nx9[0].slice(5, 7)) + '/' + (+nx9[0].slice(8, 10)) + '</b>(' + nx9[4] + '교)'); if (cs9 && cs9[0] >= t9) bits.push('수능 <b>' + (+cs9[0].slice(5, 7)) + '/' + (+cs9[0].slice(8, 10)) + '</b>(학교 ' + cs9[1] + '곳이 적은 날 · 교육부 공고와 맞대 볼 것)');
       if (bits.length) h += '<div class="r"><b>📅 사람 수가 달라지는 날</b><span>' + bits.join(' · ') + ' <em>(서울 초·중·고가 손으로 적은 학사일정 — 실제보다 낮게 잡힌다)</em></span></div>'; }
-    return h + '<p class="lg-n" style="color:#b45309"><b>차례는 까닭이 아니다</b> — 같은 자리에서 무엇이 먼저 몰리고 무엇이 뒤따르는지의 모양만 본다. 줄마다 자기 최고값에 맞춰 그려 <b>크기는 견줄 수 없다</b>. 자료마다 기준이 다르다: 지하철·버스 = 한 달 평균 하루 · 생활인구 = ' + (o.we ? '주말' : '평일') + ' · 매출 = 분기의 하루 평균(시간대 여섯) · 사고 = 2016~2025 합(시간대 넷) · 올빼미버스 = 한 달 합을 날수로 나눈 것(교통카드만 · 하차는 덜 찍힌다) · 행사 = 여러 해의 하루짜리 행사를 시각으로 센 것.</p></div>'; }
+    return h + '<p class="lg-n" style="color:#b45309"><b>차례는 까닭이 아니다</b> — 같은 자리에서 무엇이 먼저 몰리고 무엇이 뒤따르는지의 모양만 본다. 줄마다 자기 최고값에 맞춰 그려 <b>크기는 견줄 수 없다</b>. 자료마다 기준이 다르다: 지하철·버스 = 한 달 평균 하루 · 생활인구 = ' + (o.we ? '주말' : '평일') + ' · 매출 = 분기의 하루 평균(시간대 여섯) · 사고 = 2016~2025 합(시간대 넷) · 올빼미버스 = 한 달 합을 날수로 나눈 것(교통카드만 · 하차는 덜 찍힌다) · 행사 = 여러 해의 하루짜리 행사를 시각으로 센 것 · 차량 도착 = 통신 자료 어림(교통카드 수와 맞지 않는다) · 119 = 구조대 출동(「화재」는 확인 출동 · 발생 건수가 아니다) · <b>112 는 시간대가 공개되지 않아 줄이 없다</b>(경찰서 × 해까지만).</p></div>'; }
   function radPaint() {
     var el = $('m2dRad'); if (!el || !el.classList.contains('on')) return; var o = RAD.res, h = '<div class="lg-h"><b>📐 반경 분석</b><span><button data-rx="min">▾ 접기</button> <button data-rx="x">닫기</button></span></div>';
     h += '<div class="lg-btns">' + [300, 500, 1000].map(function (r) { return '<button data-rr="' + r + '" class="' + (RAD.r === r ? 'on' : '') + '">반경 ' + (r >= 1000 ? r / 1000 + 'km' : r + 'm') + '</button>'; }).join('') +

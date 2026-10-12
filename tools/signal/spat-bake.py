@@ -128,6 +128,42 @@ def anchors(strong=False):
     return out
 
 
+def split_write(doc):
+    """지도(폰)가 읽는 꼴 — data/sigdir/index.json(기록 its 를 뺀 나머지 + fl 교차로마다 표시 · cell 칸 크기) + data/sigdir/c/<칸>.json(그 칸 교차로들의 its).
+    칸 = floor(위도 / 0.03)_floor(경도 / 0.04) (약 3.3 × 3.5km) · 자리 없는 교차로는 'x'. fl 값: 1 = 다시 받아 맞은 기록(v)이 있다 · 2 = 닻(a)이 있다(더한 값).
+    한 장짜리 data/sigdir-seoul.json 은 그대로 둔다. 조각은 내용이 바뀐 것만 다시 쓴다."""
+    import math
+    CELL = [0.03, 0.04]
+    d = os.path.join(ROOT, 'data', 'sigdir')
+    os.makedirs(os.path.join(d, 'c'), exist_ok=True)
+    its, pts = doc['its'], doc['pts']
+    cells, fl = {}, {}
+    for k, L in its.items():
+        q = pts.get(k)
+        key = '%d_%d' % (math.floor(q[0] / CELL[0]), math.floor(q[1] / CELL[1])) if q else 'x'
+        cells.setdefault(key, {})[k] = L
+        fl[k] = (1 if any(o.get('v') for o in L) else 0) + (2 if any(o.get('a') for o in L) else 0)
+    nw = 0
+    for key, part in cells.items():
+        t = json.dumps({'schema': 'tg-sigdir-cell/1', 'cell': key, 'its': part}, ensure_ascii=False, separators=(',', ':'))
+        fp = os.path.join(d, 'c', key + '.json')
+        try:
+            old = open(fp, encoding='utf-8').read()
+        except Exception:
+            old = None
+        if old != t:
+            open(fp, 'w', encoding='utf-8').write(t); nw += 1
+    idx = {k: v for k, v in doc.items() if k != 'its'}
+    idx['schema'] = 'tg-sigdir-idx/1'
+    idx['cell'] = CELL
+    idx['cells'] = {k: len(v) for k, v in sorted(cells.items())}
+    idx['fl'] = fl
+    idx['fields'] = 'fl{교차로 번호: 표시(1 다시 받아 맞은 기록이 있다 + 2 닻이 있다)} · cell[위도 칸, 경도 칸] · cells{칸: 교차로 수} · 기록(its)은 c/<칸>.json 의 its{교차로 번호: [기록…]} — 칸 = floor(위도/cell[0])_floor(경도/cell[1]) · 자리 없는 교차로는 x · ' + doc.get('fields', '')
+    ip = os.path.join(d, 'index.json')
+    json.dump(idx, open(ip, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    print('나눠 쓰기: 색인', os.path.getsize(ip), 'B · 칸', len(cells), '· 바뀐 칸', nw)
+
+
 def publish():
     """data/sigdir-seoul.json 과 맞대 본 결과 data/sig-audit.json 만 올린다(다른 파일은 건드리지 않는다) — 열쇠 검사에 걸리면 올리지 않는다."""
     import subprocess
@@ -136,11 +172,11 @@ def publish():
         if not run('git', 'status', '--porcelain', '--', 'data/sigdir-seoul.json', 'data/live-spd-seocho.json').stdout.strip():
             return
         run(sys.executable, '-X', 'utf8', os.path.join('tools', 'signal', 'sig-audit.py'))   # 맞대 본 결과(data/sig-audit.json)도 같이 다시 만든다
-        run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sig-audit.json', 'data/live-spd-seocho.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
+        run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
         if run(sys.executable, '-X', 'utf8', os.path.join('tools', 'keycheck.py')).returncode != 0:
             print('열쇠 검사에 걸려 올리지 않았다', flush=True); return
         run('git', 'pull', '-q', '--ff-only', 'origin', 'main')
-        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sig-audit.json', 'data/live-spd-seocho.json')
+        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json')
         p2 = run('git', 'push', '-q', 'origin', 'main')
         print(datetime.datetime.now().strftime('%H:%M:%S'), '올림' if c.returncode == 0 and p2.returncode == 0 else '올리기 실패 ' + (c.stderr or p2.stderr)[:120], flush=True)
     except Exception as e:
@@ -1186,6 +1222,10 @@ def build():
            'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its, 'tod': tod, 'pl': pl}
     p = os.path.join(ROOT, 'data', 'sigdir-seoul.json')
     json.dump(doc, open(p, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    try:
+        split_write(doc)
+    except Exception as e:
+        print('나눠 쓰기 실패', str(e)[:120], flush=True)
     print('교차로', len(its), '· 닻', sum(1 for L in its.values() if L[-1].get('a')), '· 검증됨', nver, '· 안 맞음', nbad, '->', p, os.path.getsize(p), 'B')
 
 

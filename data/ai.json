@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 145개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 146개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1557,6 +1557,11 @@
    "econ-gu.json",
    "20260731",
    "국세청 사업자현황 — 100대 생활업종 · 연령별 · 존속연수별(공공데이터포털 15061118 · 15061120 · 15061121 · 20260731 · 시군구 · 개인+법인)"
+  ],
+  [
+   "ems119-seoul.json",
+   "2026-10-12",
+   "서울 열린데이터광장 OA-22849 「서울시 소방 구급 출동 현황」(서울특별시 소방재난본부 · 119구급 스마트시스템 · 공공누리 1유형) — 2022~2024"
   ],
   [
    "enforce-seocho.json",

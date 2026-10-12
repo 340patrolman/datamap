@@ -18,30 +18,30 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 KINDS = [['유흥주점', '제26호', 'eduzone/entertainment_bars.csv'], ['단란주점', '제26호', 'eduzone/singing_bars.csv'], ['노래연습장', '제24호', 'eduzone/karaoke_rooms.csv'], ['인터넷컴퓨터게임시설(PC방)', '제19호', 'eduzone/pc_bangs.csv'],
          ['일반게임제공업', '제19호', 'eduzone/general_game_providers.csv'], ['청소년게임제공업', '제19호', 'eduzone/youth_game_providers.csv'], ['복합유통게임제공업', '제19호', 'eduzone/mixed_game_providers.csv'],
          ['숙박업(여관·모텔 등)', '제27호', 'lodging/lodgings.csv'], ['관광숙박업(호텔 등)', '제27호', 'lodging/tourist_accommodations.csv']]
-SIDO = {'서울특별시': '11', '경기도': '41', '인천광역시': '28'}
+SIDO = None   # 전국(2026-10-12 소유자 「기회될 때 전국으로」) — 시도는 주소 글자가 아니라 그 점이 든 행정동 경계의 시도 코드로 가른다(지도의 시도 코드 그대로 · 광주·전남 = 12)
 def main():
     tr = Transformer.from_crs('EPSG:5174', 'EPSG:4326', always_xy=True); G = json.load(open(HJD, encoding='utf-8'))['features']; geoms = []; codes = []
     for f in G:
         p = f['properties']; c = str(p.get('adm_cd2') or p.get('adm_cd8') or p.get('adm_cd') or '')
-        if c[:2] in ('11', '41', '28'): geoms.append(shape(f['geometry'])); codes.append(c[:8])
-    tree = STRtree(geoms); OUT = {sd: [] for sd in SIDO.values()}; CNT = {sd: collections.Counter() for sd in SIDO.values()}; noxy = collections.Counter(); nodong = 0
+        geoms.append(shape(f['geometry'])); codes.append(c[:8])
+    tree = STRtree(geoms); OUT = collections.defaultdict(list); CNT = collections.defaultdict(collections.Counter); noxy = collections.Counter(); nodong = 0; ALLN = collections.Counter()
     for ki, (nm, ho, path) in enumerate(KINDS):
         with open(os.path.join(KB, path), encoding='cp949', errors='replace', newline='') as fh:
             for r in csv.DictReader(fh):
                 if (r.get('영업상태코드') or '').strip() != '01': continue
-                a = (r.get('도로명주소') or r.get('지번주소') or '').strip(); sd = next((v for k, v in SIDO.items() if a.startswith(k)), None)
-                if not sd: continue
+                ALLN[ki] += 1
                 try: x = float(r['좌표정보(X)']); y = float(r['좌표정보(Y)'])
-                except Exception: noxy[sd] += 1; continue
+                except Exception: noxy['all'] += 1; continue
                 lo, la = tr.transform(x, y)
-                if not (36.8 < la < 38.4 and 126.0 < lo < 127.9): noxy[sd] += 1; continue
+                if not (33.0 < la < 38.7 and 124.5 < lo < 132.0): noxy['all'] += 1; continue
                 pt = Point(lo, la); d = None
                 for i in tree.query(pt):
                     if geoms[i].contains(pt): d = codes[i]; break
-                if not d: nodong += 1
+                if not d: nodong += 1; continue
+                sd = d[:2]
                 OUT[sd].append([round(lo, 5), round(la, 5), ki, (d or '')[:5]]); CNT[sd][ki] += 1
     os.makedirs(os.path.join(ROOT, 'data', 'edu-zone-biz'), exist_ok=True); td = datetime.date.today().isoformat()
-    for sd, items in OUT.items():
+    for sd, items in sorted(OUT.items()):
         items.sort(key=lambda r: (r[3], r[2], r[0]))
         doc = {'schema': 'tg-edu-zone-biz/1', 'made': td, 'sido': sd,
                'source': '행정안전부 지방행정인허가(LOCALDATA) 전국 파일 — 유흥주점·단란주점·노래연습장·인터넷컴퓨터게임시설제공업·일반/청소년/복합유통 게임제공업·숙박업·관광숙박업(공공데이터포털 15045018·15045017·15045109·15045073·15045071·15045069·15045072·15044968·15044967 · 이용허락범위 제한 없음) · 영업/정상만',
@@ -49,11 +49,11 @@ def main():
                'note': ['**반경 안에 있다고 위반이 아니다** — 상대보호구역에서는 심의를 거쳐 허용된 곳이 있고, 학교보다 먼저 있던 곳도 섞여 있다. 이 파일은 「어디에 무엇이 있나」만 말한다',
                         '법의 거리는 학교 **경계**(200m)와 **출입문**(50m)에서 잰다 — 지도의 학교 자리는 점 하나라 그 거리와 다르다(운동장이 넓은 학교는 100m 넘게 어긋난다)',
                         '제19호·제24호는 유치원·대학의 보호구역에서는 빠진다 · 제27호 숙박업 가운데 대통령령으로 정하는 것은 빠진다(이 파일은 가르지 못한다)',
-                        '인허가 대장의 「영업/정상」이다 — 실제로 문을 열고 있는지는 다를 수 있다 · 좌표가 없거나 틀린 %d곳은 뺐다 · 상호·주소·전화는 싣지 않았다' % noxy[sd],
+                        '인허가 대장의 「영업/정상」이다 — 실제로 문을 열고 있는지는 다를 수 있다 · 전국에서 좌표가 없거나 틀린 %d곳(%d%%)과 동 경계 밖 %d곳은 뺐다(시도마다 빠진 몫이 다르다 — 인천이 크다) · 상호·주소·전화는 싣지 않았다' % (noxy['all'], round(noxy['all'] / max(1, sum(ALLN.values())) * 100), nodong),
                         '청소년게임제공업(오락실·인형뽑기 등)도 법의 「게임제공업」에 든다 — 갈래를 나눠 실었으니 화면에서 골라 센다'],
                'fields': {'kinds': '[[갈래 이름, 제9조의 호, 이 시도의 곳 수]](items 의 갈래 번호 차례)', 'items': '[[경도, 위도, 갈래 번호, 시군구 코드 5자리(동 경계 밖이면 빈칸)]]'},
                'kinds': [[k[0], k[1], CNT[sd][i]] for i, k in enumerate(KINDS)], 'items': items}
         p = os.path.join(ROOT, 'data', 'edu-zone-biz', sd + '.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
-        print(sd, '바이트', os.path.getsize(p), '곳', len(items), '좌표 없음', noxy[sd], [(k[0], CNT[sd][i]) for i, k in enumerate(KINDS)])
-    print('동 경계 밖', nodong, '서초', collections.Counter(KINDS[r[2]][0] for r in OUT['11'] if r[3] == '11650'))
+        print(sd, '바이트', os.path.getsize(p), '곳', len(items), [CNT[sd][i] for i, k in enumerate(KINDS)])
+    print('영업 중', sum(ALLN.values()), '좌표 없음', noxy['all'], '동 경계 밖', nodong, '서초', collections.Counter(KINDS[r[2]][0] for r in OUT['11'] if r[3] == '11650'))
 if __name__ == '__main__': main()

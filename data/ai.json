@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 146개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 149개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1740,8 +1740,8 @@
   ],
   [
    "live-spd-seocho.json",
-   "13:41",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261012134000"
+   "13:52",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261012135000"
   ],
   [
    "livepop.json",
@@ -1829,6 +1829,11 @@
    "서울시 T-GIS 교통안전시설물 교차로(A008_P · data/tgis-seoul.json) · C-ITS 번호 = 교통안전 신호등 실시간 정보의 교차로 지도정보(공공데이터포털 15157604)  …(전문은 파일에)"
   ],
   [
+   "onto-schema.json",
+   "2026-10-12 04:54",
+   "이 지도의 자료 파일을 원천으로 묶은 목록(ONTOLOGY-1-원천.md) 위에 객체·슬롯·링크를 얹은 설계 — 값이 아니라 틀이다(값은 각 파일)"
+  ],
+  [
    "pedbtn-seocho.json",
    "",
    "서울시 보행자작동신호기 관련 정보(OA-15545 · 서울특별시 교통실 교통운영과 · 공공누리 1유형 · 2026-10-04 받음) — 30m 안 버튼을 한 자리로 묶음"
@@ -1882,6 +1887,11 @@
    "rail-lines.json",
    "2026-10-10",
    "한국철도공사_열차운행정보(공공데이터포털 B551457 · 2026-10-08 하루 정차 기록)의 정차 차례 · 역 자리 = 한국철도공사_역 위치 정보(15127532) 등(data/train-seo …(전문은 파일에)"
+  ],
+  [
+   "rd-cell-seocho.json",
+   "2026-10-12 04:54",
+   "data/nav-seocho.json(국가교통정보센터 ITS 전국 표준노드링크 2026-09-14판 · 서초구 + 경계 밖 2km) 의 링크 선 × 국가지점번호식 250m 격자(EPSG:5179 · …(전문은 파일에)"
   ],
   [
    "reach-hubs.json",
@@ -1965,7 +1975,7 @@
   ],
   [
    "sig-audit.json",
-   "2026-10-12 13:47",
+   "2026-10-12 13:52",
    "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)"
   ],
   [
@@ -2010,7 +2020,7 @@
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-12 13:47",
+   "2026-10-12 13:58",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [
@@ -2147,6 +2157,11 @@
    "venue-events-seoul.json",
    "2026-10-12",
    "서울 열린데이터광장 「서울시 문화행사 정보」(culturalEventInfo · 서울문화포털) — 20261012 받음 · 19580건"
+  ],
+  [
+   "youth-support.json",
+   "2026-10-12",
+   "공공데이터포털 — 성평등가족부_청소년상담복지센터 현황(3084537) · 청소년쉼터 현황(3084536) · 청소년 자립지원관 현황(15100267) · 한국청소년상담복지개발원_전국_꿈드림_센터(1 …(전문은 파일에)"
   ]
  ],
  "catalog_full": "https://340patrolman.github.io/datamap/data/ai-catalog.json (파일마다 칸 설명·한계·표본까지 — 쓸 파일을 고른 뒤 그 파일 항목만 읽는다)",

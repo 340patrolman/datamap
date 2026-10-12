@@ -1113,7 +1113,8 @@
       });
     }
     drawLive(dark); drawKma(dark); liveSoon();
-    if (REP) { var rs = S(REP.p); ctx.beginPath(); ctx.arc(rs[0], rs[1], 14, 0, Math.PI * 2); ctx.lineWidth = 4; ctx.strokeStyle = '#dc2626'; ctx.stroke(); ctx.beginPath(); ctx.arc(rs[0], rs[1], 4, 0, Math.PI * 2); ctx.fillStyle = '#dc2626'; ctx.fill();
+    if (REP) { var rs = S(REP.p); if (REP.here && REP.acc > 25) { ctx.beginPath(); ctx.arc(rs[0], rs[1], Math.max(16, REP.acc * view.s), 0, Math.PI * 2); ctx.fillStyle = 'rgba(29,78,216,.10)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(29,78,216,.45)'; ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(rs[0], rs[1], 14, 0, Math.PI * 2); ctx.lineWidth = 4; ctx.strokeStyle = '#dc2626'; ctx.stroke(); ctx.beginPath(); ctx.arc(rs[0], rs[1], 4, 0, Math.PI * 2); ctx.fillStyle = '#dc2626'; ctx.fill();
       label([REP.p[0], REP.p[1] - 26 / view.s], REP.here ? '📍 지금 위치' : '📋 보고 자리', 12, '#fff', REP.here ? 'rgba(29,78,216,.92)' : 'rgba(185,28,28,.9)'); hit.push({ x: rs[0], y: rs[1], r: 16, it: { kind: 'report' } }); }
     if (sel) { ctx.beginPath(); ctx.arc(sel.x, sel.y, sel.r + 5, 0, Math.PI * 2); ctx.lineWidth = 3; ctx.strokeStyle = '#facc15'; ctx.stroke(); }
     if (document.body.classList.contains('legon')) legend();
@@ -1217,7 +1218,10 @@
   function show0(it) {
     var card = $('m2dCard'), h = '';
     if (!it) { card.classList.remove('on'); return; }
-    if (it.kind === 'report') {
+    if (it.kind === 'report' && REP && REP.out) {   /* v2.216.0 서초 밖의 지금 위치 — 「가까운 교차로」 카드(서초 자료) 대신 그 자리의 동 카드 */
+      var d9 = dongAtM(REP.p); if (d9) { sel = { x: sel ? sel.x : 0, y: sel ? sel.y : 0, r: 12, it: { kind: 'dong', d: d9 } }; show(sel.it); return; }
+      h = '<h3>📍 지금 위치</h3>' + (REP.acc ? row('정확도', '약 ±' + REP.acc.toLocaleString() + 'm' + (REP.acc > 1000 ? ' — <b>대략의 자리</b>(GPS 가 아니라 통신망으로 잡은 값일 수 있다)' : '')) : '') + '<p class="desc">이 자리의 동 자료를 받는 중… 잠시 뒤 그 동의 카드가 열린다.</p>' + src('이 기기가 잡은 위치 — 이 기기 안에서만 쓰고 어디에도 저장하지 않는다');
+    } else if (it.kind === 'report') {
       var nn = nearestRealNode(REP.p), dd = nn ? Math.round(dTrue(nn.p, REP.p)) : 0;
       if (nn && dd <= 800) { show({ kind: 'node', n: nn, st: accOf(nn), rep: dd }); return; }
       h = '<h3>' + (REP.here ? '📍 지금 위치' : '📋 보고 자리') + '</h3>' + (function () { var k = sdAt(REP.p, 150); if (!k) return ''; var q = D.sigd.pts[k]; return row('가까운 신호 교차로', esc(q[2] || k) + ' ' + Math.round(dTrue(P(q[1], q[0]), REP.p)) + 'm') + sigDir(k); })() + row('가까운 교차로', '없음(800m 안) — 서초구 밖일 수 있음') + repAround() + hereRows() + src('T-Book 최초보고가 넘긴 좌표 — 이 기기 안에서만 쓰고 어디에도 저장하지 않는다');
@@ -2834,7 +2838,7 @@
     if (!m || !n) return false;
     var lat = +m[1], lon = +n[1];
     if (!isFinite(lat) || !isFinite(lon) || lat < 33.0 || lat > 38.7 || lon < 124.5 || lon > 131.95) return false;   // v2.11.0 전국(종전 서초 상자 — T-Book 주소는 그대로 됨)
-    if (lat < 37.395 || lat > 37.535 || lon < 126.935 || lon > 127.135) { var q0 = P(lon, lat); TAPM = q0; view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 1500); view.cx = q0[0]; view.cy = q0[1]; draw(); dayHash(q0); return true; }   // 서초 밖 = 그 자리로 옮기기만(「보고 자리」 카드는 서초 자료 기준이라 띄우지 않는다)
+    if (lat < 37.395 || lat > 37.535 || lon < 126.935 || lon > 127.135) { var q0 = P(lon, lat); TAPM = q0; view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 1500); view.cx = q0[0]; view.cy = q0[1]; if (/[#&]here=1(?!\d)/.test(location.hash)) hereOut(q0, 0); else draw(); dayHash(q0); return true; }   // 서초 밖 = 그 자리로 옮기기만(「보고 자리」 카드는 서초 자료 기준이라 띄우지 않는다)
     REP = { p: P(lon, lat), here: /[#&]here=1(?!\d)/.test(location.hash) };   // here=1 = T-Book 홈 「📍 지금 위치」(v0.10.77) — 아니면 최초보고 「보고 자리」
     TAPM = REP.p; view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 500); view.cx = REP.p[0]; view.cy = REP.p[1] + cv.clientHeight * 0.22 / view.s;   // 아래 카드에 가리지 않게 표시를 위쪽에   // 반경 약 500m
     if (on.bld && view.s > 0.12) loadBld();
@@ -2843,11 +2847,27 @@
     return true;
   }
   // &gps=1(T-Book v23.52 · 홈 관내 이름) — 열린 뒤 스스로 지금 위치를 다시 잡는다. 정밀 1km 안 · 서초 상자 안일 때만 옮기고, 아니면 넘겨받은 자리 그대로. 좌표는 저장하지 않는다.
+  /* v2.216.0 지금 위치를 전국에서 — 소유자 「아이폰에서 현재위치를 확인하는데 잘 안 되고 데이터지도가 보이질 않아서」. 종전: 서초 상자 밖이면 표시도 카드도 없이 지도만 옮겼고, &gps=1 도 서초 안에서만 받았으며, 지도에는 위치를 잡는 단추가 없었다.
+     hereOut(자리, 정확도 m) = 표시(📍 지금 위치 + 정확도 원)를 찍고 그 자리 동 자료가 오면 동 카드를 연다. hereAsk() = 「📍 내 위치」 단추 — **누른 그 순간** 위치를 청한다(아이폰은 사용자 동작 직후의 요청이 가장 잘 받아진다).
+     좌표는 이 기기 안에서만 쓰고 저장하지도 주소에 넣지도 않는다 */
+  function hereOut(q0, acc) { REP = { p: q0, here: true, out: true, acc: acc || 0 }; TAPM = q0; if (!on.dong) { on.dong = true; paintLayers(); }
+    if (!(view.s >= 0.06)) view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 1500); view.cx = q0[0]; view.cy = q0[1] + cv.clientHeight * 0.22 / view.s; draw();
+    var s0 = S(q0), n = 0; sel = { x: s0[0], y: s0[1], r: 12, it: { kind: 'report' } }; show(sel.it); draw();
+    (function tt() { if (!REP || REP.p !== q0) return; if (dongAtM(q0)) { var s2 = S(q0); sel = { x: s2[0], y: s2[1], r: 12, it: { kind: 'report' } }; show(sel.it); draw(); return; } if (++n < 40) setTimeout(tt, 700); })(); }
+  function hereAsk() { if (!navigator.geolocation) { toast('이 기기·브라우저는 위치를 쓸 수 없다'); return; } toast('📍 위치를 잡는 중…');
+    navigator.geolocation.getCurrentPosition(function (pos) { var c = pos.coords, la = c.latitude, lo = c.longitude, ac = Math.round(c.accuracy || 0);
+      if (la < 33 || la > 38.7 || lo < 124.5 || lo > 131.95) { toast('잡힌 위치가 나라 밖이다(위도 ' + la.toFixed(2) + ' · 경도 ' + lo.toFixed(2) + ')'); return; }
+      toast('📍 지금 위치 — 정확도 약 ±' + ac.toLocaleString() + 'm' + (ac > 1000 ? ' · 대략의 자리(통신망으로 잡은 값일 수 있다)' : ''));
+      if (ac <= 1000 && la >= 37.395 && la <= 37.535 && lo >= 126.935 && lo <= 127.135) { REP = { p: P(lo, la), here: true, acc: ac }; TAPM = REP.p; view.s = Math.max(view.s, Math.min(cv.clientWidth, cv.clientHeight) / (2 * 500)); view.cx = REP.p[0]; view.cy = REP.p[1] + cv.clientHeight * 0.22 / view.s; if (on.bld && view.s > 0.12) loadBld(); draw(); var s = S(REP.p); sel = { x: s[0], y: s[1], r: 12, it: { kind: 'report' } }; show(sel.it); draw(); return; }
+      hereOut(P(lo, la), ac);
+    }, function (e) { var c = e && e.code; toast(c === 1 ? '위치 권한이 꺼져 있다 — 아이폰: 설정 › 개인정보 보호 및 보안 › 위치 서비스 › Safari 웹사이트 › 「앱을 사용하는 동안」 · 그리고 주소창의 「가가」 › 웹 사이트 설정 › 위치 › 허용' : c === 3 ? '위치를 잡는 데 시간이 너무 걸린다 — 하늘이 보이는 곳에서 다시 눌러 본다' : '위치를 잡지 못했다 — 잠시 뒤 다시 눌러 본다'); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 }); }
+  if ($('m2dHereB')) $('m2dHereB').onclick = hereAsk;
   var gpsAsked = false;
   function gpsHere() {
     if (gpsAsked || !/[#&]gps=1(?!\d)/.test(location.hash) || !navigator.geolocation) return; gpsAsked = true;
     navigator.geolocation.getCurrentPosition(function (pos) {
-      var c = pos.coords; if (!(c.accuracy <= 1000) || c.latitude < 37.395 || c.latitude > 37.535 || c.longitude < 126.935 || c.longitude > 127.135) return;
+      var c = pos.coords; if (!(c.accuracy <= 1000) || c.latitude < 33 || c.latitude > 38.7 || c.longitude < 124.5 || c.longitude > 131.95) return;
+      if (c.latitude < 37.395 || c.latitude > 37.535 || c.longitude < 126.935 || c.longitude > 127.135) { hereOut(P(c.longitude, c.latitude), Math.round(c.accuracy)); dayHash(REP.p, 1); return; }   /* v2.216.0 서초 밖도 */
       REP = { p: P(c.longitude, c.latitude), here: true, acc: Math.round(c.accuracy) }; view.cx = REP.p[0]; view.cy = REP.p[1] + cv.clientHeight * 0.22 / view.s;
       draw(); var s = S(REP.p); sel = { x: s[0], y: s[1], r: 12, it: { kind: 'report' } }; show({ kind: 'report' }); draw();
       dayHash(REP.p, 1);

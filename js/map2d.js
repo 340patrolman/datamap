@@ -6293,6 +6293,7 @@
   var TRTK = 0;   /* 맛보기(중계)로 볼 때는 60초마다 — 중계가 접속 주소마다 하루 300번을 세므로 아껴 쓴다 */
   setInterval(function () { if (!TR || document.hidden || !$('m2dTr') || !$('m2dTr').classList.contains('on')) return; TRTK++; if (tryOn() && TRTK % 2) return; if (TR.bus && TR.bus.stops) TR.bus.stops.forEach(function (st) { if (st.arr && !st.busy) trArr(st); }); if (TR.loc && !TR.loc.busy) trLoc(TR.loc.city, TR.loc.rid, TR.loc.no); if (TR.sub && TR.sub.rt) TR.sub.st.forEach(function (q) { var R = TR.sub.rt[q.nm]; if (R && !R.busy) trSubRt(TR, q); }); }, 30000);
   setInterval(function () { if (TR && $('m2dTr') && $('m2dTr').classList.contains('on') && !document.hidden) trPaint(); }, 20000);
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-dayhere]'); if (!b) return; var a = b.getAttribute('data-dayhere').split(','); radOpen(P(+a[0], +a[1])); });
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-trhere]'); if (!b) return; var a = b.getAttribute('data-trhere').split(','); trOpen(P(+a[0], +a[1])); });
   if ($('m2dTr')) $('m2dTr').addEventListener('click', function (e) { var el = $('m2dTr'), b = e.target.closest('[data-tx],[data-tsa],[data-tsl],[data-trl],[data-tra],[data-trx]'); if (!b) { if (el.classList.contains('min')) el.classList.remove('min'); return; }
     var x = b.getAttribute('data-tx');
@@ -7667,6 +7668,32 @@
       '출처: 소상공인 상가정보(' + o.ym + ') · 서울시 상권분석서비스 · 서울 생활인구 · 행안부 주민등록 · 한국부동산원 임대동향 — 추정·근사 포함'];
     return L.filter(Boolean).join('\n');
   }
+  /* v2.192.0 🕐 이 자리의 하루 — 소유자 「지금은 존재론의 원론처럼만 알려 주고 있다 · 서로가 서로에게 영향을 미치면서 살고 있다」. 분류가 아니라 **겹치기**: 서로 무관하게 모인 자료를 한 자리(반경) · 한 시간축(0~24시)에 줄줄이.
+     줄 = 🚇 지하철 하차(옅은 줄 승차) · 🚌 버스 하차(승차) · 👥 생활인구 · 💳 시간당 카드 매출(여섯 시간대 계단) · 🚗 사고 10년(네 시간대 계단 · 시간당). 줄마다 **자기 최고값을 100 으로** 그린다(모양만 견준다 · 크기는 다르다).
+     ▲ = 그 줄의 꼭대기 · 세로 점선 = 지금(또는 고른 시각). 맨 아래 「꼭대기가 오는 차례」 — 차례일 뿐 까닭이 아니다. 자료마다 기준(해 · 평일/주말)이 다르다는 말은 접지 않는다. 재료는 radCalc 가 이미 모은 것 + A10(사고 시간대) */
+  function radDay(o) { if (!o || !RAD.c) return ''; var R = [], hr = function (A) { return A && A.some(function (v) { return v > 0; }); };
+    if (o.sub && o.sub.n && hr(o.sub.off)) R.push({ lb: '🚇 지하철 하차', sm: o.sub.names.slice(0, 3).join('·') + ' · 옅은 줄 = 승차', A: o.sub.off, B: o.sub.on, c: '#2563eb', u: '명' });
+    if (o.bus && o.bus.n && hr(o.bus.off)) R.push({ lb: '🚌 버스 하차', sm: '정류장 ' + o.bus.n + '곳 · 옅은 줄 = 승차', A: o.bus.off, B: o.bus.on, c: '#0891b2', u: '명' });
+    if (hr(o.live)) R.push({ lb: '👥 생활인구', sm: (o.we ? '주말' : '평일') + ' · 동 넓이 비율로 나눈 어림', A: o.live, c: '#16a34a', u: '명' });
+    if (o.tb && hr(o.tb)) R.push({ lb: '💳 카드 매출', sm: '시간당 · 걸친 상권 추정', S: o.tb.map(function (v, i) { return v / TBH[i]; }), E: [0, 6, 11, 14, 17, 21, 24], c: '#7c3aed', u: '' });
+    var tb4 = [0, 0, 0, 0], na = 0; A10.forEach(function (x) { if (dTrue(x.p, RAD.c) > o.r) return; for (var k = 0; k < 4; k++) tb4[k] += x.c[19 + k]; na++; });
+    if (hr(tb4)) R.push({ lb: '🚗 사고 10년', sm: '시간당 · 100m 칸 ' + na + '개 · ' + tb4.reduce(function (a, b) { return a + b; }, 0).toLocaleString() + '건', S: tb4.map(function (v) { return v / 6; }), E: [0, 6, 12, 18, 24], c: '#ea580c', u: '건' });
+    if (R.length < 2) return '<div class="rcard"><div class="cap"><b>🕐 이 자리의 하루</b></div><p class="lg-n">이 반경에는 시간대 자료가 한 가지뿐이거나 없다(지하철·버스 시간대 승하차는 지금 서초 둘레만 · 생활인구는 서울 · 시간대 매출은 서울 상권).</p></div>';
+    var RH = 30, W = 240, X = function (t) { return 34 + t / 24 * 196; }, H = 16 + R.length * RH + 14, dn = new Date(), now = HOUR != null ? HOUR + 0.5 : dn.getHours() + dn.getMinutes() / 60, pk = [];
+    var h = '<div class="rcard"><div class="cap"><b>🕐 이 자리의 하루</b> — 서로 따로 모인 자료를 같은 시간축에 겹쳐 본다(반경 ' + (o.r >= 1000 ? o.r / 1000 + 'km' : o.r + 'm') + ' · 줄마다 자기 최고값 = 100)</div><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="이 자리의 하루 — 시간대마다" style="width:100%;max-width:420px;height:auto;display:block;margin:2px auto">';
+    [0, 6, 12, 18, 24].forEach(function (t) { h += '<line x1="' + X(t).toFixed(1) + '" y1="10" x2="' + X(t).toFixed(1) + '" y2="' + (H - 14) + '" stroke="currentColor" stroke-opacity=".12"/><text x="' + X(t).toFixed(1) + '" y="' + (H - 4) + '" font-size="7.5" text-anchor="middle" fill="currentColor" opacity=".75">' + t + '시</text>'; });
+    R.forEach(function (q, i) { var y0 = 14 + i * RH, yb = y0 + RH - 6, hh = RH - 12, mx = 0, pt = 0, ptx = '';
+      if (q.A) { q.A.forEach(function (v, k) { if (v > mx) { mx = v; pt = k + 0.5; ptx = k + '시'; } }); var ln = function (A, m) { var d = ''; A.forEach(function (v, k) { d += (k ? 'L' : 'M') + X(k + 0.5).toFixed(1) + ' ' + (yb - v / m * hh).toFixed(1); }); return d; };
+        if (q.B) { var mb = Math.max.apply(null, q.B) || 1; h += '<path d="' + ln(q.B, Math.max(mx, mb)) + '" fill="none" stroke="' + q.c + '" stroke-opacity=".35" stroke-width="1.2"/>'; if (mb > mx) mx = mb; }
+        var mm = q.B ? Math.max(Math.max.apply(null, q.A), Math.max.apply(null, q.B)) : mx; h += '<path d="' + ln(q.A, mm) + 'L' + X(23.5).toFixed(1) + ' ' + yb + 'L' + X(0.5).toFixed(1) + ' ' + yb + 'Z" fill="' + q.c + '" fill-opacity=".14"/><path d="' + ln(q.A, mm) + '" fill="none" stroke="' + q.c + '" stroke-width="1.8" stroke-linejoin="round"/>';
+        var pa = 0; q.A.forEach(function (v, k) { if (v > pa) { pa = v; pt = k + 0.5; ptx = k + '시'; } }); h += '<path d="M' + (X(pt) - 3).toFixed(1) + ' ' + (yb - pa / mm * hh - 6).toFixed(1) + 'l3 4l3 -4z" fill="' + q.c + '"/>'; }
+      else { q.S.forEach(function (v, k) { if (v > mx) { mx = v; pt = (q.E[k] + q.E[k + 1]) / 2; ptx = q.E[k] + '~' + q.E[k + 1] + '시'; } }); q.S.forEach(function (v, k) { var bh = v / mx * hh, top = v === mx; h += '<rect x="' + (X(q.E[k]) + 0.6).toFixed(1) + '" y="' + (yb - bh).toFixed(1) + '" width="' + (X(q.E[k + 1]) - X(q.E[k]) - 1.2).toFixed(1) + '" height="' + Math.max(0.6, bh).toFixed(1) + '" fill="' + q.c + '" fill-opacity="' + (top ? '.85' : '.4') + '"/>'; });
+        h += '<path d="M' + (X(pt) - 3).toFixed(1) + ' ' + (yb - hh - 6).toFixed(1) + 'l3 4l3 -4z" fill="' + q.c + '"/>'; }
+      h += '<line x1="34" y1="' + yb + '" x2="230" y2="' + yb + '" stroke="var(--line)"/><text x="1" y="' + (y0 + 5) + '" font-size="7.2" font-weight="700" fill="currentColor">' + q.lb + '</text>'; pk.push([pt, q.lb, ptx, q.c, q.sm]); });
+    h += '<line x1="' + X(now).toFixed(1) + '" y1="8" x2="' + X(now).toFixed(1) + '" y2="' + (H - 14) + '" stroke="#dc2626" stroke-width="1" stroke-dasharray="3 2"/><text x="' + X(now).toFixed(1) + '" y="7" font-size="6.5" text-anchor="middle" fill="#dc2626">' + (HOUR != null ? '고른 시각' : '지금') + '</text></svg>';
+    h += '<div class="r"><b>꼭대기가 오는 차례</b><span>' + pk.slice().sort(function (a, b) { return a[0] - b[0]; }).map(function (q) { return '<b style="color:' + q[3] + '">' + q[1] + ' ' + q[2] + '</b>'; }).join(' → ') + '</span></div>';
+    h += pk.map(function (q) { return '<div class="r"><b style="color:' + q[3] + '">' + q[1] + '</b><span>가장 높은 때 <b>' + q[2] + '</b> <em>(' + esc(q[4]) + ')</em></span></div>'; }).join('');
+    return h + '<p class="lg-n" style="color:#b45309"><b>차례는 까닭이 아니다</b> — 같은 자리에서 무엇이 먼저 몰리고 무엇이 뒤따르는지의 모양만 본다. 줄마다 자기 최고값에 맞춰 그려 <b>크기는 견줄 수 없다</b>. 자료마다 기준이 다르다: 지하철·버스 = 한 달 평균 하루 · 생활인구 = ' + (o.we ? '주말' : '평일') + ' · 매출 = 분기의 하루 평균(시간대 여섯) · 사고 = 2016~2025 합(시간대 넷).</p></div>'; }
   function radPaint() {
     var el = $('m2dRad'); if (!el || !el.classList.contains('on')) return; var o = RAD.res, h = '<div class="lg-h"><b>📐 반경 분석</b><span><button data-rx="min">▾ 접기</button> <button data-rx="x">닫기</button></span></div>';
     h += '<div class="lg-btns">' + [300, 500, 1000].map(function (r) { return '<button data-rr="' + r + '" class="' + (RAD.r === r ? 'on' : '') + '">반경 ' + (r >= 1000 ? r / 1000 + 'km' : r + 'm') + '</button>'; }).join('') +
@@ -7678,6 +7705,7 @@
     if (RAD.busy) h += '<p class="lg-n">반경 안 자료를 모으는 중…</p>';
     else if (o && RAD.c) {
       var ha = Math.PI * o.r * o.r / 1e4, Lk = Object.keys(o.byL).sort(function (a, b) { return o.byL[b] - o.byL[a]; }), Sk = Object.keys(o.byS).sort(function (a, b) { return o.byS[b] - o.byS[a]; }).slice(0, 12);
+      h += radDay(o);
       h += '<div class="rcard">' + row('점포', o.n.toLocaleString() + '곳 · ' + (o.n / ha).toFixed(1) + '곳/ha <em>(반경 넓이 ' + ha.toFixed(1) + 'ha · 등록 상가 ' + o.ym + ')</em>');
       h += '<div class="cap">업종 대분류별 점포 수(곳 · 반경 안 등록 상가)</div>' + bar(Lk.map(function (k) { return o.byL[k]; }), '#475569', Lk.map(function (k) { return ({ '과학·기술': '전문', '시설관리·임대': '시설', '수리·개인': '수리', '예술·스포츠': '예체', '보건의료': '의료' })[k] || k.slice(0, 3); })) + '<p class="lg-n">' + Lk.map(function (k) { return esc(k) + ' ' + o.byL[k]; }).join(' · ') + '</p>';
       h += vzH(Sk.slice(0, 10).map(function (k) { return [k, o.byS[k], '#475569']; }), { title: '많은 업종(곳 · 반경 안 등록 상가)', unit: '곳' });
@@ -7895,7 +7923,7 @@
       nx.map(function (q, i) { return '<div><span class="s">가장 가까운 ' + q[0] + '</span> ' + (q[4] ? '<button data-relgo="' + i + '" title="이 대상의 카드로 건너간다">' + esc(q[1]) + ' ›</button>' : '<b>' + esc(q[1]) + '</b>') + ' <span class="p">' + fm(q[2]) + '</span><small>' + esc(q[3]) + ' · <i class="c">계산</i></small></div>'; }).join('') + '</div>' +
       '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기 · <b>가장 가까운 ○○ ›</b> 는 옆으로 건너가기 — 화면 밖이면 그리로 옮긴다). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
     h = h.replace(/<\/details>$/, ledgRel(m) + '</details>');
-    h += '<div class="lg-btns trbtn"><button data-trhere="' + ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + '" title="이 지점 가까운 정류장 버스 도착·위치 · 지하철 다음 열차 · 기차 · 국내선">🚏 여기 대중교통(실시간)</button></div>';
+    h += '<div class="lg-btns trbtn"><button data-trhere="' + ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + '" title="이 지점 가까운 정류장 버스 도착·위치 · 지하철 다음 열차 · 기차 · 국내선">🚏 여기 대중교통(실시간)</button><button data-dayhere="' + ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + '" title="이 자리 반경 안의 지하철·버스 하차 · 생활인구 · 시간대 매출 · 사고를 같은 24시간 축에 겹쳐 본다(반경 분석 창)">🕐 이 자리의 하루</button></div>';
     if ($('m2dCard') && ((it && (it.kind === 'sgd' || it.kind === 'sig' || it.kind === 'ksc')) || $('m2dCard').querySelector('#sdNow, #kscNow, #sigTick'))) $('m2dCard').insertAdjacentHTML('beforeend', '<div class="relb">' + h + '</div>');   /* v2.105.0 신호 교차로 카드는 신호가 먼저 — 관계·대중교통 단추는 카드 끝으로 */
     else box.insertAdjacentHTML('beforeend', h);
 

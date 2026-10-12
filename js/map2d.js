@@ -12,6 +12,8 @@
   var $ = function (id) { return document.getElementById(id); };
   /* v2.209.0 소유자 「PC 인지 스마트폰인지를 알아차려서 거기에 맞게 돌아가는 게 좋겠다」 — PHONE = 손가락으로 쓰는 좁은 화면(짧은 변 820px 아래). 주소 #phone=1 / #phone=0 으로 시험.
      폰이면: 이름표 수를 절반 아래로(교차로 140→60 · 도로 70→30 · 바탕 도로 90→40) · 바탕 조각은 한 번에 2장 · 둘레 시군구 자료는 한 번에 하나 · 메모리 4GB 아래 폰은 그리는 해상도 1.5배까지 */
+  /* v2.214.0 seoulLater(f) = 서울·서초에서만 쓰는 곁자료 받기를 미뤄 둔다 — lateLoad(화면이 서울 둘레에 걸쳤을 때)가 한 번 돌린다. 향남처럼 서울 밖에서 열면 안 받는다 */
+  var SEOULF = []; function seoulLater(f) { if (SEOULF) SEOULF.push(f); else { try { f(); } catch (e) {} } }
   var PHONE = (function () { var m = /[#&]phone=([01])/.exec(location.hash); if (m) return m[1] === '1'; try { return !!(window.matchMedia && matchMedia('(pointer: coarse)').matches) && Math.min(screen.width || 9999, screen.height || 9999) < 820; } catch (e) { return false; } })();
   var cv = $('m2d'), ctx = cv.getContext('2d'), DPR = Math.min(window.devicePixelRatio || 1, PHONE && (navigator.deviceMemory || 8) <= 4 ? 1.5 : 2);
   var view = { s: 0.16, cx: 0, cy: 0 };   // s = 화면 px / m · cx,cy = 화면 가운데의 평면 m
@@ -108,7 +110,7 @@
      화면이 서울 둘레(seoulNear)에 걸쳤을 때만 받는다. 향남처럼 서울 밖에서 열면 안 받고, 지도를 서울로 옮겨 0.6초 멈추면(viewWatch) 그때 받는다. 서초 건물(loadBld)도 같은 문 */
   var LATEP = null;
   function seoulNear() { try { var v = viewLL(); return !(v[2] < 126.70 || v[0] > 127.25 || v[3] < 37.38 || v[1] > 37.72); } catch (e) { return true; } }
-  function lateLoad() { if (LATEP) return LATEP; BOOTT.late = 'load';
+  function lateLoad() { if (LATEP) return LATEP; BOOTT.late = 'load'; var F9 = SEOULF || []; SEOULF = null; F9.forEach(function (f) { try { f(); } catch (e) {} });
     LATEP = Promise.all(LATE.filter(function (k) { return k !== 'pstat'; }).map(get)).then(function () { BOOTT.late = 'done'; BOOTT.net2 = Math.round(performance.now() - BOOTT.t0); var tB = performance.now(); sigdPrep(); bootT('live', livePrep); bootT('trd', trdPrep); bootT('safe', safePrep); bootT('a10', a10Prep); bootT('season', seasonPrep); paintPre(); bootT('sum2', summary); bootT('draw2', draw); if (sel && $('m2dCard').classList.contains('on')) show(sel.it); BOOTT.prep2 = Math.round(performance.now() - tB); });
     return LATEP; }
   function loadBld() {   // 건물 593KB — 켤 때만
@@ -1761,7 +1763,7 @@
     return out; }
   function tileUrl(k) { return (ONGH ? '/datamap-tiles/t/' : 'data/base/t/') + k + '.json?b=' + encodeURIComponent(TBAKE); }   // v2.8.0 전국 조각은 datamap-tiles 저장소
   var TQ = 0, TRAF = 0;
-  function needTiles() { if (!BIDX || view.s < TILE_S) return; var vt = visTiles(); if (vt.length > 24) return;
+  function needTiles() { if (BOOT1 || !BIDX || view.s < TILE_S) return; var vt = visTiles(); if (vt.length > 24) return;
     vt.forEach(function (k) { if (TILES[k] || TLOAD[k] || TQ >= (PHONE ? 2 : 4)) return; TLOAD[k] = 1; TQ++;
       fetch(tileUrl(k)).then(function (r) { if (!r.ok) throw 0; return r.json(); }).catch(function () { return caches.match(tileUrl(k), { ignoreSearch: true }).then(function (r) { if (!r) throw 0; return r.json(); }); }).then(function (j) { var t9 = performance.now(); TILES[k] = prepPack(j, k); OSM = OSM || TILES[k]; trimTiles(); t9 = performance.now() - t9; BOOTT.tileN = (BOOTT.tileN || 0) + 1; BOOTT.tileMs = Math.round((BOOTT.tileMs || 0) + t9); if (t9 > (BOOTT.tileMax || 0)) BOOTT.tileMax = Math.round(t9); }).catch(function () {}).then(function () { TQ--; delete TLOAD[k]; if (!TRAF) TRAF = requestAnimationFrame(function () { TRAF = 0; draw(); }); }); }); }
   function trimTiles() { var ks = Object.keys(TILES); if (ks.length <= TMAX) return; var T = BIDX.size;
@@ -2912,7 +2914,7 @@
   /* v2.183.0 소유자 「평일 · 금요일 · 토요일 · 일요일 · 특수일 해서 조금씩 달라 · 내가 붙인 pdf 보면 알 거야」 — 교통과 현시도(KSC-5800SE)의 특수일 표는 **15종**(신정 · 설날 전·당일·후 · 삼일절 · 어린이날 · 석탄일 · 현충일 · 광복절 · 추석 전·당일·후 · 개천절 · 한글날 · 성탄일)이고 전부 TOD 4(일요일 계획).
      표에 없는 쉬는 날(대체공휴일 · 선거일 · 제헌절 · 노동절 · 임시공휴일)은 제어기가 특수일로 알지 못해 **그 요일의 계획**으로 돈다고 본다. data/sig-special.json(다른 세션 · tg-sig-special/1) days{날짜: 이름} = 일요일 갈래 · other{날짜: 이름} = 그 요일 그대로.
      종전 sdCls·kscDayType 은 holOf(쉬는 날 전부)를 일요일로 봤다. 표를 못 읽었으면 종전대로(holOf). 근거는 현시도 한 장(다섯 장 모두 같게 전사) — 대체공휴일에 교통과가 따로 바꾸는지는 그날 받은 값으로 가린다 */
-  var SGSP = null; fetch('data/sig-special.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.days) SGSP = j; }).catch(function () {});
+  var SGSP = null; seoulLater(function () { fetch('data/sig-special.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.days) SGSP = j; }).catch(function () {}); });
   function sgspDay(dt) { return SGSP ? !!SGSP.days[ymdOf(dt)] : !!holOf(dt); }
   function sgspNote() { var d = new Date(), k = ymdOf(d), o = SGSP && SGSP.other && SGSP.other[k], sp = SGSP && SGSP.days[k]; if (HOUR != null) return '';
     return o ? '<p class="sdnt" style="margin:4px 0 0;color:#b45309"><b>오늘은 ' + esc(o) + '</b> — 신호는 <b>' + ['일', '월', '화', '수', '목', '금', '토'][d.getDay()] + '요일 계획</b>으로 도는 것으로 본다(신호제어기의 특수일 표 15종에 없는 날) · 통행량은 휴일 같을 수 있다.</p>'
@@ -4345,7 +4347,7 @@
   /* v2.143.0 맞대 본 결과(tools/signal/sig-audit.py → data/sig-audit.json · 소유자 「신호체계가 제대로 맞는지 확인도 해야 해」) — 교통과 현시도 · 경찰청 계획 · 두 API 서로 · 다시 받은 값 · 짜임새. 어긋난 것은 접지 않고 띄운다 */
   /* v2.145.0 현장 지식(data/sig-field.json · tg-sig-field/1 — 소유자가 현장에서 아는 것을 말한 그대로 · same = 같은 현시에 함께 켜지는 이동류 묶음 · 초는 없다).
      받은 기록에 그 묶음의 한쪽이 빠졌으면(밤 기록에서 좌회전이 안 읽힌 곳 등) 같은 묶음의 다른 이동류 초로 채운다 — 화면에서만(자료 파일은 그대로) · 채운 줄은 m.fld = 1 → 표에 「채움」 */
-  var SFLD = null; fetch('data/sig-field.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFLD = j; }).catch(function () {});
+  var SFLD = null; seoulLater(function () { fetch('data/sig-field.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFLD = j; }).catch(function () {}); });
   function sfldFix(no) { var q = SFLD && SFLD.spots && SFLD.spots[String(no)], L = q && sigdRec(no); if (!L || !q.same) return;
     L.forEach(function (o) { if (o._f) return; o._f = 1; q.same.forEach(function (g9) { var d = g9[0], ms = g9[1] || [], base = o.mv.filter(function (m) { return m[0] === d && ms.indexOf(m[1]) >= 0 && m[2] != null && m[5] != null; })[0]; if (!base) return;
         ms.forEach(function (k9) { var row = o.mv.filter(function (m) { return m[0] === d && m[1] === k9; })[0]; if (row && row[2] != null) return; if (row) { row[2] = base[2]; row[3] = base[3]; row[4] = base[4]; row[5] = base[5]; row.fld = 1; } else { var nr = [d, k9, base[2], base[3], base[4], base[5], base[6]]; nr.fld = 1; o.mv.splice(o.mv.indexOf(base) + 1, 0, nr); } }); }); }); }
@@ -4362,7 +4364,7 @@
   function spdMap() { var sp = typeof LIVE !== 'undefined' && LIVE.sp; if (sp && sp.m && Date.now() - (sp.at || 0) < 15 * 60000 && !sp.busy) return { m: sp.m, at: sp.at, snap: 0 }; if (sp && sp.m && sp.n && Date.now() - (sp.at || 0) < 15 * 60000) return { m: sp.m, at: sp.at, snap: 0 };
     if (LK.its || tryOn()) { tsnpGet(); if (TSNP && Date.now() / 1000 - TSNP.at < 25 * 60) return { m: TSNP.m, at: TSNP.at * 1000, snap: 1 }; } return null; }
   function spdOf(M9, id) { var v = M9 && M9.m[id]; v = Array.isArray(v) ? v[0] : v; return v > 0 ? +v : null; }
-  var SAPR = null; fetch('data/sig-approach-seocho.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SAPR = j; }).catch(function () {});
+  var SAPR = null; seoulLater(function () { fetch('data/sig-approach-seocho.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SAPR = j; }).catch(function () {}); });
   function aprSpd(no, dir) { var q = SAPR && SAPR.spots && SAPR.spots[String(no)]; if (!q || !q.in) return null; var ks = Object.keys(q.in).filter(function (k9) { return sgBin(k9, dir) <= 1; }).sort(function (a, b) { return sgBin(a, dir) - sgBin(b, dir); }); if (!ks.length) return null;
     var M9 = spdMap(), R = q.in[ks[0]], sw = 0, w = 0, lim = 0, nm = ''; if (!M9) return { off: 1 };
     R.forEach(function (r) { nm = nm || r[0]; lim = Math.max(lim, r[1] || 0); var ids = r[4] || [], each = (r[3] || 1) / (ids.length || 1); ids.forEach(function (e9) { var id = Array.isArray(e9) ? e9[0] : e9, ln = Array.isArray(e9) ? (e9[1] || 1) : each, v = spdOf(M9, id); if (v) { sw += v * ln; w += ln; } }); });   /* tg-sig-approach/2 = [[링크 ID, 길이 m]…] → 길이 가중 · /1 = [ID…] → 고르게 */
@@ -4376,12 +4378,12 @@
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-aprlive]'); if (!b) return; e.preventDefault();
     if (!LK.its) { if (!tryOn()) { if (!TRY.url || tryLeftMs() < 15000) { toast('오늘 맛보기 30분을 다 썼다 — ITS 키를 넣으면 계속 본다'); return; } tryStart(); } TSNPAT = 0; tsnpGet(); b.textContent = '받는 중… 잠시 뒤 줄마다 뜬다'; return; }
     on.lspd = true; try { saveOn(); paintLayers(); } catch (e2) {} if (!itsK()) { toast('실시간 소통은 ITS 키(또는 맛보기)가 있어야 받는다'); return; } if (!spdSpan()) { toast('더 확대하면 받는다'); } try { liveGo('sp'); } catch (e3) {} draw(); b.textContent = '받는 중… 잠시 뒤 줄마다 뜬다'; });
-  var SAUD = null; fetch('data/sig-audit.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SAUD = j; }).catch(function () {});
+  var SAUD = null; seoulLater(function () { fetch('data/sig-audit.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SAUD = j; }).catch(function () {}); });
   function saudHtml(no) { var q = SAUD && SAUD.spots && SAUD.spots[String(no)], h = sfldHtml(no); if (!q) return h;
     if (q.bad && q.bad.length) h += '<p class="sdnt" style="margin:6px 0 0;color:#b45309"><b>⚠ 맞대 보니 다른 것</b> — ' + q.bad.map(function (b) { return esc(b[1]); }).join(' / ') + '</p>';
     if (q.ok && q.ok.length) h += '<p class="sdnt" style="margin:6px 0 0;color:#15803d"><b>✔ 맞대 봄</b> — ' + q.ok.map(function (b) { return esc(b[1]); }).join(' · ') + '</p>';
     return h; }
-  var SFCK = null; fetch('data/sig-field-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFCK = j; }).catch(function () {});
+  var SFCK = null; seoulLater(function () { fetch('data/sig-field-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { SFCK = j; }).catch(function () {}); });
   function kscFv(no) { var c = SFCK && SFCK.checks ? SFCK.checks.filter(function (q) { return String(q.no) === String(no); }) : []; if (!c.length) return ''; var q = c[c.length - 1];
     if (q.eye) return '<b style="color:#15803d">✅ 현장 눈 대조</b>(' + esc(q.day) + ' ' + esc(q.at) + ' · ' + esc(q.mv) + ') — 소유자가 현장에서 실제 신호와 맞대 보고 「' + esc(q.say || '맞다') + '」 · 초 단위로 잰 기록은 아니다(그 시각대 한 번 본 것)';
     return '<b style="color:#15803d">✅ 현장 영상 대조</b>(' + esc(q.day) + ' ' + esc(q.at) + ' · ' + esc(q.mv) + ') — 계획 ' + esc(q.plan) + ' / 영상 ' + esc(q.seen) + ' → <b>' + (Math.abs(q.d) <= q.pm ? q.pm + '초 안으로 맞음' : (q.d > 0 ? '실제가 ' + q.d + '초 늦음' : '실제가 ' + (-q.d) + '초 빠름')) + '</b>(영상 시각 ±' + q.pm + '초 · 그 시각대 한 번 본 것)'; }
@@ -4393,7 +4395,7 @@
   function phmvTxt(PM, k, rl) { var L = PM && PM.ph && PM.ph[String(k)]; if (!L || !L.length) return ''; var G = {}, O = [];
     L.forEach(function (q) { if (q[2] && rl && q[2] !== rl) return; if (!G[q[1]]) { G[q[1]] = []; O.push(q[1]); } if (G[q[1]].indexOf(q[0]) < 0) G[q[1]].push(q[0]); });
     return O.map(function (m) { return G[m].sort(function (a, b) { return SDORD.indexOf(a) - SDORD.indexOf(b); }).map(function (d) { return SDN[d] || d; }).join('·') + '쪽 ' + (SDM[m] || m); }).join(' · '); }
-  var OFCK = null; fetch('data/sig-offset-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OFCK = j; }).catch(function () {});
+  var OFCK = null; seoulLater(function () { fetch('data/sig-offset-check.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OFCK = j; }).catch(function () {}); });
   function sodK(ms) { return ((((ms + 32400000) % 86400000) + 86400000) % 86400000) / 1000; }
   function sigTickHtml(s) { return s && s.no != null ? '<div class="sdnow" id="sigTick" data-no="' + esc(String(s.no)) + '"></div>' : ''; }
   function sigTickPaint() { var el = $('sigTick'); if (!el || !D.sig || !D.sig.spots) return; var no = el.getAttribute('data-no'), s = D.sig.spots.filter(function (q) { return String(q.no) === no; })[0]; if (!s) return;
@@ -7984,9 +7986,21 @@
      · venue-events-seoul.json(서울 문화행사 장소 1,250곳 · venues[{n, gu, lat, lon, yr, kind, day[[날짜, 시작, 끝|null, 갈래]], up[[제목, 갈래, 시작일, 끝일, 시작|null, 끝|null, 시각 글, 주소]]}] — 서울시·자치구 행사가 대부분 · 「행사 없음」으로 읽으면 안 된다)
      · school-cal-seoul.json(days[[날짜, 초·중·고 방학 몫 %, 재량휴업 학교 수, 개학, 졸업식, 입학식]] · csat[[날짜, 학교 수]]). 반경 분석을 처음 열 때 한 번 읽는다(undefined = 아직 · null = 못 읽음) */
   var OVX = { nb: undefined, ve: undefined, sc: undefined, rs: undefined, mv: undefined, bk: undefined, kp: undefined }, OVXP = null;
-  function ovxGet() { if (OVXP) return OVXP; OVXP = Promise.all([['nb', 'night-bus-seoul'], ['ve', 'venue-events-seoul'], ['sc', 'school-cal-seoul'], ['rs', 'rescue119'], ['mv', 'move-mode-seoul'], ['bk', 'bike-hour-seoul'], ['kp', 'venue-events-kopis']].map(function (q) { return fetch('data/' + q[1] + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { OVX[q[0]] = j || null; }).catch(function () { OVX[q[0]] = null; }); })); return OVXP; }
+  /* v2.214.0 겹쳐 보기 자료를 반경이 걸친 곳 것만 받는다(종전 ovxGet: 반경 판을 열면 어디서든 7개 5MB — 공연 2.8MB · 따릉이 0.7MB …).
+     서울 전용 다섯(심야버스 nb · 큰 행사장 ve · 학사일정 sc · 이동 수단 mv · 따릉이 bk)은 반경이 서울(11)에 걸칠 때만 · 119 구조 = data/rescue119/<시도>.json(전국 16장 · 다른 세션 60654818 — items 0번 칸이 원자료 시도 이름인 것만 옛 한 장과 다르다)
+     · 공연 = data/venue-events-kopis/<시도>.json(오면 그것 · 아직 없으면 수도권은 옛 한 장). OVX.rs · OVX.kp 는 부를 때마다 지금 반경의 시도 것으로 다시 맞춘다 */
+  var OVXS = {}, OVXK = {}, OVXW = {};
+  function ovxJ(u) { return fetch(u).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+  function ovxSds() { var o = {}; try { schlGusAt([RAD.c], Math.max(RAD.r || 500, 500)).forEach(function (g) { o[String(g.gu).slice(0, 2)] = 1; }); } catch (e) {} return Object.keys(o); }
+  function ovxNeed() { var sds = ovxSds(), W = [];
+    if (sds.indexOf('11') >= 0 && !OVXW.seoul) { OVXW.seoul = 1; [['nb', 'night-bus-seoul'], ['ve', 'venue-events-seoul'], ['sc', 'school-cal-seoul'], ['mv', 'move-mode-seoul'], ['bk', 'bike-hour-seoul']].forEach(function (q) { W.push(ovxJ('data/' + q[1] + '.json').then(function (j) { OVX[q[0]] = j; })); }); }
+    sds.forEach(function (sd) { if (!OVXW['r' + sd]) { OVXW['r' + sd] = 1; W.push(ovxJ('data/rescue119/' + sd + '.json').then(function (j) { OVXS[sd] = j; })); }
+      if (!OVXW['k' + sd]) { OVXW['k' + sd] = 1; W.push(ovxJ('data/venue-events-kopis/' + sd + '.json').then(function (j) { if (j && j.venues) { OVXK[sd] = j; return; } if (sd !== '11') { OVXK[sd] = null; return; }   /* 옛 한 장(수도권 2.7MB)은 서울에서만 — 경기·인천은 시도 파일이 오면 나온다 */ if (!OVXW.kold) OVXW.kold = ovxJ('data/venue-events-kopis.json'); return OVXW.kold.then(function (o) { OVXK[sd] = o; }); })); } });
+    var rs = null, kp = null, ks = []; sds.forEach(function (sd) { var j = OVXS[sd]; if (j && j.items) { if (!rs) rs = { groups: j.groups, year: j.year, source: j.source, items: [] }; rs.items = rs.items.concat(j.items); }
+      var k = OVXK[sd]; if (k && k.venues && ks.indexOf(k) < 0) { ks.push(k); if (!kp) kp = { made: k.made, source: k.source, note: k.note, venues: [] }; kp.venues = kp.venues.concat(k.venues); } });
+    OVX.rs = rs; OVX.kp = kp; return W.length ? Promise.all(W) : null; }
   function radDay(o) { if (!o || !RAD.c) return ''; var R = [], hr = function (A) { return A && A.some(function (v) { return v > 0; }); };
-    if (OVX.nb === undefined) ovxGet().then(function () { if (RAD.res && !RAD.busy) radPaint(); });
+    var w9 = ovxNeed(); if (w9) w9.then(function () { if (RAD.res && !RAD.busy) radPaint(); });
     if (o.sub && o.sub.n && hr(o.sub.off)) R.push({ lb: '🚇 지하철 하차', sm: o.sub.names.slice(0, 3).join('·') + ' · 옅은 줄 = 승차', A: o.sub.off, B: o.sub.on, c: '#2563eb', u: '명' });
     if (o.bus && o.bus.n && hr(o.bus.off)) R.push({ lb: '🚌 버스 하차', sm: '정류장 ' + o.bus.n + '곳 · 옅은 줄 = 승차', A: o.bus.off, B: o.bus.on, c: '#0891b2', u: '명' });
     if (hr(o.live)) R.push({ lb: '👥 생활인구', sm: (o.we ? '주말' : '평일') + ' · 동 넓이 비율로 나눈 어림', A: o.live, c: '#16a34a', u: '명' });
@@ -8016,7 +8030,7 @@
       if (mvN && hr(mvA)) R.push({ lb: '🚙 차량 도착(추정)', sm: '수도권 생활이동 ' + String(OVX.mv.month || '').slice(0, 4) + '.' + String(OVX.mv.month || '').slice(4) + ' · ' + (o.we ? '주말' : '평일') + ' 하루 평균 · 통신 자료 어림 · 수단 구분은 추정 · 택시·자가용·대리운전이 섞여 있다', A: mvA, c: '#b45309', u: '건' }); }
     if (OVX.rs && OVX.rs.items && o.dk && o.dk.length) { var top9 = o.dk.slice().sort(function (a, b) { return b[1] - a[1]; })[0], ln9 = String(top9[2]).replace(/제?[0-9]+(\.[0-9]+)*가?동$/, '동').replace(/본동$/, '동'), gu9 = String(top9[3]).split(' ').pop();
       var tk9 = String(top9[0]).slice(0, 8), rb9 = 0, rx = null; OVX.rs.items.forEach(function (x) { (x[9] || []).forEach(function (q) { if (String(q[0]) === tk9 && q[1] > rb9) { rb9 = q[1]; rx = x; } }); });
-      if (!rx) rx = OVX.rs.items.filter(function (x) { return x[2] === ln9 && (x[1] === gu9 || String(x[1]).split(' ').pop() === gu9); })[0];
+      if (!rx) { var g9n = gu9.replace(/\s/g, ''); rx = OVX.rs.items.filter(function (x) { if (x[2] !== ln9) return false; var x1 = String(x[1]).replace(/\s/g, ''); return x[1] === gu9 || String(x[1]).split(' ').pop() === gu9 || x1 === g9n || (x1.length >= 3 && g9n.indexOf(x1) === 0); })[0]; }   /* v2.214.0 화성시 ↔ 화성시만세구(일반구가 새로 생긴 시) · 수원시 장안구 ↔ 수원시장안구 */
       if (rx && hr(rx[4])) { var G9 = OVX.rs.groups || [], gi9 = rx[5].map(function (v, i) { return [v, G9[i] || '']; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, 3);
         R.push({ lb: '🚒 119 구조 출동', sm: '법정동 ' + rx[2] + ' 전체(반경보다 넓다) · ' + (OVX.rs.year || '') + '년 ' + rx[3].toLocaleString() + '건 · ' + gi9.map(function (q) { return q[1] + ' ' + q[0].toLocaleString(); }).join(' · ') + ' · 옅은 줄 = 교통 갈래 · 구급차(환자 이송)는 없다', A: rx[4], B: rx[6] && hr(rx[6]) ? rx[6] : null, c: '#dc2626', u: '건' }); } }
     /* v2.195.0 🚲 따릉이 대여(bike-hour-seoul.json · 대여소 2,757곳 · items[[번호, 이름, 구, 경도, 위도, 평일 [24], 주말 [24]]] · 2026-06 하루 평균) — **대여한 곳·시각만**(반납 없음 = 떠나는 사람 줄) · 철을 탄다.

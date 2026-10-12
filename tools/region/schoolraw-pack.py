@@ -59,7 +59,7 @@ def main():
     idx = {'schema': 'tg-school-raw-index/1', 'made': made, 'source': SOURCE, 'license': LICENSE,
            'note': ['**응답 원문 그대로다** — 값도 칸 이름도 고치지 않았고 칸을 고르지 않았다. 동·학군으로 묶은 값, 학교끼리 견주는 값은 이 자료로 만들지 않는다(변경금지)',
                     '졸업생 진로(대학·상급학교 진학)와 교과별 학업성취는 OpenAPI 에 없다 — 학교알리미의 학교별 화면에만 있다(school_page 주소에 SHL_IDF_CD 를 붙인다)',
-                    '공시연도는 최근 3년만 온다 · 서울 25구 · 초·중·고(특수·각종학교는 받지 않았다)',
+                    '공시연도는 최근 3년만 온다 · 받은 시군구는 gus 에 있는 곳(서울·경기·인천) · 초·중·고(특수·각종학교는 받지 않았다)',
                     '칸 이름의 뜻은 학교알리미 OpenAPI 안내서에 있다 — 지도는 뜻을 확인한 칸에만 우리말 이름을 붙이고 나머지는 칸 이름 그대로 보인다'],
            'fields': 'items{항목 번호: 이름} · kinds{학교급 코드: 이름} · years[공시연도] · gus[구 코드] · base = base/<구>.json · detail = <구>.json',
            'items': ITEMS, 'kinds': KINDS, 'years': years, 'gus': sorted(gus), 'count': nsch,

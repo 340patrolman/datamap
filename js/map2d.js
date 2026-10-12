@@ -7861,7 +7861,10 @@
     var c = e.target.closest('#m2dCard [data-copy]'); if (c) { var t = c.getAttribute('data-copy'); try { navigator.clipboard.writeText(t).then(function () { c.textContent = '✅ 복사했다 ' + t; }); } catch (e2) { prompt('복사', t); } } });
   // ---------- v2.28.0 🔗 이 자리의 관계(온톨로지) — 소유자 「여러 가지 온톨로지적 개념을 넣은 설명을 상단에」 ----------
   //  대상(지점·칸·동·지구대·경찰서·시군구·교차로·카메라·응급실·관서)과 그 사이 관계(속함·관할·구역·가까움)를 이름 붙여 잇는다 · 관계마다 근거 = 원자료 / 계산(거리) / 근사
+  var RELGO = [];
   var RELON = false;   // v2.69.1 소유자 「대상과 관계를 이어 주는 온톨로지는 눌러야 열리게」 — 카드마다 접힌 채로 시작(기억하지 않는다)
+  document.addEventListener('click', function (ev) { var b = ev.target.closest && ev.target.closest('[data-relgo]'); if (!b) return; ev.preventDefault(); var g = RELGO[+b.getAttribute('data-relgo')]; if (!g || !g[0]) return; var pt = g[1], sp = pt ? S(pt) : [-99, -99];
+    if (pt && (sp[0] < 40 || sp[0] > cv.clientWidth - 40 || sp[1] < 40 || sp[1] > cv.clientHeight - 40)) { view.cx = pt[0]; view.cy = pt[1]; sp = S(pt); } sel = { x: sp[0], y: sp[1], r: 10, it: g[0] }; show(sel.it); draw(); });
   function relNear(m, arr, pf, nf) { var b = null, bd = 1e12; arr.forEach(function (q) { var p = pf(q); if (!p) return; var d = dTrue(p, m); if (d < bd) { bd = d; b = q; } }); return b ? [nf(b), bd] : null; }
   function relFill(steps, m, it) {
     var box = $('m2dLad'); if (!box) return; var R = [], REL = { cell: ['속한다', '국가지점번호 250m 격자', '원자료'], ri: ['속한다', '브이월드 리 경계', '원자료'], dong: ['속한다', '통계청 SGIS 행정동 경계', '원자료'], pb: ['구역이다', '가장 가까운 지구대·파출소(관할 경계 비공개)', '근사'], ps: ['관할한다', '직제 시행규칙 별표2 × 행정동', '근사'], sgg: ['속한다', 'SGIS 시군구 경계', '원자료'] };
@@ -7871,17 +7874,26 @@
     function fm(d) { return d >= 1000 ? (d / 1000).toFixed(1) + 'km' : Math.round(d) + 'm'; }
     var nx = [];
     var jc = JCN.length ? relNear(m, JCN, function (J) { return J.p; }, function (J) { return J.t[0]; }) : null; if (jc && jc[1] < 3000) nx.push(['🚦 교차로', jc[0], jc[1], 'ITS 교차로 이름(원자료) · 거리 계산']);
-    var cm = D.cam && D.cam.items.length ? relNear(m, D.cam.items, function (c) { return P(c.lon, c.lat); }, function (c) { return c.name || c.loc || c.addr || '무인 단속 카메라'; }) : null; if (cm && cm[1] < 3000) nx.push(['📷 단속 카메라', cm[0], cm[1], '경찰청 무인단속카메라(원자료) · 거리 계산']);
+    var cm = D.cam && D.cam.items.length ? relNear(m, D.cam.items, function (c) { return P(c.lon, c.lat); }, function (c) { return c; }) : null; if (cm && cm[1] < 3000) nx.push(['📷 단속 카메라', cm[0].name || cm[0].loc || cm[0].addr || '무인 단속 카메라', cm[1], '경찰청 무인단속카메라(원자료) · 거리 계산', [{ kind: 'cam', c: cm[0] }, P(cm[0].lon, cm[0].lat)]]);
     var er = PUB && PUB.er && PUB.er.length ? relNear(m, PUB.er, function (q) { return q.p; }, function (q) { return q.name; }) : null; if (er && er[1] < 15000) nx.push(['🏥 응급실', er[0], er[1], '응급의료기관(원자료) · 거리 계산']);
     if (POL2) { var pb = relNear(m, POL2.pbox, function (b) { return b.p; }, function (b) { return b[0] + (b[1] ? ' 파출소' : ' 지구대'); }); if (pb) nx.push(['👮 지구대·파출소 청사', pb[0], pb[1], '경찰청 주소 현황 → 좌표 · 거리 계산']);
       var ps = relNear(m, POL2.stations, function (q) { return q.p; }, function (q) { return q[1]; }); if (ps) nx.push(['🚓 경찰서 청사', ps[0], ps[1], '경찰민원24 좌표 · 거리 계산']); }
     var rpn = RP ? rpNear(m, 'lamp', 400) : null; if (rpn) nx.push(['🔢 가로등 번호', rpn[0][0], rpn[1], '서울시 가로등 위치(2022-11) · 거리 계산']);
+    /* v2.191.0 옆으로 건너가기(소유자 「각각의 자료들을 온톨로지 팔란티어 방식으로 연결해서 사용할 방법」) — 위아래(칸·동·관할·구)는 단추였는데 옆의 대상은 이름뿐이었다.
+       가까운 대상에 건너갈 카드를 붙이고(다섯째 칸 [it, 지도 좌표]) 신호 교차로(방향별 신호값) · 지하철역(밤 승차) · 큰 사건을 더한다. 자료를 아직 안 읽었으면 읽고 다시 그린다(한 번씩) */
+    var sgk = D.sigd && D.sigd.pts ? relNear(m, Object.keys(D.sigd.pts).filter(function (k) { return D.sigd.its && D.sigd.its[k]; }), function (k) { var q = D.sigd.pts[k]; return P(q[1], q[0]); }, function (k) { return k; }) : null;
+    if (sgk && sgk[1] < 3000 && !(it && it.kind === 'sgd' && String(it.no) === String(sgk[0]))) { var sq9 = D.sigd.pts[sgk[0]]; nx.push(['🚥 신호 교차로', (sq9[2] || '신호 교차로') + ' ' + sgk[0], sgk[1], '서울 T-Data 방향별 신호(받은 값) · 거리 계산', [{ kind: 'sgd', no: sgk[0], q: sq9 }, P(sq9[1], sq9[0])]]); }
+    if (!NRD) nrdGet().then(function () { agReshow(); }); else { var ns9 = relNear(m, (NRD.items || []).filter(function (x) { return x[10] != null && x[6] != null; }), function (x) { return x._p || (x._p = P(x[10], x[11])); }, function (x) { return x; });
+      if (ns9 && ns9[1] < 3000 && !(it && it.kind === 'nrl' && it.x === ns9[0])) nx.push(['🚇 지하철역', String(ns9[0][0]).replace(/[(].*[)] *$/, '') + (ns9[0][8] != null ? ' · 밤 승차 ' + (ns9[0][8] > 0 ? '+' : '') + ns9[0][8] + '%' : ''), ns9[1], '서울 열린데이터 지하철 승하차(밤 22~03시 · 2019 → ' + esc(NRD.full_year || '') + ') · 거리 계산', [{ kind: 'nrl', x: ns9[0] }, ns9[0]._p]]); }
+    if (!EVB) evbGet().then(function () { agReshow(); }).catch(function () {}); else { var ev9 = relNear(m, (EVB.items || []).filter(function (e) { return e._p; }), function (e) { return e._p; }, function (e) { return e; });
+      if (ev9 && ev9[1] < 5000 && !(it && it.kind === 'evb' && it.e === ev9[0])) nx.push(['🏗 큰 사건', ev9[0].nm + ' (' + ev9[0].state + ')', ev9[1], '사건 객체(출처 붙은 것만 · events-big) · 거리 계산', [{ kind: 'evb', e: ev9[0] }, ev9[0]._p]]); }
+    RELGO = nx.map(function (q) { return q[4] || null; });
     var ll = [m[0] / KX + LON0, LAT0 - m[1] / KY];
     var h = '<details class="rel"' + (RELON ? ' open' : '') + '><summary>🔗 이 자리의 관계 <small>— 대상과 관계를 이름 붙여 잇는 「온톨로지」 보기</small></summary>' +
       '<div class="relx">지점 <b>' + ll[1].toFixed(5) + ', ' + ll[0].toFixed(5) + '</b>' + (it && it.kind && it.kind !== 'dong' && it.kind !== 'unit' ? ' · 지금 카드 = ' + esc(({ g250: '250m 칸', land: '필지', jgc: '공시지가 칸', node: '교차로', cam: '단속 카메라', stay: '숙박시설', minbak: '도시민박', pub: '시설', rnl: '도로', rpost: '도로 번호', rnear: '가까운 도로 번호' })[it.kind] || it.kind) : '') + '</div>' +
       '<div class="rell">' + R.map(function (r) { return '<div><span class="s">' + r[0] + '</span> ' + r[1] + ' <span class="p">' + r[2] + '</span><small>' + esc(r[3]) + ' · <i class="' + (r[4] === '원자료' ? 'o' : 'a') + '">' + r[4] + '</i></small></div>'; }).join('') +
-      nx.map(function (q) { return '<div><span class="s">가장 가까운 ' + q[0] + '</span> <b>' + esc(q[1]) + '</b> <span class="p">' + fm(q[2]) + '</span><small>' + esc(q[3]) + ' · <i class="c">계산</i></small></div>'; }).join('') + '</div>' +
-      '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
+      nx.map(function (q, i) { return '<div><span class="s">가장 가까운 ' + q[0] + '</span> ' + (q[4] ? '<button data-relgo="' + i + '" title="이 대상의 카드로 건너간다">' + esc(q[1]) + ' ›</button>' : '<b>' + esc(q[1]) + '</b>') + ' <span class="p">' + fm(q[2]) + '</span><small>' + esc(q[3]) + ' · <i class="c">계산</i></small></div>'; }).join('') + '</div>' +
+      '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기 · <b>가장 가까운 ○○ ›</b> 는 옆으로 건너가기 — 화면 밖이면 그리로 옮긴다). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
     h = h.replace(/<\/details>$/, ledgRel(m) + '</details>');
     h += '<div class="lg-btns trbtn"><button data-trhere="' + ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + '" title="이 지점 가까운 정류장 버스 도착·위치 · 지하철 다음 열차 · 기차 · 국내선">🚏 여기 대중교통(실시간)</button></div>';
     if ($('m2dCard') && ((it && (it.kind === 'sgd' || it.kind === 'sig' || it.kind === 'ksc')) || $('m2dCard').querySelector('#sdNow, #kscNow, #sigTick'))) $('m2dCard').insertAdjacentHTML('beforeend', '<div class="relb">' + h + '</div>');   /* v2.105.0 신호 교차로 카드는 신호가 먼저 — 관계·대중교통 단추는 카드 끝으로 */

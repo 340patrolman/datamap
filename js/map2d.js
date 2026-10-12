@@ -7991,13 +7991,15 @@
      · 공연 = data/venue-events-kopis/<시도>.json(오면 그것 · 아직 없으면 수도권은 옛 한 장). OVX.rs · OVX.kp 는 부를 때마다 지금 반경의 시도 것으로 다시 맞춘다 */
   var OVXS = {}, OVXK = {}, OVXW = {};
   function ovxJ(u) { return fetch(u).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
-  function ovxSds() { var o = {}; try { schlGusAt([RAD.c], Math.max(RAD.r || 500, 500)).forEach(function (g) { o[String(g.gu).slice(0, 2)] = 1; }); } catch (e) {} return Object.keys(o); }
-  function ovxNeed() { var sds = ovxSds(), W = [];
-    if (sds.indexOf('11') >= 0 && !OVXW.seoul) { OVXW.seoul = 1; [['nb', 'night-bus-seoul'], ['ve', 'venue-events-seoul'], ['sc', 'school-cal-seoul'], ['mv', 'move-mode-seoul'], ['bk', 'bike-hour-seoul']].forEach(function (q) { W.push(ovxJ('data/' + q[1] + '.json').then(function (j) { OVX[q[0]] = j; })); }); }
-    sds.forEach(function (sd) { if (!OVXW['r' + sd]) { OVXW['r' + sd] = 1; W.push(ovxJ('data/rescue119/' + sd + '.json').then(function (j) { OVXS[sd] = j; })); }
-      if (!OVXW['k' + sd]) { OVXW['k' + sd] = 1; W.push(ovxJ('data/venue-events-kopis/' + sd + '.json').then(function (j) { if (j && j.venues) { OVXK[sd] = j; return; } if (sd !== '11') { OVXK[sd] = null; return; }   /* 옛 한 장(수도권 2.7MB)은 서울에서만 — 경기·인천은 시도 파일이 오면 나온다 */ if (!OVXW.kold) OVXW.kold = ovxJ('data/venue-events-kopis.json'); return OVXW.kold.then(function (o) { OVXK[sd] = o; }); })); } });
-    var rs = null, kp = null, ks = []; sds.forEach(function (sd) { var j = OVXS[sd]; if (j && j.items) { if (!rs) rs = { groups: j.groups, year: j.year, source: j.source, items: [] }; rs.items = rs.items.concat(j.items); }
-      var k = OVXK[sd]; if (k && k.venues && ks.indexOf(k) < 0) { ks.push(k); if (!kp) kp = { made: k.made, source: k.source, note: k.note, venues: [] }; kp.venues = kp.venues.concat(k.venues); } });
+  function ovxGus() { try { return schlGusAt([RAD.c], Math.max(RAD.r || 500, 500)).map(function (g) { return String(g.gu); }); } catch (e) { return []; } }
+  function ovxKs(sd) { if (OVXW['k' + sd]) return OVXW['k' + sd]; OVXW['k' + sd] = ovxJ('data/venue-events-kopis/' + sd + '.json').then(function (j) { if (j && j.venues) { OVXK[sd] = j; return; } if (sd !== '11') { OVXK[sd] = null; return; } if (!OVXW.kold) OVXW.kold = ovxJ('data/venue-events-kopis.json'); return OVXW.kold.then(function (o) { OVXK[sd] = o; }); }); return OVXW['k' + sd]; }   /* 시도 한 장 · 서울만 옛 한 장(수도권)으로 한 번 더 물러선다 */
+  function ovxNeed() { var gus = ovxGus(), so = {}, W = []; gus.forEach(function (g) { so[g.slice(0, 2)] = 1; }); var sds = Object.keys(so);
+    if (so['11'] && !OVXW.seoul) { OVXW.seoul = 1; [['nb', 'night-bus-seoul'], ['ve', 'venue-events-seoul'], ['sc', 'school-cal-seoul'], ['mv', 'move-mode-seoul'], ['bk', 'bike-hour-seoul']].forEach(function (q) { W.push(ovxJ('data/' + q[1] + '.json').then(function (j) { OVX[q[0]] = j; })); }); }
+    sds.forEach(function (sd) { if (!OVXW['r' + sd]) { OVXW['r' + sd] = 1; W.push(ovxJ('data/rescue119/' + sd + '.json').then(function (j) { OVXS[sd] = j; })); } if (sd !== '11' && !OVXW['k' + sd]) W.push(ovxKs(sd)); });
+    /* v2.214.1 서울 공연은 구마다(g/<구>.json · 시도 한 장이 2.3MB 라 폰에 무겁다) — 그 구 파일이 없으면 시도 한 장으로 */
+    gus.forEach(function (gu) { if (gu.slice(0, 2) !== '11' || OVXW['kg' + gu]) return; OVXW['kg' + gu] = 1; W.push(ovxJ('data/venue-events-kopis/g/' + gu + '.json').then(function (j) { OVXK['g' + gu] = j && j.venues ? j : null; if (!OVXK['g' + gu]) return ovxKs('11'); })); });
+    var rs = null, kp = null, ks = []; sds.forEach(function (sd) { var j = OVXS[sd]; if (j && j.items) { if (!rs) rs = { groups: j.groups, year: j.year, source: j.source, items: [] }; rs.items = rs.items.concat(j.items); } });
+    gus.forEach(function (gu) { var sd = gu.slice(0, 2), k = sd === '11' ? (OVXK['g' + gu] || OVXK['11']) : OVXK[sd]; if (k && k.venues && ks.indexOf(k) < 0) { ks.push(k); if (!kp) kp = { made: k.made, source: k.source, note: k.note, venues: [] }; kp.venues = kp.venues.concat(k.venues); } });
     OVX.rs = rs; OVX.kp = kp; return W.length ? Promise.all(W) : null; }
   function radDay(o) { if (!o || !RAD.c) return ''; var R = [], hr = function (A) { return A && A.some(function (v) { return v > 0; }); };
     var w9 = ovxNeed(); if (w9) w9.then(function () { if (RAD.res && !RAD.busy) radPaint(); });

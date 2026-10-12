@@ -5,6 +5,7 @@
 #     pblprfr?stdate&eddate(31일까지)&cpage&rows(100까지)&signgucode(11 서울·41 경기·28 인천) 공연 목록 → pblprfr/<공연 ID> 상세(공연장 ID mt10id · dtguidance 요일(시각) · prfruntime 공연 시간) → prfplc/<공연장 ID> 상세(la·lo·seatscale·홀)
 #     받은 것은 07_API키/out/kopis/{list,prf,plc}/ 에 그대로 둔다(다시 돌리면 없는 것만 받는다)
 #   끝 시각 = 시작 시각 + 공연 시간(자료의 prfruntime 그대로 — 인터미션 포함 여부는 공연마다 다르고 커튼콜·퇴장 시간은 없다). 공연 시간이 없으면 끝은 null
+#   ⚠ 2026-10-13 전국을 한 번에(약 9천 번 · 0.05초 간격) 받은 뒤 KOPIS 가 이 PC 를 막았다(HTTP 400 「Request Blocked」 — 모든 요청) → 간격을 0.5초로 늘렸다. 막히면 그날은 다시 부르지 않는다. 광주(29)·전남(46)은 그때 한 건도 안 받아졌다(코드가 바뀌었는지 막힌 탓인지 모름 — 풀린 뒤 한 번 불러 확인)
 #   py -3.12 -X utf8 tools/region/kopis-bake.py fetch [앞 달수 3] [뒤 달수 3]   → 받기(오래 걸린다 · 뒤에서)
 #   py -3.12 -X utf8 tools/region/kopis-bake.py build                            → 굽기(한 장 = 서울·경기·인천 · venue-events-kopis/<시도>.json = 전국)
 import json, os, re, sys, time, glob, datetime, collections, urllib.request, html
@@ -44,7 +45,7 @@ def fetch(back=3, fwd=3):
         if not os.path.exists(p):
             t = get('pblprfr/' + pid)
             if '<mt20id>' not in t: continue
-            open(p, 'w', encoding='utf-8', newline='\n').write(t); n += 1; time.sleep(0.05)
+            open(p, 'w', encoding='utf-8', newline='\n').write(t); n += 1; time.sleep(0.5)
         else: t = open(p, encoding='utf-8').read()
         plc.add(tag(t, 'mt10id'))
         if i % 500 == 0: print('상세', i, '/', len(ids), '새로', n); sys.stdout.flush()
@@ -53,7 +54,7 @@ def fetch(back=3, fwd=3):
         p = os.path.join(OUT, 'plc', fid + '.xml')
         if os.path.exists(p): continue
         t = get('prfplc/' + fid)
-        if '<mt10id>' in t: open(p, 'w', encoding='utf-8', newline='\n').write(t); m += 1; time.sleep(0.05)
+        if '<mt10id>' in t: open(p, 'w', encoding='utf-8', newline='\n').write(t); m += 1; time.sleep(0.5)
     print('끝 — 공연', len(ids), '새 상세', n, '공연장', len(plc), '새로', m)
 WD = '월화수목금토일'
 def runtime(s):

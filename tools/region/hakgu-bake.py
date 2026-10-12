@@ -7,7 +7,7 @@
 #   HAKGUDO_GB: 0 = 통학구역·학교군(·중학구) · 1 = 공동통학구역·공동학구(두 학교 가운데 고를 수 있는 곳 — 다른 구역과 겹친다)
 #   행정동 겹침 = 통계청 SGIS 행정동 경계(13_관할경계/원자료/hjd20260701.geojson · CC BY 4.0)와 넓이로 — [[행정동 8자리, 이 구역 넓이 가운데 %, 그 동 넓이 가운데 %]] · 넓이 비율이지 사는 사람 비율이 아니다
 #   학교 ID(B…)는 학구도 쪽 번호라 학교알리미의 정보공시 학교코드와 다르다 → 이름 + 300m 로 이은 SCHUL_CODE 를 같이 싣는다(수도권 · 07_API키/out/schoolinfo/api)
-#   py -3.12 -X utf8 tools/region/hakgu-bake.py [시도 코드…]   (기본 11 41 28) → <시도>.json + g/<시군구>.json
+#   py -3.12 -X utf8 tools/region/hakgu-bake.py [시도 코드…]   (기본 11 41 28) → data/school-zone/g/<시군구>.json(지도가 읽는 것) + 시도 한 장은 저장소 밖 07_API키/out/hakgu/<시도>.json(2026-10-12 저장소 용량 때문에 뺌 · 16장 약 60MB)
 import csv, io, json, os, re, sys, glob, math, datetime, collections, warnings, shapefile
 from pyproj import Transformer
 from shapely.geometry import shape, mapping
@@ -81,7 +81,7 @@ def main(sidos):
                'fields': {'schools': '{학구도 학교 ID: [학교 이름, 학교급, 설립, 경도, 위도, 정보공시 학교코드|null, 운영 상태]}',
                           'items': '[[종류(초·중·고), 학구 ID, 이름, gb(0 통학구역·학교군 · 1 공동), 교육지원청, 가운데 경도, 가운데 위도, 테두리 [[[경도, 위도]…]…], [이 구역의 학구도 학교 ID…], [[행정동 8자리, 이 구역 넓이 가운데 %, 그 동 넓이 가운데 %]…]]]'},
                'count': {'%s·%s' % (k[0], '공동' if k[1] else '구역'): v for k, v in sorted(cnt.items())}, 'schools': SCHOOLS[sd], 'items': items}
-        p = os.path.join(ROOT, 'data', 'school-zone', sd + '.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+        os.makedirs(os.path.join(KB, 'out', 'hakgu'), exist_ok=True); p = os.path.join(KB, 'out', 'hakgu', sd + '.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
         print(sd, '바이트', os.path.getsize(p), dict(doc['count']), '학교', len(SCHOOLS[sd]), '학교알리미 이음', nal)
         # 시군구마다 한 파일(폰이 시도 파일을 통째로 읽지 않게) — 그 시군구의 행정동에 걸친 구역 + 그 구역의 학교. 두 시군구에 걸친 구역은 양쪽에 다 싣는다
         os.makedirs(os.path.join(ROOT, 'data', 'school-zone', 'g'), exist_ok=True); BY = collections.defaultdict(list)

@@ -6,7 +6,7 @@
 #     받은 것은 07_API키/out/kopis/{list,prf,plc}/ 에 그대로 둔다(다시 돌리면 없는 것만 받는다)
 #   끝 시각 = 시작 시각 + 공연 시간(자료의 prfruntime 그대로 — 인터미션 포함 여부는 공연마다 다르고 커튼콜·퇴장 시간은 없다). 공연 시간이 없으면 끝은 null
 #   py -3.12 -X utf8 tools/region/kopis-bake.py fetch [앞 달수 3] [뒤 달수 3]   → 받기(오래 걸린다 · 뒤에서)
-#   py -3.12 -X utf8 tools/region/kopis-bake.py build                            → 굽기
+#   py -3.12 -X utf8 tools/region/kopis-bake.py build                            → 굽기(한 장 = 서울·경기·인천 · venue-events-kopis/<시도>.json = 전국)
 import json, os, re, sys, time, glob, datetime, collections, urllib.request, html
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); KB = os.path.join(os.path.dirname(ROOT), '07_API키'); OUT = os.path.join(KB, 'out', 'kopis'); SIDO = {'11': '서울', '41': '경기', '28': '인천'}
 def key(): return json.load(open(os.path.join(KB, 'keys.json'), encoding='utf-8-sig'))['kopis']
@@ -20,12 +20,16 @@ def num(v):
     v = re.sub(r'[^0-9]', '', v or ''); return int(v) if v else 0
 def tag(x, t):
     m = re.search(r'<%s>(.*?)</%s>' % (t, t), x, re.S); return html.unescape(m.group(1)).strip() if m else ''
+# 전국(2026-10-13 소유자 「기회될 때 전국으로」): KOPIS 의 시도 코드(signgucode) — 지도의 시도 코드와 다른 곳이 있다(광주 29 · 전남 46 · 전북 45 · 강원 51)
+KSG = ['11', '26', '27', '28', '29', '30', '31', '36', '41', '51', '43', '44', '45', '46', '47', '48', '50']
+# 주소 앞 낱말 → 지도의 시도 코드(광주·전남 = 12 · 전북 52 · 강원 51)
+ADDR = [('서울', '11'), ('부산', '26'), ('대구', '27'), ('인천', '28'), ('광주', '12'), ('대전', '30'), ('울산', '31'), ('세종', '36'), ('경기', '41'), ('강원', '51'), ('충청북', '43'), ('충북', '43'), ('충청남', '44'), ('충남', '44'), ('전북', '52'), ('전라북', '52'), ('전남', '12'), ('전라남', '12'), ('경상북', '47'), ('경북', '47'), ('경상남', '48'), ('경남', '48'), ('제주', '50')]
 def fetch(back=3, fwd=3):
     for d in ('list', 'prf', 'plc'): os.makedirs(os.path.join(OUT, d), exist_ok=True)
     today = datetime.date.today(); a = today - datetime.timedelta(days=30 * back); end = today + datetime.timedelta(days=30 * fwd); ids = {}
     while a < end:
         b = min(a + datetime.timedelta(days=30), end)
-        for sg in SIDO:
+        for sg in KSG:
             pg = 1
             while True:
                 t = get('pblprfr', stdate=a.strftime('%Y%m%d'), eddate=b.strftime('%Y%m%d'), cpage=pg, rows=100, signgucode=sg); dbs = re.findall(r'<db>(.*?)</db>', t, re.S)
@@ -96,7 +100,7 @@ def build():
                 v['day'].append([ds, st, en, si]); nd += 1
             d += datetime.timedelta(days=1)
     venues = [v for v in V.values() if v['shows']]
-    for v in venues: v['day'].sort(key=lambda x: (x[0], x[1], x[3])); v['sido'] = next((s for s in SIDO.values() if s in v['addr'][:8]), ''); a = v.pop('addr').split(); v['gu'] = ' '.join(a[1:3]) if len(a) > 2 and a[1].endswith('시') and a[2].endswith('구') else (a[1] if len(a) > 1 else '')
+    for v in venues: v['day'].sort(key=lambda x: (x[0], x[1], x[3])); v['sd'] = next((c for k, c in ADDR if v['addr'].startswith(k)), ''); v['sido'] = next((s for s in SIDO.values() if s in v['addr'][:8]), ''); a = v.pop('addr').split(); v['gu'] = ' '.join(a[1:3]) if len(a) > 2 and a[1].endswith('시') and a[2].endswith('구') else (a[1] if len(a) > 1 else '')
     venues.sort(key=lambda v: -len(v['day']))
     doc = {'schema': 'tg-venue-kopis/1', 'made': today.isoformat(), 'source': '(재)예술경영지원센터 공연예술통합전산망(KOPIS · www.kopis.or.kr) OpenAPI — 공연 목록·상세·공연시설 상세 · %s 받음 · 서울·경기·인천' % today.isoformat(),
            'note': ['공연장마다 좌표·객석 수가 있고 공연마다 요일별 시작 시각·공연 시간이 있다 — **끝 시각 = 시작 + 공연 시간**(자료의 공연 시간 칸 그대로 · 커튼콜·퇴장에 걸리는 시간은 없다 · 공연 시간이 없는 공연은 끝 null). 공연 %d건 가운데 공연 시간이 있는 것 %d건' % (np, nrt),
@@ -106,6 +110,13 @@ def build():
                     '대중음악 큰 공연은 예매처가 KOPIS 에 보내는 것만 실린다 — 빠진 공연이 있을 수 있다. 서울시·자치구 행사는 venue-events-seoul.json'],
            'fields': {'venues': '[{id 공연시설 ID, n 이름, sido, gu 시군구, lat, lon, seats 홀 객석 수의 합(자료의 시설 전체 값은 틀린 곳이 있어 쓰지 않았다), kind 시설 성격, halls [[홀 이름, 객석 수]], shows [[제목, 갈래, 시작일, 끝일, 요일(시각) 안내 글 그대로, 공연 시간(분)|null, 홀 이름, 그 홀 객석 수|null, 공연 ID]], day [[날짜, 시작 HH:MM, 끝 HH:MM|null, shows 의 차례 번호]](오늘 앞뒤 95일)}] — 회차 많은 차례'},
            'venues': venues}
+    # 시도마다 한 장(전국) — data/venue-events-kopis/<지도의 시도 코드>.json · 꼴은 한 장과 같다. 옛 한 장(venue-events-kopis.json)은 서울·경기·인천만 그대로 둔다(지도가 읽는다)
+    os.makedirs(os.path.join(ROOT, 'data', 'venue-events-kopis'), exist_ok=True); allv = venues; bysd = collections.defaultdict(list)
+    for v in allv: bysd[v.pop('sd')].append(v)
+    for sd, vs in sorted(bysd.items()):
+        if not sd: continue
+        dd = dict(doc); dd['sido_code'] = sd; dd['venues'] = vs; dd['source'] = doc['source'].replace('서울·경기·인천', '전국 가운데 이 시도'); ps = os.path.join(ROOT, 'data', 'venue-events-kopis', sd + '.json'); json.dump(dd, open(ps, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); print('  ', sd, len(vs), sum(len(v['day']) for v in vs), os.path.getsize(ps))
+    venues = [v for v in allv if v['sido']]; doc['venues'] = venues
     p = os.path.join(ROOT, 'data', 'venue-events-kopis.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('바이트', os.path.getsize(p), '공연장', len(venues), '공연', np, '공연 시간 있음', nrt, '회차', nd, '끝 시각 있음', ne)
     for v in sorted(venues, key=lambda v: -v['seats'])[:15]: print(v['n'], v['seats'], len(v['shows']), len(v['day']))

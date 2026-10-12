@@ -68,6 +68,32 @@ def main():
                     '시각 칸이 깨진 %d줄은 뺐다' % bad],
            'fields': {'groups': '갈래 여섯(이 차례)', 'sido': '{시도: {h [시 0~23 건수], g [갈래 6][시 0~23]}}', 'items': '[[시도, 시군구, 법정동, 한 해 건수, 시간대별 건수[24], 갈래별 건수[6], 교통 갈래의 시간대별 건수[24], 신고→출동 가운데값(분) 또는 null, 법정동 8자리 코드 또는 null, [[이 법정동이 걸친 행정동 8자리, 넓이 %]…넓은 셋] 또는 null(b2a.json · 서울·경기만 — 인천과 이름이 안 맞은 동은 null)]]'},
            'groups': GRP, 'sido': {k: {'h': ALLH[k], 'g': ALLG[k]} for k in ALLH}, 'items': items}
+    # 전국(2026-10-13 소유자 「기회될 때 전국으로」) — 시도마다 한 장 data/rescue119/<지도의 시도 코드>.json · 꼴은 한 장과 같다(법정동 코드·행정동 겹침은 b2a 가 서울·경기뿐이라 그 밖은 null). 옛 한 장은 서울·경기·인천 그대로
+    NAT = {'서울특별시': '11', '부산광역시': '26', '대구광역시': '27', '인천광역시': '28', '광주광역시': '12', '대전광역시': '30', '울산광역시': '31', '세종특별자치시': '36', '경기도': '41', '강원특별자치도': '51', '충청북도': '43', '충청남도': '44', '전북특별자치도': '52', '전라남도': '12', '전남광주통합특별시': '12', '경상북도': '47', '경상남도': '48', '제주특별자치도': '50'}
+    DN = {}; HN = collections.defaultdict(lambda: [0] * 24); GNN = collections.defaultdict(lambda: [[0] * 24 for _ in GRP]); miss = collections.Counter()
+    for x in r[1:]:
+        if len(x) < 10: continue
+        sd = NAT.get(x[5].strip())
+        if not sd: miss[x[5]] += 1; continue
+        try: h = int(x[2][:2])
+        except Exception: continue
+        k = (sd, x[5].strip(), x[6].strip(), x[7].strip()); d = DN.setdefault(k, {'h': [0] * 24, 'g': [0] * 6, 't': [0] * 24, 'm': []}); g = grp(x[8].strip()); d['h'][h] += 1; d['g'][g] += 1; HN[sd][h] += 1; GNN[sd][g][h] += 1
+        if g == 1: d['t'][h] += 1
+        try:
+            a_ = datetime.datetime.strptime(x[1] + ' ' + x[2], '%Y-%m-%d %H:%M'); b_ = datetime.datetime.strptime(x[3] + ' ' + x[4], '%Y-%m-%d %H:%M'); mm = (b_ - a_).total_seconds() / 60
+            if 0 <= mm <= 120: d['m'].append(mm)
+        except Exception: pass
+    os.makedirs(os.path.join(ROOT, 'data', 'rescue119'), exist_ok=True); CODE = {(i[0], i[1], i[2]): (i[8], i[9]) for i in items if len(i) > 9}; SH = {'11': '서울', '41': '경기', '28': '인천'}
+    for sd in sorted(HN):
+        its = []
+        for k, d in sorted(DN.items()):
+            if k[0] != sd or not k[3]: continue
+            c = CODE.get((SH.get(sd, ''), k[2], k[3]), (None, None)); its.append([k[1], k[2], k[3], sum(d['h']), d['h'], d['g'], d['t'], (round(statistics.median(d['m']), 1) if len(d['m']) >= 20 else None), c[0], c[1]])
+        dd = {k: v for k, v in doc.items() if k not in ('items', 'sido')}; dd['sido_code'] = sd; dd['total'] = {'h': HN[sd], 'g': GNN[sd]}
+        dd['fields'] = {'groups': '갈래 여섯(이 차례)', 'total': '{h [시 0~23 건수], g [갈래 6][시 0~23]}(이 시도)', 'items': '[[시도 이름, 시군구, 법정동, 한 해 건수, 시간대별 건수[24], 갈래별 건수[6], 교통 갈래의 시간대별 건수[24], 신고→출동 가운데값(분)|null, 법정동 8자리 코드|null, [[걸친 행정동 8자리, 넓이 %]…]|null(서울·경기만)]]'}
+        dd['source'] = '공공데이터포털 「소방청_구조활동현황」(15062386 · 2025-01-01 ~ 12-31 · 전국 613,150건 가운데 이 시도 %d건)' % sum(HN[sd]); dd['items'] = its
+        pp = os.path.join(ROOT, 'data', 'rescue119', sd + '.json'); json.dump(dd, open(pp, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); print('  ', sd, '동', len(its), '건', sum(HN[sd]), os.path.getsize(pp))
+    if miss: print('  시도 이름 못 맞춤', dict(miss))
     p = os.path.join(ROOT, 'data', 'rescue119.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); print('119 바이트', os.path.getsize(p), '동', len(items), '건', n, '깨짐', bad)
     print('서울 시간대', ALLH['서울']); print('서울 교통 시간대', ALLG['서울'][1])
     print([(i[2], i[3], i[5], i[7]) for i in items if i[1] == '서초구'])

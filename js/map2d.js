@@ -2755,6 +2755,10 @@
     if (offs.length) h += row(hh + '시 하차 상위', offs.slice(0, 3).map(function (x) { return esc(x[0]) + ' ' + x[1].toLocaleString(); }).join(' · ') + ' <em>(하루 평균)</em>');
     return h;
   }
+  /* v2.202.0 &day=1(T-Book 공연 시각 잇기 · 소유자 2026-10-12 「권고대로 진행」) — 넘겨받은 자리에서 📐 반경 분석을 열어 맨 위 「🕐 이 자리의 하루」(🎭 공연 시각 줄 포함)를 바로 보인다.
+     같은 해시로는 한 번만(applyHash 는 창 크기가 바뀔 때도 다시 불린다) · 자리가 없으면 아무것도 안 한다 · &gps=1 로 자리가 옮겨지면 그 자리에서 다시 연다 */
+  var DAYK = '';
+  function dayHash(p, again) { if (!p || !/[#&]day=1(?!\d)/.test(location.hash) || (!again && DAYK === location.hash)) return; DAYK = location.hash; setTimeout(function () { radOpen(p); }, 0); }
   function applyHash() {
     if (!cv.clientWidth || !cv.clientHeight) return true;   // v2.90.0 창 크기 0(숨은 탭)이면 자리를 잡지 않는다 — 0÷0 으로 화면 가운데가 NaN 이 됐다 · 크기가 생기면 ResizeObserver(v2.88.2)가 fit+applyHash 를 다시 부른다
     var vm = /[#&]v=(-?[\d.]+),(-?[\d.]+),(\d+)/.exec(location.hash);   // v2.44.0 💻 PC로 보내기 — 폰에서 보던 자리·넓이(반경 m)를 그대로 · &t= 누른 자리면 그 카드를 다시 연다 · 「보고 자리」 표시 없음
@@ -2764,11 +2768,12 @@
     if (!m || !n) return false;
     var lat = +m[1], lon = +n[1];
     if (!isFinite(lat) || !isFinite(lon) || lat < 33.0 || lat > 38.7 || lon < 124.5 || lon > 131.95) return false;   // v2.11.0 전국(종전 서초 상자 — T-Book 주소는 그대로 됨)
-    if (lat < 37.395 || lat > 37.535 || lon < 126.935 || lon > 127.135) { var q0 = P(lon, lat); TAPM = q0; view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 1500); view.cx = q0[0]; view.cy = q0[1]; draw(); return true; }   // 서초 밖 = 그 자리로 옮기기만(「보고 자리」 카드는 서초 자료 기준이라 띄우지 않는다)
+    if (lat < 37.395 || lat > 37.535 || lon < 126.935 || lon > 127.135) { var q0 = P(lon, lat); TAPM = q0; view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 1500); view.cx = q0[0]; view.cy = q0[1]; draw(); dayHash(q0); return true; }   // 서초 밖 = 그 자리로 옮기기만(「보고 자리」 카드는 서초 자료 기준이라 띄우지 않는다)
     REP = { p: P(lon, lat), here: /[#&]here=1(?!\d)/.test(location.hash) };   // here=1 = T-Book 홈 「📍 지금 위치」(v0.10.77) — 아니면 최초보고 「보고 자리」
     TAPM = REP.p; view.s = Math.min(cv.clientWidth, cv.clientHeight) / (2 * 500); view.cx = REP.p[0]; view.cy = REP.p[1] + cv.clientHeight * 0.22 / view.s;   // 아래 카드에 가리지 않게 표시를 위쪽에   // 반경 약 500m
     if (on.bld && view.s > 0.12) loadBld();
     draw(); var s = S(REP.p); sel = { x: s[0], y: s[1], r: 12, it: { kind: 'report' } }; show({ kind: 'report' }); draw();
+    dayHash(REP.p);
     return true;
   }
   // &gps=1(T-Book v23.52 · 홈 관내 이름) — 열린 뒤 스스로 지금 위치를 다시 잡는다. 정밀 1km 안 · 서초 상자 안일 때만 옮기고, 아니면 넘겨받은 자리 그대로. 좌표는 저장하지 않는다.
@@ -2779,6 +2784,7 @@
       var c = pos.coords; if (!(c.accuracy <= 1000) || c.latitude < 37.395 || c.latitude > 37.535 || c.longitude < 126.935 || c.longitude > 127.135) return;
       REP = { p: P(c.longitude, c.latitude), here: true, acc: Math.round(c.accuracy) }; view.cx = REP.p[0]; view.cy = REP.p[1] + cv.clientHeight * 0.22 / view.s;
       draw(); var s = S(REP.p); sel = { x: s[0], y: s[1], r: 12, it: { kind: 'report' } }; show({ kind: 'report' }); draw();
+      dayHash(REP.p, 1);
     }, function () {}, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
   }
   window.addEventListener('hashchange', function () { if (hashLayers()) { paintLayers(); if (on.bld && view.s > 0.12) loadBld(); } if (Object.keys(D).length) { if (!applyHash()) draw(); } });

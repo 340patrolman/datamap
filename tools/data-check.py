@@ -75,6 +75,7 @@ SETS = [
     ['data/r/11680/jct.json', 365, 'auto', '교차로별 사고 10년 — 사고 10년(taas10) 또는 바탕 조각 교차로가 바뀌면 `py -3.12 -X utf8 tools/region/jct-bake.py`'],
     ['data/r/11680/hot10.json', 365, 'auto', '다발지 10년 서울·경기 — 새 공표 해가 나오면 `tools/region/hot10-bake.py fetch`(1개씩 · 동시 호출하면 막힘) → `build`'],
     # v2.99.0(2026-10-09) 이번 판들에서 생긴 자료
+    ['data/venue-events-kopis.json', 31, 'auto', 'KOPIS 공연 일정 — 날마다 회차(day)는 받은 날 앞뒤 95일뿐이라 달마다 다시 받는다(안 받으면 석 달 뒤 지도·T-Book 의 🎭 공연 시각이 빈다) · `py -3.12 -X utf8 tools/region/kopis-bake.py fetch` → `build`(열쇠 keys.json kopis · 서울·경기·인천)'],
     ['data/mig-dong.json', 31, 'hand', '동별 전입·전출(행정안전부 지역별 인구이동 15108093 · 달마다) — 코워크가 받아 동·달 CSV(07_API키/out/mig) → `py -3.12 -X utf8 tools/region/mig-bake.py "<자료 이름 (받은 날)>"` · 지금 서초·강남만(전국은 받는 방식부터)'],
     ['data/redev.json', 31, 'hand', '입주 예정 단지(손 목록 · 출처·checked) — 새 입주 예정(고시·국토부 15160169·언론)을 더하고, 주민 기준월보다 앞이 된 단지는 add=false 로'],
     ['data/home-ref.json', 92, 'auto', '시도·시군구 집값 기준표 — 실거래(home.json)를 다시 구운 뒤 `py -3.12 -X utf8 tools/region/homeref-bake.py`'],

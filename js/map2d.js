@@ -468,7 +468,9 @@
     });
     if (D.gu) (D.gu.districts || D.gu.gu || []).forEach(function (g) { var rings = g.rings || g.lines || (g.coords ? [g.coords] : []); rings.forEach(function (r) { GU.push({ name: g.name, pts: r.map(function (q) { return P(q[0], q[1]); }) }); }); });
   }
-  function prepBld() { if (!D.bld) return; BLD = (D.bld.buildings || []).map(function (b) { return { p: (b.p || []).map(function (q) { return fullM(q[0], q[1]); }), n: b.n || '', lv: b.lv || 0 }; }).filter(function (b) { return b.p.length > 2; }); }
+  function prepBld() { if (!D.bld) return; BLD = (D.bld.buildings || []).map(function (b) { return { p: (b.p || []).map(function (q) { return fullM(q[0], q[1]); }), n: b.n || '', lv: b.lv || 0 }; }).filter(function (b) { return b.p.length > 2; });
+    /* v2.208.0 건물마다 둘레 상자 · 도는 방향을 하나로(한 번에 칠할 때 겹친 건물이 서로 지워지지 않게) */
+    BLD.forEach(function (b) { var q = b.p, x0 = 1e12, x1 = -1e12, y0 = 1e12, y1 = -1e12, a = 0; for (var i = 0, n = q.length; i < n; i++) { var c = q[i], d = q[(i + 1) % n]; if (c[0] < x0) x0 = c[0]; if (c[0] > x1) x1 = c[0]; if (c[1] < y0) y0 = c[1]; if (c[1] > y1) y1 = c[1]; a += c[0] * d[1] - d[0] * c[1]; } if (a < 0) q.reverse(); b.bx = [x0, x1, y0, y1]; }); }
   function along(pts, ax, t) {   // 중심선에서 주축 값 t 의 가로 값(ax 0: x 로 z 를 · ax 1: z 로 x 를)
     var s = pts.slice().sort(function (a, b) { return a[ax] - b[ax]; }), o = 1 - ax;
     if (t <= s[0][ax]) return s[0][o];
@@ -520,6 +522,13 @@
   var F2 = null;
   var PAL = ['#dbeafe', '#fce7f3', '#dcfce7', '#fef9c3', '#ede9fe', '#ffedd5', '#cffafe', '#fee2e2', '#e0e7ff'];
   function path(pts) { ctx.beginPath(); pts.forEach(function (q, k) { var s = S(q); if (k) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); }
+  /* v2.208.0 소유자 「스마트폰이 멈춘다 · 한 번에 돌리기 너무 큰지 확인」 — 재 보니 내려받는 양보다 **그리기**였다: 한 번 그리는 데 PC 에서 70~270ms(폰은 4~5배)인데 손가락이 움직일 때마다(초당 60~120번) draw() 를 그대로 불러 밀렸다.
+     drawSoon() = 끌기·두 손가락 확대·휠은 화면 프레임 하나에 한 번만 그린다(밀린 것은 버린다). ringsPath() = 동 테두리를 그릴 때 좌표 변환을 줄 안에서 하고(점마다 배열을 만들지 않는다) 화면에서 0.7px 안 되게 붙은 점은 건너뛴다 */
+  var DRAWQ = 0, MOVING = 0, MOVET = 0;   /* MOVING = 손가락이 지도를 움직이는 중 — 점선 길(보행·자전거 · 지하차도)은 손을 뗀 뒤에 그린다 */
+  function moveEnd() { clearTimeout(MOVET); MOVET = setTimeout(function () { if (MOVING) { MOVING = 0; drawSoon(); } }, 160); }
+  function drawSoon() { if (DRAWQ) return; DRAWQ = 1; var done = 0, go = function () { if (done) return; done = 1; DRAWQ = 0; draw(); }; requestAnimationFrame(go); setTimeout(go, 120); }   /* 가려진 화면에서는 rAF 가 안 돈다 — 120ms 뒤 타이머가 대신 그린다 */
+  function ringAdd(r, k, ox, oy) { var n = r.length, lx = 0, ly = 0; for (var i = 0; i < n; i++) { var x = r[i][0] * k + ox, y = r[i][1] * k + oy; if (!i) { ctx.moveTo(x, y); lx = x; ly = y; } else if (i === n - 1 || Math.abs(x - lx) + Math.abs(y - ly) >= 0.7) { ctx.lineTo(x, y); lx = x; ly = y; } } ctx.closePath(); }
+  function ringsPath(Pg) { var k = view.s, ox = cv.clientWidth / 2 - view.cx * k, oy = cv.clientHeight / 2 - view.cy * k; ctx.beginPath(); for (var a = 0; a < Pg.length; a++) ringAdd(Pg[a], k, ox, oy); }
   function zk() { return Math.max(0.55, Math.min(1.35, view.s / 0.3)); }
   function dot(q, r, fill, stroke, item) { var s = S(q); if (s[0] < -40 || s[1] < -40 || s[0] > cv.clientWidth + 40 || s[1] > cv.clientHeight + 40) return; r = r * zk(); ctx.beginPath(); ctx.arc(s[0], s[1], r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.lineWidth = 1.5; ctx.strokeStyle = stroke; ctx.stroke(); } if (item) hit.push({ x: s[0], y: s[1], r: Math.max(r, 9), it: item }); }
   function halo(q, text, size, color, dark) { var s0 = S(q); ctx.font = 'bold ' + size + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round'; ctx.lineWidth = 3.5; ctx.strokeStyle = dark ? 'rgba(15,22,36,.9)' : 'rgba(255,255,255,.95)'; ctx.strokeText(text, s0[0], s0[1]); ctx.fillStyle = color; ctx.fillText(text, s0[0], s0[1]); }   // 글씨만(바탕 상자 없이 테두리 빛)
@@ -999,21 +1008,22 @@
     var VW = drawVw();
     var ymd = pickDate(), RVIS = RDONG.filter(inViewBox);
     // 이웃 구의 동(회색 · 점선 경계) — 그 구의 지역 자료를 받았으면 그쪽이 그린다
-    NEAR.forEach(function (d) { if (RGUN[d.gu]) return;
-      d.polys.forEach(function (Pg) { ctx.beginPath(); Pg.forEach(function (r) { r.forEach(function (q, n) { var s = S(q); if (n) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); ctx.closePath(); });
+    var vA = M(0, 0), vB = M(W, H);
+    NEAR.forEach(function (d) { if (RGUN[d.gu]) return; if (d.box[1] < vA[0] || d.box[0] > vB[0] || d.box[3] < vA[1] || d.box[2] > vB[1]) return;
+      d.polys.forEach(function (Pg) { ringsPath(Pg);
         if (on.dong) { var hl = sel && sel.it.kind === 'near' && sel.it.d === d; ctx.fillStyle = dark ? (hl ? 'rgba(148,163,184,.35)' : 'rgba(148,163,184,.10)') : (hl ? '#e2e8f0' : '#f1f5f9'); ctx.fill('evenodd'); }
         ctx.lineWidth = 0.9; ctx.setLineDash([3, 3]); ctx.strokeStyle = dark ? 'rgba(148,163,184,.5)' : 'rgba(100,116,139,.55)'; ctx.stroke(); ctx.setLineDash([]); });
     });
     // 행정동
-    DONG.concat(RVIS).forEach(function (d, k) {
-      d.polys.forEach(function (Pg) { ctx.beginPath(); Pg.forEach(function (r) { r.forEach(function (q, n) { var s = S(q); if (n) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); ctx.closePath(); });
+    DONG.concat(RVIS).forEach(function (d, k) { if (d.box && (d.box[1] < vA[0] || d.box[0] > vB[0] || d.box[3] < vA[1] || d.box[2] > vB[1])) return;
+      d.polys.forEach(function (Pg) { ringsPath(Pg);
         var lv = on.live ? liveNow(d) : null;
         if (lv) { var t = Math.min(1, lv.n / (lv.max || 1)); ctx.fillStyle = 'rgba(' + Math.round(255 - 40 * t) + ',' + Math.round(230 - 170 * t) + ',' + Math.round(150 - 110 * t) + ',' + (dark ? .55 : .75) + ')'; ctx.fill('evenodd'); }
         else if (on.sales && salesNow(d)) { var sn = salesNow(d); ctx.fillStyle = 'rgba(' + Math.round(237 - 120 * sn.t) + ',' + Math.round(233 - 180 * sn.t) + ',' + Math.round(254 - 40 * sn.t) + ',' + (dark ? .5 : .8) + ')'; ctx.fill('evenodd'); }
         else if (on.dong) { var hl3 = sel && sel.it.kind === 'dong' && sel.it.d === d; ctx.fillStyle = dark ? 'rgba(90,120,170,' + (hl3 ? '.45' : BASE ? '.08' : '.18') + ')' : (hl3 ? '#fde68a' : PAL[k % PAL.length]); if (VW && !hl3) ctx.globalAlpha = 0.14; else if (BASE && !hl3 && !dark) ctx.globalAlpha = 0.3; ctx.fill('evenodd'); ctx.globalAlpha = 1; }
         if (!BASE) { ctx.lineWidth = (on.dong ? 1.6 : 0.8) * (d.rg ? 0.7 : 1); ctx.strokeStyle = dark ? 'rgba(160,190,230,.6)' : 'rgba(40,60,90,.45)'; ctx.stroke(); } });
     });
-    if (BASE) { if (!VW) drawBaseAreas(dark); DONG.concat(RVIS).forEach(function (d) { d.polys.forEach(function (Pg) { ctx.beginPath(); Pg.forEach(function (r) { r.forEach(function (q, n) { var s = S(q); if (n) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); }); ctx.closePath(); });
+    if (BASE) { if (!VW) drawBaseAreas(dark); DONG.concat(RVIS).forEach(function (d) { if (d.box && (d.box[1] < vA[0] || d.box[0] > vB[0] || d.box[3] < vA[1] || d.box[2] > vB[1])) return; d.polys.forEach(function (Pg) { ringsPath(Pg);
       ctx.lineWidth = (on.dong ? 1.8 : 0.8) * (d.rg ? 0.65 : 1); ctx.setLineDash(on.dong ? [] : [4, 4]); ctx.strokeStyle = dark ? 'rgba(167,139,250,.65)' : 'rgba(109,40,217,.45)'; ctx.stroke(); ctx.setLineDash([]); }); }); }
     drawFmap();
     // 구 경계(서초·동작·관악·강남)
@@ -1022,7 +1032,10 @@
     if (on.road && OSM) drawBaseRoads(dark);
     drawUnits(dark); drawJrs(dark); drawRone(dark); drawAcad(dark); drawMed(dark); drawLpop(dark); drawFdong(dark); drawRnet(dark); drawSgg(dark); drawVols(dark); drawExv(dark); drawMsub(dark); drawBusd(dark); drawFlodge(dark); drawMinbak(dark); drawStay(dark); drawRpost(dark); drawJiga(dark); drawLand(dark);   // v0.10.90 시·군·구 경계(서울·경기·인천)
     // 건물
-    if (on.bld && BLD.length && view.s > 0.12) BLD.forEach(function (b) { path(b.p); ctx.closePath(); ctx.fillStyle = dark ? 'rgba(200,210,225,.28)' : (BASE ? 'rgba(186,176,164,.85)' : 'rgba(90,100,115,.30)'); ctx.fill(); if (BASE && !dark && view.s > 0.5) { ctx.lineWidth = 0.6; ctx.strokeStyle = 'rgba(120,110,100,.7)'; ctx.stroke(); } });
+    if (on.bld && BLD.length && view.s > 0.12) { var k9 = view.s, ox9 = W / 2 - view.cx * k9, oy9 = H / 2 - view.cy * k9, cnt9 = 0, edg9 = BASE && !dark && view.s > 0.5 && !MOVING;   /* v2.208.0 화면에 걸친 건물만 · 16채씩 묶어 칠한다(1px 안 되는 건물은 뺀다). 한 길에 다 넣으면 오히려 느리다 — 4,336채 한 길 65ms · 16채씩 1.3ms(실측) */
+      ctx.fillStyle = dark ? 'rgba(200,210,225,.28)' : (BASE ? 'rgba(186,176,164,.85)' : 'rgba(90,100,115,.30)'); ctx.lineWidth = 0.6; ctx.strokeStyle = 'rgba(120,110,100,.7)'; ctx.beginPath();
+      for (var i9 = 0; i9 < BLD.length; i9++) { var b9 = BLD[i9], x9 = b9.bx; if (x9[1] < vA[0] || x9[0] > vB[0] || x9[3] < vA[1] || x9[2] > vB[1] || (x9[1] - x9[0] + x9[3] - x9[2]) * k9 < 1.2) continue; ringAdd(b9.p, k9, ox9, oy9); if (++cnt9 >= 16) { ctx.fill(); if (edg9) ctx.stroke(); ctx.beginPath(); cnt9 = 0; } }
+      if (cnt9) { ctx.fill(); if (edg9) ctx.stroke(); } }
     if ((on.road || on.jcnm) && OSM) drawBaseLabels(dark);
     // 도로(OSM 간선 10개)
     if (on.road && !OSM) ROADS.forEach(function (r) { path(r.pts); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, 26 * view.s); ctx.strokeStyle = dark ? '#3b4a63' : '#ffffff'; ctx.stroke(); ctx.lineWidth = Math.max(1, 3 * view.s); ctx.strokeStyle = dark ? '#8aa0c0' : '#f59e0b'; ctx.stroke(); });
@@ -1084,12 +1097,12 @@
     if (ks.length === 1) drag = { x: e.offsetX, y: e.offsetY, cx: view.cx, cy: view.cy, moved: 0 };
     else if (ks.length === 2) { var a = ptrs[ks[0]], b = ptrs[ks[1]]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), s: view.s, m: M((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) }; drag = null; } });
   cv.addEventListener('pointermove', function (e) { if (!ptrs[e.pointerId]) return; ptrs[e.pointerId] = [e.offsetX, e.offsetY]; var ks = Object.keys(ptrs);
-    if (pinch && ks.length === 2) { var a = ptrs[ks[0]], b = ptrs[ks[1]], d = Math.hypot(a[0] - b[0], a[1] - b[1]); zoomAt(pinch.s * d / pinch.d, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, pinch.m); return; }
-    if (drag) { var dx = e.offsetX - drag.x, dy = e.offsetY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy)); view.cx = drag.cx - dx / view.s; view.cy = drag.cy - dy / view.s; draw(); } });
-  function up(e) { var wasTap = drag && drag.moved < 6 && !RPLP.fired; delete ptrs[e.pointerId]; if (Object.keys(ptrs).length < 2) pinch = null; if (wasTap) tap(e.offsetX, e.offsetY); if (!Object.keys(ptrs).length) drag = null; }
-  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', function (e) { delete ptrs[e.pointerId]; drag = null; pinch = null; });
-  cv.addEventListener('wheel', function (e) { e.preventDefault(); zoomAt(view.s * (e.deltaY < 0 ? 1.18 : 1 / 1.18), e.offsetX, e.offsetY); }, { passive: false });
-  function zoomAt(ns, sx, sy, anchor) { ns = Math.max(0.0008, Math.min(3, ns)); var m = anchor || M(sx, sy); view.s = ns; view.cx = m[0] - (sx - cv.clientWidth / 2) / ns; view.cy = m[1] - (sy - cv.clientHeight / 2) / ns; if (on.bld && ns > 0.12) loadBld(); draw(); }
+    if (pinch && ks.length === 2) { var a = ptrs[ks[0]], b = ptrs[ks[1]], d = Math.hypot(a[0] - b[0], a[1] - b[1]); MOVING = 1; clearTimeout(MOVET); zoomAt(pinch.s * d / pinch.d, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, pinch.m); return; }
+    if (drag) { var dx = e.offsetX - drag.x, dy = e.offsetY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy)); view.cx = drag.cx - dx / view.s; view.cy = drag.cy - dy / view.s; if (drag.moved > 6) { MOVING = 1; clearTimeout(MOVET); } drawSoon(); } });
+  function up(e) { if (MOVING) moveEnd(); var wasTap = drag && drag.moved < 6 && !RPLP.fired; delete ptrs[e.pointerId]; if (Object.keys(ptrs).length < 2) pinch = null; if (wasTap) tap(e.offsetX, e.offsetY); if (!Object.keys(ptrs).length) drag = null; }
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', function (e) { delete ptrs[e.pointerId]; drag = null; pinch = null; if (MOVING) moveEnd(); });
+  cv.addEventListener('wheel', function (e) { e.preventDefault(); MOVING = 1; moveEnd(); zoomAt(view.s * (e.deltaY < 0 ? 1.18 : 1 / 1.18), e.offsetX, e.offsetY); }, { passive: false });
+  function zoomAt(ns, sx, sy, anchor) { ns = Math.max(0.0008, Math.min(3, ns)); var m = anchor || M(sx, sy); view.s = ns; view.cx = m[0] - (sx - cv.clientWidth / 2) / ns; view.cy = m[1] - (sy - cv.clientHeight / 2) / ns; if (on.bld && ns > 0.12) loadBld(); drawSoon(); }
   $('m2dIn').onclick = function () { zoomAt(view.s * 1.5, cv.clientWidth / 2, cv.clientHeight / 2); };
   $('m2dOut').onclick = function () { zoomAt(view.s / 1.5, cv.clientWidth / 2, cv.clientHeight / 2); };
   $('m2dFit').onclick = function () { fitAll = !fitAll; this.textContent = fitAll ? '격자' : '전체'; fit(); if (on.bld && view.s > 0.12) loadBld(); draw(); };
@@ -1709,10 +1722,12 @@
     ks.slice(0, ks.length - TMAX).forEach(function (k) { delete TILES[k]; var f = function (L) { return L.pk !== k; }; OSMLAB = OSMLAB.filter(f); WLAB = WLAB.filter(f); JLAB = JLAB.filter(f); }); }
   // ---------- 🗺 시·군·구 경계 · 📥 지역 받기(v0.10.90 · 소유자 「GPS 기반으로 구별·지역별로 받거나 골라서 받으면」·「인근 인접도 보이게」) ----------
   var SGG = [];
-  function sggPrep() { if (!D.sgg) return; SGG = D.sgg.sgg.map(function (g) { return { g: g, rings: g.rings.map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }), c: P(g.c[0], g.c[1]) }; }); }
+  function sggPrep() { if (!D.sgg) return; SGG = D.sgg.sgg.map(function (g) { var R = g.rings.map(function (r) { return r.map(function (q) { return P(q[0], q[1]); }); }), b = [1e12, -1e12, 1e12, -1e12]; R.forEach(function (r) { for (var i = 0; i < r.length; i++) { var q = r[i]; if (q[0] < b[0]) b[0] = q[0]; if (q[0] > b[1]) b[1] = q[0]; if (q[1] < b[2]) b[2] = q[1]; if (q[1] > b[3]) b[3] = q[1]; } }); return { g: g, rings: R, c: P(g.c[0], g.c[1]), box: b }; }); }
   function drawSgg(dark) { if (!SGG.length) return; var s = view.s;
-    SGG.forEach(function (G) { G.rings.forEach(function (r) { path(r); ctx.closePath(); ctx.setLineDash(s < 0.02 ? [6, 4] : [10, 6]); ctx.lineWidth = s < 0.02 ? 1.4 : 2; ctx.strokeStyle = dark ? 'rgba(203,213,225,.55)' : 'rgba(71,85,105,.55)'; ctx.stroke(); ctx.setLineDash([]); }); });
-    if (s < 0.05) SGG.forEach(function (G) { if (s < 0.006 && G.g.sido === '인천광역시') return; label(G.c, G.g.name, s < 0.01 ? 11 : 13, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.8)'); }); }
+    var a9 = M(0, 0), b9 = M(cv.clientWidth, cv.clientHeight), ox = cv.clientWidth / 2 - view.cx * s, oy = cv.clientHeight / 2 - view.cy * s; ctx.beginPath();   /* v2.208.0 화면에 걸친 시군구만 · 한 번에 긋는다 */
+    SGG.forEach(function (G) { var b = G.box; if (b && (b[1] < a9[0] || b[0] > b9[0] || b[3] < a9[1] || b[2] > b9[1])) return; G.rings.forEach(function (r) { ringAdd(r, s, ox, oy); }); });
+    ctx.setLineDash(s < 0.02 ? [6, 4] : [10, 6]); ctx.lineWidth = s < 0.02 ? 1.4 : 2; ctx.strokeStyle = dark ? 'rgba(203,213,225,.55)' : 'rgba(71,85,105,.55)'; ctx.stroke(); ctx.setLineDash([]);
+    if (s < 0.05) SGG.forEach(function (G) { if (s < 0.006 && G.g.sido === '인천광역시') return; if (G.c[0] < a9[0] || G.c[0] > b9[0] || G.c[1] < a9[1] || G.c[1] > b9[1]) return; label(G.c, G.g.name, s < 0.01 ? 11 : 13, dark ? '#e2e8f0' : '#334155', dark ? 'rgba(15,22,36,.7)' : 'rgba(255,255,255,.8)'); }); }
   function distToRings(pt, rings) { var inside = false, best = Infinity;
     rings.forEach(function (r) { if (inRing(r, pt[0], pt[1])) inside = true;
       for (var i = 1; i < r.length; i++) { var a = r[i - 1], b = r[i], dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz, u = L ? Math.max(0, Math.min(1, ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dz) / L)) : 0; best = Math.min(best, Math.hypot(a[0] + u * dx - pt[0], a[1] + u * dz - pt[1])); } });
@@ -1785,9 +1800,9 @@
     if (s > 0.05) { ctx.strokeStyle = dark ? '#64748b' : '#8b95a3'; ctx.lineWidth = Math.max(2.6 / s, 4); each(function (K) { ctx.stroke(K.rail); }); ctx.strokeStyle = dark ? '#0f1624' : '#ffffff'; ctx.lineWidth = Math.max(1.2 / s, 1.8); ctx.setLineDash([6 / s, 6 / s]); each(function (K) { ctx.stroke(K.rail); }); ctx.setLineDash([]); }
     else if (s > 0.008) { ctx.strokeStyle = dark ? '#64748b' : '#8b95a3'; ctx.lineWidth = 1.4 / s; each(function (K) { ctx.stroke(K.rail); }); }
     // 보행·자전거 길(가늘게 · 점선)
-    ['f', 'c'].forEach(function (c) { var st = RSTY[c]; if (s < st[2]) return; ctx.strokeStyle = st[mode][0]; ctx.lineWidth = Math.max(st[1] / s, st[0]); ctx.setLineDash([3 / s, 2.5 / s]); eachR(c, function (R) { ctx.stroke(R.n); ctx.stroke(R.b); }); ctx.setLineDash([]); });
+    if (!MOVING) ['f', 'c'].forEach(function (c) { var st = RSTY[c]; if (s < st[2]) return; ctx.strokeStyle = st[mode][0]; ctx.lineWidth = Math.max(st[1] / s, st[0]); ctx.setLineDash([3 / s, 2.5 / s]); eachR(c, function (R) { ctx.stroke(R.n); ctx.stroke(R.b); }); ctx.setLineDash([]); });
     // 지하차도·터널: 옅은 점선 한 겹
-    RORD.forEach(function (c) { var st = RSTY[c]; if (s < st[2]) return; ctx.globalAlpha = 0.55; ctx.setLineDash([5 / s, 4 / s]); ctx.strokeStyle = st[mode][1]; ctx.lineWidth = Math.max(st[1] / s, st[0] * 0.8); eachR(c, function (R) { ctx.stroke(R.t); }); ctx.setLineDash([]); ctx.globalAlpha = 1; });
+    if (!MOVING) RORD.forEach(function (c) { var st = RSTY[c]; if (s < st[2]) return; ctx.globalAlpha = 0.55; ctx.setLineDash([5 / s, 4 / s]); ctx.strokeStyle = st[mode][1]; ctx.lineWidth = Math.max(st[1] / s, st[0] * 0.8); eachR(c, function (R) { ctx.stroke(R.t); }); ctx.setLineDash([]); ctx.globalAlpha = 1; });
     // 테두리 → 채움(낮은 종류부터 — 큰길이 위로)
     RORD.forEach(function (c) { var st = RSTY[c]; if (s < st[2]) return; var w = Math.max(st[1] / s, st[0]); ctx.strokeStyle = st[mode][1]; ctx.lineWidth = w + Math.max(1.4 / s, w * 0.18); eachR(c, function (R) { ctx.stroke(R.n); }); });
     RORD.forEach(function (c) { var st = RSTY[c]; if (s < st[2]) return; var w = Math.max(st[1] / s, st[0]); ctx.strokeStyle = dark ? '#0b1220' : '#5b6472'; ctx.lineWidth = w + Math.max(2.4 / s, w * 0.3); if (s > 0.15) eachR(c, function (R) { ctx.stroke(R.b); }); ctx.strokeStyle = st[mode][0]; ctx.lineWidth = w; eachR(c, function (R) { ctx.stroke(R.n); }); });

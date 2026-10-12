@@ -281,6 +281,7 @@
 | 음주 적발 | 경찰서 · 시 · 요일 | `dui-catch-st.json` | 해 |
 | 신호 주기·현시 | 교차로 · 시 | `sigdir-seoul.json` pl | 월~목·금·토·일(+특수일) |
 | 통행속도 | 링크 · 시 | `live-spd-seocho.json`(지금) · `spd-normal`(평소 — 모으는 중) | 요일 갈래 |
+| 따릉이 대여(떠나는 사람) | 대여소 · 시 | `bike-hour-seoul.json` | 평일·주말(한 달 평균 · 철을 탄다) |
 | 119 구조 출동(갈래 6) | 법정동 · 시 | `rescue119.json` | 2025년 한 해 |
 | **공연·행사 시작·끝** | 장소 · 날 · 시각 | `venue-events-seoul.json` | 그 날만 |
 

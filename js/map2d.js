@@ -3930,6 +3930,17 @@
     if (kid.length) h += '<div class="sdnt" style="margin:0 0 4px">' + kid.map(function (x) { var ys = x[1].map(function (r) { return r[1]; }).filter(function (v, i, a) { return a.indexOf(v) === i; }), n = 0, c = 0, sv = 0; x[1].forEach(function (r) { n += r[2]; c += r[3]; sv += r[4] + r[5]; });
         return '· ' + esc(String(x[0].n).replace(/^\S+(특별시|광역시|특별자치시|특별자치도|도)\s+/, '')) + ' — 학교에서 ' + Math.round(x[2] / 10) * 10 + 'm · 공표 ' + ys.join('·') + ' · ' + n + '건 · 사상 ' + c + '명' + (sv ? '(사망·중상 ' + sv + ')' : ''); }).join('<br>') + '</div>';
     return h + '<p class="sdnt" style="margin:0 0 6px">다발지 = 도로교통공단이 해마다 기준에 따라 <b>뽑은 곳</b>이다(공표연도 = 앞 해 사고 자료). 안 뽑혔다고 사고가 없었다는 뜻이 아니고, 통학 시간대만 가른 값도 아니다 — 시간대별 어린이 보행 사고는 공개 자료에서 가를 수 없다.</p>'; }
+  /* v2.213.0 학교 둘레 단속 카메라 — 전국. 자료 = r/<구>/safety.json 의 cam[{at 설치 장소, road, lat, lon, se 단속 구분 코드, lim 제한속도(0 = 적지 않음), zone 보호구역 구분 코드, yr}](전국무인교통단속카메라표준데이터 · 255구 43,648대).
+     ⚠ 코드 뜻은 표준 문서 대조 전 — 다른 세션이 자료로 가늠: zone 2 = 어린이보호구역으로 보인다(전국에서 94% 가 보호구역 점 300m 안 · 제한 30 이 85%) · zone 1 = 다른 보호구역으로 보이나 확인 못 함. 화면에는 **코드와 수를 그대로** 적고 가늠이라고 밝힌다 */
+  var SCAM = {}, SCAMP = {};
+  function scamGet(gu) { if (SCAMP[gu]) return SCAMP[gu]; SCAMP[gu] = rGet(gu, 'safety.json').then(function (j) { SCAM[gu] = { L: (j.cam || []).map(function (c) { return { c: c, p: P(c.lon, c.lat) }; }), src: (j.source || {}).cam || '', baked: j.baked || '' }; }).catch(function () { SCAM[gu] = null; }); return SCAMP[gu]; }
+  function scamHtml(q, R, rk, again) { var gs = schlGusAt([q.p], R).filter(function (g) { return (g.bytes || {}).safety; }), wait = gs.filter(function (g) { return SCAM[g.gu] === undefined; });
+    if (wait.length) { Promise.all(wait.map(function (g) { return scamGet(g.gu); })).then(again); return '<p class="sdnt">단속 카메라를 읽는 중…</p>'; } if (!gs.length) return '';
+    var n = 0, z2 = 0, z1 = 0, l30 = 0, lim = {}, seen = {}, src = '', bk = '', got = 0; gs.forEach(function (g) { var S9 = SCAM[g.gu]; if (!S9) return; got++; src = src || S9.src; bk = bk || S9.baked;
+      S9.L.forEach(function (o) { if (dTrue(o.p, q.p) > R) return; var c = o.c, k = c.lat + ',' + c.lon + ',' + c.se + ',' + c.lim; if (seen[k]) return; seen[k] = 1; n++; var z = String(+c.zone || ''); if (z === '2') z2++; else if (z === '1') z1++; if (+c.lim === 30) l30++; var lk = +c.lim ? String(+c.lim) : '적지 않음'; lim[lk] = (lim[lk] || 0) + 1; }); });
+    if (!got) return ''; var ls = Object.keys(lim).sort(function (a, b) { return (+a || 999) - (+b || 999); }).map(function (k) { return (k === '적지 않음' ? k : '제한 ' + k) + ' ' + lim[k] + '대'; }).join(' · ');
+    return row('📷 단속 카메라', '<b>' + n + '대</b>' + (n ? ' · 그 가운데 보호구역 구분 2 가 ' + z2 + '대' + (z1 ? ' · 구분 1 이 ' + z1 + '대' : '') + ' · 제한속도 30 이 ' + l30 + '대' : '') + ' <em>(반경 ' + rk(R) + (n ? ' · ' + ls : '') + ')</em>')
+      + '<p class="sdnt" style="margin:0 0 6px">보호구역 구분 2 = 어린이보호구역으로 <b>보인다</b>(코드 뜻은 표준 문서 대조 전 — 전국 자료에서 구분 2 의 94% 가 보호구역 점 300m 안이고 제한 30 이 85% 라 그렇게 가늠했다) · 구분 1 은 다른 보호구역으로 보이나 확인하지 못했다 · 제한속도 「적지 않음」 = 자료에 0 으로 적힌 것(주정차 단속 등으로 보인다). ' + esc(src) + (bk ? ' · ' + esc(String(bk)) + ' 구움' : '') + '</p>'; }
   function schlNear(q) { var again = function () { if (sel && sel.it && sel.it.kind === 'schl' && sel.it.q === q) agReshow(); }, R = SCHLR, rk = function (r) { return r >= 1000 ? r / 1000 + 'km' : r + 'm'; };
     var h = '<div class="cap sdcap" style="margin-top:8px">🚸 학교 둘레 — 반경을 고른다</div><div class="lg-btns" style="margin:2px 0 4px">' + [300, 500, 1000].map(function (r) { return '<button data-schr="' + r + '"' + (r === R ? ' class="on"' : '') + '>' + rk(r) + '</button>'; }).join('') + '</div>';
     var A = schlAcNear([q.p], R, again); if (!A) h += '<p class="sdnt">학원 자리를 읽는 중…</p>'; else { var ex = (A.n[0] || 0) + (A.n[1] || 0); h += row('📚 학원', '<b>' + A.tot.toLocaleString() + '곳</b> · 그 가운데 입시·교과 ' + (A.n[0] || 0) + ' · 외국어 ' + (A.n[1] || 0) + ' <em>(둘을 더해 ' + ex + '곳 · 반경 ' + rk(R) + ')</em>') + (A.tot ? schlAcBars(A, '갈래마다 학원 수(곳 · 반경 ' + rk(R) + ' · 등록 상가 ' + esc(String(A.ym || '')) + ')') : ''); }
@@ -3937,7 +3948,7 @@
     if (wait.length) { Promise.all(wait).then(again); h += '<p class="sdnt">사고 자료를 읽는 중…</p>'; } else if (A10.length) { var t = 0, ped = 0, sev = 0, nc = 0; A10.forEach(function (x) { if (dTrue(x.p, q.p) > R) return; nc++; for (var k = 0; k < 10; k++) t += x.c[2 + k]; ped += x.c[14]; sev += x.c[12] + x.c[13]; });
       h += row('🚗 사고 10년', '<b>' + t.toLocaleString() + '건</b> · 보행자 피해 ' + ped.toLocaleString() + ' · 사망·중상자 ' + sev.toLocaleString() + '명 <em>(2016~2025 · 반경 ' + rk(R) + ' 안 100m 칸 ' + nc + '개 · 어린이 사고만 가른 수가 아니다' + (gap ? ' · 둘레의 한 구는 사고 자료 준비 중' : '') + ')</em>'); }
     h += shotHtml(q, R, rk, again);
-    if (D.cam && D.cam.items && q.gu === '11650') { var nc2 = D.cam.items.filter(function (c) { return dTrue(P(c.lon, c.lat), q.p) <= R; }).length; h += row('📷 단속 카메라', nc2 + '대 <em>(반경 ' + rk(R) + ' · 서초구 자료)</em>'); }   /* v2.212.0 카메라 자료는 서초뿐 — 다른 곳 학교에 「0대」라고 찍지 않는다(전국 자료가 오면 넓힌다) */
+    h += scamHtml(q, R, rk, again);   /* v2.213.0 전국 — 종전 서초 파일(cameras-seocho.json)만 세던 줄을 바꿈 */
     h += cznHtml(q, R, again);
     h += sclLine(q.kd);
     h += '<p class="sdnt" style="margin:2px 0 6px">학원 = 소상공인시장진흥공단 상가(상권)정보의 교육 업종(등록 상가 — 교육청 등록 학원·교습소 수와 다를 수 있다). 「🕐 이 자리의 하루」 단추로 이 학교 둘레의 시간대 흐름을 본다.</p>';

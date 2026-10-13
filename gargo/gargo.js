@@ -67,7 +67,7 @@
       G.sig.forEach(function (s) { if (j.fl[s.no] == null) return; var q = j.pts[s.no]; if (q) need[Math.floor(q[0] / j.cell[0]) + '_' + Math.floor(q[1] / j.cell[1])] = 1; });
       return Promise.all(Object.keys(need).map(function (k) { return getJ('../data/sigdir/c/' + k + '.json').then(function (c) { if (c && c.its) Object.keys(c.its).forEach(function (no) { SIG.its[no] = c.its[no]; }); }); })).then(function () {
         var v = []; Object.keys(SIG.its).forEach(function (no) { SIG.its[no].forEach(function (r) { if (!recOk(r)) return; var C = r.ci || r.cyc; if (!C) return; r.mv.forEach(function (m) { if (m[1] === 'St' && m[2] != null && m[2] < C) v.push((C - m[2]) * (C - m[2]) / (2 * C)); }); }); });
-        v.sort(function (a, b) { return a - b; }); if (v.length) SIG.typ = v[v.length >> 1]; SIG.ready = 1; if (dest && me) plan(); draw(); paint(); }); });
+        v.sort(function (a, b) { return a - b; }); if (v.length) SIG.typ = v[v.length >> 1]; SIG.ready = 1; SIG.at = Date.now(); if (dest && me) plan(); draw(); paint(); }); });
   }
   function recOk(r) { return r && r.mv && r.dq !== 'dir' && !(r.x && !r.v); }
   function mvOf(rec, side, mv) { var i = DIRS.indexOf(side), best = null; rec.mv.forEach(function (m) { if (m[1] !== mv || m[2] == null || m[5] == null) return; var k = DIRS.indexOf(m[0]); if (k < 0) return; var d = Math.min((k - i + 8) % 8, (i - k + 8) % 8); if (d <= 1 && (!best || d < best[0])) best = [d, m]; }); return best ? best[1] : null; }
@@ -221,7 +221,7 @@
       bot.innerHTML = '<div class="sum"><div class="big"><b>' + mmss(r.time) + '</b> <span>' + km(r.dist) + ' · ' + hm(now + r.time) + ' 도착</span></div>'
         + '<div class="mode"><button data-mode="n" class="' + (MODE === 'n' ? 'on' : '') + '">일반 — 신호를 지킨다</button><button data-mode="e" class="' + (MODE === 'e' ? 'on' : '') + '">🚨 긴급 출동</button></div>'
         + '<div class="sub">신호 ' + r.sigs.length + '곳 · 그 가운데 지금 색을 아는 곳 ' + known + (MODE === 'e' ? ' · <b>신호 기다림을 셈에서 뺐다</b>(닿을 때 적색이면 알려 준다 — 통과는 운전자 판단)' : ' · 신호 기다림 ' + mmss(wsum) + ' 포함') + '<br>'
-          + (LIVE.m ? '🚗 통행속도 반영(' + esc(LIVE.made || '') + ' 받음 · 길의 ' + Math.round(r.live * 100) + '%에 값' + (r.cong.length ? ' · <b class="r">막히는 구간 ' + r.cong.length + '곳</b>' : ' · 막히는 구간 없음') + ')' : '🚗 통행속도 없음(받은 지 20분 넘음) — 제한속도로 셈') + ' · 신호·막힘이 없다면 ' + mmss(r.free) + '</div>'
+          + (LIVE.m ? '🚗 통행속도 반영(' + esc(LIVE.made || '') + ' 받음 · 길의 ' + Math.round(r.live * 100) + '%에 값' + (r.cong.length ? ' · <b class="r">막히는 구간 ' + r.cong.length + '곳</b>' : ' · 막히는 구간 없음') + ')' : '🚗 통행속도 없음(받은 지 20분 넘음) — 제한속도로 셈') + ' · 신호·막힘이 없다면 ' + mmss(r.free) + '<br>🚦 신호값 ' + (SIG.idx ? esc(String(SIG.idx.made || '')) + ' 구움 · 5분마다 새 값을 확인한다' : '없음') + '</div>'
         + '<div class="btns"><button id="gGo" class="go">▶ 안내 시작</button><button id="gSim">모의 주행</button><button id="gClr">지우기</button></div>'
         + '<details class="steps"><summary>가는 차례 ' + r.mans.length + '곳 · 신호 ' + r.sigs.length + '곳</summary>' + r.mans.map(function (m) { return '<div class="st"><i>' + ARW[m.k] + '</i><b>' + km(m.d) + '</b><span>' + MKO[m.k] + (m.nm ? ' · ' + esc(m.nm) : '') + (m.sig ? ' (' + esc(m.sig) + ')' : '') + '</span></div>'; }).join('')
         + '<div class="cap">지나는 신호(닿을 때의 예상 — 계획값)</div>' + r.sigs.map(function (g) { var s = g.s; return '<div class="st"><i>🚦</i><b>' + km(g.d) + '</b><span>' + esc(g.nm) + ' · ' + (g.mv === 'Rt' ? '우회전' : g.mv === 'Lt' ? '좌회전' : g.mv === 'U' ? '유턴' : '직진') + ' — ' + (g.mv === 'Rt' || g.mv === 'U' ? '신호 자료 없음(우회전·유턴)' : !s ? '<em>모름</em>(자료 없음 · 보통 값 ' + Math.round(SIG.typ) + '초로 셈)' : s.kind === 'avg' ? '<em>지금 색 모름</em> · 평균 기다림 ' + Math.round(s.wait) + '초' : s.green ? '<b class="g">녹색</b> 통과 예상' : '<b class="r">적색</b> ' + Math.round(s.wait) + '초 기다림 예상') + '</span></div>'; }).join('') + '</details></div>'; }
@@ -298,7 +298,11 @@
     if (f) setMe(PX(+f[2]), PY(+f[1]), 5, null, 0); if (t) { var x = PX(+t[2]), y = PY(+t[1]), ns = nearSeg(x, y, 600); if (ns) setDest(ns.x, ns.y, n ? decodeURIComponent(n[1]) : '받은 자리'); else note('받은 자리가 서초구 둘레 밖이다 — 시험판은 서초구와 둘레 2km 안에서만 된다'); }
     if (t || f) { try { history.replaceState(null, '', location.pathname); } catch (e) {} } }
   setInterval(function () { if (route && (guide || sim)) { paint(); draw(); } else if (route) draw(); }, 1000);
-  setInterval(function () { if (G && !document.hidden) liveLoad().then(function () { if (dest && me && !guide) plan(); }); }, 300000);
+  /* 5분마다 — 통행속도 한 장과 신호 색인을 다시 본다. 신호 수집기가 약 15분마다 새 값을 올리므로(색인의 made 가 바뀐다) 바뀌었으면 서초 둘레 칸을 다시 받아 그 자리에서 갈아 끼운다.
+     소유자 2026-10-13 「신호값이 업데이트되는 대로 계속 추가 업데이트되게」 — 안내 중에도 받는다(지금 색·남은 초가 새 값으로 바뀐다 · 길은 다시 고르지 않는다) */
+  function sigRefresh() { return getJ('../data/sigdir/index.json').then(function (j) { if (!j || !j.fl || !SIG.idx || j.made === SIG.idx.made) return false; var need = {}; G.sig.forEach(function (s) { if (j.fl[s.no] == null) return; var q = j.pts[s.no]; if (q) need[Math.floor(q[0] / j.cell[0]) + '_' + Math.floor(q[1] / j.cell[1])] = 1; });
+    var its = {}; return Promise.all(Object.keys(need).map(function (k) { return getJ('../data/sigdir/c/' + k + '.json').then(function (c) { if (c && c.its) Object.keys(c.its).forEach(function (no) { its[no] = c.its[no]; }); }); })).then(function () { if (!Object.keys(its).length) return false; SIG.idx = j; SIG.pl = j.pl || {}; SIG.cell = j.cell; SIG.its = its; SIG.at = Date.now(); return true; }); }); }
+  setInterval(function () { if (!G || document.hidden) return; Promise.all([liveLoad(), sigRefresh()]).then(function (r) { if (dest && me && !guide) plan(); else { paint(); draw(); } }); }, 300000);
   window.addEventListener('resize', function () { draw(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && guide && navigator.wakeLock) { try { navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} } });
   try { if (localStorage.getItem('tg_gargo_dark') === '1') document.documentElement.classList.add('dark'); } catch (e) {}

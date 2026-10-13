@@ -7,7 +7,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var cv = $('gMap'), ctx = cv.getContext('2d'), DPR = Math.min(window.devicePixelRatio || 1, 2);
-  var LON0 = 127.02, LAT0 = 37.48, KX = 111320 * Math.cos(LAT0 * Math.PI / 180), KY = 110940;
+  var LON0 = 127.01, LAT0 = 37.49, KX = 88800, KY = 111000;   /* 데이터 압축지도(js/map2d.js)와 같은 평면 — 바탕 조각·건물 자료가 그대로 맞는다 */
   function PX(lon) { return (lon - LON0) * KX; } function PY(lat) { return (LAT0 - lat) * KY; }
   function LL(x, y) { return [LON0 + x / KX, LAT0 - y / KY]; }
   var G = null, SIG = { idx: null, its: {}, pl: {}, hol: {}, cell: null, st: {}, typ: 25 };
@@ -19,7 +19,7 @@
   function getJ(u) { return fetch(u).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
   function load() {
     msg('길 자료를 읽는 중…');
-    return getJ('pack-seocho.json').then(function (j) { if (!j || !j.seg) { msg('길 자료를 읽지 못했다 — 새로 고쳐 본다'); return; } build(j); msg(''); fitAll(); draw(); hashGo(); sigLoad(); });
+    return getJ('pack-seocho.json').then(function (j) { if (!j || !j.seg) { msg('길 자료를 읽지 못했다 — 새로 고쳐 본다'); return; } build(j); msg(''); fitAll(); draw(); hashGo(); sigLoad(); baseLoad(); ['s', 't'].forEach(function (k) { var b = document.querySelector('[data-ov=' + k + ']'); if (b) b.classList.toggle('on', !!OV[k]); }); });
   }
   function build(j) {
     var n = j.nx.length, X = new Float32Array(n), Y = new Float32Array(n), bx = j.base[0], by = j.base[1], i;
@@ -158,20 +158,108 @@
     else { r.offN = (r.offN || 0) + 1; if (guide && r.offN >= 3 && Date.now() - (r.reT || 0) > 6000) { r.reT = Date.now(); say('경로를 벗어났습니다. 다시 찾습니다'); plan(); return; } }
     if (guide && r.dist - r.pos < 25) { say('목적지 부근입니다. 안내를 마칩니다'); guideStop(true); } }
 
+
+  /* ---------- v0.3.0 지도 채우기 — 데이터 압축지도의 바탕 자료를 읽기만 한다(소유자 「지도를 좀 더 잘 만들어 주고」) ----------
+     바탕 조각 ../data/base/index.json + t/<칸>.json(깃허브에서는 /datamap-tiles/t/ · OSM — 녹지·물·물길·철도 · 교차로 이름) · 서초 건물 ../data/maps/seocho-full-buildings.json(이름 있는 건물 974) · 역 출구 ../data/exits-kr.json.
+     길 자체는 길 계산 묶음(pack)의 것을 그린다 — 안내하는 길과 보이는 길이 같아야 한다 */
+  var BASE = { idx: null, T: {}, ld: {}, q: 0 }, BLD = null, BLDP = null, PL = [], STN = [], OV = { s: 1, t: 1 }, TRAF = null, TRAFAT = 0;
+  try { var ov0 = JSON.parse(localStorage.getItem('tg_gargo_ov') || 'null'); if (ov0) { OV.s = ov0.s ? 1 : 0; OV.t = ov0.t ? 1 : 0; } } catch (e) {}
+  var ONGH = /github\.io$/.test(location.hostname);
+  function baseLoad() { getJ('../data/base/index.json').then(function (j) { if (!j || !j.tiles) return; BASE.idx = j; BASE.set = {}; j.tiles.forEach(function (t) { BASE.set[t[0] + '_' + t[1]] = 1; }); draw(); });
+    getJ('../data/exits-kr.json').then(function (j) { if (!j || !j.pts || !G) return; var by = {}; j.pts.forEach(function (q) { var x = PX(q[1]), y = PY(q[0]); if (x < G.box[0] - 500 || x > G.box[1] + 500 || y < G.box[2] - 500 || y > G.box[3] + 500 || !q[3]) return; var o = by[q[3]] || (by[q[3]] = { n: q[3], x: 0, y: 0, c: 0, ex: [] }); o.x += x; o.y += y; o.c++; if (q[2]) o.ex.push([x, y, q[2]]); });
+      STN = Object.keys(by).map(function (k) { var o = by[k]; o.x /= o.c; o.y /= o.c; o.n = /역$/.test(o.n) ? o.n : o.n + '역'; return o; }); draw(); }); }
+  function tileUrl(k) { return (ONGH ? '/datamap-tiles/t/' : '../data/base/t/') + k + '.json?b=' + encodeURIComponent(String(BASE.idx.bake || '')); }
+  function decAdd(pa, a, from) { var x = a[from], z = a[from + 1]; pa.moveTo(x, z); for (var i = from + 2; i < a.length; i += 2) { x += a[i]; z += a[i + 1]; pa.lineTo(x, z); } }
+  function tilePrep(B, k) { var K = { g: {}, w: [], ww: new Path2D(), rail: new Path2D(), jn: [] }, GK = { forest: 'wood', wood: 'wood', scrub: 'wood', pitch: 'pitch', cemetery: 'cem' }, NM = B.names || [];
+    function chunk(L) { var c = L[L.length - 1]; if (!c || c.n > 1200) { c = { p: new Path2D(), n: 0 }; L.push(c); } return c; }
+    (B.green || []).forEach(function (g) { var kd = GK[g[1]] || 'park', L = K.g[kd] || (K.g[kd] = []), c = chunk(L); g[2].forEach(function (r) { decAdd(c.p, r, 0); c.p.closePath(); c.n += r.length >> 1; }); var nm = g[0] >= 0 ? NM[g[0]] : ''; if (nm && /공원|산$|숲/.test(nm) && g[2][0].length > 40) { var r0 = g[2][0], x = r0[0], z = r0[1], sx = x, sz = z, n = 1; for (var i = 2; i < r0.length; i += 2) { x += r0[i]; z += r0[i + 1]; sx += x; sz += z; n++; } K.jn.push({ n: nm, x: sx / n, y: sz / n, k: 'g' }); } });
+    (B.water || []).forEach(function (w) { var c = chunk(K.w); w[1].forEach(function (r) { decAdd(c.p, r, 0); c.p.closePath(); c.n += r.length >> 1; }); });
+    (B.waterways || []).forEach(function (w) { if (!(w[2] & 2)) decAdd(K.ww, w, 3); });
+    (B.rail || []).forEach(function (r) { if (!(r[2] & 2)) decAdd(K.rail, r, 3); });
+    (B.junctions || []).forEach(function (j) { K.jn.push({ n: j[0], x: j[1], y: j[2], k: 'j' }); });
+    if (B.tile) { var T = B.size; K.box = [B.tile[0] * T, B.tile[1] * T, (B.tile[0] + 1) * T, (B.tile[1] + 1) * T]; } return K; }
+  function needTiles() { if (!BASE.idx || view.s < 0.04) return; var T = BASE.idx.size, W = cv.clientWidth, H = cv.clientHeight, c = [S2W(0, 0), S2W(W, 0), S2W(0, H), S2W(W, H)], x0 = 1e12, x1 = -1e12, y0 = 1e12, y1 = -1e12; c.forEach(function (q) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+    var n = 0; for (var ix = Math.floor(x0 / T); ix <= Math.floor(x1 / T); ix++) for (var iz = Math.floor(y0 / T); iz <= Math.floor(y1 / T); iz++) { var k = ix + '_' + iz; if (++n > 12) return; if (!BASE.set[k] || BASE.T[k] || BASE.ld[k] || BASE.q >= 2) continue; BASE.ld[k] = 1; BASE.q++;
+      (function (k) { getJ(tileUrl(k)).then(function (j) { BASE.q--; if (j) { BASE.T[k] = tilePrep(j, k); drawSoon(); } }); })(k); } }
+  function drawBase(dark, s) { needTiles(); var ks = Object.keys(BASE.T); if (!ks.length) return; var col = dark ? { park: '#173426', wood: '#142f21', pitch: '#1b3a29', cem: '#213228', w: '#17324f' } : { park: '#d3ecc6', wood: '#c1e2b0', pitch: '#c9e8bc', cem: '#dde8d6', w: '#a9d4f5' };
+    ['park', 'wood', 'pitch', 'cem'].forEach(function (kd) { ctx.fillStyle = col[kd]; ks.forEach(function (k) { (BASE.T[k].g[kd] || []).forEach(function (c) { ctx.fill(c.p, 'evenodd'); }); }); });
+    ctx.fillStyle = col.w; ks.forEach(function (k) { BASE.T[k].w.forEach(function (c) { ctx.fill(c.p, 'evenodd'); }); });
+    ctx.strokeStyle = col.w; ctx.lineWidth = Math.max(5, 2 / s); ks.forEach(function (k) { ctx.stroke(BASE.T[k].ww); });
+    if (s > 0.08) { ctx.strokeStyle = dark ? '#475569' : '#9aa3af'; ctx.lineWidth = Math.max(3, 1.6 / s); ks.forEach(function (k) { ctx.stroke(BASE.T[k].rail); }); ctx.strokeStyle = dark ? '#111827' : '#eef1f4'; ctx.lineWidth = Math.max(1.4, 0.8 / s); ctx.setLineDash([9, 9]); ks.forEach(function (k) { ctx.stroke(BASE.T[k].rail); }); ctx.setLineDash([]); } }
+  function bldLoad() { if (BLDP) return; BLDP = getJ('../data/maps/seocho-full-buildings.json').then(function (j) { if (!j || !j.buildings) return; var dx = -2438 - (LON0 - 127.0077) * KX, dy = -1743 - (37.4917 - LAT0) * KY;
+      BLD = j.buildings.filter(function (b) { return b.p && b.p.length > 2; }).map(function (b) { var n = b.p.length, P = new Float32Array(n * 2), x0 = 1e12, x1 = -1e12, y0 = 1e12, y1 = -1e12, sx = 0, sy = 0; for (var i = 0; i < n; i++) { var x = b.p[i][0] + dx, y = b.p[i][1] + dy; P[i * 2] = x; P[i * 2 + 1] = y; sx += x; sy += y; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } return { p: P, b: [x0, x1, y0, y1], n: b.n || '', x: sx / n, y: sy / n, a: (x1 - x0) * (y1 - y0) }; }); drawSoon(); }); }
+  function drawBld(dark, s) { if (s < 0.4) return; if (!BLD) { bldLoad(); return; } var W = cv.clientWidth, H = cv.clientHeight, c = [S2W(0, 0), S2W(W, 0), S2W(0, H), S2W(W, H)], x0 = 1e12, x1 = -1e12, y0 = 1e12, y1 = -1e12; c.forEach(function (q) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+    ctx.fillStyle = dark ? '#1b2434' : '#e7e2d9'; ctx.strokeStyle = dark ? '#2a3547' : '#d6cfc3'; ctx.lineWidth = 0.6 / s; var n = 0; ctx.beginPath();
+    for (var i = 0; i < BLD.length; i++) { var b = BLD[i]; if (b.b[1] < x0 || b.b[0] > x1 || b.b[3] < y0 || b.b[2] > y1) continue; var p = b.p; ctx.moveTo(p[0], p[1]); for (var u = 2; u < p.length; u += 2) ctx.lineTo(p[u], p[u + 1]); ctx.closePath(); if (++n >= 16) { ctx.fill(); if (s > 0.8) ctx.stroke(); ctx.beginPath(); n = 0; } } if (n) { ctx.fill(); if (s > 0.8) ctx.stroke(); } }
+  /* 소통 색 — 통행속도 ÷ 제한속도: 0.7 이상 초록 · 0.4~0.7 주황 · 그 아래 빨강(값이 온 길만 · 큰길 위주) */
+  function drawTraf(s) { if (!LIVE.m) return; if (!TRAF || TRAFAT !== LIVE.at) { TRAF = [new Path2D(), new Path2D(), new Path2D()]; TRAFAT = LIVE.at; for (var i = 0; i < G.S.length; i++) { var q = G.S[i], lim = q[3] || 30, p = G.SP[i]; for (var d = 0; d < 2; d++) { var li = q[13 + d]; if (li == null || li < 0) continue; var v = LIVE.m[G.j.links[li]]; if (!(v > 0)) continue; var r = v / lim, pa = TRAF[r >= 0.7 ? 0 : r >= 0.4 ? 1 : 2], off = (d ? -1 : 1) * 3.2;
+          /* 두 방향을 길 가운데에서 조금씩 벌려 그린다 */ for (var u = 0; u + 3 < p.length; u += 2) { var ax = p[u], ay = p[u + 1], bx = p[u + 2], by = p[u + 3], l = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / l * off, ny = (bx - ax) / l * off; if (!u) pa.moveTo(ax + nx, ay + ny); pa.lineTo(bx + nx, by + ny); } } } }
+    /* 멀리서 보면 막히는 길(주황·빨강)만 가늘게 — 초록까지 다 그리면 지도가 어지럽다 · 가까이 보면 셋 다 */
+    var far = s < 0.3; ctx.globalAlpha = far ? 0.8 : 0.92; ctx.lineWidth = far ? 2.2 / s : Math.max(3.2, 2.6 / s); ['#22c55e', '#f59e0b', '#dc2626'].forEach(function (c, i) { if (far && !i) return; ctx.strokeStyle = c; ctx.stroke(TRAF[i]); }); ctx.globalAlpha = 1; }
+  /* 이름 — 교차로·신호 교차로·역·공원·큰 건물 */
+  function drawPlaces(dark, s, W, H) { if (s < 0.22) return; var boxes = [], seen = {}, n = 0;
+    function put(nm, x, y, font, col, dy, max) { if (n >= max) return; var q = W2S(x, y); if (q[0] < 24 || q[0] > W - 24 || q[1] < 80 || q[1] > H - 110) return; var key = nm.replace(/\s+/g, ''); if (seen[key]) return; ctx.font = font; var tw = ctx.measureText(nm).width, cx = q[0], cy = q[1] + dy; for (var i = 0; i < boxes.length; i++) { var b = boxes[i]; if (Math.abs(b[0] - cx) < (b[2] + tw) / 2 + 5 && Math.abs(b[1] - cy) < 15) return; } boxes.push([cx, cy, tw]); seen[key] = 1; n++;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = dark ? 'rgba(17,24,39,.92)' : 'rgba(255,255,255,.95)'; ctx.strokeText(nm, cx, cy); ctx.fillStyle = col; ctx.fillText(nm, cx, cy); return q; }
+    STN.forEach(function (o) { var q = put(o.n, o.x, o.y, '800 12.5px system-ui, sans-serif', dark ? '#93c5fd' : '#1d4ed8', -13, 60); if (q) { ctx.beginPath(); ctx.arc(q[0], q[1], 4.5, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2.2; ctx.strokeStyle = '#1d4ed8'; ctx.stroke(); } });
+    if (s > 1.1) STN.forEach(function (o) { o.ex.forEach(function (e) { var q = W2S(e[0], e[1]); if (q[0] < 0 || q[0] > W || q[1] < 70 || q[1] > H - 100) return; ctx.beginPath(); ctx.arc(q[0], q[1], 7, 0, Math.PI * 2); ctx.fillStyle = '#facc15'; ctx.fill(); ctx.font = '800 9.5px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#111'; ctx.fillText(e[2], q[0], q[1] + 0.5); }); });
+    if (s > 0.3) G.sig.forEach(function (g) { put(g.nm, g.x, g.y, '700 11px system-ui, sans-serif', dark ? '#fde68a' : '#7c2d12', -14, 60); });
+    if (s > 0.45) Object.keys(BASE.T).forEach(function (k) { BASE.T[k].jn.forEach(function (j) { put(j.n, j.x, j.y, j.k === 'g' ? 'italic 700 11.5px system-ui, sans-serif' : '600 10.5px system-ui, sans-serif', j.k === 'g' ? (dark ? '#86efac' : '#166534') : (dark ? '#cbd5e1' : '#475569'), j.k === 'g' ? 0 : -12, 70); }); });
+    if (s > 0.75 && BLD) { var c = [S2W(0, 0), S2W(W, H)]; BLD.forEach(function (b) { if (!b.n || b.a < (s > 1.4 ? 300 : 1500)) return; put(b.n, b.x, b.y, '600 10.5px system-ui, sans-serif', dark ? '#d1d5db' : '#57534e', 0, 90); }); } }
+  /* 평상시 신호 — 방위마다 직진 신호의 지금 색(아는 곳만). 가운데 점에서 그 차가 들어오는 쪽으로 짧은 막대 · 가까이 보면 남은 초 */
+  var SIDEV = { nt: [0, -1], ne: [0.7, -0.7], et: [1, 0], se: [0.7, 0.7], st: [0, 1], sw: [-0.7, 0.7], wt: [-1, 0], nw: [-0.7, -0.7] };
+  function sigSides(no) { var out = {}, recs = (SIG.its[no] || []).filter(recOk); recs.forEach(function (r) { r.mv.forEach(function (m) { if ((m[1] === 'St' || m[1] === 'Lt') && m[2] != null && DIRS.indexOf(m[0]) >= 0) (out[m[0]] = out[m[0]] || {})[m[1]] = 1; }); }); return out; }
+  function drawSigs(dark, s, W, H, onR, now) { if (s <= 0.1) return; var live = OV.s && !guide && SIG.ready && s > 0.28, cr = Math.cos(-view.rot * Math.PI / 180), sr = Math.sin(-view.rot * Math.PI / 180), nd = 0;
+    G.sig.forEach(function (sg, si) { if (onR[si]) return; var q = W2S(sg.x, sg.y); if (q[0] < -20 || q[0] > W + 20 || q[1] < -20 || q[1] > H + 20) return;
+      if (live && nd < 70) { var sd = sg._sd || (sg._sd = sigSides(sg.no)), ks = Object.keys(sd), any = false; ks.forEach(function (k) { if (!sd[k].St) return; var st = sigAt(sg.no, now, k, 'St'); if (!st || st.kind === 'avg') return; any = true; var v = SIDEV[k], vx = v[0] * cr - v[1] * sr, vy = v[0] * sr + v[1] * cr, L = s > 0.6 ? 17 : 12;
+          ctx.beginPath(); ctx.moveTo(q[0] + vx * 5, q[1] + vy * 5); ctx.lineTo(q[0] + vx * L, q[1] + vy * L); ctx.lineCap = 'round'; ctx.lineWidth = 6.5; ctx.strokeStyle = '#111827'; ctx.stroke(); ctx.lineWidth = 4; ctx.strokeStyle = st.green ? '#22c55e' : '#ef4444'; ctx.stroke();
+          if (s > 0.75) { ctx.font = '800 10.5px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; var tx = Math.ceil(st.remain) + ''; ctx.lineWidth = 3; ctx.strokeStyle = dark ? '#111827' : '#fff'; ctx.strokeText(tx, q[0] + vx * (L + 10), q[1] + vy * (L + 10)); ctx.fillStyle = st.green ? '#15803d' : '#b91c1c'; ctx.fillText(tx, q[0] + vx * (L + 10), q[1] + vy * (L + 10)); } });
+        if (any) nd++; ctx.beginPath(); ctx.arc(q[0], q[1], 4.2, 0, Math.PI * 2); ctx.fillStyle = any ? '#111827' : (dark ? '#64748b' : '#94a3b8'); ctx.fill(); return; }
+      ctx.beginPath(); ctx.arc(q[0], q[1], 3.2, 0, Math.PI * 2); ctx.fillStyle = dark ? '#64748b' : '#94a3b8'; ctx.fill(); }); }
+  /* 짧게 누름 — 신호 교차로면 방향마다 지금 색을 글로 */
+  function tapAt(px, py) { if (!G || guide) return; var el = $('gPick'); if (el.style.display === 'flex') { el.style.display = 'none'; return; } var best = null, bd = 28; G.sig.forEach(function (sg) { var q = W2S(sg.x, sg.y), d = Math.hypot(q[0] - px, q[1] - py); if (d < bd) { bd = d; best = sg; } }); if (!best) return;
+    var now = Date.now() / 1000, sd = sigSides(best.no), rows = []; DIRS.forEach(function (k) { if (!sd[k]) return; ['St', 'Lt'].forEach(function (mv) { if (!sd[k][mv]) return; var st = sigAt(best.no, now, k, mv); rows.push('<div class="si"><span>' + DIRKO[k] + '쪽에서 ' + (mv === 'St' ? '직진' : '좌회전') + '</span>' + (!st ? '<em>모름</em>' : st.kind === 'avg' ? '<em>지금 색 모름 · 주기 ' + Math.round(st.C) + '초</em>' : '<b class="' + (st.green ? 'g' : 'r') + '">' + (st.green ? '녹색' : '적색') + ' ' + Math.ceil(st.remain) + '초</b>') + '</div>'); }); });
+    var ns = nearSeg(best.x, best.y, 200); el.style.display = 'flex'; el.style.left = Math.max(8, Math.min(cv.clientWidth - 248, px - 120)) + 'px'; el.style.top = Math.max(70, Math.min(cv.clientHeight - 330, py + 14)) + 'px'; el.style.width = '240px';
+    el.innerHTML = '<b>🚦 ' + esc(best.nm) + '</b>' + (rows.length ? rows.join('') + '<div class="si"><em>계획값 — 수동 조작·감응이면 다르다</em></div>' : '<div class="si"><em>이 교차로는 신호 자료가 없다</em></div>') + '<button data-p="to">여기로 안내</button><button data-p="x">닫기</button>'; el._w = [ns ? ns.x : best.x, ns ? ns.y : best.y, best.nm]; }
+  /* 찾기 — 이 기기 안의 이름(신호 교차로 · 큰길 · 역 · 이름 있는 건물) + 브이월드 장소·주소(이 기기에 브이월드 키가 있을 때만 · 데이터 압축지도의 🔑 와 같은 값) */
+  var VWN = 0;
+  function vwJ(url) { return new Promise(function (ok, no) { var cb = '__gvw' + (++VWN) + 'x' + Date.now(), sc = document.createElement('script'), t = setTimeout(function () { fin(); no(new Error('응답 없음')); }, 12000); function fin() { clearTimeout(t); window[cb] = function () {}; if (sc.parentNode) sc.parentNode.removeChild(sc); } window[cb] = function (j) { fin(); ok(j); }; sc.onerror = function () { fin(); no(new Error('받기 실패')); }; sc.src = url + '&callback=' + cb; document.head.appendChild(sc); }); }
+  function vwKey() { try { return localStorage.getItem('tg_map2d_vwkey') || ''; } catch (e) { return ''; } }
+  function vwSearch(q) { var key = vwKey(); if (!key) return Promise.resolve(null); var base = 'https://api.vworld.kr/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=6&page=1&format=json&errorformat=json&key=' + encodeURIComponent(key) + '&domain=340patrolman.github.io&query=' + encodeURIComponent(q);
+    return Promise.all([vwJ(base + '&type=place').catch(function () { return null; }), vwJ(base + '&type=address&category=road').catch(function () { return null; }), vwJ(base + '&type=address&category=parcel').catch(function () { return null; })]).then(function (R) { var out = [];
+      R.forEach(function (j, i) { var it = j && j.response && j.response.result && j.response.result.items || []; it.forEach(function (o) { if (!o.point) return; var x = PX(+o.point.x), y = PY(+o.point.y); if (x < G.box[0] - 300 || x > G.box[1] + 300 || y < G.box[2] - 300 || y > G.box[3] + 300) return; var ad = o.address || {}; out.push([i ? '🏠' : '📍', i ? (ad.road || ad.parcel || o.title || q) : (o.title || q), x, y, i ? '' : (ad.road || ad.parcel || '')]); }); }); return out; }); }
+  function localFind(q) { var out = [], seen = {}; function add(ic, nm, x, y) { if (out.length > 40 || seen[ic + nm]) return; seen[ic + nm] = 1; out.push([ic, nm, x, y, '']); } var has = function (t) { return String(t).replace(/\s+/g, '').indexOf(q) >= 0; };
+    STN.forEach(function (o) { if (has(o.n)) add('🚇', o.n, o.x, o.y); }); G.sig.forEach(function (g) { if (has(g.nm)) add('🚦', g.nm, g.x, g.y); }); if (BLD) BLD.forEach(function (b) { if (b.n && has(b.n)) add('🏢', b.n, b.x, b.y); });
+    Object.keys(BASE.T).forEach(function (k) { BASE.T[k].jn.forEach(function (j) { if (has(j.n)) add(j.k === 'g' ? '🌳' : '✚', j.n, j.x, j.y); }); }); G.LAB.forEach(function (L) { if (has(L.n)) add('🛣', L.n, L.x, L.y); }); return out; }
+  var FSEQ = 0;
+  function findRun(raw, auto) { var q = String(raw || '').replace(/\s+/g, ''); if (!G || q.length < 2) { fl.style.display = 'none'; return; } if (!BLD) bldLoad(); var seq = ++FSEQ, out = localFind(q);
+    function show(extra) { if (seq !== FSEQ) return; var all = out.concat(extra || []); fl._o = all; fl.innerHTML = all.slice(0, 16).map(function (o, i) { return '<button data-i="' + i + '">' + o[0] + ' ' + esc(o[1]) + (o[4] ? ' <small>' + esc(o[4]) + '</small>' : '') + '</button>'; }).join('') + (all.length ? '' : '<div class="no">찾지 못했다 — 지도를 길게 눌러 목적지를 정할 수 있다</div>') + (vwKey() ? '' : '<div class="no">주소(도로명·지번)와 그 밖의 장소 이름은 이 기기에 브이월드 키가 있어야 찾는다 — 데이터 압축지도의 「🔑」에서 한 번 넣으면 여기서도 쓴다. 지금은 서초 둘레의 역·신호 교차로·큰길·이름 있는 건물만 찾는다.</div>'); fl.style.display = 'block'; if (auto && all.length === 1) pickFound(0); }
+    show(null); if (vwKey() && raw.replace(/\s+/g, ' ').trim().length >= 2) vwSearch(raw.replace(/\s+/g, ' ').trim()).then(function (ex) { if (ex && ex.length) show(ex); }); }
+  function pickFound(i) { var o = fl._o && fl._o[i]; if (!o) return; fl.style.display = 'none'; fi.value = o[1]; fi.blur(); var ns = nearSeg(o[2], o[3], 400); setDest(ns ? ns.x : o[2], ns ? ns.y : o[3], o[1]); view.cx = o[2]; view.cy = o[3]; if (view.s < 0.5) view.s = 0.7; follow = false; draw(); }
+  /* 음성으로 목적지 — 브라우저의 받아쓰기(webkitSpeechRecognition · 크롬·사파리는 소리를 그 회사 서버로 보낸다 · 티북의 음성 입력과 같은 길) */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition, rec = null;
+  function micGo() { var b = $('gMic'); if (!SR) { note('이 브라우저는 음성 받아쓰기를 지원하지 않는다 — 자판의 마이크 단추로 말한다'); fi.focus(); return; } if (rec) { try { rec.stop(); } catch (e) {} return; }
+    try { rec = new SR(); rec.lang = 'ko-KR'; rec.interimResults = true; rec.maxAlternatives = 1; } catch (e) { rec = null; note('음성 받아쓰기를 켜지 못했다'); return; }
+    rec.onresult = function (e) { var t = '', fin = false; for (var i = 0; i < e.results.length; i++) { t += e.results[i][0].transcript; if (e.results[i].isFinal) fin = true; } fi.value = t; if (fin) findRun(t, true); };
+    rec.onerror = function (e) { note(e && e.error === 'not-allowed' ? '마이크 권한이 꺼져 있다 — 브라우저 설정에서 이 사이트의 마이크를 허용한다' : '잘 듣지 못했다 — 다시 누르고 말한다'); };
+    rec.onend = function () { rec = null; b.classList.remove('on'); }; b.classList.add('on'); note('말하십시오 — 예: 「서초구청」 「교대역」 「반포대로 201」'); try { rec.start(); } catch (e) { rec = null; b.classList.remove('on'); } }
+
   /* ---------- 그리기 ---------- */
-  var RS = { 1: [15, '#f2a65a', '#c2742a'], 2: [13, '#f6c667', '#c9962e'], 3: [11, '#fbe08f', '#cdb06a'], 4: [9, '#ffffff', '#b9c1cc'], 5: [7.5, '#ffffff', '#c3cad4'], 6: [5.5, '#ffffff', '#cfd5dd'], 7: [4, '#f8fafc', '#d9dee5'], 8: [3, '#f1f5f9', '#dfe4ea'] };
+  /* 등급: [폭 m, 낮 채움, 낮 테, 밤 채움] — 큰길은 따뜻한 노랑 · 그 밖은 흰 길에 옅은 테(땅 색과 건물 색을 가라앉혀 길과 안내선이 먼저 보이게) */
+  var RS = { 1: [16, '#f7c16a', '#dc9a36', '#8a6420'], 2: [14, '#fbd583', '#e2b452', '#7c6126'], 3: [12, '#fde8ad', '#e4cc8a', '#6b5a30'], 4: [9.5, '#ffffff', '#d3d8df', '#3b4658'], 5: [8, '#ffffff', '#dbe0e6', '#364154'], 6: [6, '#ffffff', '#e1e5ea', '#323c4e'], 7: [4.2, '#fbfcfd', '#e5e8ec', '#2e3748'], 8: [3, '#f6f7f9', '#e8ebee', '#2b3444'] };
   function resize() { var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return; if (cv.width !== Math.round(w * DPR) || cv.height !== Math.round(h * DPR)) { cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR); } }
   function anchorY() { return guide ? cv.clientHeight * 0.68 : cv.clientHeight * 0.5; }
   function W2S(x, y) { var c = Math.cos(-view.rot * Math.PI / 180), s = Math.sin(-view.rot * Math.PI / 180), dx = (x - view.cx) * view.s, dy = (y - view.cy) * view.s; return [cv.clientWidth / 2 + dx * c - dy * s, anchorY() + dx * s + dy * c]; }
   function S2W(px, py) { var c = Math.cos(view.rot * Math.PI / 180), s = Math.sin(view.rot * Math.PI / 180), dx = (px - cv.clientWidth / 2) / view.s, dy = (py - anchorY()) / view.s; return [view.cx + dx * c - dy * s, view.cy + dx * s + dy * c]; }
   var DQ = 0; function drawSoon() { if (DQ) return; DQ = 1; var f = function () { if (!DQ) return; DQ = 0; draw(); }; requestAnimationFrame(f); setTimeout(f, 150); }
   function draw() { resize(); var W = cv.clientWidth, H = cv.clientHeight; if (!W) return; var dark = document.documentElement.classList.contains('dark');
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = dark ? '#111827' : '#eef1f4'; ctx.fillRect(0, 0, W, H); if (!G) return;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = dark ? '#0f1726' : '#f2f0ea'; ctx.fillRect(0, 0, W, H); if (!G) return;
     ctx.save(); ctx.translate(W / 2, anchorY()); ctx.rotate(-view.rot * Math.PI / 180); ctx.scale(view.s, view.s); ctx.translate(-view.cx, -view.cy); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     var s = view.s, show = function (c) { return c <= 3 || (c <= 5 && s > 0.05) || (c === 6 && s > 0.12) || (c === 7 && s > 0.2) || (c === 8 && s > 0.35); }, c;
-    for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s) + 2 / s; ctx.strokeStyle = dark ? '#0b1220' : RS[c][2]; ctx.stroke(G.PATH[c]); }
-    for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s); ctx.strokeStyle = dark ? (c <= 3 ? '#8a6d2f' : '#374151') : RS[c][1]; ctx.stroke(G.PATH[c]); }
-    if (route) { var p = route.pts, i; ctx.beginPath(); ctx.moveTo(p[0], p[1]); for (i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]); ctx.lineWidth = Math.max(11, 9 / s); ctx.strokeStyle = '#0b3d91'; ctx.stroke(); ctx.lineWidth = Math.max(7.5, 6 / s); ctx.strokeStyle = '#2f7bff'; ctx.stroke();
+    drawBase(dark, s);
+    for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s) + 2 / s; ctx.strokeStyle = dark ? '#0a101c' : RS[c][2]; ctx.stroke(G.PATH[c]); }
+    for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s); ctx.strokeStyle = dark ? RS[c][3] : RS[c][1]; ctx.stroke(G.PATH[c]); }
+    drawBld(dark, s); if (!guide && OV.t) drawTraf(s);
+    if (route) { var p = route.pts, i; ctx.beginPath(); ctx.moveTo(p[0], p[1]); for (i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]); ctx.lineWidth = Math.max(13, 11 / s); ctx.strokeStyle = dark ? '#0b1220' : '#ffffff'; ctx.stroke(); ctx.lineWidth = Math.max(10.5, 8.6 / s); ctx.strokeStyle = '#1b54d6'; ctx.stroke(); ctx.lineWidth = Math.max(7.5, 6 / s); ctx.strokeStyle = '#3d86ff'; ctx.stroke();
       route.cong.forEach(function (cg) { ctx.beginPath(); var on = false; for (var u = 0; u < p.length; u += 2) { var dd = route.cum[u / 2]; if (dd >= cg[0] - 0.5 && dd <= cg[1] + 0.5) { if (!on) { ctx.moveTo(p[u], p[u + 1]); on = true; } else ctx.lineTo(p[u], p[u + 1]); } } ctx.lineWidth = Math.max(7.5, 6 / s); ctx.strokeStyle = cg[2] === 2 ? '#dc2626' : '#f59e0b'; ctx.stroke(); }); }
     ctx.restore();
     /* 이름표 */
@@ -179,15 +267,17 @@
       for (var li = 0; li < G.LAB.length && n < 26; li++) { var L = G.LAB[li]; if ((L.c >= 5 && s < 0.3) || (L.c === 4 && s < 0.15)) continue; var q = W2S(L.x, L.y); if (q[0] < 30 || q[0] > W - 30 || q[1] < 90 || q[1] > H - 120) continue; var sl = seen[L.n]; if (sl && sl.some(function (o) { return Math.hypot(o[0] - q[0], o[1] - q[1]) < 240; })) continue;
         var tw = ctx.measureText(L.n).width; if (tw + 16 > L.L * s) continue; var hit = false; for (var bi = 0; bi < boxes.length; bi++) { var b = boxes[bi]; if (Math.abs(b[0] - q[0]) < (b[2] + tw) / 2 + 6 && Math.abs(b[1] - q[1]) < 18) { hit = true; break; } } if (hit) continue; boxes.push([q[0], q[1], tw]); (seen[L.n] = seen[L.n] || []).push(q); n++;
         var a = L.a - view.rot * Math.PI / 180; a = Math.atan2(Math.sin(a), Math.cos(a)); if (a > Math.PI / 2) a -= Math.PI; if (a < -Math.PI / 2) a += Math.PI; ctx.save(); ctx.translate(q[0], q[1]); ctx.rotate(a); ctx.lineWidth = 3; ctx.strokeStyle = dark ? 'rgba(17,24,39,.9)' : 'rgba(255,255,255,.95)'; ctx.strokeText(L.n, 0, 0); ctx.fillStyle = dark ? '#cbd5e1' : '#374151'; ctx.fillText(L.n, 0, 0); ctx.restore(); } }
-    /* 신호 — 길 위의 신호는 지금 색(아는 곳만) · 그 밖은 작은 회색 점 */
+    drawPlaces(dark, s, W, H);
+    /* 신호 — 길 위의 신호는 지금 색(아는 곳만) · 그 밖은 평상시 화면에서 방위마다 색(drawSigs) */
     var now = Date.now() / 1000, onR = {}; if (route) route.sigs.forEach(function (g) { onR[g.si] = g; });
-    if (s > 0.1) G.sig.forEach(function (sg, si) { if (onR[si]) return; var q = W2S(sg.x, sg.y); if (q[0] < -10 || q[0] > W + 10 || q[1] < -10 || q[1] > H + 10) return; ctx.beginPath(); ctx.arc(q[0], q[1], 3.2, 0, Math.PI * 2); ctx.fillStyle = dark ? '#64748b' : '#94a3b8'; ctx.fill(); });
+    drawSigs(dark, s, W, H, onR, now);
     if (route) route.sigs.forEach(function (g) { var sg = G.sig[g.si], q = W2S(sg.x, sg.y); if (q[0] < -20 || q[0] > W + 20 || q[1] < -20 || q[1] > H + 20) return; var st = g.mv === 'St' || g.mv === 'Lt' ? sigAt(g.no, now, g.side, g.mv) : null, col = !st || st.kind === 'avg' ? '#94a3b8' : st.green ? '#16a34a' : '#dc2626';
       ctx.beginPath(); ctx.arc(q[0], q[1], 9, 0, Math.PI * 2); ctx.fillStyle = '#111827'; ctx.fill(); ctx.beginPath(); ctx.arc(q[0], q[1], 6.5, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
       if (st && st.kind !== 'avg' && s > 0.25) { var tx = Math.ceil(st.remain) + ''; ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.strokeText(tx, q[0], q[1] - 17); ctx.fillStyle = col; ctx.fillText(tx, q[0], q[1] - 17); } });
     if (dest) { var dq = W2S(dest.x, dest.y); ctx.beginPath(); ctx.moveTo(dq[0], dq[1]); ctx.lineTo(dq[0] - 9, dq[1] - 22); ctx.arc(dq[0], dq[1] - 26, 10, Math.PI * 0.85, Math.PI * 0.15); ctx.closePath(); ctx.fillStyle = '#e11d48'; ctx.fill(); ctx.beginPath(); ctx.arc(dq[0], dq[1] - 26, 4, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); }
     if (me) { var mp = route && route.sx && route.off < 45 ? route.sx : [me.x, me.y, me.hd], mq = W2S(mp[0], mp[1]); if (me.acc > 30) { ctx.beginPath(); ctx.arc(mq[0], mq[1], Math.max(14, me.acc * s), 0, Math.PI * 2); ctx.fillStyle = 'rgba(37,99,235,.12)'; ctx.fill(); }
-      ctx.save(); ctx.translate(mq[0], mq[1]); ctx.rotate(((guide ? mp[2] : me.hd) - view.rot) * Math.PI / 180); ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(11, 11); ctx.lineTo(0, 5); ctx.lineTo(-11, 11); ctx.closePath(); ctx.fillStyle = '#1d4ed8'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.fill(); ctx.restore(); }
+      ctx.save(); ctx.translate(mq[0], mq[1]); ctx.beginPath(); ctx.arc(0, 2, 19, 0, Math.PI * 2); ctx.fillStyle = 'rgba(15,23,42,.18)'; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(15,23,42,.12)'; ctx.stroke();
+      ctx.rotate(((guide ? mp[2] : me.hd) - view.rot) * Math.PI / 180); ctx.beginPath(); ctx.moveTo(0, -12.5); ctx.lineTo(9.5, 9); ctx.lineTo(0, 4.2); ctx.lineTo(-9.5, 9); ctx.closePath(); ctx.fillStyle = '#1b54d6'; ctx.fill(); ctx.restore(); }
   }
   function fitAll() { var b = G.box; view.cx = (b[0] + b[1]) / 2; view.cy = (b[2] + b[3]) / 2; view.s = Math.min(cv.clientWidth / (b[1] - b[0]), cv.clientHeight / (b[3] - b[2])) * 1.9; view.rot = 0; }
   function fitRoute() { var p = route.pts, b = [1e9, -1e9, 1e9, -1e9]; for (var i = 0; i < p.length; i += 2) { if (p[i] < b[0]) b[0] = p[i]; if (p[i] > b[1]) b[1] = p[i]; if (p[i + 1] < b[2]) b[2] = p[i + 1]; if (p[i + 1] > b[3]) b[3] = p[i + 1]; }
@@ -262,12 +352,12 @@
   /* ---------- 손가락 ---------- */
   var ptrs = {}, drag = null, pinch = null, lpT = 0, lpAt = null;
   cv.addEventListener('pointerdown', function (e) { try { cv.setPointerCapture(e.pointerId); } catch (x) {} ptrs[e.pointerId] = [e.offsetX, e.offsetY]; var ks = Object.keys(ptrs);
-    if (ks.length === 1) { drag = { x: e.offsetX, y: e.offsetY, cx: view.cx, cy: view.cy, moved: 0 }; lpAt = [e.offsetX, e.offsetY]; clearTimeout(lpT); lpT = setTimeout(function () { if (drag && drag.moved < 8 && lpAt) pick(lpAt[0], lpAt[1]); }, 550); }
+    if (ks.length === 1) { drag = { x: e.offsetX, y: e.offsetY, cx: view.cx, cy: view.cy, moved: 0, t0: Date.now() }; lpAt = [e.offsetX, e.offsetY]; clearTimeout(lpT); lpT = setTimeout(function () { if (drag && drag.moved < 8 && lpAt) pick(lpAt[0], lpAt[1]); }, 550); }
     else if (ks.length === 2) { clearTimeout(lpT); var a = ptrs[ks[0]], b = ptrs[ks[1]]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, s: view.s }; drag = null; } });
   cv.addEventListener('pointermove', function (e) { if (!ptrs[e.pointerId]) return; ptrs[e.pointerId] = [e.offsetX, e.offsetY]; var ks = Object.keys(ptrs);
     if (pinch && ks.length >= 2) { var a = ptrs[ks[0]], b = ptrs[ks[1]]; view.s = Math.max(0.03, Math.min(4, pinch.s * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinch.d)); drawSoon(); return; }
     if (drag) { var dx = e.offsetX - drag.x, dy = e.offsetY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy)); if (drag.moved > 8) { clearTimeout(lpT); follow = false; $('gCen').classList.add('off'); var c = Math.cos(view.rot * Math.PI / 180), s = Math.sin(view.rot * Math.PI / 180); view.cx = drag.cx - (dx * c - dy * s) / view.s; view.cy = drag.cy - (dx * s + dy * c) / view.s; drawSoon(); } } });
-  function up(e) { delete ptrs[e.pointerId]; clearTimeout(lpT); if (Object.keys(ptrs).length < 2) pinch = null; if (!Object.keys(ptrs).length) drag = null; }
+  function up(e) { var tp = e.type === 'pointerup' && drag && drag.moved < 8 && Date.now() - drag.t0 < 380 ? [drag.x, drag.y] : null; if (tp) setTimeout(function () { tapAt(tp[0], tp[1]); }, 0); delete ptrs[e.pointerId]; clearTimeout(lpT); if (Object.keys(ptrs).length < 2) pinch = null; if (!Object.keys(ptrs).length) drag = null; }
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', function (e) { e.preventDefault(); view.s = Math.max(0.03, Math.min(4, view.s * (e.deltaY < 0 ? 1.2 : 1 / 1.2))); drawSoon(); }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); pick(e.offsetX, e.offsetY); });
@@ -281,6 +371,8 @@
     if (id === 'gGo') { voiceAsk(); guideStart(); } else if (id === 'gSim') simStart(); else if (id === 'gClr') { route = null; dest = null; note(''); paint(); draw(); } else if (id === 'gStop') guideStop(false);
     else if (id === 'gCen') { follow = true; t.classList.remove('off'); if (watchId == null && !sim) gpsStart(); if (me) { view.cx = me.x; view.cy = me.y; if (guide) view.rot = me.hd; else if (view.s < 0.5) view.s = 0.9; } draw(); }
     else if (id === 'gVoice') { voiceOn = !voiceOn; t.classList.toggle('on', voiceOn); if (voiceOn) say('음성 안내를 켭니다'); else if (window.speechSynthesis) speechSynthesis.cancel(); }
+    else if (id === 'gMic') micGo();
+    else if (t.hasAttribute('data-ov')) { var k = t.getAttribute('data-ov'); OV[k] = OV[k] ? 0 : 1; t.classList.toggle('on', !!OV[k]); try { localStorage.setItem('tg_gargo_ov', JSON.stringify(OV)); } catch (x) {} draw(); }
     else if (id === 'gIn') { view.s = Math.min(4, view.s * 1.4); draw(); } else if (id === 'gOut') { view.s = Math.max(0.03, view.s / 1.4); draw(); }
     else if (t.hasAttribute('data-mode')) { MODE = t.getAttribute('data-mode'); if (dest && me) plan(); }
     else if (id === 'gDark') { document.documentElement.classList.toggle('dark'); try { localStorage.setItem('tg_gargo_dark', document.documentElement.classList.contains('dark') ? '1' : '0'); } catch (x) {} draw(); }
@@ -288,16 +380,14 @@
   function voiceAsk() { if (!window.speechSynthesis) return; voiceOn = true; $('gVoice').classList.add('on'); }
   /* 이름으로 찾기 — 신호 교차로 이름 · 길 이름(이 묶음 안) */
   var fi = $('gQ'), fl = $('gList');
-  fi.addEventListener('input', function () { var q = fi.value.replace(/\s+/g, ''); if (!G || q.length < 2) { fl.style.display = 'none'; return; } var out = [];
-    G.sig.forEach(function (s) { if (s.nm.replace(/\s+/g, '').indexOf(q) >= 0) out.push(['🚦', s.nm, s.x, s.y]); });
-    var seen = {}; G.LAB.forEach(function (L) { if (out.length > 30 || seen[L.n] || L.n.replace(/\s+/g, '').indexOf(q) < 0) return; seen[L.n] = 1; out.push(['🛣', L.n, L.x, L.y]); });
-    fl.innerHTML = out.slice(0, 14).map(function (o, i) { return '<button data-i="' + i + '">' + o[0] + ' ' + esc(o[1]) + '</button>'; }).join('') || '<div class="no">서초구 둘레의 신호 교차로·큰길 이름만 찾는다 — 그 밖은 지도를 길게 누른다</div>'; fl._o = out; fl.style.display = 'block'; });
-  fl.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var o = fl._o[+b.getAttribute('data-i')]; fl.style.display = 'none'; fi.value = o[1]; fi.blur(); var ns = nearSeg(o[2], o[3], 300); setDest(ns ? ns.x : o[2], ns ? ns.y : o[3], o[1]); view.cx = o[2]; view.cy = o[3]; if (view.s < 0.4) view.s = 0.6; follow = false; draw(); });
+  var fT = 0; fi.addEventListener('input', function () { clearTimeout(fT); var v = fi.value; fT = setTimeout(function () { findRun(v, false); }, 250); });
+  fi.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(fT); findRun(fi.value, true); } });
+  fl.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; pickFound(+b.getAttribute('data-i')); });
   /* 주소로 받은 목적지 — #to=위도,경도&nm=이름 · #from=위도,경도(시험) · 주소에서 지운다(좌표가 남지 않게) */
   function hashGo() { var H = location.hash || '', t = /[#&]to=(-?[\d.]+),(-?[\d.]+)/.exec(H), f = /[#&]from=(-?[\d.]+),(-?[\d.]+)/.exec(H), n = /[#&]nm=([^&]*)/.exec(H);
     if (f) setMe(PX(+f[2]), PY(+f[1]), 5, null, 0); if (t) { var x = PX(+t[2]), y = PY(+t[1]), ns = nearSeg(x, y, 600); if (ns) setDest(ns.x, ns.y, n ? decodeURIComponent(n[1]) : '받은 자리'); else note('받은 자리가 서초구 둘레 밖이다 — 시험판은 서초구와 둘레 2km 안에서만 된다'); }
     if (t || f) { try { history.replaceState(null, '', location.pathname); } catch (e) {} } }
-  setInterval(function () { if (route && (guide || sim)) { paint(); draw(); } else if (route) draw(); }, 1000);
+  setInterval(function () { if (document.hidden) return; if (route && (guide || sim)) { paint(); draw(); } else if (route || (OV.s && SIG.ready && view.s > 0.28)) draw(); }, 1000);
   /* 5분마다 — 통행속도 한 장과 신호 색인을 다시 본다. 신호 수집기가 약 15분마다 새 값을 올리므로(색인의 made 가 바뀐다) 바뀌었으면 서초 둘레 칸을 다시 받아 그 자리에서 갈아 끼운다.
      소유자 2026-10-13 「신호값이 업데이트되는 대로 계속 추가 업데이트되게」 — 안내 중에도 받는다(지금 색·남은 초가 새 값으로 바뀐다 · 길은 다시 고르지 않는다) */
   function sigRefresh() { return getJ('../data/sigdir/index.json').then(function (j) { if (!j || !j.fl || !SIG.idx || j.made === SIG.idx.made) return false; var need = {}; G.sig.forEach(function (s) { if (j.fl[s.no] == null) return; var q = j.pts[s.no]; if (q) need[Math.floor(q[0] / j.cell[0]) + '_' + Math.floor(q[1] / j.cell[1])] = 1; });
@@ -305,7 +395,7 @@
   setInterval(function () { if (!G || document.hidden) return; Promise.all([liveLoad(), sigRefresh()]).then(function (r) { if (dest && me && !guide) plan(); else { paint(); draw(); } }); }, 300000);
   window.addEventListener('resize', function () { draw(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && guide && navigator.wakeLock) { try { navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} } });
-  try { if (localStorage.getItem('tg_gargo_dark') === '1') document.documentElement.classList.add('dark'); } catch (e) {}
+  try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {}
   function boot() { if (document.documentElement.classList.contains('gated')) return; var seen = false; try { seen = localStorage.getItem('tg_gargo_intro') === '1'; } catch (e) {} if (seen) { $('gIntro').style.display = 'none'; if (!/[#&]from=/.test(location.hash)) gpsStart(); } load(); }
   window.addEventListener('tggate', boot); boot();
   window.GARGO = { view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart };

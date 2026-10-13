@@ -1106,10 +1106,13 @@
     drawJgg(dark); drawSz(dark); drawTrd(dark); drawHl(dark); drawGgt(dark); drawRent(dark); drawBiz(dark); drawTr(dark); drawRad(dark); drawA10(dark); drawGrid(dark); drawHome(dark); drawPolice(dark); drawRi(dark); drawPub(dark); drawExtra(dark); drawFlow(dark); drawSafe(dark); drawExb(dark); drawFire(dark); drawSeason(dark); drawWalk(dark); drawLore(dark); drawGgbrt(dark); drawHira(dark);
     if (on.evt && D.evt) {
       (D.evt.events && D.evt.events.items || []).forEach(function (e) { if (e.lat && e.s <= ymd && e.e >= ymd) dot(P(e.lon, e.lat), 5.5, '#a855f7', '#fff', { kind: 'evt', e: e }); });
-      (D.evt.rallies && D.evt.rallies.items || []).forEach(function (r) {
-        if (r.d !== ymd || !r.lat) return;
-        if (r.march && r.dest) { path([P(r.lon, r.lat), P(r.dest[1], r.dest[0])]); ctx.lineWidth = 3; ctx.setLineDash([6, 4]); ctx.strokeStyle = '#ef4444'; ctx.stroke(); ctx.setLineDash([]); }
-        dot(P(r.lon, r.lat), 7, '#ef4444', '#fff', { kind: 'rally', r: r });
+      if (RLY === undefined && seoulNear()) rlyGet();   /* v2.217.0 서울 전 관할서 집회(rally-seoul.json) — 오면 그것으로, 아직이면 옛 서초분 */
+      (RLY ? rlyDay(ymd) : (D.evt.rallies && D.evt.rallies.items || []).filter(function (r) { return r.d === ymd; })).forEach(function (r) {
+        if (!r.lat) return; var p0 = r._p || P(r.lon, r.lat);
+        if (r.march && r.dest) { path([p0, r._d || P(r.dest[1], r.dest[0])]); ctx.lineWidth = 3; ctx.setLineDash([6, 4]); ctx.strokeStyle = '#ef4444'; ctx.stroke(); ctx.setLineDash([]); }
+        var rr = 6 + Math.min(7, Math.sqrt((+r.n || 0) / 100) * 1.5);   /* 신고 인원이 많을수록 크게(100명 7.5 · 1,000명 10.7 · 2,000명부터 13) */
+        if (r.approx) { var q0 = S(p0); ctx.beginPath(); ctx.arc(q0[0], q0[1], rr + 4, 0, Math.PI * 2); ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5; ctx.strokeStyle = '#ef4444'; ctx.stroke(); ctx.setLineDash([]); }
+        dot(p0, rr, '#ef4444', '#fff', { kind: 'rally', r: r });
       });
     }
     drawLive(dark); drawKma(dark); liveSoon();
@@ -1382,8 +1385,13 @@
     } else if (it.kind === 'hira') { h = hiraCard(it);
     } else if (it.kind === 'rone') { h = roneCard(it);
     } else if (it.kind === 'rally') {
-      var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + r.from + '~' + r.to)) + row('자리', esc(r.p)) + row('신고 인원', (r.n || '-') + '명 <em>(신고값)</em>') + (r.approx ? row('자리 표시', '<em>근사</em> — ' + esc(r.note)) : '');
-      h += src('서울경찰청 「오늘의 주요집회」 · 주최자는 담지 않았다');
+      var r = it.r; h = '<h3>🪧 집회' + (r.march ? '·행진' : '') + '</h3>' + row('때', esc(r.d + ' ' + (r.from || '?') + '~' + (r.to || '?'))) + row('자리', esc(r.p)) + row('신고 인원', (r.n ? (+r.n).toLocaleString() : '-') + '명 <em>(신고값 — 실제 모인 수가 아니다)</em>') + (r.st ? row('관할', esc(r.st)) : '') + (r.approx ? row('자리 표시', '<b style="color:#b91c1c">근사</b>(점선 테) — ' + esc(r.note || '')) : r.note ? row('자리 표시', esc(r.note)) : '') + (r.march ? row('행진', r.dest ? '점선 = 시작과 끝을 곧게 이은 것(실제 길이 아니다)' : '끝 자리를 찾지 못했다 — 글로만') : '');
+      h += (RLY ? sdMore(rlyList(r.d, r), 'rlyl', '📢 이 날 서울 주요집회 ' + rlyDay(r.d).length + '건 — 목록') : '') + src('서울경찰청 「오늘의 주요집회」 · 주최자는 담지 않았다');
+    } else if (it.kind === 'rlylist') {
+      var dy = it.d || pickDate(); if (RLY === undefined) { rlyGet(); h = '<h3>📢 주요집회</h3><p class="desc">집회 자료를 읽는 중…</p>'; } else if (!RLY) h = '<h3>📢 주요집회</h3><p class="desc">집회 자료를 읽지 못했다.</p>';
+      else { var nx = new Date(dy + 'T00:00:00'); nx.setDate(nx.getDate() + 1); var d2 = ymdOf(nx), n2 = rlyDay(d2).length;
+        h = '<h3>📢 서울 주요집회 — ' + esc(dy) + '</h3>' + rlyList(dy, null) + (n2 ? '<div class="cap" style="margin-top:8px"><b>다음 날(' + esc(d2) + ') ' + n2 + '건</b></div>' + rlyList(d2, null, 1) : '<p class="sdnt">다음 날(' + esc(d2) + ') 글은 아직 없다 — 경찰청이 전날 올린다.</p>')
+          + '<p class="desc">' + esc(String(RLY.caution || '').replace(/\*\*/g, '')) + '</p>' + src(String(RLY.source || '') + ' · ' + String(RLY.collected || '') + ' 받음'); }
     }
     if (it.kind === 'dong' && it.d && it.d.c) { var dll = (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5), dA = 0;   // v2.61.0 소유자 「읍면동 오른쪽 옆에 상권분석 · 그 옆에 이 동 풀어 읽기 · 손익 계산은 그대로」
       (it.d.polys || []).forEach(function (pg) { var r = pg[0] || [], a = 0; for (var i = 0, k = r.length - 1; i < r.length; k = i++) a += (r[k][0] + r[i][0]) * (r[k][1] - r[i][1]); dA += Math.abs(a / 2); });
@@ -2784,7 +2792,7 @@
     if (on.phar) G('💊 약국', li('#16a34a', '지금 영업 중') + li('#94a3b8', '닫음·모름'));
     if (on.er || on.hosp) G('🏥 의료', (on.er ? li('#dc2626', '응급실') : '') + (on.hosp ? li('#0891b2', '병원·의원') : ''));
     if (on.bar || on.play || on.inn) G('🌙 밤 순찰', (on.bar ? li('#b45309', '주점') : '') + (on.play ? li('#db2777', '노래방·PC방') : '') + (on.inn ? li('#7c3aed', '숙박') : ''));
-    if (on.evt) G('📅 행사·집회', li('#a855f7', '문화행사') + li('#ef4444', '집회(선 = 행진)'));
+    if (on.evt) G('📅 행사·집회', li('#a855f7', '문화행사') + li('#ef4444', '집회(크기 = 신고 인원 · 점선 테 = 자리 근사 · 선 = 행진)') + '<div class="lg-btns" style="margin:4px 0 0"><button data-rlylist="1">📢 서울 주요집회 목록' + (RLY ? ' — 이 날 ' + rlyDay(pickDate()).length + '건' : '') + '</button></div>');
     seasonLegend(G);
     if (on.cam || on.sig) G('📷🚦', (on.cam ? li('#2563eb', '무인 단속 카메라') + (A10.length ? li('#16a34a', '설치 뒤 둘레 사고가 서초 전체보다 더 줄었다') + li('#dc2626', '덜 줄었거나 늘었다') : '') + camSum() : '') + (on.sig ? li('#16a34a', '신호 주기(경찰청)') : ''));
     if (on.spot) G('🎯 길목', li('rgba(234,88,12,.5)', '버스 정류장') + li('rgba(14,165,233,.5)', '지하철역') + '<small class="lg-n">숫자 = 그 시각 하차 순위</small>');
@@ -2862,6 +2870,18 @@
       hereOut(P(lo, la), ac);
     }, function (e) { var c = e && e.code; toast(c === 1 ? '위치 권한이 꺼져 있다 — 아이폰: 설정 › 개인정보 보호 및 보안 › 위치 서비스 › Safari 웹사이트 › 「앱을 사용하는 동안」 · 그리고 주소창의 「가가」 › 웹 사이트 설정 › 위치 › 허용' : c === 3 ? '위치를 잡는 데 시간이 너무 걸린다 — 하늘이 보이는 곳에서 다시 눌러 본다' : '위치를 잡지 못했다 — 잠시 뒤 다시 눌러 본다'); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 }); }
   if ($('m2dHereB')) $('m2dHereB').onclick = hereAsk;
+  /* v2.217.0 소유자 「집회시위 신고자료는?」 — 📢 서울경찰청 「오늘의 주요집회」 서울 전 관할서(data/rally-seoul.json · tg-rally-seoul/1 · 다른 세션 tools/region/rally-bake.py · 날마다 · 지난 90일쯤).
+     items[{d, from, to, p 장소 글, n 신고 인원, st 관할(원문 — 여러 서가 쉼표로), march, lat, lon(못 찾으면 없음), approx 1 = 근사, dest [위도, 경도], note}].
+     ⚠ 주요 집회만(모든 신고가 아니다) · 주최자 없음 · 신고 인원 ≠ 실제 · 열리지 않거나 바뀔 수 있다 · 자리는 장소 글에서 찾은 건물 자리 · 행진 점선은 시작·끝 직선. 신고서 원문·관서 내부 대장은 싣지 않는다.
+     화면: 고른 날의 집회 점(크기 = 신고 인원 · 근사는 점선 테 · 행진 점선) · 범례의 「📢 주요집회 목록」 → 그 날·다음 날 목록(좌표 없는 것도 글로) · 집회 카드에 관할·목록 */
+  var RLY, RLYP = null, RLYD = {};
+  function rlyGet() { if (RLYP) return RLYP; RLYP = fetch('data/rally-seoul.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { RLY = j && j.items ? j : null; if (RLY) RLY.items.forEach(function (r) { if (r.lat && r.lon) r._p = P(r.lon, r.lat); if (r.dest) r._d = P(r.dest[1], r.dest[0]); }); RLYD = {}; draw(); if (sel && sel.it && (sel.it.kind === 'rlylist' || sel.it.kind === 'rally') && $('m2dCard').classList.contains('on')) show(sel.it); }).catch(function () { RLY = null; }); return RLYP; }
+  function rlyDay(d) { if (!RLY) return []; if (!RLYD[d]) RLYD[d] = RLY.items.filter(function (r) { return r.d === d; }).sort(function (a, b) { return String(a.from || '') < String(b.from || '') ? -1 : 1; }); return RLYD[d]; }
+  function rlyList(d, cur, noGo) { var L = rlyDay(d); if (!L.length) return '<p class="sdnt">' + esc(d) + ' — 올라온 주요집회가 없다(없는 날이거나 아직 안 받은 날).</p>'; var tot = 0; L.forEach(function (r) { tot += +r.n || 0; });
+    return '<div class="cap" style="margin-top:6px">' + L.length + '건 · 신고 인원 합 ' + tot.toLocaleString() + '명(신고값)</div>' + L.map(function (r, i) { var me = r === cur;
+      return '<div class="r"' + (me ? ' style="background:rgba(239,68,68,.08)"' : '') + '><b>' + esc((r.from || '?') + '~' + (r.to || '?')) + '</b><span>' + (r.march ? '🚶 ' : '') + esc(r.p) + ' <em>(' + (r.n ? (+r.n).toLocaleString() + '명' : '인원 없음') + (r.st ? ' · ' + esc(r.st) : '') + (r.lat ? (r.approx ? ' · 자리 근사' : '') : ' · 자리 못 찾음') + ')</em>' + (r.lat && !me ? ' <button data-rlygo="' + esc(d) + '|' + i + '" style="margin-left:4px">지도에서 ›</button>' : '') + '</span></div>'; }).join(''); }
+  function rlyGo(d, i) { var r = rlyDay(d)[i]; if (!r || !r._p) return; if (pickDate() !== d) toast('이 집회는 ' + d + ' 것이다 — 지도의 날짜가 달라 점은 안 보일 수 있다'); if (!on.evt) { on.evt = true; saveOn(); paintLayers(); } if (!(view.s >= 0.12)) view.s = 0.16; view.cx = r._p[0]; view.cy = r._p[1] + cv.clientHeight * 0.2 / view.s; draw(); var q = S(r._p); sel = { x: q[0], y: q[1], r: 10, it: { kind: 'rally', r: r } }; show(sel.it); draw(); }
+  document.addEventListener('click', function (ev) { var b = ev.target.closest && ev.target.closest('[data-rlygo],[data-rlylist]'); if (!b) return; ev.preventDefault(); if (b.hasAttribute('data-rlylist')) { sel = { x: -99, y: -99, r: 0, it: { kind: 'rlylist', d: pickDate() } }; show(sel.it); return; } var a = b.getAttribute('data-rlygo').split('|'); rlyGo(a[0], +a[1]); });
   var gpsAsked = false;
   function gpsHere() {
     if (gpsAsked || !/[#&]gps=1(?!\d)/.test(location.hash) || !navigator.geolocation) return; gpsAsked = true;

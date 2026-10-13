@@ -44,6 +44,10 @@
     /* 3) 화면 — 받은 주소(#from·to)로 길이 잡혔는가 · 그리기 · 모의 주행 */
     var rt = g.state().route; ck('주소의 #from·#to 로 길이 잡힌다', !!(rt && rt.es && rt.es.length), rt ? Math.round(rt.dist) + 'm' : '없음');
     try { g.draw(); ck('지도 그리기', true); } catch (e) { ck('지도 그리기', false, e.message); }
+    /* 잇기 — 길 요약 판의 넘기기 단추 넷(데이터지도·티맵·카카오맵·네이버지도) · 데이터지도는 목적지 좌표로 같은 사이트의 지도를 연다 */
+    var hb = document.querySelectorAll('#gBot [data-hand]'); ck('넘기기 단추 넷', hb.length === 4, [].map.call(hb, function (b) { return b.textContent; }).join(' · '));
+    if (hb.length) { var op2 = [], wo2 = window.open; window.open = function (u) { op2.push(String(u)); return null; }; hb[0].click(); window.open = wo2; var m2 = /^\.\.\/#lat=(-?[\d.]+)&lon=(-?[\d.]+)$/.exec(op2[0] || ''); ck('「데이터지도」가 목적지(양재역 쪽)로 연다', !!m2 && Math.abs(+m2[1] - 37.4844) < 0.006 && Math.abs(+m2[2] - 127.0341) < 0.007, op2[0]); }
+    ck('첫 안내는 세 줄 + 접어 둔 설명', document.querySelectorAll('#gIntro li').length === 3 && !!document.querySelector('#gIntro details'), document.querySelectorAll('#gIntro li').length + '줄');
     /* 4) 밤 — 시각을 23시로 바꿔 놓고 모의 주행 4초: 속도 권고 글이 한 번도 나오면 안 된다 */
     var gh = Date.prototype.getHours; Date.prototype.getHours = function () { return 23; };
     ck('밤 판정(23시 → 밤)', g.night() === true, g.night());

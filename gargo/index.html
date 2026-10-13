@@ -73,7 +73,7 @@
   #gTop .tx small b { font-size: inherit; line-height: inherit; }
   #gTop .tx small.ln2 { font-size: 14px; opacity: 1; background: rgba(255,255,255,.16); border-radius: 8px; padding: 2px 8px; align-self: flex-start; margin-top: 3px; } #gTop .tx small.ln2 em { font-style: normal; opacity: .8; }
   #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: 13px; border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: 14.5px; font-weight: 700; }
-  #gBot .hand { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12.5px; color: var(--dim, #64748b); } #gBot .hand span { flex: 1; } #gBot .hand button { height: 34px; border-radius: 10px; border: 1px solid var(--line); background: transparent; padding: 0 10px; font-size: 13px; font-weight: 700; color: inherit; }
+  #gBot .hand { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 12.5px; color: var(--dim, #64748b); } #gBot .hand span { flex: 1 0 100%; } #gBot .hand button { height: 34px; border-radius: 10px; border: 1px solid var(--line); background: transparent; padding: 0 10px; font-size: 13px; font-weight: 700; color: inherit; }
   #gBot .btns .go { flex: 1; background: linear-gradient(135deg, #2f6bff, #1b54d6); color: #fff; border: 0; font-size: 17px; font-weight: 900; box-shadow: 0 6px 16px rgba(47,107,255,.35); }
   .steps { margin-top: 10px; } .steps summary { font-size: 14px; font-weight: 800; padding: 8px 0; cursor: pointer; }
   .steps .st { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; line-height: 1.5; } .steps .st i { font-style: normal; width: 22px; text-align: center; flex: 0 0 auto; } .steps .st b { width: 52px; flex: 0 0 auto; }
@@ -86,7 +86,7 @@
   #gPick b { font-size: 13.5px; padding: 2px 4px 4px; } #gPick button { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-size: 15px; font-weight: 800; } #gPick button[data-p=to] { background: var(--acc); color: #fff; border: 0; }
   #gIntro { position: fixed; inset: 0; z-index: 20; background: rgba(15,23,42,.6); display: flex; align-items: flex-end; justify-content: center; }
   #gIntro > div { background: var(--panel); border-radius: 20px 20px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); max-width: 560px; width: 100%; max-height: 86vh; overflow: auto; }
-  #gIntro h1 { font-size: 20px; margin: 0 0 8px; } #gIntro ul { margin: 6px 0 12px; padding-left: 18px; font-size: 14px; line-height: 1.75; } #gIntro p { font-size: 13px; color: var(--dim); line-height: 1.65; margin: 6px 0; }
+  #gIntro h1 { font-size: 20px; margin: 0 0 8px; } #gIntro ul { margin: 6px 0 12px; padding-left: 18px; font-size: 14px; line-height: 1.75; } #gIntro p { font-size: 13px; color: var(--dim); line-height: 1.65; margin: 6px 0; } #gIntro details { margin: 0 0 12px; } #gIntro summary { font-size: 13.5px; font-weight: 700; color: var(--dim); padding: 6px 0; }
   #gIntro button { width: 100%; height: 50px; border-radius: 14px; border: 0; background: var(--acc); color: #fff; font-size: 16.5px; font-weight: 900; }
   #gGate { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: #0b1220; color: #fff; }
   :root.gated #gGate { display: flex; } :root.gated #gIntro { display: none; }
@@ -109,13 +109,13 @@
 <div id="gIntro"><div>
   <h1>🚓 네비 가르고 — 서초 출동 길 안내 <small style="font-size:13px;color:#b45309">시험판</small></h1>
   <ul>
-    <li><b>신호를 아는 길 안내</b> — 길 위 신호의 지금 색과 남은 초, 닿을 때 녹색인지 적색인지를 보여 준다.</li>
-    <li>신호값은 서울시가 공개한 <b>계획값</b>이다. 경찰관이 수동 조작 중이거나 감응 신호면 다르다 — <b>눈으로 확인</b>한다.</li>
-    <li>지도는 OpenStreetMap 바탕의 <b>시험용</b>이다. 일방통행·진입금지·회전 제한이 현장과 다를 수 있다.</li>
-    <li>제한속도를 넘는 안내는 하지 않는다. 밤 22~06시에는 속도 안내를 하지 않는다.</li>
-    <li>지금은 <b>서초구와 둘레 2km</b> 안에서만 길을 찾는다.</li>
+    <li><b>신호를 아는 길 안내</b> — 길 위 신호의 지금 색과 남은 초를 보여 준다. 신호값은 <b>계획값</b>이라 수동 조작·감응 신호면 다르다 — <b>눈으로 확인</b>한다.</li>
+    <li>제한속도를 넘는 안내는 하지 않는다. 운전 중에는 화면을 조작하지 않는다 — 판단은 운전자 몫이다.</li>
+    <li>주소·이름을 적거나 🎤 말해서 찾는다. 긴 길 안내는 <b>티맵·카카오맵·네이버지도로 넘길 수 있다</b>.</li>
   </ul>
-  <p>위치와 목적지는 이 기기 안에서만 쓰고 저장하지 않는다. 운전 중에는 화면을 조작하지 않는다 — 길과 신호의 판단은 운전자 몫이다.</p>
+  <details><summary>더 알아 둘 것</summary>
+  <p>지도는 OpenStreetMap 바탕의 <b>시험용</b>이다. 일방통행·진입금지·회전 제한이 현장과 다를 수 있다. 밤 22~06시에는 속도 안내를 하지 않는다. 지금은 <b>서초구와 둘레 2km</b> 안에서만 길을 찾는다. 위치와 목적지는 이 기기 안에서만 쓰고 저장하지 않는다(주소를 찾을 때만 그 글이 브이월드로 간다).</p>
+  </details>
   <button id="gOk">알겠다 — 시작</button>
 </div></div>
 <div id="gGate" role="dialog" aria-modal="true"><form id="gGateF" autocomplete="off"><div style="font-size:34px">🚓</div><h1>가르고</h1><p>경찰 동료용입니다.<br>받은 확인코드를 넣어 주십시오.</p><input id="gGateI" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="확인코드" placeholder="확인코드"><button type="submit">들어가기</button><p class="bad" id="gGateM" aria-live="polite"></p></form></div>
@@ -131,6 +131,6 @@
         try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
   })();
 </script>
-<script src="gargo.js?v=0.4.2"></script>
+<script src="gargo.js?v=0.4.3"></script>
 </body>
 </html>

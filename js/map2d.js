@@ -1398,6 +1398,8 @@
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
       h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3><div id="storyBox"></div>' + jmyRows(it.d));   // v2.76.1 소유자 「이야기 목록이 첫 화면을 잡아먹는다 — 이 지역 설명에 넣어라」 → 📝 이 지역 설명을 누르면 맨 아래에
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
+    if (sel && sel.it === it && !sel.w) sel.w = [(sel.x - cv.clientWidth / 2) / view.s + view.cx, (sel.y - cv.clientHeight / 2) / view.s + view.cy];
+    NAVW = cardW(it);
     card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig|prd|gdr)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
@@ -6268,7 +6270,12 @@
   cv.addEventListener('pointerup', function (e) { if (e.pointerType === 'mouse' || !TIPD || Math.abs(e.offsetX - TIPD[0]) + Math.abs(e.offsetY - TIPD[1]) > 10) return; var h = tipHit(e.offsetX, e.offsetY), t = h ? tipOf(h.it) : null; if (!t) return; tipShow(e.clientX, Math.max(70, e.clientY - 90), t); clearTimeout(TIPT); TIPT = setTimeout(function () { tipShow(0, 0, null); }, 2500); });
 
   // ---------- v2.44.0 📝 틀린 곳 알리기(시범 사용 · 서버 없음 — 보던 화면·숫자를 글로 모아 복사·공유) ----------
-  function fbHtml() { return '<div class="fbx"><div class="lg-btns"><button data-pc="1">💻 PC로 보내기</button><button data-fb="1">📝 틀린 곳·헷갈린 곳 알리기</button></div><div id="m2dFbF"></div></div>'; }
+  /* v2.218.0 네비 가르고로 잇기 — 카드가 가리키는 자리가 가르고의 길 묶음(서초구와 둘레) 안이면 「여기까지 길 안내」 단추. 새 탭으로 연다(# 뒤라 서버로 가지 않는다 · 좌표와 카드 제목만 넘긴다) */
+  var GARGOBOX = [-7400, 9200, -6700, 9900], NAVW = null;
+  function cardW(it) { if (!it) return null; if (sel && sel.it === it && sel.w) return sel.w; var p = (it.n && it.n.p) || it.p || (it.d && it.d.c) || (it.x && it.x.c) || (it.rep != null && REP && REP.p) || null; return p && isFinite(p[0]) && isFinite(p[1]) ? [p[0], p[1]] : null; }
+  function navHtml() { var w = NAVW; if (!w || w[0] < GARGOBOX[0] || w[0] > GARGOBOX[1] || w[1] < GARGOBOX[2] || w[1] > GARGOBOX[3]) return ''; return '<button data-nav="1" title="신호를 아는 길 안내(서초 시험판)를 새 탭으로 연다">🧭 네비 가르고로 여기까지</button>'; }
+  function navGo() { var w = NAVW; if (!w) return; var t = $('m2dCard').querySelector('h3'), nm = t ? String(t.textContent || '').replace(/^[^가-힣A-Za-z0-9]+/, '').replace(/\s+/g, ' ').trim().slice(0, 40) : ''; window.open('gargo/#to=' + (LAT0 - w[1] / KY).toFixed(6) + ',' + (w[0] / KX + LON0).toFixed(6) + (nm ? '&nm=' + encodeURIComponent(nm) : ''), '_blank', 'noopener'); }
+  function fbHtml() { return '<div class="fbx"><div class="lg-btns">' + navHtml() + '<button data-pc="1">💻 PC로 보내기</button><button data-fb="1">📝 틀린 곳·헷갈린 곳 알리기</button></div><div id="m2dFbF"></div></div>'; }
   var FB_KIND = [['bad', '❌ 숫자·내용이 틀림'], ['hard', '🤔 헷갈림·찾기 어려움'], ['want', '➕ 이런 게 있으면 좋겠다']];
   function fbForm(el) { el.innerHTML = '<div class="lg-btns">' + FB_KIND.map(function (k, i) { return '<button data-fbk="' + k[0] + '" class="' + (i === 0 ? 'on' : '') + '">' + k[1] + '</button>'; }).join('') + '</div><textarea id="m2dFbT" placeholder="무엇이 어떻게 다른지 · 현장에서 본 값 · 바라는 것 — 이름·전화 등 개인정보는 적지 마십시오"></textarea><div class="lg-btns"><button data-fbs="share">📤 보내기(카톡 등)</button><button data-fbs="copy">📋 글로 복사</button></div><small class="lg-n">이 글은 이 기기에서만 만들어진다 — 서버로 가지 않는다. 보내기를 누르면 폰 공유 창이 뜬다.</small>'; }
   function fbText() { var c = $('m2dCard'), h3 = c && c.querySelector('h3'), k = (c && c.querySelector('[data-fbk].on') || {}).getAttribute ? c.querySelector('[data-fbk].on').getAttribute('data-fbk') : 'bad', kn = (FB_KIND.filter(function (x) { return x[0] === k; })[0] || FB_KIND[0])[1];
@@ -6277,6 +6284,7 @@
     var lay = LAYERS.filter(function (l) { return on[l[0]]; }).map(function (l) { return l[0]; }).join(',');
     return '[데이터 압축지도 의견 — ' + kn + ']\n판 v' + ver + ' · ' + (function (d) { return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16).replace('T', ' '); })(new Date()) + (ll ? ' · 자리 ' + ll[0].toFixed(5) + ', ' + ll[1].toFixed(5) : '') + '\n화면: ' + (h3 ? h3.innerText : '-') + ' · 켠 레이어: ' + lay + '\n\n의견: ' + (($('m2dFbT') || {}).value || '(비어 있음)') + '\n\n--- 그때 보던 카드(앞부분) ---\n' + body; }
   document.addEventListener('click', function (e) {
+    var bn = e.target.closest('#m2dCard [data-nav]'); if (bn) { navGo(); return; }
     var b = e.target.closest('#m2dCard [data-fb]'); if (b) { var el = $('m2dFbF'); if (el) { fbForm(el); var t = $('m2dFbT'); if (t) t.focus(); } return; }
     b = e.target.closest('#m2dCard [data-fbk]'); if (b) { b.parentNode.querySelectorAll('[data-fbk]').forEach(function (x) { x.classList.toggle('on', x === b); }); return; }
     b = e.target.closest('#m2dCard [data-fbs]'); if (!b) return; var tx = fbText();

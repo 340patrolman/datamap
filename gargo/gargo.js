@@ -350,7 +350,7 @@
         + '<div class="sub">신호 ' + r.sigs.length + '곳 · 그 가운데 지금 색을 아는 곳 ' + known + (MODE === 'e' ? ' · <b>신호 기다림을 셈에서 뺐다</b>(닿을 때 적색이면 알려 준다 — 통과는 운전자 판단)' : ' · 신호 기다림 ' + mmss(wsum) + ' 포함') + '<br>'
           + (LIVE.m ? '🚗 통행속도 반영(' + esc(LIVE.made || '') + ' 받음 · 길의 ' + Math.round(r.live * 100) + '%에 값' + (r.cong.length ? ' · <b class="r" title="큰길 25·15km/h · 자동차전용 50·30km/h 아래(앱 기준)">막히는 구간 ' + r.cong.length + '곳</b>' : ' · 막히는 구간 없음') + ')' : '🚗 통행속도 없음(받은 지 20분 넘음) — 제한속도로 셈') + ' · 신호·막힘이 없다면 ' + mmss(r.free) + '<br>🚦 신호값 ' + (SIG.idx ? esc(String(SIG.idx.made || '')) + ' 구움 · 5분마다 새 값을 확인한다' : '없음') + '</div>'
         + '<div class="btns"><button id="gGo" class="go">▶ 안내 시작</button><button id="gSim">모의 주행</button><button id="gClr">지우기</button></div>'
-        + '<div class="hand"><span>같은 목적지를 다른 내비로</span><button data-hand="tmap">티맵</button><button data-hand="kakao">카카오맵</button><button data-hand="naver">네이버지도</button></div>'
+        + '<div class="hand"><span>이 목적지를 다른 앱으로</span><button data-hand="map">🗺 데이터지도</button><button data-hand="tmap">티맵</button><button data-hand="kakao">카카오맵</button><button data-hand="naver">네이버지도</button></div>'
         + '<details class="steps"><summary>가는 차례 ' + r.mans.length + '곳 · 신호 ' + r.sigs.length + '곳</summary>' + r.mans.map(function (m) { return '<div class="st"><i>' + ARW[m.k] + '</i><b>' + km(m.d) + '</b><span>' + MKO[m.k] + (m.nm ? ' · ' + esc(m.nm) : '') + (m.sig ? ' (' + esc(m.sig) + ')' : '') + '</span></div>'; }).join('')
         + '<div class="cap">지나는 신호(닿을 때의 예상 — 계획값)</div>' + r.sigs.map(function (g) { var s = g.s; return '<div class="st"><i>🚦</i><b>' + km(g.d) + '</b><span>' + esc(g.nm) + ' · ' + (g.mv === 'Rt' ? '우회전' : g.mv === 'Lt' ? '좌회전' : g.mv === 'U' ? '유턴' : '직진') + ' — ' + (g.mv === 'Rt' || g.mv === 'U' ? '신호 자료 없음(우회전·유턴)' : !s ? '<em>모름</em>(자료 없음 · 보통 값 ' + Math.round(SIG.typ) + '초로 셈)' : s.kind === 'avg' ? '<em>지금 색 모름</em> · 평균 기다림 ' + Math.round(s.wait) + '초' : s.green ? '<b class="g">녹색</b> 통과 예상' : '<b class="r">적색</b> ' + Math.round(s.wait) + '초 기다림 예상') + '</span></div>'; }).join('') + '</details></div>'; }
     /* 다음 신호 판 — 핵심 */
@@ -417,7 +417,9 @@
     else if (id === 'gDark') { document.documentElement.classList.toggle('dark'); try { localStorage.setItem('tg_gargo_dark', document.documentElement.classList.contains('dark') ? '1' : '0'); } catch (x) {} draw(); }
     else if (id === 'gOk') { $('gIntro').style.display = 'none'; try { localStorage.setItem('tg_gargo_intro', '1'); } catch (x) {} gpsStart(); } });
   /* 다른 내비로 넘기기 — 그 앱이 깔려 있어야 열린다(앱의 주소 규약으로 목적지 좌표와 이름만 넘긴다 · 누를 때만) */
-  function handOff(k) { if (!dest) return; var lon = (dest.x / KX + LON0).toFixed(6), lat = (LAT0 - dest.y / KY).toFixed(6), nm = encodeURIComponent(dest.nm || '목적지'),
+  function handOff(k) { if (!dest) return; var lon = (dest.x / KX + LON0).toFixed(6), lat = (LAT0 - dest.y / KY).toFixed(6), nm = encodeURIComponent(dest.nm || '목적지');
+    if (k === 'map') { window.open('../#lat=' + (+lat).toFixed(5) + '&lon=' + (+lon).toFixed(5), '_blank', 'noopener'); return; }   /* 같은 사이트의 데이터 압축지도 — 그 자리의 사고·신호·시설 */
+    var
       u = k === 'tmap' ? 'tmap://route?goalname=' + nm + '&goalx=' + lon + '&goaly=' + lat : k === 'kakao' ? 'kakaomap://route?ep=' + lat + ',' + lon + '&by=CAR' : 'nmap://navigation?dlat=' + lat + '&dlng=' + lon + '&dname=' + nm + '&appname=340patrolman.github.io';
     note((k === 'tmap' ? '티맵' : k === 'kakao' ? '카카오맵' : '네이버지도') + '을 연다 — 앱이 깔려 있지 않으면 아무 일도 일어나지 않는다'); location.href = u; }
   function voiceAsk() { if (!window.speechSynthesis) return; voiceOn = true; $('gVoice').classList.add('on'); }

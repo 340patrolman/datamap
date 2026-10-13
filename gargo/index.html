@@ -80,7 +80,7 @@
   #gBot .eta { display: flex; align-items: center; gap: 14px; } #gBot .eta div { display: flex; flex-direction: column; } #gBot .eta b { font-size: 21px; font-weight: 900; } #gBot .eta span { font-size: 11.5px; color: var(--dim); }
   #gBot .eta .stop { margin-left: auto; height: 46px; border-radius: 13px; border: 0; background: #e11d48; color: #fff; font-weight: 900; padding: 0 16px; font-size: 15px; }
   #gMsg, #gNote { position: fixed; left: 50%; transform: translateX(-50%); z-index: 7; display: none; background: rgba(15,23,42,.9); color: #fff; border-radius: 12px; padding: 9px 14px; font-size: 13.5px; line-height: 1.55; max-width: 88vw; }
-  #gMsg { top: 45%; } #gNote { top: calc(72px + env(safe-area-inset-top)); } body.guiding #gNote { top: auto; bottom: calc(176px + env(safe-area-inset-bottom)); }
+  #gMsg { top: 45%; } #gNote { top: calc(72px + env(safe-area-inset-top)); } body.guiding #gNote { top: calc(262px + env(safe-area-inset-top)); font-size: 12.5px; max-width: 78vw; }
   #gPick { position: fixed; z-index: 8; display: none; flex-direction: column; gap: 5px; width: 220px; background: var(--solid); border-radius: 18px; box-shadow: 0 12px 32px rgba(15,23,42,.28); padding: 10px; }
   #gPick b { font-size: 13.5px; padding: 2px 4px 4px; } #gPick button { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-size: 15px; font-weight: 800; } #gPick button[data-p=to] { background: var(--acc); color: #fff; border: 0; }
   #gIntro { position: fixed; inset: 0; z-index: 20; background: rgba(15,23,42,.6); display: flex; align-items: flex-end; justify-content: center; }
@@ -130,6 +130,6 @@
         try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
   })();
 </script>
-<script src="gargo.js?v=0.3.2"></script>
+<script src="gargo.js?v=0.3.3"></script>
 </body>
 </html>

@@ -123,14 +123,14 @@
     return shape(es, a, b, T0); }
   /* 길 꼴 — 선 · 거리 · 꺾는 곳 · 지나는 신호 */
   function shape(es, a, b, T0) {
-    var pts = [], cum = [0], mans = [], sigs = [], t = 0, dist = 0, i, k, liveLen = 0, cong = [];
+    var pts = [], cum = [0], mans = [], sigs = [], t = 0, dist = 0, i, k, liveLen = 0, cong = [], free = 0;
     function add(x, y) { if (pts.length) { var d = Math.hypot(x - pts[pts.length - 2], y - pts[pts.length - 1]); if (d < 0.05) return; dist += d; cum.push(dist); } pts.push(x, y); }
     for (i = 0; i < es.length; i++) { var e = es[i], p = G.SP[G.eS[e]], n = p.length / 2, rev = G.eR[e], q = [];
       for (k = 0; k < n; k++) { var u = (rev ? n - 1 - k : k) * 2; q.push(p[u], p[u + 1]); }
       if (i === 0) { var cut = [a.x, a.y], st = false; for (k = 0; k < n - 1; k++) { var u0 = rev ? (n - 2 - k) * 2 : k * 2; if (!st && u0 === a.u) { st = true; cut.push(q[(k + 1) * 2], q[(k + 1) * 2 + 1]); } else if (st) cut.push(q[(k + 1) * 2], q[(k + 1) * 2 + 1]); } if (cut.length >= 4) q = cut; }
       if (i === es.length - 1) { var c2 = [], done = false; for (k = 0; k < q.length / 2 && !done; k++) { c2.push(q[k * 2], q[k * 2 + 1]); if (k + 1 < q.length / 2) { var ax = q[k * 2], ay = q[k * 2 + 1], bx = q[k * 2 + 2], by = q[k * 2 + 3], l2 = (bx - ax) * (bx - ax) + (by - ay) * (by - ay), tt = l2 ? ((b.x - ax) * (bx - ax) + (b.y - ay) * (by - ay)) / l2 : 0; if (tt >= 0 && tt <= 1 && Math.hypot(ax + (bx - ax) * tt - b.x, ay + (by - ay) * tt - b.y) < 3) { c2.push(b.x, b.y); done = true; } } } q = c2; }
       var d0 = dist; for (k = 0; k < q.length; k += 2) add(q[k], q[k + 1]);
-      var len = dist - d0, spd = eSpd(e), lv = eLive(e); t += len / (eV(e) / 3.6); if (lv) { liveLen += len; var cl0 = spdLv(lv, G.S[G.eS[e]][4], spd); if (cl0) cong.push([d0, dist, cl0]); }
+      var len = dist - d0, spd = eSpd(e), lv = eLive(e); t += len / (eV(e) / 3.6); free += len / (spd / 3.6); if (lv) { liveLen += len; var cl0 = spdLv(lv, G.S[G.eS[e]][4], spd); if (cl0) cong.push([d0, dist, cl0]); }
       if (i + 1 < es.length) { var f = es[i + 1], dA = angDiff(eBrgIn(e), eBrgOut(f)), tk = turnKind(dA), outs = G.oHead[G.eB[e] + 1] - G.oHead[G.eB[e]], nm = G.S[G.eS[f]][5] >= 0 ? G.j.names[G.S[G.eS[f]][5]] : '';
         if (G.eB[f] === G.eA[e] && G.eS[f] === G.eS[e]) { tk = 'U'; t += 30; }
         var sc = sigCost(e, f, T0 + t); if (sc) { var sg = G.sig[sc.si]; sigs.push({ si: sc.si, no: sg.no, nm: sg.nm, d: dist, side: sc.side, mv: sc.mv, t: t, w: sc.w, s: sc.s, lim: spd }); if (MODE !== 'e') t += sc.w; }
@@ -139,7 +139,6 @@
     }
     mans.push({ d: dist, k: 'E', nm: dest && dest.nm || '목적지' });
     var lims = []; var dd = 0; es.forEach(function (e, i2) { lims.push([dd, eSpd(e), G.S[G.eS[e]][5] >= 0 ? G.j.names[G.S[G.eS[e]][5]] : '', G.S[G.eS[e]][9]]); dd += eLen(e); });
-    var free = 0; es.forEach(function (e) { free += eLen(e) / (eSpd(e) / 3.6); });
     return { es: es, pts: pts, cum: cum, dist: dist, time: t, free: free, mans: mans, sigs: sigs, lims: lims, T0: T0, a: a, b: b, live: dist ? liveLen / dist : 0, cong: cong, mode: MODE };
   }
   function plan() { if (!G || !dest || !me) return; var T0 = Date.now() / 1000, r = findRoute(me.x, me.y, dest.x, dest.y, T0, me.spd > 2 ? me.hd : null);
@@ -242,7 +241,8 @@
       R.forEach(function (j, i) { var rs = j && j.response; if (!rs) { miss++; return; } if (rs.status === 'ERROR') err = String(rs.error && (rs.error.text || rs.error.code) || '오류'); var it = rs.result && rs.result.items || [];
         it.forEach(function (o) { if (!o.point) return; var x = PX(+o.point.x), y = PY(+o.point.y); if (x < G.box[0] - 300 || x > G.box[1] + 300 || y < G.box[2] - 300 || y > G.box[3] + 300) return; var ad = o.address || {}, nm = String(i === 2 ? (o.title || q) : (i === 0 ? (ad.road || o.title || q) : (ad.parcel || o.title || q))).replace(/^서울특별시\s*/, ''), sub = i === 2 ? String(ad.road || ad.parcel || '').replace(/^서울특별시\s*/, '') : (i === 1 && ad.road ? String(ad.road).replace(/^서울특별시\s*/, '') : '');
           if (seen[nm]) return; seen[nm] = 1; out.push([i === 2 ? '📍' : '🏠', nm, x, y, sub]); }); });
-      if (miss === 3) err = '브이월드에 닿지 못했다'; return { list: out, err: out.length ? '' : err }; }); }); }
+      if (miss === 3) err = '브이월드에 닿지 못했다'; if (!/\d/.test(q)) out.sort(function (a, b) { return (a[0] === '📍' ? 0 : 1) - (b[0] === '📍' ? 0 : 1); });   /* 숫자 없는 말 = 이름 → 장소 먼저 */
+      return { list: out, err: out.length ? '' : err }; }); }); }
   /* 통신이 안 될 때의 어림 — 도로명주소의 건물번호는 길 시작점(서쪽·남쪽 끝)에서 10m마다 1씩 는다. 이 묶음 안에서 시작하는 길만 · 건물 앞이 아니라 길 위의 자리다 */
   function roadNear(ids, x, y) { var bx = x, by = y, bd = 1e12; ids.forEach(function (i) { var p = G.SP[i]; for (var u = 0; u + 3 < p.length; u += 2) { var ax = p[u], ay = p[u + 1], dx = p[u + 2] - ax, dy = p[u + 3] - ay, l2 = dx * dx + dy * dy, t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l2)) : 0, qx = ax + dx * t, qy = ay + dy * t, d = (qx - x) * (qx - x) + (qy - y) * (qy - y); if (d < bd) { bd = d; bx = qx; by = qy; } } }); return [bx, by, Math.sqrt(bd)]; }
   function addrGuess(raw) { if (!G) return null; var t = String(raw || '').replace(/\s+/g, ' ').trim().replace(/(대로|로)\s+(\d+[가-힣]?길)/, '$1$2'), m = /(?:^|\s)([가-힣0-9·]+(?:로|길))\s*(\d+)(?:-\d+)?\s*(?:번지|번)?$/.exec(t); if (!m) return null;
@@ -264,8 +264,11 @@
       fl.style.display = 'block'; if (auto && !wait && all.length === 1) pickFound(0); }
     show(null, false); if (!net) return;
     FNT = setTimeout(function () { if (seq !== FSEQ) return; vwSearch(txt).then(function (r) { if (seq !== FSEQ) return; wait = false; var ex = r && r.list || [], hit = ex.some(function (o) { return o[0] === '🏠'; });
-      st = ex.length ? '' : (r && r.err ? '주소 검색에 닿지 못했다 — ' + r.err + (gs ? ' · 아래는 도로명 번호로 셈한 어림 자리' : '') : ''); show(ex, hit); }); }, auto ? 0 : 700); }
-  function pickFound(i) { var o = fl._o && fl._o[i]; if (!o) return; fl.style.display = 'none'; if (o[0] === '📐') note(o[4]); fi.value = o[1]; fi.blur(); var ns = nearSeg(o[2], o[3], 400); setDest(ns ? ns.x : o[2], ns ? ns.y : o[3], o[1]); view.cx = o[2]; view.cy = o[3]; if (view.s < 0.5) view.s = 0.7; follow = false; draw(); }
+      st = ex.length ? '' : (r && r.err ? '주소 검색에 닿지 못했다 — ' + r.err + (gs ? ' · 아래는 도로명 번호로 셈한 어림 자리' : '') : '');
+      /* 엔터·음성: 적은 글과 딱 맞는 것이 하나뿐이면 그것으로(「사임당로 143」 ↔ 「사임당로17길 143」을 가른다 · 장소는 이름이 같을 때) */
+      var pickI = -1; if (auto) { var n0 = out.length, hits = []; ex.forEach(function (o, i) { var nm = ' ' + o[1].replace(/\(.*?\)/g, ' ') + ' '; if (o[0] === '🏠' ? nm.indexOf(' ' + txt + ' ') >= 0 : o[1].replace(/\s+/g, '') === q) hits.push(n0 + i); }); if (hits.length === 1 && !out.some(function (o) { return o[1].replace(/\s+/g, '') === q; })) pickI = hits[0]; }
+      show(ex, hit); if (pickI >= 0 && fl.style.display !== 'none') pickFound(pickI); }); }, auto ? 0 : 700); }
+  function pickFound(i) { var o = fl._o && fl._o[i]; if (!o) return; fl.style.display = 'none'; if (o[0] === '📐') note(o[4]); fi.value = o[1]; fi.blur(); var ns = nearSeg(o[2], o[3], 400); setDest(ns ? ns.x : o[2], ns ? ns.y : o[3], o[1]); if (!route) { view.cx = o[2]; view.cy = o[3]; if (view.s < 0.5) view.s = 0.7; follow = false; } draw(); }
   /* 음성으로 목적지 — 브라우저의 받아쓰기(webkitSpeechRecognition · 크롬·사파리는 소리를 그 회사 서버로 보낸다 · 티북의 음성 입력과 같은 길) */
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition, rec = null;
   function micGo() { var b = $('gMic'); if (!SR) { note('이 브라우저는 음성 받아쓰기를 지원하지 않는다 — 자판의 마이크 단추로 말한다'); fi.focus(); return; } if (rec) { try { rec.stop(); } catch (e) {} return; }

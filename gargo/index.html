@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#0b3d91">
+<title>가르고 — 서초 출동 길 안내(시험판)</title>
+<link rel="icon" href="../icon-192.png">
+<script>
+  // 확인코드 관문 — 데이터 압축지도와 같은 울타리(같은 사이트라 기억도 같이 쓴다 · tg_map2d_gate) · 경찰 동료용 코드만 · 티북이 여는 주소 끝 tbk=… 이면 통과
+  (function () {
+    var ok = false, H = location.hash || '', T = /[#&]tbk=796815f0c98a/;
+    try { ok = localStorage.getItem('tg_map2d_gate') === '1'; } catch (e) {}
+    if (T.test(H)) { ok = true; try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e) {}
+      var h = H.replace(T, '').replace(/^&/, '#'); try { history.replaceState(null, '', location.pathname + location.search + (h.length > 1 ? (h.charAt(0) === '#' ? h : '#' + h) : '')); } catch (e) {} }
+    if (!ok) document.documentElement.classList.add('gated');
+  })();
+</script>
+<style>
+  :root { --ink: #0f172a; --dim: #475569; --panel: #ffffff; --line: #e2e8f0; --blue: #0b3d91; --acc: #2f7bff; }
+  :root.dark { --ink: #e5e7eb; --dim: #9ca3af; --panel: #111827; --line: #1f2937; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: system-ui, -apple-system, 'Malgun Gothic', sans-serif; color: var(--ink); background: #eef1f4; overscroll-behavior: none; }
+  #gMap { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  /* 위 — 찾기(평소) / 다음 꺾는 곳(안내 중) */
+  #gFind { position: fixed; left: 10px; right: 10px; top: calc(10px + env(safe-area-inset-top)); z-index: 5; display: flex; gap: 8px; align-items: center; background: var(--panel); border-radius: 16px; box-shadow: 0 4px 16px rgba(15,23,42,.18); padding: 6px 8px 6px 12px; }
+  #gFind b { font-size: 15px; font-weight: 900; color: var(--blue); white-space: nowrap; } :root.dark #gFind b { color: #93c5fd; }
+  #gQ { flex: 1; min-width: 0; height: 40px; border: 0; outline: 0; background: transparent; font-size: 16px; color: var(--ink); }
+  #gList { position: fixed; left: 10px; right: 10px; top: calc(66px + env(safe-area-inset-top)); z-index: 6; display: none; background: var(--panel); border-radius: 14px; box-shadow: 0 6px 20px rgba(15,23,42,.22); max-height: 46vh; overflow: auto; padding: 4px; }
+  #gList button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 12px 10px; font-size: 15px; border-bottom: 1px solid var(--line); }
+  #gList .no { padding: 12px; font-size: 13.5px; color: var(--dim); line-height: 1.6; }
+  #gTop { position: fixed; left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); z-index: 5; display: none; gap: 12px; align-items: center; background: #0f6b3a; color: #fff; border-radius: 16px; padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+  #gTop .arw { font-size: 44px; line-height: 1; width: 54px; text-align: center; }
+  #gTop .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  #gTop .tx b { font-size: 30px; font-weight: 900; line-height: 1.1; }
+  #gTop .tx span { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #gTop .tx em { font-style: normal; opacity: .85; font-weight: 500; }
+  #gTop .tx small { font-size: 12.5px; opacity: .85; margin-top: 2px; }
+  /* 다음 신호 판 — 이 앱의 핵심 */
+  #gSig { position: fixed; left: 8px; right: 62px; z-index: 4; display: none; top: calc(104px + env(safe-area-inset-top)); background: var(--panel); border-radius: 14px; padding: 9px 12px; box-shadow: 0 4px 14px rgba(15,23,42,.2); border-left: 7px solid #94a3b8; font-size: 13.5px; line-height: 1.55; }
+  #gSig.grn { border-left-color: #16a34a; } #gSig.red { border-left-color: #dc2626; }
+  #gSig .hd { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; } #gSig .hd b { font-size: 15px; } #gSig .hd span { color: var(--dim); font-size: 12.5px; }
+  #gSig .now { display: flex; align-items: center; gap: 8px; margin: 3px 0 2px; } #gSig .now i { width: 18px; height: 18px; border-radius: 50%; background: #94a3b8; flex: 0 0 auto; }
+  #gSig.grn .now i { background: #16a34a; } #gSig.red .now i { background: #dc2626; }
+  #gSig .now b { font-size: 24px; font-weight: 900; } #gSig.grn .now b { color: #15803d; } #gSig.red .now b { color: #b91c1c; } #gSig .now span { color: var(--dim); }
+  #gSig .ln em, .steps em { font-style: normal; color: var(--dim); } #gSig .adv { background: rgba(47,123,255,.1); border-radius: 8px; padding: 3px 7px; margin-top: 3px; }
+  .g { color: #15803d; } .r { color: #b91c1c; } :root.dark .g { color: #4ade80; } :root.dark .r { color: #f87171; }
+  #gSig .src { color: var(--dim); font-size: 11.5px; margin-top: 3px; }
+  /* 오른쪽 단추 · 속도 */
+  #gBtn { position: fixed; right: 8px; z-index: 4; bottom: calc(190px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 7px; }
+  #gBtn button { width: 46px; height: 46px; border-radius: 14px; border: 0; background: var(--panel); box-shadow: 0 3px 10px rgba(15,23,42,.2); font-size: 20px; font-weight: 800; }
+  #gBtn #gVoice.on { background: var(--acc); color: #fff; } #gBtn #gCen.off { opacity: .55; }
+  #gSpd { position: fixed; left: 8px; z-index: 4; bottom: calc(110px + env(safe-area-inset-bottom)); display: none; gap: 8px; align-items: center; flex-wrap: wrap; max-width: 60vw; }
+  #gSpd .lim { width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 6px solid #dc2626; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 900; color: #111; }
+  #gSpd .cur { background: var(--panel); border-radius: 12px; padding: 4px 10px; box-shadow: 0 3px 10px rgba(15,23,42,.2); display: flex; flex-direction: column; align-items: center; }
+  #gSpd .cur b { font-size: 24px; font-weight: 900; line-height: 1.05; } #gSpd .cur span { font-size: 10.5px; color: var(--dim); } #gSpd .cur.over b { color: #dc2626; }
+  #gSpd .rn { background: rgba(15,23,42,.72); color: #fff; border-radius: 10px; padding: 3px 9px; font-size: 12.5px; font-weight: 700; }
+  /* 아래 판 */
+  #gBot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--panel); border-radius: 18px 18px 0 0; box-shadow: 0 -4px 18px rgba(15,23,42,.18); padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); max-height: 62vh; overflow: auto; }
+  #gBot .hint { font-size: 14px; line-height: 1.65; color: var(--dim); } #gBot .hint.warn { color: #b45309; margin-top: 6px; }
+  #gBot .big b { font-size: 28px; font-weight: 900; color: var(--blue); } :root.dark #gBot .big b { color: #93c5fd; } #gBot .big span { font-size: 14.5px; color: var(--dim); font-weight: 700; }
+  #gBot .sub { font-size: 13px; color: var(--dim); line-height: 1.6; margin: 3px 0 9px; }
+  #gBot .mode { display: flex; gap: 6px; margin: 6px 0 4px; } #gBot .mode button { flex: 1; height: 40px; border-radius: 11px; border: 1px solid var(--line); background: transparent; font-size: 13.5px; font-weight: 800; } #gBot .mode button.on { background: var(--blue); color: #fff; border-color: var(--blue); } #gBot .mode button[data-mode=e].on { background: #b91c1c; border-color: #b91c1c; }
+  #gTop .tx small b { font-size: inherit; line-height: inherit; }
+  #gTop .tx small.ln2 { font-size: 14px; opacity: 1; background: rgba(255,255,255,.16); border-radius: 8px; padding: 2px 8px; align-self: flex-start; margin-top: 3px; } #gTop .tx small.ln2 em { font-style: normal; opacity: .8; }
+  #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: 13px; border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: 14.5px; font-weight: 700; }
+  #gBot .btns .go { flex: 1; background: var(--acc); color: #fff; border: 0; font-size: 17px; font-weight: 900; }
+  .steps { margin-top: 10px; } .steps summary { font-size: 14px; font-weight: 800; padding: 8px 0; cursor: pointer; }
+  .steps .st { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; line-height: 1.5; } .steps .st i { font-style: normal; width: 22px; text-align: center; flex: 0 0 auto; } .steps .st b { width: 52px; flex: 0 0 auto; }
+  .steps .cap { font-size: 12.5px; font-weight: 800; color: var(--dim); margin: 10px 0 2px; }
+  #gBot .eta { display: flex; align-items: center; gap: 14px; } #gBot .eta div { display: flex; flex-direction: column; } #gBot .eta b { font-size: 21px; font-weight: 900; } #gBot .eta span { font-size: 11.5px; color: var(--dim); }
+  #gBot .eta .stop { margin-left: auto; height: 46px; border-radius: 13px; border: 0; background: #e11d48; color: #fff; font-weight: 900; padding: 0 16px; font-size: 15px; }
+  #gMsg, #gNote { position: fixed; left: 50%; transform: translateX(-50%); z-index: 7; display: none; background: rgba(15,23,42,.9); color: #fff; border-radius: 12px; padding: 9px 14px; font-size: 13.5px; line-height: 1.55; max-width: 88vw; }
+  #gMsg { top: 45%; } #gNote { top: calc(72px + env(safe-area-inset-top)); } body.guiding #gNote { top: auto; bottom: calc(176px + env(safe-area-inset-bottom)); }
+  #gPick { position: fixed; z-index: 8; display: none; flex-direction: column; gap: 4px; width: 220px; background: var(--panel); border-radius: 14px; box-shadow: 0 8px 24px rgba(15,23,42,.3); padding: 8px; }
+  #gPick b { font-size: 13.5px; padding: 2px 4px 4px; } #gPick button { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-size: 15px; font-weight: 800; } #gPick button[data-p=to] { background: var(--acc); color: #fff; border: 0; }
+  #gIntro { position: fixed; inset: 0; z-index: 20; background: rgba(15,23,42,.6); display: flex; align-items: flex-end; justify-content: center; }
+  #gIntro > div { background: var(--panel); border-radius: 20px 20px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); max-width: 560px; width: 100%; max-height: 86vh; overflow: auto; }
+  #gIntro h1 { font-size: 20px; margin: 0 0 8px; } #gIntro ul { margin: 6px 0 12px; padding-left: 18px; font-size: 14px; line-height: 1.75; } #gIntro p { font-size: 13px; color: var(--dim); line-height: 1.65; margin: 6px 0; }
+  #gIntro button { width: 100%; height: 50px; border-radius: 14px; border: 0; background: var(--acc); color: #fff; font-size: 16.5px; font-weight: 900; }
+  #gGate { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: #0b1220; color: #fff; }
+  :root.gated #gGate { display: flex; } :root.gated #gIntro { display: none; }
+  #gGate form { text-align: center; padding: 24px; max-width: 320px; } #gGate h1 { font-size: 22px; margin: 6px 0; } #gGate p { font-size: 13.5px; opacity: .8; line-height: 1.6; }
+  #gGate input { width: 100%; height: 48px; border-radius: 12px; border: 0; padding: 0 14px; font-size: 17px; margin: 10px 0 8px; } #gGate button { width: 100%; height: 48px; border-radius: 12px; border: 0; background: #2f7bff; color: #fff; font-weight: 900; font-size: 16px; } #gGate .bad { color: #fca5a5; min-height: 20px; }
+  @media (min-width: 760px) { #gBot { left: auto; right: 12px; bottom: 12px; width: 380px; border-radius: 18px; } #gFind, #gTop, #gList { right: auto; width: 380px; } #gSig { right: auto; width: 380px; } #gBtn { right: 404px; bottom: 24px; } }
+</style>
+</head>
+<body>
+<canvas id="gMap"></canvas>
+<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" autocomplete="off" placeholder="어디로? — 교차로·큰길 이름 / 지도를 길게 누름" aria-label="목적지 찾기"></div>
+<div id="gList"></div>
+<div id="gTop" aria-live="polite"></div>
+<div id="gSig" aria-live="polite"></div>
+<div id="gSpd"></div>
+<div id="gBtn"><button id="gVoice" aria-label="음성 안내">🔊</button><button id="gCen" aria-label="내 자리로">◎</button><button id="gIn" aria-label="확대">＋</button><button id="gOut" aria-label="축소">－</button><button id="gDark" aria-label="밤 화면">◐</button></div>
+<div id="gBot"><div class="hint">길 자료를 읽는 중…</div></div>
+<div id="gMsg"></div><div id="gNote"></div><div id="gPick"></div>
+<div id="gIntro"><div>
+  <h1>🚓 가르고 — 서초 출동 길 안내 <small style="font-size:13px;color:#b45309">시험판</small></h1>
+  <ul>
+    <li><b>신호를 아는 길 안내</b> — 길 위 신호의 지금 색과 남은 초, 닿을 때 녹색인지 적색인지를 보여 준다.</li>
+    <li>신호값은 서울시가 공개한 <b>계획값</b>이다. 경찰관이 수동 조작 중이거나 감응 신호면 다르다 — <b>눈으로 확인</b>한다.</li>
+    <li>지도는 OpenStreetMap 바탕의 <b>시험용</b>이다. 일방통행·진입금지·회전 제한이 현장과 다를 수 있다.</li>
+    <li>제한속도를 넘는 안내는 하지 않는다. 밤 22~06시에는 속도 안내를 하지 않는다.</li>
+    <li>지금은 <b>서초구와 둘레 2km</b> 안에서만 길을 찾는다.</li>
+  </ul>
+  <p>위치와 목적지는 이 기기 안에서만 쓰고 저장하지 않는다. 운전 중에는 화면을 조작하지 않는다 — 길과 신호의 판단은 운전자 몫이다.</p>
+  <button id="gOk">알겠다 — 시작</button>
+</div></div>
+<div id="gGate" role="dialog" aria-modal="true"><form id="gGateF" autocomplete="off"><div style="font-size:34px">🚓</div><h1>가르고</h1><p>경찰 동료용입니다.<br>받은 확인코드를 넣어 주십시오.</p><input id="gGateI" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="확인코드" placeholder="확인코드"><button type="submit">들어가기</button><p class="bad" id="gGateM" aria-live="polite"></p></form></div>
+<script>
+  (function () {   // 확인코드 — 맞으면 이 기기에 기억(데이터 압축지도와 같은 값) · 평문은 어디에도 두지 않는다(SHA-256 만 견준다)
+    var f = document.getElementById('gGateF'), HX = '3a1d43815df6e60d5f8673f05157b39f235d4893d17ecc36396bb1e3b047413b';
+    var CH = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', JU = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
+    function moa(t) { var o = '', i = 0; while (i < t.length) { var a = CH.indexOf(t.charAt(i)), b = JU.indexOf(t.charAt(i + 1)); if (a >= 0 && b >= 0) { o += String.fromCharCode(0xAC00 + (a * 21 + b) * 28); i += 2; } else { o += t.charAt(i); i++; } } return o; }
+    f.addEventListener('submit', function (e) { e.preventDefault(); var raw = document.getElementById('gGateI').value || '', v = moa((raw.normalize ? raw.normalize('NFC') : raw).replace(/\s+/g, '')), M = document.getElementById('gGateM');
+      if (!window.crypto || !crypto.subtle) { M.textContent = '이 브라우저에서는 확인할 수 없습니다(https 주소로 여십시오)'; return; }
+      crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)).then(function (b) { var h = Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+        if (h !== HX) { M.textContent = '확인코드가 맞지 않습니다'; return; }
+        try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
+  })();
+</script>
+<script src="gargo.js?v=0.2.0"></script>
+</body>
+</html>

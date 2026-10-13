@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="theme-color" content="#0b3d91">
-<title>가르고 — 서초 출동 길 안내(시험판)</title>
+<title>네비 가르고 — 서초 출동 길 안내(시험판)</title>
 <link rel="icon" href="../icon-192.png">
 <script>
   // 확인코드 관문 — 데이터 압축지도와 같은 울타리(같은 사이트라 기억도 같이 쓴다 · tg_map2d_gate) · 경찰 동료용 코드만 · 티북이 여는 주소 끝 tbk=… 이면 통과
@@ -107,7 +107,7 @@
 <div id="gBot"><div class="hint">길 자료를 읽는 중…</div></div>
 <div id="gMsg"></div><div id="gNote"></div><div id="gPick"></div>
 <div id="gIntro"><div>
-  <h1>🚓 가르고 — 서초 출동 길 안내 <small style="font-size:13px;color:#b45309">시험판</small></h1>
+  <h1>🚓 네비 가르고 — 서초 출동 길 안내 <small style="font-size:13px;color:#b45309">시험판</small></h1>
   <ul>
     <li><b>신호를 아는 길 안내</b> — 길 위 신호의 지금 색과 남은 초, 닿을 때 녹색인지 적색인지를 보여 준다.</li>
     <li>신호값은 서울시가 공개한 <b>계획값</b>이다. 경찰관이 수동 조작 중이거나 감응 신호면 다르다 — <b>눈으로 확인</b>한다.</li>
@@ -131,6 +131,6 @@
         try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
   })();
 </script>
-<script src="gargo.js?v=0.4.0"></script>
+<script src="gargo.js?v=0.4.1"></script>
 </body>
 </html>

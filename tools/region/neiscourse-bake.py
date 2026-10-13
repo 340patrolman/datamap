@@ -13,18 +13,37 @@ src = open(os.path.join(ROOT, 'tools', 'region', 'neis-bake.py'), encoding='utf-
 SUBJ = [('수학', r'수학|수리|연산|산수|주산|매쓰|매스|[Mm][Aa][Tt][Hh]'), ('영어', r'영어|영문|[Ee][Nn][Gg][Ll][Ii][Ss][Hh]|잉글리|파닉스|토플|토익|텝스|어학원'), ('국어', r'국어|언어|문학|독해|한글'), ('과학', r'과학|물리|화학|생물|지구과학|생명과학'), ('사회·역사', r'사회|역사|한국사|세계사|지리|윤리|경제'),
         ('논술·독서', r'논술|독서|토론|글쓰기|작문'), ('코딩·컴퓨터', r'코딩|컴퓨터|프로그래밍|소프트웨어|SW|파이썬|로봇'), ('한자·제2외국어', r'한자|한문|중국어|일본어|일어|불어|독일어|스페인어')]
 LEVEL = [('유아', r'유아|유치|미취학|5세|6세|7세'), ('초등', r'초등|초[1-6]|초\d|초저|초고|아동'), ('중등', r'중등|중학|중[1-3]|중\d'), ('고등', r'고등|고[1-3]|고\d|수능|입시|재수|내신'), ('성인', r'성인|일반인|직장인|대학생')]
-MUSIC = [('피아노', r'피아노|건반'), ('현악(바이올린·첼로 등)', r'바이올린|첼로|비올라|현악|더블베이스|콘트라베이스'), ('관악(플루트·클라리넷 등)', r'플루트|플룻|클라리넷|색소폰|트럼펫|관악|오보에|호른'), ('성악·보컬', r'성악|보컬|노래|합창'), ('기타·드럼·실용음악', r'기타|드럼|베이스|실용음악|밴드|우쿨렐레'), ('국악', r'국악|가야금|해금|대금|판소리|장구')]
+# 「기타」는 「그 밖」이라는 뜻으로도 쓰여(기타(소) · 기타 과정) 악기로 읽힐 때만 센다
+MUSIC = [('피아노', r'피아노|건반'), ('현악(바이올린·첼로 등)', r'바이올린|첼로|비올라|현악|더블베이스|콘트라베이스'), ('관악(플루트·클라리넷 등)', r'플루트|플룻|클라리넷|색소폰|트럼펫|관악|오보에|호른'), ('성악·보컬', r'성악|보컬|노래|합창'), ('기타·드럼·실용음악', r'통기타|일렉기타|클래식기타|어쿠스틱|기타(?=\s*(교실|학원|교습|레슨|연주|반\b|,|·|/|$))|드럼|실용음악|밴드|우쿨렐레'), ('국악', r'국악|가야금|해금|대금|판소리|장구')]
+# 2026-10-13 — 도로명주소 → 좌표(tools/region/neis-geo.py 캐시) → 행정동 경계가 먼저다. 캐시에 없는 주소만 종전의 법정동 넓이 나눔(match)으로
+#   (소유자 신고 「관악구 은천동 피아노 학원 10개 넘는데 몇 개 안 나온다」 — 봉천동을 행정동 여럿에 넓이로 나눠 실측 17 ↔ 5.2 로 어긋났다)
+from shapely.geometry import shape, Point
+from shapely.strtree import STRtree
+GEO = {}; _gp = os.path.join(SRC, 'geo.json')
+if os.path.exists(_gp): GEO = json.load(open(_gp, encoding='utf-8'))
+_HJ = json.load(open(os.path.join(os.path.dirname(ROOT), '13_관할경계', '원자료', 'hjd20260701.geojson'), encoding='utf-8'))['features']; _HG = [shape(f['geometry']) for f in _HJ]; _HC = [str(f['properties']['adm_cd2'])[:8] for f in _HJ]; _HT = STRtree(_HG)
+def dong_at(addr):
+    v = GEO.get((addr or '').strip())
+    if not v: return None
+    pt = Point(v[0], v[1])
+    for i in _HT.query(pt):
+        if _HG[i].contains(pt): return _HC[i]
+    return None
 def tags(text, table): return [i for i, (_, pat) in enumerate(table) if re.search(pat, text)]
 def main():
-    ALLC = collections.Counter(); D = collections.defaultdict(lambda: {'c': collections.defaultdict(lambda: [0.0, 0.0]), 's': [0.0] * len(SUBJ), 'l': [0.0] * len(LEVEL), 'm': [0.0] * len(MUSIC), 'bo': 0.0, 'bol': 0.0, 'mu': 0.0, 'mul': 0.0}); cnt = collections.Counter()
+    SDC = collections.Counter(); ALLC = collections.Counter(); D = collections.defaultdict(lambda: {'c': collections.defaultdict(lambda: [0.0, 0.0]), 's': [0.0] * len(SUBJ), 'l': [0.0] * len(LEVEL), 'm': [0.0] * len(MUSIC), 'bo': 0.0, 'bol': 0.0, 'mu': 0.0, 'mul': 0.0}); cnt = collections.Counter()
     for fn in sorted(glob.glob(os.path.join(SRC, 'aca_*.json'))):
         for r in json.load(open(fn, encoding='utf-8')):
             code = r['ATPT_OFCDC_SC_CODE']; ad = (r.get('FA_RDNMA') or '').split(); zone = (r.get('ADMST_ZONE_NM') or '').strip()
             if len(ad) > 2 and re.search(r'[시군구]$', ad[1]): zone = ad[1] + (ad[2] if ad[1].endswith('시') and ad[2].endswith('구') else '') if code != 'I10' else zone
             emd = next((w for w in ad[2:4] if re.search(r'[읍면]$', w)), None); m = re.search(r'\(([^,)]+)', r.get('FA_RDNDA') or ''); ld = re.sub(r'\s', '', m.group(1)) if m else None
-            W, how = match(code, zone, ld, emd)
-            if not W and zone != (r.get('ADMST_ZONE_NM') or '').strip(): W, how = match(code, (r.get('ADMST_ZONE_NM') or '').strip(), ld, emd)
-            cnt['전체'] += 1
+            k8g = dong_at(r.get('FA_RDNMA'))
+            if k8g: W, how = [(k8g, 1.0)], 'geo'; cnt['좌표로 붙임'] += 1
+            else:
+                W, how = match(code, zone, ld, emd)
+                if not W and zone != (r.get('ADMST_ZONE_NM') or '').strip(): W, how = match(code, (r.get('ADMST_ZONE_NM') or '').strip(), ld, emd)
+                if W: cnt['넓이로 나눔'] += 1
+            cnt['전체'] += 1; SDC[(W[0][0][:2] if W else 'x', how if how == 'geo' else ('area' if W else 'none'))] += 1
             if not W: cnt['동을 못 찾음'] += 1; continue
             cr = (r.get('LE_CRSE_NM') or '').strip() or ((r.get('REALM_SC_NM') or '분야 모름').strip() + ' — 과정 미기재'); t = 1 if r.get('ACA_INSTI_SC_NM') == '교습소' else 0; lst = (r.get('LE_CRSE_LIST_NM') or '').strip()
             bo = (r.get('REALM_SC_NM') or '').startswith(('입시', '종합')); mu = cr.startswith(('음악', '실용음악')) or (cr.endswith('과정 미기재') and (r.get('REALM_SC_NM') or '').startswith('예능') and re.search(r'피아노|음악|바이올린', lst))
@@ -45,13 +64,13 @@ def main():
         BY[k8[:2]][k8] = [cs, [r1(d['bo']), r1(d['bol']), [r1(x) for x in d['s']], [r1(x) for x in d['l']]], [r1(d['mu']), r1(d['mul']), [r1(x) for x in d['m']]]]
     os.makedirs(os.path.join(ROOT, 'data', 'neis-course'), exist_ok=True); td = datetime.date.today().isoformat()
     for sd, dong in sorted(BY.items()):
-        doc = {'schema': 'tg-neis-course/1', 'made': td, 'sido': sd, 'source': '교육부 NEIS 교육정보 개방 포털 「학원교습소정보」(시·도 교육청 등록 · %s 받음 · 전국 %d곳) · 행정동 = 통계청 SGIS(가공 vuski/admdongkor 2026-07 · CC BY 4.0)' % (td, cnt['전체']),
+        doc = {'schema': 'tg-neis-course/1', 'made': td, 'sido': sd, 'how': {'geo': SDC[(sd, 'geo')], 'area': SDC[(sd, 'area')]}, 'source': '교육부 NEIS 교육정보 개방 포털 「학원교습소정보」(시·도 교육청 등록 · %s 받음 · 전국 %d곳) · 행정동 = 통계청 SGIS(가공 vuski/admdongkor 2026-07 · CC BY 4.0)' % (td, cnt['전체']),
                'note': ['**교육청에 등록한 교습과정 이름 그대로** 센 것이다(courses) — 개원 중인 학원·교습소만 · 체육도장(태권도 등)·개인과외교습자·무등록은 없다',
                         '과목(수학·영어 …)·대상(초·중·고)·악기는 **학원 이름과 교습과목 목록 글에서 낱말을 찾은 어림**이다(「○○수학학원」 → 수학) — 한 학원에 여러 낱말이 있으면 과목마다 한 번씩 센다(합이 학원 수보다 클 수 있다) · 낱말이 없는 학원은 과목을 모른다(「과목을 알 수 있는 곳」 수를 같이 싣는다 — 보습 학원의 60~70%쯤)',
-                        '좌표가 없어 주소의 읍·면·법정동으로 행정동에 붙인 근사다 — 한 법정동이 여러 행정동에 걸치면 넓이 비율로 나눠 소수로 센다(그래서 0.3곳 같은 값이 나온다) · 전국 %d곳 가운데 동을 못 찾은 %d곳은 빠졌다' % (cnt['전체'], cnt['동을 못 찾음']),
+                        '동에 붙이는 법: **도로명주소를 좌표로 바꿔 행정동 경계에 넣는다**(브이월드 주소 변환 · 이 시도 %d곳) — 좌표를 아직 못 구한 곳만 법정동 넓이 비율로 나눠 소수로 센다(이 시도 %d곳 · 그런 동은 크게 어긋날 수 있다) · 전국 %d곳 가운데 동을 못 찾은 %d곳은 빠졌다' % (SDC[(sd, 'geo')], SDC[(sd, 'area')], cnt['전체'], cnt['동을 못 찾음']),
                         '학원이 많다고 「공부를 잘 시키는 동」이라는 뜻은 아니다 — 이웃 동·다른 구에서 오는 학생이 섞인다(큰 학원가는 그 동 아이 수보다 훨씬 많다)',
                         '학원 이름·전화·교습비는 여기에 없다(교습비 가운데값은 neis-dong.json)'],
-               'fields': {'courses': '교습과정 이름(전국에서 많은 차례 · dong 의 과정 번호가 가리킨다) — 「… — 과정 미기재」 = 과정 이름을 안 적어 분야 이름으로 묶은 것',
+               'fields': {'how': '{geo 좌표로 붙인 곳 수, area 넓이로 나눈 곳 수}(이 시도)', 'courses': '교습과정 이름(전국에서 많은 차례 · dong 의 과정 번호가 가리킨다) — 「… — 과정 미기재」 = 과정 이름을 안 적어 분야 이름으로 묶은 것',
                           'subjects': '보습(입시·검정 및 보습 · 종합)의 과목 낱말(차례)', 'levels': '보습의 대상 낱말(차례)', 'music': '음악의 악기 낱말(차례)',
                           'dong': '{행정동 8자리: [[[과정 번호, 학원 수, 교습소 수]…많은 차례], [보습 곳 수, 그 가운데 과목을 알 수 있는 곳, [과목별 곳 수], [대상별 곳 수]], [음악 곳 수, 악기를 알 수 있는 곳, [악기별 곳 수]]]}'},
                'courses': courses, 'subjects': [s[0] for s in SUBJ], 'levels': [s[0] for s in LEVEL], 'music': [s[0] for s in MUSIC], 'dong': dong}

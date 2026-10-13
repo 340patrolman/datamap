@@ -50,6 +50,18 @@ def match(code, zone, ld, emd):   # → ([(행정동, 무게)], 방법) · 못 �
         S = [a for a in C if a[3] == ld or stem(a[3]) == ld or stem(a[3]) == stem(ld)]
         if S: return [(a[0], 1.0 / len(S)) for a in S], 'name'
     return [], C[0][0][:5]
+from shapely.geometry import shape as _shape, Point as _Point
+from shapely.strtree import STRtree as _STR
+GEO = {}; _gp = os.path.join(SRC, 'geo.json')
+if os.path.exists(_gp): GEO = json.load(open(_gp, encoding='utf-8'))
+_HJ = json.load(open(os.path.join(KB, '13_관할경계', '원자료', 'hjd20260701.geojson'), encoding='utf-8'))['features']; _HG = [_shape(f['geometry']) for f in _HJ]; _HC = [str(f['properties']['adm_cd2'])[:8] for f in _HJ]; _HT = _STR(_HG)
+def dong_at(addr):
+    v = GEO.get((addr or '').strip())
+    if not v: return None
+    pt = _Point(v[0], v[1])
+    for i in _HT.query(pt):
+        if _HG[i].contains(pt): return _HC[i]
+    return None
 def fee(t):
     a = [int(x.replace(',', '')) for x in re.findall(r':\s*([\d,]{5,})', t or '')]
     a = [x for x in a if 10000 <= x <= 3000000]
@@ -63,8 +75,11 @@ for fn in sorted(glob.glob(os.path.join(SRC, 'aca_*.json'))):
         if len(ad) > 2 and re.search(r'[시군구]$', ad[1]): zone = ad[1] + (ad[2] if ad[1].endswith('시') and ad[2].endswith('구') else '') if code != 'I10' else zone
         emd = next((w for w in ad[2:4] if re.search(r'[읍면]$', w)), None)
         m = re.search(r'\(([^,)]+)', r.get('FA_RDNDA') or ''); ld = re.sub(r'\s', '', m.group(1)) if m else None
-        W, how = match(code, zone, ld, emd)
-        if not W and zone != (r.get('ADMST_ZONE_NM') or '').strip(): W, how = match(code, (r.get('ADMST_ZONE_NM') or '').strip(), ld, emd)
+        k8g = dong_at(r.get('FA_RDNMA'))   # 2026-10-13 좌표(neis-geo 캐시)가 먼저 — 없으면 종전 넓이 나눔
+        if k8g: W, how = [(k8g, 1.0)], 'geo'
+        else:
+            W, how = match(code, zone, ld, emd)
+            if not W and zone != (r.get('ADMST_ZONE_NM') or '').strip(): W, how = match(code, (r.get('ADMST_ZONE_NM') or '').strip(), ld, emd)
         t = 1 if r.get('ACA_INSTI_SC_NM') == '교습소' else 0; g = grp(r); fv = fee(r.get('PSNBY_THCC_CNTNT'))
         gk = (W[0][0][:5] if W else how) or 'x'
         for o, w in [(D[k8], w) for k8, w in W] + [(G[gk], 1.0)]:
@@ -83,7 +98,7 @@ def pack(o, full):
     return x
 res = {'schema': 'tg-neis/1', 'groups': GR, 'source': '교육부 NEIS 교육정보 개방 포털 「학원교습소정보」(시·도 교육청 등록 · 2026-10-06 받음) · 행정동 = 통계청 SGIS(가공 vuski/admdongkor 2026-07 · CC BY 4.0) · 법정동→행정동 = 브이월드 경계(서울·경기)',
        'fields': 'dong = {행정동 8자리: [[학원, 교습소], [[갈래별 학원, 교습소, 학원 교습비 가운데 값(원), 교습소 교습비 가운데 값] × 갈래], 정원 합, {개원 연도: 수}]} · sgg = {시군구 5자리: 앞 둘}',
-       'note': '개원 중인 곳만(폐원 기록 없음) · 체육도장(태권도 등)·개인과외교습자는 없다 · 좌표가 없어 주소의 읍·면·법정동으로 행정동에 붙인 근사(한 법정동이 여러 행정동에 걸치면 넓이 비율로 나눠 소수로 센다) · 교습비는 교습소만 공개(학원 칸은 비어 있다) — 등록한 과정별 1인 교습비 금액들의 가운데 값(기간 단위는 과정마다 다를 수 있다)',
+       'note': '개원 중인 곳만(폐원 기록 없음) · 체육도장(태권도 등)·개인과외교습자는 없다 · 도로명주소를 좌표로 바꿔 행정동 경계에 넣는다(브이월드 · counts 의 「동 geo」) — 좌표를 못 구한 곳만 읍·면·법정동 넓이 비율로 나눠 소수로 센다 · 교습비는 교습소만 공개(학원 칸은 비어 있다) — 등록한 과정별 1인 교습비 금액들의 가운데 값(기간 단위는 과정마다 다를 수 있다)',
        'counts': dict(cnt), 'dong': {k: pack(v, True) for k, v in D.items()}, 'sgg': {k: pack(v, False) for k, v in G.items()}}
 p = os.path.join(ROOT, 'data', 'neis-dong.json'); json.dump(res, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
 print(dict(cnt), '동', len(D), '시군구', len(G), os.path.getsize(p) // 1024, 'KB')

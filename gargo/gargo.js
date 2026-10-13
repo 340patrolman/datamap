@@ -228,17 +228,44 @@
   var VWN = 0;
   function vwJ(url) { return new Promise(function (ok, no) { var cb = '__gvw' + (++VWN) + 'x' + Date.now(), sc = document.createElement('script'), t = setTimeout(function () { fin(); no(new Error('응답 없음')); }, 12000); function fin() { clearTimeout(t); window[cb] = function () {}; if (sc.parentNode) sc.parentNode.removeChild(sc); } window[cb] = function (j) { fin(); ok(j); }; sc.onerror = function () { fin(); no(new Error('받기 실패')); }; sc.src = url + '&callback=' + cb; document.head.appendChild(sc); }); }
   function vwKey() { try { return localStorage.getItem('tg_map2d_vwkey') || ''; } catch (e) { return ''; } }
-  function vwSearch(q) { var key = vwKey(); if (!key) return Promise.resolve(null); var base = 'https://api.vworld.kr/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=6&page=1&format=json&errorformat=json&key=' + encodeURIComponent(key) + '&domain=340patrolman.github.io&query=' + encodeURIComponent(q);
-    return Promise.all([vwJ(base + '&type=place').catch(function () { return null; }), vwJ(base + '&type=address&category=road').catch(function () { return null; }), vwJ(base + '&type=address&category=parcel').catch(function () { return null; })]).then(function (R) { var out = [];
-      R.forEach(function (j, i) { var it = j && j.response && j.response.result && j.response.result.items || []; it.forEach(function (o) { if (!o.point) return; var x = PX(+o.point.x), y = PY(+o.point.y); if (x < G.box[0] - 300 || x > G.box[1] + 300 || y < G.box[2] - 300 || y > G.box[3] + 300) return; var ad = o.address || {}; out.push([i ? '🏠' : '📍', i ? (ad.road || ad.parcel || o.title || q) : (o.title || q), x, y, i ? '' : (ad.road || ad.parcel || '')]); }); }); return out; }); }
+  /* 키 — 이 기기에 넣어 둔 것이 있으면 그것, 없으면 운영 중계(Cloudflare · data/relay.json)의 /vwkey 에서 받아 이 화면이 떠 있는 동안만 쓴다(저장하지 않는다 · 하루 한도는 중계가 센다) */
+  var VWK = '', VWKP = null, VWWHY = '';
+  function vwKeyGet() { var k = vwKey(); if (k) return Promise.resolve(k); if (VWK) return Promise.resolve(VWK); if (VWKP) return VWKP;
+    VWKP = getJ('../data/relay.json').then(function (r) { if (!r || !r.url) throw new Error('중계 주소를 못 읽었다'); return fetch(r.url + '/vwkey', { cache: 'no-store' }); })
+      .then(function (res) { return res.json().then(function (j) { if (!res.ok || !j || !j.key) throw new Error(res.status === 429 ? '오늘 찾기 한도를 다 썼다' : (j && j.err) || ('중계 응답 ' + res.status)); VWK = j.key; VWWHY = ''; return VWK; }); })
+      .catch(function (e) { VWKP = null; VWWHY = String(e && e.message || e); if (/Failed to fetch|NetworkError|Load failed/i.test(VWWHY)) VWWHY = '주소 검색 중계에 닿지 못했다(통신)'; return ''; });
+    return VWKP; }
+  function vwSearch(q) { return vwKeyGet().then(function (key) { if (!key) return { list: [], err: VWWHY || '키를 받지 못했다' };
+    var b = G.box, bb = [(b[0] - 300) / KX + LON0, LAT0 - (b[3] + 300) / KY, (b[1] + 300) / KX + LON0, LAT0 - (b[2] - 300) / KY].map(function (v) { return v.toFixed(5); }).join(',');
+    var base = 'https://api.vworld.kr/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=8&page=1&format=json&errorformat=json&key=' + encodeURIComponent(key) + '&domain=340patrolman.github.io&bbox=' + bb + '&query=' + encodeURIComponent(q);
+    return Promise.all([vwJ(base + '&type=address&category=road').catch(function () { return null; }), vwJ(base + '&type=address&category=parcel').catch(function () { return null; }), vwJ(base + '&type=place').catch(function () { return null; })]).then(function (R) { var out = [], seen = {}, err = '', miss = 0;
+      R.forEach(function (j, i) { var rs = j && j.response; if (!rs) { miss++; return; } if (rs.status === 'ERROR') err = String(rs.error && (rs.error.text || rs.error.code) || '오류'); var it = rs.result && rs.result.items || [];
+        it.forEach(function (o) { if (!o.point) return; var x = PX(+o.point.x), y = PY(+o.point.y); if (x < G.box[0] - 300 || x > G.box[1] + 300 || y < G.box[2] - 300 || y > G.box[3] + 300) return; var ad = o.address || {}, nm = String(i === 2 ? (o.title || q) : (i === 0 ? (ad.road || o.title || q) : (ad.parcel || o.title || q))).replace(/^서울특별시\s*/, ''), sub = i === 2 ? String(ad.road || ad.parcel || '').replace(/^서울특별시\s*/, '') : (i === 1 && ad.road ? String(ad.road).replace(/^서울특별시\s*/, '') : '');
+          if (seen[nm]) return; seen[nm] = 1; out.push([i === 2 ? '📍' : '🏠', nm, x, y, sub]); }); });
+      if (miss === 3) err = '브이월드에 닿지 못했다'; return { list: out, err: out.length ? '' : err }; }); }); }
+  /* 통신이 안 될 때의 어림 — 도로명주소의 건물번호는 길 시작점(서쪽·남쪽 끝)에서 10m마다 1씩 는다. 이 묶음 안에서 시작하는 길만 · 건물 앞이 아니라 길 위의 자리다 */
+  function roadNear(ids, x, y) { var bx = x, by = y, bd = 1e12; ids.forEach(function (i) { var p = G.SP[i]; for (var u = 0; u + 3 < p.length; u += 2) { var ax = p[u], ay = p[u + 1], dx = p[u + 2] - ax, dy = p[u + 3] - ay, l2 = dx * dx + dy * dy, t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l2)) : 0, qx = ax + dx * t, qy = ay + dy * t, d = (qx - x) * (qx - x) + (qy - y) * (qy - y); if (d < bd) { bd = d; bx = qx; by = qy; } } }); return [bx, by, Math.sqrt(bd)]; }
+  function addrGuess(raw) { if (!G) return null; var t = String(raw || '').replace(/\s+/g, ' ').trim().replace(/(대로|로)\s+(\d+[가-힣]?길)/, '$1$2'), m = /(?:^|\s)([가-힣0-9·]+(?:로|길))\s*(\d+)(?:-\d+)?\s*(?:번지|번)?$/.exec(t); if (!m) return null;
+    var road = m[1], num = +m[2], ni = G.j.names.indexOf(road); if (ni < 0 || !(num > 0)) return null; var ids = []; for (var i = 0; i < G.S.length; i++) if (G.S[i][5] === ni) ids.push(i); if (!ids.length) return null;
+    var x0 = 1e12, x1 = -1e12, y0 = 1e12, y1 = -1e12, W = null, E = null, S = null, N = null; ids.forEach(function (i) { var p = G.SP[i]; for (var u = 0; u < p.length; u += 2) { var x = p[u], y = p[u + 1]; if (x < x0) { x0 = x; W = [x, y]; } if (x > x1) { x1 = x; E = [x, y]; } if (y > y1) { y1 = y; S = [x, y]; } if (y < y0) { y0 = y; N = [x, y]; } } });
+    var ew = (x1 - x0) >= (y1 - y0), a = ew ? W : S, b = ew ? E : N, par = road.replace(/\d+[가-힣]?길$/, '');
+    if (par !== road) { var pi = G.j.names.indexOf(par); if (pi >= 0) { var pids = []; for (i = 0; i < G.S.length; i++) if (G.S[i][5] === pi) pids.push(i); if (pids.length) { var da = roadNear(pids, a[0], a[1])[2], db = roadNear(pids, b[0], b[1])[2]; if (db < da) { var sw = a; a = b; b = sw; } } } }
+    else if (a[0] < G.box[0] + 400 || a[0] > G.box[1] - 400 || a[1] < G.box[2] + 400 || a[1] > G.box[3] - 400) return null;   /* 길이 이 묶음 밖에서 시작한다 — 셈할 수 없다 */
+    var L = Math.hypot(b[0] - a[0], b[1] - a[1]), d = num * 10; if (L < 30 || d > L + 60) return null; var q = roadNear(ids, a[0] + (b[0] - a[0]) / L * d, a[1] + (b[1] - a[1]) / L * d);
+    return ['📐', road + ' ' + num + ' 쯤', q[0], q[1], '어림 자리 — 도로명 번호로 셈(시작점에서 ' + km(d) + ') · 길 위의 자리라 건물에서 100m 넘게 어긋날 수 있다']; }
   function localFind(q) { var out = [], seen = {}; function add(ic, nm, x, y) { if (out.length > 40 || seen[ic + nm]) return; seen[ic + nm] = 1; out.push([ic, nm, x, y, '']); } var has = function (t) { return String(t).replace(/\s+/g, '').indexOf(q) >= 0; };
     STN.forEach(function (o) { if (has(o.n)) add('🚇', o.n, o.x, o.y); }); G.sig.forEach(function (g) { if (has(g.nm)) add('🚦', g.nm, g.x, g.y); }); if (BLD) BLD.forEach(function (b) { if (b.n && has(b.n)) add('🏢', b.n, b.x, b.y); });
     Object.keys(BASE.T).forEach(function (k) { BASE.T[k].jn.forEach(function (j) { if (has(j.n)) add(j.k === 'g' ? '🌳' : '✚', j.n, j.x, j.y); }); }); G.LAB.forEach(function (L) { if (has(L.n)) add('🛣', L.n, L.x, L.y); }); return out; }
   var FSEQ = 0;
-  function findRun(raw, auto) { var q = String(raw || '').replace(/\s+/g, ''); if (!G || q.length < 2) { fl.style.display = 'none'; return; } if (!BLD) bldLoad(); var seq = ++FSEQ, out = localFind(q);
-    function show(extra) { if (seq !== FSEQ) return; var all = out.concat(extra || []); fl._o = all; fl.innerHTML = all.slice(0, 16).map(function (o, i) { return '<button data-i="' + i + '">' + o[0] + ' ' + esc(o[1]) + (o[4] ? ' <small>' + esc(o[4]) + '</small>' : '') + '</button>'; }).join('') + (all.length ? '' : '<div class="no">찾지 못했다 — 지도를 길게 눌러 목적지를 정할 수 있다</div>') + (vwKey() ? '' : '<div class="no">주소(도로명·지번)와 그 밖의 장소 이름은 이 기기에 브이월드 키가 있어야 찾는다 — 데이터 압축지도의 「🔑」에서 한 번 넣으면 여기서도 쓴다. 지금은 서초 둘레의 역·신호 교차로·큰길·이름 있는 건물만 찾는다.</div>'); fl.style.display = 'block'; if (auto && all.length === 1) pickFound(0); }
-    show(null); if (vwKey() && raw.replace(/\s+/g, ' ').trim().length >= 2) vwSearch(raw.replace(/\s+/g, ' ').trim()).then(function (ex) { if (ex && ex.length) show(ex); }); }
-  function pickFound(i) { var o = fl._o && fl._o[i]; if (!o) return; fl.style.display = 'none'; fi.value = o[1]; fi.blur(); var ns = nearSeg(o[2], o[3], 400); setDest(ns ? ns.x : o[2], ns ? ns.y : o[3], o[1]); view.cx = o[2]; view.cy = o[3]; if (view.s < 0.5) view.s = 0.7; follow = false; draw(); }
+  var FNT = 0;
+  function findRun(raw, auto) { var q = String(raw || '').replace(/\s+/g, ''); clearTimeout(FNT); if (!G || q.length < 2) { fl.style.display = 'none'; return; } if (!BLD) bldLoad(); var seq = ++FSEQ, out = localFind(q), gs = addrGuess(raw), txt = String(raw).replace(/\s+/g, ' ').trim(), net = txt.length >= 2 && navigator.onLine !== false, st = net ? '🔎 주소·장소를 찾는 중…' : (navigator.onLine === false ? '통신이 끊겨 있다 — 이 기기 안의 이름만 찾는다' : ''), wait = net;
+    function show(extra, exact) { if (seq !== FSEQ) return; var all = out.concat(extra || []); if (gs && !exact) all.push(gs); fl._o = all;
+      fl.innerHTML = all.slice(0, 16).map(function (o, i) { return '<button data-i="' + i + '">' + o[0] + ' ' + esc(o[1]) + (o[4] ? ' <small>' + esc(o[4]) + '</small>' : '') + '</button>'; }).join('') + (all.length || wait ? '' : '<div class="no">찾지 못했다 — 「반포대로 179」「서초동 1726-1」처럼 주소를 적거나, 지도를 길게 눌러 목적지를 정한다</div>') + (st ? '<div class="no">' + esc(st) + '</div>' : '');
+      fl.style.display = 'block'; if (auto && !wait && all.length === 1) pickFound(0); }
+    show(null, false); if (!net) return;
+    FNT = setTimeout(function () { if (seq !== FSEQ) return; vwSearch(txt).then(function (r) { if (seq !== FSEQ) return; wait = false; var ex = r && r.list || [], hit = ex.some(function (o) { return o[0] === '🏠'; });
+      st = ex.length ? '' : (r && r.err ? '주소 검색에 닿지 못했다 — ' + r.err + (gs ? ' · 아래는 도로명 번호로 셈한 어림 자리' : '') : ''); show(ex, hit); }); }, auto ? 0 : 700); }
+  function pickFound(i) { var o = fl._o && fl._o[i]; if (!o) return; fl.style.display = 'none'; if (o[0] === '📐') note(o[4]); fi.value = o[1]; fi.blur(); var ns = nearSeg(o[2], o[3], 400); setDest(ns ? ns.x : o[2], ns ? ns.y : o[3], o[1]); view.cx = o[2]; view.cy = o[3]; if (view.s < 0.5) view.s = 0.7; follow = false; draw(); }
   /* 음성으로 목적지 — 브라우저의 받아쓰기(webkitSpeechRecognition · 크롬·사파리는 소리를 그 회사 서버로 보낸다 · 티북의 음성 입력과 같은 길) */
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition, rec = null;
   function micGo() { var b = $('gMic'); if (!SR) { note('이 브라우저는 음성 받아쓰기를 지원하지 않는다 — 자판의 마이크 단추로 말한다'); fi.focus(); return; } if (rec) { try { rec.stop(); } catch (e) {} return; }
@@ -320,6 +347,7 @@
         + '<div class="sub">신호 ' + r.sigs.length + '곳 · 그 가운데 지금 색을 아는 곳 ' + known + (MODE === 'e' ? ' · <b>신호 기다림을 셈에서 뺐다</b>(닿을 때 적색이면 알려 준다 — 통과는 운전자 판단)' : ' · 신호 기다림 ' + mmss(wsum) + ' 포함') + '<br>'
           + (LIVE.m ? '🚗 통행속도 반영(' + esc(LIVE.made || '') + ' 받음 · 길의 ' + Math.round(r.live * 100) + '%에 값' + (r.cong.length ? ' · <b class="r" title="큰길 25·15km/h · 자동차전용 50·30km/h 아래(앱 기준)">막히는 구간 ' + r.cong.length + '곳</b>' : ' · 막히는 구간 없음') + ')' : '🚗 통행속도 없음(받은 지 20분 넘음) — 제한속도로 셈') + ' · 신호·막힘이 없다면 ' + mmss(r.free) + '<br>🚦 신호값 ' + (SIG.idx ? esc(String(SIG.idx.made || '')) + ' 구움 · 5분마다 새 값을 확인한다' : '없음') + '</div>'
         + '<div class="btns"><button id="gGo" class="go">▶ 안내 시작</button><button id="gSim">모의 주행</button><button id="gClr">지우기</button></div>'
+        + '<div class="hand"><span>같은 목적지를 다른 내비로</span><button data-hand="tmap">티맵</button><button data-hand="kakao">카카오맵</button><button data-hand="naver">네이버지도</button></div>'
         + '<details class="steps"><summary>가는 차례 ' + r.mans.length + '곳 · 신호 ' + r.sigs.length + '곳</summary>' + r.mans.map(function (m) { return '<div class="st"><i>' + ARW[m.k] + '</i><b>' + km(m.d) + '</b><span>' + MKO[m.k] + (m.nm ? ' · ' + esc(m.nm) : '') + (m.sig ? ' (' + esc(m.sig) + ')' : '') + '</span></div>'; }).join('')
         + '<div class="cap">지나는 신호(닿을 때의 예상 — 계획값)</div>' + r.sigs.map(function (g) { var s = g.s; return '<div class="st"><i>🚦</i><b>' + km(g.d) + '</b><span>' + esc(g.nm) + ' · ' + (g.mv === 'Rt' ? '우회전' : g.mv === 'Lt' ? '좌회전' : g.mv === 'U' ? '유턴' : '직진') + ' — ' + (g.mv === 'Rt' || g.mv === 'U' ? '신호 자료 없음(우회전·유턴)' : !s ? '<em>모름</em>(자료 없음 · 보통 값 ' + Math.round(SIG.typ) + '초로 셈)' : s.kind === 'avg' ? '<em>지금 색 모름</em> · 평균 기다림 ' + Math.round(s.wait) + '초' : s.green ? '<b class="g">녹색</b> 통과 예상' : '<b class="r">적색</b> ' + Math.round(s.wait) + '초 기다림 예상') + '</span></div>'; }).join('') + '</details></div>'; }
     /* 다음 신호 판 — 핵심 */
@@ -382,8 +410,13 @@
     else if (t.hasAttribute('data-ov')) { var k = t.getAttribute('data-ov'); OV[k] = OV[k] ? 0 : 1; t.classList.toggle('on', !!OV[k]); try { localStorage.setItem('tg_gargo_ov', JSON.stringify(OV)); } catch (x) {} draw(); }
     else if (id === 'gIn') { view.s = Math.min(4, view.s * 1.4); draw(); } else if (id === 'gOut') { view.s = Math.max(0.03, view.s / 1.4); draw(); }
     else if (t.hasAttribute('data-mode')) { MODE = t.getAttribute('data-mode'); if (dest && me) plan(); }
+    else if (t.hasAttribute('data-hand')) handOff(t.getAttribute('data-hand'));
     else if (id === 'gDark') { document.documentElement.classList.toggle('dark'); try { localStorage.setItem('tg_gargo_dark', document.documentElement.classList.contains('dark') ? '1' : '0'); } catch (x) {} draw(); }
     else if (id === 'gOk') { $('gIntro').style.display = 'none'; try { localStorage.setItem('tg_gargo_intro', '1'); } catch (x) {} gpsStart(); } });
+  /* 다른 내비로 넘기기 — 그 앱이 깔려 있어야 열린다(앱의 주소 규약으로 목적지 좌표와 이름만 넘긴다 · 누를 때만) */
+  function handOff(k) { if (!dest) return; var lon = (dest.x / KX + LON0).toFixed(6), lat = (LAT0 - dest.y / KY).toFixed(6), nm = encodeURIComponent(dest.nm || '목적지'),
+      u = k === 'tmap' ? 'tmap://route?goalname=' + nm + '&goalx=' + lon + '&goaly=' + lat : k === 'kakao' ? 'kakaomap://route?ep=' + lat + ',' + lon + '&by=CAR' : 'nmap://navigation?dlat=' + lat + '&dlng=' + lon + '&dname=' + nm + '&appname=340patrolman.github.io';
+    note((k === 'tmap' ? '티맵' : k === 'kakao' ? '카카오맵' : '네이버지도') + '을 연다 — 앱이 깔려 있지 않으면 아무 일도 일어나지 않는다'); location.href = u; }
   function voiceAsk() { if (!window.speechSynthesis) return; voiceOn = true; $('gVoice').classList.add('on'); }
   /* 이름으로 찾기 — 신호 교차로 이름 · 길 이름(이 묶음 안) */
   var fi = $('gQ'), fl = $('gList');
@@ -405,5 +438,5 @@
   try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {}
   function boot() { if (document.documentElement.classList.contains('gated')) return; var seen = false; try { seen = localStorage.getItem('tg_gargo_intro') === '1'; } catch (e) {} if (seen) { $('gIntro').style.display = 'none'; if (!/[#&]from=/.test(location.hash)) gpsStart(); } load(); }
   window.addEventListener('tggate', boot); boot();
-  window.GARGO = { view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night };
+  window.GARGO = { view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
 })();

@@ -73,6 +73,7 @@
   #gTop .tx small b { font-size: inherit; line-height: inherit; }
   #gTop .tx small.ln2 { font-size: 14px; opacity: 1; background: rgba(255,255,255,.16); border-radius: 8px; padding: 2px 8px; align-self: flex-start; margin-top: 3px; } #gTop .tx small.ln2 em { font-style: normal; opacity: .8; }
   #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: 13px; border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: 14.5px; font-weight: 700; }
+  #gBot .hand { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12.5px; color: var(--dim, #64748b); } #gBot .hand span { flex: 1; } #gBot .hand button { height: 34px; border-radius: 10px; border: 1px solid var(--line); background: transparent; padding: 0 10px; font-size: 13px; font-weight: 700; color: inherit; }
   #gBot .btns .go { flex: 1; background: linear-gradient(135deg, #2f6bff, #1b54d6); color: #fff; border: 0; font-size: 17px; font-weight: 900; box-shadow: 0 6px 16px rgba(47,107,255,.35); }
   .steps { margin-top: 10px; } .steps summary { font-size: 14px; font-weight: 800; padding: 8px 0; cursor: pointer; }
   .steps .st { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; line-height: 1.5; } .steps .st i { font-style: normal; width: 22px; text-align: center; flex: 0 0 auto; } .steps .st b { width: 52px; flex: 0 0 auto; }
@@ -96,7 +97,7 @@
 </head>
 <body>
 <canvas id="gMap"></canvas>
-<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="어디로? — 말하거나 적는다 / 지도를 길게 누름" aria-label="목적지 찾기"><button id="gMic" aria-label="음성으로 목적지">🎤</button></div>
+<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="어디로? 주소·이름을 적거나 🎤 말한다" aria-label="목적지 찾기"><button id="gMic" aria-label="음성으로 목적지">🎤</button></div>
 <div id="gOv"><button data-ov="s" class="on">🚦 신호</button><button data-ov="t" class="on">🚗 소통</button></div>
 <div id="gList"></div>
 <div id="gTop" aria-live="polite"></div>
@@ -130,6 +131,6 @@
         try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
   })();
 </script>
-<script src="gargo.js?v=0.3.4"></script>
+<script src="gargo.js?v=0.4.0"></script>
 </body>
 </html>

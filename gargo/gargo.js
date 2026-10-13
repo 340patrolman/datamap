@@ -90,6 +90,8 @@
   function eLen(e) { return G.S[G.eS[e]][2]; } function eSpd(e) { return G.S[G.eS[e]][3] || 30; } function eWay(e) { return G.S[G.eS[e]][6]; }
   /* 그 줄을 지금 달릴 수 있는 속도 = 제한속도와 실시간 통행속도 가운데 낮은 쪽(실시간 값이 없으면 제한속도 · 제한속도를 넘는 값은 쓰지 않는다) */
   function eLive(e) { if (!LIVE.m) return null; var q = G.S[G.eS[e]], li = q[G.eR[e] ? 14 : 13]; if (li == null || li < 0) return null; var v = LIVE.m[G.j.links[li]]; return v > 0 ? v : null; }
+  /* 소통 갈래 0 원활 · 1 서행 · 2 정체 — 앱 기준: 자동차전용·고속(제한 70 이상)은 50·30km/h, 그 밖의 길은 25·15km/h(제한이 낮은 길은 제한의 0.7·0.4배로 낮춘다) */
+  function spdLv(v, cls, lim) { if (cls <= 2 && lim >= 70) return v >= 50 ? 0 : v >= 30 ? 1 : 2; return v >= Math.min(25, lim * 0.7) ? 0 : v >= Math.min(15, lim * 0.4) ? 1 : 2; }
   function eV(e) { var lim = eSpd(e), v = eLive(e); return v ? Math.max(4, Math.min(lim, v)) : lim; }
   /* 길 고르기에만 쓰는 무게(가정 — 시간 표시에는 안 넣는다): 골목·생활도로·진입로(등급 6)은 1.7배 · 생활도로·진입로(7·8)는 2.2배 느리게 치고, 신호 없는 곳에서 꺾으면 좌 12초·우 6초를 얹는다.
      넣지 않으면 신호 한두 개를 피하려고 골목을 지그재그로 도는 길이 나온다(시험: 서초역 → 양재역이 열다섯 번 꺾였다) */
@@ -128,7 +130,7 @@
       if (i === 0) { var cut = [a.x, a.y], st = false; for (k = 0; k < n - 1; k++) { var u0 = rev ? (n - 2 - k) * 2 : k * 2; if (!st && u0 === a.u) { st = true; cut.push(q[(k + 1) * 2], q[(k + 1) * 2 + 1]); } else if (st) cut.push(q[(k + 1) * 2], q[(k + 1) * 2 + 1]); } if (cut.length >= 4) q = cut; }
       if (i === es.length - 1) { var c2 = [], done = false; for (k = 0; k < q.length / 2 && !done; k++) { c2.push(q[k * 2], q[k * 2 + 1]); if (k + 1 < q.length / 2) { var ax = q[k * 2], ay = q[k * 2 + 1], bx = q[k * 2 + 2], by = q[k * 2 + 3], l2 = (bx - ax) * (bx - ax) + (by - ay) * (by - ay), tt = l2 ? ((b.x - ax) * (bx - ax) + (b.y - ay) * (by - ay)) / l2 : 0; if (tt >= 0 && tt <= 1 && Math.hypot(ax + (bx - ax) * tt - b.x, ay + (by - ay) * tt - b.y) < 3) { c2.push(b.x, b.y); done = true; } } } q = c2; }
       var d0 = dist; for (k = 0; k < q.length; k += 2) add(q[k], q[k + 1]);
-      var len = dist - d0, spd = eSpd(e), lv = eLive(e); t += len / (eV(e) / 3.6); if (lv) { liveLen += len; if (lv < spd * 0.6) cong.push([d0, dist, lv < spd * 0.35 ? 2 : 1]); }
+      var len = dist - d0, spd = eSpd(e), lv = eLive(e); t += len / (eV(e) / 3.6); if (lv) { liveLen += len; var cl0 = spdLv(lv, G.S[G.eS[e]][4], spd); if (cl0) cong.push([d0, dist, cl0]); }
       if (i + 1 < es.length) { var f = es[i + 1], dA = angDiff(eBrgIn(e), eBrgOut(f)), tk = turnKind(dA), outs = G.oHead[G.eB[e] + 1] - G.oHead[G.eB[e]], nm = G.S[G.eS[f]][5] >= 0 ? G.j.names[G.S[G.eS[f]][5]] : '';
         if (G.eB[f] === G.eA[e] && G.eS[f] === G.eS[e]) { tk = 'U'; t += 30; }
         var sc = sigCost(e, f, T0 + t); if (sc) { var sg = G.sig[sc.si]; sigs.push({ si: sc.si, no: sg.no, nm: sg.nm, d: dist, side: sc.side, mv: sc.mv, t: t, w: sc.w, s: sc.s, lim: spd }); if (MODE !== 'e') t += sc.w; }
@@ -191,11 +193,12 @@
   function drawBld(dark, s) { if (s < 0.4) return; if (!BLD) { bldLoad(); return; } var W = cv.clientWidth, H = cv.clientHeight, c = [S2W(0, 0), S2W(W, 0), S2W(0, H), S2W(W, H)], x0 = 1e12, x1 = -1e12, y0 = 1e12, y1 = -1e12; c.forEach(function (q) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
     ctx.fillStyle = dark ? '#1b2434' : '#e7e2d9'; ctx.strokeStyle = dark ? '#2a3547' : '#d6cfc3'; ctx.lineWidth = 0.6 / s; var n = 0; ctx.beginPath();
     for (var i = 0; i < BLD.length; i++) { var b = BLD[i]; if (b.b[1] < x0 || b.b[0] > x1 || b.b[3] < y0 || b.b[2] > y1) continue; var p = b.p; ctx.moveTo(p[0], p[1]); for (var u = 2; u < p.length; u += 2) ctx.lineTo(p[u], p[u + 1]); ctx.closePath(); if (++n >= 16) { ctx.fill(); if (s > 0.8) ctx.stroke(); ctx.beginPath(); n = 0; } } if (n) { ctx.fill(); if (s > 0.8) ctx.stroke(); } }
-  /* 소통 색 — 통행속도 ÷ 제한속도: 0.7 이상 초록 · 0.4~0.7 주황 · 그 아래 빨강(값이 온 길만 · 큰길 위주) */
-  function drawTraf(s) { if (!LIVE.m) return; if (!TRAF || TRAFAT !== LIVE.at) { TRAF = [new Path2D(), new Path2D(), new Path2D()]; TRAFAT = LIVE.at; for (var i = 0; i < G.S.length; i++) { var q = G.S[i], lim = q[3] || 30, p = G.SP[i]; for (var d = 0; d < 2; d++) { var li = q[13 + d]; if (li == null || li < 0) continue; var v = LIVE.m[G.j.links[li]]; if (!(v > 0)) continue; var r = v / lim, pa = TRAF[r >= 0.7 ? 0 : r >= 0.4 ? 1 : 2], off = (d ? -1 : 1) * 3.2;
+  /* 소통 색 — 값이 온 길만 · 갈래는 spdLv(앱 기준). 큰길(갈래 1~5)은 늘, 생활도로는 가까이 볼 때만(멀리서 다 그리면 지도가 온통 빨갛다) */
+  function drawTraf(s) { if (!LIVE.m) return; if (!TRAF || TRAFAT !== LIVE.at) { TRAF = [new Path2D(), new Path2D(), new Path2D(), new Path2D(), new Path2D(), new Path2D()]; TRAFAT = LIVE.at; for (var i = 0; i < G.S.length; i++) { var q = G.S[i], lim = q[3] || 30, p = G.SP[i]; for (var d = 0; d < 2; d++) { var li = q[13 + d]; if (li == null || li < 0) continue; var v = LIVE.m[G.j.links[li]]; if (!(v > 0)) continue; var pa = TRAF[spdLv(v, q[4], lim) + (q[4] <= 5 ? 0 : 3)], off = (d ? -1 : 1) * 3.2;
           /* 두 방향을 길 가운데에서 조금씩 벌려 그린다 */ for (var u = 0; u + 3 < p.length; u += 2) { var ax = p[u], ay = p[u + 1], bx = p[u + 2], by = p[u + 3], l = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / l * off, ny = (bx - ax) / l * off; if (!u) pa.moveTo(ax + nx, ay + ny); pa.lineTo(bx + nx, by + ny); } } } }
-    /* 멀리서 보면 막히는 길(주황·빨강)만 가늘게 — 초록까지 다 그리면 지도가 어지럽다 · 가까이 보면 셋 다 */
-    var far = s < 0.3; ctx.globalAlpha = far ? 0.8 : 0.92; ctx.lineWidth = far ? 2.2 / s : Math.max(3.2, 2.6 / s); ['#22c55e', '#f59e0b', '#dc2626'].forEach(function (c, i) { if (far && !i) return; ctx.strokeStyle = c; ctx.stroke(TRAF[i]); }); ctx.globalAlpha = 1; }
+    /* 멀리서 보면 큰길의 서행·정체만 가늘게 · 가까이 보면 원활까지 · 더 가까이(0.9 배율부터) 생활도로도 */
+    var far = s < 0.3, col = ['#22c55e', '#f59e0b', '#dc2626']; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = far ? 0.85 : 0.92; ctx.lineWidth = far ? 2.4 / s : Math.max(3.2, 2.6 / s); col.forEach(function (c, i) { if (far && !i) return; ctx.strokeStyle = c; ctx.stroke(TRAF[i]); });
+    if (s >= 0.9) { ctx.globalAlpha = 0.8; ctx.lineWidth = Math.max(2.2, 1.8 / s); col.forEach(function (c, i) { ctx.strokeStyle = c; ctx.stroke(TRAF[i + 3]); }); } ctx.globalAlpha = 1; }
   /* 이름 — 교차로·신호 교차로·역·공원·큰 건물 */
   function drawPlaces(dark, s, W, H) { if (s < 0.22) return; var boxes = [], seen = {}, n = 0;
     function put(nm, x, y, font, col, dy, max) { if (n >= max) return; var q = W2S(x, y); if (q[0] < 24 || q[0] > W - 24 || q[1] < 80 || q[1] > H - 110) return; var key = nm.replace(/\s+/g, ''); if (seen[key]) return; ctx.font = font; var tw = ctx.measureText(nm).width, cx = q[0], cy = q[1] + dy; for (var i = 0; i < boxes.length; i++) { var b = boxes[i]; if (Math.abs(b[0] - cx) < (b[2] + tw) / 2 + 5 && Math.abs(b[1] - cy) < 15) return; } boxes.push([cx, cy, tw]); seen[key] = 1; n++;
@@ -280,8 +283,11 @@
       ctx.rotate(((guide ? mp[2] : me.hd) - view.rot) * Math.PI / 180); ctx.beginPath(); ctx.moveTo(0, -12.5); ctx.lineTo(9.5, 9); ctx.lineTo(0, 4.2); ctx.lineTo(-9.5, 9); ctx.closePath(); ctx.fillStyle = '#1b54d6'; ctx.fill(); ctx.restore(); }
   }
   function fitAll() { var b = G.box; view.cx = (b[0] + b[1]) / 2; view.cy = (b[2] + b[3]) / 2; view.s = Math.min(cv.clientWidth / (b[1] - b[0]), cv.clientHeight / (b[3] - b[2])) * 1.9; view.rot = 0; }
+  /* 화면에서 지도가 실제로 보이는 자리 — 위 찾기 칸·켜는 단추 줄, 아래 판, 오른쪽 단추 줄을 뺀다 */
+  function fitBox() { var W = cv.clientWidth, H = cv.clientHeight, bot = $('gBot'), bh = bot && bot.offsetHeight ? Math.min(H * 0.62, bot.offsetHeight) : 0, top = 112; return [22, top, Math.max(120, W - 22 - 58), Math.max(top + 120, H - bh - 18)]; }
   function fitRoute() { var p = route.pts, b = [1e9, -1e9, 1e9, -1e9]; for (var i = 0; i < p.length; i += 2) { if (p[i] < b[0]) b[0] = p[i]; if (p[i] > b[1]) b[1] = p[i]; if (p[i + 1] < b[2]) b[2] = p[i + 1]; if (p[i + 1] > b[3]) b[3] = p[i + 1]; }
-    view.rot = 0; view.cx = (b[0] + b[1]) / 2; view.cy = (b[2] + b[3]) / 2 + (b[3] - b[2]) * 0.12; view.s = Math.min(3, Math.min(cv.clientWidth / ((b[1] - b[0]) * 1.25 + 80), cv.clientHeight * 0.55 / ((b[3] - b[2]) * 1.25 + 80))); follow = false; }
+    var f = fitBox(), fw = f[2] - f[0], fh = f[3] - f[1]; view.rot = 0; view.s = Math.min(3, Math.min(fw / ((b[1] - b[0]) + 60), fh / ((b[3] - b[2]) + 60)));
+    /* 길 묶음의 가운데가 보이는 자리의 가운데에 오게 */ view.cx = (b[0] + b[1]) / 2 - ((f[0] + f[2]) / 2 - cv.clientWidth / 2) / view.s; view.cy = (b[2] + b[3]) / 2 - ((f[1] + f[3]) / 2 - cv.clientHeight * 0.5) / view.s; follow = false; }
 
   /* ---------- 화면 글 ---------- */
   function msg(t) { var el = $('gMsg'); el.textContent = t; el.style.display = t ? 'block' : 'none'; }
@@ -311,7 +317,7 @@
       bot.innerHTML = '<div class="sum"><div class="big"><b>' + mmss(r.time) + '</b> <span>' + km(r.dist) + ' · ' + hm(now + r.time) + ' 도착</span></div>'
         + '<div class="mode"><button data-mode="n" class="' + (MODE === 'n' ? 'on' : '') + '">일반 — 신호를 지킨다</button><button data-mode="e" class="' + (MODE === 'e' ? 'on' : '') + '">🚨 긴급 출동</button></div>'
         + '<div class="sub">신호 ' + r.sigs.length + '곳 · 그 가운데 지금 색을 아는 곳 ' + known + (MODE === 'e' ? ' · <b>신호 기다림을 셈에서 뺐다</b>(닿을 때 적색이면 알려 준다 — 통과는 운전자 판단)' : ' · 신호 기다림 ' + mmss(wsum) + ' 포함') + '<br>'
-          + (LIVE.m ? '🚗 통행속도 반영(' + esc(LIVE.made || '') + ' 받음 · 길의 ' + Math.round(r.live * 100) + '%에 값' + (r.cong.length ? ' · <b class="r">막히는 구간 ' + r.cong.length + '곳</b>' : ' · 막히는 구간 없음') + ')' : '🚗 통행속도 없음(받은 지 20분 넘음) — 제한속도로 셈') + ' · 신호·막힘이 없다면 ' + mmss(r.free) + '<br>🚦 신호값 ' + (SIG.idx ? esc(String(SIG.idx.made || '')) + ' 구움 · 5분마다 새 값을 확인한다' : '없음') + '</div>'
+          + (LIVE.m ? '🚗 통행속도 반영(' + esc(LIVE.made || '') + ' 받음 · 길의 ' + Math.round(r.live * 100) + '%에 값' + (r.cong.length ? ' · <b class="r" title="큰길 25·15km/h · 자동차전용 50·30km/h 아래(앱 기준)">막히는 구간 ' + r.cong.length + '곳</b>' : ' · 막히는 구간 없음') + ')' : '🚗 통행속도 없음(받은 지 20분 넘음) — 제한속도로 셈') + ' · 신호·막힘이 없다면 ' + mmss(r.free) + '<br>🚦 신호값 ' + (SIG.idx ? esc(String(SIG.idx.made || '')) + ' 구움 · 5분마다 새 값을 확인한다' : '없음') + '</div>'
         + '<div class="btns"><button id="gGo" class="go">▶ 안내 시작</button><button id="gSim">모의 주행</button><button id="gClr">지우기</button></div>'
         + '<details class="steps"><summary>가는 차례 ' + r.mans.length + '곳 · 신호 ' + r.sigs.length + '곳</summary>' + r.mans.map(function (m) { return '<div class="st"><i>' + ARW[m.k] + '</i><b>' + km(m.d) + '</b><span>' + MKO[m.k] + (m.nm ? ' · ' + esc(m.nm) : '') + (m.sig ? ' (' + esc(m.sig) + ')' : '') + '</span></div>'; }).join('')
         + '<div class="cap">지나는 신호(닿을 때의 예상 — 계획값)</div>' + r.sigs.map(function (g) { var s = g.s; return '<div class="st"><i>🚦</i><b>' + km(g.d) + '</b><span>' + esc(g.nm) + ' · ' + (g.mv === 'Rt' ? '우회전' : g.mv === 'Lt' ? '좌회전' : g.mv === 'U' ? '유턴' : '직진') + ' — ' + (g.mv === 'Rt' || g.mv === 'U' ? '신호 자료 없음(우회전·유턴)' : !s ? '<em>모름</em>(자료 없음 · 보통 값 ' + Math.round(SIG.typ) + '초로 셈)' : s.kind === 'avg' ? '<em>지금 색 모름</em> · 평균 기다림 ' + Math.round(s.wait) + '초' : s.green ? '<b class="g">녹색</b> 통과 예상' : '<b class="r">적색</b> ' + Math.round(s.wait) + '초 기다림 예상') + '</span></div>'; }).join('') + '</details></div>'; }

@@ -32,7 +32,7 @@ if (-not $hasT) {
   Write-Output '잔여시간 훑기를 띄웠다'
 }
 if (-not $hasP) {
-  if (-not $hasT) { Start-Sleep -Seconds 150 }
+  # (2026-10-15) 150초 기다림 뺌 — PC 켤 때 예약 작업이 기다리는 사이 끝나 상태 훑기만 안 떴다(06:43 부팅). 5분 제한은 API·열쇠마다 따로라 같이 떠도 된다
   # 기다리는 사이 다른 지킴이가 이미 띄웠으면 그만둔다(2026-10-10 다시 띄우다 상태 훑기가 둘이 됐다)
   $dup = @(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*spat-bake.py*sweep*--api p*' -and $_.Name -notlike 'powershell*' -and $_.Name -notlike 'bash*' }).Count
   if ($dup) { Write-Output '신호 상태 훑기는 이미 돌고 있다'; exit 0 }

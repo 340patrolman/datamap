@@ -70,6 +70,7 @@
       /* 켜놓고 다니기(v0.6.0) — 안내를 끝내고 길을 지운 뒤: 반포대로를 북쪽으로 가는 자리·속도를 넣으면 진행 방향이 위로 돌고, 내 길 앞의 신호가 「남쪽에서 직진」 값으로 잡힌다 */
       try { var b1 = document.getElementById('gStop'); if (b1) b1.click(); var b2 = document.getElementById('gClr'); if (b2) b2.click();
         ck('목적지가 없으면 「켜놓고 다니기」 단추가 있다', !!document.getElementById('gCruise'));
+        var bt0 = String(document.getElementById('gBot').innerText || ''); ck('목적지가 없으면 지금 색을 아는 신호 수와 까닭을 보인다(v0.6.2)', /지금 색·남은 초를 아는 신호 \d+곳/.test(bt0), bt0.replace(/\s+/g, ' ').slice(0, 80));
         var pa = g.P(127.0113, 37.4835), pb = g.P(127.0076, 37.4925), rr = g.findRoute(pa[0], pa[1], pb[0], pb[1], Date.now() / 1000, null), ii = Math.floor(rr.pts.length / 2 / 3) * 2, hx = rr.pts[ii], hy = rr.pts[ii + 1], hd = (Math.atan2(rr.pts[ii + 2] - hx, -(rr.pts[ii + 3] - hy)) * 180 / Math.PI + 360) % 360;
         g.setMe(hx, hy, 5, hd, 11); var onC = g.cruise(), A = g.ahead(), top2 = String(document.getElementById('gTop').innerText || '');
         ck('켜놓고 다니기가 켜진다(위 띠 · 진행 방향이 위)', onC === true && /켜놓고 다니기/.test(top2) && Math.abs(g.view.rot - hd) < 1 && g.view.s >= 0.5 && g.view.s <= 0.9, 'rot ' + Math.round(g.view.rot) + ' / 방위 ' + Math.round(hd) + ' · 배율 ' + g.view.s.toFixed(2));

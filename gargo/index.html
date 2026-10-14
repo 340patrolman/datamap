@@ -78,6 +78,7 @@
   .steps { margin-top: 10px; } .steps summary { font-size: 14px; font-weight: 800; padding: 8px 0; cursor: pointer; }
   .steps .st { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; line-height: 1.5; } .steps .st i { font-style: normal; width: 22px; text-align: center; flex: 0 0 auto; } .steps .st b { width: 52px; flex: 0 0 auto; }
   .steps .cap { font-size: 12.5px; font-weight: 800; color: var(--dim); margin: 10px 0 2px; }
+  .rk summary { color: #b45309; } .rk .st b.nm { width: auto; } .rk .st span b { width: auto; } .rk .st b.r { color: #dc2626; } .rk .cap { font-weight: 600; line-height: 1.5; }
   #gBot .eta { display: flex; align-items: center; gap: 14px; } #gBot .eta div { display: flex; flex-direction: column; } #gBot .eta b { font-size: 21px; font-weight: 900; } #gBot .eta span { font-size: 11.5px; color: var(--dim); }
   #gBot .eta .stop { margin-left: auto; height: 46px; border-radius: 13px; border: 0; background: #e11d48; color: #fff; font-weight: 900; padding: 0 16px; font-size: 15px; }
   #gMsg, #gNote { position: fixed; left: 50%; transform: translateX(-50%); z-index: 7; display: none; background: rgba(15,23,42,.9); color: #fff; border-radius: 12px; padding: 9px 14px; font-size: 13.5px; line-height: 1.55; max-width: 88vw; }
@@ -131,7 +132,7 @@
         try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
   })();
 </script>
-<script src="gargo.js?v=0.9.3"></script>
+<script src="gargo.js?v=0.10.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

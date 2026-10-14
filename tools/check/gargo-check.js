@@ -70,6 +70,9 @@
     /* 3) 화면 — 받은 주소(#from·to)로 길이 잡혔는가 · 그리기 · 모의 주행 */
     var rt = g.state().route; ck('주소의 #from·#to 로 길이 잡힌다', !!(rt && rt.es && rt.es.length), rt ? Math.round(rt.dist) + 'm' : '없음');
     try { g.draw(); ck('지도 그리기', true); } catch (e) { ck('지도 그리기', false, e.message); }
+    /* v0.10.0 — 길 요약 판을 다시 그려도(위치가 올 때마다) 펼친 칸은 펼친 채 */
+    var stp = document.querySelector('#gBot details.steps'); if (stp) { stp.open = true; g.paint(); } var stp2 = document.querySelector('#gBot details.steps'); ck('길 요약 판을 다시 그려도 펼친 「가는 차례」는 펼친 채', !!(stp2 && stp2.open)); if (stp2) stp2.open = false;
+    g.risk();   /* ⚠ 이 길 주의 교차로 표(risk-six.json) — 받기만 걸어 두고 아래 4초 뒤에 잰다 */
     /* 잇기 — 길 요약 판의 넘기기 단추 넷(데이터지도·티맵·카카오맵·네이버지도) · 데이터지도는 목적지 좌표로 같은 사이트의 지도를 연다 */
     var hb = document.querySelectorAll('#gBot [data-hand]'); ck('넘기기 단추 넷', hb.length === 4, [].map.call(hb, function (b) { return b.textContent; }).join(' · '));
     if (hb.length) { var op2 = [], wo2 = window.open; window.open = function (u) { op2.push(String(u)); return null; }; hb[0].click(); window.open = wo2; var m2 = /^\.\.\/#lat=(-?[\d.]+)&lon=(-?[\d.]+)$/.exec(op2[0] || ''); ck('「데이터지도」가 목적지(양재역 쪽)로 연다', !!m2 && Math.abs(+m2[1] - 37.4844) < 0.006 && Math.abs(+m2[2] - 127.0341) < 0.007, op2[0]); }
@@ -92,6 +95,12 @@
         var tl = rc.tc[rc.tc.length - 1]; ck('거리마다 걸린 시간 표 — 끝이 전체 거리·시간과 같다 · 가운데는 그 사이', Math.abs(tl[0] - rc.dist) < 1 && Math.abs(tl[1] - rc.time) < 1 && g.tAt(rc, rc.dist / 2) > 0 && g.tAt(rc, rc.dist / 2) < rc.time, Math.round(tl[0]) + 'm ' + Math.round(tl[1]) + '초 · 가운데 ' + Math.round(g.tAt(rc, rc.dist / 2)) + '초');
         var keepP = localStorage.getItem('tg_gargo_places'); g.plPut('h', { x: rc.a.x, y: rc.a.y, nm: '시험 집' }); var pl = g.places(); ck('집을 넣으면 찾기 목록 맨 앞에 🏠', pl.length && pl[0][0] === '🏠' && pl[0][1] === '시험 집', pl.slice(0, 2).map(function (x) { return x[0] + x[1]; }).join(' · ')); if (keepP == null) localStorage.removeItem('tg_gargo_places'); else localStorage.setItem('tg_gargo_places', keepP);
       } catch (e) { ck('v0.9.0 검사', false, e.message); }
+      /* v0.10.0 ⚠ 이 길 주의 교차로(온톨로지 코어 v1 질문 4) — 서초역→양재역 · 지나는 교차로마다 표의 값 그대로 · 35m 안 · 사고 많은 차례 */
+      try { var rk = g.findRoute.apply(null, (function () { var a = g.P(127.0076, 37.4919), b = g.P(127.0341, 37.4844); return [a[0], a[1], b[0], b[1], Date.now() / 1000, null]; })()), RL = g.riskOn(rk), RH = g.riskHtml(rk);
+        ck('⚠ 이 길 주의 교차로 — 서초역→양재역에 3곳 넘게 · 모두 35m 안 · 길 위 거리 · 10년 사고 많은 차례', !!(RL && RL.length >= 3 && RL.every(function (h, i) { return h.off <= 35 && h.d >= 0 && h.d <= rk.dist + 1 && (!i || h.q[4] <= RL[i - 1].q[4]); })), RL ? RL.length + '곳 · ' + RL.slice(0, 3).map(function (h) { return h.q[1] + ' ' + h.q[4] + '건 ' + Math.round(h.off) + 'm'; }).join(' · ') : '표 없음');
+        ck('⚠ 칸 글 — 이름·10년 건수·주 위반이 들어가고 근사라고 밝힌다', /⚠ 이 길 주의 교차로 \d+곳/.test(RH) && RL && RH.indexOf(RL[0].q[1]) >= 0 && /근사/.test(RH) && /주 위반/.test(RH), RH.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 90));
+        var far = g.findRoute.apply(null, (function () { var a = g.P(127.0076, 37.4919), b = g.P(127.0090, 37.4925); return [a[0], a[1], b[0], b[1], Date.now() / 1000, null]; })()); ck('⚠ 짧은 길은 지나는 교차로만(전체 표를 쏟지 않는다)', !far || g.riskOn(far).length <= 3, far ? g.riskOn(far).length + '곳' : '길 없음');
+      } catch (e) { ck('⚠ 이 길 주의 교차로 검사', false, e.message); }
       /* 건물 이름 찾기 — 칸을 띄우지 않아도 이름 목록(bld6/names.json)으로 */
       var rf = g.localFind('롯데월드몰').concat(g.localFind('송파구청')); ck('건물 이름 찾기(롯데월드몰·송파구청 · 칸을 안 띄워도)', rf.filter(function (x) { return x[0] === '🏢'; }).length >= 2, rf.slice(0, 3).map(function (x) { return x[0] + x[1]; }).join(' · ') + ' · 이름 ' + g.bld().names);
       ck('밤 22~06시에는 속도 권고가 안 나온다(모의 주행 4초)', seen === 0, '신호 판 ' + shown + '번 봄 · 권고 글 ' + seen + '번');

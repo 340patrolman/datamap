@@ -9,13 +9,20 @@
     ACT·REC  = data/sig-ksc-seocho.json hist(교통과 출력물 5곳 · 소유자 공개 결정 2026-10-10 · 이력 글 그대로)
     LAW·PREC = ontology-core/src/tbook-law.json(T-Book 범칙금 DB · 원문 대조 판례 — tools/tbook-extract.py 가 읽기만 해서 꺼냄)
   VIO → LAW 는 이름 맞대기 표(아래 VIO_LAW · 등급 C · 확인 필요) · LAW → PREC 은 조문 번호가 같을 때만(교특법 §3 은 12대 중과실 공통이라 빼고)(범칙금 DB meta 「도교법§5」 ↔ 판결문 참조조문 「도로교통법 제5조」 · 등급 A · 「구 ○○법」 이면 C)
-  쓰기: py -3.12 -X utf8 ontology-core/build.py
+  쓰기: py -3.12 -X utf8 ontology-core/build.py            → data/core-seocho.json(서초)
+        py -3.12 -X utf8 ontology-core/build.py --area six → data/core-six.json(서초·강남·송파·동작·관악·용산 — 네비 가르고 길 묶음 범위 · 작업지시서 Phase 4)
+        여섯 구의 사고 칸 = 서초 data/taas10-seocho.json + 나머지 data/r/<구>/taas10.json(권역 저장소 datamap-data-seoul 에 올린 것과 같은 로컬 빌드 출력 · 같은 꼴 tg-taas10/1)
+        여섯 구에서도 인접(sig-net)·조치(교통과 출력물)는 서초에만 있다
 """
-import json, os, re, math, hashlib, datetime, collections
+import json, os, re, math, hashlib, datetime, collections, sys
 CORE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(CORE); D = os.path.join(ROOT, 'data')
 def J(p): return json.load(open(p, encoding='utf-8'))
 def m(la1, lo1, la2, lo2): return math.hypot((lo1 - lo2) * 88400.0, (la1 - la2) * 111000.0)
 GU = '11650'
+AREAS = {'seocho': (['11650'], '서울특별시 서초구(11650)', 'core-seocho.json'),
+         'six': (['11650', '11680', '11710', '11590', '11620', '11170'], '서울특별시 서초·강남·송파·동작·관악·용산구(11650·11680·11710·11590·11620·11170)', 'core-six.json')}
+AREA = sys.argv[sys.argv.index('--area') + 1] if '--area' in sys.argv else 'seocho'
+GUS, AREA_NM, OUTF = AREAS[AREA]
 # 위반유형 → T-Book 범칙금 DB 항목(제목 그대로) — 이름 맞대기(등급 C). 「06 안전운전불이행」·「기타」는 DB 에 같은 항목이 없어 잇지 않는다
 VIO_LAW = {'02': ['① 신호위반·안전표지 위반'], '01': ['② 중앙선 침범'], '05': ['③ 제한속도 20km/h 초과', '과속 (일반도로)', '스쿨존 과속'],
            '03': ['안전거리 미확보'], '07': ['교차로 통행방법 위반 (꼬리물기)'], '08': ['⑥ 횡단보도 보행자보호의무 위반']}
@@ -45,7 +52,7 @@ def main():
     O = {}; E = []
     def obj(i, t, **p): O[i] = dict(id=i, t=t, **{k: v for k, v in p.items() if v is not None}); return i
     def edge(a, rel, b, grade, src, **p): E.append([a, rel, b, dict(g=grade, src=src, **p)])
-    oi = J(os.path.join(D, 'onto-int.json')); rows = [r for r in oi['items'] if r[6] == GU]
+    oi = J(os.path.join(D, 'onto-int.json')); rows = [r for r in oi['items'] if r[6] in GUS]
     by_cits = {}
     for r in rows:
         i = obj('INT-%s' % r[0], 'INT', nm=r[1], lat=r[2], lon=r[3], cits=r[4] or 0, st=r[5], dong=(r[7] or '')[:8], dongnm=r[8], has=r[11])
@@ -56,17 +63,27 @@ def main():
         a, b = by_cits.get(str(l[0])), by_cits.get(str(l[1]))
         if a and b and a != b: edge(a, '인접', b, 'B', 'sig-net-seocho.json', m=l[2], s=l[3])
     ta = J(os.path.join(D, 'taas10-seocho.json')); dv = ta['dic']['v']; R = 70
+    taf = ['taas10-seocho.json'] + ['r/%s/taas10.json' % g for g in GUS if g != '11650']
+    for f in taf[1:]:
+        tb = J(os.path.join(D, f))
+        if tb.get('schema') != ta.get('schema') or tb['dic']['v'] != dv: raise SystemExit('사고 칸 꼴·위반 사전이 서초와 다르다: ' + f)
+        ta = dict(ta, cells=ta['cells'] + tb['cells'])
+    CG = collections.defaultdict(list)
+    for k, c in enumerate(ta['cells']): CG[(int(c[0] * 1000), int(c[1] * 1000))].append((k, c))   # 위도·경도 0.001° 칸(약 111×88m) — 70m 안 칸만 빨리 찾기
+    def near_cells(la, lo):
+        a, b = int(la * 1000), int(lo * 1000)
+        return [kc[1] for kc in sorted(kc for i in (-1, 0, 1) for j in (-1, 0, 1) for kc in CG.get((a + i, b + j), ()))]   # 원래 칸 차례 그대로(동점 주 위반이 바뀌지 않게)
     for code, nm in dv.items(): obj('VIO-%s' % code, 'VIO', nm=nm)
     INTs = [O[k] for k in O if O[k]['t'] == 'INT']
     for it in INTs:
-        cs = [c for c in ta['cells'] if m(c[0], c[1], it['lat'], it['lon']) <= R]
+        cs = [c for c in near_cells(it['lat'], it['lon']) if m(c[0], c[1], it['lat'], it['lon']) <= R]
         if not cs: continue
         yrs = [sum(c[2 + k] for c in cs) for k in range(10)]
         a = obj('ACC-%s' % it['id'], 'ACC', y0=2016, years=yrs, dead=sum(c[12] for c in cs), serious=sum(c[13] for c in cs), ped=sum(c[14] for c in cs), night=sum(c[18] for c in cs), tod=[sum(c[19 + k] for c in cs) for k in range(4)], cells=len(cs), r=R)
-        edge(it['id'], '발생', a, 'C', 'taas10-seocho.json(70m 안 100m 칸)')
+        edge(it['id'], '발생', a, 'C', ('taas10-seocho.json' if AREA == 'seocho' else 'taas10(여섯 구)') + '(70m 안 100m 칸)')
         vc = collections.Counter()
         for c in cs: vc[c[23]] += c[24]
-        for code, n in vc.items(): edge(a, '주요원인', 'VIO-%s' % code, 'C', 'taas10-seocho.json(칸마다 주 위반 하나)', n=n)
+        for code, n in vc.items(): edge(a, '주요원인', 'VIO-%s' % code, 'C', ('taas10-seocho.json' if AREA == 'seocho' else 'taas10(여섯 구)') + '(칸마다 주 위반 하나)', n=n)
     al = J(os.path.join(D, 'gargo-alerts-seoul.json'))
     for it in INTs:
         for c in al['cam']:
@@ -112,13 +129,13 @@ def main():
             if verified(tl['precdoc'].get(no)) and not any(e[0] == lid and e[2] == 'PREC-' + no for e in E): edge(lid, '해석', 'PREC-' + no, 'A', 'T-Book 범칙금 DB handle 글에 적힌 사건번호 · 원문 대조(PRECDOC)')
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
-    srcs = ['onto-int.json', 'sig-net-seocho.json', 'taas10-seocho.json', 'gargo-alerts-seoul.json', 'sig-ksc-seocho.json']
-    doc = {'schema': 'onto-core/1', 'area': '서울특별시 서초구(11650)', 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
+    srcs = ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json']
+    doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',
            'count': dict(collections.Counter(v['t'] for v in O.values())), 'edges_count': dict(collections.Counter(e[1] for e in E)),
            'objects': sorted(O.values(), key=lambda v: v['id']), 'edges': E}
-    os.makedirs(os.path.join(CORE, 'data'), exist_ok=True); p = os.path.join(CORE, 'data', 'core-seocho.json')
+    os.makedirs(os.path.join(CORE, 'data'), exist_ok=True); p = os.path.join(CORE, 'data', OUTF)
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print(doc['count'], doc['edges_count'], os.path.getsize(p), 'B')
 if __name__ == '__main__': main()

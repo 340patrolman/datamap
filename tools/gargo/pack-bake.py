@@ -10,8 +10,9 @@
 """
 import json, os, sys, datetime, collections
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = os.path.join(os.path.dirname(ROOT), 'gargo', 'data', 'graph-seocho.json')
-OUT = os.path.join(ROOT, 'gargo', 'pack-seocho.json')
+AREA = sys.argv[sys.argv.index('--area') + 1] if '--area' in sys.argv else 'seocho'   # --area six = 서초·강남·송파·동작·관악·용산(2026-10-14)
+SRC = os.path.join(os.path.dirname(ROOT), 'gargo', 'data', 'graph-%s.json' % AREA)
+OUT = os.path.join(ROOT, 'gargo', 'pack-%s.json' % AREA)
 
 
 def main():

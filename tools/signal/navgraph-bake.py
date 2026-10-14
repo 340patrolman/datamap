@@ -5,11 +5,16 @@
 #     data/sigdir-seoul.json(서울 T-Data 방향별 초 · 닻) · data/signal-tod-seoul.json(경찰청 요일·시각별 계획) · data/sig-ksc-seocho.json(교통과 출력물 5곳) · data/sig-phmv-seoul.json(현시 → 이동류)
 #   범위 = 서초구 경계에서 2km 바깥까지(구 밖으로 나갔다 들어오는 길이 더 빠를 수 있다)
 #   이 파일은 **준비물**이다 — 길을 찾아 주는 기능은 아직 없다. 신호 자료가 붙은 교차로가 얼마나 되는지(coverage)가 「언제 만들 수 있나」의 잣대
-#   py -3.12 -X utf8 tools/signal/navgraph-bake.py
+#   py -3.12 -X utf8 tools/signal/navgraph-bake.py [원자료 폴더] [--area six]
+#   --area six = 서초·강남·송파·동작·관악·용산(소유자 2026-10-14 「여섯 구 신호값을 빠짐없이 · 송파는 거기 사는 직원도 있으니」 — 네비 가르고를 넓히는 바탕) → data/nav-six.json · 없으면 종전 서초 한 장
 import json, os, sys, math, datetime, collections, warnings
 warnings.filterwarnings('ignore')
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = sys.argv[1] if len(sys.argv) > 1 else 'C:/Users/knpth/regionwork/nl'
+ARGS = [a for i, a in enumerate(sys.argv[1:]) if not a.startswith('--') and not (i and sys.argv[i] == '--area')]
+SRC = ARGS[0] if ARGS else 'C:/Users/knpth/regionwork/nl'
+AREA = sys.argv[sys.argv.index('--area') + 1] if '--area' in sys.argv else 'seocho'
+AREAS = {'seocho': (['서초구'], 'nav-seocho.json', '서울특별시 서초구 + 경계 밖 2km'),
+         'six': (['서초구', '강남구', '송파구', '동작구', '관악구', '용산구'], 'nav-six.json', '서울특별시 서초·강남·송파·동작·관악·용산구 + 경계 밖 2km')}
 RANK = {'101': 1, '102': 2, '103': 3, '104': 4, '105': 5, '106': 6, '107': 7}
 TURN = {'001': '비보호회전', '002': '버스만 회전', '003': '회전금지', '011': '유턴', '012': '피턴', '101': '좌회전금지', '102': '직진금지', '103': '우회전금지'}   # 표준노드링크 구축·운영 지침의 회전 유형 코드
 DEMD = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'dem'); DEMT = {}
@@ -32,8 +37,12 @@ def main():
     from shapely.geometry import Polygon, Point, LineString
     from shapely.ops import unary_union
     tr = Transformer.from_crs('+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +units=m', 'EPSG:4326', always_xy=True); inv = Transformer.from_crs('EPSG:4326', '+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +units=m', always_xy=True)
-    sg = [x for x in json.load(open(os.path.join(ROOT, 'data', 'base', 'sgg.json'), encoding='utf-8'))['sgg'] if x['sido'] == '서울특별시' and x['name'] == '서초구'][0]
-    gu = unary_union([Polygon([inv.transform(*p) for p in r]).buffer(0) for r in sg['rings'] if len(r) >= 4]); area = gu.buffer(2000); bx = area.bounds
+    GUS, OUTF, ALABEL = AREAS[AREA]
+    SGS = [x for x in json.load(open(os.path.join(ROOT, 'data', 'base', 'sgg.json'), encoding='utf-8'))['sgg'] if x['sido'] == '서울특별시' and x['name'] in GUS]
+    if len(SGS) != len(GUS): raise SystemExit('구 경계를 다 못 찾았다: %s' % [x['name'] for x in SGS])
+    gu = unary_union([Polygon([inv.transform(*p) for p in r]).buffer(0) for sg in SGS for r in sg['rings'] if len(r) >= 4]); area = gu.buffer(2000); bx = area.bounds
+    if AREA == 'seocho': LB = (37.40, 37.56, 126.94, 127.13)   # 종전 상자 그대로(서초 한 장이 바이트까지 같게)
+    else: w0, s0 = tr.transform(bx[0], bx[1]); e0, n0 = tr.transform(bx[2], bx[3]); LB = (s0 - 0.005, n0 + 0.005, w0 - 0.005, e0 + 0.005)
     n = shapefile.Reader(os.path.join(SRC, 'MOCT_NODE.shp'), encoding='cp949'); fi = {f[0]: k for k, f in enumerate(n.fields[1:])}; NODE = {}
     for sr in n.iterShapeRecords():
         x, y = sr.shape.points[0]
@@ -77,13 +86,13 @@ def main():
         except Exception as e: print(fn, '못 읽음', e); return {}
     sd = load('sigdir-seoul.json'); its = sd.get('its', {})
     for no, p in (sd.get('pts') or {}).items():
-        if not (37.40 < p[0] < 37.56 and 126.94 < p[1] < 127.13): continue
+        if not (LB[0] < p[0] < LB[1] and LB[2] < p[1] < LB[3]): continue
         hit = snap(p[1], p[0])
         if not hit: lost['sigdir'] += 1; continue
         recs = its.get(no) or []
         for d, k in hit: put(k, 'sd', [no, p[2], len(recs), 1 if any('a' in x for x in recs) else 0, d], d, 4)   # 서울 T-Data: [번호, 이름, 기록 수, 닻(이어 세기) 있음, 붙인 거리 m]
     for s in load('signal-tod-seoul.json').get('spots', []):
-        if not (37.40 < s['lat'] < 37.56 and 126.94 < s['lon'] < 127.13): continue
+        if not (LB[0] < s['lat'] < LB[1] and LB[2] < s['lon'] < LB[3]): continue
         hit = snap(s['lon'], s['lat'])
         if not hit: lost['tod'] += 1; continue
         for d, k in hit: put(k, 'tod', [s['no'], s['name'], len(s['plans']), d], d, 3)   # 경찰청 계획: [번호, 이름, 계획 수, 거리]
@@ -110,7 +119,7 @@ def main():
     def cov(ids):
         def nn(f): return len(set(SIG[k]['no'] for k in ids if k in SIG and f(SIG[k])))
         return {'교차로 노드': len(ids), '신호 교차로(번호로 묶어)': nn(lambda v: True), '방향별 초(T-Data)': nn(lambda v: 'sd' in v), '지금 이어 셀 수 있음(닻)': nn(lambda v: v.get('sd', [0, 0, 0, 0])[3]), '요일·시각 계획(경찰청)': nn(lambda v: 'tod' in v), '교통과 출력물': nn(lambda v: 'ksc' in v), '현시 → 방향 읽음': nn(lambda v: 'phmv' in v)}
-    doc = {'schema': 'tg-nav-graph/1', 'made': datetime.date.today().isoformat(), 'area': '서울특별시 서초구 + 경계 밖 2km',
+    doc = {'schema': 'tg-nav-graph/1', 'made': datetime.date.today().isoformat(), 'area': ALABEL,
            'dem': 'produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.',
            'source': '국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판(MOCT_NODE·MOCT_LINK·TURNINFO) · 신호 = data/sigdir-seoul.json · signal-tod-seoul.json · sig-ksc-seocho.json · sig-phmv-seoul.json',
            'note': ['**준비물이다 — 길을 찾아 주는 기능은 아직 없다.** 길찾기를 만들 때 이 한 파일을 읽으면 되도록 뼈대와 신호 자료의 붙음을 모아 둔 것',
@@ -122,9 +131,9 @@ def main():
                     '길찾기에 쓸 때의 규칙(T-Book 신호 앱과 같다): 제한속도를 넘는 값은 안 낸다 · 밤(22시~)에는 연동속도를 안 보인다 · 계획값과 실제가 다를 수 있다고 밝힌다 · 「몇 초 뒤 바뀜」은 닻이 맞는 교차로에서만'],
            'turn_types': TURN,
            'fields': 'nodes{노드 ID: [경도, 위도, 유형(101 교차로·102 도로 시작/끝·103 속성변화점·104 도로시설·106 IC/JC 등 — 원자료 코드), 이름, 서초구 안 1/밖 0, 닿는 링크 수, 높이 m, 신호{no 신호 교차로 번호(같은 번호의 노드들이 한 교차로) · sd[T-Data 번호, 이름, 기록 수, 닻 있음, 거리 m], tod[경찰청 번호, 이름, 계획 수, 거리], ksc[번호, 이름, 거리], phmv 방향 읽은 현시 수}(있을 때만)]} · links[[링크 ID, 시작 노드, 끝 노드, 길이 m, 제한속도, 등급 1~7, 차로, 길 이름, 연결로 1, 선 = 경도·위도×1e5 첫 점 + 차이, 오르막 합 m, 내리막 합 m(F → T 방향 · 40m 마다 읽음), 도로 유형(000 일반 · 001 고가 · 002 지하차도 · 003 교량 · 004 터널 — 원자료 코드)]] · turns[[노드, 들어오는 링크, 나가는 링크, 회전 유형 코드]]',
-           'coverage': {'서초구 안 교차로(링크 셋 이상이 만나는 노드)': cov(inx), '참고': '서초경찰서 관내 신호제어기는 교통과 대장으로 178대(2026-09 · 방배서 관내 제외) — 위 분모는 신호 없는 교차로까지 든 수라 비율로 읽지 않는다', '서초 밖이라 안 붙인 신호 자료(범위 상자 안)': dict(lost)},
+           'coverage': ({'서초구 안 교차로(링크 셋 이상이 만나는 노드)': cov(inx), '참고': '서초경찰서 관내 신호제어기는 교통과 대장으로 178대(2026-09 · 방배서 관내 제외) — 위 분모는 신호 없는 교차로까지 든 수라 비율로 읽지 않는다', '서초 밖이라 안 붙인 신호 자료(범위 상자 안)': dict(lost)} if AREA == 'seocho' else {'여섯 구 안 교차로(링크 셋 이상이 만나는 노드)': cov(inx), '참고': '분모는 신호 없는 교차로까지 든 수라 비율로 읽지 않는다', '범위 밖이라 안 붙인 신호 자료(상자 안)': dict(lost)}),
            'nodes': nodes, 'links': LINK, 'turns': TURNS}
-    p = os.path.join(ROOT, 'data', 'nav-seocho.json')
+    p = os.path.join(ROOT, 'data', OUTF)
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('노드', len(nodes), '· 링크', len(LINK), '· 회전 제한', len(TURNS), collections.Counter(TURN.get(t[3], t[3]) for t in TURNS), '· 바이트', os.path.getsize(p))
     for k, v in doc['coverage'].items(): print(' ', k, v)

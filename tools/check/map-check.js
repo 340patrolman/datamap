@@ -38,8 +38,13 @@
     function fin() {
     /* 레이어 판 — 새 기기에서는 켜진 것이 없는 묶음이 접혀 있다 */
     try { document.getElementById('m2dFold').click(); var gs = [].map.call(document.querySelectorAll('#m2dPanel .gc'), function (b) { return b.getAttribute('aria-expanded'); }), nOpen = gs.filter(function (x) { return x === 'true'; }).length; ck('레이어 판 묶음이 접힌 채로 열린다(켜진 것이 든 묶음만 펼침)', gs.length > 8 && nOpen < gs.length, '묶음 ' + gs.length + ' · 펼침 ' + nOpen + ' · 판 높이 ' + document.getElementById('m2dPanel').scrollHeight + 'px'); } catch (e) { ck('레이어 판이 열린다', false, e.message); }
-    var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
-    send();
+    /* v2.222.0 🧩 교차로 관계(온톨로지 코어 v1 · Phase 2) — 서초역 카드의 「이 자리의 관계」 안 단추를 누르면 서초역사거리의 사고·주 위반·과거 조치가 펼쳐진다 · 누르기 전에는 코어를 받지 않는다 */
+    var ob = document.querySelector('#m2dCard [data-onto]'); ck('카드에 「🧩 교차로 관계 보기」 단추(서초)', !!ob, ob ? '' : '없음'); ck('누르기 전에는 온톨로지 코어를 받지 않는다', !m.onto());
+    if (ob) { var det = ob.closest('details'); if (det) det.open = true; ob.click(); }
+    setTimeout(function () { var bx = document.getElementById('m2dOnto'), tx = bx ? String(bx.innerText || '') : '';
+      ck('관계 패널이 펼쳐진다 — 교차로 · 사고 해마다 · 주 위반 근거 · 과거 조치 · 비슷한 교차로', /서초역사거리/.test(tx) && /① 사고/.test(tx) && /② 주 위반/.test(tx) && /④ 과거 조치/.test(tx) && /⑤ 비슷한/.test(tx) && /반포대로 축개선/.test(tx), tx.replace(/\s+/g, ' ').slice(0, 120));
+      var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
+      send(); }, 3500);
     }
   }
 })();

@@ -790,6 +790,12 @@
   #m2dCard details.rel > summary { cursor: pointer; font-weight: 800; font-size: 14px; }
   #m2dCard details.rel > summary small { font-weight: 600; color: var(--ink2); font-size: 11.5px; }
   #m2dCard .relx { font-size: 12.5px; color: var(--ink2); margin: 6px 0 4px; }
+  /* v2.222.0 🧩 교차로 관계(온톨로지 코어) */
+  #m2dCard .onto { margin: 8px 0 4px; } #m2dCard .onto > button { width: 100%; text-align: left; font-size: 13.5px; font-weight: 800; padding: 9px 11px; border-radius: 12px; border: 1px solid var(--acc); background: var(--panel); color: var(--acc); cursor: pointer; font-family: inherit; } #m2dCard .onto > button small { font-weight: 600; color: var(--ink2); }
+  #m2dCard .ontb { border: 1px solid var(--line); border-radius: 12px; padding: 9px 10px; background: var(--panel); } #m2dCard .ontb small { color: var(--ink2); }
+  #m2dCard .onh { margin: 10px 0 4px; font-size: 12.5px; font-weight: 900; color: var(--ink); } #m2dCard .onk { font-size: 13px; line-height: 1.55; } #m2dCard .onl { font-size: 13px; line-height: 1.5; padding: 5px 0; border-top: 1px dashed var(--line); } #m2dCard .onl span { display: block; color: var(--ink2); font-size: 12.5px; }
+  #m2dCard .onbar { display: flex; align-items: flex-end; gap: 3px; height: 40px; } #m2dCard .onbar i { flex: 1; background: #ef4444; border-radius: 3px 3px 0 0; position: relative; min-width: 8px; } #m2dCard .onbar i em { position: absolute; top: -14px; left: 0; right: 0; text-align: center; font-size: 10px; font-style: normal; color: var(--ink2); }
+  #m2dCard .onyr { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink2); margin-bottom: 4px; }
   #m2dCard .rell > div { padding: 4px 0; border-top: 1px dashed var(--line); font-size: 13px; line-height: 1.5; }
   #m2dCard .rell button { font-size: 12.5px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--acc); background: var(--panel); color: var(--acc); font-weight: 700; cursor: pointer; min-height: 28px; }
   #m2dCard .rell .s { color: var(--ink2); } #m2dCard .rell .p { font-weight: 800; }
@@ -997,7 +1003,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.221.0"></script>
+<script src="js/map2d.js?v=2.222.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

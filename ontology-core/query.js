@@ -41,7 +41,7 @@
         else cmp = { before: [y - 2, y - 1], beforeN: b[0] + b[1], after: [y + 1, y + 2], afterN: f[0] + f[1] }; }
       else if (!y) why = '이력 글에 연·월이 없다'; else why = '둘레 사고 칸이 없다';
       return { id: a.id, what: a.what, ym: a.ym || null, reason: rec ? rec.o.text : null, reasonGrade: rec ? rec.p.g : null, internalDoc: !!(rec && rec.o.internal), compare: cmp, noCompare: why };
-    }).sort(function (a, b) { return String(a.ym || '').localeCompare(String(b.ym || '')); });
+    }).sort(function (a, b) { return String(a.ym || '9999').localeCompare(String(b.ym || '9999')); });   /* 연·월이 있는 것부터 · 없는 것은 끝에 */
     return { id: intId, nm: it.nm, actions: list, notes: list.length ? ['사고는 해 단위라 같은 해·이웃 해에 조치가 여럿이면 어느 조치 덕인지 가르지 못한다', '사유는 이력 글에 적힌 것만 — 자세한 사유는 교통과 내부 문서'] : ['이 교차로의 조치 이력 자료가 없다(교통과 출력물 5곳만 있다)'] };
   };
   /* 질문 3 — 이 위반유형의 근거 조문·판례·범칙금·벌점 */

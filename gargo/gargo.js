@@ -193,7 +193,7 @@
       function (e) { note(e && e.code === 1 ? '위치 권한이 꺼져 있다 — 아이폰: 설정 › 개인정보 보호 및 보안 › 위치 서비스 › Safari 웹사이트 › 「앱을 사용하는 동안」 · 지도를 길게 눌러 떠나는 곳을 정할 수도 있다' : '위치를 잡지 못했다 — 하늘이 보이는 곳에서 잠시 기다린다'); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 }); }
   function setMe(x, y, acc, hd, spd) { var prev = me, h = hd != null && !isNaN(hd) && (spd == null || spd > 1) ? hd : null; if (h == null && prev) { var mv = Math.hypot(x - prev.x, y - prev.y); h = mv > 4 ? brg(prev.x, prev.y, x, y) : prev.hd; }
     me = { x: x, y: y, acc: acc, hd: h == null ? 0 : h, spd: spd == null || isNaN(spd) ? (prev && prev.t ? Math.hypot(x - prev.x, y - prev.y) / Math.max(0.5, (Date.now() - prev.t) / 1000) : 0) : spd, t: Date.now(), out: !G || x < G.box[0] - 300 || x > G.box[1] + 300 || y < G.box[2] - 300 || y > G.box[3] + 300 };
-    if (dest && !route && G) plan(); if (route) track(); if (follow) { view.cx = me.x; view.cy = me.y; if (guide) view.rot = me.hd; } paint(); draw(); }
+    if (dest && !route && G) plan(); if (route) track(); if (follow) { view.cx = me.x; view.cy = me.y; if (guide || cruise) view.rot = me.hd; } paint(); draw(); }
   /* 길 위의 내 자리(진행 거리) · 벗어나면 다시 계산 */
   function track() { var r = route, best = 1e9, bd = r.pos || 0, lo = 0, i; for (i = 0; i + 3 < r.pts.length; i += 2) { var k = i / 2; if (r.cum[k + 1] < (r.pos || 0) - 60) continue; if (r.cum[k] > (r.pos || 0) + 400) break; var ax = r.pts[i], ay = r.pts[i + 1], bx = r.pts[i + 2], by = r.pts[i + 3], vx = bx - ax, vy = by - ay, l2 = vx * vx + vy * vy, t = l2 ? Math.max(0, Math.min(1, ((me.x - ax) * vx + (me.y - ay) * vy) / l2)) : 0, d = Math.hypot(ax + vx * t - me.x, ay + vy * t - me.y); if (d < best) { best = d; bd = r.cum[k] + Math.sqrt(l2) * t; lo = i; } }
     r.off = best; if (best < 45) { r.pos = bd; r.offN = 0; r.sx = null; var ax2 = r.pts[lo], ay2 = r.pts[lo + 1], bx2 = r.pts[lo + 2], by2 = r.pts[lo + 3], l = Math.hypot(bx2 - ax2, by2 - ay2) || 1, tt = (bd - r.cum[lo / 2]) / l; r.sx = [ax2 + (bx2 - ax2) * tt, ay2 + (by2 - ay2) * tt, brg(ax2, ay2, bx2, by2)]; }
@@ -252,11 +252,12 @@
   /* 평상시 신호 — 방위마다 직진 신호의 지금 색(아는 곳만). 가운데 점에서 그 차가 들어오는 쪽으로 짧은 막대 · 가까이 보면 남은 초 */
   var SIDEV = { nt: [0, -1], ne: [0.7, -0.7], et: [1, 0], se: [0.7, 0.7], st: [0, 1], sw: [-0.7, 0.7], wt: [-1, 0], nw: [-0.7, -0.7] };
   function sigSides(no) { var out = {}, recs = (SIG.its[no] || []).filter(recOk); recs.forEach(function (r) { r.mv.forEach(function (m) { if ((m[1] === 'St' || m[1] === 'Lt') && m[2] != null && DIRS.indexOf(m[0]) >= 0) (out[m[0]] = out[m[0]] || {})[m[1]] = 1; }); }); return out; }
+  function inZone(x, y) { if (!me) return false; var dx = x - me.x, dy = y - me.y, hr = me.hd * Math.PI / 180, f = dx * Math.sin(hr) - dy * Math.cos(hr), d = Math.hypot(dx, dy); return f >= 0 ? d <= 1000 : d <= 500; }
   function drawSigs(dark, s, W, H, onR, now) { if (s <= 0.1) return; var live = OV.s && !guide && SIG.ready && s > 0.28, cr = Math.cos(-view.rot * Math.PI / 180), sr = Math.sin(-view.rot * Math.PI / 180), nd = 0;
     G.sig.forEach(function (sg, si) { if (onR[si]) return; var q = W2S(sg.x, sg.y); if (q[0] < -20 || q[0] > W + 20 || q[1] < -20 || q[1] > H + 20) return;
-      if (live && nd < 70) { var sd = sg._sd || (sg._sd = sigSides(sg.no)), ks = Object.keys(sd), any = false; ks.forEach(function (k) { if (!sd[k].St) return; var st = sigAt(sg.no, now, k, 'St'); if (!st || st.kind === 'avg') return; any = true; var v = SIDEV[k], vx = v[0] * cr - v[1] * sr, vy = v[0] * sr + v[1] * cr, L = s > 0.6 ? 17 : 12;
+      if (live && nd < 70 && (!cruise || inZone(sg.x, sg.y))) { var sd = sg._sd || (sg._sd = sigSides(sg.no)), ks = Object.keys(sd), any = false; ks.forEach(function (k) { if (!sd[k].St) return; var st = sigAt(sg.no, now, k, 'St'); if (!st || st.kind === 'avg') return; any = true; var v = SIDEV[k], vx = v[0] * cr - v[1] * sr, vy = v[0] * sr + v[1] * cr, L = s > 0.6 ? 17 : 12;
           ctx.beginPath(); ctx.moveTo(q[0] + vx * 5, q[1] + vy * 5); ctx.lineTo(q[0] + vx * L, q[1] + vy * L); ctx.lineCap = 'round'; ctx.lineWidth = 6.5; ctx.strokeStyle = '#111827'; ctx.stroke(); ctx.lineWidth = 4; ctx.strokeStyle = st.green ? '#22c55e' : '#ef4444'; ctx.stroke();
-          if (s > 0.75) { ctx.font = '800 10.5px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; var tx = Math.ceil(st.remain) + ''; ctx.lineWidth = 3; ctx.strokeStyle = dark ? '#111827' : '#fff'; ctx.strokeText(tx, q[0] + vx * (L + 10), q[1] + vy * (L + 10)); ctx.fillStyle = st.green ? '#15803d' : '#b91c1c'; ctx.fillText(tx, q[0] + vx * (L + 10), q[1] + vy * (L + 10)); } });
+          if (s > 0.75 || cruise) { ctx.font = '800 10.5px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; var tx = Math.ceil(st.remain) + ''; ctx.lineWidth = 3; ctx.strokeStyle = dark ? '#111827' : '#fff'; ctx.strokeText(tx, q[0] + vx * (L + 10), q[1] + vy * (L + 10)); ctx.fillStyle = st.green ? '#15803d' : '#b91c1c'; ctx.fillText(tx, q[0] + vx * (L + 10), q[1] + vy * (L + 10)); } });
         if (any) nd++; ctx.beginPath(); ctx.arc(q[0], q[1], 4.2, 0, Math.PI * 2); ctx.fillStyle = any ? '#111827' : (dark ? '#64748b' : '#94a3b8'); ctx.fill(); return; }
       ctx.beginPath(); ctx.arc(q[0], q[1], 3.2, 0, Math.PI * 2); ctx.fillStyle = dark ? '#64748b' : '#94a3b8'; ctx.fill(); }); }
   /* 짧게 누름 — 신호 교차로면 방향마다 지금 색을 글로 */
@@ -322,7 +323,7 @@
   /* 등급: [폭 m, 낮 채움, 낮 테, 밤 채움] — 큰길은 따뜻한 노랑 · 그 밖은 흰 길에 옅은 테(땅 색과 건물 색을 가라앉혀 길과 안내선이 먼저 보이게) */
   var RS = { 1: [16, '#f7c16a', '#dc9a36', '#8a6420'], 2: [14, '#fbd583', '#e2b452', '#7c6126'], 3: [12, '#fde8ad', '#e4cc8a', '#6b5a30'], 4: [9.5, '#ffffff', '#d3d8df', '#3b4658'], 5: [8, '#ffffff', '#dbe0e6', '#364154'], 6: [6, '#ffffff', '#e1e5ea', '#323c4e'], 7: [4.2, '#fbfcfd', '#e5e8ec', '#2e3748'], 8: [3, '#f6f7f9', '#e8ebee', '#2b3444'] };
   function resize() { var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return; if (cv.width !== Math.round(w * DPR) || cv.height !== Math.round(h * DPR)) { cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR); } }
-  function anchorY() { return guide ? cv.clientHeight * 0.68 : cv.clientHeight * 0.5; }
+  function anchorY() { return guide || cruise ? cv.clientHeight * 0.68 : cv.clientHeight * 0.5; }
   function W2S(x, y) { var c = Math.cos(-view.rot * Math.PI / 180), s = Math.sin(-view.rot * Math.PI / 180), dx = (x - view.cx) * view.s, dy = (y - view.cy) * view.s; return [cv.clientWidth / 2 + dx * c - dy * s, anchorY() + dx * s + dy * c]; }
   function S2W(px, py) { var c = Math.cos(view.rot * Math.PI / 180), s = Math.sin(view.rot * Math.PI / 180), dx = (px - cv.clientWidth / 2) / view.s, dy = (py - anchorY()) / view.s; return [view.cx + dx * c - dy * s, view.cy + dx * s + dy * c]; }
   var DQ = 0; function drawSoon() { if (DQ) return; DQ = 1; var f = function () { if (!DQ) return; DQ = 0; draw(); }; requestAnimationFrame(f); setTimeout(f, 150); }
@@ -345,7 +346,7 @@
     drawPlaces(dark, s, W, H);
     /* 신호 — 길 위의 신호는 지금 색(아는 곳만) · 그 밖은 평상시 화면에서 방위마다 색(drawSigs) */
     var now = Date.now() / 1000, onR = {}; if (route) route.sigs.forEach(function (g) { if (g.si >= 0) onR[g.si] = g; });
-    drawSigs(dark, s, W, H, onR, now);
+    drawSigs(dark, s, W, H, onR, now); if (cruise && !route) drawAhead(dark, now);
     if (route) route.sigs.forEach(function (g) { var sg = g.si >= 0 ? G.sig[g.si] : g, q = W2S(sg.x, sg.y); if (q[0] < -20 || q[0] > W + 20 || q[1] < -20 || q[1] > H + 20) return; var st = g.mv === 'St' || g.mv === 'Lt' ? sigAt(g.no, now, g.side, g.mv) : null, col = !st || st.kind === 'avg' ? '#94a3b8' : st.green ? '#16a34a' : '#dc2626';
       ctx.beginPath(); ctx.arc(q[0], q[1], 9, 0, Math.PI * 2); ctx.fillStyle = '#111827'; ctx.fill(); ctx.beginPath(); ctx.arc(q[0], q[1], 6.5, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
       if (st && st.kind !== 'avg' && s > 0.25) { var tx = Math.ceil(st.remain) + ''; ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.strokeText(tx, q[0], q[1] - 17); ctx.fillStyle = col; ctx.fillText(tx, q[0], q[1] - 17); } });
@@ -375,8 +376,9 @@
   function night() { var h = new Date().getHours(); return h >= 22 || h < 6; }
   function paint() {
     var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd');
+    if (!route && cruise) { paintCruise(); return; }
     if (!route) { top.style.display = 'none'; sg.style.display = 'none'; spd.style.display = 'none'; $('gFind').style.display = guide ? 'none' : 'flex';
-      bot.innerHTML = '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (me && me.out ? '<div class="hint warn">지금 자리가 서초구 둘레 밖이다 — 시험판은 서초구와 둘레 2km 안에서만 길을 찾는다.</div>' : ''); return; }
+      bot.innerHTML = '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest ? '' : '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기 — 앞 신호·소통</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 서초구 둘레 밖이다 — 시험판은 서초구와 둘레 2km 안에서만 길을 찾는다.</div>' : ''); return; }
     var r = route, now = Date.now() / 1000, pos = r.pos || 0, left = Math.max(0, r.dist - pos), frac = r.dist ? left / r.dist : 0, tLeft = r.time * frac;
     var nx = null, n2 = null; for (var i = 0; i < r.mans.length; i++) if (r.mans[i].d > pos + 5) { nx = r.mans[i]; n2 = r.mans[i + 1] || null; break; }
     var known = r.sigs.filter(function (g) { return g.s && g.s.kind !== 'avg'; }).length, wsum = 0; r.sigs.forEach(function (g) { wsum += g.tw || 0; });
@@ -420,6 +422,40 @@
 
   /* ---------- 안내 ---------- */
   var wake = null;
+  /* ---------- v0.6.0 켜놓고 다니기(목적지 없이) — 소유자 「평소에 교통상황·교차로 신호값을 기본으로 · 그냥 켜놓고 다니는 모드」 ----------
+     내 자리를 따라가며(진행 방향이 위) 소통 색과 둘레 신호를 보이고, **내가 가는 길을 곧장 따라가면 처음 만나는 신호**를 내 진행 방향의 값으로 보인다.
+     길을 따라가는 법: 지금 선 줄에서 진행 방향 쪽 줄을 잡고, 갈림길마다 가장 덜 꺾이는(40° 안) 줄로 900m 까지. 곧장 갈 줄이 없으면(막다른 길·꺾어야 하는 삼거리) 거기서 멈춘다 */
+  var cruise = false;
+  function segEdges(seg) { var out = [], k; for (k = G.oHead[G.S[seg][0]]; k < G.oHead[G.S[seg][0] + 1]; k++) if (G.eS[G.oList[k]] === seg) out.push(G.oList[k]); for (k = G.oHead[G.S[seg][1]]; k < G.oHead[G.S[seg][1] + 1]; k++) if (G.eS[G.oList[k]] === seg && out.indexOf(G.oList[k]) < 0) out.push(G.oList[k]); return out; }
+  function ahead() { if (!me || !G || me.out) return null; var a = nearSeg(me.x, me.y, 45); if (!a) return null; var best = -1, bdif = 61; segEdges(a.seg).forEach(function (e) { var eb = G.eR[e] ? (a.brg + 180) % 360 : a.brg, df = Math.abs(angDiff(me.hd, eb)); if (df < bdif) { bdif = df; best = e; } });
+    var q = G.S[a.seg], out = { seg: a.seg, e: best, nm: q[5] >= 0 ? G.j.names[q[5]] : '', lim: q[3] || 30, cls: q[4], live: best >= 0 ? eLive(best) : null, sig: null, sigs: [] }; if (best < 0) return out;
+    var p = G.SP[a.seg], al = 0, tot = 0, u; for (u = 0; u + 3 < p.length; u += 2) { var l = Math.hypot(p[u + 2] - p[u], p[u + 3] - p[u + 1]); if (u < a.u) al += l; else if (u === a.u) al += l * a.t; tot += l; }
+    var fr = tot ? al / tot : 0, e = best, dist = eLen(e) * (G.eR[e] ? fr : 1 - fr), now = Date.now() / 1000, v = Math.max(3, me.spd > 2 ? me.spd : out.lim / 3.6 * 0.6);
+    for (var step = 0; step < 24 && dist < 1000; step++) { var nd = G.eB[e], f = -1, fd = 40; for (var i = G.oHead[nd]; i < G.oHead[nd + 1]; i++) { var g = G.oList[i]; if (G.eB[g] === G.eA[e] && G.eS[g] === G.eS[e]) continue; var d2 = Math.abs(angDiff(eBrgIn(e), eBrgOut(g))); if (d2 < fd) { fd = d2; f = g; } }
+      if (f < 0) break; var sc = sigCost(e, f, now + dist / v); if (sc) { var known = sc.si >= 0, sg = known ? G.sig[sc.si] : XS[sc.xi - 1]; var one = { nm: sg.nm, no: known ? sg.no : '', x: sg.x, y: sg.y, d: dist, side: sc.side, unk: !known, eta: dist / v }; out.sigs.push(one); if (!out.sig) out.sig = one; } dist += eLen(f); e = f; }
+    return out; }
+  var CRA = null;
+  function drawAhead(dark, now) { if (!CRA || !CRA.sigs) return; CRA.sigs.forEach(function (g) { var q = W2S(g.x, g.y), st = g.unk ? null : sigAt(g.no, now, g.side, 'St'), ok = st && st.kind !== 'avg', tx = ok ? String(Math.ceil(st.remain)) : '?', w = ok ? 30 : 22, x = q[0] + 12, y = q[1] - 11;
+      ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, 22, 11); else ctx.rect(x, y, w, 22); ctx.fillStyle = ok ? (st.green ? '#16a34a' : '#dc2626') : '#64748b'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.font = '900 12.5px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(tx, x + w / 2, y + 11.5); }); }
+  function cruiseStart() { if (!G) return; if (!me) { gpsStart(); note('내 자리를 기다리는 중 — 위치를 허락하면 따라가기 시작한다'); } cruise = true; follow = true; document.body.classList.add('guiding'); view.s = Math.max(0.5, Math.min(0.9, cv.clientHeight * 0.68 / 1000));   /* 앞으로 1km 가 화면에 들게(내 자리는 화면 68% 높이 → 뒤로는 약 470m) */
+    if (me) { view.cx = me.x; view.cy = me.y; view.rot = me.hd; }
+    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} paint(); draw(); }
+  function cruiseStop() { cruise = false; CRA = null; document.body.classList.remove('guiding'); view.rot = 0; try { if (wake) wake.release(); } catch (e) {} wake = null; paint(); draw(); }
+  function paintCruise() { var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd'), now = Date.now() / 1000, A = ahead(); CRA = A; $('gFind').style.display = 'none'; top.style.display = 'flex';
+    var lv = A && A.live ? spdLv(A.live, A.cls, A.lim) : -1, flow = lv < 0 ? '' : '<small class="ln2">이 길 지금 — <b>' + ['원활', '서행', '정체'][lv] + '</b> · 시속 ' + Math.round(A.live) + 'km쯤</small>';
+    top.innerHTML = '<div class="arw">⬆</div><div class="tx"><b>' + (A && A.nm ? esc(A.nm) : (me ? '길 위가 아니다' : '내 자리 기다리는 중')) + '</b><span>켜놓고 다니기 — 목적지 없음</span>' + flow + '</div>';
+    bot.innerHTML = '<div class="eta"><div><b>' + hm(now) + '</b><span>지금</span></div><div><b>' + (LIVE.m ? esc(String(LIVE.made || '').slice(-5)) : '없음') + '</b><span>소통 받은 때</span></div><button id="gCruiseX" class="stop">끝</button></div>';
+    if (A && me) { var v = Math.round((me.spd || 0) * 3.6); spd.style.display = 'flex'; spd.innerHTML = '<div class="lim">' + A.lim + '</div><div class="cur' + (v > A.lim + 2 ? ' over' : '') + '"><b>' + v + '</b><span>km/h</span></div>' + (A.nm ? '<div class="rn">' + esc(A.nm) + '</div>' : ''); } else spd.style.display = 'none';
+    var ns = A && A.sig; if (!ns) { sg.style.display = 'none'; return; } var st = ns.unk ? null : sigAt(ns.no, now, ns.side, 'St'), at = ns.unk || !(me && me.spd > 2) ? null : sigAt(ns.no, now + ns.eta, ns.side, 'St'), h = '';
+    sg.style.display = 'block'; var tb = top.getBoundingClientRect(); sg.style.top = Math.round(tb.bottom + 6) + 'px'; sg.className = 'sig ' + (!st || st.kind === 'avg' ? 'unk' : st.green ? 'grn' : 'red');
+    h += '<div class="hd"><b>🚦 ' + esc(ns.nm) + '</b><span>' + km(ns.d) + ' 앞 · ' + (DIRKO[ns.side] || '') + '쪽에서 직진</span></div>';
+    if (!st) h += '<div class="ln">이 신호는 <b>자료가 없다</b> — 눈으로 본다</div>';
+    else if (st.kind === 'avg') h += '<div class="ln">지금 색은 <b>모른다</b>(이 시각대를 아직 못 받았다) · 평균 기다림 ' + Math.round(st.wait) + '초 · 주기 ' + Math.round(st.C) + '초</div>';
+    else { h += '<div class="now"><i></i><b>' + (st.green ? '녹색' : '적색') + ' ' + Math.ceil(st.remain) + '초</b><span>' + (st.green ? '뒤 꺼짐' : '뒤 녹색') + '</span></div>';
+      if (at && at.kind !== 'avg') h += '<div class="ln">지금 속도로 닿으면(' + Math.round(ns.eta) + '초 뒤) → ' + (at.green ? '<b class="g">녹색 통과</b> <em>(남은 녹색 ' + Math.floor(at.remain) + '초)</em>' : '<b class="r">적색</b> · ' + Math.ceil(at.wait) + '초 기다림') + '</div>';
+      h += '<div class="src">' + (st.kind === 'pl' ? '시각대 표(계획값)' : '방금 받은 값에서 이어 셈') + ' · 내 진행 방향(직진)의 값 · 수동 조작·감응 신호면 다르다 · 눈으로 확인</div>'; }
+    sg.innerHTML = h; }
   function guideStart() { if (!route) return; guide = true; follow = true; document.body.classList.add('guiding'); view.s = 1.1; if (me) { view.cx = me.x; view.cy = me.y; view.rot = me.hd; } lastSay = {}; try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} say('안내를 시작합니다'); paint(); draw(); }
   function guideStop(done) { guide = false; document.body.classList.remove('guiding'); view.rot = 0; try { if (wake) wake.release(); } catch (e) {} wake = null; if (sim) { clearInterval(sim.t); sim = null; } if (done) { route = null; dest = null; } paint(); draw(); }
   function simStart() { if (!route) return; var r = route, d = 0, last = Date.now(); voiceOn = false; $('gVoice').classList.remove('on'); guideStart(); note('모의 주행 — 제한속도로 길을 따라간다(신호에서는 예상대로 선다) · 실제 위치가 아니다');
@@ -445,9 +481,9 @@
     var nm = G.S[ns.seg][5] >= 0 ? G.j.names[G.S[ns.seg][5]] : '이름 없는 길'; el.style.display = 'flex'; el.style.left = Math.max(8, Math.min(cv.clientWidth - 228, px - 110)) + 'px'; el.style.top = Math.max(70, py - 64) + 'px';
     el.innerHTML = '<b>' + esc(nm) + '</b><button data-p="to">여기로 안내</button><button data-p="from">여기서 떠나기</button><button data-p="x">닫기</button>'; el._w = [ns.x, ns.y, nm]; }
   $('gPick').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var w = this._w, k = b.getAttribute('data-p'); this.style.display = 'none'; if (k === 'to') setDest(w[0], w[1], w[2]); else if (k === 'from') { if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; } sim = null; setMe(w[0], w[1], 5, null, 0); note('떠나는 곳을 손으로 정했다 — 실제 위치로 돌아가려면 ◎ 를 누른다'); } });
-  function setDest(x, y, nm) { dest = { x: x, y: y, nm: nm || '목적지' }; route = null; if (!me) gpsStart(); if (me) plan(); else { paint(); draw(); } }
+  function setDest(x, y, nm) { if (cruise) cruiseStop(); dest = { x: x, y: y, nm: nm || '목적지' }; route = null; if (!me) gpsStart(); if (me) plan(); else { paint(); draw(); } }
   document.addEventListener('click', function (e) { var t = e.target.closest('button'); if (!t) return; var id = t.id;
-    if (id === 'gGo') { voiceAsk(); guideStart(); } else if (id === 'gSim') simStart(); else if (id === 'gClr') { route = null; dest = null; note(''); paint(); draw(); } else if (id === 'gStop') guideStop(false);
+    if (id === 'gGo') { voiceAsk(); guideStart(); } else if (id === 'gSim') simStart(); else if (id === 'gClr') { route = null; dest = null; note(''); paint(); draw(); } else if (id === 'gStop') guideStop(false); else if (id === 'gCruise') cruiseStart(); else if (id === 'gCruiseX') cruiseStop();
     else if (id === 'gCen') { follow = true; t.classList.remove('off'); if (watchId == null && !sim) gpsStart(); if (me) { view.cx = me.x; view.cy = me.y; if (guide) view.rot = me.hd; else if (view.s < 0.5) view.s = 0.9; } draw(); }
     else if (id === 'gVoice') { voiceOn = !voiceOn; t.classList.toggle('on', voiceOn); if (voiceOn) say('음성 안내를 켭니다'); else if (window.speechSynthesis) speechSynthesis.cancel(); }
     else if (id === 'gMic') micGo();
@@ -475,16 +511,16 @@
     /* #q=주소·이름 — 받은 글로 바로 찾는다(티북 같은 데서 주소를 넘길 때 · # 뒤라 서버로 가지 않는다 · 읽고 지운다) */
     var qq = /[#&]q=([^&]*)/.exec(H); if (qq) { var qv = ''; try { qv = decodeURIComponent(qq[1]); } catch (e) {} if (qv) { fi.value = qv; findRun(qv, true); } }
     if (t || f || qq) { try { history.replaceState(null, '', location.pathname); } catch (e) {} } }
-  setInterval(function () { if (document.hidden) return; if (route && (guide || sim)) { paint(); draw(); } else if (route || (OV.s && SIG.ready && view.s > 0.28)) draw(); }, 1000);
+  setInterval(function () { if (document.hidden) return; if (route && (guide || sim)) { paint(); draw(); } else if (cruise && !route) { paint(); draw(); } else if (route || (OV.s && SIG.ready && view.s > 0.28)) draw(); }, 1000);
   /* 5분마다 — 통행속도 한 장과 신호 색인을 다시 본다. 신호 수집기가 약 15분마다 새 값을 올리므로(색인의 made 가 바뀐다) 바뀌었으면 서초 둘레 칸을 다시 받아 그 자리에서 갈아 끼운다.
      소유자 2026-10-13 「신호값이 업데이트되는 대로 계속 추가 업데이트되게」 — 안내 중에도 받는다(지금 색·남은 초가 새 값으로 바뀐다 · 길은 다시 고르지 않는다) */
   function sigRefresh() { return getJ('../data/sigdir/index.json').then(function (j) { if (!j || !j.fl || !SIG.idx || j.made === SIG.idx.made) return false; var need = {}; G.sig.forEach(function (s) { if (j.fl[s.no] == null) return; var q = j.pts[s.no]; if (q) need[Math.floor(q[0] / j.cell[0]) + '_' + Math.floor(q[1] / j.cell[1])] = 1; });
     var its = {}; return Promise.all(Object.keys(need).map(function (k) { return getJ('../data/sigdir/c/' + k + '.json').then(function (c) { if (c && c.its) Object.keys(c.its).forEach(function (no) { its[no] = c.its[no]; }); }); })).then(function () { if (!Object.keys(its).length) return false; SIG.idx = j; SIG.pl = j.pl || {}; SIG.cell = j.cell; SIG.its = its; SIG.at = Date.now(); return true; }); }); }
   setInterval(function () { if (!G || document.hidden) return; Promise.all([liveLoad(), sigRefresh()]).then(function (r) { if (dest && me && !guide) plan(); else { paint(); draw(); } }); }, 300000);
   window.addEventListener('resize', function () { draw(); });
-  document.addEventListener('visibilitychange', function () { if (!document.hidden && guide && navigator.wakeLock) { try { navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} } });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && (guide || cruise) && navigator.wakeLock) { try { navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} } });
   try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {}
   function boot() { if (document.documentElement.classList.contains('gated')) return; var seen = false; try { seen = localStorage.getItem('tg_gargo_intro') === '1'; } catch (e) {} if (seen) { $('gIntro').style.display = 'none'; if (!/[#&]from=/.test(location.hash)) gpsStart(); } load(); }
   window.addEventListener('tggate', boot); boot();
-  window.GARGO = { mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
+  window.GARGO = { cruise: function (on) { if (on === false) cruiseStop(); else cruiseStart(); return cruise; }, ahead: ahead, mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
 })();

@@ -63,9 +63,51 @@ POOL_ORDER = {'timing': ['KEY1', 'KEY2'], 'phase': ['KEY1', 'KEY2'], 'fusion': [
 POOL_URL = {'timing': BASE, 'phase': BASEP, 'fusion': BASEF}
 POOL_PROBE_Q = {'timing': '&pageNo=1&numOfRows=3', 'phase': '&pageNo=1&numOfRows=3', 'fusion': '&pageNo=1&numOfRows=3&itstId=4036'}
 RECHECK = 1800
-DAYCAP_EP = {'fusion': 400}   # (2026-10-14 15:40) 두 열쇠가 신호 API 여섯 가지 모두 승인됨 → 역사 API 둘을 두 열쇠가 번갈아 쓴다(열쇠마다 하루 약 290 × 2 = 580).
+DAYCAP_EP = {}   # 엔드포인트별 상한은 이제 안 쓴다(열쇠마다 합 KEYCAP) — 종전 'fusion': 400   # (2026-10-14 15:40) 두 열쇠가 신호 API 여섯 가지 모두 승인됨 → 역사 API 둘을 두 열쇠가 번갈아 쓴다(열쇠마다 하루 약 290 × 2 = 580).
                               #  T-Data 한도 「1일 1,000회」가 열쇠마다인지 API 마다인지 몰라, 열쇠마다 합이 1,000 을 넘지 않게 Fusion 은 열쇠마다 400(두 열쇠 800) — 종전 KEY2 홀로 970
+KEYCAP = 960   # (2026-10-14 소유자 「API 키 2개 각각 960회까지 사용해 보도록」) 열쇠마다 하루(한국 날짜) 모든 API 합 — 세 수집(잔여·상태·Fusion)이 keyday.json 하나로 같이 센다
 DAYCAP = 900   # (2026-10-14) 공식 안내 하루 1,000회 — 열쇠마다인지 API 마다인지 몰라 짝(열쇠, API)마다 세고 900 에서 멈춘다
+
+
+def kd_path():
+    return os.path.join(RAW, 'keyday.json')
+
+
+def kd_today():
+    return datetime.datetime.fromtimestamp(time.time() + 9 * 3600, datetime.timezone.utc).strftime('%Y-%m-%d')
+
+
+def kd_get(label):
+    try:
+        d = json.load(open(kd_path(), encoding='utf-8'))
+        return d.get(label, 0) if d.get('day') == kd_today() else 0
+    except Exception:
+        return 0
+
+
+def kd_add(label):
+    """열쇠의 오늘 호출 수 +1 — 세 수집이 같은 파일을 쓴다(읽고 고쳐 쓰기 사이가 짧아 겹침은 드물다 · 겹쳐도 하나 덜 셀 뿐)"""
+    for _ in range(3):
+        try:
+            try:
+                d = json.load(open(kd_path(), encoding='utf-8'))
+            except Exception:
+                d = {}
+            if d.get('day') != kd_today():
+                d = {'day': kd_today()}
+            d[label] = d.get(label, 0) + 1
+            t = kd_path() + '.%d.tmp' % os.getpid()
+            json.dump(d, open(t, 'w', encoding='utf-8')); os.replace(t, kd_path())
+            return d[label]
+        except Exception:
+            time.sleep(0.2)
+    return None
+
+
+def hist_reserve():
+    """오늘 남은 시간 동안 역사 훑기(잔여·상태 둘)가 열쇠 하나로 더 부를 어림 — 열쇠마다 API 하나에 5분(GAP)에 한 번 꼴"""
+    left = 86400 - (time.time() + 9 * 3600) % 86400
+    return int(2 * left / GAP) + 5
 
 
 def keyval(label):
@@ -101,7 +143,12 @@ class KeyPool:
 
     def capped(self, k):
         S = self.st[k]
-        return S.get('dd') == self.today() and S.get('dn', 0) >= DAYCAP_EP.get(self.ep, DAYCAP)
+        if S.get('dd') == self.today() and S.get('dn', 0) >= DAYCAP_EP.get(self.ep, DAYCAP):
+            return True
+        used = kd_get(k)
+        if self.ep == 'fusion':
+            return used + hist_reserve() >= KEYCAP          # Fusion 은 역사 훑기가 오늘 더 쓸 몫을 남기고 그 나머지만
+        return used >= KEYCAP
 
     def alive(self):
         nw = time.time()
@@ -145,7 +192,7 @@ class KeyPool:
         al = self.alive()
         if not al:
             k = self.order[0]
-            if all(self.capped(x) for x in self.order if self.st[x]['state'] == 'alive') and self.capped(k):
+            if self.capped(k) and all(self.capped(x) for x in self.order if self.st[x]['state'] == 'alive'):
                 nw = time.time(); mid = nw - (nw + 9 * 3600) % 86400 + 86400 + 5   # 다음 날 0시(한국) 5초 뒤
                 return k, mid - nw
             return k, max(0.0, max(self.st[k]['last'] + self.gap0, self.st[k]['rest']) - time.time())
@@ -157,8 +204,11 @@ class KeyPool:
         if S.get('dd') != d:
             S['dd'], S['dn'] = d, 0
         S['dn'] = S.get('dn', 0) + 1
+        tot = kd_add(k)
         if S['dn'] == DAYCAP_EP.get(self.ep, DAYCAP):
             self.say('%s 오늘 %d번 — 이 짝은 다음 날 0시까지 멈춘다' % (k, S['dn']))
+        if tot == KEYCAP:
+            self.say('%s 오늘 모든 API 합 %d번 — 이 열쇠는 다음 날 0시까지 멈춘다' % (k, tot))
         self.save()
 
     def tally(self, k, c):
@@ -1472,8 +1522,13 @@ def fusion(sample=False, ids=None):
     ⚠ 2026-10-14 실측: sggCd 는 어느 꼴(11650 · 650 · 1165000000 · 「서초구」)로도 200 에 빈 배열 — 구 단위로는 안 온다 · itstId 하나씩만 온다(여러 번호를 쉼표로 이어도 빈 배열)
        교차로마다 「그 교차로가 마지막으로 보낸 한 줄」이라 오래된 것도 온다(4039 는 50분 전 값) — trsmTm 을 꼭 같이 본다 · 하루 호출 한도는 아직 모른다
     --sample = 4036 한 줄을 받아 CurrentInfo 와 칸을 견준 표를 찍고 멈춘다(2026-10-14 지시 — 보고 뒤 상시 수집)."""
-    step = max(30.0, 86400.0 / DAYCAP_EP['fusion'])            # 하루 970 번을 24시간 고르게 — 약 89초에 한 번(밤 시각대 칸도 채운다)
-    P = KeyPool('fusion', gap=int(step)); out = os.path.join(RAW, 'fusion'); os.makedirs(out, exist_ok=True)
+    def fz_step():
+        """남은 Fusion 몫(열쇠마다 KEYCAP − 오늘 쓴 수 − 역사 훑기 남길 몫)을 오늘 남은 시간에 고르게 — 두 열쇠면 약 2배로 촘촘"""
+        left = 86400 - (time.time() + 9 * 3600) % 86400
+        room = sum(max(0, KEYCAP - kd_get(k) - hist_reserve()) for k in P.order if P.st[k]['state'] == 'alive')
+        return max(30.0, left / max(1, room))
+    step = fz_step()
+    P = KeyPool('fusion', gap=30); out = os.path.join(RAW, 'fusion'); os.makedirs(out, exist_ok=True)
     def get(itst, kl):
         u = BASEF + '?apikey=' + keyval(kl) + '&pageNo=1&numOfRows=10&itstId=%s' % itst
         try:
@@ -1531,8 +1586,8 @@ def fusion(sample=False, ids=None):
         for itst in L:
             P.refresh(); kl, w = P.pick()
             if P.capped(kl):
-                print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 오늘 한도 %d번 — %d분 쉰다(다음 날 0시까지)' % (DAYCAP_EP['fusion'], w // 60), flush=True)
-                time.sleep(w); break
+                print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 오늘 몫을 다 씀(열쇠마다 %d · 역사 훑기 몫 남김) — %d분 쉰다' % (KEYCAP, w // 60), flush=True)
+                time.sleep(max(w, 600)); break
             if w > 0:
                 time.sleep(w)
             P.mark(kl); c, b = get(itst, kl); srv = P.note(kl, c, b); stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -1561,7 +1616,7 @@ def fusion(sample=False, ids=None):
                 print(stamp, '[fusion]', itst, kl, 'HTTP', c, mask(b[:120]), flush=True)
                 if srv:
                     time.sleep(srv)
-            time.sleep(step)
+            step = fz_step(); time.sleep(step)
         print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 한 바퀴 %d곳(축 %d) · 받음 %d · 새 닻 %d' % (len(L), sum(1 for k in L if onaxis(k)), nok, nanc), flush=True)
 
 

@@ -308,6 +308,17 @@
   body.more #m2dFold { background: var(--chip); color: var(--ink); border-color: var(--line); }
   @media (max-width: 430px) { #m2dHm, #m2dHp { display: none; } #m2dHourT .wk { display: none; } #m2dTime b { min-width: 34px !important; } #m2dFold { padding: 0 8px; } #m2dDateB { padding: 0 7px; } }
   @media (max-width: 520px) { #m2dLayers { max-height: 77px; } #m2dLayers button { padding: 0 9px; font-size: 12.5px; } #m2dTime button, #m2dPre button, #m2dLayers button { height: 32px; } #m2dTime b { min-width: 64px; font-size: 12px; } .row1 h1 { font-size: 15px; } }
+  /* v2.219.0 도구 모음 — 오른쪽 기둥은 ＋ － 📍 🧰 넷만(나머지는 🧰 안으로 · 단추 자체는 남겨 두고 감춘다) */
+  body.toolcol #m2dZoom #m2dFit, body.toolcol #m2dZoom #m2dLegB, body.toolcol #m2dZoom #m2dGetB, body.toolcol #m2dZoom #m2dFsB { display: none !important; }
+  #m2dTool { position: fixed; right: 58px; bottom: calc(46px + env(safe-area-inset-bottom)); z-index: 6; width: min(292px, calc(100vw - 72px)); max-height: min(80vh, 620px); overflow: auto; display: none; background: var(--panel); color: var(--ink); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.28); padding: 8px; }
+  #m2dTool.on { display: block; }
+  #m2dTool .th { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 6px 6px; font-size: 15px; } #m2dTool .th button { border: 0; background: transparent; color: var(--ink2); font-size: 13px; font-weight: 700; padding: 8px; cursor: pointer; }
+  #m2dTool .tg { font-size: 12px; font-weight: 800; color: var(--ink2); padding: 8px 8px 3px; }
+  #m2dTool button[data-tool]:not([data-tool="x"]) { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 4px 8px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; font-family: inherit; }
+  #m2dTool button[data-tool]:not([data-tool="x"]):active { background: rgba(120,130,150,.18); }
+  #m2dTool button i { font-style: normal; font-size: 21px; width: 30px; text-align: center; flex: 0 0 auto; } #m2dTool button span { display: flex; flex-direction: column; min-width: 0; }
+  #m2dTool button b { font-size: 15px; font-weight: 800; } #m2dTool button small { font-size: 12px; color: var(--ink2); line-height: 1.35; }
+  #m2dPanel .c1.fav h4 small { font-weight: 600; color: var(--ink2); font-size: 12px; margin-left: 6px; }
   #m2dZoom #m2dLegB { font-size: 13px; }
   #m2dLeg { display: none; position: fixed; left: 8px; bottom: calc(30px + env(safe-area-inset-bottom)); z-index: 5; width: 250px; max-height: 46vh; overflow-y: auto; overflow-x: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 12px; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
   body.legon #m2dLeg { display: block; }
@@ -912,9 +923,11 @@
   <button id="m2dFit" aria-label="전체 보기">전체</button>
   <button id="m2dLegB" aria-label="범례">범례</button>
   <button id="m2dHereB" aria-label="내 위치">📍</button>
+  <button id="m2dToolB" aria-label="도구 모음" aria-haspopup="true" aria-expanded="false">🧰</button>
   <button id="m2dGetB" aria-label="지역 받기">📥</button>
   <button id="m2dFsB" aria-label="전체화면">⛶</button>
 </div>
+<div id="m2dTool" role="menu" aria-label="도구 모음"></div>
 <div id="m2dCard" role="dialog" aria-live="polite"></div>
 <div id="m2dLeg" aria-label="범례"></div>
 <div id="m2dGetP" aria-label="지역 받기"></div>
@@ -977,7 +990,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.218.0"></script>
+<script src="js/map2d.js?v=2.219.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

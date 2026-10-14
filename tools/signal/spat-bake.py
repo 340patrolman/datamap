@@ -63,7 +63,8 @@ POOL_ORDER = {'timing': ['KEY1', 'KEY2'], 'phase': ['KEY1', 'KEY2'], 'fusion': [
 POOL_URL = {'timing': BASE, 'phase': BASEP, 'fusion': BASEF}
 POOL_PROBE_Q = {'timing': '&pageNo=1&numOfRows=3', 'phase': '&pageNo=1&numOfRows=3', 'fusion': '&pageNo=1&numOfRows=3&itstId=4036'}
 RECHECK = 1800
-DAYCAP_EP = {'fusion': 970}   # (2026-10-14 소유자 「둘째 열쇠도 하루 한도를 거의 채우면서」) KEY2 는 Fusion 말고는 404 라 한도를 나눌 API 가 없다 — 1,000 에서 30 여유
+DAYCAP_EP = {'fusion': 400}   # (2026-10-14 15:40) 두 열쇠가 신호 API 여섯 가지 모두 승인됨 → 역사 API 둘을 두 열쇠가 번갈아 쓴다(열쇠마다 하루 약 290 × 2 = 580).
+                              #  T-Data 한도 「1일 1,000회」가 열쇠마다인지 API 마다인지 몰라, 열쇠마다 합이 1,000 을 넘지 않게 Fusion 은 열쇠마다 400(두 열쇠 800) — 종전 KEY2 홀로 970
 DAYCAP = 900   # (2026-10-14) 공식 안내 하루 1,000회 — 열쇠마다인지 API 마다인지 몰라 짝(열쇠, API)마다 세고 900 에서 멈춘다
 
 

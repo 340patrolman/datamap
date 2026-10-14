@@ -25,21 +25,26 @@
   }
   /* ---------- v0.8.0 칸 묶음 — 소유자 2026-10-14 「한강 이남이 완성되면 서울 전체로」 · 서울 한 장은 약 40MB 라 폰에 못 싣는다 ----------
      core = 등급 1~5 길 줄 · 칸 = 2km 골목 줄(tools/gargo/pack-tile.py) · 번호는 전체 번호 → 받은 것끼리 다시 매겨(pkMerge) 종전 build 로 */
+  var PKF = {};   /* 받기에 실패한 칸 → 시각(30초 동안 다시 안 부른다 — 끊긴 곳에서 받기·다시 짓기를 끝없이 되풀이하지 않게) */
   var PKA = (/[?&]pk=(seoul|six)(?![a-z])/.exec(location.search) || [0, 'six'])[1], PK = null,   /* 범위 — 지금 여섯 구 · 이남이 차면 'seoul' · 시험은 주소 뒤 ?pk=seoul */
    PKT = {}, PKL = {}, PKRT = 0, PKW = false;
   function pkMerge() { var C = PK, nl = {}, nx = [], ny = [], seg = [], geo = [], sl = {}, turns = [], F = [C].concat(Object.keys(PKT).map(function (k) { return PKT[k]; }));
     F.forEach(function (f) { f.nodes.forEach(function (r) { if (nl[r[0]] == null) { nl[r[0]] = nx.length; nx.push(r[1]); ny.push(r[2]); } }); });
     F.forEach(function (f) { f.segs.forEach(function (r) { if (sl[r[0]] != null) return; var row = r.slice(1); row[0] = nl[row[0]]; row[1] = nl[row[1]]; if (row[0] == null || row[1] == null) return; if (row[8] >= 0) { geo.push(f.geo[row[8]]); row[8] = geo.length - 1; } sl[r[0]] = seg.length; seg.push(row); }); });
-    F.forEach(function (f) { f.turns.forEach(function (t) { var v = nl[t[0]], a = sl[t[1]], b = sl[t[2]]; if (v != null && a != null && b != null) turns.push([v, a, b, t[3]]); }); });
+    var tk = {}; F.forEach(function (f) { f.turns.forEach(function (t) { var v = nl[t[0]]; if (v == null) return; var k = t[0] + '|' + t[1] + '|' + t[2] + '|' + t[3]; if (tk[k]) return; tk[k] = 1; turns.push([v, t[1], t[2], t[3]]); }); });   /* v0.9.2 — t[1]·t[2] 는 길(way) 번호다(길 줄 번호가 아니다) — v0.8.0~0.9.1 은 길 줄 번호로 바꿔 회전 제한이 모두 무효였다(독립 검수) */
     var sig = C.sig.map(function (g) { return [g[0], g[1], g[2], g[3], g[4], g[5], g[6].map(function (n) { return nl[n]; }).filter(function (n) { return n != null; })]; });
     return { base: C.base, nx: nx, ny: ny, names: C.names, ways: C.ways, seg: seg, links: C.links, tl: C.tl, geo: geo, turns: turns, sig: sig, area: C.area, made: C.made }; }
-  function pkKeys(pts, r) { if (!PK) return []; var c = PK.cell, out = {}; pts.forEach(function (q) { if (!q) return; for (var ix = Math.floor((q[0] - r) / c); ix <= Math.floor((q[0] + r) / c); ix++) for (var iz = Math.floor((q[1] - r) / c); iz <= Math.floor((q[1] + r) / c); iz++) { var k = ix + '_' + iz; if (PK.tiles[k] != null && !PKT[k] && !PKL[k]) out[k] = 1; } }); return Object.keys(out); }
-  function pkLoad(keys) { keys.forEach(function (k) { PKL[k] = 1; }); return Promise.all(keys.map(function (k) { return getJ('pk-' + PKA + '/t/' + k + '.json').then(function (t) { delete PKL[k]; if (t && t.segs) PKT[k] = t; }); })); }
+  function pkKeys(pts, r) { if (!PK) return []; var c = PK.cell, out = {}; pts.forEach(function (q) { if (!q) return; for (var ix = Math.floor((q[0] - r) / c); ix <= Math.floor((q[0] + r) / c); ix++) for (var iz = Math.floor((q[1] - r) / c); iz <= Math.floor((q[1] + r) / c); iz++) { var k = ix + '_' + iz; if (PK.tiles[k] != null && !PKT[k] && !PKL[k] && !(PKF[k] && Date.now() - PKF[k] < 30000)) out[k] = 1; } }); return Object.keys(out); }
+  function pkLoad(keys) { var n = 0; keys.forEach(function (k) { PKL[k] = 1; }); return Promise.all(keys.map(function (k) { return getJ('pk-' + PKA + '/t/' + k + '.json' + (PK.bake ? '?b=' + PK.bake : '')).then(function (t) { delete PKL[k];
+      if (t && t.segs && (!PK.bake || t.bake === PK.bake)) { PKT[k] = t; n++; } else PKF[k] = Date.now(); }); })).then(function () { return n; }); }   /* 구운 판(bake)이 core 와 다른 칸은 버린다(옛 칸이 새 core 와 섞이면 마디가 엉뚱하게 이어진다) */
   /* 다시 짓기 — 길 번호가 바뀌므로 길이 있으면 다시 찾는다(안내 중에는 plan 이 부를 때만) · 칸이 80 넘게 쌓이면 지금 자리·화면에서 먼 칸부터 비운다 */
-  function pkRebuild(noPlan, keepAll) { if (!PK) return; var ks = Object.keys(PKT); if (!keepAll && ks.length > 80) { var cx = me ? me.x : view.cx, cy = me ? me.y : view.cy, c = PK.cell; ks.map(function (k) { var a = k.split('_'); return [k, Math.hypot((+a[0] + 0.5) * c - cx, (+a[1] + 0.5) * c - cy)]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, ks.length - 60).forEach(function (x) { delete PKT[x[0]]; }); }
-    build(pkMerge()); TRAF = null; SSTAT = null; CRA = null; liveStat(); xsLoad(); if (!noPlan && route && dest && me && !guide) plan(); paint(); draw(); }
-  function pkSoon() { clearTimeout(PKRT); PKRT = setTimeout(function () { pkRebuild(); }, 500); }
-  function pkEnsure(pts, r) { var m = pkKeys(pts, r || 2200); if (!m.length) return Promise.resolve(false); return pkLoad(m).then(function () { pkRebuild(true); return true; }); }
+  function pkRebuild(noPlan, keepAll, keep) { if (!PK) return; var ks = Object.keys(PKT); if (!keepAll && !route && !guide && ks.length > 80) { var cx = cruise && me ? me.x : view.cx, cy = cruise && me ? me.y : view.cy, c = PK.cell, kp = {}; (keep || []).forEach(function (k) { kp[k] = 1; }); pkVis().forEach(function (k) { kp[k] = 1; });
+      ks.filter(function (k) { return !kp[k]; }).map(function (k) { var a = k.split('_'); return [k, Math.hypot((+a[0] + 0.5) * c - cx, (+a[1] + 0.5) * c - cy)]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, ks.length - 60).forEach(function (x) { delete PKT[x[0]]; }); }
+    build(pkMerge()); TRAF = null; SSTAT = null; CRA = null; liveStat(); if (XSJ) xsBuild(XSJ); else xsLoad(); if (!noPlan && route && dest && me) plan(true); paint(); draw(); }
+  function pkVis() { if (!PK || !cv) return []; var W = cv.clientWidth, H = cv.clientHeight, a = S2W(0, 0), b = S2W(W, H), c = S2W(W, 0), d = S2W(0, H), x0 = Math.min(a[0], b[0], c[0], d[0]), x1 = Math.max(a[0], b[0], c[0], d[0]), y0 = Math.min(a[1], b[1], c[1], d[1]), y1 = Math.max(a[1], b[1], c[1], d[1]), out = [], C = PK.cell;
+    for (var ix = Math.floor(x0 / C); ix <= Math.floor(x1 / C); ix++) for (var iz = Math.floor(y0 / C); iz <= Math.floor(y1 / C); iz++) out.push(ix + '_' + iz); return out; }
+  function pkSoon(n) { if (n === 0) return; clearTimeout(PKRT); PKRT = setTimeout(function () { pkRebuild(); }, 500); }   /* 늘어난 칸이 없으면 다시 짓지 않는다 */
+  function pkEnsure(pts, r) { var m = pkKeys(pts, r || 2200); if (!m.length) return Promise.resolve(false); return pkLoad(m).then(function (n) { if (n) pkRebuild(true, false, m); return n > 0; }); }
   function build(j) {
     var n = j.nx.length, X = new Float32Array(n), Y = new Float32Array(n), bx = j.base[0], by = j.base[1], i;
     for (i = 0; i < n; i++) { X[i] = PX((bx + j.nx[i]) / 1e6); Y[i] = PY((by + j.ny[i]) / 1e6); }
@@ -91,7 +96,7 @@
   var LIVER = null;
   function liveStat() { LIVER = null; if (!LIVE.m || !G) return; var by = {}, all = [], med = function (v) { v.sort(function (a, b) { return a - b; }); return v[v.length >> 1]; }; G.S.forEach(function (q) { var lim = q[3] || 30; for (var d = 13; d <= 14; d++) { var li = q[d]; if (li == null || li < 0) continue; var v = LIVE.m[G.j.links[li]]; if (!(v > 0)) continue; var r = Math.min(1, v / lim); (by[q[4]] || (by[q[4]] = [])).push(r); all.push(r); } });
     if (all.length < 30) return; LIVER = { all: med(all) }; Object.keys(by).forEach(function (c) { if (by[c].length >= 20) LIVER[c] = med(by[c]); }); }
-  var AREA_KO = '서초·강남·송파·동작·관악·용산';
+  var AREA_KO = /[?&]pk=seoul(?![a-z])/.test(location.search) ? '서울 25구' : '서초·강남·송파·동작·관악·용산';
   function liveFresh(x) { return !!(x && x.m && x.at && Date.now() / 1000 - x.at < 1200); }
   function liveLoad() { return getJ('../data/live-spd-six.json').then(function (j) { return liveFresh(j) ? j : getJ('../data/live-spd-seocho.json').then(function (k) { return liveFresh(k) ? k : (j && j.m ? j : k); }); }).then(function (j) { var ok = j && j.m && j.at && Date.now() / 1000 - j.at < 1200; LIVE = ok ? { m: j.m, at: j.at, made: j.made } : { m: null, at: j && j.at || 0 }; liveStat(); }); }
   function sigLoad() { liveLoad().then(function () { if (dest && me && !guide) plan(); else paint(); }); getJ('../data/sig-special.json').then(function (j) { if (j && j.days) SIG.hol = j.days; });
@@ -104,8 +109,9 @@
   /* v0.5.0 값 없는 신호 — 서울 모든 신호 교차로(T-GIS · data/tgis-seoul.json) 가운데 신호값을 못 받은 곳. 길 마디에 붙여 두고 「신호가 있다」고만 친다(기다림은 받은 값의 가운데값에 견준 어림).
      종전에는 값 있는 189곳만 신호로 쳐서, 그 신호를 피하려고 값 없는 신호가 줄지어 선 길이나 골목으로 돌았다 */
   var XS = [];
-  var XSJ = null;
-  function xsLoad() { return (XSJ ? Promise.resolve(XSJ) : getJ('../data/tgis-seoul.json').then(function (j) { XSJ = j; return j; })).then(function (j) { if (!j || !j.items || !G) return; var C = 60, ng = {}, i, k; for (i = 0; i < G.n; i++) { k = Math.floor(G.X[i] / C) + ',' + Math.floor(G.Y[i] / C); (ng[k] || (ng[k] = [])).push(i); }
+  var XSJ = null, XSP = null;
+  function xsLoad() { if (!XSP) XSP = getJ('../data/tgis-seoul.json').then(function (j) { if (j && j.items) XSJ = j; else XSP = null; return j; }); return XSP.then(function (j) { if (!j || !j.items || !G) return; xsBuild(j); if (dest && me && !guide) plan(); else draw(); }); }
+  function xsBuild(j) { if (!j || !j.items || !G) return; var C = 60, ng = {}, i, k; for (i = 0; i < G.n; i++) { k = Math.floor(G.X[i] / C) + ',' + Math.floor(G.Y[i] / C); (ng[k] || (ng[k] = [])).push(i); }
       /* 마디마다 닿는 길의 가장 큰 길·가장 작은 길 등급 — 자동차전용 본선만 닿는 마디(신호가 없다)와 골목끼리 만나는 마디(큰길 신호를 건너지 않는다)는 신호로 치지 않는다 */
       var cmin = new Uint8Array(G.n).fill(9), cmax = new Uint8Array(G.n); G.S.forEach(function (q) { var c = q[4]; if (c < cmin[q[0]]) cmin[q[0]] = c; if (c < cmin[q[1]]) cmin[q[1]] = c; if (c > cmax[q[0]]) cmax[q[0]] = c; if (c > cmax[q[1]]) cmax[q[1]] = c; });
       function okNode(nd) { return G.n2s[nd] < 0 && cmin[nd] <= 5 && cmax[nd] >= 3; }
@@ -117,7 +123,7 @@
         for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { var L = ng[(gx + dx) + ',' + (gy + dy)]; if (!L) continue; for (var q = 0; q < L.length; q++) { var nd = L[q], d = Math.hypot(G.X[nd] - x, G.Y[nd] - y); if (d <= 60 && G.n2s[nd] >= 0) known = true; if (!okNode(nd)) continue; if (d <= 32) near.push(nd); if (d < bd) { bd = d; bn = nd; } } }
         if (known) return;   /* 60m 안에 값 있는 신호 마디 — 두 자료의 좌표가 수십 m 어긋나 같은 교차로일 수 있다(두 번 세지 않는다) */
         if (!near.length && bn >= 0) near = [bn]; if (!near.length) return; list.push({ nm: it[1], x: x, y: y }); near.forEach(function (nd) { if (!nxs[nd]) nxs[nd] = list.length; }); });
-      XS = list; G.nxs = nxs; G.XS = list; if (dest && me && !guide) plan(); else draw(); }); }
+      XS = list; G.nxs = nxs; G.XS = list; }
   function recOk(r) { return r && r.mv && r.dq !== 'dir' && !(r.x && !r.v); }
   /* 내가 들어가는 쪽의 기록 고르기 — 같은 방위가 있으면 그것. 없으면 바로 옆 방위(45°) 하나뿐일 때만 그것을 쓴다.
      옆 방위가 양쪽에 다 있으면(비스듬한 길: 남서쪽에서 들어가는데 기록은 남·서 둘) 어느 쪽인지 가릴 수 없으므로 「모름」으로 둔다 — v0.5.0 까지는 먼저 나온 쪽을 골라 다른 방향의 초를 보일 수 있었다 */
@@ -204,10 +210,10 @@
     var lims = []; var dd = 0; es.forEach(function (e, i2) { lims.push([dd, eSpd(e), G.S[G.eS[e]][5] >= 0 ? G.j.names[G.S[G.eS[e]][5]] : '', G.S[G.eS[e]][9]]); dd += eLen(e); });
     return { es: es, pts: pts, cum: cum, dist: dist, time: t, tc: tc, free: free, mans: mans, sigs: sigs, lims: lims, T0: T0, a: a, b: b, live: dist ? liveLen / dist : 0, cong: cong, mode: MODE, viaLive: !!LIVER };
   }
-  function plan() { if (!G || !dest || !me) return; if (PK && !PKW) { var mk = pkKeys([[me.x, me.y], [dest.x, dest.y]], 2200); if (mk.length) { PKW = true; note('골목 길을 받는 중…'); pkLoad(mk).then(function () { PKW = false; pkRebuild(true); plan(); }); return; } }
+  function plan(noFit) { if (!G || !dest || !me) return; if (PK && !PKW) { var mk = pkKeys([[me.x, me.y], [dest.x, dest.y]], 2200); if (mk.length) { PKW = true; note('골목 길을 받는 중…'); pkLoad(mk).then(function (n) { PKW = false; if (n) pkRebuild(true, false, mk); plan(noFit); }); return; } }
     var T0 = Date.now() / 1000, r = findRoute(me.x, me.y, dest.x, dest.y, T0, me.spd > 2 ? me.hd : null);
     if (!r) { route = null; note('길을 찾지 못했다 — 목적지나 내 자리가 길에서 너무 멀다(' + AREA_KO + '과 둘레 2km 안에서만 된다)'); paint(); draw(); return; }
-    route = r; route.pos = 0; note(''); paint(); if (!guide) fitRoute(); draw(); }
+    route = r; route.pos = 0; note(''); paint(); if (!guide && !noFit) fitRoute(); draw(); }
 
   /* ---------- 내 자리 ---------- */
   var watchId = null;
@@ -367,7 +373,7 @@
       /* 엔터·음성: 적은 글과 딱 맞는 것이 하나뿐이면 그것으로(「사임당로 143」 ↔ 「사임당로17길 143」을 가른다 · 장소는 이름이 같을 때) */
       var pickI = -1; if (auto) { var n0 = out.length, hits = []; ex.forEach(function (o, i) { var nm = ' ' + o[1].replace(/\(.*?\)/g, ' ') + ' '; if (o[0] === '🏠' ? nm.indexOf(' ' + txt + ' ') >= 0 : o[1].replace(/\s+/g, '') === q) hits.push(n0 + i); }); if (hits.length === 1 && !out.some(function (o) { return o[1].replace(/\s+/g, '') === q; })) pickI = hits[0]; }
       show(ex, hit); if (pickI >= 0 && fl.style.display !== 'none') pickFound(pickI); }); }, auto ? 0 : 700); }
-  function pickFound(i) { var o = fl._o && fl._o[i]; if (!o) return; fl.style.display = 'none'; if (o[0] === '📐') note(o[4]); fi.value = o[1]; fi.blur(); pkEnsure([[o[2], o[3]]], 800).then(function () { var ns = nearSeg(o[2], o[3], 400); setDest(ns ? ns.x : o[2], ns ? ns.y : o[3], o[1]); }); if (!route) { view.cx = o[2]; view.cy = o[3]; if (view.s < 0.5) view.s = 0.7; follow = false; } draw(); }
+  function pickFound(i) { var o = fl._o && fl._o[i]; if (!o) return; fl.style.display = 'none'; if (o[0] === '📐') note(o[4]); fi.value = o[1]; fi.blur(); var tk1 = ++PICKSEQ; pkEnsure([[o[2], o[3]]], 800).then(function () { if (tk1 !== PICKSEQ) return; var ns = nearSeg(o[2], o[3], 400); setDest(ns ? ns.x : o[2], ns ? ns.y : o[3], o[1]); }); if (!route) { view.cx = o[2]; view.cy = o[3]; if (view.s < 0.5) view.s = 0.7; follow = false; } draw(); }
   /* 음성으로 목적지 — 브라우저의 받아쓰기(webkitSpeechRecognition · 크롬·사파리는 소리를 그 회사 서버로 보낸다 · 티북의 음성 입력과 같은 길) */
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition, rec = null;
   function micGo() { var b = $('gMic'); if (!SR) { note('이 브라우저는 음성 받아쓰기를 지원하지 않는다 — 자판의 마이크 단추로 말한다'); fi.focus(); return; } if (rec) { try { rec.stop(); } catch (e) {} return; }
@@ -391,7 +397,7 @@
     drawBase(dark, s);
     for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s) + 2 / s; ctx.strokeStyle = dark ? '#0a101c' : RS[c][2]; ctx.stroke(G.PATH[c]); }
     for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s); ctx.strokeStyle = dark ? RS[c][3] : RS[c][1]; ctx.stroke(G.PATH[c]); }
-    if (PK && !route && !guide && s > 0.25) { var vw = [S2W(0, 0), S2W(W, H), S2W(W, 0), S2W(0, H)], vk = pkKeys([[(vw[0][0] + vw[1][0]) / 2, (vw[0][1] + vw[1][1]) / 2]], Math.max(Math.abs(vw[0][0] - vw[1][0]), Math.abs(vw[2][1] - vw[3][1]), 600) / 2).slice(0, 9); if (vk.length) pkLoad(vk).then(pkSoon); }
+    if (PK && !route && !guide && s > 0.25) { var vw = [S2W(0, 0), S2W(W, H), S2W(W, 0), S2W(0, H)], vcx = (vw[0][0] + vw[1][0]) / 2, vcy = (vw[0][1] + vw[1][1]) / 2, vk = pkKeys([[vcx, vcy]], Math.max(Math.abs(vw[0][0] - vw[1][0]), Math.abs(vw[2][1] - vw[3][1]), 600) / 2).sort(function (a, b) { var A = a.split('_'), B = b.split('_'), C = PK.cell; return Math.hypot((+A[0] + 0.5) * C - vcx, (+A[1] + 0.5) * C - vcy) - Math.hypot((+B[0] + 0.5) * C - vcx, (+B[1] + 0.5) * C - vcy); }).slice(0, 9); if (vk.length) pkLoad(vk).then(pkSoon); }
     drawBld(dark, s); if (OV.t) drawTraf(s);
     if (route) { var p = route.pts, i; ctx.beginPath(); ctx.moveTo(p[0], p[1]); for (i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]); ctx.lineWidth = Math.max(13, 11 / s); ctx.strokeStyle = dark ? '#0b1220' : '#ffffff'; ctx.stroke(); ctx.lineWidth = Math.max(10.5, 8.6 / s); ctx.strokeStyle = '#1b54d6'; ctx.stroke(); ctx.lineWidth = Math.max(7.5, 6 / s); ctx.strokeStyle = '#3d86ff'; ctx.stroke();
       route.cong.forEach(function (cg) { ctx.beginPath(); var on = false; for (var u = 0; u < p.length; u += 2) { var dd = route.cum[u / 2]; if (dd >= cg[0] - 0.5 && dd <= cg[1] + 0.5) { if (!on) { ctx.moveTo(p[u], p[u + 1]); on = true; } else ctx.lineTo(p[u], p[u + 1]); } } ctx.lineWidth = Math.max(7.5, 6 / s); ctx.strokeStyle = cg[2] === 2 ? '#dc2626' : '#f59e0b'; ctx.stroke(); }); }
@@ -586,7 +592,8 @@
   cv.addEventListener('wheel', function (e) { e.preventDefault(); view.s = Math.max(0.03, Math.min(4, view.s * (e.deltaY < 0 ? 1.2 : 1 / 1.2))); drawSoon(); }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); pick(e.offsetX, e.offsetY); });
   /* 길게 누름 → 여기로 / 여기서 */
-  function pick(px, py) { if (!G || guide) return; var w = S2W(px, py); if (PK) { var pm = pkKeys([w], 400); if (pm.length) { pkLoad(pm).then(function () { pkRebuild(true); pick(px, py); }); return; } } var ns = nearSeg(w[0], w[1], 250), el = $('gPick'); if (!ns) { note('여기는 길에서 멀다'); return; }
+  var PICKSEQ = 0;
+  function pick(px, py, w0) { if (!G || guide) return; var w = w0 || S2W(px, py); if (PK) { var pm = pkKeys([w], 400); if (pm.length) { var tk3 = ++PICKSEQ; pkLoad(pm).then(function (n) { if (n) pkRebuild(true, false, pm); if (tk3 !== PICKSEQ) return; var q = W2S(w[0], w[1]); pick(q[0], q[1], w); }); return; } } var ns = nearSeg(w[0], w[1], 250), el = $('gPick'); if (!ns) { note('여기는 길에서 멀다'); return; }
     var nm = G.S[ns.seg][5] >= 0 ? G.j.names[G.S[ns.seg][5]] : '이름 없는 길'; el.style.display = 'flex'; el.style.left = Math.max(8, Math.min(cv.clientWidth - 228, px - 110)) + 'px'; el.style.top = Math.max(70, py - 64) + 'px';
     el.innerHTML = '<b>' + esc(nm) + '</b><button data-p="to">여기로 안내</button><button data-p="from">여기서 떠나기</button><button data-p="x">닫기</button>'; el._w = [ns.x, ns.y, nm]; }
   $('gPick').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var w = this._w, k = b.getAttribute('data-p'); this.style.display = 'none'; if (k === 'to') setDest(w[0], w[1], w[2]); else if (k === 'from') { if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; } sim = null; setMe(w[0], w[1], 5, null, 0); note('떠나는 곳을 손으로 정했다 — 실제 위치로 돌아가려면 ◎ 를 누른다'); } });
@@ -630,7 +637,7 @@
   fl.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; pickFound(+b.getAttribute('data-i')); });
   /* 주소로 받은 목적지 — #to=위도,경도&nm=이름 · #from=위도,경도(시험) · 주소에서 지운다(좌표가 남지 않게) */
   function hashGo() { var H = location.hash || '', t = /[#&]to=(-?[\d.]+),(-?[\d.]+)/.exec(H), f = /[#&]from=(-?[\d.]+),(-?[\d.]+)/.exec(H), n = /[#&]nm=([^&]*)/.exec(H);
-    if (f) setMe(PX(+f[2]), PY(+f[1]), 5, null, 0); if (t) { var x = PX(+t[2]), y = PY(+t[1]), nmH = n ? decodeURIComponent(n[1]) : '받은 자리'; pkEnsure([[x, y]], 800).then(function () { var ns = nearSeg(x, y, 600); if (ns) setDest(ns.x, ns.y, nmH); else note('받은 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 된다'); }); }
+    if (f) setMe(PX(+f[2]), PY(+f[1]), 5, null, 0); if (t) { var x = PX(+t[2]), y = PY(+t[1]), nmH = n ? decodeURIComponent(n[1]) : '받은 자리', tk2 = ++PICKSEQ; pkEnsure([[x, y]], 800).then(function () { if (tk2 !== PICKSEQ) return; var ns = nearSeg(x, y, 600); if (ns) setDest(ns.x, ns.y, nmH); else note('받은 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 된다'); }); }
     /* #q=주소·이름 — 받은 글로 바로 찾는다(티북 같은 데서 주소를 넘길 때 · # 뒤라 서버로 가지 않는다 · 읽고 지운다) */
     var qq = /[#&]q=([^&]*)/.exec(H); if (qq) { var qv = ''; try { qv = decodeURIComponent(qq[1]); } catch (e) {} if (qv) { fi.value = qv; findRun(qv, true); } }
     if (t || f || qq) { try { history.replaceState(null, '', location.pathname); } catch (e) {} } }
@@ -645,5 +652,5 @@
   try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {}
   function boot() { if (document.documentElement.classList.contains('gated')) return; var seen = false; try { seen = localStorage.getItem('tg_gargo_intro') === '1'; } catch (e) {} if (seen) { $('gIntro').style.display = 'none'; if (!/[#&]from=/.test(location.hash)) gpsStart(); } load(); }
   window.addEventListener('tggate', boot); boot();
-  window.GARGO = { alrLoad: function () { alrLoad(); return ALRP; }, alrAhead: alrAhead, routePoly: routePoly, aheadPoly: aheadPoly, tAt: tAt, places: function () { return plList(); }, plPut: plPut, pk: function () { return { on: !!PK, area: PKA, tiles: Object.keys(PKT).length, total: PK ? Object.keys(PK.tiles).length : 0 }; }, pkAll: function () { return PK ? pkLoad(Object.keys(PK.tiles).filter(function (k) { return !PKT[k]; })).then(function () { pkRebuild(true, true); }) : Promise.resolve(); }, pkEnsure: pkEnsure, todFor: todFor, localFind: function (q) { return localFind(q); }, bld: function () { return { idx: !!BIDX, tiles: Object.keys(BT).length, vis: BVIS.length, names: BNM ? BNM.length : 0 }; }, bnmLoad: function () { bldLoad(); return BLDP.then(function () { bnmLoad(); return BNMP; }); }, paint: function () { paint(); }, cruise: function (on) { if (on === false) cruiseStop(); else cruiseStart(); return cruise; }, ahead: ahead, mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
+  window.GARGO = { pkTurns: function () { return G ? G.j.turns.length : 0; }, pkCore: function () { return PK; }, alrLoad: function () { alrLoad(); return ALRP; }, alrAhead: alrAhead, routePoly: routePoly, aheadPoly: aheadPoly, tAt: tAt, places: function () { return plList(); }, plPut: plPut, pk: function () { return { on: !!PK, area: PKA, tiles: Object.keys(PKT).length, total: PK ? Object.keys(PK.tiles).length : 0, turnsTotal: PK ? PK.turns_total : 0, bake: PK ? PK.bake : '' }; }, pkAll: function () { return PK ? pkLoad(Object.keys(PK.tiles).filter(function (k) { return !PKT[k]; })).then(function () { pkRebuild(true, true); }) : Promise.resolve(); }, pkEnsure: pkEnsure, todFor: todFor, localFind: function (q) { return localFind(q); }, bld: function () { return { idx: !!BIDX, tiles: Object.keys(BT).length, vis: BVIS.length, names: BNM ? BNM.length : 0 }; }, bnmLoad: function () { bldLoad(); return BLDP.then(function () { bnmLoad(); return BNMP; }); }, paint: function () { paint(); }, cruise: function (on) { if (on === false) cruiseStop(); else cruiseStart(); return cruise; }, ahead: ahead, mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
 })();

@@ -8,7 +8,7 @@
   줄 한 줄 = [길 줄 번호(전체), …pack 의 seg 한 줄 그대로(마디는 전체 번호 · 선 번호는 그 파일의 geo 번호)]
   쓰기: py -3.12 -X utf8 tools/gargo/pack-tile.py seoul
 """
-import json, os, sys, collections
+import json, os, sys, collections, datetime
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 AREA = sys.argv[1] if len(sys.argv) > 1 else 'seoul'
 CELL = 2000; CORE = 5
@@ -37,12 +37,20 @@ def main():
     tc = {}
     for k, ids in T.items():
         for i in ids: tc[i] = k
-    turns_core = []; turns_t = collections.defaultdict(list)
+    # 회전 제한 = [거치는 마디, 들어오는 길(way) 번호, 나가는 길 번호, 0 금지·1 이 길로만] — t[1]·t[2] 는 **길 번호**(길 줄 번호가 아니다 · v0.8.0 은 이걸 길 줄로 읽어 모두 무효였다 — 독립 검수 2026-10-14)
+    #   거치는 마디가 core 에 있으면 core 에(큰길만 받아도 지켜진다) · 아니면 그 마디가 든 칸 모두에(그 마디를 쓰는 줄이 있는 칸이면 늘 같이 온다)
+    node_tiles = collections.defaultdict(list)
+    for k, ids in T.items():
+        for i in ids:
+            for nd in (S[i][0], S[i][1]):
+                if nd not in cn and k not in node_tiles[nd]: node_tiles[nd].append(k)
+    turns_core = []; turns_t = collections.defaultdict(list); lost = 0
     for t in P['turns']:
-        if t[1] in cs and t[2] in cs: turns_core.append(t); continue
-        k = tc.get(t[1]) if t[1] not in cs else tc.get(t[2])
-        if k is None: k = cell(*XY(t[0]))
-        turns_t[k].append(t)
+        if t[0] in cn: turns_core.append(t); continue
+        if not node_tiles.get(t[0]): lost += 1; continue
+        for k in node_tiles[t[0]]: turns_t[k].append(t)
+    if lost: print('⚠ 어느 줄에도 안 닿는 마디의 회전 제한', lost)
+    BAKE = datetime.datetime.now().strftime('%Y%m%d%H%M%S')   # 구운 판 — core 와 칸이 같은 판이어야 이어 붙인다(gargo.js 가 다르면 버림)
     D = os.path.join(ROOT, 'gargo', 'pk-%s' % AREA); os.makedirs(os.path.join(D, 't'), exist_ok=True)
     for f in os.listdir(os.path.join(D, 't')): os.remove(os.path.join(D, 't', f))
     sz = []
@@ -51,13 +59,13 @@ def main():
         ids = T.get(k, []); r, g = rows(ids); need = set()
         for i in ids: need.add(S[i][0]); need.add(S[i][1])
         nodes = [[n, nx[n], ny[n]] for n in sorted(need - cn)]
-        doc = {'schema': 'gargo-pack-tile/1', 'cell': k, 'nodes': nodes, 'segs': r, 'geo': g, 'turns': turns_t.get(k, [])}
+        doc = {'schema': 'gargo-pack-tile/1', 'bake': BAKE, 'cell': k, 'nodes': nodes, 'segs': r, 'geo': g, 'turns': turns_t.get(k, [])}
         p = os.path.join(D, 't', k + '.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); sz.append(os.path.getsize(p))
     r, g = rows(core)
     C = {k: P[k] for k in P if k not in ('nx', 'ny', 'seg', 'geo', 'turns')}
-    C.update({'schema': 'gargo-pack-tiles/1', 'cell': CELL, 'core_max_grade': CORE, 'proj': [LON0, LAT0, KX, KY], 'nodes': [[n, nx[n], ny[n]] for n in sorted(cn)], 'segs': r, 'geo': g, 'turns': turns_core,
+    C.update({'schema': 'gargo-pack-tiles/1', 'bake': BAKE, 'turns_total': len(set(tuple(t) for t in P['turns'])), 'cell': CELL, 'core_max_grade': CORE, 'proj': [LON0, LAT0, KX, KY], 'nodes': [[n, nx[n], ny[n]] for n in sorted(cn)], 'segs': r, 'geo': g, 'turns': turns_core,
               'tiles': {k: len(T.get(k, [])) for k in keys}, 'n_total': len(nx), 'seg_total': len(S),
-              'fields_tiles': 'core = 등급 1~%d 길 줄과 그 마디 · t/<칸>.json = 나머지 길 줄(가운데 점 기준 %dm 칸) · nodes[[마디 번호(전체), nx, ny]] · segs[[길 줄 번호(전체), …seg 한 줄(마디 = 전체 번호 · 선 번호 = 그 파일 geo 번호)]] · turns 는 전체 번호 그대로' % (CORE, CELL)})
+              'fields_tiles': 'core = 등급 1~%d 길 줄과 그 마디 · t/<칸>.json = 나머지 길 줄(가운데 점 기준 %dm 칸) · nodes[[마디 번호(전체), nx, ny]] · segs[[길 줄 번호(전체), …seg 한 줄(마디 = 전체 번호 · 선 번호 = 그 파일 geo 번호)]] · turns = [거치는 마디(전체 번호), 들어오는 길(way) 번호, 나가는 길 번호, 0 금지·1 이 길로만] — 마디가 core 에 있으면 core, 아니면 그 마디가 든 칸 모두' % (CORE, CELL)})
     p = os.path.join(D, 'core.json'); json.dump(C, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('core', len(core), '줄 ·', len(cn), '마디 ·', os.path.getsize(p), 'B · 칸', len(keys), '· 칸 합', sum(sz), 'B · 가장 큰 칸', max(sz) if sz else 0, 'B · 회전 제한 core', len(turns_core), '칸', sum(len(v) for v in turns_t.values()))
 if __name__ == '__main__': main()

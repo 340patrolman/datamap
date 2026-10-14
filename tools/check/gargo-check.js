@@ -10,7 +10,13 @@
   function ready() { try { var g = window.GARGO, st = g && g.state(); return !!(st && st.G && st.G.S && st.G.S.length && st.G.XS); } catch (e) { return false; } }
   /* v0.8.0 칸 묶음 — 처음엔 큰길만(칸 0) 받는지 보고, 검사(길 찾기 여러 벌)는 칸을 모두 받은 뒤에 한다 */
   var poll = setInterval(function () { if (ready()) { clearInterval(poll); var P0 = window.GARGO.pk(); ck('칸 묶음 — 처음엔 큰길 한 장 + 받은 자리(#from·#to) 둘레 칸만(전체의 1/4 아래)', !P0.on || (P0.tiles > 0 && P0.tiles < P0.total / 4), JSON.stringify(P0));
+      if (P0.on) ck('칸 묶음 — 큰길만·일부 칸만 받아도 큰길 마디의 회전 제한은 다 있다', window.GARGO.pkTurns() > P0.turnsTotal * 0.8, window.GARGO.pkTurns() + ' / 원본 ' + P0.turnsTotal);
       window.GARGO.pkAll().then(function () { var P1 = window.GARGO.pk(); if (P1.on) ck('칸 묶음 — 골목 칸을 모두 받아 합쳤다', P1.tiles === P1.total && window.GARGO.state().G.S.length > 60000, P1.tiles + '/' + P1.total + '칸 · 길 줄 ' + window.GARGO.state().G.S.length);
+        /* 내용 맞대기 — 큰길 묶음(core)의 회전 제한 200개가 길 계산이 쓰는 표(G.ban·G.only · 열쇠 「마디|들어오는 길 번호」)에 그대로 있는가. core 마디는 합칠 때 맨 앞에 core.nodes 차례로 번호가 매겨진다 */
+        if (P1.on) { var PKc = window.GARGO.pkCore(), Gs = window.GARGO.state().G, idx = {}, okT = 0, badT = []; PKc.nodes.forEach(function (r, i) { idx[r[0]] = i; });
+          PKc.turns.slice(0, 200).forEach(function (t) { var tb = (t[3] ? Gs.only : Gs.ban)[idx[t[0]] + '|' + t[1]]; if (tb && tb[t[2]]) okT++; else if (badT.length < 3) badT.push(t.join(',')); });
+          ck('칸 묶음 — 큰길 회전 제한 200개가 길 계산 표에 그대로(내용 맞대기)', okT === Math.min(200, PKc.turns.length), okT + '/' + Math.min(200, PKc.turns.length) + (badT.length ? ' · 빠짐 ' + badT.join(' | ') : '')); }
+        if (P1.on) ck('칸 묶음 — 회전 금지·지정 방향이 원본 묶음과 같은 수(길 번호 그대로 · v0.8.0~0.9.1 은 모두 무효였다)', window.GARGO.pkTurns() === P1.turnsTotal && P1.turnsTotal > 1000, window.GARGO.pkTurns() + ' / 원본 ' + P1.turnsTotal);
         setTimeout(function () { try { run(); } catch (e) { fail(e && e.message); } }, 2500); }); } else if (Date.now() - t0 > 45000) { clearInterval(poll); fail('45초 안에 길 묶음이 안 읽혔다(문법 오류 · 파일 없음) ' + (window.__ERR || []).join(' | ')); } }, 300);
 
   function run() {

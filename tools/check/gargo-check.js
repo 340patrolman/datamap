@@ -7,19 +7,20 @@
   function send() { var o = { checks: C }, s = btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), n = Math.ceil(s.length / 1500), id = String(Date.now());
     for (var i = 0; i < n; i++) (new Image()).src = '/__r?p=' + window.__PAGE + '&k=' + id + '&i=' + i + '&n=' + n + '&d=' + s.substr(i * 1500, 1500); }
   function fail(m) { ck('검사 스크립트가 끝까지 돌았다', false, m); send(); }
-  function ready() { try { var g = window.GARGO, st = g && g.state(); return !!(st && st.G && st.G.S && st.G.S.length); } catch (e) { return false; } }
+  function ready() { try { var g = window.GARGO, st = g && g.state(); return !!(st && st.G && st.G.S && st.G.S.length && st.G.XS); } catch (e) { return false; } }
   var poll = setInterval(function () { if (ready()) { clearInterval(poll); setTimeout(function () { try { run(); } catch (e) { fail(e && e.message); } }, 2500); } else if (Date.now() - t0 > 45000) { clearInterval(poll); fail('45초 안에 길 묶음이 안 읽혔다(문법 오류 · 파일 없음) ' + (window.__ERR || []).join(' | ')); } }, 300);
 
   function run() {
     var g = window.GARGO, st = g.state(), G = st.G, now = Date.now() / 1000;
     ck('가르고가 열린다(문법 · 길 묶음)', true, '길 ' + G.S.length + '줄 · 신호 교차로 ' + G.sig.length + '곳');
     ck('신호 교차로가 있다(서초 묶음 100곳 넘게)', G.sig.length > 100, G.sig.length);
+    ck('값 없는 신호도 신호로 친다(T-GIS 800곳 넘게 붙음)', G.XS.length > 800, G.XS.length);
     /* 1) 소통 갈래 — 앱 기준표 그대로 */
     var sp = [[60, 1, 100, 0], [40, 1, 100, 1], [20, 1, 100, 2], [30, 3, 50, 0], [20, 3, 50, 1], [10, 3, 50, 2], [22, 6, 30, 0], [13, 6, 30, 1], [8, 6, 30, 2]], bad = [];
     sp.forEach(function (q) { var v = g.spdLv(q[0], q[1], q[2]); if (v !== q[3]) bad.push(q.join('/') + '→' + v); });
     ck('소통 갈래 기준표(9칸)', !bad.length, bad.join(' '));
     /* 2) 길 계산 세 벌 — 서초역→양재역 · 고속터미널→방배역 · 교대역→예술의전당 */
-    var OD = [['서초역→양재역', 127.0076, 37.4919, 127.0341, 37.4844], ['고속터미널→방배역', 127.0049, 37.5049, 126.9976, 37.4814], ['교대역→예술의전당', 127.0142, 37.4934, 127.0118, 37.4786], ['서초역→서초경찰서(짧은 길)', 127.0076, 37.4919, 127.005607, 37.495467]];
+    var OD = [['서초역→양재역', 127.0076, 37.4919, 127.0341, 37.4844], ['고속터미널→방배역', 127.0049, 37.5049, 126.9976, 37.4814], ['교대역→예술의전당', 127.0142, 37.4934, 127.0118, 37.4786], ['서초역→서초경찰서(짧은 길)', 127.0076, 37.4919, 127.005607, 37.495467], ['방배경찰서→서초경찰서', 126.9826, 37.4813, 127.0056, 37.4955], ['사당역→고속터미널', 126.9816, 37.4766, 127.0049, 37.5049]];
     OD.forEach(function (o) {
       var a = g.P(o[1], o[2]), b = g.P(o[3], o[4]), r = g.findRoute(a[0], a[1], b[0], b[1], now, null), line = Math.hypot(a[0] - b[0], a[1] - b[1]);
       if (!r) { ck(o[0] + ' · 길이 나온다', false, '길 없음'); return; }
@@ -30,6 +31,9 @@
       for (i = 0; i + 1 < r.es.length; i++) { var e = r.es[i], f = r.es[i + 1]; if (G.eB[e] !== G.eA[f]) brk++;
         var key = G.eB[e] + '|' + G.S[G.eS[e]][6], w2 = G.S[G.eS[f]][6], bn = G.ban[key], on = G.only[key]; if ((bn && bn[w2]) || (on && !on[w2])) ban++; }
       ck(o[0] + ' · 줄이 끊기지 않는다', brk === 0, '끊긴 곳 ' + brk);
+      /* v0.5.0 길 고르기 품질 — 골목으로 돌지 않는다(골목·생활도로 길이 몫 20% 아래) · 꺾는 곳이 적다(9번 아래) · 에움(길 ÷ 직선) 1.7 아래 */
+      var al = 0, tot = 0; r.es.forEach(function (e2) { var q2 = G.S[G.eS[e2]]; tot += q2[2]; if (q2[4] >= 6) al += q2[2]; }); var alp = tot ? al / tot * 100 : 0, turns = r.mans.length - 1, det = r.dist / line;
+      ck(o[0] + ' · 골목으로 돌지 않는다(20% 아래) · 꺾음 9번 아래 · 에움 1.7 아래', line < 600 || (alp <= 20 && turns <= 9 && det <= 1.7), '골목 ' + Math.round(alp) + '% · 꺾음 ' + turns + ' · 에움 ' + det.toFixed(2));
       ck(o[0] + ' · 회전 금지·지정 방향을 어기지 않는다', ban === 0, '어긴 곳 ' + ban);
       var over = [], odd = [];
       r.sigs.forEach(function (s) { if (!(s.lim > 0)) odd.push(s.nm + ' 제한속도 없음');

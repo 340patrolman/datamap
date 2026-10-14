@@ -25,7 +25,8 @@
   }
   /* ---------- v0.8.0 칸 묶음 — 소유자 2026-10-14 「한강 이남이 완성되면 서울 전체로」 · 서울 한 장은 약 40MB 라 폰에 못 싣는다 ----------
      core = 등급 1~5 길 줄 · 칸 = 2km 골목 줄(tools/gargo/pack-tile.py) · 번호는 전체 번호 → 받은 것끼리 다시 매겨(pkMerge) 종전 build 로 */
-  var PKA = 'six', PK = null, PKT = {}, PKL = {}, PKRT = 0, PKW = false;
+  var PKA = (/[?&]pk=(seoul|six)(?![a-z])/.exec(location.search) || [0, 'six'])[1], PK = null,   /* 범위 — 지금 여섯 구 · 이남이 차면 'seoul' · 시험은 주소 뒤 ?pk=seoul */
+   PKT = {}, PKL = {}, PKRT = 0, PKW = false;
   function pkMerge() { var C = PK, nl = {}, nx = [], ny = [], seg = [], geo = [], sl = {}, turns = [], F = [C].concat(Object.keys(PKT).map(function (k) { return PKT[k]; }));
     F.forEach(function (f) { f.nodes.forEach(function (r) { if (nl[r[0]] == null) { nl[r[0]] = nx.length; nx.push(r[1]); ny.push(r[2]); } }); });
     F.forEach(function (f) { f.segs.forEach(function (r) { if (sl[r[0]] != null) return; var row = r.slice(1); row[0] = nl[row[0]]; row[1] = nl[row[1]]; if (row[0] == null || row[1] == null) return; if (row[8] >= 0) { geo.push(f.geo[row[8]]); row[8] = geo.length - 1; } sl[r[0]] = seg.length; seg.push(row); }); });

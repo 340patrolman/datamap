@@ -191,8 +191,8 @@
   function gpsStart() { if (!navigator.geolocation) { note('이 기기는 위치를 알려주지 않는다 — 지도를 길게 눌러 떠나는 곳을 정한다'); return; } if (watchId != null) return;
     watchId = navigator.geolocation.watchPosition(function (pos) { var c = pos.coords; if (sim) return; setMe(PX(c.longitude), PY(c.latitude), c.accuracy || 0, c.heading, c.speed); },
       function (e) { note(e && e.code === 1 ? '위치 권한이 꺼져 있다 — 아이폰: 설정 › 개인정보 보호 및 보안 › 위치 서비스 › Safari 웹사이트 › 「앱을 사용하는 동안」 · 지도를 길게 눌러 떠나는 곳을 정할 수도 있다' : '위치를 잡지 못했다 — 하늘이 보이는 곳에서 잠시 기다린다'); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 }); }
-  function setMe(x, y, acc, hd, spd) { var prev = me, h = hd != null && !isNaN(hd) && (spd == null || spd > 1) ? hd : null; if (h == null && prev) { var mv = Math.hypot(x - prev.x, y - prev.y); h = mv > 4 ? brg(prev.x, prev.y, x, y) : prev.hd; }
-    me = { x: x, y: y, acc: acc, hd: h == null ? 0 : h, spd: spd == null || isNaN(spd) ? (prev && prev.t ? Math.hypot(x - prev.x, y - prev.y) / Math.max(0.5, (Date.now() - prev.t) / 1000) : 0) : spd, t: Date.now(), out: !G || x < G.box[0] - 300 || x > G.box[1] + 300 || y < G.box[2] - 300 || y > G.box[3] + 300 };
+  function setMe(x, y, acc, hd, spd) { var prev = me, hk0 = true, h = hd != null && !isNaN(hd) && hd >= 0 && (spd == null || spd > 1) ? hd : null; if (h == null && prev) { var mv = Math.hypot(x - prev.x, y - prev.y), still = spd != null && !isNaN(spd) && spd <= 1, fp = still || mv <= 4; h = fp ? prev.hd : brg(prev.x, prev.y, x, y); if (fp && !prev.hk) hk0 = false; }
+    me = { x: x, y: y, acc: acc, hk: h != null && hk0, hd: h == null ? 0 : h, spd: spd == null || isNaN(spd) ? (prev && prev.t ? Math.hypot(x - prev.x, y - prev.y) / Math.max(0.5, (Date.now() - prev.t) / 1000) : 0) : spd, t: Date.now(), out: !G || x < G.box[0] - 300 || x > G.box[1] + 300 || y < G.box[2] - 300 || y > G.box[3] + 300 };
     if (dest && !route && G) plan(); if (route) track(); if (follow) { view.cx = me.x; view.cy = me.y; if (guide || cruise) view.rot = me.hd; } paint(); draw(); }
   /* 길 위의 내 자리(진행 거리) · 벗어나면 다시 계산 */
   function track() { var r = route, best = 1e9, bd = r.pos || 0, lo = 0, i; for (i = 0; i + 3 < r.pts.length; i += 2) { var k = i / 2; if (r.cum[k + 1] < (r.pos || 0) - 60) continue; if (r.cum[k] > (r.pos || 0) + 400) break; var ax = r.pts[i], ay = r.pts[i + 1], bx = r.pts[i + 2], by = r.pts[i + 3], vx = bx - ax, vy = by - ay, l2 = vx * vx + vy * vy, t = l2 ? Math.max(0, Math.min(1, ((me.x - ax) * vx + (me.y - ay) * vy) / l2)) : 0, d = Math.hypot(ax + vx * t - me.x, ay + vy * t - me.y); if (d < best) { best = d; bd = r.cum[k] + Math.sqrt(l2) * t; lo = i; } }
@@ -252,10 +252,10 @@
   /* 평상시 신호 — 방위마다 직진 신호의 지금 색(아는 곳만). 가운데 점에서 그 차가 들어오는 쪽으로 짧은 막대 · 가까이 보면 남은 초 */
   var SIDEV = { nt: [0, -1], ne: [0.7, -0.7], et: [1, 0], se: [0.7, 0.7], st: [0, 1], sw: [-0.7, 0.7], wt: [-1, 0], nw: [-0.7, -0.7] };
   function sigSides(no) { var out = {}, recs = (SIG.its[no] || []).filter(recOk); recs.forEach(function (r) { r.mv.forEach(function (m) { if ((m[1] === 'St' || m[1] === 'Lt') && m[2] != null && DIRS.indexOf(m[0]) >= 0) (out[m[0]] = out[m[0]] || {})[m[1]] = 1; }); }); return out; }
-  function inZone(x, y) { if (!me) return false; var dx = x - me.x, dy = y - me.y, hr = me.hd * Math.PI / 180, f = dx * Math.sin(hr) - dy * Math.cos(hr), d = Math.hypot(dx, dy); return f >= 0 ? d <= 1000 : d <= 500; }
-  function drawSigs(dark, s, W, H, onR, now) { if (s <= 0.1) return; var live = OV.s && !guide && SIG.ready && s > 0.28, cr = Math.cos(-view.rot * Math.PI / 180), sr = Math.sin(-view.rot * Math.PI / 180), nd = 0;
+  function inZone(x, y) { if (!me) return false; if (!me.hk) return Math.hypot(x - me.x, y - me.y) <= 500; var dx = x - me.x, dy = y - me.y, hr = me.hd * Math.PI / 180, f = dx * Math.sin(hr) - dy * Math.cos(hr), d = Math.hypot(dx, dy); return f >= 0 ? d <= 1000 : d <= 500; }
+  function drawSigs(dark, s, W, H, onR, now) { if (s <= 0.1) return; var live = OV.s && SIG.ready && s > 0.28, zone = guide || cruise, cr = Math.cos(-view.rot * Math.PI / 180), sr = Math.sin(-view.rot * Math.PI / 180), nd = 0;
     G.sig.forEach(function (sg, si) { if (onR[si]) return; var q = W2S(sg.x, sg.y); if (q[0] < -20 || q[0] > W + 20 || q[1] < -20 || q[1] > H + 20) return;
-      if (live && nd < 70 && (!cruise || inZone(sg.x, sg.y))) { var sd = sg._sd || (sg._sd = sigSides(sg.no)), ks = Object.keys(sd), any = false; ks.forEach(function (k) { if (!sd[k].St) return; var st = sigAt(sg.no, now, k, 'St'); if (!st || st.kind === 'avg') return; any = true; var v = SIDEV[k], vx = v[0] * cr - v[1] * sr, vy = v[0] * sr + v[1] * cr, L = s > 0.6 ? 17 : 12;
+      if (live && nd < 70 && (!zone || inZone(sg.x, sg.y))) { var sd = sg._sd || (sg._sd = sigSides(sg.no)), ks = Object.keys(sd), any = false; ks.forEach(function (k) { if (!sd[k].St) return; var st = sigAt(sg.no, now, k, 'St'); if (!st || st.kind === 'avg') return; any = true; var v = SIDEV[k], vx = v[0] * cr - v[1] * sr, vy = v[0] * sr + v[1] * cr, L = s > 0.6 ? 17 : 12;
           ctx.beginPath(); ctx.moveTo(q[0] + vx * 5, q[1] + vy * 5); ctx.lineTo(q[0] + vx * L, q[1] + vy * L); ctx.lineCap = 'round'; ctx.lineWidth = 6.5; ctx.strokeStyle = '#111827'; ctx.stroke(); ctx.lineWidth = 4; ctx.strokeStyle = st.green ? '#22c55e' : '#ef4444'; ctx.stroke();
           if (s > 0.75 || cruise) { ctx.font = '800 10.5px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; var tx = Math.ceil(st.remain) + ''; ctx.lineWidth = 3; ctx.strokeStyle = dark ? '#111827' : '#fff'; ctx.strokeText(tx, q[0] + vx * (L + 10), q[1] + vy * (L + 10)); ctx.fillStyle = st.green ? '#15803d' : '#b91c1c'; ctx.fillText(tx, q[0] + vx * (L + 10), q[1] + vy * (L + 10)); } });
         if (any) nd++; ctx.beginPath(); ctx.arc(q[0], q[1], 4.2, 0, Math.PI * 2); ctx.fillStyle = any ? '#111827' : (dark ? '#64748b' : '#94a3b8'); ctx.fill(); return; }
@@ -334,7 +334,7 @@
     drawBase(dark, s);
     for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s) + 2 / s; ctx.strokeStyle = dark ? '#0a101c' : RS[c][2]; ctx.stroke(G.PATH[c]); }
     for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s); ctx.strokeStyle = dark ? RS[c][3] : RS[c][1]; ctx.stroke(G.PATH[c]); }
-    drawBld(dark, s); if (!guide && OV.t) drawTraf(s);
+    drawBld(dark, s); if (OV.t) drawTraf(s);
     if (route) { var p = route.pts, i; ctx.beginPath(); ctx.moveTo(p[0], p[1]); for (i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]); ctx.lineWidth = Math.max(13, 11 / s); ctx.strokeStyle = dark ? '#0b1220' : '#ffffff'; ctx.stroke(); ctx.lineWidth = Math.max(10.5, 8.6 / s); ctx.strokeStyle = '#1b54d6'; ctx.stroke(); ctx.lineWidth = Math.max(7.5, 6 / s); ctx.strokeStyle = '#3d86ff'; ctx.stroke();
       route.cong.forEach(function (cg) { ctx.beginPath(); var on = false; for (var u = 0; u < p.length; u += 2) { var dd = route.cum[u / 2]; if (dd >= cg[0] - 0.5 && dd <= cg[1] + 0.5) { if (!on) { ctx.moveTo(p[u], p[u + 1]); on = true; } else ctx.lineTo(p[u], p[u + 1]); } } ctx.lineWidth = Math.max(7.5, 6 / s); ctx.strokeStyle = cg[2] === 2 ? '#dc2626' : '#f59e0b'; ctx.stroke(); }); }
     ctx.restore();
@@ -378,13 +378,13 @@
     var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd');
     if (!route && cruise) { paintCruise(); return; }
     if (!route) { top.style.display = 'none'; sg.style.display = 'none'; spd.style.display = 'none'; $('gFind').style.display = guide ? 'none' : 'flex';
-      bot.innerHTML = '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest ? '' : '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기 — 앞 신호·소통</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 서초구 둘레 밖이다 — 시험판은 서초구와 둘레 2km 안에서만 길을 찾는다.</div>' : ''); return; }
+      setH(bot, '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest ? '' : '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기 — 앞 신호·소통</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 서초구 둘레 밖이다 — 시험판은 서초구와 둘레 2km 안에서만 길을 찾는다.</div>' : '')); return; }
     var r = route, now = Date.now() / 1000, pos = r.pos || 0, left = Math.max(0, r.dist - pos), frac = r.dist ? left / r.dist : 0, tLeft = r.time * frac;
     var nx = null, n2 = null; for (var i = 0; i < r.mans.length; i++) if (r.mans[i].d > pos + 5) { nx = r.mans[i]; n2 = r.mans[i + 1] || null; break; }
     var known = r.sigs.filter(function (g) { return g.s && g.s.kind !== 'avg'; }).length, wsum = 0; r.sigs.forEach(function (g) { wsum += g.tw || 0; });
     if (guide) { $('gFind').style.display = 'none'; top.style.display = 'flex';
       top.innerHTML = nx ? '<div class="arw">' + ARW[nx.k] + '</div><div class="tx"><b>' + km(nx.d - pos) + '</b><span>' + (nx.k === 'E' ? '목적지' : MKO[nx.k]) + (nx.nm ? ' · ' + esc(nx.nm) : '') + (nx.sig ? ' <em>(' + esc(nx.sig) + ')</em>' : '') + '</span>' + (function () { var lh = nx.d - pos < 700 ? laneHint(nx) : ''; return lh ? '<small class="ln2">차로 — ' + lh + '</small>' : ''; })() + (n2 ? '<small>그다음 ' + ARW[n2.k] + ' ' + km(n2.d - nx.d) + ' 뒤 ' + MKO[n2.k] + '</small>' : '') + '</div>' : '';
-      bot.innerHTML = '<div class="eta"><div><b>' + hm(now + tLeft) + '</b><span>도착</span></div><div><b>' + mmss(tLeft) + '</b><span>남은 시간</span></div><div><b>' + km(left) + '</b><span>남은 거리</span></div><button id="gStop" class="stop">안내 끝</button></div>';
+      setH(bot, '<div class="eta"><div><b>' + hm(now + tLeft) + '</b><span>도착</span></div><div><b>' + mmss(tLeft) + '</b><span>남은 시간</span></div><div><b>' + km(left) + '</b><span>남은 거리</span></div><button id="gStop" class="stop">안내 끝</button></div>');
       var lim = 0, rn = ''; for (var k = 0; k < r.lims.length; k++) if (r.lims[k][0] <= pos + 1) { lim = r.lims[k][1]; rn = r.lims[k][2]; } spd.style.display = 'flex'; var v = Math.round((me && me.spd || 0) * 3.6);
       spd.innerHTML = '<div class="lim">' + lim + '</div><div class="cur' + (v > lim + 2 ? ' over' : '') + '"><b>' + v + '</b><span>km/h</span></div>' + (rn ? '<div class="rn">' + esc(rn) + '</div>' : '');
     } else { top.style.display = 'none'; spd.style.display = 'none'; $('gFind').style.display = 'flex';
@@ -427,36 +427,52 @@
      길을 따라가는 법: 지금 선 줄에서 진행 방향 쪽 줄을 잡고, 갈림길마다 가장 덜 꺾이는(40° 안) 줄로 900m 까지. 곧장 갈 줄이 없으면(막다른 길·꺾어야 하는 삼거리) 거기서 멈춘다 */
   var cruise = false;
   function segEdges(seg) { var out = [], k; for (k = G.oHead[G.S[seg][0]]; k < G.oHead[G.S[seg][0] + 1]; k++) if (G.eS[G.oList[k]] === seg) out.push(G.oList[k]); for (k = G.oHead[G.S[seg][1]]; k < G.oHead[G.S[seg][1] + 1]; k++) if (G.eS[G.oList[k]] === seg && out.indexOf(G.oList[k]) < 0) out.push(G.oList[k]); return out; }
-  function ahead() { if (!me || !G || me.out) return null; var a = nearSeg(me.x, me.y, 45); if (!a) return null; var best = -1, bdif = 61; segEdges(a.seg).forEach(function (e) { var eb = G.eR[e] ? (a.brg + 180) % 360 : a.brg, df = Math.abs(angDiff(me.hd, eb)); if (df < bdif) { bdif = df; best = e; } });
-    var q = G.S[a.seg], out = { seg: a.seg, e: best, nm: q[5] >= 0 ? G.j.names[q[5]] : '', lim: q[3] || 30, cls: q[4], live: best >= 0 ? eLive(best) : null, sig: null, sigs: [] }; if (best < 0) return out;
+  /* v0.6.1 독립 검수 반영 — 가까운 줄 여럿(맞은편 차로·교차로의 가로지르는 길) 중 내 진행 방향에 맞는 줄을 고른다 · 맞는 것이 없으면 이름·제한속도도 비운다(남의 길 값을 보이지 않는다) */
+  function ahead() { if (!me || !G || me.out || !me.hk) return null; var C = nearSegs(me.x, me.y, 45, 24); if (!C.length) return null; var a = null, best = -1, k0 = 1e9;
+    C.forEach(function (o) { segEdges(o.seg).forEach(function (e) { var eb = G.eR[e] ? (o.brg + 180) % 360 : o.brg, df = Math.abs(angDiff(me.hd, eb)); if (df > 60) return; var k = df + o.d * 1.5; if (k < k0) { k0 = k; best = e; a = o; } }); });
+    if (best < 0) return { seg: -1, e: -1, nm: '', lim: 0, cls: 0, live: null, sig: null, sigs: [], off: 1 };
+    var q = G.S[a.seg], out = { seg: a.seg, e: best, nm: q[5] >= 0 ? G.j.names[q[5]] : '', lim: q[3] || 30, cls: q[4], live: eLive(best), sig: null, sigs: [] };
     var p = G.SP[a.seg], al = 0, tot = 0, u; for (u = 0; u + 3 < p.length; u += 2) { var l = Math.hypot(p[u + 2] - p[u], p[u + 3] - p[u + 1]); if (u < a.u) al += l; else if (u === a.u) al += l * a.t; tot += l; }
-    var fr = tot ? al / tot : 0, e = best, dist = eLen(e) * (G.eR[e] ? fr : 1 - fr), now = Date.now() / 1000, v = Math.max(3, me.spd > 2 ? me.spd : out.lim / 3.6 * 0.6);
-    for (var step = 0; step < 24 && dist < 1000; step++) { var nd = G.eB[e], f = -1, fd = 40; for (var i = G.oHead[nd]; i < G.oHead[nd + 1]; i++) { var g = G.oList[i]; if (G.eB[g] === G.eA[e] && G.eS[g] === G.eS[e]) continue; var d2 = Math.abs(angDiff(eBrgIn(e), eBrgOut(g))); if (d2 < fd) { fd = d2; f = g; } }
-      if (f < 0) break; var sc = sigCost(e, f, now + dist / v); if (sc) { var known = sc.si >= 0, sg = known ? G.sig[sc.si] : XS[sc.xi - 1]; var one = { nm: sg.nm, no: known ? sg.no : '', x: sg.x, y: sg.y, d: dist, side: sc.side, unk: !known, eta: dist / v }; out.sigs.push(one); if (!out.sig) out.sig = one; } dist += eLen(f); e = f; }
+    /* 닿는 시각 = 줄마다 min(지금 속도, 그 줄 제한속도) — 제한속도를 넘는 속도로 닿는 것을 셈하지 않는다 */
+    var fr = tot ? al / tot : 0, e = best, d0 = eLen(e) * (G.eR[e] ? fr : 1 - fr), dist = d0, now = Date.now() / 1000, v = me.spd > 2 ? me.spd : 0, vo = function (x) { return Math.max(3, Math.min(v || eSpd(x) / 3.6 * 0.6, eSpd(x) / 3.6)); }, eta = d0 / vo(e);
+    function put(sc, x, more) { var known = sc.si >= 0, sg = known ? G.sig[sc.si] : XS[sc.xi - 1], one = { nm: sg.nm, no: known ? sg.no : '', x: sg.x, y: sg.y, d: dist, side: sc.side, unk: !known, mv: sc.mv, eta: eta }; for (var kk in more) one[kk] = more[kk]; out.sigs.push(one); if (!out.sig) out.sig = one; }
+    for (var step = 0; step < 24 && dist < 1000; step++) { var nd = G.eB[e], f = -1, fd = 40, f2 = -1, fd2 = 1e9, any = -1;
+      for (var i = G.oHead[nd]; i < G.oHead[nd + 1]; i++) { var g = G.oList[i]; if (G.eB[g] === G.eA[e] && G.eS[g] === G.eS[e]) continue; if (any < 0) any = g; var d2 = Math.abs(angDiff(eBrgIn(e), eBrgOut(g))); if (d2 < fd) { if (f >= 0) { f2 = f; fd2 = fd; } fd = d2; f = g; } else if (d2 < fd2) { f2 = g; fd2 = d2; } }
+      if (f < 0) { var sx = any >= 0 ? sigCost(e, any, now) : null; if (sx) put(sx, 0, { noSt: 1 }); break; }   /* 곧장 갈 줄이 없어도 신호가 있으면 알린다 */
+      var amb = f2 >= 0 && fd2 - fd < 10 && G.S[G.eS[f2]][5] !== G.S[G.eS[f]][5], sc = sigCost(e, f, now); if (sc) put(sc, 0, amb ? { amb: 1 } : {}); if (amb) break;
+      dist += eLen(f); eta += eLen(f) / vo(f); e = f; }
     return out; }
+  function sigUse(g) { return !g.unk && !g.noSt && !g.amb && g.mv === 'St'; }   /* 「내 방향(직진) 값」으로 보여도 되는가 */
+  function sigWhy(g) { return g.unk ? '이 신호는 <b>자료가 없다</b> — 눈으로 본다' : g.noSt ? '여기서 곧장 가는 길이 없다(꺾어야 한다) — 내 방향 값을 <b>가리지 못한다</b> · 눈으로' : g.amb ? '갈림이 비슷해 어느 길로 가는지 <b>못 가린다</b> — 눈으로' : '길이 꺾여 들어간다 — 직진 값을 <b>쓰지 않는다</b> · 눈으로'; }
   var CRA = null;
-  function drawAhead(dark, now) { if (!CRA || !CRA.sigs) return; CRA.sigs.forEach(function (g) { var q = W2S(g.x, g.y), st = g.unk ? null : sigAt(g.no, now, g.side, 'St'), ok = st && st.kind !== 'avg', tx = ok ? String(Math.ceil(st.remain)) : '?', w = ok ? 30 : 22, x = q[0] + 12, y = q[1] - 11;
+  function drawAhead(dark, now) { if (!CRA || !CRA.sigs) return; CRA.sigs.forEach(function (g) { var q = W2S(g.x, g.y), st = sigUse(g) ? sigAt(g.no, now, g.side, 'St') : null, ok = st && st.kind !== 'avg', tx = ok ? String(Math.ceil(st.remain)) : '?', w = ok ? 30 : 22, x = q[0] + 12, y = q[1] - 11;
       ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, 22, 11); else ctx.rect(x, y, w, 22); ctx.fillStyle = ok ? (st.green ? '#16a34a' : '#dc2626') : '#64748b'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
       ctx.font = '900 12.5px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(tx, x + w / 2, y + 11.5); }); }
-  function cruiseStart() { if (!G) return; if (!me) { gpsStart(); note('내 자리를 기다리는 중 — 위치를 허락하면 따라가기 시작한다'); } cruise = true; follow = true; document.body.classList.add('guiding'); view.s = Math.max(0.5, Math.min(0.9, cv.clientHeight * 0.68 / 1000));   /* 앞으로 1km 가 화면에 들게(내 자리는 화면 68% 높이 → 뒤로는 약 470m) */
-    if (me) { view.cx = me.x; view.cy = me.y; view.rot = me.hd; }
-    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} paint(); draw(); }
+  function wakeOn() { try { if (navigator.wakeLock && !wake) navigator.wakeLock.request('screen').then(function (w) { if (guide || cruise) wake = w; else try { w.release(); } catch (e) {} }).catch(function () {}); } catch (e) {} }
+  function cruiseStart() { if (!G) return; if (watchId == null && !sim) gpsStart(); if (!me) note('내 자리를 기다리는 중 — 위치를 허락하면 따라가기 시작한다'); cruise = true; follow = true; document.body.classList.add('guiding'); view.s = Math.max(0.5, Math.min(0.9, cv.clientHeight * 0.68 / 1000));   /* 앞으로 1km 가 화면에 들게(내 자리는 화면 68% 높이 → 뒤로는 약 470m) */
+    if (me) { view.cx = me.x; view.cy = me.y; view.rot = me.hd; } wakeOn(); paint(); draw(); }
   function cruiseStop() { cruise = false; CRA = null; document.body.classList.remove('guiding'); view.rot = 0; try { if (wake) wake.release(); } catch (e) {} wake = null; paint(); draw(); }
-  function paintCruise() { var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd'), now = Date.now() / 1000, A = ahead(); CRA = A; $('gFind').style.display = 'none'; top.style.display = 'flex';
-    var lv = A && A.live ? spdLv(A.live, A.cls, A.lim) : -1, flow = lv < 0 ? '' : '<small class="ln2">이 길 지금 — <b>' + ['원활', '서행', '정체'][lv] + '</b> · 시속 ' + Math.round(A.live) + 'km쯤</small>';
-    top.innerHTML = '<div class="arw">⬆</div><div class="tx"><b>' + (A && A.nm ? esc(A.nm) : (me ? '길 위가 아니다' : '내 자리 기다리는 중')) + '</b><span>켜놓고 다니기 — 목적지 없음</span>' + flow + '</div>';
-    bot.innerHTML = '<div class="eta"><div><b>' + hm(now) + '</b><span>지금</span></div><div><b>' + (LIVE.m ? esc(String(LIVE.made || '').slice(-5)) : '없음') + '</b><span>소통 받은 때</span></div><button id="gCruiseX" class="stop">끝</button></div>';
-    if (A && me) { var v = Math.round((me.spd || 0) * 3.6); spd.style.display = 'flex'; spd.innerHTML = '<div class="lim">' + A.lim + '</div><div class="cur' + (v > A.lim + 2 ? ' over' : '') + '"><b>' + v + '</b><span>km/h</span></div>' + (A.nm ? '<div class="rn">' + esc(A.nm) + '</div>' : ''); } else spd.style.display = 'none';
-    var ns = A && A.sig; if (!ns) { sg.style.display = 'none'; return; } var st = ns.unk ? null : sigAt(ns.no, now, ns.side, 'St'), at = ns.unk || !(me && me.spd > 2) ? null : sigAt(ns.no, now + ns.eta, ns.side, 'St'), h = '';
+  /* 같은 글이면 다시 쓰지 않는다 — 누르는 도중 단추가 바뀌어 눌림이 사라지는 것을 막는다(다른 곳이 그 사이 고쳐 썼으면 다시 쓴다) */
+  function setH(el, h) { if (el._h === h && el._hs === el.innerHTML) return; el._h = h; el.innerHTML = h; el._hs = el.innerHTML; }
+  function paintCruise() { var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd'), now = Date.now() / 1000, age = me && !sim ? (Date.now() - me.t) / 1000 : 0, lost = age > 5, A = lost ? null : ahead(); CRA = A; $('gFind').style.display = 'none'; top.style.display = 'flex';
+    var lv = A && A.live ? spdLv(A.live, A.cls, A.lim) : -1, flow = lv < 0 ? '' : '<small class="ln2">이 길 지금 — <b>' + ['원활', '서행', '정체'][lv] + '</b>' + (A.live <= A.lim ? ' · 시속 ' + Math.round(A.live) + 'km쯤' : '') + '</small>';
+    var t1 = lost ? '📡 위치가 끊겼다' : A && A.nm ? esc(A.nm) : !me ? '내 자리 기다리는 중' : !me.hk ? '방향을 잡는 중' : me.out ? '가르고 지도 밖' : A && A.off ? '가는 쪽의 길을 못 찾았다' : '길 위가 아니다',
+      t2 = lost ? Math.round(age) + '초 전 자리 — 다시 잡히면 이어서 보인다' : me && !me.hk ? '조금 움직이면 가는 쪽의 앞 신호를 보인다' : me && me.out ? '서초구와 그 둘레에서만 길을 안다' : '켜놓고 다니기 — 목적지 없음';
+    setH(top, '<div class="arw">' + (lost ? '…' : '⬆') + '</div><div class="tx"><b>' + t1 + '</b><span>' + t2 + '</span>' + flow + '</div>');
+    setH(bot, '<div class="eta"><div><b>' + hm(now) + '</b><span>지금</span></div><div><b>' + (LIVE.m ? esc(String(LIVE.made || '').slice(-5)) : '없음') + '</b><span>소통 받은 때</span></div><button id="gCruiseX" class="stop">끝</button></div>');
+    if (A && !A.off && me) { var v = Math.round((me.spd || 0) * 3.6); spd.style.display = 'flex'; setH(spd, '<div class="lim">' + A.lim + '</div><div class="cur' + (v > A.lim + 2 ? ' over' : '') + '"><b>' + v + '</b><span>km/h</span></div>' + (A.nm ? '<div class="rn">' + esc(A.nm) + '</div>' : '')); } else spd.style.display = 'none';
+    var ns = A && A.sig; if (!ns) { sg.style.display = 'none'; return; } var use = sigUse(ns), st = use ? sigAt(ns.no, now, ns.side, 'St') : null, kmh = (me.spd || 0) * 3.6,
+      at = use && me.spd > 2 && kmh <= A.lim + 2 && !night() ? sigAt(ns.no, now + ns.eta, ns.side, 'St') : null, h = '';   /* 「닿으면」 — 움직일 때만 · 제한속도 넘게 달리는 중이면 안 보임 · 밤(22~06시) 안 보임 */
     sg.style.display = 'block'; var tb = top.getBoundingClientRect(); sg.style.top = Math.round(tb.bottom + 6) + 'px'; sg.className = 'sig ' + (!st || st.kind === 'avg' ? 'unk' : st.green ? 'grn' : 'red');
-    h += '<div class="hd"><b>🚦 ' + esc(ns.nm) + '</b><span>' + km(ns.d) + ' 앞 · ' + (DIRKO[ns.side] || '') + '쪽에서 직진</span></div>';
-    if (!st) h += '<div class="ln">이 신호는 <b>자료가 없다</b> — 눈으로 본다</div>';
+    h += '<div class="hd"><b>🚦 ' + esc(ns.nm) + '</b><span>' + km(ns.d) + ' 앞 · ' + (DIRKO[ns.side] || '') + '쪽에서 ' + (use ? '직진' : '들어감') + '</span></div>';
+    if (!use) h += '<div class="ln">' + sigWhy(ns) + '</div>';
+    else if (!st) h += '<div class="ln">이 신호는 <b>자료가 없다</b> — 눈으로 본다</div>';
     else if (st.kind === 'avg') h += '<div class="ln">지금 색은 <b>모른다</b>(이 시각대를 아직 못 받았다) · 평균 기다림 ' + Math.round(st.wait) + '초 · 주기 ' + Math.round(st.C) + '초</div>';
     else { h += '<div class="now"><i></i><b>' + (st.green ? '녹색' : '적색') + ' ' + Math.ceil(st.remain) + '초</b><span>' + (st.green ? '뒤 꺼짐' : '뒤 녹색') + '</span></div>';
-      if (at && at.kind !== 'avg') h += '<div class="ln">지금 속도로 닿으면(' + Math.round(ns.eta) + '초 뒤) → ' + (at.green ? '<b class="g">녹색 통과</b> <em>(남은 녹색 ' + Math.floor(at.remain) + '초)</em>' : '<b class="r">적색</b> · ' + Math.ceil(at.wait) + '초 기다림') + '</div>';
+      if (at && at.kind !== 'avg') h += '<div class="ln">지금 속도(제한속도 안)로 닿으면(' + Math.round(ns.eta) + '초 뒤) → ' + (at.green ? '<b class="g">녹색일 때</b> <em>(남은 녹색 ' + Math.floor(at.remain) + '초)</em>' : '<b class="r">적색</b> · ' + Math.ceil(at.wait) + '초 기다림') + '</div>';
       h += '<div class="src">' + (st.kind === 'pl' ? '시각대 표(계획값)' : '방금 받은 값에서 이어 셈') + ' · 내 진행 방향(직진)의 값 · 수동 조작·감응 신호면 다르다 · 눈으로 확인</div>'; }
-    sg.innerHTML = h; }
-  function guideStart() { if (!route) return; guide = true; follow = true; document.body.classList.add('guiding'); view.s = 1.1; if (me) { view.cx = me.x; view.cy = me.y; view.rot = me.hd; } lastSay = {}; try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} say('안내를 시작합니다'); paint(); draw(); }
+    setH(sg, h); }
+  function guideStart() { if (!route) return; guide = true; follow = true; document.body.classList.add('guiding'); view.s = 1.1; if (me) { view.cx = me.x; view.cy = me.y; view.rot = me.hd; } lastSay = {}; wakeOn(); say('안내를 시작합니다'); paint(); draw(); }
   function guideStop(done) { guide = false; document.body.classList.remove('guiding'); view.rot = 0; try { if (wake) wake.release(); } catch (e) {} wake = null; if (sim) { clearInterval(sim.t); sim = null; } if (done) { route = null; dest = null; } paint(); draw(); }
   function simStart() { if (!route) return; var r = route, d = 0, last = Date.now(); voiceOn = false; $('gVoice').classList.remove('on'); guideStart(); note('모의 주행 — 제한속도로 길을 따라간다(신호에서는 예상대로 선다) · 실제 위치가 아니다');
     sim = { t: setInterval(function () { var now = Date.now(), dt = (now - last) / 1000 * 4; last = now; var lim = 30, k; for (k = 0; k < r.lims.length; k++) if (r.lims[k][0] <= d + 1) lim = r.lims[k][1];
@@ -484,7 +500,7 @@
   function setDest(x, y, nm) { if (cruise) cruiseStop(); dest = { x: x, y: y, nm: nm || '목적지' }; route = null; if (!me) gpsStart(); if (me) plan(); else { paint(); draw(); } }
   document.addEventListener('click', function (e) { var t = e.target.closest('button'); if (!t) return; var id = t.id;
     if (id === 'gGo') { voiceAsk(); guideStart(); } else if (id === 'gSim') simStart(); else if (id === 'gClr') { route = null; dest = null; note(''); paint(); draw(); } else if (id === 'gStop') guideStop(false); else if (id === 'gCruise') cruiseStart(); else if (id === 'gCruiseX') cruiseStop();
-    else if (id === 'gCen') { follow = true; t.classList.remove('off'); if (watchId == null && !sim) gpsStart(); if (me) { view.cx = me.x; view.cy = me.y; if (guide) view.rot = me.hd; else if (view.s < 0.5) view.s = 0.9; } draw(); }
+    else if (id === 'gCen') { follow = true; t.classList.remove('off'); if (watchId == null && !sim) gpsStart(); if (me) { view.cx = me.x; view.cy = me.y; if (guide || cruise) view.rot = me.hd; else if (view.s < 0.5) view.s = 0.9; } draw(); }
     else if (id === 'gVoice') { voiceOn = !voiceOn; t.classList.toggle('on', voiceOn); if (voiceOn) say('음성 안내를 켭니다'); else if (window.speechSynthesis) speechSynthesis.cancel(); }
     else if (id === 'gMic') micGo();
     else if (t.hasAttribute('data-ov')) { var k = t.getAttribute('data-ov'); OV[k] = OV[k] ? 0 : 1; t.classList.toggle('on', !!OV[k]); try { localStorage.setItem('tg_gargo_ov', JSON.stringify(OV)); } catch (x) {} draw(); }
@@ -522,5 +538,5 @@
   try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {}
   function boot() { if (document.documentElement.classList.contains('gated')) return; var seen = false; try { seen = localStorage.getItem('tg_gargo_intro') === '1'; } catch (e) {} if (seen) { $('gIntro').style.display = 'none'; if (!/[#&]from=/.test(location.hash)) gpsStart(); } load(); }
   window.addEventListener('tggate', boot); boot();
-  window.GARGO = { cruise: function (on) { if (on === false) cruiseStop(); else cruiseStart(); return cruise; }, ahead: ahead, mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
+  window.GARGO = { paint: function () { paint(); }, cruise: function (on) { if (on === false) cruiseStop(); else cruiseStart(); return cruise; }, ahead: ahead, mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
 })();

@@ -38,8 +38,9 @@
       ck(o[0] + ' · 줄이 끊기지 않는다', brk === 0, '끊긴 곳 ' + brk);
       /* v0.5.0 길 고르기 품질 — 골목으로 돌지 않는다(골목·생활도로 길이 몫 20% 아래) · 꺾는 곳이 적다(9번 아래) · 에움(길 ÷ 직선) 1.7 아래 */
       var al = 0, tot = 0; r.es.forEach(function (e2) { var q2 = G.S[G.eS[e2]]; tot += q2[2]; if (q2[4] >= 6) al += q2[2]; }); var alp = tot ? al / tot * 100 : 0, turns = r.mans.length - 1, det = r.dist / line;
+      /* 2026-10-14 큰길로만 돌아가는 길(골목 5% 이하 · 꺾음 4번 이하)은 에움 2.0 까지 — 교대역→예술의전당이 12:10 소통 값에서 서초대로 › 반포대로 › 우면산로(2.9km · 꺾음 2 · 골목 0%)로 1.75 가 나왔다. v0.5.1 판도 같은 값 → 길 찾기 탓이 아니라 그 시각 소통 탓. 1.7 은 골목·지그재그를 잡으려는 기준이다 */
       /* 고속터미널→방배역은 떠나는 자리가 중앙분리된 큰길의 동쪽행 차로에 붙어 한 번 돌아야 하는 구간이다(큰길 유턴 자리가 길 자료에 없다 — 알려진 한계) → 에움은 2.0 까지 */
-      ck(o[0] + ' · 골목으로 돌지 않는다(20% 아래) · 꺾음 9번 아래 · 에움 1.7 아래', line < 600 || (alp <= 20 && turns <= 9 && det <= (/고속터미널→방배역/.test(o[0]) ? 2.0 : 1.7)), '골목 ' + Math.round(alp) + '% · 꺾음 ' + turns + ' · 에움 ' + det.toFixed(2));
+      ck(o[0] + ' · 골목으로 돌지 않는다(20% 아래) · 꺾음 9번 아래 · 에움 1.7 아래', line < 600 || (alp <= 20 && turns <= 9 && det <= (/고속터미널→방배역/.test(o[0]) || (alp <= 5 && turns <= 4) ? 2.0 : 1.7)), '골목 ' + Math.round(alp) + '% · 꺾음 ' + turns + ' · 에움 ' + det.toFixed(2));
       ck(o[0] + ' · 회전 금지·지정 방향을 어기지 않는다', ban === 0, '어긴 곳 ' + ban);
       var over = [], odd = [];
       r.sigs.forEach(function (s) { if (!(s.lim > 0)) odd.push(s.nm + ' 제한속도 없음');
@@ -74,6 +75,17 @@
         ck('켜놓고 다니기가 켜진다(위 띠 · 진행 방향이 위)', onC === true && /켜놓고 다니기/.test(top2) && Math.abs(g.view.rot - hd) < 1 && g.view.s >= 0.5 && g.view.s <= 0.9, 'rot ' + Math.round(g.view.rot) + ' / 방위 ' + Math.round(hd) + ' · 배율 ' + g.view.s.toFixed(2));
         var asc = A && A.sigs.every(function (x, i2) { return x.d <= 1000 && (!i2 || x.d >= A.sigs[i2 - 1].d); });
         ck('내 길 앞 신호가 잡힌다(1km 안 · 가까운 순 · 들어가는 쪽 = 남쪽 언저리)', !!(A && A.sig && asc && ['st', 'se', 'sw'].indexOf(A.sig.side) >= 0), A && A.sig ? A.nm + ' · ' + A.sig.nm + ' ' + Math.round(A.sig.d) + 'm · ' + A.sig.side + ' · 모두 ' + A.sigs.length + '곳' : '없음');
+        /* v0.6.1 독립 검수 ① — 길을 따라 자리를 옮겨 가며 위 띠의 「시속 N」이 그 길 제한속도를 넘지 않는다(소통 값이 제한보다 높아도 숫자를 안 보임) */
+        var overC = [], seenC = 0; for (var pi = 0; pi + 3 < rr.pts.length; pi += 6) { var x1 = rr.pts[pi], y1 = rr.pts[pi + 1], h1 = (Math.atan2(rr.pts[pi + 2] - x1, -(rr.pts[pi + 3] - y1)) * 180 / Math.PI + 360) % 360; g.setMe(x1, y1, 5, h1, 11); var A1 = g.ahead(), tt = String(document.getElementById('gTop').innerText || ''), mm1 = /시속 (\d+)/.exec(tt); if (mm1) { seenC++; if (!A1 || +mm1[1] > A1.lim) overC.push(mm1[1] + '>' + (A1 && A1.lim)); } }
+        ck('켜놓고 다니기 · 소통 시속 숫자가 제한속도를 넘지 않는다', overC.length === 0, '숫자 본 곳 ' + seenC + ' · 넘은 곳 ' + overC.length + ' ' + overC.slice(0, 3).join(' '));
+        /* ⑤ — 위치가 5초 넘게 안 오면 「끊겼다」 · 앞 신호 판을 감춘다 */
+        g.setMe(hx, hy, 5, hd, 11); g.state().me.t = Date.now() - 8000; g.paint(); var top4 = String(document.getElementById('gTop').innerText || '');
+        ck('위치가 끊기면 지난 자리 값을 「지금」처럼 보이지 않는다', /위치가 끊겼다/.test(top4) && document.getElementById('gSig').style.display === 'none', top4.replace(/\s+/g, ' ').slice(0, 40));
+        g.setMe(hx, hy, 5, hd, 11);
+        /* v0.6.1 — 방향을 모르면(멈춘 채 켬 · 기기가 방위를 안 줌) 앞 신호를 지어내지 않는다 */
+        g.state().me.hk = false; g.setMe(hx, hy, 5, null, 0); var A0 = g.ahead(), top3 = String(document.getElementById('gTop').innerText || '');
+        ck('방향을 모르면 앞 신호를 보이지 않는다(「방향을 잡는 중」)', A0 === null && /방향을 잡는 중/.test(top3) && document.getElementById('gSig').style.display === 'none', (A0 === null ? 'ahead 없음' : 'ahead 있음') + ' · ' + top3.replace(/\s+/g, ' ').slice(0, 40));
+        g.setMe(hx, hy, 5, hd, 11); ck('다시 움직이면 앞 신호가 돌아온다', !!(g.ahead() && g.ahead().sig));
         ck('끝내면 지도가 북쪽 위로 돌아오고 찾기 칸이 다시 보인다', g.cruise(false) === false && g.view.rot === 0 && !document.body.classList.contains('guiding') && document.getElementById('gFind').style.display !== 'none');
       } catch (e) { ck('켜놓고 다니기 검사', false, e && e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));

@@ -97,7 +97,9 @@
         if (!near.length && bn >= 0) near = [bn]; if (!near.length) return; list.push({ nm: it[1], x: x, y: y }); near.forEach(function (nd) { if (!nxs[nd]) nxs[nd] = list.length; }); });
       XS = list; G.nxs = nxs; G.XS = list; if (dest && me && !guide) plan(); else draw(); }); }
   function recOk(r) { return r && r.mv && r.dq !== 'dir' && !(r.x && !r.v); }
-  function mvOf(rec, side, mv) { var i = DIRS.indexOf(side), best = null; rec.mv.forEach(function (m) { if (m[1] !== mv || m[2] == null || m[5] == null) return; var k = DIRS.indexOf(m[0]); if (k < 0) return; var d = Math.min((k - i + 8) % 8, (i - k + 8) % 8); if (d <= 1 && (!best || d < best[0])) best = [d, m]; }); return best ? best[1] : null; }
+  /* 내가 들어가는 쪽의 기록 고르기 — 같은 방위가 있으면 그것. 없으면 바로 옆 방위(45°) 하나뿐일 때만 그것을 쓴다.
+     옆 방위가 양쪽에 다 있으면(비스듬한 길: 남서쪽에서 들어가는데 기록은 남·서 둘) 어느 쪽인지 가릴 수 없으므로 「모름」으로 둔다 — v0.5.0 까지는 먼저 나온 쪽을 골라 다른 방향의 초를 보일 수 있었다 */
+  function mvOf(rec, side, mv) { var i = DIRS.indexOf(side), same = null, nb = {}, nbm = null; rec.mv.forEach(function (m) { if (m[1] !== mv || m[2] == null || m[5] == null) return; var k = DIRS.indexOf(m[0]); if (k < 0) return; var d = Math.min((k - i + 8) % 8, (i - k + 8) % 8); if (d === 0) { if (!same) same = m; } else if (d === 1) { if (!nb[m[0]]) { nb[m[0]] = 1; if (!nbm) nbm = m; } } }); return same || (Object.keys(nb).length === 1 ? nbm : null); }
   function sideOf(bearing) { return DIRS[Math.floor((((bearing + 180) % 360) + 22.5) / 45) % 8]; }
   function clOf(d) { var k = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); if (SIG.hol[k]) return 3; var w = d.getDay(); return w >= 1 && w <= 4 ? 0 : w === 5 ? 1 : w === 6 ? 2 : 3; }
   /* T(초) 에 no 교차로로 side 쪽에서 들어와 mv(St·Lt) 하는 신호 — {kind 'pl'|'anchor'|'avg', green, remain(바뀔 때까지 초), wait(기다림 초), C, g} 또는 null(모름) */
@@ -484,5 +486,5 @@
   try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {}
   function boot() { if (document.documentElement.classList.contains('gated')) return; var seen = false; try { seen = localStorage.getItem('tg_gargo_intro') === '1'; } catch (e) {} if (seen) { $('gIntro').style.display = 'none'; if (!/[#&]from=/.test(location.hash)) gpsStart(); } load(); }
   window.addEventListener('tggate', boot); boot();
-  window.GARGO = { liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
+  window.GARGO = { mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
 })();

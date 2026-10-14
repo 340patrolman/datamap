@@ -1529,7 +1529,7 @@ def fusion(sample=False, ids=None):
         left = 86400 - (time.time() + 9 * 3600) % 86400
         room = sum(max(0, KEYCAP - kd_get(k) - hist_reserve()) for k in P.order if P.st[k]['state'] == 'alive')
         return max(30.0, left / max(1, room))
-    step = fz_step()
+    step = 30.0                                                 # 첫 값 — 풀(P)이 생긴 뒤 부를 때마다 fz_step() 으로 다시 셈
     P = KeyPool('fusion', gap=30); out = os.path.join(RAW, 'fusion'); os.makedirs(out, exist_ok=True)
     def get(itst, kl):
         u = BASEF + '?apikey=' + keyval(kl) + '&pageNo=1&numOfRows=10&itstId=%s' % itst

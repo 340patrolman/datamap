@@ -58,14 +58,15 @@ def mask(t):
 #   · 고르기 = 살아 있는 열쇠 가운데 그 API 에서 가장 오래 쉰 것 · 열쇠마다 5분 제한(GAP) · 호출 사이 = GAP ÷ 살아 있는 열쇠 수
 #   · 둘 이상 번갈아 쓰는 동안 429 가 세 번 나면 「5분 제한을 같이 쓴다」로 보고 둘째 이후 열쇠를 여섯 시간 쉰다(아직 확인 안 된 것 · 종전 규칙 그대로)
 #   열쇠 값은 keys.json 에서만 읽고 기록에는 KEY1/KEY2 라벨만 남긴다. 상태 = ../07_API키/out/tdata/pool_<엔드포인트>.json · 처리량 = throughput.log(매시)
+BASEFH = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xSignalPhaseTimingFusionInformation/1.0'   # (2026-10-14 15:40 두 열쇠 승인) 잔여 초 + 상태 이름 **역사** — 잔여시간 역사와 같은 줄 꼴에 상태 칸이 더 붙음 · 5분 제한이 따로라 셋째 훑기로(api 'f')
 BASEF = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xSignalPhaseTimingFusionCurrentInfo/1.0'   # 지금 한 줄(잔여 초 + 방향별 상태 이름) · itstId 또는 sggCd 필수
-POOL_ORDER = {'timing': ['KEY1', 'KEY2'], 'phase': ['KEY1', 'KEY2'], 'fusion': ['KEY2', 'KEY1']}
-POOL_URL = {'timing': BASE, 'phase': BASEP, 'fusion': BASEF}
-POOL_PROBE_Q = {'timing': '&pageNo=1&numOfRows=3', 'phase': '&pageNo=1&numOfRows=3', 'fusion': '&pageNo=1&numOfRows=3&itstId=4036'}
+POOL_ORDER = {'timing': ['KEY1', 'KEY2'], 'phase': ['KEY1', 'KEY2'], 'fhist': ['KEY2', 'KEY1'], 'fusion': ['KEY2', 'KEY1']}
+POOL_URL = {'timing': BASE, 'phase': BASEP, 'fhist': BASEFH, 'fusion': BASEF}
+POOL_PROBE_Q = {'timing': '&pageNo=1&numOfRows=3', 'phase': '&pageNo=1&numOfRows=3', 'fhist': '&pageNo=1&numOfRows=3', 'fusion': '&pageNo=1&numOfRows=3&itstId=4036'}
 RECHECK = 1800
 DAYCAP_EP = {}   # 엔드포인트별 상한은 이제 안 쓴다(열쇠마다 합 KEYCAP) — 종전 'fusion': 400   # (2026-10-14 15:40) 두 열쇠가 신호 API 여섯 가지 모두 승인됨 → 역사 API 둘을 두 열쇠가 번갈아 쓴다(열쇠마다 하루 약 290 × 2 = 580).
                               #  T-Data 한도 「1일 1,000회」가 열쇠마다인지 API 마다인지 몰라, 열쇠마다 합이 1,000 을 넘지 않게 Fusion 은 열쇠마다 400(두 열쇠 800) — 종전 KEY2 홀로 970
-KEYCAP = 960   # (2026-10-14 소유자 「API 키 2개 각각 960회까지 사용해 보도록」) 열쇠마다 하루(한국 날짜) 모든 API 합 — 세 수집(잔여·상태·Fusion)이 keyday.json 하나로 같이 센다
+KEYCAP = 999   # (2026-10-14 소유자 「하루에 키별 999회까지 하자」 · 앞서 960) 열쇠마다 하루(한국 날짜) 모든 API 합 — 세 수집(잔여·상태·Fusion)이 keyday.json 하나로 같이 센다
 DAYCAP = 900   # (2026-10-14) 공식 안내 하루 1,000회 — 열쇠마다인지 API 마다인지 몰라 짝(열쇠, API)마다 세고 900 에서 멈춘다
 
 
@@ -107,7 +108,7 @@ def kd_add(label):
 def hist_reserve():
     """오늘 남은 시간 동안 역사 훑기(잔여·상태 둘)가 열쇠 하나로 더 부를 어림 — 열쇠마다 API 하나에 5분(GAP)에 한 번 꼴"""
     left = 86400 - (time.time() + 9 * 3600) % 86400
-    return int(2 * left / GAP) + 5
+    return int(3 * left / GAP) + 5                         # 역사 훑기 셋(잔여·상태·잔여+상태)
 
 
 def keyval(label):
@@ -159,6 +160,7 @@ class KeyPool:
 
     def probe(self, k):
         u = POOL_URL[self.ep] + '?apikey=' + keyval(k) + POOL_PROBE_Q[self.ep]
+        kd_add(k)                                             # 살펴보는 호출도 하루 한도에 든다
         try:
             r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=60); c = r.status; r.read()
         except urllib.error.HTTPError as e:
@@ -424,7 +426,7 @@ def pick_todo(tiers, order, need1, need2, need3, ok=lambda i: True):
 
 
 # (2026-10-14 소유자) 수집 단계 — ① 여섯 구 ② 한강 이남 나머지 여섯 구 ③ 서울 전체. 앞 단계가 다 차면 다음 단계를 바구니에 더한다(「한강 이남이 완성되면 서울 전체로」)
-STAGE_GU = [['서초구', '강남구', '동작구', '관악구', '용산구', '송파구'], ['영등포구', '구로구', '금천구', '강서구', '양천구', '강동구']]
+STAGE_GU = [['서초구'], ['강남구', '동작구', '관악구', '용산구', '송파구'], ['영등포구', '구로구', '금천구', '강서구', '양천구', '강동구']]   # (2026-10-14 소유자 「우선 서초구부터 완성」) 서초 → 나머지 다섯 구 → 한강 이남 → 서울
 TIER_NAMES = []   # read_list 가 채운다 — 묶음(## 줄)의 구 이름
 
 
@@ -552,12 +554,12 @@ def sweep(prefer=None, api='t', cap=None):
     except Exception:
         pass
     # 열쇠 고르기는 풀이 맡는다(KeyPool — 404 짝은 쉬고 30분마다 다시 보고, 살아나면 저절로 번갈아 쓴다)
-    P = KeyPool('phase' if api == 'p' else 'timing')
+    P = KeyPool({'p': 'phase', 'f': 'fhist'}.get(api, 'timing'))
     W0 = 300 if api == 'p' else 285   # (2026-10-10 19:04 실측 — 줄 수 = 정각 뒤 초 − 8쯤 · 240초에는 234줄이라 문턱 240 에 못 미쳤다 → 285초)  # 정각 뒤 창 — 이때는 교차로마다 300줄쯤이라 한 쪽에 100곳 가까이 들고, 서울 뒤쪽(서초 1668~ · 강남 ~2248)도 20쪽 안이다
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
     spd_at = 0
     while True:
-        if api != 'p' and time.time() - spd_at >= 600:
+        if api == 't' and time.time() - spd_at >= 600:
             spd_at = time.time()                              # 10분에 한 번 통행속도 한 장 — 신호를 받았든 못 받았든(잔여시간 훑기 쪽에서만)
             if livespd(): publish()
         if time.time() - stage['at'] > 3600:
@@ -616,8 +618,8 @@ def sweep(prefer=None, api='t', cap=None):
         per = int(30000 / max(dens * t, 1.0))                 # 한 쪽에 드는 교차로 수(정각 창에서는 100곳 안팎)
         if len(ps) > 2 and per >= 20:
             # 받을 곳이 가장 많이 몰린 자리를 고른다(2026-10-10 21:04 — 맨 앞 자리만 골라 같은 쪽을 시간마다 다시 받았다) · 잔여는 앞 절반, 상태는 뒤 절반에서(두 훑기가 같은 쪽을 받지 않게)
-            mid = ps[len(ps) // 2]
-            cand = [q for q in ps if (q >= mid if api == 'p' else q <= mid)] or ps
+            q1, q2 = ps[len(ps) // 3], ps[2 * len(ps) // 3]   # (2026-10-14) 훑기 셋이 셋으로 나눈다 — 잔여 = 앞 1/3 · 잔여+상태 = 가운데 · 상태 = 뒤 1/3(같은 쪽을 겹쳐 받지 않게)
+            cand = [q for q in ps if (q >= q2 if api == 'p' else (q1 <= q <= q2 if api == 'f' else q <= q1))] or ps
             K = max(cand, key=lambda q: (sum(1 for z in ps if abs(z - q) <= per * 0.45), q if api == 'p' else -q))
         else:
             K = (max if api == 'p' else min)(ps)   # 신호 상태 훑기는 뒤에서부터(두 훑기가 같은 쪽을 받지 않게)
@@ -637,7 +639,7 @@ def sweep(prefer=None, api='t', cap=None):
             time.sleep(w9 + 1); continue                       # 그 열쇠의 5분이 안 찼다 — 기다렸다가 처음부터 다시 고른다(시각·쪽이 달라졌다)
         kv, kn = keyval(kl), int(kl[-1])
         P.mark(kl)
-        u = (BASEP if api == 'p' else BASE) + '?apikey=' + kv + '&pageNo=%d&numOfRows=30000' % page
+        u = {'p': BASEP, 'f': BASEFH}.get(api, BASE) + '?apikey=' + kv + '&pageNo=%d&numOfRows=30000' % page
         try:
             try:
                 open(stamp_f, 'w', encoding='utf-8').write(str(time.time()))
@@ -675,7 +677,7 @@ def sweep(prefer=None, api='t', cap=None):
             by[i].append(x)
         idx = [pos[i] for i in seq if i in pos]
         if not idx:
-            print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
+            print(stamp, {'p': '[상태]', 'f': '[잔여+상태]'}.get(api, '[잔여]'), '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
             P.note(kl, 200)
             dens *= 0.8; time.sleep(P.gap()); continue
         a, b = min(idx), max(idx)
@@ -695,7 +697,7 @@ def sweep(prefer=None, api='t', cap=None):
                 seen[i] = seen.get(i, 0) + 1
             red = (reduce_phase(i, by[i]) if api == 'p' else reduce_one(i, by[i])) if len(by[i]) >= 240 else None
             if red and red.get('cyc'):
-                json.dump(red, open(os.path.join(RAW, 'red', '%s_%s%s.json' % (i, stamp, 'p' if api == 'p' else '')), 'w', encoding='utf-8'), ensure_ascii=False); saved += 1
+                json.dump(red, open(os.path.join(RAW, 'red', '%s_%s%s.json' % (i, stamp, {'p': 'p', 'f': 'x'}.get(api, ''))), 'w', encoding='utf-8'), ensure_ascii=False); saved += 1
             elif not edge and len(by[i]) >= 420:
                 tried.add(i)
             elif not edge and len(by[i]) >= 240:
@@ -711,10 +713,10 @@ def sweep(prefer=None, api='t', cap=None):
             if stuck[K] >= 3:
                 tried.add(order[K]); json.dump(sorted(tried), open(tried_f, 'w'))   # 두 번 받고도 주기를 못 읽은 곳은 건너뛴다
         miss = 0 if hit else miss + 1
-        print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '우선 목록 — 닻 없음', len([i for i in pref if need1(i)]), '· 이 시각대 빈 곳', len([i for i in pref if needS(i)]), ('· 끝자리 %d' % pcap) if pcap else '', flush=True)
+        print(stamp, {'p': '[상태]', 'f': '[잔여+상태]'}.get(api, '[잔여]'), '쪽', page, '줄', len(J), '교차로', len(seq), '자리', a, '~', b, '(찾던 자리', K, '맞음' if hit else '빗나감', ') 구움', saved, '밀도', round(dens, 3), '우선 목록 — 닻 없음', len([i for i in pref if need1(i)]), '· 이 시각대 빈 곳', len([i for i in pref if needS(i)]), ('· 끝자리 %d' % pcap) if pcap else '', flush=True)
         if miss >= 4:
             tried.add(order[K]); miss = 0   # 네 번 빗나가면 그 교차로는 건너뛴다
-        if api != 'p':
+        if api == 't':
             build()
             ncall += 1
             if ncall % 3 == 0:
@@ -1649,7 +1651,7 @@ if __name__ == '__main__':
         auto()
     elif a and a[0] == 'sweep':
         pf = read_list(a[2]) if len(a) > 2 and a[1] == '--list' else None
-        sweep(pf, 'p' if '--api' in a and a[a.index('--api') + 1] == 'p' else 't', int(a[a.index('--cap') + 1]) if '--cap' in a else None)
+        sweep(pf, a[a.index('--api') + 1] if '--api' in a and a[a.index('--api') + 1] in ('p', 'f') else 't', int(a[a.index('--cap') + 1]) if '--cap' in a else None)
     elif a and a[0] == 'fusion':
         fusion('--sample' in a, [x for x in a[1:] if x.isdigit()] or None)
     elif a and a[0] == 'pooltest':

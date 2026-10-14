@@ -14,13 +14,19 @@ if ($Stop) {
   exit 0
 }
 $hasP = @($all | Where-Object { $_.CommandLine -like '*--api p*' }).Count
-$hasT = @($all | Where-Object { $_.CommandLine -like '*sweep*' -and $_.CommandLine -notlike '*--api p*' }).Count
+$hasT = @($all | Where-Object { $_.CommandLine -like '*sweep*' -and $_.CommandLine -notlike '*--api p*' -and $_.CommandLine -notlike '*--api f*' }).Count
+$hasH = @($all | Where-Object { $_.CommandLine -like '*sweep*' -and $_.CommandLine -like '*--api f*' }).Count
 $hasF = @($all | Where-Object { $_.CommandLine -like '*fusion*' }).Count
 if (-not $hasF) {
   Start-Process -WindowStyle Hidden -FilePath 'py' -ArgumentList @('-3.12', '-X', 'utf8', '-u', 'tools\signal\spat-bake.py', 'fusion') -WorkingDirectory $root -RedirectStandardOutput (Join-Path $log 'fusion.log') -RedirectStandardError (Join-Path $log 'fusion.err')
   Write-Output 'Fusion 닻 수집을 띄웠다'
 }
 $base = @('-3.12', '-X', 'utf8', '-u', 'tools\signal\spat-bake.py', 'sweep', '--list', '..\07_API키\out\tdata\list_near.txt')
+if (-not $hasH) {
+  # (2026-10-14) 셋째 역사 훑기 = 잔여+상태 역사(v2xSignalPhaseTimingFusionInformation · 5분 제한이 따로)
+  Start-Process -WindowStyle Hidden -FilePath 'py' -ArgumentList ($base + @('--api', 'f')) -WorkingDirectory $root -RedirectStandardOutput (Join-Path $log 'sweep_f.log') -RedirectStandardError (Join-Path $log 'sweep_f.err')
+  Write-Output '잔여+상태 훑기를 띄웠다'
+}
 if (-not $hasT) {
   Start-Process -WindowStyle Hidden -FilePath 'py' -ArgumentList $base -WorkingDirectory $root -RedirectStandardOutput (Join-Path $log 'sweep_t.log') -RedirectStandardError (Join-Path $log 'sweep_t.err')
   Write-Output '잔여시간 훑기를 띄웠다'

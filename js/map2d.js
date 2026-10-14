@@ -6304,9 +6304,9 @@
 
   // ---------- v2.44.0 📝 틀린 곳 알리기(시범 사용 · 서버 없음 — 보던 화면·숫자를 글로 모아 복사·공유) ----------
   /* v2.218.0 네비 가르고로 잇기 — 카드가 가리키는 자리가 가르고의 길 묶음(서초구와 둘레) 안이면 「여기까지 길 안내」 단추. 새 탭으로 연다(# 뒤라 서버로 가지 않는다 · 좌표와 카드 제목만 넘긴다) */
-  var GARGOBOX = [-5300, 9300, -6650, 9950], NAVW = null;   /* 가르고 길 묶음 상자(위도 37.405~37.545 · 경도 126.955~127.115)에 약 600m — 서쪽을 넓게 잡았던 것을 v2.219.1 에서 바로잡음(신대방 쪽은 길이 없어 목적지가 안 잡혔다) */
+  var GARGOBOX = [-12400, 16400, -9300, 9950], NAVW = null;   /* v2.221.0 가르고 v0.7.0 여섯 구 길 묶음(위도 37.405~37.570 · 경도 126.875~127.190)에 약 400~600m — 소유자 2026-10-14 「서초·강남·송파·동작·관악·용산」 */ /* 종전:   /* 가르고 길 묶음 상자(위도 37.405~37.545 · 경도 126.955~127.115)에 약 600m — 서쪽을 넓게 잡았던 것을 v2.219.1 에서 바로잡음(신대방 쪽은 길이 없어 목적지가 안 잡혔다) */
   function cardW(it) { if (!it) return null; if (sel && sel.it === it && sel.w) return sel.w; var p = (it.n && it.n.p) || it.p || (it.d && it.d.c) || (it.x && it.x.c) || (it.rep != null && REP && REP.p) || null; return p && isFinite(p[0]) && isFinite(p[1]) ? [p[0], p[1]] : null; }
-  function navHtml() { var w = NAVW; if (!w || w[0] < GARGOBOX[0] || w[0] > GARGOBOX[1] || w[1] < GARGOBOX[2] || w[1] > GARGOBOX[3]) return ''; return '<button data-nav="1" title="신호를 아는 길 안내(서초 시험판)를 새 탭으로 연다">🧭 네비 가르고로 여기까지</button>'; }
+  function navHtml() { var w = NAVW; if (!w || w[0] < GARGOBOX[0] || w[0] > GARGOBOX[1] || w[1] < GARGOBOX[2] || w[1] > GARGOBOX[3]) return ''; return '<button data-nav="1" title="신호를 아는 길 안내(서초·강남·송파·동작·관악·용산 시험판)를 새 탭으로 연다">🧭 네비 가르고로 여기까지</button>'; }
   function navGo() { var w = NAVW; if (!w) return; var t = $('m2dCard').querySelector('h3'), nm = t ? String(t.textContent || '').replace(/^[^가-힣A-Za-z0-9]+/, '').replace(/\s+/g, ' ').trim().slice(0, 40) : ''; window.open('gargo/#to=' + (LAT0 - w[1] / KY).toFixed(6) + ',' + (w[0] / KX + LON0).toFixed(6) + (nm ? '&nm=' + encodeURIComponent(nm) : ''), '_blank', 'noopener'); }
   function fbHtml() { return '<div class="fbx"><div class="lg-btns">' + navHtml() + '<button data-pc="1">💻 PC로 보내기</button><button data-fb="1">📝 틀린 곳·헷갈린 곳 알리기</button></div><div id="m2dFbF"></div></div>'; }
   var FB_KIND = [['bad', '❌ 숫자·내용이 틀림'], ['hard', '🤔 헷갈림·찾기 어려움'], ['want', '➕ 이런 게 있으면 좋겠다']];

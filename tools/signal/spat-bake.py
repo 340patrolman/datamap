@@ -473,16 +473,18 @@ def sweep(prefer=None, api='t', cap=None):
         def pick(ok=lambda i: True):
             """받을 곳 — ① 앞 두 묶음(서초·강남) 닻 없는 곳 ② 앞 두 묶음의 이 시각대 빈 곳 ③ 나머지 묶음 닻 없는 곳 ④ 그 밖 서울 닻 없는 곳 ⑤ 나머지 묶음 이 시각대 빈 곳 ⑥ 그 밖 서울 이 시각대 빈 곳
             (2026-10-10 소유자 「우선 서초구 전 지역 후 강남구로 · 순서대로」「수집 가능한 모든 신호값을 모아서」)"""
+            # (2026-10-14 소유자 「서초 강남 동작 관악 용산 · 송파까지 · 다 받아야지」) 앞 여섯 묶음을 **한 바구니**로 — 종전엔 묶음마다 차례로 봐서
+            #  서초·강남의 「이 시각대 빈 곳」(늘 1,300곳 넘게 남음)이 끝나지 않아 뒤 묶음이 한 번도 안 골렸다(송파 152곳 가운데 기록 58 · 송파 자리 2249~ 를 찾던 자리로 고른 적 0).
+            #  한 바구니에 넣으면 받을 곳이 가장 몰린 자리(K)를 고르는 규칙이 저절로 여섯 구에 나눈다
             for f in (need1, needS):
-                for T in tiers[:2]:
-                    c = [i for i in T if f(i) and ok(i)]
-                    if c: return c
-            for T in tiers[2:]:
+                c = [i for T in tiers[:6] for i in T if f(i) and ok(i)]
+                if c: return c
+            for T in tiers[6:]:
                 c = [i for i in T if need1(i) and ok(i)]
                 if c: return c
             c = [i for i in order if need1(i) and ok(i)]
             if c: return c
-            for T in tiers[2:]:
+            for T in tiers[6:]:
                 c = [i for i in T if needS(i) and ok(i)]
                 if c: return c
             return [i for i in order if needS(i) and ok(i)]

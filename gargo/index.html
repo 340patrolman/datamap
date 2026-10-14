@@ -26,87 +26,123 @@
   button { font: inherit; color: inherit; cursor: pointer; }
   /* 위 — 찾기(평소) / 다음 꺾는 곳(안내 중) */
   #gFind { position: fixed; left: 10px; right: 10px; top: calc(10px + env(safe-area-inset-top)); z-index: 5; display: flex; gap: 8px; align-items: center; background: var(--panel); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-radius: 18px; box-shadow: var(--sh); padding: 6px 7px 6px 8px; }
-  #gFind b { font-size: 13px; font-weight: 900; color: #fff; white-space: nowrap; background: linear-gradient(135deg, #0f6b3a, #12a05a); border-radius: 12px; padding: 9px 11px; letter-spacing: .2px; }
-  #gQ { flex: 1; min-width: 0; height: 40px; border: 0; outline: 0; background: transparent; font-size: 16px; color: var(--ink); }
+  #gFind b { font-size: calc(13px * var(--fz, 1)); font-weight: 900; color: #fff; white-space: nowrap; background: linear-gradient(135deg, #0f6b3a, #12a05a); border-radius: 12px; padding: 9px 11px; letter-spacing: .2px; }
+  #gQ { flex: 1; min-width: 0; height: 40px; border: 0; outline: 0; background: transparent; font-size: calc(16px * var(--fz, 1)); color: var(--ink); }
   #gList { position: fixed; left: 10px; right: 10px; top: calc(68px + env(safe-area-inset-top)); z-index: 6; display: none; background: var(--solid); border-radius: 18px; box-shadow: 0 12px 32px rgba(15,23,42,.24); max-height: 46vh; overflow: auto; padding: 6px; }
-  #gList button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 12px 10px; font-size: 15px; border-bottom: 1px solid var(--line); }
-  #gList button small { color: var(--dim); font-size: 12px; margin-left: 4px; }
-  #gMic { width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(47,123,255,.12); font-size: 18px; flex: 0 0 auto; } #gMic.on { background: #e11d48; animation: gpulse 1s infinite; }
+  #gList button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 12px 10px; font-size: calc(15px * var(--fz, 1)); border-bottom: 1px solid var(--line); }
+  #gList button small { color: var(--dim); font-size: calc(12px * var(--fz, 1)); margin-left: 4px; }
+  #gMic { width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(47,123,255,.12); font-size: calc(18px * var(--fz, 1)); flex: 0 0 auto; } #gMic.on { background: #e11d48; animation: gpulse 1s infinite; }
   @keyframes gpulse { 50% { opacity: .55; } }
   #gOv { position: fixed; left: 10px; top: calc(68px + env(safe-area-inset-top)); z-index: 4; display: flex; gap: 6px; } body.guiding #gOv { display: none; }
-  #gOv button { height: 34px; border-radius: 999px; border: 0; background: var(--panel); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--sh); padding: 0 13px 0 11px; font-size: 13px; font-weight: 800; color: var(--dim); display: flex; align-items: center; gap: 5px; } #gOv button::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; } #gOv button.on { color: var(--ink); } #gOv button.on::after { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.18); }
-  #gPick .si { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 3px 4px; border-bottom: 1px dashed var(--line); } #gPick .si em { font-style: normal; color: var(--dim); } #gPick .si b { padding: 0; }
-  #gList .no { padding: 12px; font-size: 13.5px; color: var(--dim); line-height: 1.6; }
+  #gOv button { height: 34px; border-radius: 999px; border: 0; background: var(--panel); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--sh); padding: 0 13px 0 11px; font-size: calc(13px * var(--fz, 1)); font-weight: 800; color: var(--dim); display: flex; align-items: center; gap: 5px; } #gOv button::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; } #gOv button.on { color: var(--ink); } #gOv button.on::after { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.18); }
+  #gPick .si { display: flex; justify-content: space-between; gap: 8px; font-size: calc(13px * var(--fz, 1)); padding: 3px 4px; border-bottom: 1px dashed var(--line); } #gPick .si em { font-style: normal; color: var(--dim); } #gPick .si b { padding: 0; }
+  #gList .no { padding: 12px; font-size: calc(13.5px * var(--fz, 1)); color: var(--dim); line-height: 1.6; }
   #gTop { position: fixed; left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); z-index: 5; display: none; gap: 12px; align-items: center; background: linear-gradient(135deg, #0c5a31, #118a4c); color: #fff; border-radius: 20px; padding: 12px 16px; box-shadow: 0 8px 24px rgba(8,60,32,.35); }
-  #gTop .arw { font-size: 44px; line-height: 1; width: 54px; text-align: center; }
+  #gTop .arw { font-size: calc(44px * var(--fz, 1)); line-height: 1; width: 54px; text-align: center; }
   #gTop .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  #gTop .tx b { font-size: 30px; font-weight: 900; line-height: 1.1; }
-  #gTop .tx span { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #gTop .tx b { font-size: calc(30px * var(--fz, 1)); font-weight: 900; line-height: 1.1; }
+  #gTop .tx span { font-size: calc(16px * var(--fz, 1)); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #gTop .tx em { font-style: normal; opacity: .85; font-weight: 500; }
-  #gTop .tx small { font-size: 12.5px; opacity: .85; margin-top: 2px; }
+  #gTop .tx small { font-size: calc(12.5px * var(--fz, 1)); opacity: .85; margin-top: 2px; }
   /* 다음 신호 판 — 이 앱의 핵심 */
-  #gSig { position: fixed; left: 8px; right: 62px; z-index: 4; display: none; top: calc(104px + env(safe-area-inset-top)); background: var(--panel); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-radius: 16px; padding: 10px 13px; box-shadow: var(--sh); border-left: 7px solid #94a3b8; font-size: 13.5px; line-height: 1.55; }
+  #gSig { position: fixed; left: 8px; right: 62px; z-index: 4; display: none; top: calc(104px + env(safe-area-inset-top)); background: var(--panel); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-radius: 16px; padding: 10px 13px; box-shadow: var(--sh); border-left: 7px solid #94a3b8; font-size: calc(13.5px * var(--fz, 1)); line-height: 1.55; }
   #gSig.grn { border-left-color: #16a34a; } #gSig.red { border-left-color: #dc2626; }
-  #gSig .hd { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; } #gSig .hd b { font-size: 15px; } #gSig .hd span { color: var(--dim); font-size: 12.5px; }
+  #gSig .hd { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; } #gSig .hd b { font-size: calc(15px * var(--fz, 1)); } #gSig .hd span { color: var(--dim); font-size: calc(12.5px * var(--fz, 1)); }
   #gSig .now { display: flex; align-items: center; gap: 8px; margin: 3px 0 2px; } #gSig .now i { width: 18px; height: 18px; border-radius: 50%; background: #94a3b8; flex: 0 0 auto; }
   #gSig.grn .now i { background: #16a34a; } #gSig.red .now i { background: #dc2626; }
-  #gSig .now b { font-size: 24px; font-weight: 900; } #gSig.grn .now b { color: #15803d; } #gSig.red .now b { color: #b91c1c; } #gSig .now span { color: var(--dim); }
+  #gSig .now b { font-size: calc(24px * var(--fz, 1) * var(--sz, 2)); font-weight: 900; line-height: 1.05; letter-spacing: -1px; } #gSig.grn .now b { color: #15803d; } #gSig.red .now b { color: #b91c1c; } #gSig .now span { color: var(--dim); }
   #gSig .ln em, .steps em { font-style: normal; color: var(--dim); } #gSig .adv { background: rgba(47,123,255,.1); border-radius: 8px; padding: 3px 7px; margin-top: 3px; }
   .g { color: #15803d; } .r { color: #b91c1c; } :root.dark .g { color: #4ade80; } :root.dark .r { color: #f87171; }
-  #gSig .src { color: var(--dim); font-size: 11.5px; margin-top: 3px; }
+  #gSig .src { color: var(--dim); font-size: calc(11.5px * var(--fz, 1)); margin-top: 3px; }
   /* 오른쪽 단추 · 속도 */
   #gBtn { position: fixed; right: 8px; z-index: 4; bottom: calc(190px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 7px; }
-  #gBtn button { width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--panel); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--sh); font-size: 19px; font-weight: 800; color: var(--ink); }
+  #gBtn button { width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--panel); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--sh); font-size: calc(19px * var(--fz, 1)); font-weight: 800; color: var(--ink); }
   #gBtn #gVoice.on { background: var(--acc); color: #fff; } #gBtn #gCen.off { opacity: .55; }
   #gSpd { position: fixed; left: 8px; z-index: 4; bottom: calc(110px + env(safe-area-inset-bottom)); display: none; gap: 8px; align-items: center; flex-wrap: wrap; max-width: 60vw; }
-  #gSpd .lim { width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 6px solid #dc2626; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 900; color: #111; }
+  #gSpd .lim { width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 6px solid #dc2626; display: flex; align-items: center; justify-content: center; font-size: calc(19px * var(--fz, 1)); font-weight: 900; color: #111; }
   #gSpd .cur { background: var(--panel); border-radius: 14px; padding: 5px 11px; box-shadow: var(--sh); display: flex; flex-direction: column; align-items: center; }
-  #gSpd .cur b { font-size: 24px; font-weight: 900; line-height: 1.05; } #gSpd .cur span { font-size: 10.5px; color: var(--dim); } #gSpd .cur.over b { color: #dc2626; }
-  #gSpd .rn { background: rgba(15,23,42,.72); color: #fff; border-radius: 10px; padding: 3px 9px; font-size: 12.5px; font-weight: 700; }
+  #gSpd .cur b { font-size: calc(24px * var(--fz, 1)); font-weight: 900; line-height: 1.05; } #gSpd .cur span { font-size: calc(10.5px * var(--fz, 1)); color: var(--dim); } #gSpd .cur.over b { color: #dc2626; }
+  #gSpd .rn { background: rgba(15,23,42,.72); color: #fff; border-radius: 10px; padding: 3px 9px; font-size: calc(12.5px * var(--fz, 1)); font-weight: 700; }
   /* 아래 판 */
   #gBot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--solid); border-radius: 24px 24px 0 0; box-shadow: 0 -8px 28px rgba(15,23,42,.16); padding: 18px 16px calc(14px + env(safe-area-inset-bottom)); max-height: 62vh; overflow: auto; }
   #gBot::before { content: ''; position: absolute; left: 50%; top: 7px; width: 38px; height: 4px; margin-left: -19px; border-radius: 4px; background: var(--line); }
-  #gBot .hint { font-size: 14px; line-height: 1.65; color: var(--dim); } #gBot .hint.warn { color: #b45309; margin-top: 6px; }
-  #gBot .big b { font-size: 28px; font-weight: 900; color: var(--blue); } :root.dark #gBot .big b { color: #93c5fd; } #gBot .big span { font-size: 14.5px; color: var(--dim); font-weight: 700; }
-  #gBot .sub { font-size: 13px; color: var(--dim); line-height: 1.6; margin: 3px 0 9px; }
-  #gBot .mode { display: flex; gap: 6px; margin: 6px 0 4px; } #gBot .mode button { flex: 1; height: 40px; border-radius: 11px; border: 1px solid var(--line); background: transparent; font-size: 13.5px; font-weight: 800; } #gBot .mode button.on { background: var(--blue); color: #fff; border-color: var(--blue); } #gBot .mode button[data-mode=e].on { background: #b91c1c; border-color: #b91c1c; }
+  #gBot .hint { font-size: calc(14px * var(--fz, 1)); line-height: 1.65; color: var(--dim); } #gBot .hint.warn { color: #b45309; margin-top: 6px; }
+  #gBot .big b { font-size: calc(28px * var(--fz, 1)); font-weight: 900; color: var(--blue); } :root.dark #gBot .big b { color: #93c5fd; } #gBot .big span { font-size: calc(14.5px * var(--fz, 1)); color: var(--dim); font-weight: 700; }
+  #gBot .sub { font-size: calc(13px * var(--fz, 1)); color: var(--dim); line-height: 1.6; margin: 3px 0 9px; }
+  #gBot .mode { display: flex; gap: 6px; margin: 6px 0 4px; } #gBot .mode button { flex: 1; height: 40px; border-radius: 11px; border: 1px solid var(--line); background: transparent; font-size: calc(13.5px * var(--fz, 1)); font-weight: 800; } #gBot .mode button.on { background: var(--blue); color: #fff; border-color: var(--blue); } #gBot .mode button[data-mode=e].on { background: #b91c1c; border-color: #b91c1c; }
   #gTop .tx small b { font-size: inherit; line-height: inherit; }
-  #gTop .tx small.ln2 { font-size: 14px; opacity: 1; background: rgba(255,255,255,.16); border-radius: 8px; padding: 2px 8px; align-self: flex-start; margin-top: 3px; } #gTop .tx small.ln2 em { font-style: normal; opacity: .8; }
-  #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: 13px; border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: 14.5px; font-weight: 700; }
-  #gBot .hand { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 12.5px; color: var(--dim, #64748b); } #gBot .hand span { flex: 1 0 100%; } #gBot .hand button { height: 34px; border-radius: 10px; border: 1px solid var(--line); background: transparent; padding: 0 10px; font-size: 13px; font-weight: 700; color: inherit; }
-  #gBot .btns .go { flex: 1; background: linear-gradient(135deg, #2f6bff, #1b54d6); color: #fff; border: 0; font-size: 17px; font-weight: 900; box-shadow: 0 6px 16px rgba(47,107,255,.35); }
-  .steps { margin-top: 10px; } .steps summary { font-size: 14px; font-weight: 800; padding: 8px 0; cursor: pointer; }
-  .steps .st { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; line-height: 1.5; } .steps .st i { font-style: normal; width: 22px; text-align: center; flex: 0 0 auto; } .steps .st b { width: 52px; flex: 0 0 auto; }
-  .steps .cap { font-size: 12.5px; font-weight: 800; color: var(--dim); margin: 10px 0 2px; }
+  #gTop .tx small.ln2 { font-size: calc(14px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.16); border-radius: 8px; padding: 2px 8px; align-self: flex-start; margin-top: 3px; } #gTop .tx small.ln2 em { font-style: normal; opacity: .8; }
+  #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: 13px; border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: calc(14.5px * var(--fz, 1)); font-weight: 700; }
+  #gBot .hand { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: calc(12.5px * var(--fz, 1)); color: var(--dim, #64748b); } #gBot .hand span { flex: 1 0 100%; } #gBot .hand button { height: 34px; border-radius: 10px; border: 1px solid var(--line); background: transparent; padding: 0 10px; font-size: calc(13px * var(--fz, 1)); font-weight: 700; color: inherit; }
+  #gBot .btns .go { flex: 1; background: linear-gradient(135deg, #2f6bff, #1b54d6); color: #fff; border: 0; font-size: calc(17px * var(--fz, 1)); font-weight: 900; box-shadow: 0 6px 16px rgba(47,107,255,.35); }
+  .steps { margin-top: 10px; } .steps summary { font-size: calc(14px * var(--fz, 1)); font-weight: 800; padding: 8px 0; cursor: pointer; }
+  .steps .st { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: calc(13.5px * var(--fz, 1)); line-height: 1.5; } .steps .st i { font-style: normal; width: 22px; text-align: center; flex: 0 0 auto; } .steps .st b { width: 52px; flex: 0 0 auto; }
+  .steps .cap { font-size: calc(12.5px * var(--fz, 1)); font-weight: 800; color: var(--dim); margin: 10px 0 2px; }
   .rk summary { color: #b45309; } .rk .st b.nm { width: auto; } .rk .st span b { width: auto; } .rk .st b.r { color: #dc2626; } .rk .cap { font-weight: 600; line-height: 1.5; }
-  #gBot .eta { display: flex; align-items: center; gap: 14px; } #gBot .eta div { display: flex; flex-direction: column; } #gBot .eta b { font-size: 21px; font-weight: 900; } #gBot .eta span { font-size: 11.5px; color: var(--dim); }
-  #gBot .eta .stop { margin-left: auto; height: 46px; border-radius: 13px; border: 0; background: #e11d48; color: #fff; font-weight: 900; padding: 0 16px; font-size: 15px; }
-  #gMsg, #gNote { position: fixed; left: 50%; transform: translateX(-50%); z-index: 7; display: none; background: rgba(15,23,42,.9); color: #fff; border-radius: 12px; padding: 9px 14px; font-size: 13.5px; line-height: 1.55; max-width: 88vw; }
-  #gMsg { top: 45%; } #gNote { top: calc(72px + env(safe-area-inset-top)); } body.guiding #gNote { top: calc(262px + env(safe-area-inset-top)); font-size: 12.5px; max-width: 78vw; }
+  #gBot .eta { display: flex; align-items: center; gap: 14px; } #gBot .eta div { display: flex; flex-direction: column; } #gBot .eta b { font-size: calc(21px * var(--fz, 1)); font-weight: 900; } #gBot .eta span { font-size: calc(11.5px * var(--fz, 1)); color: var(--dim); }
+  #gBot .eta .stop { margin-left: auto; height: 46px; border-radius: 13px; border: 0; background: #e11d48; color: #fff; font-weight: 900; padding: 0 16px; font-size: calc(15px * var(--fz, 1)); }
+  #gMsg, #gNote { position: fixed; left: 50%; transform: translateX(-50%); z-index: 7; display: none; background: rgba(15,23,42,.9); color: #fff; border-radius: 12px; padding: 9px 14px; font-size: calc(13.5px * var(--fz, 1)); line-height: 1.55; max-width: 88vw; }
+  #gMsg { top: 45%; } #gNote { top: calc(72px + env(safe-area-inset-top)); } body.guiding #gNote { top: calc(262px + env(safe-area-inset-top)); font-size: calc(12.5px * var(--fz, 1)); max-width: 78vw; }
   #gPick { position: fixed; z-index: 8; display: none; flex-direction: column; gap: 5px; width: 220px; background: var(--solid); border-radius: 18px; box-shadow: 0 12px 32px rgba(15,23,42,.28); padding: 10px; }
-  #gPick b { font-size: 13.5px; padding: 2px 4px 4px; } #gPick button { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-size: 15px; font-weight: 800; } #gPick button[data-p=to] { background: var(--acc); color: #fff; border: 0; }
+  #gPick b { font-size: calc(13.5px * var(--fz, 1)); padding: 2px 4px 4px; } #gPick button { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-size: calc(15px * var(--fz, 1)); font-weight: 800; } #gPick button[data-p=to] { background: var(--acc); color: #fff; border: 0; }
   #gIntro { position: fixed; inset: 0; z-index: 20; background: rgba(15,23,42,.6); display: flex; align-items: flex-end; justify-content: center; }
   #gIntro > div { background: var(--panel); border-radius: 20px 20px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); max-width: 560px; width: 100%; max-height: 86vh; overflow: auto; }
-  #gIntro h1 { font-size: 20px; margin: 0 0 8px; } #gIntro ul { margin: 6px 0 12px; padding-left: 18px; font-size: 14px; line-height: 1.75; } #gIntro p { font-size: 13px; color: var(--dim); line-height: 1.65; margin: 6px 0; } #gIntro details { margin: 0 0 12px; } #gIntro summary { font-size: 13.5px; font-weight: 700; color: var(--dim); padding: 6px 0; }
-  #gIntro button { width: 100%; height: 50px; border-radius: 14px; border: 0; background: var(--acc); color: #fff; font-size: 16.5px; font-weight: 900; }
+  #gIntro h1 { font-size: calc(20px * var(--fz, 1)); margin: 0 0 8px; } #gIntro ul { margin: 6px 0 12px; padding-left: 18px; font-size: calc(14px * var(--fz, 1)); line-height: 1.75; } #gIntro p { font-size: calc(13px * var(--fz, 1)); color: var(--dim); line-height: 1.65; margin: 6px 0; } #gIntro details { margin: 0 0 12px; } #gIntro summary { font-size: calc(13.5px * var(--fz, 1)); font-weight: 700; color: var(--dim); padding: 6px 0; }
+  #gIntro button { width: 100%; height: 50px; border-radius: 14px; border: 0; background: var(--acc); color: #fff; font-size: calc(16.5px * var(--fz, 1)); font-weight: 900; }
   #gGate { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; background: #0b1220; color: #fff; }
   :root.gated #gGate { display: flex; } :root.gated #gIntro { display: none; }
   #gGate form { text-align: center; padding: 24px; max-width: 320px; } #gGate h1 { font-size: 22px; margin: 6px 0; } #gGate p { font-size: 13.5px; opacity: .8; line-height: 1.6; }
   #gGate input { width: 100%; height: 48px; border-radius: 12px; border: 0; padding: 0 14px; font-size: 17px; margin: 10px 0 8px; } #gGate button { width: 100%; height: 48px; border-radius: 12px; border: 0; background: #2f7bff; color: #fff; font-weight: 900; font-size: 16px; } #gGate .bad { color: #fca5a5; min-height: 20px; }
   @media (min-width: 760px) { #gBot { left: auto; right: 12px; bottom: 12px; width: 380px; border-radius: 18px; } #gFind, #gTop, #gList { right: auto; width: 380px; } #gSig { right: auto; width: 380px; } #gBtn { right: 404px; bottom: 24px; } }
+
+  /* v0.11.0 티맵 같은 모양(소유자 「티맵과 비슷한 디자인으로」) — 어두운 남색 안내 판 · 파란 꺾임 칸 · 큰 거리 · 아래 흰 도착 줄 · 신호 판도 어두운 판에 큰 남은 초. 상표·그림은 쓰지 않는다 */
+  #gTop { background: #18233a; border-radius: 18px; padding: 10px 14px 10px 10px; box-shadow: 0 10px 28px rgba(9,15,30,.45); gap: 12px; }
+  #gTop .arw { background: #2f6bff; border-radius: 14px; width: calc(64px * var(--fz, 1)); height: calc(64px * var(--fz, 1)); display: flex; align-items: center; justify-content: center; font-size: calc(42px * var(--fz, 1)); color: #fff; flex: 0 0 auto; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); }
+  #gTop .tx b { font-size: calc(34px * var(--fz, 1)); letter-spacing: -.8px; }
+  #gTop .tx span { color: #c7d3ea; } #gTop .tx em { color: #93a8cf; }
+  #gTop .tx small.ln2 { background: rgba(47,107,255,.28); }
+  #gSig { background: #1f2a42; color: #eef2fb; border-left-width: 9px; border-radius: 16px; box-shadow: 0 8px 24px rgba(9,15,30,.4); }
+  #gSig .hd span, #gSig .src, #gSig .ln em, #gSig .now span { color: #a9b6d0; }
+  #gSig.grn .now b { color: #4ade80; } #gSig.red .now b { color: #f87171; } #gSig .now { gap: 12px; } #gSig .now i { width: 22px; height: 22px; }
+  #gSig .adv { background: rgba(47,107,255,.22); }
+  @media (min-width: 760px) { body.guiding #gBtn { right: 12px; bottom: calc(130px + env(safe-area-inset-bottom)); } }   /* 펼친 화면 — 안내 중에는 아래 판이 작아 단추를 오른쪽 끝으로(가운데 내 차 표시를 가리지 않게) */
+  #gSig .now { flex-wrap: nowrap; } #gSig .now b { white-space: nowrap; } #gSig .now b small { font-size: calc(17px * var(--fz, 1)); font-weight: 900; letter-spacing: 0; margin: 0 2px; } #gSig .now span { white-space: nowrap; }   /* 2배로 키우는 것은 남은 초 숫자만 — 「적색」「초」는 그대로 */
+  #gBot .eta b { color: var(--ink); } #gBot .eta div:first-child b { color: #1b54d6; } :root.dark #gBot .eta div:first-child b { color: #93c5fd; }
+  body.guiding #gBot { border-radius: 20px 20px 0 0; }
+  #gSpd .cur { background: #18233a; color: #fff; } #gSpd .cur span { color: #a9b6d0; }
+  #gBot .mode button.on { background: #18233a; color: #fff; border-color: #18233a; } :root.dark #gBot .mode button.on { background: #2f6bff; border-color: #2f6bff; }
+  /* 🔒 중요업무 */
+  #gFind #gVip { width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(15,23,42,.08); font-size: calc(17px * var(--fz, 1)); flex: 0 0 auto; } #gFind #gVip.on { background: #18233a; color: #fff; box-shadow: 0 0 0 3px #facc15; }
+  body.vip #gFind { box-shadow: 0 0 0 3px #facc15, var(--sh); }
+  #gBot .vip { border: 2px solid #18233a; border-radius: 14px; padding: 10px 12px; margin: 8px 0 6px; } :root.dark #gBot .vip { border-color: #facc15; }
+  #gBot .vip .vh { font-weight: 900; font-size: calc(15px * var(--fz, 1)); } #gBot .vip .vh span { display: block; font-weight: 600; font-size: calc(12px * var(--fz, 1)); color: var(--dim); }
+  #gBot .vip .vs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; font-size: calc(12.5px * var(--fz, 1)); color: var(--dim); } #gBot .vip .vs button { height: 38px; min-width: 52px; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-weight: 900; font-size: calc(15px * var(--fz, 1)); padding: 0 10px; } #gBot .vip .vs button.on { background: #18233a; color: #fff; border-color: #18233a; }
+  #gBot .vip .v2 { display: grid; gap: 6px; } #gBot .vip .v2 div { display: flex; align-items: baseline; gap: 10px; } #gBot .vip .v2 b { font-size: calc(26px * var(--fz, 1)); font-weight: 900; color: #1b54d6; min-width: 3.2em; } #gBot .vip .v2 .fast b { color: #dc2626; } #gBot .vip .v2 span { font-size: calc(13px * var(--fz, 1)); color: var(--dim); font-weight: 700; }
+  #gBot .vn { margin: 8px 0 2px; font-size: calc(13px * var(--fz, 1)); font-weight: 800; background: #fef3c7; color: #78350f; border-radius: 10px; padding: 6px 10px; } :root.dark #gBot .vn { background: #422006; color: #fde68a; }
+  #gBot .cap { font-size: calc(12px * var(--fz, 1)); color: var(--dim); line-height: 1.55; margin-top: 6px; }
+  #gBot .eta.vipe .fast b { color: #dc2626; } #gBot .vnext { margin-top: 8px; font-size: calc(14px * var(--fz, 1)); }
+  /* ⚙ 설정 판 */
+  #gCfg { position: fixed; inset: auto 0 0 0; max-height: 86%; z-index: 9; display: none; overflow: auto; background: var(--solid); border-radius: 22px 22px 0 0; box-shadow: 0 -10px 30px rgba(15,23,42,.3); padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); }
+  #gCfg .ch { display: flex; align-items: center; justify-content: space-between; } #gCfg .ch b { font-size: calc(19px * var(--fz, 1)); } #gCfg .ch button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(15,23,42,.08); font-size: 18px; }
+  #gCfg .cs { margin: 2px 0 6px; font-size: calc(12.5px * var(--fz, 1)); color: var(--dim); }
+  #gCfg .cg { margin: 14px 0 4px; font-size: calc(13px * var(--fz, 1)); font-weight: 900; color: #1b54d6; } :root.dark #gCfg .cg { color: #93c5fd; }
+  #gCfg .ci { padding: 8px 0; border-bottom: 1px solid var(--line); } #gCfg .cl { font-size: calc(14px * var(--fz, 1)); font-weight: 800; margin-bottom: 6px; line-height: 1.5; }
+  #gCfg .co { display: flex; flex-wrap: wrap; gap: 6px; } #gCfg .co button { min-height: 40px; min-width: 52px; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-size: calc(14px * var(--fz, 1)); font-weight: 800; padding: 4px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; } #gCfg .co button.on { background: #18233a; color: #fff; border-color: #18233a; } #gCfg .co button i { font-style: normal; font-size: 10.5px; font-weight: 700; opacity: .75; }
+  #gCfg .cre { border: 0; background: transparent; color: #1b54d6; font-weight: 800; font-size: calc(12.5px * var(--fz, 1)); padding: 0 4px; } :root.dark #gCfg .cre { color: #93c5fd; }
+  #gCfg .cb { display: flex; gap: 8px; margin-top: 14px; } #gCfg .cb button { flex: 1; height: 48px; border-radius: 13px; border: 1px solid var(--line); background: transparent; font-weight: 800; font-size: calc(15px * var(--fz, 1)); } #gCfg .cb .go { background: #2f6bff; color: #fff; border: 0; }
 </style>
 </head>
 <body>
 <canvas id="gMap"></canvas>
-<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="어디로? 주소·이름을 적거나 🎤 말한다" aria-label="목적지 찾기"><button id="gMic" aria-label="음성으로 목적지">🎤</button></div>
+<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="어디로? 주소·이름을 적거나 🎤 말한다" aria-label="목적지 찾기"><button id="gMic" aria-label="음성으로 목적지">🎤</button><button id="gVip" aria-label="중요업무 — 기기 안에서만" hidden>🔒</button></div>
 <div id="gOv"><button data-ov="s" class="on">🚦 신호</button><button data-ov="t" class="on">🚗 소통</button></div>
 <div id="gList"></div>
 <div id="gTop" aria-live="polite"></div>
 <div id="gSig" aria-live="polite"></div>
 <div id="gSpd"></div>
-<div id="gBtn"><button id="gVoice" aria-label="음성 안내">🔊</button><button id="gCen" aria-label="내 자리로">◎</button><button id="gIn" aria-label="확대">＋</button><button id="gOut" aria-label="축소">－</button><button id="gDark" aria-label="밤 화면">◐</button></div>
+<div id="gBtn"><button id="gVoice" aria-label="음성 안내">🔊</button><button id="gCen" aria-label="내 자리로">◎</button><button id="gIn" aria-label="확대">＋</button><button id="gOut" aria-label="축소">－</button><button id="gDark" aria-label="밤 화면">◐</button><button id="gCfgB" aria-label="설정">⚙</button></div>
 <div id="gBot"><div class="hint">길 자료를 읽는 중…</div></div>
-<div id="gMsg"></div><div id="gNote"></div><div id="gPick"></div>
+<div id="gMsg"></div><div id="gNote"></div><div id="gPick"></div><div id="gCfg" role="dialog" aria-label="설정"></div>
 <div id="gIntro"><div>
   <h1>🚓 네비 가르고 — 서초·강남·송파·동작·관악·용산 출동 길 안내 <small style="font-size:13px;color:#b45309">시험판</small></h1>
   <ul>
@@ -132,7 +168,8 @@
         try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
   })();
 </script>
-<script src="gargo.js?v=0.10.0"></script>
+<script src="../js/travel-time.js?v=1"></script>
+<script src="gargo.js?v=0.11.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

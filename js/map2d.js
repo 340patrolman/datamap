@@ -578,7 +578,7 @@
   function vwLy(lat, z) { var r = lat * Math.PI / 180; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z); }
   function vwLon(x, z) { return x / Math.pow(2, z) * 360 - 180; }
   function vwLat(y, z) { var n = Math.PI * (1 - 2 * y / Math.pow(2, z)); return Math.atan((Math.exp(n) - Math.exp(-n)) / 2) * 180 / Math.PI; }
-  function vwTile(lay, z, x, y) {
+  function vwTile(lay, z, x, y) { if (vipOn()) return null;
     var k = lay + '/' + z + '/' + y + '/' + x, t = VWT[k];
     if (t) { t.u = ++VWN; return t.ok ? t : null; }
     var ks = Object.keys(VWT); if (ks.length > 500) ks.sort(function (a, b) { return VWT[a].u - VWT[b].u; }).slice(0, 150).forEach(function (q) { delete VWT[q]; });
@@ -660,7 +660,7 @@
       : tryLeftMs() < 15000 ? '<small class="lg-n" style="display:block"><b style="color:#b45309">🎟 오늘 맛보기 ' + TRY.min + '분을 다 썼다</b> — 내일 다시 ' + TRY.min + '분 · 실시간을 더 쓰려면 <b>본인 API 키(무료)</b>를 받아 「🔑」에 넣는다(넣은 기기는 제한 없음): data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청 — 받는 곳은 지도 아래 「🔎 없는 자료 찾는 법」에도 있다 · 받아 둔 자료로 그리는 층(신호 이어 세기 · 접근성 등)은 통신이 아니라 그대로 쓴다</small>'
       : '<div class="lg-btns"><button data-ltry="go">🎟 맛보기 켜기(오늘 ' + Math.ceil(tryLeftMs() / 60000) + '분 남음 · 키 없이)</button></div><small class="lg-n">맛보기 = 이 지도 운영자의 키로 잠깐 본다 — <b>기기마다 하루 ' + TRY.min + '분</b>(켜 둔 동안만 센다 · 여러 사람이 나눠 씀) · 더 쓰려면 키를 직접 받아 「🔑」에 넣는다 — 무료(data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청) · 넣은 기기는 제한 없음</small>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-ltry]'); if (!b) return; e.preventDefault(); if (b.getAttribute('data-ltry') === 'stop') tryStop(); else tryStart(); });
-  function itsGet(path, q) {
+  function itsGet(path, q) { if (vipOn()) return Promise.reject(new Error('🔒 중요업무 중'));
     if (!LK.its && tryOn() && !TRY.off.its) return tryGet('its', path, q + '&getType=json').then(function (t) { try { return JSON.parse(t); } catch (e) { throw new Error('맛보기 중계: 응답이 JSON 이 아님'); } });
     if (!LK.its) return Promise.reject(new Error('ITS 키 없음'));
     if (itsQuota() >= itsMax()) return Promise.reject(new Error(itsTier() === 'op' ? '이 기기에서 이번 달 ITS 9,500건을 다 썼다' : '이 기기에서 이번 달 ITS ' + itsMax() + '건을 다 썼다(개발키 월 100건) — 운영키(월 10,000건) 승인 뒤 「운영키」를 누른다'));
@@ -718,7 +718,7 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden) liveSoon(); });
   // 🌧 레이더 — RainViewer 조각(무료 판은 7단까지 · 한 칸 약 1km) · 우리 평면에 조각 모서리를 옮겨 그린다(브이월드와 같은 법)
   var RADT = {};
-  function radTile(u, z, x, y) { var k = u + '/' + z + '/' + x + '/' + y, t = RADT[k]; if (t) return t.ok ? t : null;
+  function radTile(u, z, x, y) { if (vipOn()) return null; var k = u + '/' + z + '/' + x + '/' + y, t = RADT[k]; if (t) return t.ok ? t : null;
     var ks = Object.keys(RADT); if (ks.length > 300) ks.slice(0, 100).forEach(function (q) { delete RADT[q]; });
     t = RADT[k] = { im: new Image(), ok: false }; t.im.onload = function () { t.ok = true; if (!VWQ) VWQ = requestAnimationFrame(function () { VWQ = 0; draw(); }); };
     t.im.src = u + '/256/' + z + '/' + x + '/' + y + '/2/1_1.png'; return null; }
@@ -749,7 +749,7 @@
   function ccList() { return CCLIVE || CCB; }
   function hlsLoad() { if (window.Hls) return Promise.resolve(); if (HLSP) return HLSP;
     HLSP = new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = 'js/vendor/hls.light.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); return HLSP; }
-  function ccPlay(url) {
+  function ccPlay(url) { if (vipOn()) return;
     var v = document.getElementById('ccv'); if (!v) return; if (HLS) { try { HLS.destroy(); } catch (e) {} HLS = null; }
     var bad = function () { var m = document.getElementById('ccm'); if (m) m.innerHTML = '영상을 열지 못했다 — 목록이 오래되었거나 그 카메라가 쉬는 중일 수 있다. <button data-ccref="1">🔄 목록 새로 받기(ITS 2건)</button>'; };
     v.addEventListener('error', bad);
@@ -776,7 +776,7 @@
   function pmGrade(v, small) { if (v == null) return null; var c = small ? [15, 35, 75] : [30, 80, 150]; return v <= c[0] ? 0 : v <= c[1] ? 1 : v <= c[2] ? 2 : 3; }
   var PMG = [['좋음', '#2563eb'], ['보통', '#16a34a'], ['나쁨', '#f59e0b'], ['매우나쁨', '#dc2626']];
   // ---------- 공공데이터포털 실시간(v1.9.0) ----------
-  function dgGet(path, q) {
+  function dgGet(path, q) { if (vipOn()) return Promise.reject(new Error('🔒 중요업무 중'));
     if (!LK.dgk && !tryOn()) return Promise.reject(new Error('공공데이터포털 키 없음 — 범례 「🔑 공공데이터포털 키」 또는 「🎟 맛보기」'));
     var k = LK.dgk ? (LK.dgk.indexOf('%') >= 0 ? LK.dgk : encodeURIComponent(LK.dgk)) : '';
     return (LK.dgk ? fetch('https://apis.data.go.kr/' + path + '?serviceKey=' + k + q).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }) : tryGet('dg', path, q))
@@ -1149,6 +1149,7 @@
   function inPoly(d, m) { if (m[0] < d.box[0] || m[0] > d.box[1] || m[1] < d.box[2] || m[1] > d.box[3]) return false; for (var p = 0; p < d.polys.length; p++) if (inRing(d.polys[p][0], m[0], m[1]) && !d.polys[p].slice(1).some(function (h) { return inRing(h, m[0], m[1]); })) return true; return false; }
   function nearAtM(m) { for (var k = 0; k < NEAR.length; k++) if (!RGUN[NEAR[k].gu] && inPoly(NEAR[k], m)) return NEAR[k]; return null; }
   function tap(x, y) {
+    if (VIPM.pick && vipOn()) { VIPM.cp.push(M(x, y)); navGet().then(function () { vipRun(); show({ kind: 'prd' }); draw(); }); return; }   /* 🔒 지점은 TAPM(의견·PC 보내기에 쓰는 「누른 곳」)에 넣지 않는다 */
     TAPM = M(x, y);
     if (RAD.pick && document.body.classList.contains('radon')) { RAD.c = M(x, y); RAD.pick = false; radRun(); return; }
     if (PRD.pick) { PRD.p = M(x, y); PRD.pick = false; PRD.base = Date.now(); prdGo(); return; }
@@ -1219,6 +1220,7 @@
       if (!SHOWTM) SHOWTM = setTimeout(function () { SHOWTM = 0; SHOWAT = 0; if (sel && sel.it === SHOWIT && $('m2dCard').classList.contains('on')) show(SHOWIT); }, 40); return; }
     BOOTT.nshow = (BOOTT.nshow || 0) + 1; SHOWIT = it; try { show0(it); } finally { SHOWAT = performance.now(); } }
   function show0(it) {
+    if (PRD.set === 'v' && (!it || it.kind !== 'prd')) { VIPM.cp = []; VIPM.res = null; VIPM.pick = false; VIPM.goal = null; VIPM.fast = null; VIPM.base = 0; PRD.set = 'n'; PRD.sig = 1; PRD.k = 1; }   /* 🔒 카드를 닫거나 다른 카드로 가면 중요업무를 지운다 */
     var card = $('m2dCard'), h = '';
     if (!it) { card.classList.remove('on'); return; }
     if (it.kind === 'report' && REP && REP.out) {   /* v2.216.0 서초 밖의 지금 위치 — 「가까운 교차로」 카드(서초 자료) 대신 그 자리의 동 카드 */
@@ -1400,7 +1402,7 @@
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
     if (sel && sel.it === it && !sel.w) sel.w = [(sel.x - cv.clientWidth / 2) / view.s + view.cx, (sel.y - cv.clientHeight / 2) / view.s + view.cy];
     NAVW = cardW(it);
-    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig|prd|gdr)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + fbHtml(); card.classList.add('on');   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
+    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig|prd|gdr)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + (it && it.kind === 'prd' && PRD.set === 'v' ? '' : fbHtml()); card.classList.add('on');   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
@@ -3535,8 +3537,14 @@
      속도 = 지금 그 링크의 평균 통행속도(실시간 소통 층이 받은 값 · 15분 안 · 제한속도로 자르지 않는다 — 남의 차를 보는 것이라 실제 흐름이 기준) · 없으면 제한속도(0 이면 30) × 배수.
      신호 = 신호 교차로에 들어설 때 한 번(같은 번호의 노드들은 한 교차로 — 안쪽 링크에서는 다시 안 선다) · 나가는 방향으로 이동류를 정한다(직진·좌회전 · 우회전 0 · 유턴 안 봄) → prdWait: 지금 색을 알면 남은 초(황색은 지나간다고 봄) · 모르면 평균 (주기−녹색)²÷(2×주기) · 자료 없으면 0.
      내는 것 = ① 곧장 갈 때 시간표(신호·나들목) ② 적색에 걸려 서게 되는 교차로 ③ 1·2·3·5분 안에 닿는 길(색) + 자료 밖으로 나가는 길. 「갈 수 있는 바깥 테두리」이지 「여기 있다」가 아니다 */
+  /* v2.223.0 🔒 중요업무 카드가 열려 있는 동안 — 바깥 서비스(브이월드·ITS·공공데이터·레이더·홍수지도·날씨·중계)로 가는 요청을 막는다 · 같은 사이트 자료 파일은 받는다(카드에 밝힘) */
+  function vipOn() { var c = document.getElementById('m2dCard'); return PRD.set === 'v' && !!c && c.classList.contains('on'); }
+  (function () { var of = window.fetch; if (!of || of.__vip) return; var wf = function (u) { var s9 = String(u && u.url || u); if (vipOn() && /^https?:/i.test(s9) && s9.indexOf(location.origin + '/') !== 0) return Promise.reject(new Error('🔒 중요업무 중 — 밖으로 묻지 않는다')); return of.apply(this, arguments); }; wf.__vip = 1; window.fetch = wf; })();
   var PRD = { p: null, hd: 'nt', ago: 0, wait: 0, k: 1, base: 0, pick: false, res: null }, PRDC = [[60, '#dc2626', '1분'], [120, '#f97316', '2분'], [180, '#eab308', '3분'], [300, '#16a34a', '5분']], PRDH = 300, PRDA = { nt: '↑', ne: '↗', et: '→', se: '↘', st: '↓', sw: '↙', wt: '←', nw: '↖' };
   var NAVG = null, NAVGP = null;
+  /* v2.223.0 설정 세트 — n 일반 신고차량(신호 대기 적용 · 도로 평균 속도) · r 도주 차량(신호 무시 · 평균 × 배율) · v 🔒 중요업무(신호 무시 · 고른 속도 · 지점별 시각표) */
+  PRD.set = 'n'; PRD.sig = 1;
+  var VIPM = { cp: [], pick: false, base: 0, fast: null, t0: 0, goal: null, res: null };   /* 🔒 중요업무 지점·속도 — 메모리에만(저장·주소창·통신 없음) */
   function navGet() { if (NAVGP) return NAVGP; NAVGP = Promise.all([fetch('data/nav-seocho.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }), fetch('data/nav-arterial.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fetch('data/nav-express.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })]).then(function (A) { var N = {}, L = [], out = {}, nm = {}, seen = {}, ban = {};
       /* 서초 그래프(골목·회전 제한) → 간선 그래프(v2.150.0 nav-arterial — 서초구청에서 제한속도로 15분 안에 닿는 마디의 큰길 · 서울 쪽 신호 붙음) → 수도권 고속·도시고속 뼈대(v2.148.0). 같은 원자료 ID — 겹치는 노드·링크는 앞의 것을 쓴다 */
       A.forEach(function (jx, gi) { if (!jx) return;
@@ -3553,14 +3561,14 @@
   function prdV(o) { var v = spdOf(spdMap(), o.id); return v ? [v, 1] : [o.lim > 0 ? o.lim : 30, 0]; }
   function prdLen(no, dir, mv) { var L = sigdRec(no), o = L && L[L.length - 1]; if (!o) return null; var m = o.mv.filter(function (q) { return q[1] === mv && q[2] != null && sgBin(q[0], dir) <= 1; })[0] || o.mv.filter(function (q) { return q[2] != null && sgBin(q[0], dir) <= 1; })[0]; return m ? { g: m[2], c: o.ci || o.cyc } : null; }
   /* 기다리는 초와 갈래 — g 녹색 통과 · y 황색(지나간다고 본다 — 바깥 테두리라서) · r 적색(남은 초를 안다) · u 색 모름(평균 기다림) · n 신호 자료 없음(0) · t 우회전(0) */
-  function prdWait(no, dir, mv, T) { if (mv === 'Rt') return [0, 't']; var st = null; try { st = sgStateAt(no, dir, T, mv); } catch (e) {} if (st) return st.st === 'r' ? [st.left, 'r'] : [0, st.st]; var q = prdLen(no, dir, mv); return q && q.c > 0 ? [Math.pow(Math.max(0, q.c - q.g), 2) / (2 * q.c), 'u'] : [0, 'n']; }
+  function prdWait(no, dir, mv, T) { if (!PRD.sig) return [0, 'i']; if (mv === 'Rt') return [0, 't']; var st = null; try { st = sgStateAt(no, dir, T, mv); } catch (e) {} if (st) return st.st === 'r' ? [st.left, 'r'] : [0, st.st]; var q = prdLen(no, dir, mv); return q && q.c > 0 ? [Math.pow(Math.max(0, q.c - q.g), 2) / (2 * q.c), 'u'] : [0, 'n']; }
   function prdStart() { var p = PRD.p, G = NAVG, best = null, ha = SDA[PRD.hd] * Math.PI / 180; if (!G || !p) return null;
     G.L.forEach(function (o) { var pts = o.pts, n = pts.length, e = pts[n - 1], bb = o.bb; if (p[0] < bb[0] - 150 || p[0] > bb[1] + 150 || p[1] < bb[2] - 150 || p[1] > bb[3] + 150) return;
       if (PRD.wait) { if (!G.N[o.t].no || G.N[o.t].no === G.N[o.f].no || Math.abs(prdAng(ha, o.b1)) > 50) return; var de = dTrue(p, e); if (de <= 110 && (!best || de < best.d)) best = { o: o, f: 1, d: de }; return; }
       for (var i = 1; i < n; i++) { var A = pts[i - 1], B = pts[i], dx = B[0] - A[0], dy = B[1] - A[1], L2 = dx * dx + dy * dy; if (!L2) continue; var da = Math.abs(prdAng(ha, Math.atan2(dy, dx))); if (da > 50) continue;
         var f = Math.max(0, Math.min(1, ((p[0] - A[0]) * dx + (p[1] - A[1]) * dy) / L2)), d = dTrue(p, [A[0] + f * dx, A[1] + f * dy]) + da * 0.2; if (d <= 70 && (!best || d < best.d)) best = { o: o, f: (o.cum[i - 1] + f * (o.cum[i] - o.cum[i - 1])) / (o.cum[n - 1] || 1), d: d }; } });
     return best; }
-  function prdRun() { PRD.res = null; var G = NAVG; if (!G || !PRD.p) return; var T0 = PRD.base - PRD.ago * 60000, k = PRD.k, st = prdStart(); if (!st) { PRD.res = { err: 1 }; return; }
+  function prdRun() { PRD.res = null; var G = NAVG; if (!G || !PRD.p) return; var T0 = PRD.base - PRD.ago * 60000, k = PRD.k, st = prdStart(), tS = window.TT ? TT.cfg().turnS : 0;   /* tS 회전 감속(초 · 공통 설정) — 신호를 무시해도 남는다 */ if (!st) { PRD.res = { err: 1 }; return; }
     var lab = {}, H = [], stops = {}, unk = {}, sig = {}, outs = {};
     function push(t, ix) { H.push([t, ix]); var i = H.length - 1; while (i > 0) { var pa = (i - 1) >> 1; if (H[pa][0] <= H[i][0]) break; var tmp = H[pa]; H[pa] = H[i]; H[i] = tmp; i = pa; } }
     function pop() { var top = H[0], last = H.pop(); if (H.length) { H[0] = last; var i = 0; for (;;) { var l = 2 * i + 1, r = l + 1, m = i; if (l < H.length && H[l][0] < H[m][0]) m = l; if (r < H.length && H[r][0] < H[m][0]) m = r; if (m === i) break; var tmp = H[m]; H[m] = H[i]; H[i] = tmp; i = m; } } return top; }
@@ -3575,6 +3583,7 @@
       O.forEach(function (q) { if (q.t === o.f || G.ban[o.t + '|' + o.id + '|' + q.id]) return; var dep = t, pd2 = null;
         if (pend) { if (G.N[q.t].no === pend.no) pd2 = pend; else { var mv = prdTurnA(pend.b, q.b0); if (mv === 'Ut') return; var w = prdWait(pend.no, pend.dir, mv, T0 + pend.t * 1000); if (pend.first && w[1] === 'u') w = [0, 'u']; dep = t + w[0]; } }
         else if (prdTurnA(o.b1, q.b0) === 'Ut') return;
+        if (tS && !PRD.sig && O.length > 2 && /^(Lt|Rt)$/.test(prdTurnA(o.b1, q.b0))) dep += tS;   /* 신호를 무시하면 기다림 대신 회전 감속만 · 갈림이 있는 마디에서만 */
         if (dep >= PRDH) return; var v = prdV(q), arr = dep + q.m / (v[0] * k / 3.6); if (!lab[q.ix] || arr < lab[q.ix].b - 1e-6) { lab[q.ix] = { a: dep, b: arr, f: 0, pend: pd2, lv: v[1] }; push(arr, q.ix); } }); }
     /* 곧장 갈 때 — 갈림마다 가장 덜 꺾이는 길(같은 길 이름 먼저) · 신호 교차로와 나들목(IC/JC)을 적는다 */
     var tt = [], co = o0, ct = t1, dist = (1 - f0) * o0.m, guard = 0;
@@ -3589,13 +3598,15 @@
   function prdGo() { navGet().then(function () { if (KSC === undefined) kscGet(); prdRun(); sel = null; show({ kind: 'prd' }); draw(); }); }
   function prdOpen() { PRD.pick = true; navGet(); if (KSC === undefined) kscGet(); if (!on.sgm) { on.sgm = true; try { paintLayers(); } catch (e) {} } toast('🚨 신고 자리를 지도에서 누른다'); sel = null; show({ kind: 'prd' }); draw(); }
   function prdMin(t) { return '+' + (t / 60).toFixed(1) + '분'; }
-  function prdWTxt(w, t) { return w[1] === 'r' ? '<b style="color:#dc2626">적색 · ' + Math.round(w[0]) + '초 섬</b> · ' + prdMin(t + w[0]) + '에 출발' : w[1] === 'g' ? '<b style="color:#16a34a">녹색 통과</b>' : w[1] === 'y' ? '<b style="color:#a16207">황색(지나간다고 봄)</b>' : w[1] === 'u' ? '<b style="color:#64748b">색 모름</b>' + (w[0] ? ' · 평균 ' + Math.round(w[0]) + '초 기다린다고 봄' : ' · 바로 출발한다고 봄') : '<b style="color:#64748b">신호 자료 없음</b> · 기다림 0으로 봄'; }
+  function prdWTxt(w, t) { if (w[1] === 'i') return '<b style="color:#64748b">신호 무시</b>(기다림 0으로 봄)'; return w[1] === 'r' ? '<b style="color:#dc2626">적색 · ' + Math.round(w[0]) + '초 섬</b> · ' + prdMin(t + w[0]) + '에 출발' : w[1] === 'g' ? '<b style="color:#16a34a">녹색 통과</b>' : w[1] === 'y' ? '<b style="color:#a16207">황색(지나간다고 봄)</b>' : w[1] === 'u' ? '<b style="color:#64748b">색 모름</b>' + (w[0] ? ' · 평균 ' + Math.round(w[0]) + '초 기다린다고 봄' : ' · 바로 출발한다고 봄') : '<b style="color:#64748b">신호 자료 없음</b> · 기다림 0으로 봄'; }
   function prdCard() { var R = PRD.res, bt = function (k, v, t, act) { return '<button data-prd="' + k + ':' + v + '"' + (act ? ' style="background:#1d4ed8;color:#fff;border-color:#1d4ed8"' : '') + '>' + t + '</button>'; };
-    var h = '<h3>🚨 신고 차량 예측</h3><p class="sdnt" style="margin:0 0 8px;color:#b45309"><b>갈 수 있는 바깥 테두리</b>이지 「여기 있다」가 아니다 — ' + (R && R.nlv ? '지금 그 길의 평균 통행속도(값이 없는 길은 제한속도)' : '제한속도') + (PRD.k > 1 ? '의 ' + PRD.k + '배' : '') + '로 달리고 신호를 지킨다고 볼 때. 신호를 안 지키거나 혼자 더 빨리 달리면 더 멀리, 막히면 덜 간다.</p>';
+    var TC = window.TT ? TT.cfg() : { runK: 1.3 }, sets = '<div class="lg-btns">' + bt('set', 'n', '일반 신고차량', PRD.set === 'n') + bt('set', 'r', '도주 차량', PRD.set === 'r') + (window.TT && TT.VIP_ON ? bt('set', 'v', '🔒 중요업무', PRD.set === 'v') : '') + '</div>';
+    if (PRD.set === 'v') return vipCard(bt, sets);
+    var h = '<h3>🚨 신고 차량 예측</h3>' + sets + '<div class="lg-btns">' + bt('sig', 1, PRD.sig ? '🚦 신호 대기 적용' : '🚦 신호 대기 무시', PRD.sig) + '</div><p class="sdnt" style="margin:0 0 8px;color:#b45309"><b>갈 수 있는 바깥 테두리</b>이지 「여기 있다」가 아니다 — ' + (R && R.nlv ? '지금 그 길의 평균 통행속도(값이 없는 길은 제한속도)' : '제한속도') + (PRD.k > 1 ? '의 ' + PRD.k + '배' : '') + '로 달리고 ' + (PRD.sig ? '신호를 지킨다고' : '<b>신호를 무시한다고</b>(기다림 0 · 회전 감속은 셈)') + ' 볼 때. ' + (PRD.sig ? '신호를 안 지키거나 혼자 더 빨리 달리면 더 멀리, 막히면 덜 간다.' : '막히면 덜 간다.') + '</p>';
     if (!PRD.p) return h + '<p class="desc"><b>신고 자리를 지도에서 누른다</b> — 그 차가 있던 길 위를 누른다. 그다음 진행 방위·신고 시각을 고른다.</p><div class="lg-btns">' + bt('pick', 1, '📍 지도에서 자리 고르기', PRD.pick) + '</div><p class="sdnt">서초구 둘레(+2km)는 골목까지 · 서초에서 15분쯤 닿는 권역(용산·성동·송파·성남·영등포·관악·수원 북쪽·용인 수지)은 큰길(대로)까지 · 그 밖 수도권은 고속도로·도시고속도로만 따라간다 · 차량번호·신고 내용은 넣는 칸이 없다(자리와 방향만).</p>';
     h += '<div class="cap" style="margin-top:2px">진행 방위(가는 쪽)</div><div class="lg-btns">' + DIR8K.map(function (d) { return bt('hd', d, PRDA[d] + ' ' + SDN[d], PRD.hd === d); }).join('') + '</div>';
     h += '<div class="cap">신고 시각</div><div class="lg-btns">' + [0, 1, 2, 3, 5].map(function (n) { return bt('ago', n, n ? n + '분 전' : '지금', PRD.ago === n); }).join('') + '</div>';
-    h += '<div class="lg-btns">' + bt('wait', 1, (PRD.wait ? '✅ ' : '') + '신호대기 중이었다', PRD.wait) + bt('k', 1, '흐름대로', PRD.k === 1) + bt('k', 1.2, '1.2배로 본다', PRD.k === 1.2) + bt('k', 1.5, '1.5배', PRD.k === 1.5) + bt('pick', 1, '📍 자리 다시', PRD.pick) + bt('re', 1, '⟳ 다시 계산', 0) + bt('x', 1, '✕ 지우기', 0) + '</div>';
+    h += '<div class="lg-btns">' + bt('wait', 1, (PRD.wait ? '✅ ' : '') + '신호대기 중이었다', PRD.wait) + bt('k', 1, '흐름대로', PRD.k === 1) + bt('k', 1.2, '1.2배로 본다', PRD.k === 1.2) + bt('k', 1.5, '1.5배', PRD.k === 1.5) + (PRD.set === 'r' && [1, 1.2, 1.5].indexOf(PRD.k) < 0 ? bt('k', PRD.k, PRD.k + '배(도주 배율 설정)', 1) : '') + bt('pick', 1, '📍 자리 다시', PRD.pick) + bt('re', 1, '⟳ 다시 계산', 0) + bt('x', 1, '✕ 지우기', 0) + '</div>';
     if (!NAVG) return h + '<p class="desc">길 자료를 읽는 중…</p>';
     if (!R || R.err) return h + '<p class="sdnt" style="color:#b45309"><b>이 자리·이 방위로 가는 길을 못 찾았다</b> — ' + (PRD.wait ? '신호 교차로 정지선에서 110m 안을 누르고' : '길 위(70m 안)를 누르고') + ', 방위를 그 길이 가는 쪽으로 고른다(서초 밖은 큰길·고속도로 위만 된다 · 일방통행·분리된 길이면 반대 방위는 없다).</p>';
     var o0 = R.st.o, el = (Date.now() - R.T0) / 1000;
@@ -3607,9 +3618,68 @@
     h += row('③ 5분 안에 닿는 곳', '신호 교차로 <b>' + nn + '곳</b> · 그중 <b>지금 색을 모르는 곳 ' + nu + '</b>(평균으로 봄 — 그만큼 덜 정확) · 길 ' + R.nl.toLocaleString() + '구간 가운데 <b>지금 통행속도로 센 구간 ' + R.nlv.toLocaleString() + '</b>' + (R.nlv ? '' : ' <em>(🚗 실시간 소통 층을 켜고 값이 뜬 뒤 「⟳ 다시 계산」을 누르면 넣는다 — 지금은 제한속도)</em>'));
     if (OX.length) h += row('🚪 여기로 나감', OX.slice(0, 8).map(function (q) { return '<b>' + esc(q[0]) + '</b> ' + prdMin(q[1]); }).join(' · ') + ' <em>(권역 밖으로 나가거나 큰길이 좁은 길로 바뀐 자리 — 그 뒤는 이 예측이 못 따라간다 · 그 길로 계속 갔을 수 있다)</em>');
     h += '<div class="lg-btns" style="pointer-events:none">' + PRDC.map(function (c) { return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12.5px;margin-right:8px"><i style="display:inline-block;width:18px;height:5px;border-radius:3px;background:' + c[1] + '"></i>' + c[2] + ' 안</span>'; }).join('') + '</div>';
+    h += ttSetHtml();
     return h + sdMore('<p class="sdnt">셈법 — 신고 자리에서 그 방위로 가는 길을 잡고 길마다 가장 이른 도착 시각으로 퍼뜨린다(5분까지). 속도 = 지금 그 길의 평균 통행속도(실시간 소통 층이 15분 안에 받은 값 · 제한속도로 자르지 않는다) · 값이 없으면 제한속도. 신호 = 교차로에 들어설 때 한 번, 나가는 방향(직진·좌회전 · 우회전은 기다림 0 · 유턴은 안 봄)의 신호를 그 시각으로 센다 — 지금 색을 아는 곳은 남은 초 그대로, 모르는 곳은 평균 (주기 − 녹색)² ÷ (2 × 주기), 신호 자료가 없는 곳은 0. 황색은 지나간다고 본다(바깥 테두리라서).</p><p class="sdnt">한계 — 서초구 + 2km 둘레는 골목까지 · 서초구청에서 제한속도로 15분 안에 닿는 권역은 큰길(차로 3 이상·대로·국도)까지 — 행정 경계가 아니라 길로 이어진 권역 · 그 밖 수도권은 고속·도시고속도로만(나간 뒤는 「여기로 나감」에 길 이름만) · 서초 밖에는 회전 제한 자료가 없고, 경기도 쪽 교차로는 신호 자료가 없어 기다림이 0 이다(그만큼 실제보다 멀리 나온다) · 회전 금지는 자료(TURNINFO)에 적힌 것만 · 과속 단속 카메라 앞에서 줄이는 것은 안 넣었다 · 신호값은 받은 값·계획에서 이어 센 추정이라 감응·수동 운영 때는 다르다 · 차량번호·신고 내용은 넣는 칸이 없고 어디에도 저장하지 않는다.</p>' + src('길 = 국가교통정보센터 표준노드링크(data/nav-seocho.json · 간선 data/nav-arterial.json · 수도권 고속·도시고속 data/nav-express.json) · 신호 = 서울시 T-Data · 서초경찰서 교통과 현시도 · 통행속도 = 국가교통정보센터 실시간 소통(켜 둔 경우)'), 'prd', 'ⓘ 셈법·한계'); }
+  /* ---------- v2.223.0 🔒 중요업무 — 지점 사이를 길로 잇는다(가장 짧은 길 · 금지 회전·유턴 지킴 · 꺾임마다 30m 무게) → 구간 목록 → TT.vipTwo ----------
+     기기 안에서만 셈 · 지점·경로·시각은 저장하지 않는다(메모리 · 「모두 지우기」로 바로 지움) · 주소창에도 안 남긴다 */
+  function vipSnap(p) { var G = NAVG, L = []; G.L.forEach(function (o) { var bb = o.bb; if (p[0] < bb[0] - 120 || p[0] > bb[1] + 120 || p[1] < bb[2] - 120 || p[1] > bb[3] + 120) return; var bd = null;
+      for (var i = 1; i < o.pts.length; i++) { var A = o.pts[i - 1], B = o.pts[i], dx = B[0] - A[0], dy = B[1] - A[1], L2 = dx * dx + dy * dy; if (!L2) continue; var f = Math.max(0, Math.min(1, ((p[0] - A[0]) * dx + (p[1] - A[1]) * dy) / L2)), d = dTrue(p, [A[0] + f * dx, A[1] + f * dy]); if (d <= 120 && (!bd || d < bd.d)) bd = { o: o, f: (o.cum[i - 1] + f * (o.cum[i] - o.cum[i - 1])) / (o.cum[o.pts.length - 1] || 1), d: d }; }
+      if (bd) L.push(bd); }); if (!L.length) return []; var m0 = Math.min.apply(null, L.map(function (x) { return x.d; })); return L.filter(function (x) { return x.d <= m0 + 15; }); }   /* 가장 가까운 줄과 15m 안의 줄은 다 후보(양방향 길의 두 줄) */
+  function vipLeg(a, b, prev) { var G = NAVG, S0 = prev ? [prev] : vipSnap(a), T = vipSnap(b); if (!S0.length || !T.length) return null; var tg = {}, H = [], lab = {}, best = null;
+    T.forEach(function (t) { tg[t.o.ix] = t; });
+    function push(c, key) { H.push([c, key]); var i = H.length - 1; while (i > 0) { var pa = (i - 1) >> 1; if (H[pa][0] <= H[i][0]) break; var tmp = H[pa]; H[pa] = H[i]; H[i] = tmp; i = pa; } }
+    function pop() { var top = H[0], last = H.pop(); if (H.length) { H[0] = last; var i = 0; for (;;) { var l = 2 * i + 1, r = l + 1, m = i; if (l < H.length && H[l][0] < H[m][0]) m = l; if (r < H.length && H[r][0] < H[m][0]) m = r; if (m === i) break; var tmp = H[m]; H[m] = H[i]; H[i] = tmp; i = m; } } return top; }
+    S0.forEach(function (s0) { var o = s0.o, t = tg[o.ix]; if (t && t.f >= s0.f) { var c0 = (t.f - s0.f) * o.m; if (!best || c0 < best.c) best = { c: c0, key: 's' + o.ix, f1: t.f }; }
+      lab['s' + o.ix] = { o: o, a: -s0.f * o.m, b: (1 - s0.f) * o.m, pv: null, f0: s0.f }; push(-s0.f * o.m, 's' + o.ix); });   /* 열쇠 = 들어가는 비용 a(시작 줄은 음수 — 앞부분을 이미 지났다) */
+    while (H.length) { var cur = pop(), lb = lab[cur[1]]; if (cur[0] > lb.a + 1e-6) continue; if (best && lb.a >= best.c) break; var o = lb.o;
+      var t = tg[o.ix]; if (t && lb.pv !== null) { var ct = lb.a + t.f * o.m; if (!best || ct < best.c) best = { c: ct, key: cur[1], f1: t.f }; }
+      (G.out[o.t] || []).forEach(function (q) { if (q.t === o.f || G.ban[o.t + '|' + o.id + '|' + q.id]) return; var tk = prdTurnA(o.b1, q.b0); if (tk === 'Ut') return; var a2 = lb.b + (tk === 'St' ? 0 : 30), k2 = String(q.ix); if (!lab[k2] || a2 < lab[k2].a - 1e-6) { lab[k2] = { o: q, a: a2, b: a2 + q.m, pv: cur[1], f0: 0 }; push(a2, k2); } }); }
+    if (!best) return null; var seq = [], key = best.key, f1 = best.f1;
+    while (key != null) { var l9 = lab[key]; seq.unshift({ o: l9.o, f0: l9.f0, f1: f1 }); f1 = 1; key = l9.pv; }
+    return seq; }
+  function vipName(p, k, n) { var G = NAVG, bd = 90, nm = ''; Object.keys(G.N).forEach(function (id) { var v = G.N[id]; if (!v.no) return; var d = dTrue(p, v.p); if (d < bd) { bd = d; nm = G.nm[v.no] || ''; } }); return (k === 0 ? '출발' : k === n - 1 ? '도착' : '지점 ' + k) + (nm ? ' · ' + nm : ''); }
+  function vipRun() { VIPM.res = null; if (!NAVG || VIPM.cp.length < 2 || !window.TT) return; var segs = [], path = [], cps = [{ nm: vipName(VIPM.cp[0], 0, VIPM.cp.length), m: 0 }], m = 0, bad = 0;
+    var prev = null; for (var k = 1; k < VIPM.cp.length; k++) { var seq = vipLeg(VIPM.cp[k - 1], VIPM.cp[k], prev); if (!seq) { bad = k; break; } var lst = seq[seq.length - 1]; prev = { o: lst.o, f: lst.f1 };   /* 다음 구간은 이 구간 끝 줄에서 이어 간다 */
+      seq.forEach(function (x, i) { var o = x.o, len = Math.max(0, (x.f1 - x.f0) * o.m), nx = seq[i + 1], tk = nx ? prdTurnA(o.b1, nx.o.b0) : 'St'; m += len; path.push(prdSub(o, x.f0, x.f1));
+        var brn = (NAVG.out[o.t] || []).filter(function (q) { return q.t !== o.f; }).length >= 2;   /* 갈림이 있는 마디에서만 회전을 센다(굽은 길·램프 고리는 안 셈) */
+        segs.push({ m: len, turn: brn && /^(Lt|Rt)$/.test(tk), ramp: !!(nx && NAVG.N[o.t] && NAVG.N[o.t].ty === '106' && nx.o.rk !== o.rk), tunnel: /터널|지하차도/.test(o.nm || ''), cp: i === seq.length - 1 ? vipName(VIPM.cp[k], k, VIPM.cp.length) : null }); });
+      cps.push({ nm: vipName(VIPM.cp[k], k, VIPM.cp.length), m: m }); }
+    if (bad) { VIPM.res = { err: bad }; return; }
+    var t0 = VIPM.t0 || Date.now(), V = TT.vipTwo(segs, { base: VIPM.base || TT.cfg().vipV, fast: VIPM.fast, t0: t0 }); VIPM.res = { V: V, path: path, m: m, segs: segs, t0: t0, start: cps[0].nm }; }
+  function vipCard(bt, sets) { var C = TT.cfg(), Rv = VIPM.res, h = '<h3>🔒 중요업무 — 지점별 도착 시각</h3>' + sets;
+    h += '<p class="sdnt" style="margin:0 0 6px">지도에서 <b>출발 → 지점 → … → 도착</b>을 차례로 누른다. 길을 따라 이어 지점마다 통과 예정 시각을 낸다(신호 대기 0 · 회전·진출입 감속은 셈). <b>🔒 이 기기 안에서만 셈하고 저장하지 않는다</b> — 「모두 지우기」나 카드를 닫으면 사라진다. 이 카드가 열려 있는 동안 바깥 서비스(브이월드·ITS·공공데이터·레이더·중계)로는 묻지 않는다. 지도 조각·자료 파일은 같은 사이트에서 화면 둘레만큼 받는다(지점·시각은 보내지 않는다).</p>';
+    h += '<div class="lg-btns">' + bt('vp', 1, (VIPM.pick ? '✅ ' : '') + '📍 지점 더하기 (' + VIPM.cp.length + ')', VIPM.pick) + bt('vu', 1, '↶ 마지막 빼기', 0) + bt('vx', 1, '🗑 모두 지우기', 0) + '</div>';
+    h += '<div class="cap">기본 속도</div><div class="lg-btns">' + bt('vb', 60, '60', (VIPM.base || C.vipV) === 60) + bt('vb', 70, '70', (VIPM.base || C.vipV) === 70) + '</div>';
+    h += '<div class="cap">빨리 간다(직접 입력 ' + C.vMin + '~' + C.vMax + ')</div><div class="lg-btns">' + bt('vf', 1, VIPM.fast ? VIPM.fast + 'km/h ✎' : '직접 입력', !!VIPM.fast) + (VIPM.fast ? bt('vf', 'x', '✕ 입력 지움', 0) : '') + bt('vt', 1, '⟳ 출발 = 지금', 0) + bt('vg', 1, VIPM.goal ? '🎯 목표 ' + hhmm(VIPM.goal) + ' ✎' : '🎯 목표 도착 시각 → 필요 속도', !!VIPM.goal) + '</div>';
+    if (VIPM.cp.length < 2) return h + '<p class="desc">지점을 두 곳 넘게 누르면 시각표가 나온다.</p>' + ttSetHtml();
+    if (!NAVG) return h + '<p class="desc">길 자료를 읽는 중…</p>';
+    if (!Rv || Rv.err) return h + '<p class="sdnt" style="color:#b45309"><b>' + (Rv ? Rv.err + '번째 지점으로 가는 길을 못 찾았다' : '계산하지 못했다') + '</b> — 길 위(120m 안)를 누른다 · 서초 밖은 큰길·고속도로 위만 된다.</p>' + ttSetHtml();
+    var V = Rv.V; if (V.err) return h + '<p class="sdnt" style="color:#b45309">' + esc(V.err) + '</p>' + ttSetHtml();
+    h += '<div style="border:2px solid #18233a;border-radius:12px;padding:8px 10px;margin:8px 0"><div style="display:flex;gap:10px;align-items:baseline"><b style="font-size:24px;color:#1b54d6">' + TT.hm(V.base.at) + '</b><span>예상 도착 · ' + TT.fmt(V.base.sec) + ' · ' + V.base.v + 'km/h</span></div><div style="display:flex;gap:10px;align-items:baseline"><b style="font-size:24px;color:#dc2626">' + TT.hm(V.fast.at) + '</b><span>가장 이른 도착 · ' + TT.fmt(V.fast.sec) + ' · ' + V.fastV + 'km/h' + (V.typed ? '' : '(직접 입력 없음 — 기준값)') + '</span></div>'
+      + '<div style="margin-top:6px;background:#fef3c7;color:#78350f;border-radius:8px;padding:5px 8px;font-weight:800">📌 교차로 통제 개시는 「가장 이른 도착」 시각 기준</div></div>';
+    if (VIPM.goal) { var sec = (VIPM.goal - Rv.t0) / 1000, nv = TT.needSegs(Rv.segs, sec);
+      h += row('🎯 역산', '목표 ' + hhmm(VIPM.goal) + '에 닿으려면 고른 속도 <b>' + (nv ? Math.ceil(nv) + 'km/h' : '— (시간이 모자란다)') + '</b>' + (nv && nv > C.vMax ? ' <b style="color:#dc2626">· 허용 범위(' + C.vMax + ') 밖</b>' : nv && nv < C.vMin ? ' <em>· 허용 범위(' + C.vMin + ')보다 느려도 닿는다</em>' : '') + ' <em>(회전·진출입·터널·가감속을 넣고 셈 · 보정 없음)</em>'); }
+    h += '<div class="cap">지점별 통과 예정 — 출발 ' + hhmm(Rv.t0) + ' · 모두 ' + (Rv.m / 1000).toFixed(1) + 'km</div><div class="r"><b>' + esc(Rv.start) + '</b><span>0km · ' + hhmm(Rv.t0) + '</span></div>' + V.base.cps.map(function (c, i) { var f = V.fast.cps[i]; return '<div class="r"><b>' + esc(c.nm) + '</b><span>' + (c.m / 1000).toFixed(1) + 'km · 예상 +' + TT.mmss(c.t) + ' <b>' + TT.hm(c.at) + '</b> · 가장 이른 +' + TT.mmss(f.t) + ' <b style="color:#dc2626">' + TT.hm(f.at) + '</b></span></div>'; }).join('');
+    h += '<p class="sdnt">계산 속도는 도착 시각을 내려는 값이지 주행 속도 안내가 아니다 · 길 = 지점 사이의 가장 짧은 길(금지 회전·유턴 지킴 · 꺾는 곳마다 30m 무게) · 회전 ' + C.turnS + '초 · 진출입 ' + C.rampS + '초 · 출발·정지 ' + C.accS + '초 · 터널 ×' + C.tunK + '(앱 제안값 · 아래 설정에서 바꾼다) · 실측 보정 ×' + TT.calK().toFixed(2) + '(가르고에서 쌓인 것)</p>';
+    return h + ttSetHtml(); }
+  function drawVip(dark) { var Rv = VIPM.res; ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (Rv && Rv.path) Rv.path.forEach(function (pl) { if (pl.length < 2) return; [[9, dark ? 'rgba(15,22,36,.85)' : '#fff'], [5, '#18233a']].forEach(function (w) { ctx.beginPath(); pl.forEach(function (q, i) { var sp = S(q); if (i) ctx.lineTo(sp[0], sp[1]); else ctx.moveTo(sp[0], sp[1]); }); ctx.lineWidth = w[0]; ctx.strokeStyle = w[1]; ctx.stroke(); }); });
+    VIPM.cp.forEach(function (p, i) { var sp = S(p); ctx.beginPath(); ctx.arc(sp[0], sp[1], 11, 0, 6.2832); ctx.fillStyle = i === 0 ? '#16a34a' : i === VIPM.cp.length - 1 && i > 0 ? '#dc2626' : '#1b54d6'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(i === 0 ? '출' : String(i), sp[0], sp[1] + 0.5); });
+    ctx.restore(); }
+  /* 주행시간 설정 — 가르고 ⚙ 와 같은 값(js/travel-time.js · 이 기기 tg_tt_cfg) */
+  var TTSET = [['vipV', '중요업무 기본 속도', [60, 70]], ['vipFast', '가장 이른 도착 기준(입력 없을 때)', [80, 90, 100, 110]], ['vMin', '직접 입력 — 가장 느린', [20, 30, 40]], ['vMax', '직접 입력 — 가장 빠른', [100, 110, 120]], ['turnS', '회전 감속(초/번)', [0, 3, 6, 10]], ['rampS', '진출입로 감속(초/번)', [0, 5, 8, 12]], ['accS', '출발·정지 가감속(초/번)', [0, 2, 4, 6]], ['tunK', '터널·지하차도 속도 배율', [0.8, 0.9, 1]], ['runK', '도주 차량 속도 배율', [1.2, 1.3, 1.5]]];
+  function ttSetHtml() { if (!window.TT) return ''; var C = TT.cfg(), D = TT.DEF; return '<details class="sdmore"><summary>⚙ 주행시간 설정 — 가르고와 같은 값(이 기기)</summary>' + TTSET.map(function (it) { var k = it[0], o = it[2].slice(); if (o.indexOf(C[k]) < 0) o.push(C[k]); return '<div class="cap">' + it[1] + (C[k] !== D[k] ? ' <button data-ttr="' + k + '" style="border:0;background:none;color:#1d4ed8;font-weight:800">↺ 기본 ' + D[k] + '</button>' : '') + '</div><div class="lg-btns">' + o.map(function (v) { return '<button data-tts="' + k + ':' + v + '"' + (v === C[k] ? ' style="background:#1d4ed8;color:#fff;border-color:#1d4ed8"' : '') + '>' + v + (v === D[k] ? ' · 기본' : '') + '</button>'; }).join('') + '</div>'; }).join('') + '<div class="lg-btns" style="margin-top:8px"><button data-ttx="all">전체 기본값으로</button></div></details>'; }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-tts],[data-ttr],[data-ttx]'); if (!b || !window.TT) return; e.preventDefault(); var a = b.getAttribute('data-tts');
+    if (a) { var i = a.indexOf(':'); TT.set(a.slice(0, i), +a.slice(i + 1)); } else if (b.hasAttribute('data-ttr')) TT.reset(b.getAttribute('data-ttr')); else if (confirm('주행시간 설정을 모두 기본값으로 되돌릴까요?')) TT.reset(); else return;
+    var dt = b.closest('details'), op = dt && dt.open; if (PRD.set === 'r' && ((a && a.indexOf('runK:') === 0) || b.getAttribute('data-ttr') === 'runK' || b.hasAttribute('data-ttx'))) PRD.k = TT.cfg().runK; if (PRD.set === 'v') vipRun(); else if (PRD.p) prdRun(); show({ kind: 'prd' }); draw(); var d2 = document.querySelector('details.sdmore'); if (op && d2) d2.open = true; });
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-prd]'); if (!b || PRD.set !== 'v') return; var v = b.getAttribute('data-prd').split(':'), k = v[0], C = window.TT ? TT.cfg() : null; if (!/^v[pubxftg]$/.test(k)) return; e.stopImmediatePropagation(); e.preventDefault();
+    if (k === 'vp') { VIPM.pick = !VIPM.pick; if (VIPM.pick) toast('🔒 지점을 지도에서 차례로 누른다'); } else if (k === 'vu') VIPM.cp.pop(); else if (k === 'vx') { VIPM.cp = []; VIPM.res = null; VIPM.goal = null; VIPM.fast = null; VIPM.pick = true; toast('🔒 지점을 모두 지웠다(남은 기록 없음)'); }
+    else if (k === 'vb') VIPM.base = +v[1]; else if (k === 'vt') VIPM.t0 = 0;
+    else if (k === 'vf') { if (v[1] === 'x') VIPM.fast = null; else { var a = prompt('빨리 갈 때 속도(km/h · ' + C.vMin + '~' + C.vMax + ')', VIPM.fast || ''); if (a == null || a === '') return; var n = +String(a).replace(/[^\d.]/g, ''); if (!(n >= C.vMin && n <= C.vMax)) { alert('받지 않았다 — ' + C.vMin + '~' + C.vMax + 'km/h 안에서만 넣는다'); return; } VIPM.fast = Math.round(n); } }
+    else if (k === 'vg') { var g = prompt('목표 도착 시각(예: 14:30) — 비우면 지움', VIPM.goal ? hhmm(VIPM.goal) : ''); if (g == null) return; var mm = /^(\d{1,2}):?(\d{2})$/.exec(String(g).trim()); if (!mm) { VIPM.goal = null; } else { var d = new Date(VIPM.res && VIPM.res.t0 || Date.now()); d.setHours(+mm[1], +mm[2], 0, 0); if (d.getTime() < (VIPM.res && VIPM.res.t0 || Date.now())) d.setDate(d.getDate() + 1); VIPM.goal = d.getTime(); } }
+    navGet().then(function () { vipRun(); show({ kind: 'prd' }); draw(); }); }, true);
   function prdSub(o, fa, fb) { var tot = o.cum[o.cum.length - 1] || 1, da = fa * tot, db = fb * tot, out = []; for (var i = 1; i < o.pts.length; i++) { var c0 = o.cum[i - 1], c1 = o.cum[i]; if (c1 < da || c0 > db) continue; var L9 = (c1 - c0) || 1, A = o.pts[i - 1], B = o.pts[i], s0 = (Math.max(da, c0) - c0) / L9, s1 = (Math.min(db, c1) - c0) / L9; if (!out.length) out.push([A[0] + (B[0] - A[0]) * s0, A[1] + (B[1] - A[1]) * s0]); out.push([A[0] + (B[0] - A[0]) * s1, A[1] + (B[1] - A[1]) * s1]); } return out; }
-  function drawPrd(dark) { if (!PRD.p) return; ctx.save(); ctx.setLineDash([]); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; var R = PRD.res, G = NAVG;
+  function drawPrd(dark) { if (PRD.set === 'v') { if (vipOn()) drawVip(dark); return; } if (!PRD.p) return; ctx.save(); ctx.setLineDash([]); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; var R = PRD.res, G = NAVG;
     if (R && !R.err && G) { var a0 = M(-30, -30), b0 = M(cv.clientWidth + 30, cv.clientHeight + 30), under = view.s >= 0.06;
       (under ? [0, 1] : [1]).forEach(function (pass) { Object.keys(R.lab).forEach(function (ix) { var g = R.lab[ix], o = G.L[ix], bb = o.bb; if (bb[1] < a0[0] || bb[0] > b0[0] || bb[3] < a0[1] || bb[2] > b0[1]) return; var dur = g.b - g.a; if (dur <= 0) return; var lo = g.a;
           PRDC.forEach(function (c) { var hi = Math.min(g.b, c[0]); if (hi <= lo) return; var sub = prdSub(o, g.f + (1 - g.f) * (lo - g.a) / dur, g.f + (1 - g.f) * (hi - g.a) / dur); lo = hi; if (sub.length < 2) return; ctx.beginPath(); sub.forEach(function (q, i) { var sp = S(q); if (i) ctx.lineTo(sp[0], sp[1]); else ctx.moveTo(sp[0], sp[1]); }); ctx.lineWidth = pass ? (o.rk <= 3 ? 5 : 3.5) : (o.rk <= 3 ? 9 : 7); ctx.strokeStyle = pass ? c[1] : (dark ? 'rgba(15,22,36,.8)' : 'rgba(255,255,255,.88)'); ctx.stroke(); }); }); });
@@ -3620,8 +3690,10 @@
     ctx.beginPath(); ctx.moveTo(s0[0] + cx * 37, s0[1] + sy * 37); ctx.lineTo(s0[0] + cx * 26 + px * 6.5, s0[1] + sy * 26 + py * 6.5); ctx.lineTo(s0[0] + cx * 26 - px * 6.5, s0[1] + sy * 26 - py * 6.5); ctx.closePath(); ctx.fillStyle = '#111827'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
     ctx.restore(); }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-prd]'); if (!b) return; e.preventDefault(); var v = b.getAttribute('data-prd').split(':');
-    if (v[0] === 'hd') PRD.hd = v[1]; else if (v[0] === 'ago') { PRD.ago = +v[1]; PRD.base = Date.now(); } else if (v[0] === 'wait') PRD.wait = PRD.wait ? 0 : 1; else if (v[0] === 'k') PRD.k = +v[1]; else if (v[0] === 'pick') { PRD.pick = true; toast('🚨 신고 자리를 지도에서 누른다'); } else if (v[0] === 'x') { PRD.p = null; PRD.res = null; PRD.pick = false; }
-    if (PRD.p && !PRD.base) PRD.base = Date.now(); prdGo(); });
+    if (v[0] === 'set') { PRD.set = v[1]; if (v[1] === 'n') { PRD.sig = 1; PRD.k = 1; } else if (v[1] === 'r') { PRD.sig = 0; PRD.k = window.TT ? TT.cfg().runK : 1.3; } else { PRD.pick = false; VIPM.pick = !VIPM.cp.length; navGet().then(function () { vipRun(); show({ kind: 'prd' }); draw(); }); if (VIPM.pick) toast('🔒 지점을 지도에서 차례로 누른다 — 출발부터'); show({ kind: 'prd' }); draw(); return; } }
+    else if (v[0] === 'sig') PRD.sig = PRD.sig ? 0 : 1;
+    else if (v[0] === 'hd') PRD.hd = v[1]; else if (v[0] === 'ago') { PRD.ago = +v[1]; PRD.base = Date.now(); } else if (v[0] === 'wait') PRD.wait = PRD.wait ? 0 : 1; else if (v[0] === 'k') PRD.k = +v[1]; else if (v[0] === 'pick') { PRD.pick = true; toast('🚨 신고 자리를 지도에서 누른다'); } else if (v[0] === 'x') { PRD.p = null; PRD.res = null; PRD.pick = false; }
+    if (PRD.set === 'v') { show({ kind: 'prd' }); draw(); return; } if (PRD.p && !PRD.base) PRD.base = Date.now(); prdGo(); });
   /* ---------- v2.151.0 🚥 교통시설 — 소유자(2026-10-11 · 다른 세션이 받아 전함) 「교차로별 진행방향별 총 차로수에 직진 좌회전 직좌 동시 횡단보도 연등신호등 — 시설이 보고 놀랄만한 레이어를 만들자 · 우선 서초 강남 동작 관악 · 그리고 서울 전 지역」 ----------
      시설담당(신호기·표지·노면표시를 관리하는 부서)에게 쓸모 있는 시설 관리용 지도 + 시설담당의 신호주기 자료가 들어올 자리(빈 틀).
      자료 = data/fac-signal.json(다른 세션 tools/signal · tg-fac-signal/1 · spots{번호: {nm, ll, gu, in[[들어오는 쪽, 길 이름, 차로 합, 제한속도, 직진 녹색, 좌회전 녹색, 직좌 동시 1, 보행 녹색(-1 = 있으나 초 모름 · null = 받은 값에 없음)]], cyc, cells, plan, yd, cam, tgis[코드, 이름, 연동 부모 코드, 부모 이름], day, at}}) · 시설담당 자료 = data/fac-plan.json(아직 없음 — 있으면 읽는다).
@@ -3761,7 +3833,7 @@
   var FMCL = [['0.5m 미만', '253,251,199'], ['0.5~1m', '230,255,153'], ['1~2m', '56,254,253'], ['2~5m', '206,154,254'], ['5m 이상', '206,63,135']];
   function fmapBox() { var a = M(0, 0), b = M(cv.clientWidth, cv.clientHeight); return [a[0] / KX + LON0, LAT0 - b[1] / KY, b[0] / KX + LON0, LAT0 - a[1] / KY]; }
   function fmapReset() { FMAP.im = null; FMAP.box = null; FMAP.sig = ''; FMAP.want = ''; FMAP.st = ''; clearTimeout(FMAP.tm); }
-  function fmapLoad() { if (!on.fmap || !LK.floodmap) return; var v = fmapBox(), w = v[2] - v[0], h = v[3] - v[1]; if (w > 0.9 || w <= 0 || h <= 0) return;
+  function fmapLoad() { if (!on.fmap || !LK.floodmap || vipOn()) return; var v = fmapBox(), w = v[2] - v[0], h = v[3] - v[1]; if (w > 0.9 || w <= 0 || h <= 0) return;
     var bx = [v[0] - w * 0.2, v[1] - h * 0.2, v[2] + w * 0.2, v[3] + h * 0.2], sc = Math.min(2000 / (cv.clientWidth * 1.4), 2000 / (cv.clientHeight * 1.4), Math.min(2, window.devicePixelRatio || 1)), pw = Math.round(cv.clientWidth * 1.4 * sc), ph = Math.round(cv.clientHeight * 1.4 * sc);
     var sa = fmapSa((v[0] + v[2]) / 2, (v[1] + v[3]) / 2); FMAP.saNow = sa;
     var sig = FMAP.svc + '|' + FMAP.fq + '|' + sa + '|' + bx.map(function (x) { return x.toFixed(5); }).join(','); if (sig === FMAP.want) return; FMAP.want = sig; FMAP.st = 'load'; try { legend(); } catch (e) {}
@@ -6311,7 +6383,7 @@
   function fbHtml() { return '<div class="fbx"><div class="lg-btns">' + navHtml() + '<button data-pc="1">💻 PC로 보내기</button><button data-fb="1">📝 틀린 곳·헷갈린 곳 알리기</button></div><div id="m2dFbF"></div></div>'; }
   var FB_KIND = [['bad', '❌ 숫자·내용이 틀림'], ['hard', '🤔 헷갈림·찾기 어려움'], ['want', '➕ 이런 게 있으면 좋겠다']];
   function fbForm(el) { el.innerHTML = '<div class="lg-btns">' + FB_KIND.map(function (k, i) { return '<button data-fbk="' + k[0] + '" class="' + (i === 0 ? 'on' : '') + '">' + k[1] + '</button>'; }).join('') + '</div><textarea id="m2dFbT" placeholder="무엇이 어떻게 다른지 · 현장에서 본 값 · 바라는 것 — 이름·전화 등 개인정보는 적지 마십시오"></textarea><div class="lg-btns"><button data-fbs="share">📤 보내기(카톡 등)</button><button data-fbs="copy">📋 글로 복사</button></div><small class="lg-n">이 글은 이 기기에서만 만들어진다 — 서버로 가지 않는다. 보내기를 누르면 폰 공유 창이 뜬다.</small>'; }
-  function fbText() { var c = $('m2dCard'), h3 = c && c.querySelector('h3'), k = (c && c.querySelector('[data-fbk].on') || {}).getAttribute ? c.querySelector('[data-fbk].on').getAttribute('data-fbk') : 'bad', kn = (FB_KIND.filter(function (x) { return x[0] === k; })[0] || FB_KIND[0])[1];
+  function fbText() { if (vipOn()) return '(중요업무 중 — 내용을 담지 않는다)'; var c = $('m2dCard'), h3 = c && c.querySelector('h3'), k = (c && c.querySelector('[data-fbk].on') || {}).getAttribute ? c.querySelector('[data-fbk].on').getAttribute('data-fbk') : 'bad', kn = (FB_KIND.filter(function (x) { return x[0] === k; })[0] || FB_KIND[0])[1];
     var v = (document.querySelector('script[src*="map2d.js"]') || {}).src || '', ver = (v.match(/v=([\d.]+)/) || [])[1] || '', m = TAPM || (view && [view.cx, view.cy]), ll = m ? [LAT0 - m[1] / KY, m[0] / KX + LON0] : null;
     var body = c ? (c.innerText || '').replace(/📝 틀린 곳[\s\S]*$/, '').replace(/\n{2,}/g, '\n').slice(0, 900) : '';
     var lay = LAYERS.filter(function (l) { return on[l[0]]; }).map(function (l) { return l[0]; }).join(',');
@@ -6330,14 +6402,14 @@
     document.body.appendChild(fb); })();
 
   // ---------- v2.44.0 💻 PC로 보내기 — 지금 보는 자리·층·누른 곳을 주소 하나로(#v=·&t=·&ly=) · 폰 공유(카톡 「나와의 채팅」 등)·내 메일·복사 · 서버 없음 ----------
-  function pcUrl() { var r = Math.round(Math.min(cv.clientWidth, cv.clientHeight) / 2 / view.s), c = [LAT0 - view.cy / KY, view.cx / KX + LON0], f = function (x) { return x.toFixed(5); };
+  function pcUrl() { if (vipOn()) return location.origin + location.pathname; var r = Math.round(Math.min(cv.clientWidth, cv.clientHeight) / 2 / view.s), c = [LAT0 - view.cy / KY, view.cx / KX + LON0], f = function (x) { return x.toFixed(5); };
     var lay = LAYERS.filter(function (l) { return on[l[0]] && l[0] !== 'crowd'; }).map(function (l) { return l[0]; }).join(',');
     var c2 = $('m2dCard'), t = TAPM && c2 && c2.classList.contains('on') ? '&t=' + f(LAT0 - TAPM[1] / KY) + ',' + f(TAPM[0] / KX + LON0) : '';
     return location.origin + location.pathname + '#v=' + f(c[0]) + ',' + f(c[1]) + ',' + r + t + '&ly=' + lay; }
   function pcTitle() { var h3 = document.querySelector('#m2dCard.on h3'); return '데이터 압축지도' + (h3 ? ' — ' + h3.innerText.slice(0, 40) : ''); }
   function pcForm(el) { var ml = ''; try { ml = localStorage.getItem('tg_map2d_mail') || ''; } catch (e) {}
     el.innerHTML = '<div class="simc"><b style="font-size:12.5px">💻 PC에서 이어 보기</b><p class="cap">지금 자리·넓이·켠 층' + (TAPM ? '·누른 곳(카드)' : '') + '이 주소 하나에 담긴다. PC에서 열면 같은 화면이 뜬다(처음 한 번은 확인코드를 묻는다).</p><div class="lg-btns"><button data-pcs="share">📤 공유(카톡 나와의 채팅 등)</button><button data-pcs="mail">📧 내 메일로' + (ml ? ' (' + esc(ml.replace(/^(.{2}).*(@.*)$/, '$1…$2')) + ')' : '') + '</button><button data-pcs="copy">📋 주소 복사</button>' + (ml ? '<button data-pcs="mailx">메일 주소 바꾸기</button>' : '') + '</div><small class="lg-n">메일 주소는 이 기기에만 남는다(보내는 것은 폰의 메일 앱) · 주소에는 위치·층 이름만 들어간다 — 확인코드·키·입력값은 안 들어간다.</small></div>'; }
-  function pcMail(ask) { var ml = ''; try { ml = localStorage.getItem('tg_map2d_mail') || ''; } catch (e) {}
+  function pcMail(ask) { if (vipOn()) { toast('🔒 중요업무 중에는 보내지 않는다'); return; } var ml = ''; try { ml = localStorage.getItem('tg_map2d_mail') || ''; } catch (e) {}
     if (ask || !ml) { var a = prompt('PC에서 받아 볼 내 메일 주소(이 기기에만 저장)', ml); if (a == null) return; ml = a.trim(); try { localStorage.setItem('tg_map2d_mail', ml); } catch (e) {} }
     var c = $('m2dCard'), body = c && c.classList.contains('on') ? (c.innerText || '').replace(/💻 PC로[\s\S]*$/, '').replace(/\n{2,}/g, '\n').slice(0, 700) : '';
     location.href = 'mailto:' + encodeURIComponent(ml) + '?subject=' + encodeURIComponent('[지도] ' + pcTitle()) + '&body=' + encodeURIComponent('PC에서 열기:\n' + pcUrl() + '\n\n--- 보던 카드(앞부분) ---\n' + body); }
@@ -8609,7 +8681,7 @@
     [LAND.uqi, LAND.cad].forEach(function (I, i) { if (!I || !I.ok || (i === 0 && !LAND.uq) || (i === 1 && view.s < 0.5)) return; var a = S(P(I.b[0], I.b[3])), b = S(P(I.b[2], I.b[1]));
       ctx.save(); ctx.globalAlpha = i === 0 ? 0.42 : 0.95; if (i === 1 && !dark && !on.vw) ctx.filter = 'brightness(0.42) saturate(1.6)'; try { ctx.drawImage(I.im, a[0], a[1], b[0] - a[0], b[1] - a[1]); } catch (e) {} ctx.restore(); });
     if (LAND.g && sel && sel.it && sel.it.kind === 'land' && sel.it.rings === LAND.g) { LAND.g.forEach(function (r) { path(r); ctx.closePath(); ctx.fillStyle = 'rgba(250,204,21,.22)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#f59e0b'; ctx.stroke(); }); }
-    if (!VWKEY) return; var v = viewLL(), wk = v.map(function (x) { return x.toFixed(5); }).join(',') + (LAND.uq ? 'u' : '');
+    if (!VWKEY || vipOn()) return; var v = viewLL(), wk = v.map(function (x) { return x.toFixed(5); }).join(',') + (LAND.uq ? 'u' : '');
     if (wk === LAND.wk) return; LAND.wk = wk; clearTimeout(LAND.wt);
     LAND.wt = setTimeout(function () { var sc = Math.min(2, window.devicePixelRatio || 1);
       function wms(lays, sty, k, w, h) { var I = { im: new Image(), b: v, ok: false }; I.im.onload = function () { I.ok = true; LAND[k] = I; draw(); };
@@ -8973,5 +9045,5 @@
   paintLayers(); ctrPaint(); dnApply();
   (function () { var hs = location.hash || ''; var seen = '1'; try { seen = localStorage.getItem('tg_map2d_onb'); } catch (e) {} if (seen || /(^|[#&])(lat|ly|here|gps|v)=/.test(hs)) return;
     if (document.documentElement.classList.contains('gated')) window.addEventListener('tggate', function () { setTimeout(onbOpen, 300); }); else setTimeout(onbOpen, 700); })();   // 처음 안내는 확인코드 관문 뒤에
-  window.TGMap2D = { onto: function () { return ONQ; }, wins: function () { return WORD.slice(); }, phone: PHONE, boot: function () { return BOOTT; }, sgc: function () { return SGC; }, rq: function () { return { wait: RQL.map(function (j) { return j.k; }), run: RQN, focus: rqFocus() }; }, tax: function (o) { taxOpen(o); }, acsim: function (k) { asOpen(k); }, as: function () { return AS; }, ledg: function () { return LEDG; }, field: function () { return FIELD; }, ftc: function () { return FTC; }, pnl: function () { return PNL; }, pnlOpen: pnlOpen, rp: function () { return RP; }, rpFind: rpFind, rpLong: rpLong, stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
+  window.TGMap2D = { vip: function () { return VIPM; }, prd: function () { return PRD; }, vipRun: vipRun, navGet: function () { return navGet(); }, prdRun: prdRun, LL: function (lon, lat) { return P(lon, lat); }, prdShow: function () { show({ kind: 'prd' }); draw(); }, onto: function () { return ONQ; }, wins: function () { return WORD.slice(); }, phone: PHONE, boot: function () { return BOOTT; }, sgc: function () { return SGC; }, rq: function () { return { wait: RQL.map(function (j) { return j.k; }), run: RQN, focus: rqFocus() }; }, tax: function (o) { taxOpen(o); }, acsim: function (k) { asOpen(k); }, as: function () { return AS; }, ledg: function () { return LEDG; }, field: function () { return FIELD; }, ftc: function () { return FTC; }, pnl: function () { return PNL; }, pnlOpen: pnlOpen, rp: function () { return RP; }, rpFind: rpFind, rpLong: rpLong, stk: function () { return STK; }, fdsg: function () { return fdSgg(); }, jiga: function () { return JIGA; }, regOpen: regOpen, reg: function () { return REG; }, land: function () { return LAND; }, onbOpen: onbOpen, unitSet: unitSet, midApply: midApply, cats: function () { return CATS; }, unit: function () { return UNIT; }, preFit: preFit, a10: function () { return A10; }, rad: function () { return RAD; }, radOpen: radOpen, radRun: radRun, rent: function () { return RENT; }, biz: function () { return BIZ; }, bizOpen: bizOpen, bizGo: bizGo, trd: function () { return TRD; }, rdong: function () { return RDONG; }, ridx: rIdx, osm: function () { return OSM; }, flow: function () { return FLOW; }, livep: function () { return LIVEP; }, setHour: setHour, preset: preset, PRESETS: PRESETS, summary: summary, salesNow: salesNow, crowdAt: crowdAt, nowH: function () { return nowH(); }, hashLayers: hashLayers, hour: spotHour, jur: function () { return JUR; }, tgis: function () { return TG; }, spots: function () { return SPOTS; }, saving: function () { return !HASHLY; }, report: function () { return REP; }, applyHash: applyHash, hits: function () { return hit; }, pub: function () { return PUB; }, openNow: openNow, liveNow: liveNow, layers: LAYERS, view: view, nodes: function () { return NODES; }, dongs: function () { return DONG; }, draw: draw, tap: tap, on: on, S: S, P: P };   // 검사·다른 페이지가 읽는 창구
 })();

@@ -43,8 +43,29 @@
     if (ob) { var det = ob.closest('details'); if (det) det.open = true; ob.click(); }
     setTimeout(function () { var bx = document.getElementById('m2dOnto'), tx = bx ? String(bx.innerText || '') : '';
       ck('관계 패널이 펼쳐진다 — 교차로 · 사고 해마다 · 주 위반 근거 · 과거 조치 · 비슷한 교차로', /서초역사거리/.test(tx) && /① 사고/.test(tx) && /② 주 위반/.test(tx) && /④ 과거 조치/.test(tx) && /⑤ 비슷한/.test(tx) && /반포대로 축개선/.test(tx), tx.replace(/\s+/g, ' ').slice(0, 120));
+      /* v2.223.0 신고 차량 예측 — 설정 세트 셋이 서로 다른 결과 · 🔒 중요업무 두 줄 · 밖으로 나가는 요청 0 · 남기는 것 없음 */
+      var P0 = m.prd(), V0 = m.vip(), ls0 = Object.keys(localStorage).sort().join(','), h0 = location.hash; window.__NET = []; var of = window.fetch, ox = XMLHttpRequest.prototype.open, oo = window.open;
+      m.navGet().then(function () { try {
+        P0.p = m.LL(127.0076, 37.4935); P0.hd = 'nt'; P0.base = Date.now(); P0.ago = 0; P0.wait = 0;
+        function sum() { var R = P0.res; if (!R || R.err) return null; var n = 0; Object.keys(R.lab).forEach(function (ix) { if (R.lab[ix].b <= 120) n++; }); return { n2: n, tt: R.tt.slice(0, 3).map(function (q) { return Math.round(q.t); }).join(','), stops: Object.keys(R.stops).length }; }
+        P0.set = 'n'; P0.sig = 1; P0.k = 1; m.prdRun(); var r1 = sum(); P0.set = 'r'; P0.sig = 0; P0.k = TT.cfg().runK; m.prdRun(); var r2 = sum();
+        window.fetch = function (u) { __NET.push(String(u && u.url || u)); return of.apply(this, arguments); }; XMLHttpRequest.prototype.open = function (mm, u) { __NET.push(String(u)); return ox.apply(this, arguments); }; window.open = function (u) { __NET.push('open ' + u); return null; };
+        P0.set = 'v'; V0.cp = [m.LL(127.0076, 37.4919), m.LL(127.0142, 37.4934), m.LL(127.0341, 37.4844)]; V0.base = 0; V0.fast = null; m.vipRun(); m.prdShow(); var R3 = V0.res && V0.res.V, card = String((document.getElementById('m2dCard') || {}).innerText || '');
+        ck('신고 차량 예측 — 일반·도주 결과가 다르다(도주 = 신호 무시 · 평균 ×' + TT.cfg().runK + ' → 2분 안에 더 많은 길) · 일반은 적색에 서는 교차로를 낸다', r1 && r2 && r2.n2 > r1.n2 && r2.stops === 0, JSON.stringify([r1, r2]));
+        ck('🔒 중요업무 — 서초역 → 교대역 → 양재역 지점 둘 · 기본 60 · 직접 입력 없으면 가장 이른 = 100 · 가장 이른 쪽이 빠르다', R3 && !R3.err && R3.base.cps.length === 2 && R3.base.v === 60 && R3.fastV === 100 && !R3.typed && R3.fast.sec < R3.base.sec && R3.base.parts.sig === 0, R3 ? TT.fmt(R3.base.sec) + ' / ' + TT.fmt(R3.fast.sec) + ' · ' + (V0.res.m / 1000).toFixed(1) + 'km' : (V0.res && V0.res.err) || '없음');
+        ck('🔒 중요업무 카드 — 두 줄 · 「교차로 통제 개시는 가장 이른 도착 시각 기준」 · 지점별 표 · 「중요업무」 말만', /예상 도착/.test(card) && /가장 이른 도착/.test(card) && /교차로 통제 개시는/.test(card) && /도착 · /.test(card) && !/행차|경호|VIP/.test(card), card.replace(/\s+/g, ' ').slice(0, 90));
+        var cd = document.getElementById('m2dCard'); ck('🔒 중요업무 카드에는 「의견·PC로 보내기」가 없다', !cd.querySelector('[data-pc],[data-fb]'), cd.querySelectorAll('[data-pc],[data-fb]').length + '개');
+        V0.fast = 80; m.vipRun(); var R4 = V0.res.V; V0.fast = 130; m.vipRun(); var R5 = V0.res.V;
+        ck('🔒 직접 입력 80 이면 가장 이른 = 80 · 130 은 받지 않는다(범위 30~120)', R4.fastV === 80 && R4.typed && !!R5.err, [R4.fastV, R5.err].join(' / '));
+        var NET = __NET.slice(); window.fetch = of; XMLHttpRequest.prototype.open = ox; window.open = oo;
+        var blocked = null; window.fetch('https://api.vworld.kr/req/x').then(function () { blocked = false; }, function (e) { blocked = /중요업무/.test(String(e && e.message)); });
+        ck('🔒 중요업무 중 밖으로 나간 요청 0 · 이 기기에 남은 것 없음 · 주소창 그대로', NET.length === 0 && Object.keys(localStorage).sort().join(',') === ls0 && location.hash === h0, NET.slice(0, 3).join(' | ') || ('요청 0 · 저장 열쇠 그대로'));
+        var x9 = document.getElementById('m2dX'); if (x9) x9.click(); ck('🔒 카드를 닫으면 중요업무 지점·시각이 지워진다', V0.cp.length === 0 && !V0.res && P0.set === 'n', V0.cp.length + ' · ' + P0.set);
+        setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
+        V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
+      } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
-      send(); }, 3500);
+      setTimeout(send, 80); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }
   }
 })();

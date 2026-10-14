@@ -73,6 +73,14 @@
     /* v0.10.0 — 길 요약 판을 다시 그려도(위치가 올 때마다) 펼친 칸은 펼친 채 */
     var stp = document.querySelector('#gBot details.steps'); if (stp) { stp.open = true; g.paint(); } var stp2 = document.querySelector('#gBot details.steps'); ck('길 요약 판을 다시 그려도 펼친 「가는 차례」는 펼친 채', !!(stp2 && stp2.open)); if (stp2) stp2.open = false;
     g.risk();   /* ⚠ 이 길 주의 교차로 표(risk-six.json) — 받기만 걸어 두고 아래 4초 뒤에 잰다 */
+    /* v0.11.0 🔒 중요업무 — 밖으로 나가는 요청을 모두 적어 둔다(fetch·XHR·sendBeacon·window.open) · 그 사이 주소 찾기·음성을 시도하고 4초 뒤에 잰다 */
+    window.__NET = []; var of = window.fetch, ox = XMLHttpRequest.prototype.open, ob = navigator.sendBeacon, oo = window.open;
+    window.fetch = function (u) { __NET.push(String(u && u.url || u)); return of.apply(this, arguments); }; XMLHttpRequest.prototype.open = function (m, u) { __NET.push(String(u)); return ox.apply(this, arguments); };
+    if (ob) navigator.sendBeacon = function (u) { __NET.push('beacon ' + u); return false; }; window.open = function (u) { __NET.push('open ' + u); return null; };
+    window.__NETX = function () { window.fetch = of; XMLHttpRequest.prototype.open = ox; if (ob) navigator.sendBeacon = ob; window.open = oo; };
+    var pl0 = JSON.stringify(g.places()), od = g.state().dest, od0 = od ? { x: od.x, y: od.y, nm: od.nm } : null; g.mode('v'); g.findRun('반포대로 201', true); g.micGo(); var vp = g.P(127.0142, 37.4934); g.setDest(vp[0], vp[1], '시험 중요 지점');
+    ck('🔒 중요업무 — 목적지를 최근 목적지에 남기지 않는다', JSON.stringify(g.places()) === pl0 || !/시험 중요 지점/.test(JSON.stringify(g.places())), '');
+    g.mode('n'); if (od0) g.setDest(od0.x, od0.y, od0.nm); g.paint();   /* 아래 시험은 일반 모드·원래 목적지로 */
     /* 잇기 — 길 요약 판의 넘기기 단추 넷(데이터지도·티맵·카카오맵·네이버지도) · 데이터지도는 목적지 좌표로 같은 사이트의 지도를 연다 */
     var hb = document.querySelectorAll('#gBot [data-hand]'); ck('넘기기 단추 넷', hb.length === 4, [].map.call(hb, function (b) { return b.textContent; }).join(' · '));
     if (hb.length) { var op2 = [], wo2 = window.open; window.open = function (u) { op2.push(String(u)); return null; }; hb[0].click(); window.open = wo2; var m2 = /^\.\.\/#lat=(-?[\d.]+)&lon=(-?[\d.]+)$/.exec(op2[0] || ''); ck('「데이터지도」가 목적지(양재역 쪽)로 연다', !!m2 && Math.abs(+m2[1] - 37.4844) < 0.006 && Math.abs(+m2[2] - 127.0341) < 0.007, op2[0]); }
@@ -101,6 +109,24 @@
         ck('⚠ 칸 글 — 이름·10년 건수·주 위반이 들어가고 근사라고 밝힌다', /⚠ 이 길 주의 교차로 \d+곳/.test(RH) && RL && RH.indexOf(RL[0].q[1]) >= 0 && /근사/.test(RH) && /주 위반/.test(RH), RH.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 90));
         var far = g.findRoute.apply(null, (function () { var a = g.P(127.0076, 37.4919), b = g.P(127.0090, 37.4925); return [a[0], a[1], b[0], b[1], Date.now() / 1000, null]; })()); ck('⚠ 짧은 길은 지나는 교차로만(전체 표를 쏟지 않는다)', !far || g.riskOn(far).length <= 3, far ? g.riskOn(far).length + '곳' : '길 없음');
       } catch (e) { ck('⚠ 이 길 주의 교차로 검사', false, e.message); }
+      /* v0.11.0 🔒 중요업무 · ⚙ 설정 · 글씨 배율 */
+      try { var NET = (window.__NET || []).slice(); window.__NETX && window.__NETX(); var bad = NET.filter(function (u) { return /^(open |beacon )/.test(u) || /^https?:/.test(u) && u.indexOf(location.origin) !== 0 || /vworld|relay|workers\.dev|반포대로/.test(decodeURIComponent(u)); });
+        ck('🔒 중요업무 중 밖으로 나간 요청 0(주소 찾기·음성·중계·다른 앱 — 같은 사이트 자료 파일만)', bad.length === 0, bad.slice(0, 3).join(' | ') || NET.length + '건 모두 같은 사이트');
+        var rv = g.findRoute.apply(null, (function () { var a = g.P(127.0076, 37.4919), b = g.P(127.0341, 37.4844); return [a[0], a[1], b[0], b[1], Date.now() / 1000, null]; })()); g.vipSet(0, null); var V0 = g.vipNow(rv, 0); g.vipSet(70, 90); var V1 = g.vipNow(rv, 0); g.vipSet(0, null);
+        var sm = g.vipSegs(rv).reduce(function (a, x) { return a + x.m; }, 0);
+        ck('🔒 중요업무 두 줄 — 기본 60 · 직접 입력 없으면 가장 이른 = 100 · 70/90 고르면 그 값 · 가장 이른 쪽이 더 빠름', V0 && V0.base.v === 60 && V0.fastV === 100 && !V0.typed && V1.base.v === 70 && V1.fastV === 90 && V1.typed && V0.fast.sec < V0.base.sec, V0 ? TT.fmt(V0.base.sec) + ' / ' + TT.fmt(V0.fast.sec) : '없음');
+        ck('🔒 구간 합 = 길 거리 · 마지막 지점 = 목적지 · 신호 기다림 0(60km/h 순수 이동 + 회전·진출입·가감속만)', Math.abs(sm - rv.dist) < 3 && V0.base.cps.length >= 2 && Math.abs(V0.base.raw - (sm / (60 / 3.6) + V0.base.parts.turn + V0.base.parts.ramp + V0.base.parts.acc + (V0.base.parts.move - sm / (60 / 3.6)))) < 1 && V0.base.parts.sig === 0, Math.round(sm) + ' / ' + Math.round(rv.dist) + 'm · 지점 ' + (V0 && V0.base.cps.length));
+        var bx = g.vipBox(rv); ck('🔒 요약 판 — 「교차로 통제 개시는 가장 이른 도착 시각 기준」 고정 · 「중요업무」 말만(행차·경호 낱말 없음)', /교차로 통제 개시는/.test(bx) && /가장 이른 도착/.test(bx) && !/행차|경호|VIP/.test(bx + document.body.innerHTML), '');
+        g.mode('v'); g.paint(); var bb = document.getElementById('gBot'); ck('🔒 중요업무 요약 판 — 집·근무지·즐겨찾기·다른 앱으로 넘기기 단추가 없다', !bb.querySelector('[data-pl],[data-hand]'), bb.querySelectorAll('[data-pl],[data-hand]').length + '개');
+        g.mode('n');
+        var CF0 = g.cfg(), sig = document.getElementById('gSig'); ck('⚙ 기본값 — 앞 2,000m · 뒤 1,000m · 남은 초 2배 · 글씨 1.15', CF0.fwd === 2000 && CF0.back === 1000 && CF0.sz === 2 && CF0.fz === 1.15, JSON.stringify([CF0.fwd, CF0.back, CF0.sz, CF0.fz]));
+        sig.insertAdjacentHTML('beforeend', '<div class="now" id="__nw"><i></i><b>녹색 12초</b></div>'); var px = function () { return parseFloat(getComputedStyle(document.querySelector('#__nw b')).fontSize); }, p1 = px();
+        TT.set('sz', 1); g.cfgApply(); var p2 = px(); TT.set('fz', 1); g.cfgApply(); var p3 = px(); TT.reset(); g.cfgApply(); document.getElementById('__nw').remove();
+        ck('⚙ 남은 초 글씨 = 종전(24px) × 글씨 1.15 × 2배 = 55px · 설정을 바꾸면 바로 바뀐다', Math.abs(p1 - 55.2) < 0.6 && Math.abs(p2 - 27.6) < 0.6 && Math.abs(p3 - 24) < 0.6, p1 + ' → ' + p2 + ' → ' + p3 + 'px');
+        document.getElementById('gCfgB').click(); var cf = document.getElementById('gCfg'), op = cf.style.display === 'block' && cf.querySelectorAll('[data-cs]').length >= 30;
+        var b1 = cf.querySelector('[data-cs="fwd:1000"]'); b1.click(); var f1 = g.cfg().fwd, rb = document.getElementById('gCfg').querySelector('[data-cr="fwd"]'); if (rb) rb.click(); var f2 = g.cfg().fwd; document.getElementById('gCfg').querySelector('[data-cx="close"]').click();
+        ck('⚙ 설정 판 — 열림 · 앞 범위 1km 로 바꾸면 바로 반영 · ↺ 로 기본값 · 닫힘', op && f1 === 1000 && f2 === 2000 && cf.style.display === 'none', [op, f1, f2].join(' / '));
+      } catch (e) { ck('v0.11.0 검사', false, e.message); }
       /* 건물 이름 찾기 — 칸을 띄우지 않아도 이름 목록(bld6/names.json)으로 */
       var rf = g.localFind('롯데월드몰').concat(g.localFind('송파구청')); ck('건물 이름 찾기(롯데월드몰·송파구청 · 칸을 안 띄워도)', rf.filter(function (x) { return x[0] === '🏢'; }).length >= 2, rf.slice(0, 3).map(function (x) { return x[0] + x[1]; }).join(' · ') + ' · 이름 ' + g.bld().names);
       ck('밤 22~06시에는 속도 권고가 안 나온다(모의 주행 4초)', seen === 0, '신호 판 ' + shown + '번 봄 · 권고 글 ' + seen + '번');
@@ -111,9 +137,9 @@
         var bt0 = String(document.getElementById('gBot').innerText || ''); ck('목적지가 없으면 지금 색을 아는 신호 수와 까닭을 보인다(v0.6.2)', /지금 색·남은 초를 아는 신호 \d+곳/.test(bt0), bt0.replace(/\s+/g, ' ').slice(0, 80));
         var pa = g.P(127.0113, 37.4835), pb = g.P(127.0076, 37.4925), rr = g.findRoute(pa[0], pa[1], pb[0], pb[1], Date.now() / 1000, null), ii = Math.floor(rr.pts.length / 2 / 3) * 2, hx = rr.pts[ii], hy = rr.pts[ii + 1], hd = (Math.atan2(rr.pts[ii + 2] - hx, -(rr.pts[ii + 3] - hy)) * 180 / Math.PI + 360) % 360;
         g.setMe(hx, hy, 5, hd, 11); var onC = g.cruise(), A = g.ahead(), top2 = String(document.getElementById('gTop').innerText || '');
-        ck('켜놓고 다니기가 켜진다(위 띠 · 진행 방향이 위)', onC === true && /켜놓고 다니기/.test(top2) && Math.abs(g.view.rot - hd) < 1 && g.view.s >= 0.5 && g.view.s <= 0.9, 'rot ' + Math.round(g.view.rot) + ' / 방위 ' + Math.round(hd) + ' · 배율 ' + g.view.s.toFixed(2));
-        var asc = A && A.sigs.every(function (x, i2) { return x.d <= 1000 && (!i2 || x.d >= A.sigs[i2 - 1].d); });
-        ck('내 길 앞 신호가 잡힌다(1km 안 · 가까운 순 · 들어가는 쪽 = 남쪽 언저리)', !!(A && A.sig && asc && ['st', 'se', 'sw'].indexOf(A.sig.side) >= 0), A && A.sig ? A.nm + ' · ' + A.sig.nm + ' ' + Math.round(A.sig.d) + 'm · ' + A.sig.side + ' · 모두 ' + A.sigs.length + '곳' : '없음');
+        ck('켜놓고 다니기가 켜진다(위 띠 · 진행 방향이 위)', onC === true && /켜놓고 다니기/.test(top2) && Math.abs(g.view.rot - hd) < 1 && g.view.s >= 0.25 && g.view.s <= 0.9 && Math.abs(g.view.s - Math.max(0.25, Math.min(0.9, document.getElementById('gMap').clientHeight * 0.68 / g.cfg().fwd))) < 0.01, 'rot ' + Math.round(g.view.rot) + ' / 방위 ' + Math.round(hd) + ' · 배율 ' + g.view.s.toFixed(2));
+        var asc = A && A.sigs.every(function (x, i2) { return x.d <= g.cfg().fwd && (!i2 || x.d >= A.sigs[i2 - 1].d); });
+        ck('내 길 앞 신호가 잡힌다(앞 범위 = 설정 · 기본 2km 안 · 가까운 순 · 들어가는 쪽 = 남쪽 언저리)', !!(A && A.sig && asc && ['st', 'se', 'sw'].indexOf(A.sig.side) >= 0), A && A.sig ? A.nm + ' · ' + A.sig.nm + ' ' + Math.round(A.sig.d) + 'm · ' + A.sig.side + ' · 모두 ' + A.sigs.length + '곳' : '없음');
         /* v0.6.1 독립 검수 ① — 길을 따라 자리를 옮겨 가며 위 띠의 「시속 N」이 그 길 제한속도를 넘지 않는다(소통 값이 제한보다 높아도 숫자를 안 보임) */
         var overC = [], seenC = 0; for (var pi = 0; pi + 3 < rr.pts.length; pi += 6) { var x1 = rr.pts[pi], y1 = rr.pts[pi + 1], h1 = (Math.atan2(rr.pts[pi + 2] - x1, -(rr.pts[pi + 3] - y1)) * 180 / Math.PI + 360) % 360; g.setMe(x1, y1, 5, h1, 11); var A1 = g.ahead(), tt = String(document.getElementById('gTop').innerText || ''), mm1 = /시속 (\d+)/.exec(tt); if (mm1) { seenC++; if (!A1 || +mm1[1] > A1.lim) overC.push(mm1[1] + '>' + (A1 && A1.lim)); } }
         ck('켜놓고 다니기 · 소통 시속 숫자가 제한속도를 넘지 않는다', overC.length === 0, '숫자 본 곳 ' + seenC + ' · 넘은 곳 ' + overC.length + ' ' + overC.slice(0, 3).join(' '));

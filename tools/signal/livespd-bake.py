@@ -9,7 +9,8 @@
 #   py -3.12 -X utf8 tools/signal/livespd-bake.py
 import json, os, sys, time, datetime, urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); KB = os.path.dirname(ROOT)
-BOX = [126.955, 37.405, 127.115, 37.545]   # 서초구 + 2km 를 덮는 상자(가르고의 길 계산 지도와 같다)
+BOX = [126.955, 37.405, 127.115, 37.545]   # 서초구 + 2km 를 덮는 상자(가르고의 길 계산 지도와 같다) — live-spd-seocho.json 의 상자 · 뜻 그대로
+BOX6 = [126.875, 37.405, 127.190, 37.570]  # (2026-10-14 게임 세션 · 소유자 「여섯 구」) 서초·강남·동작·관악·용산·송파 + 2km — 부르는 것은 이 상자 한 번 · 서초 파일은 그 결과에서 서초 상자 링크만 골라 쓴다(ITS 부르는 횟수 그대로)
 def main():
     want = set()
     for v in json.load(open(os.path.join(ROOT, 'data', 'sig-approach-seocho.json'), encoding='utf-8'))['spots'].values():
@@ -18,14 +19,23 @@ def main():
                 for lk, _ in r[4]: want.add(str(lk))
     for x in json.load(open(os.path.join(ROOT, 'data', 'nav-seocho.json'), encoding='utf-8'))['links']:
         if x[5] <= 4: want.add(str(x[0]))
+    want6 = set(want)
+    n6 = os.path.join(ROOT, 'data', 'nav-six.json')   # 여섯 구 길 묶음(게임 세션 navgraph-bake --area six) — 없으면 상자 안 링크를 모두 싣는다
+    if os.path.exists(n6):
+        for x in json.load(open(n6, encoding='utf-8'))['links']:
+            if x[5] <= 4: want6.add(str(x[0]))
+    else:
+        want6 = None
     K = json.load(open(os.path.join(KB, '07_API키', 'keys.json'), encoding='utf-8-sig'))['its']
-    u = 'https://openapi.its.go.kr:9443/trafficInfo?apiKey=%s&type=all&drcType=all&minX=%s&maxX=%s&minY=%s&maxY=%s&getType=json' % (K, BOX[0], BOX[2], BOX[1], BOX[3])
+    u = 'https://openapi.its.go.kr:9443/trafficInfo?apiKey=%s&type=all&drcType=all&minX=%s&maxX=%s&minY=%s&maxY=%s&getType=json' % (K, BOX6[0], BOX6[2], BOX6[1], BOX6[3])
     try: j = json.loads(urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=40).read().decode('utf-8', 'replace'))
     except Exception as e: print('못 받음', type(e).__name__); return 1
-    items = (j.get('body') or {}).get('items') or []; m = {}
+    items = (j.get('body') or {}).get('items') or []; m = {}; m6 = {}
     for it in items:
         try:
-            if str(it['linkId']) in want: m[str(it['linkId'])] = int(round(float(it['speed'])))
+            lk, v = str(it['linkId']), int(round(float(it['speed'])))
+            if lk in want: m[lk] = v
+            if want6 is None or lk in want6: m6[lk] = v
         except Exception: pass
     if len(m) < 50: print('받은 링크가 너무 적다', len(m), '/', len(items), '— 파일을 바꾸지 않는다'); return 1
     doc = {'schema': 'tg-live-spd/1', 'at': int(time.time()), 'made': datetime.datetime.now().strftime('%H:%M'), 'day': datetime.date.today().isoformat(), 'box': BOX,
@@ -37,10 +47,15 @@ def main():
            'n': len(m), 'want': len(want), 'm': dict(sorted(m.items()))}
     p = os.path.join(ROOT, 'data', 'live-spd-seocho.json'); tmp = p + '.tmp'
     json.dump(doc, open(tmp, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); os.replace(tmp, p)
+    if len(m6) >= 50:   # 여섯 구판 — 꼴은 서초판과 같다(tg-live-spd/1) · 상자와 링크 범위만 넓다
+        d6 = dict(doc, box=BOX6, n=len(m6), want=len(want6) if want6 is not None else len(m6), m=dict(sorted(m6.items())),
+                  fields='m{ITS 링크 ID: 통행속도 km/h(정수)} — 서초 신호 교차로에 들어오는 링크 + data/nav-six.json(여섯 구 길 묶음)의 등급 1~4 링크(그 파일이 없으면 상자 안 모든 링크) · n 값이 온 링크 수 · want 찾는 링크 수')
+        p6 = os.path.join(ROOT, 'data', 'live-spd-six.json'); t6 = p6 + '.tmp'
+        json.dump(d6, open(t6, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':')); os.replace(t6, p6)
     try:   # 쌓아 두기(저장소 밖) — 「평소 속도」의 바탕(링크 × 요일 × 시각)을 만들려는 것. 하루 한 파일 · 한 번 받을 때마다 한 줄(gzip 이어 붙이기) · 실패해도 위 파일은 이미 썼다
         import gzip
         ad = os.path.join(KB, '07_API키', 'out', 'livespd'); os.makedirs(ad, exist_ok=True)
-        with gzip.open(os.path.join(ad, datetime.date.today().strftime('%Y%m%d') + '.jsonl.gz'), 'at', encoding='utf-8') as f: f.write(json.dumps({'at': doc['at'], 'm': doc['m']}, separators=(',', ':')) + chr(10))
+        with gzip.open(os.path.join(ad, datetime.date.today().strftime('%Y%m%d') + '.jsonl.gz'), 'at', encoding='utf-8') as f: f.write(json.dumps({'at': doc['at'], 'm': m6 if len(m6) >= len(m) else doc['m'], 'box': 'six' if len(m6) >= len(m) else 'seocho'}, separators=(',', ':')) + chr(10))   # (10-14부터) 여섯 구 링크를 쌓는다 — 서초 링크를 모두 담는다
     except Exception as e: print('쌓아 두기 실패', type(e).__name__)
-    print(doc['made'], '· 값이 온 링크', len(m), '/', len(want), '· 상자 안 전부', len(items), '· 바이트', os.path.getsize(p)); return 0
+    print(doc['made'], '· 서초 링크', len(m), '/', len(want), '· 여섯 구 링크', len(m6), '· 상자 안 전부', len(items), '· 바이트', os.path.getsize(p)); return 0
 if __name__ == '__main__': sys.exit(main())

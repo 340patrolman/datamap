@@ -15,6 +15,8 @@
 | `query.js` | `new OntoCore(core)` → `q1(INT)` 왜 위험한가 · `q2(INT)` 왜 바꿨고 어떻게 됐나 · `q3(VIO)` 근거 조문·판례·범칙금 · `q5(INT)` 비슷한 곳(항목마다 · 합치지 않음) · `follow`·`back`·`chain` |
 | `validate.js` | `ontoValidate(core, schema)` — ID 중복 · 고아 링크 · 타입 위반 · 필수 속성 · 등급·출처 · 개인정보 꼴 |
 | `test/run.py` + `test/test.html` | 시험 — 원자료에서 **따로 센 정답**과 머리 없는 크롬에서 돈 query.js 의 답을 맞댐 · 망가뜨린 사본으로 검증기 시험 |
+| `tools/tbook-block.py` | T-Book `ontology.html`(ver.4.2 「서초 교차로 — 자료로 시작」)에 넣는 정적 블록 `data/tbook-block-seocho.json` — 조치 이력 5곳 + 10년 사고 상위 25곳(겹쳐 26곳)의 부분 그래프를 **값 그대로** 뗀다(250m 칸·이웃 교차로는 뺌) · 넣는 패치 = `../12_티북패치기록/onto_v42.py` |
+| `test/tbook-run.py` | 위 ontology.html 시험 — 26곳마다 열어 저장된 지도·화면 글을 **전체 코어 + query.js** 답과 맞댐 · 말풍선 넘침 · 외부 요청 0 · 옛 입구(#field) · 4.1 판에서는 실패해야 정상 |
 
 ## 다시 굽기 · 시험
 

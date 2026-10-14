@@ -8,7 +8,10 @@
     for (var i = 0; i < n; i++) (new Image()).src = '/__r?p=' + window.__PAGE + '&k=' + id + '&i=' + i + '&n=' + n + '&d=' + s.substr(i * 1500, 1500); }
   function fail(m) { ck('검사 스크립트가 끝까지 돌았다', false, m); send(); }
   function ready() { try { var g = window.GARGO, st = g && g.state(); return !!(st && st.G && st.G.S && st.G.S.length && st.G.XS); } catch (e) { return false; } }
-  var poll = setInterval(function () { if (ready()) { clearInterval(poll); setTimeout(function () { try { run(); } catch (e) { fail(e && e.message); } }, 2500); } else if (Date.now() - t0 > 45000) { clearInterval(poll); fail('45초 안에 길 묶음이 안 읽혔다(문법 오류 · 파일 없음) ' + (window.__ERR || []).join(' | ')); } }, 300);
+  /* v0.8.0 칸 묶음 — 처음엔 큰길만(칸 0) 받는지 보고, 검사(길 찾기 여러 벌)는 칸을 모두 받은 뒤에 한다 */
+  var poll = setInterval(function () { if (ready()) { clearInterval(poll); var P0 = window.GARGO.pk(); ck('칸 묶음 — 처음엔 큰길 한 장 + 받은 자리(#from·#to) 둘레 칸만(전체의 1/4 아래)', !P0.on || (P0.tiles > 0 && P0.tiles < P0.total / 4), JSON.stringify(P0));
+      window.GARGO.pkAll().then(function () { var P1 = window.GARGO.pk(); if (P1.on) ck('칸 묶음 — 골목 칸을 모두 받아 합쳤다', P1.tiles === P1.total && window.GARGO.state().G.S.length > 60000, P1.tiles + '/' + P1.total + '칸 · 길 줄 ' + window.GARGO.state().G.S.length);
+        setTimeout(function () { try { run(); } catch (e) { fail(e && e.message); } }, 2500); }); } else if (Date.now() - t0 > 45000) { clearInterval(poll); fail('45초 안에 길 묶음이 안 읽혔다(문법 오류 · 파일 없음) ' + (window.__ERR || []).join(' | ')); } }, 300);
 
   function run() {
     var g = window.GARGO, st = g.state(), G = st.G, now = Date.now() / 1000;

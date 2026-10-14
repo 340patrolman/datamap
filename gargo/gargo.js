@@ -20,7 +20,7 @@
   function load() {
     msg('길 자료를 읽는 중…');
     /* v0.7.0 — 소유자 2026-10-14 「서초·강남·송파·동작·관악·용산」 여섯 구 묶음(마디 81,049 · 신호 680 · 9.5MB/전송 2.6MB) · 못 읽으면 서초 묶음 */
-    return getJ('pack-six.json').then(function (j) { return j && j.seg ? j : getJ('pack-seocho.json'); }).then(function (j) { if (!j || !j.seg) { msg('길 자료를 읽지 못했다 — 새로 고쳐 본다'); return; } build(j); msg(''); fitAll(); draw(); hashGo(); sigLoad(); xsLoad(); baseLoad(); ['s', 't'].forEach(function (k) { var b = document.querySelector('[data-ov=' + k + ']'); if (b) b.classList.toggle('on', !!OV[k]); }); });
+    return getJ('pack-six.json').then(function (j) { if (j && j.seg) return j; AREA_KO = '서초구'; return getJ('pack-seocho.json'); }).then(function (j) { if (!j || !j.seg) { msg('길 자료를 읽지 못했다 — 새로 고쳐 본다'); return; } build(j); msg(''); fitAll(); draw(); hashGo(); sigLoad(); xsLoad(); baseLoad(); ['s', 't'].forEach(function (k) { var b = document.querySelector('[data-ov=' + k + ']'); if (b) b.classList.toggle('on', !!OV[k]); }); });
   }
   function build(j) {
     var n = j.nx.length, X = new Float32Array(n), Y = new Float32Array(n), bx = j.base[0], by = j.base[1], i;
@@ -73,7 +73,9 @@
   var LIVER = null;
   function liveStat() { LIVER = null; if (!LIVE.m || !G) return; var by = {}, all = [], med = function (v) { v.sort(function (a, b) { return a - b; }); return v[v.length >> 1]; }; G.S.forEach(function (q) { var lim = q[3] || 30; for (var d = 13; d <= 14; d++) { var li = q[d]; if (li == null || li < 0) continue; var v = LIVE.m[G.j.links[li]]; if (!(v > 0)) continue; var r = Math.min(1, v / lim); (by[q[4]] || (by[q[4]] = [])).push(r); all.push(r); } });
     if (all.length < 30) return; LIVER = { all: med(all) }; Object.keys(by).forEach(function (c) { if (by[c].length >= 20) LIVER[c] = med(by[c]); }); }
-  function liveLoad() { return getJ('../data/live-spd-six.json').then(function (j) { return j && j.m ? j : getJ('../data/live-spd-seocho.json'); }).then(function (j) { var ok = j && j.m && j.at && Date.now() / 1000 - j.at < 1200; LIVE = ok ? { m: j.m, at: j.at, made: j.made } : { m: null, at: j && j.at || 0 }; liveStat(); }); }
+  var AREA_KO = '서초·강남·송파·동작·관악·용산';
+  function liveFresh(x) { return !!(x && x.m && x.at && Date.now() / 1000 - x.at < 1200); }
+  function liveLoad() { return getJ('../data/live-spd-six.json').then(function (j) { return liveFresh(j) ? j : getJ('../data/live-spd-seocho.json').then(function (k) { return liveFresh(k) ? k : (j && j.m ? j : k); }); }).then(function (j) { var ok = j && j.m && j.at && Date.now() / 1000 - j.at < 1200; LIVE = ok ? { m: j.m, at: j.at, made: j.made } : { m: null, at: j && j.at || 0 }; liveStat(); }); }
   function sigLoad() { liveLoad().then(function () { if (dest && me && !guide) plan(); else paint(); }); getJ('../data/sig-special.json').then(function (j) { if (j && j.days) SIG.hol = j.days; });
     return getJ('../data/sigdir/index.json').then(function (j) { if (!j || !j.fl) { note('신호 자료를 읽지 못했다 — 길 안내는 제한속도 기준으로만 한다'); return; } SIG.idx = j; SIG.pl = j.pl || {}; SIG.cell = j.cell; var need = {};
       G.sig.forEach(function (s) { if (j.fl[s.no] == null) return; var q = j.pts[s.no]; if (q) need[Math.floor(q[0] / j.cell[0]) + '_' + Math.floor(q[1] / j.cell[1])] = 1; });
@@ -184,7 +186,7 @@
     return { es: es, pts: pts, cum: cum, dist: dist, time: t, free: free, mans: mans, sigs: sigs, lims: lims, T0: T0, a: a, b: b, live: dist ? liveLen / dist : 0, cong: cong, mode: MODE, viaLive: !!LIVER };
   }
   function plan() { if (!G || !dest || !me) return; var T0 = Date.now() / 1000, r = findRoute(me.x, me.y, dest.x, dest.y, T0, me.spd > 2 ? me.hd : null);
-    if (!r) { route = null; note('길을 찾지 못했다 — 목적지나 내 자리가 길에서 너무 멀다(서초·강남·송파·동작·관악·용산과 둘레 2km 안에서만 된다)'); paint(); draw(); return; }
+    if (!r) { route = null; note('길을 찾지 못했다 — 목적지나 내 자리가 길에서 너무 멀다(' + AREA_KO + '과 둘레 2km 안에서만 된다)'); paint(); draw(); return; }
     route = r; route.pos = 0; note(''); paint(); if (!guide) fitRoute(); draw(); }
 
   /* ---------- 내 자리 ---------- */
@@ -230,16 +232,21 @@
     ctx.strokeStyle = col.w; ctx.lineWidth = Math.max(5, 2 / s); ks.forEach(function (k) { ctx.stroke(BASE.T[k].ww); });
     if (s > 0.08) { ctx.strokeStyle = dark ? '#475569' : '#9aa3af'; ctx.lineWidth = Math.max(3, 1.6 / s); ks.forEach(function (k) { ctx.stroke(BASE.T[k].rail); }); ctx.strokeStyle = dark ? '#111827' : '#eef1f4'; ctx.lineWidth = Math.max(1.4, 0.8 / s); ctx.setLineDash([9, 9]); ks.forEach(function (k) { ctx.stroke(BASE.T[k].rail); }); ctx.setLineDash([]); } }
   /* v0.7.1 — 여섯 구 건물(12만 9천 동 · 한 장이면 16MB)은 2km 칸으로 나눠(data/maps/bld6 · tools/gargo/bld-cut.py) 화면에 보이는 칸(+200m)만 받는다 · 칸 자료가 없으면 종전 서초 한 장 */
-  var BIDX = null, BTL = {};
+  var BIDX = null, BTL = {}, BT = {}, BVIS = [], BNM = null, BNMP = null;
   function bOff() { return [-2438 - (LON0 - 127.0077) * KX, -1743 - (37.4917 - LAT0) * KY]; }
   function bmap(b) { var o = bOff(), dx = o[0], dy = o[1], n = b.p.length, P = new Float32Array(n * 2), x0 = 1e12, x1 = -1e12, y0 = 1e12, y1 = -1e12, sx = 0, sy = 0; for (var i = 0; i < n; i++) { var x = b.p[i][0] + dx, y = b.p[i][1] + dy; P[i * 2] = x; P[i * 2 + 1] = y; sx += x; sy += y; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } return { p: P, b: [x0, x1, y0, y1], n: b.n || '', x: sx / n, y: sy / n, a: (x1 - x0) * (y1 - y0) }; }
   function bldLoad() { if (BLDP) return; BLDP = getJ('../data/maps/bld6/index.json').then(function (j) { if (j && j.tiles && j.cell) { BIDX = j; BLD = []; drawSoon(); return; }
-      return getJ('../data/maps/seocho-full-buildings.json').then(function (j2) { if (!j2 || !j2.buildings) return; BLD = j2.buildings.filter(function (b) { return b.p && b.p.length > 2; }).map(bmap); drawSoon(); }); }); }
-  function bldNeed(x0, x1, y0, y1) { if (!BIDX) return; var o = bOff(), c = BIDX.cell; for (var ix = Math.floor((x0 - 200 - o[0]) / c); ix <= Math.floor((x1 + 200 - o[0]) / c); ix++) for (var iz = Math.floor((y0 - 200 - o[1]) / c); iz <= Math.floor((y1 + 200 - o[1]) / c); iz++) { var k = ix + '_' + iz; if (BTL[k] || !BIDX.tiles[k]) continue; BTL[k] = 1;
-      getJ('../data/maps/bld6/c/' + k + '.json').then(function (t) { if (!t || !t.buildings) return; t.buildings.forEach(function (b) { if (b.p && b.p.length > 2) BLD.push(bmap(b)); }); drawSoon(); }); } }
+      return getJ('../data/maps/seocho-full-buildings.json').then(function (j2) { if (!j2 || !j2.buildings) return; BLD = j2.buildings.filter(function (b) { return b.p && b.p.length > 2; }).map(bmap); BVIS = [BLD]; drawSoon(); }); }); }
+  /* v0.7.2 독립 검수 — 건물은 칸마다 따로(BT) 두고 그릴 때는 화면에 보이는 칸(BVIS)만 돈다 · 30칸 넘게 쌓이면 화면 밖 칸은 비운다(다시 오면 캐시에서) · 못 받은 칸은 30초 뒤 다시 */
+  function bldNeed(x0, x1, y0, y1) { if (!BIDX) return; var o = bOff(), c = BIDX.cell, vis = [], want = {};
+    for (var ix = Math.floor((x0 - 200 - o[0]) / c); ix <= Math.floor((x1 + 200 - o[0]) / c); ix++) for (var iz = Math.floor((y0 - 200 - o[1]) / c); iz <= Math.floor((y1 + 200 - o[1]) / c); iz++) { var k = ix + '_' + iz; if (!BIDX.tiles[k]) continue; want[k] = 1; if (BT[k]) { vis.push(BT[k]); continue; } if (BTL[k] && Date.now() - BTL[k] < 30000) continue; BTL[k] = Date.now();
+      (function (k) { getJ('../data/maps/bld6/c/' + k + '.json').then(function (t) { if (!t || !t.buildings) return; BT[k] = t.buildings.filter(function (b) { return b.p && b.p.length > 2; }).map(bmap); drawSoon(); }); })(k); }
+    BVIS = vis; var ks = Object.keys(BT); if (ks.length > 30) ks.forEach(function (k) { if (!want[k]) { delete BT[k]; delete BTL[k]; } }); }
+  /* 건물 이름 찾기 — 이름 있는 건물만 한 파일(bld6/names.json · [이름, x, z]) · 칸을 띄우지 않아도 찾힌다 */
+  function bnmLoad() { if (BNMP || !BIDX) return; BNMP = getJ('../data/maps/bld6/names.json').then(function (j) { if (!j || !j.n) { BNMP = null; return; } var o = bOff(); BNM = j.n.map(function (r) { return { n: r[0], x: r[1] + o[0], y: r[2] + o[1] }; }); }); }
   function drawBld(dark, s) { if (s < 0.4) return; if (!BLD) { bldLoad(); return; } var W = cv.clientWidth, H = cv.clientHeight, c = [S2W(0, 0), S2W(W, 0), S2W(0, H), S2W(W, H)], x0 = 1e12, x1 = -1e12, y0 = 1e12, y1 = -1e12; c.forEach(function (q) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }); bldNeed(x0, x1, y0, y1);
     ctx.fillStyle = dark ? '#1b2434' : '#e7e2d9'; ctx.strokeStyle = dark ? '#2a3547' : '#d6cfc3'; ctx.lineWidth = 0.6 / s; var n = 0; ctx.beginPath();
-    for (var i = 0; i < BLD.length; i++) { var b = BLD[i]; if (b.b[1] < x0 || b.b[0] > x1 || b.b[3] < y0 || b.b[2] > y1) continue; var p = b.p; ctx.moveTo(p[0], p[1]); for (var u = 2; u < p.length; u += 2) ctx.lineTo(p[u], p[u + 1]); ctx.closePath(); if (++n >= 16) { ctx.fill(); if (s > 0.8) ctx.stroke(); ctx.beginPath(); n = 0; } } if (n) { ctx.fill(); if (s > 0.8) ctx.stroke(); } }
+    for (var t = 0; t < BVIS.length; t++) for (var i = 0, L = BVIS[t]; i < L.length; i++) { var b = L[i]; if (b.b[1] < x0 || b.b[0] > x1 || b.b[3] < y0 || b.b[2] > y1) continue; var p = b.p; ctx.moveTo(p[0], p[1]); for (var u = 2; u < p.length; u += 2) ctx.lineTo(p[u], p[u + 1]); ctx.closePath(); if (++n >= 16) { ctx.fill(); if (s > 0.8) ctx.stroke(); ctx.beginPath(); n = 0; } } if (n) { ctx.fill(); if (s > 0.8) ctx.stroke(); } }
   /* 소통 색 — 값이 온 길만 · 갈래는 spdLv(앱 기준). 큰길(갈래 1~5)은 늘, 생활도로는 가까이 볼 때만(멀리서 다 그리면 지도가 온통 빨갛다) */
   function drawTraf(s) { if (!LIVE.m) return; if (!TRAF || TRAFAT !== LIVE.at) { TRAF = [new Path2D(), new Path2D(), new Path2D(), new Path2D(), new Path2D(), new Path2D()]; TRAFAT = LIVE.at; for (var i = 0; i < G.S.length; i++) { var q = G.S[i], lim = q[3] || 30, p = G.SP[i]; for (var d = 0; d < 2; d++) { var li = q[13 + d]; if (li == null || li < 0) continue; var v = LIVE.m[G.j.links[li]]; if (!(v > 0)) continue; var pa = TRAF[spdLv(v, q[4], lim) + (q[4] <= 5 ? 0 : 3)], off = (d ? -1 : 1) * 3.2;
           /* 두 방향을 길 가운데에서 조금씩 벌려 그린다 */ for (var u = 0; u + 3 < p.length; u += 2) { var ax = p[u], ay = p[u + 1], bx = p[u + 2], by = p[u + 3], l = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / l * off, ny = (bx - ax) / l * off; if (!u) pa.moveTo(ax + nx, ay + ny); pa.lineTo(bx + nx, by + ny); } } } }
@@ -255,7 +262,7 @@
     if (s > 0.3) G.sig.forEach(function (g) { put(g.nm, g.x, g.y, '700 11px system-ui, sans-serif', dark ? '#fde68a' : '#7c2d12', -14, 60); });
     if (s <= 0.45) Object.keys(BASE.T).forEach(function (k) { BASE.T[k].jn.forEach(function (j) { if (j.k === 'g' && /산$|숲$|대공원$|한강공원$/.test(j.n)) put(j.n, j.x, j.y, 'italic 700 11.5px system-ui, sans-serif', dark ? '#86efac' : '#166534', 0, far ? 20 : 66); }); });
     if (s > 0.45) Object.keys(BASE.T).forEach(function (k) { BASE.T[k].jn.forEach(function (j) { put(j.n, j.x, j.y, j.k === 'g' ? 'italic 700 11.5px system-ui, sans-serif' : '600 10.5px system-ui, sans-serif', j.k === 'g' ? (dark ? '#86efac' : '#166534') : (dark ? '#cbd5e1' : '#475569'), j.k === 'g' ? 0 : -12, 70); }); });
-    if (s > 0.75 && BLD) { var c = [S2W(0, 0), S2W(W, H)]; BLD.forEach(function (b) { if (!b.n || b.a < (s > 1.4 ? 300 : 1500)) return; put(b.n, b.x, b.y, '600 10.5px system-ui, sans-serif', dark ? '#d1d5db' : '#57534e', 0, 90); }); } }
+    if (s > 0.75 && BLD) { var c = [S2W(0, 0), S2W(W, H)]; BVIS.forEach(function (L) { L.forEach(function (b) { if (!b.n || b.a < (s > 1.4 ? 300 : 1500)) return; put(b.n, b.x, b.y, '600 10.5px system-ui, sans-serif', dark ? '#d1d5db' : '#57534e', 0, 90); }); }); } }
   /* 평상시 신호 — 방위마다 직진 신호의 지금 색(아는 곳만). 가운데 점에서 그 차가 들어오는 쪽으로 짧은 막대 · 가까이 보면 남은 초 */
   var SIDEV = { nt: [0, -1], ne: [0.7, -0.7], et: [1, 0], se: [0.7, 0.7], st: [0, 1], sw: [-0.7, 0.7], wt: [-1, 0], nw: [-0.7, -0.7] };
   function sigSides(no) { var out = {}, recs = (SIG.its[no] || []).filter(recOk); recs.forEach(function (r) { r.mv.forEach(function (m) { if ((m[1] === 'St' || m[1] === 'Lt') && m[2] != null && DIRS.indexOf(m[0]) >= 0) (out[m[0]] = out[m[0]] || {})[m[1]] = 1; }); }); return out; }
@@ -276,16 +283,25 @@
     return '<div class="hint" style="margin-top:8px;font-size:12.5px">🚦 지금 색·남은 초를 아는 신호 <b>' + SSTAT.k + '곳</b> / 자료 있는 ' + SSTAT.n + '곳 — 서울시 자료가 5분에 교차로 20~40곳씩만 와서 모으는 중이다(나머지는 평균 기다림)</div>'; }
   /* v0.7.0 — T-Data 값이 없는 교차로(예: 인재개발원 3971 — 장비는 줄을 보내지만 방향별 남은 초가 비어 있다)는 경찰청 공개 계획(../data/signal-tod-seoul.json · 요일 1 일 … 7 토 · 특수일은 일요일)이라도 보인다.
      계획에는 「어느 현시가 어느 방향인지」와 「지금 몇 초인지」가 없다 — 주기·현시 길이만. 누를 때 처음 한 번 받는다(573KB) */
-  var TOD = null;
-  function todFor(no, cb) { var go = function () { var sp = TOD && TOD[no]; if (!sp) return cb(null); var d = new Date(), k = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2), dw = SIG.hol && SIG.hol[k] ? 1 : d.getDay() + 1, hm0 = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-      var rows = sp.plans[sp.dow[dw]] || [], row = null; rows.forEach(function (r) { if (r[0] <= hm0) row = r; }); if (!row) { var pr = sp.plans[sp.dow[dw === 1 ? 7 : dw - 1]] || []; row = pr[pr.length - 1] || null; } cb(row ? { at: row[0], C: row[1], a: String(row[3] || '').trim(), b: String(row[4] || '').trim(), hol: dw === 1 && d.getDay() !== 0 } : null); };
-    if (TOD) return go(); getJ('../data/signal-tod-seoul.json').then(function (j) { TOD = {}; ((j && j.spots) || []).forEach(function (x) { TOD[String(x.no)] = x; }); go(); }); }
+  var TOD = null, TODP = null, TODM = '';
+  function dKey(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function dwOf(d) { return SIG.hol && SIG.hol[dKey(d)] ? 1 : d.getDay() + 1; }   /* 1 일 … 7 토 · 특수일 = 일요일 계획(서초 교통과 현시도 15종에서 본 규칙을 서울 경찰청 계획에 넓혀 씀 — 추정) */
+  /* v0.7.2 독립 검수 — 받기는 한 번만(TODP) · 못 받으면 cb('fail')(「없다」가 아니다) · 그날 첫 줄보다 이르면 **실제 어제**의 요일 갈래(어제가 특수일이면 일요일)의 마지막 줄 */
+  function todFor(no, cb, at) {   /* at = 시험용 시각(ms) · 받아 둔 뒤에는 바로 셈한다 */
+    if (TOD) return todCalc(TOD, no, cb, at);
+    if (!TODP) TODP = getJ('../data/signal-tod-seoul.json').then(function (j) { if (!j || !j.spots) { TODP = null; return null; } TOD = {}; TODM = String(j.made || '').slice(0, 10); j.spots.forEach(function (x) { TOD[String(x.no)] = x; }); return TOD; });
+    TODP.then(function (T) { todCalc(T, no, cb, at); }); }
+  function todCalc(T, no, cb, at) { if (!T) return cb('fail'); var sp = T[no]; if (!sp) return cb(null); var d = at ? new Date(at) : new Date(), dw = dwOf(d), hm0 = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), row = null, prev = false, hol = dw === 1 && d.getDay() !== 0;
+      (sp.plans[sp.dow[dw]] || []).forEach(function (r) { if (r[0] <= hm0) row = r; });
+      if (!row) { var y = new Date(d.getTime() - 864e5), yw = dwOf(y), pr = sp.plans[sp.dow[yw]] || []; row = pr[pr.length - 1] || null; prev = true; hol = yw === 1 && y.getDay() !== 0; }
+      cb(row ? { at: row[0], C: row[1], a: String(row[3] || '').trim(), b: String(row[4] || '').trim(), hol: hol, prev: prev } : null); }
   /* 짧게 누름 — 신호 교차로면 방향마다 지금 색을 글로 */
   function tapAt(px, py) { if (!G || guide) return; var el = $('gPick'); if (el.style.display === 'flex') { el.style.display = 'none'; return; } var best = null, bd = 28; G.sig.forEach(function (sg) { var q = W2S(sg.x, sg.y), d = Math.hypot(q[0] - px, q[1] - py); if (d < bd) { bd = d; best = sg; } }); if (!best) return;
     var now = Date.now() / 1000, sd = sigSides(best.no), rows = []; DIRS.forEach(function (k) { if (!sd[k]) return; ['St', 'Lt'].forEach(function (mv) { if (!sd[k][mv]) return; var st = sigAt(best.no, now, k, mv); rows.push('<div class="si"><span>' + DIRKO[k] + '쪽에서 ' + (mv === 'St' ? '직진' : '좌회전') + '</span>' + (!st ? '<em>모름</em>' : st.kind === 'avg' ? '<em>지금 색 모름 · 주기 ' + Math.round(st.C) + '초</em>' : '<b class="' + (st.green ? 'g' : 'r') + '">' + (st.green ? '녹색' : '적색') + ' ' + Math.ceil(st.remain) + '초</b>') + '</div>'); }); });
     var ns = nearSeg(best.x, best.y, 200); el.style.display = 'flex'; el.style.left = Math.max(8, Math.min(cv.clientWidth - 248, px - 120)) + 'px'; el.style.top = Math.max(70, Math.min(cv.clientHeight - 330, py + 14)) + 'px'; el.style.width = '240px';
-    el.innerHTML = '<b>🚦 ' + esc(best.nm) + '</b>' + (rows.length ? rows.join('') + (rows.join('').indexOf('지금 색 모름') >= 0 && lastSeen(best.no) ? '<div class="si"><em>이 교차로 값을 마지막으로 받은 때 ' + ago(lastSeen(best.no)) + ' — 서울시 자료가 5분에 20~40곳씩만 와서 다시 받기까지 몇 시간 걸린다 · 그 사이엔 평균 기다림만</em></div>' : '') + '<div class="si"><em>계획값 — 수동 조작·감응이면 다르다</em></div>' : '<div class="si"><em>이 교차로는 서울시 신호 값(T-Data)이 없다 — 장비가 방향별 남은 초를 안 보내는 곳</em></div><div class="si" id="gTod"><em>경찰청 계획을 찾는 중…</em></div>') + '<button data-p="to">여기로 안내</button><button data-p="x">닫기</button>'; el._w = [ns ? ns.x : best.x, ns ? ns.y : best.y, best.nm];
-    if (!rows.length) todFor(best.no, function (t) { var x = document.getElementById('gTod'); if (!x) return; x.innerHTML = t ? '<span>경찰청 공개 계획' + (t.hol ? '(특수일 = 일요일 계획)' : '') + '</span><b>' + esc(t.at) + '부터 주기 ' + t.C + '초</b><em>현시 ' + esc(t.a.split(/\s+/).join(' · ')) + '초' + (t.b && t.b !== t.a ? ' (B링 ' + esc(t.b.split(/\s+/).join(' · ')) + ')' : '') + ' — 어느 현시가 어느 방향인지 · 지금 몇 초인지는 계획에 없다 · 눈으로</em>' : '<em>경찰청 공개 계획에도 없다 — 눈으로 본다</em>'; }); }
+    el.innerHTML = '<b>🚦 ' + esc(best.nm) + '</b>' + (rows.length ? rows.join('') + (rows.join('').indexOf('지금 색 모름') >= 0 && lastSeen(best.no) ? '<div class="si"><em>이 교차로 값을 마지막으로 받은 때 ' + ago(lastSeen(best.no)) + ' — 서울시 자료가 5분에 20~40곳씩만 와서 다시 받기까지 몇 시간 걸린다 · 그 사이엔 평균 기다림만</em></div>' : '') + '<div class="si"><em>계획값 — 수동 조작·감응이면 다르다</em></div>' : '<div class="si"><em>이 교차로는 서울시 신호 값(T-Data)이 없다 — 장비가 방향별 남은 초를 안 보내는 곳</em></div><div class="si" id="gTod" data-no="' + esc(best.no) + '"><em>경찰청 계획을 찾는 중…</em></div>') + '<button data-p="to">여기로 안내</button><button data-p="x">닫기</button>'; el._w = [ns ? ns.x : best.x, ns ? ns.y : best.y, best.nm];
+    if (!rows.length) todFor(best.no, function (t) { var x = document.getElementById('gTod'); if (!x || x.getAttribute('data-no') !== String(best.no)) return;   /* 그 사이 다른 교차로 카드로 바뀌었으면 쓰지 않는다 */
+      x.innerHTML = t === 'fail' ? '<em>경찰청 계획을 받지 못했다(통신) — 다시 눌러 본다</em>' : t ? '<span>경찰청 공개 계획' + (TODM ? '(' + esc(TODM) + ' 받음)' : '') + (t.prev ? ' · 전날 계획이 이어짐' : '') + (t.hol ? ' · 특수일이라 일요일 계획으로 봄(추정)' : '') + '</span><b>' + esc(t.at) + '부터 주기 ' + t.C + '초</b><em>현시 ' + esc(t.a.split(/\s+/).join(' · ')) + '초' + (t.b && t.b !== t.a ? ' (B링 ' + esc(t.b.split(/\s+/).join(' · ')) + ')' : '') + ' — 어느 현시가 어느 방향인지 · 지금 몇 초인지는 계획에 없다 · 눈으로</em>' : '<em>경찰청 공개 계획에도 없다 — 눈으로 본다</em>'; }); }
   /* 찾기 — 이 기기 안의 이름(신호 교차로 · 큰길 · 역 · 이름 있는 건물) + 브이월드 장소·주소(이 기기에 브이월드 키가 있을 때만 · 데이터 압축지도의 🔑 와 같은 값) */
   var VWN = 0;
   function vwJ(url) { return new Promise(function (ok, no) { var cb = '__gvw' + (++VWN) + 'x' + Date.now(), sc = document.createElement('script'), t = setTimeout(function () { fin(); no(new Error('응답 없음')); }, 12000); function fin() { clearTimeout(t); window[cb] = function () {}; if (sc.parentNode) sc.parentNode.removeChild(sc); } window[cb] = function (j) { fin(); ok(j); }; sc.onerror = function () { fin(); no(new Error('받기 실패')); }; sc.src = url + '&callback=' + cb; document.head.appendChild(sc); }); }
@@ -317,11 +333,11 @@
     var L = Math.hypot(b[0] - a[0], b[1] - a[1]), d = num * 10; if (L < 30 || d > L + 60) return null; var q = roadNear(ids, a[0] + (b[0] - a[0]) / L * d, a[1] + (b[1] - a[1]) / L * d);
     return ['📐', road + ' ' + num + ' 쯤', q[0], q[1], '어림 자리 — 도로명 번호로 셈(시작점에서 ' + km(d) + ') · 길 위의 자리라 건물에서 100m 넘게 어긋날 수 있다']; }
   function localFind(q) { var out = [], seen = {}; function add(ic, nm, x, y) { if (out.length > 40 || seen[ic + nm]) return; seen[ic + nm] = 1; out.push([ic, nm, x, y, '']); } var has = function (t) { return String(t).replace(/\s+/g, '').indexOf(q) >= 0; };
-    STN.forEach(function (o) { if (has(o.n)) add('🚇', o.n, o.x, o.y); }); G.sig.forEach(function (g) { if (has(g.nm)) add('🚦', g.nm, g.x, g.y); }); if (BLD) BLD.forEach(function (b) { if (b.n && has(b.n)) add('🏢', b.n, b.x, b.y); });
+    STN.forEach(function (o) { if (has(o.n)) add('🚇', o.n, o.x, o.y); }); G.sig.forEach(function (g) { if (has(g.nm)) add('🚦', g.nm, g.x, g.y); }); (BNM || (BIDX ? [] : BLD || [])).forEach(function (b) { if (b.n && has(b.n)) add('🏢', b.n, b.x, b.y); });
     Object.keys(BASE.T).forEach(function (k) { BASE.T[k].jn.forEach(function (j) { if (has(j.n)) add(j.k === 'g' ? '🌳' : '✚', j.n, j.x, j.y); }); }); G.LAB.forEach(function (L) { if (has(L.n)) add('🛣', L.n, L.x, L.y); }); return out; }
   var FSEQ = 0;
   var FNT = 0;
-  function findRun(raw, auto) { var q = String(raw || '').replace(/\s+/g, ''); clearTimeout(FNT); if (!G || q.length < 2) { fl.style.display = 'none'; return; } if (!BLD) bldLoad(); var seq = ++FSEQ, out = localFind(q), gs = addrGuess(raw), txt = String(raw).replace(/\s+/g, ' ').trim(), net = txt.length >= 2 && navigator.onLine !== false, st = net ? '🔎 주소·장소를 찾는 중…' : (navigator.onLine === false ? '통신이 끊겨 있다 — 이 기기 안의 이름만 찾는다' : ''), wait = net;
+  function findRun(raw, auto) { var q = String(raw || '').replace(/\s+/g, ''); clearTimeout(FNT); if (!G || q.length < 2) { fl.style.display = 'none'; return; } if (!BLD) bldLoad(); else bnmLoad(); if (!BNM && BLDP) BLDP.then(function () { bnmLoad(); if (BNMP) BNMP.then(function () { if (seq === FSEQ && BNM) findRun(raw, auto); }); }); var seq = ++FSEQ, out = localFind(q), gs = addrGuess(raw), txt = String(raw).replace(/\s+/g, ' ').trim(), net = txt.length >= 2 && navigator.onLine !== false, st = net ? '🔎 주소·장소를 찾는 중…' : (navigator.onLine === false ? '통신이 끊겨 있다 — 이 기기 안의 이름만 찾는다' : ''), wait = net;
     function show(extra, exact) { if (seq !== FSEQ) return; var all = out.concat(extra || []); if (gs && !exact) all.push(gs); fl._o = all;
       fl.innerHTML = all.slice(0, 16).map(function (o, i) { return '<button data-i="' + i + '">' + o[0] + ' ' + esc(o[1]) + (o[4] ? ' <small>' + esc(o[4]) + '</small>' : '') + '</button>'; }).join('') + (all.length || wait ? '' : '<div class="no">찾지 못했다 — 「반포대로 179」「서초동 1726-1」처럼 주소를 적거나, 지도를 길게 눌러 목적지를 정한다</div>') + (st ? '<div class="no">' + esc(st) + '</div>' : '');
       fl.style.display = 'block'; if (auto && !wait && all.length === 1) pickFound(0); }
@@ -399,7 +415,7 @@
     var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd');
     if (!route && cruise) { paintCruise(); return; }
     if (!route) { top.style.display = 'none'; sg.style.display = 'none'; spd.style.display = 'none'; $('gFind').style.display = guide ? 'none' : 'flex';
-      setH(bot, '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest ? '' : sigStat() + '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기 — 앞 신호·소통</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 길 묶음 밖이다 — 시험판은 서초·강남·송파·동작·관악·용산과 둘레 2km 안에서만 길을 찾는다.</div>' : '')); return; }
+      setH(bot, '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest ? '' : sigStat() + '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기 — 앞 신호·소통</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 길을 찾는다.</div>' : '')); return; }
     var r = route, now = Date.now() / 1000, pos = r.pos || 0, left = Math.max(0, r.dist - pos), frac = r.dist ? left / r.dist : 0, tLeft = r.time * frac;
     var nx = null, n2 = null; for (var i = 0; i < r.mans.length; i++) if (r.mans[i].d > pos + 5) { nx = r.mans[i]; n2 = r.mans[i + 1] || null; break; }
     var known = r.sigs.filter(function (g) { return g.s && g.s.kind !== 'avg'; }).length, wsum = 0; r.sigs.forEach(function (g) { wsum += g.tw || 0; });
@@ -478,7 +494,7 @@
   function paintCruise() { var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd'), now = Date.now() / 1000, age = me && !sim ? (Date.now() - me.t) / 1000 : 0, lost = age > 5, A = lost ? null : ahead(); CRA = A; $('gFind').style.display = 'none'; top.style.display = 'flex';
     var lv = A && A.live ? spdLv(A.live, A.cls, A.lim) : -1, flow = lv < 0 ? '' : '<small class="ln2">이 길 지금 — <b>' + ['원활', '서행', '정체'][lv] + '</b>' + (A.live <= A.lim ? ' · 시속 ' + Math.round(A.live) + 'km쯤' : '') + '</small>';
     var t1 = lost ? '📡 위치가 끊겼다' : A && A.nm ? esc(A.nm) : !me ? '내 자리 기다리는 중' : !me.hk ? '방향을 잡는 중' : me.out ? '가르고 지도 밖' : A && A.off ? '가는 쪽의 길을 못 찾았다' : '길 위가 아니다',
-      t2 = lost ? Math.round(age) + '초 전 자리 — 다시 잡히면 이어서 보인다' : me && !me.hk ? '조금 움직이면 가는 쪽의 앞 신호를 보인다' : me && me.out ? '서초·강남·송파·동작·관악·용산과 둘레에서만 길을 안다' : '켜놓고 다니기 — 목적지 없음';
+      t2 = lost ? Math.round(age) + '초 전 자리 — 다시 잡히면 이어서 보인다' : me && !me.hk ? '조금 움직이면 가는 쪽의 앞 신호를 보인다' : me && me.out ? AREA_KO + '과 둘레에서만 길을 안다' : '켜놓고 다니기 — 목적지 없음';
     setH(top, '<div class="arw">' + (lost ? '…' : '⬆') + '</div><div class="tx"><b>' + t1 + '</b><span>' + t2 + '</span>' + flow + '</div>');
     setH(bot, '<div class="eta"><div><b>' + hm(now) + '</b><span>지금</span></div><div><b>' + (LIVE.m ? esc(String(LIVE.made || '').slice(-5)) : '없음') + '</b><span>소통 받은 때</span></div><button id="gCruiseX" class="stop">끝</button></div>');
     if (A && !A.off && me) { var v = Math.round((me.spd || 0) * 3.6); spd.style.display = 'flex'; setH(spd, '<div class="lim">' + A.lim + '</div><div class="cur' + (v > A.lim + 2 ? ' over' : '') + '"><b>' + v + '</b><span>km/h</span></div>' + (A.nm ? '<div class="rn">' + esc(A.nm) + '</div>' : '')); } else spd.style.display = 'none';
@@ -544,7 +560,7 @@
   fl.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; pickFound(+b.getAttribute('data-i')); });
   /* 주소로 받은 목적지 — #to=위도,경도&nm=이름 · #from=위도,경도(시험) · 주소에서 지운다(좌표가 남지 않게) */
   function hashGo() { var H = location.hash || '', t = /[#&]to=(-?[\d.]+),(-?[\d.]+)/.exec(H), f = /[#&]from=(-?[\d.]+),(-?[\d.]+)/.exec(H), n = /[#&]nm=([^&]*)/.exec(H);
-    if (f) setMe(PX(+f[2]), PY(+f[1]), 5, null, 0); if (t) { var x = PX(+t[2]), y = PY(+t[1]), ns = nearSeg(x, y, 600); if (ns) setDest(ns.x, ns.y, n ? decodeURIComponent(n[1]) : '받은 자리'); else note('받은 자리가 길 묶음 밖이다 — 시험판은 서초·강남·송파·동작·관악·용산과 둘레 2km 안에서만 된다'); }
+    if (f) setMe(PX(+f[2]), PY(+f[1]), 5, null, 0); if (t) { var x = PX(+t[2]), y = PY(+t[1]), ns = nearSeg(x, y, 600); if (ns) setDest(ns.x, ns.y, n ? decodeURIComponent(n[1]) : '받은 자리'); else note('받은 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 된다'); }
     /* #q=주소·이름 — 받은 글로 바로 찾는다(티북 같은 데서 주소를 넘길 때 · # 뒤라 서버로 가지 않는다 · 읽고 지운다) */
     var qq = /[#&]q=([^&]*)/.exec(H); if (qq) { var qv = ''; try { qv = decodeURIComponent(qq[1]); } catch (e) {} if (qv) { fi.value = qv; findRun(qv, true); } }
     if (t || f || qq) { try { history.replaceState(null, '', location.pathname); } catch (e) {} } }
@@ -559,5 +575,5 @@
   try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {}
   function boot() { if (document.documentElement.classList.contains('gated')) return; var seen = false; try { seen = localStorage.getItem('tg_gargo_intro') === '1'; } catch (e) {} if (seen) { $('gIntro').style.display = 'none'; if (!/[#&]from=/.test(location.hash)) gpsStart(); } load(); }
   window.addEventListener('tggate', boot); boot();
-  window.GARGO = { paint: function () { paint(); }, cruise: function (on) { if (on === false) cruiseStop(); else cruiseStart(); return cruise; }, ahead: ahead, mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
+  window.GARGO = { todFor: todFor, localFind: function (q) { return localFind(q); }, bld: function () { return { idx: !!BIDX, tiles: Object.keys(BT).length, vis: BVIS.length, names: BNM ? BNM.length : 0 }; }, bnmLoad: function () { bldLoad(); return BLDP.then(function () { bnmLoad(); return BNMP; }); }, paint: function () { paint(); }, cruise: function (on) { if (on === false) cruiseStop(); else cruiseStart(); return cruise; }, ahead: ahead, mvOf: mvOf, liver: function () { return LIVER; }, view: view, state: function () { return { me: me, dest: dest, route: route, guide: guide, sig: SIG, G: G }; }, sigAt: sigAt, plan: plan, setDest: setDest, setMe: setMe, draw: draw, P: function (lon, lat) { return [PX(lon), PY(lat)]; }, findRoute: findRoute, simStart: simStart, guideStart: guideStart, advise: advise, spdLv: spdLv, night: night, addrGuess: addrGuess };
 })();

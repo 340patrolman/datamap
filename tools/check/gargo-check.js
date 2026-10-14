@@ -24,6 +24,9 @@
     ck('방향 · 같은 쪽 기록을 쓴다(남쪽에서 직진 → 남 50초 · 좌회전 → 20초)', m1 && m1[0] === 'st' && m1[2] === 50 && m5 && m5[2] === 20);
     ck('방향 · 양옆에 기록이 둘이면 고르지 않는다(남서쪽에서 → 모름)', m2 === null, m2 ? m2[0] : '모름');
     ck('방향 · 옆 방위가 하나뿐이면 그것을 쓴다 · 반대쪽 기록은 안 쓴다', m3 && m3[0] === 'st' && m4 === null);
+    /* v0.7.2 독립 검수 — 경찰청 계획(인재개발원 3971 · 평일 계획 마지막 줄 23:00 · 토·일 계획 22:00)의 날짜 셈: 그날 첫 줄보다 이르면 **실제 어제** · 특수일(2026-10-09 한글날 금)은 일요일 계획 */
+    g.todFor('3971', function () {});   /* 경찰청 계획을 미리 받아 둔다 — 날짜 셈 검사는 밤 시험이 시계를 되돌린 뒤에 */
+    try { g.bnmLoad(); } catch (e) {}   /* 건물 이름 목록을 미리 받아 둔다 — 찾기 검사는 밤 시험 뒤에 */
     /* v0.7.0 — 여섯 구 묶음(pack-six)이 실렸는지 · 서초 밖 길 셋을 같은 품질 기준으로 */
     ck('여섯 구 길 묶음이 실렸다(마디 6만 넘게 · 송파·용산까지)', (function () { var G0 = g.state().G, a = g.P(127.1059, 37.5145), b = g.P(126.9648, 37.5298); return G0 && G0.S.length > 60000 && a[0] <= G0.box[1] && b[1] >= G0.box[2]; })(), (g.state().G || {}).S ? g.state().G.S.length + '줄' : '없음');
     /* 2) 길 계산 세 벌 — 서초역→양재역 · 고속터미널→방배역 · 교대역→예술의전당 */
@@ -67,6 +70,13 @@
     var seen = 0, shown = 0; try { g.simStart(); } catch (e) { ck('모의 주행 시작', false, e.message); }
     var smp = setInterval(function () { var el = document.getElementById('gSig'), h = el ? el.innerHTML : ''; if (h) shown++; if (h.indexOf('시속') >= 0) seen++; }, 200);
     setTimeout(function () { clearInterval(smp); Date.prototype.getHours = gh;
+      /* v0.7.2 독립 검수 — 경찰청 계획(인재개발원 3971 · 평일 계획 마지막 줄 23:00 · 토·일 계획 22:00)의 날짜 셈: 그날 첫 줄보다 이르면 **실제 어제** · 특수일(2026-10-09 한글날 금)은 일요일 계획 */
+      [['화 03:00 → 월 계획 마지막 줄(23:00 · 전날)', '2026-10-13T03:00:00+09:00', function (t) { return t && t.prev && t.at === '23:00' && !t.hol; }],
+       ['월 03:00 → 일 계획 마지막 줄(22:00 · 전날)', '2026-10-12T03:00:00+09:00', function (t) { return t && t.prev && t.at === '22:00'; }],
+       ['한글날(금) 10:40 → 일요일 계획(특수일 · 추정 표시)', '2026-10-09T10:40:00+09:00', function (t) { return t && !t.prev && t.hol; }],
+       ['한글날 다음 날(토) 03:00 → 전날 = 특수일 = 일 계획 마지막 줄(22:00 · 금요일 23:00 이 아님)', '2026-10-10T03:00:00+09:00', function (t) { return t && t.prev && t.at === '22:00' && t.hol; }]].forEach(function (c0) { var got = 'no'; g.todFor('3971', function (t) { got = t; }, new Date(c0[1]).getTime()); ck('경찰청 계획 날짜 · ' + c0[0], c0[2](got), JSON.stringify(got)); });
+      /* 건물 이름 찾기 — 칸을 띄우지 않아도 이름 목록(bld6/names.json)으로 */
+      var rf = g.localFind('롯데월드몰').concat(g.localFind('송파구청')); ck('건물 이름 찾기(롯데월드몰·송파구청 · 칸을 안 띄워도)', rf.filter(function (x) { return x[0] === '🏢'; }).length >= 2, rf.slice(0, 3).map(function (x) { return x[0] + x[1]; }).join(' · ') + ' · 이름 ' + g.bld().names);
       ck('밤 22~06시에는 속도 권고가 안 나온다(모의 주행 4초)', seen === 0, '신호 판 ' + shown + '번 봄 · 권고 글 ' + seen + '번');
       ck('안내 화면이 뜬다(위 띠)', (document.getElementById('gTop') || {}).offsetHeight > 0, String((document.getElementById('gTop') || {}).innerText || '').split(String.fromCharCode(10)).join(' · '));
       /* 켜놓고 다니기(v0.6.0) — 안내를 끝내고 길을 지운 뒤: 반포대로를 북쪽으로 가는 자리·속도를 넣으면 진행 방향이 위로 돌고, 내 길 앞의 신호가 「남쪽에서 직진」 값으로 잡힌다 */

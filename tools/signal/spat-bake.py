@@ -1479,8 +1479,16 @@ def fusion(sample=False, ids=None):
             if c == 200:
                 try:
                     J = json.loads(b)
-                    if not J:
-                        NONE[itst] = tday; json.dump(NONE, open(nf, 'w', encoding='utf-8'))   # 빈 배열 = 그 교차로는 T-Data 에 한 줄도 없다(V2X 장비 없음으로 봄 · 날마다 다시 본다)
+                    if not J or not any(v is not None for x in J for k9, v in x.items() if k9.endswith('RmdrCs')):
+                        # 빈 배열 = T-Data 에 한 줄도 없다 · 줄은 오는데 잔여 초가 모두 비었다 = 장비는 메시지를 보내지만 신호 값이 없다
+                        #  (2026-10-14 인재개발원 3971·23971·33971 — 몇 분 전 보낸 줄인데 방향별 잔여가 전부 null · 역사 목록에도 없음) — 둘 다 그날은 다시 안 부른다
+                        NONE[itst] = tday; json.dump(NONE, open(nf, 'w', encoding='utf-8'))
+                        try:
+                            WHY = json.load(open(nf.replace('.json', '_why.json'), encoding='utf-8'))
+                        except Exception:
+                            WHY = {}
+                        WHY[itst] = [tday, '응답 없음' if not J else '줄은 오지만 잔여 초가 모두 비어 있음', str(J[0].get('trsmTm')) if J else '']
+                        json.dump(WHY, open(nf.replace('.json', '_why.json'), 'w', encoding='utf-8'), ensure_ascii=False)
                     with gzip.open(os.path.join(out, stamp[:8] + '.jsonl.gz'), 'at', encoding='utf-8') as g:
                         g.write(json.dumps({'at': stamp, 'id': itst, 'key': kl, 'rows': J}, ensure_ascii=False) + chr(10))
                     nok += 1

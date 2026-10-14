@@ -372,14 +372,43 @@ def pick_todo(tiers, order, need1, need2, need3, ok=lambda i: True):
     return [i for i in order if need3(i) and ok(i)]
 
 
+# (2026-10-14 소유자) 수집 단계 — ① 여섯 구 ② 한강 이남 나머지 여섯 구 ③ 서울 전체. 앞 단계가 다 차면 다음 단계를 바구니에 더한다(「한강 이남이 완성되면 서울 전체로」)
+STAGE_GU = [['서초구', '강남구', '동작구', '관악구', '용산구', '송파구'], ['영등포구', '구로구', '금천구', '강서구', '양천구', '강동구']]
+TIER_NAMES = []   # read_list 가 채운다 — 묶음(## 줄)의 구 이름
+
+
+def stage_done(keys, its, pl):
+    """그 단계가 다 찼나 — 목록에 있는 교차로 가운데 기록 있음 ≥ 95% 이고, 기록 있는 곳의 평일(갈래 0) 07~22시 칸(15칸)이 80% 넘게 찼을 때
+    (2026-10-14 게임 세션 제안 「기록 ≥ 95% · 평일 낮 시각대 칸이 대부분」 → 「대부분」= 80% 로 잡음)"""
+    if not keys:
+        return True
+    rec = [k for k in keys if its.get(k)]
+    if len(rec) < 0.95 * len(keys):
+        return False
+    cells = sum(len(set(x[1] for x in pl.get(k, []) if x[0] == 0 and 7 <= x[1] < 22 and not (len(x) > 6 and x[6]))) for k in rec)
+    return cells >= 0.8 * 15 * len(rec)
+
+
+def open_stages(members, its, pl):
+    """members = 단계마다 교차로 번호 목록 → 지금 열 단계 수(앞에서부터 다 찬 단계 + 1 · 모두 찼으면 len+1 = 서울 전체)"""
+    n = 0
+    for ks in members:
+        n += 1
+        if not stage_done(ks, its, pl):
+            return n
+    return len(members) + 1
+
+
 def read_list(path):
-    """수집 차례 파일 — 「## 」 줄마다 새 묶음 · 「#」 줄은 설명"""
+    """수집 차례 파일 — 「## 」 줄마다 새 묶음(이름 = ## 뒤 첫 낱말 → TIER_NAMES) · 「#」 줄은 설명"""
     tiers, cur = [], []
+    del TIER_NAMES[:]
     for ln in open(path, encoding='utf-8'):
         ln = ln.strip()
         if ln.startswith('## '):
             if cur: tiers.append(cur)
             cur = []
+            TIER_NAMES.append(ln[3:].split()[0] if ln[3:].split() else '')
         elif ln and not ln.startswith('#'):
             cur.append(ln)
     if cur: tiers.append(cur)
@@ -393,8 +422,28 @@ def sweep(prefer=None, api='t', cap=None):
     f = sorted(glob.glob(os.path.join(RAW, 'ids_*.json')))
     order = list(json.load(open(f[-1], encoding='utf-8'))['ids'].keys())
     pos = {k: i for i, k in enumerate(order)}
-    tiers = [[x for x in T if x in pos] for T in (prefer if prefer and isinstance(prefer[0], list) else [prefer or []])]   # 묶음(가까운 곳부터) — 앞 묶음이 끝나야 다음 묶음
-    tiers = [T for T in tiers if T]
+    raw_t = prefer if prefer and isinstance(prefer[0], list) else [prefer or []]
+    names = TIER_NAMES if len(TIER_NAMES) == len(raw_t) else [''] * len(raw_t)
+    tn = [(n, [x for x in T if x in pos]) for n, T in zip(names, raw_t)]
+    tn = [(n, T) for n, T in tn if T]
+    tiers = [T for n, T in tn]; tnames = [n for n, T in tn]   # 묶음(가까운 곳부터) — 앞 묶음이 끝나야 다음 묶음
+    stage = {'n': 0, 'at': 0.0, 'basket': [], 'rest': tiers}
+    def restage():
+        """바구니 다시 정하기(한 시간에 한 번) — 열린 단계의 구 묶음은 한 바구니, 나머지는 묶음 차례"""
+        try:
+            sd9 = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))
+            its9, pl9 = sd9.get('its', {}), sd9.get('pl', {})
+        except Exception:
+            its9, pl9 = {}, {}
+        mem = [[x for n, T in tn if n in G for x in T] for G in STAGE_GU]
+        k = open_stages(mem, its9, pl9)
+        gus = [g for G in STAGE_GU[:k] for g in G]
+        allopen = k > len(STAGE_GU)
+        b = [T for n, T in tn if allopen or n in gus] if any(tnames) else tiers[:6]
+        r = [T for n, T in tn if not (allopen or n in gus)] if any(tnames) else tiers[6:]
+        if k != stage['n']:
+            print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[단계] %d단계까지 엶 — 바구니 %s' % (k, '서울 전체' if allopen else ' · '.join(gus)), flush=True)
+        stage.update(n=k, at=time.time(), basket=b, rest=r)
     pref = [x for T in tiers for x in T]
     tried_f = os.path.join(RAW, 'tried_p.json' if api == 'p' else 'tried.json')
     tried = set(json.load(open(tried_f))) if os.path.exists(tried_f) else set()
@@ -460,6 +509,8 @@ def sweep(prefer=None, api='t', cap=None):
         if api != 'p' and time.time() - spd_at >= 600:
             spd_at = time.time()                              # 10분에 한 번 통행속도 한 장 — 신호를 받았든 못 받았든(잔여시간 훑기 쪽에서만)
             if livespd(): publish()
+        if time.time() - stage['at'] > 3600:
+            restage()
         A = anchors(); AS = anchors(True)
         nowt = time.time()
         now = datetime.datetime.now()
@@ -477,14 +528,14 @@ def sweep(prefer=None, api='t', cap=None):
             #  서초·강남의 「이 시각대 빈 곳」(늘 1,300곳 넘게 남음)이 끝나지 않아 뒤 묶음이 한 번도 안 골렸다(송파 152곳 가운데 기록 58 · 송파 자리 2249~ 를 찾던 자리로 고른 적 0).
             #  한 바구니에 넣으면 받을 곳이 가장 몰린 자리(K)를 고르는 규칙이 저절로 여섯 구에 나눈다
             for f in (need1, needS):
-                c = [i for T in tiers[:6] for i in T if f(i) and ok(i)]
+                c = [i for T in stage['basket'] for i in T if f(i) and ok(i)]
                 if c: return c
-            for T in tiers[6:]:
+            for T in stage['rest']:
                 c = [i for i in T if need1(i) and ok(i)]
                 if c: return c
             c = [i for i in order if need1(i) and ok(i)]
             if c: return c
-            for T in tiers[6:]:
+            for T in stage['rest']:
                 c = [i for i in T if needS(i) and ok(i)]
                 if c: return c
             return [i for i in order if needS(i) and ok(i)]
@@ -1444,7 +1495,6 @@ def fusion(sample=False, ids=None):
         print('| 한쪽에만 | %s | 상태 이름(StatNm) %d칸 |' % (', '.join(sorted(ck - fk)) or '없음', len([x for x in fk - ck if x.endswith('StatNm')])))
         print('상태 이름 값', sorted(set(v for k2, v in one.items() if k2.endswith('StatNm') and v)), '· 보낸 시각', one.get('trsmTm'))
         return
-    GU6 = ['서초구', '강남구', '동작구', '관악구', '용산구', '송파구']
     AXIS = ('반포대로', '서초대로', '강남대로', '남부순환로', '사평대로')   # 먼저 부르는 축(2026-10-14 게임 세션 권고 · 소유자 승인)
     try:
         FS = json.load(open(os.path.join(ROOT, 'data', 'fac-signal.json'), encoding='utf-8'))['spots']
@@ -1462,6 +1512,13 @@ def fusion(sample=False, ids=None):
             NONE = {}
         tday = P.today(); pl = sd.get('pl', {}); nowk = datetime.datetime.fromtimestamp(time.time() + 9 * 3600, datetime.timezone.utc)
         ck = (cls_of((nowk.weekday() + 1) % 7, nowk.strftime('%Y-%m-%d')), nowk.hour)
+        try:
+            IDS = set(json.load(open(sorted(glob.glob(os.path.join(RAW, 'ids_*.json')))[-1], encoding='utf-8'))['ids'])   # 단계 판정은 T-Data 역사 목록에 있는 교차로로만(목록 밖은 원래 못 받는다)
+        except Exception:
+            IDS = set(FS)
+        mem = [[k for k, v in FS.items() if v.get('gu') in G and k in IDS] for G in STAGE_GU]
+        kst = open_stages(mem, its, pl)
+        GU6 = [g for G in STAGE_GU[:kst] for g in G] if kst <= len(STAGE_GU) else sorted(set(v.get('gu') for v in FS.values() if v.get('gu')))   # 열린 단계의 구(다 차면 다음 단계 · 모두 차면 서울 전체)
         L = ids or [k for k, v in FS.items() if v.get('gu') in GU6 and NONE.get(k) != tday]
         haveci = lambda k: any(r.get('ci') for r in its.get(k, []))
         L = sorted(L, key=lambda k: (GU6.index(FS.get(k, {}).get('gu', '')) if FS.get(k, {}).get('gu') in GU6 else 9,

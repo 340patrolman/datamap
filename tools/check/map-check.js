@@ -26,9 +26,20 @@
     var tb = document.getElementById('m2dToolB'), tp = document.getElementById('m2dTool'); if (tb && tp) { tb.click(); var its = [].map.call(tp.querySelectorAll('button[data-tool]'), function (b) { return b.getAttribute('data-tool'); }); ck('도구 판이 열리고 도구가 다 있다', tp.classList.contains('on') && ['rad', 'biz', 'prd', 'gdr', 'tax', 'nav', 'fit', 'leg'].every(function (k) { return its.indexOf(k) >= 0; }), its.join(' '));
       ck('도구 판이 화면 밖으로 안 나간다', tp.getBoundingClientRect().left >= 0 && tp.scrollWidth <= tp.clientWidth + 1, Math.round(tp.getBoundingClientRect().left) + ' · ' + tp.scrollWidth + '/' + tp.clientWidth);
       var lg = tp.querySelector('[data-tool=leg]'); if (lg) lg.click(); ck('범례를 고르면 범례가 열리고 도구 판은 닫힌다', document.body.classList.contains('legon') && !tp.classList.contains('on')); if (document.body.classList.contains('legon')) document.getElementById('m2dLegB').click(); }
+    /* 창 관리(v2.220.0) — 방금 연 창이 맨 위 · 겹친 창이 있으면 칩이 뜨고, 칩을 누르면 그 창이 맨 위로(레이어 판을 연 채 도구 판을 연다) */
+    try { var z = function (id) { return +getComputedStyle(document.getElementById(id)).zIndex || 0; }; document.getElementById('m2dFold').click();
+      setTimeout(function () { try { tb.click(); } catch (e0) {}
+        setTimeout(function () { try { var ws = m.wins(), bar = document.getElementById('m2dWin'), chips = bar ? bar.querySelectorAll('[data-win]') : [];
+            ck('방금 연 도구 판이 레이어 판보다 위다', ws[ws.length - 1] === 'm2dTool' && z('m2dTool') > z('m2dPanel'), ws.join('>') + ' · z ' + z('m2dTool') + '/' + z('m2dPanel'));
+            ck('겹친 창 칩이 뜬다(도구 · 레이어)', bar.style.display === 'flex' && chips.length >= 2, [].map.call(chips, function (b) { return b.textContent; }).join(' · '));
+            var cb = bar.querySelector('[data-win=m2dPanel]'); if (cb) { cb.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); var w2 = m.wins(); ck('칩을 누르면 그 창이 맨 위로 온다', w2[w2.length - 1] === 'm2dPanel' && z('m2dPanel') > z('m2dTool'), w2.join('>')); }
+            if (tp.classList.contains('on')) tb.click(); var cx = document.querySelector('#m2dPanel [data-close]'); if (cx) cx.click(); } catch (e2) { ck('창 관리 검사', false, e2.message); }
+          fin(); }, 400); }, 500); } catch (e) { ck('창 관리 검사', false, e.message); fin(); }
+    function fin() {
     /* 레이어 판 — 새 기기에서는 켜진 것이 없는 묶음이 접혀 있다 */
     try { document.getElementById('m2dFold').click(); var gs = [].map.call(document.querySelectorAll('#m2dPanel .gc'), function (b) { return b.getAttribute('aria-expanded'); }), nOpen = gs.filter(function (x) { return x === 'true'; }).length; ck('레이어 판 묶음이 접힌 채로 열린다(켜진 것이 든 묶음만 펼침)', gs.length > 8 && nOpen < gs.length, '묶음 ' + gs.length + ' · 펼침 ' + nOpen + ' · 판 높이 ' + document.getElementById('m2dPanel').scrollHeight + 'px'); } catch (e) { ck('레이어 판이 열린다', false, e.message); }
     var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
     send();
+    }
   }
 })();

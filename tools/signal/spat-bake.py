@@ -683,7 +683,7 @@ def sweep(prefer=None, api='t', cap=None):
             dens *= 0.8; time.sleep(P.gap()); continue
         a, b = min(idx), max(idx)
         pok = max(pok, b); nfail = 0
-        end_note(b=b); hist(at=stamp, api=api, t=t, page=page, K=K, st=200, a=a, b=b, n=len(seq), k=kn)
+        end_note(b=b); hist(at=stamp, api=api, t=t, page=page, K=K, st=200, a=a, b=b, n=len(seq), k=kn, np=len(ps), ps0=ps[0], ps1=ps[-1])   # (2026-10-15) 후보 수·범위 — 세 훑기가 같은 자리를 고르는지 보려고
         P.note(kl, 200)
         if plast and b >= plast * 0.97:
             plast = None                                      # 끝자리 너머가 받아졌다 — 옛 끝자리는 잊는다

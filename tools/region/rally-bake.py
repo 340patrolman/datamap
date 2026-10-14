@@ -57,13 +57,18 @@ def load_ref():
         k = re.sub(r'역$', '', nm.split('(')[0].strip()); S.setdefault(k, []).append((la, lo))
         if no: E[(k, re.sub(r'\D', '', str(no)))] = (la, lo)
     S = {k: (sum(p[0] for p in v) / len(v), sum(p[1] for p in v) / len(v)) for k, v in S.items()}
-    D = {}
+    D = {}; CC = {}; GN = {}
     for f in json.load(open(os.path.join(os.path.dirname(ROOT), '13_관할경계', '원자료', 'hjd20260701.geojson'), encoding='utf-8'))['features']:
         pr = f['properties']
         if not str(pr.get('adm_cd2', '')).startswith('11'): continue
         g = f['geometry']; rings = g['coordinates'] if g['type'] == 'Polygon' else [r for poly in g['coordinates'] for r in poly]; pts = [p for r in rings[:1] for p in r]
-        nm = pr['adm_nm'].split(); D.setdefault((nm[1], re.sub(r'(제?\d+|본)?동$|\d*가$', '', nm[2])), []).append((sum(p[1] for p in pts) / len(pts), sum(p[0] for p in pts) / len(pts)))
+        nm = pr['adm_nm'].split(); CC[str(pr['adm_cd2'])[:8]] = (sum(p[1] for p in pts) / len(pts), sum(p[0] for p in pts) / len(pts)); GN[str(pr['adm_cd2'])[:5]] = nm[1]; D.setdefault((nm[1], re.sub(r'(제?\d+|본)?동$|\d*가$', '', nm[2])), []).append((sum(p[1] for p in pts) / len(pts), sum(p[0] for p in pts) / len(pts)))
     D = {k: (sum(p[0] for p in v) / len(v), sum(p[1] for p in v) / len(v)) for k, v in D.items()}
+    # 장소 글의 <동> 은 법정동일 때가 많다(수송동·효자동·관철동…) — 행정동 이름에 없으면 그 법정동이 가장 넓게 든 행정동 가운데로(data/b2a.json)
+    for code, v in json.load(open(os.path.join(ROOT, 'data', 'b2a.json'), encoding='utf-8'))['b2a'].items():
+        if not code.startswith('11') or not v.get('a') or v['a'][0][0] not in CC or v['gu'] not in GN: continue
+        k = (GN[v['gu']], re.sub(r'(제?\d+|본)?동$|\d*가$', '', v['n']))
+        if k not in D: D[k] = CC[v['a'][0][0]]
     return E, S, D
 KEY = None; CACHE = {}; VW_OFF = [False]
 def vworld(q, gus):
@@ -105,7 +110,7 @@ def locate(seg, gus, E, S, D):
     m = re.search(r'[<〈]\s*([가-힣0-9]+?)(?:제?\d+)?(?:동|\d*가)\b', seg) or re.search(r'[<〈]\s*([가-힣0-9]+?)(?:제?\d+)?(?:동|\d*가)', seg)
     if m:
         for g in gus or sorted(set(k[0] for k in D)):
-            if (g, m.group(1)) in D: la, lo = D[(g, m.group(1))]; return round(la, 6), round(lo, 6), 1, '%s %s동 가운데(장소를 못 찾아 동으로 근사)' % (g, m.group(1))
+            if (g, m.group(1)) in D: la, lo = D[(g, m.group(1))]; return round(la, 6), round(lo, 6), 1, '%s %s동 쪽(장소를 못 찾아 동으로 근사 — 그 동이 든 행정동의 가운데)' % (g, m.group(1))
     return None
 def main(days):
     idx = fetch(days); E, S, D = load_ref()

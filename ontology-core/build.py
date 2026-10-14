@@ -1,0 +1,124 @@
+# -*- coding: utf-8 -*-
+"""교통 온톨로지 코어 v1 — 서초구 객체·링크 한 장(ontology-core/data/core-seocho.json)을 굽는다.
+  모든 값은 이미 있는 공개 자료 파일에서 다시 센다(지어낸 값 없음). 링크마다 출처 파일과 등급(A~E).
+  원천:
+    INT·PLC  = data/onto-int.json(T-GIS 교차로 · C-ITS 번호 · 250m 칸 · 행정동 10자리 → 앞 8자리)
+    인접      = data/sig-net-seocho.json(신호 교차로 사이 길 · C-ITS 번호로 INT 에 이음)
+    ACC·VIO  = data/taas10-seocho.json(TAAS 2016~2025 · 100m 칸 · 주 법규위반 코드 dic.v) — 교차로에서 70m 안 칸을 묶음(jct-bake 와 같은 반지름 · 근사 C)
+    CAM·ATT  = data/gargo-alerts-seoul.json(경찰 관리 · 제한속도 있는 카메라 100m 안 · 어린이보호구역 시설 300m 안 · 근사 C)
+    ACT·REC  = data/sig-ksc-seocho.json hist(교통과 출력물 5곳 · 소유자 공개 결정 2026-10-10 · 이력 글 그대로)
+    LAW·PREC = ontology-core/src/tbook-law.json(T-Book 범칙금 DB · 원문 대조 판례 — tools/tbook-extract.py 가 읽기만 해서 꺼냄)
+  VIO → LAW 는 이름 맞대기 표(아래 VIO_LAW · 등급 C · 확인 필요) · LAW → PREC 은 조문 번호가 같을 때만(교특법 §3 은 12대 중과실 공통이라 빼고)(범칙금 DB meta 「도교법§5」 ↔ 판결문 참조조문 「도로교통법 제5조」 · 등급 A · 「구 ○○법」 이면 C)
+  쓰기: py -3.12 -X utf8 ontology-core/build.py
+"""
+import json, os, re, math, hashlib, datetime, collections
+CORE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(CORE); D = os.path.join(ROOT, 'data')
+def J(p): return json.load(open(p, encoding='utf-8'))
+def m(la1, lo1, la2, lo2): return math.hypot((lo1 - lo2) * 88400.0, (la1 - la2) * 111000.0)
+GU = '11650'
+# 위반유형 → T-Book 범칙금 DB 항목(제목 그대로) — 이름 맞대기(등급 C). 「06 안전운전불이행」·「기타」는 DB 에 같은 항목이 없어 잇지 않는다
+VIO_LAW = {'02': ['① 신호위반·안전표지 위반'], '01': ['② 중앙선 침범'], '05': ['③ 제한속도 20km/h 초과', '과속 (일반도로)', '스쿨존 과속'],
+           '03': ['안전거리 미확보'], '07': ['교차로 통행방법 위반 (꼬리물기)'], '08': ['⑥ 횡단보도 보행자보호의무 위반']}
+ABBR = {'도교법': '도로교통법', '교특법': '교통사고처리 특례법', '특가법': '특정범죄 가중처벌 등에 관한 법률', '자관법': '자동차관리법'}
+def arts_meta(meta):   # 「도교법§13③,§62 · 교특법§3②1 · 도교법§21~23」 → [[법, '13'], [법, '62'], …]
+    out = []; law = None
+    for tok in re.finditer(r'(도교법|교특법|특가법|자관법|형법)|§\s*(\d+)(의\d+)?(?:\s*~\s*(\d+))?', meta):
+        if tok.group(1): law = ABBR.get(tok.group(1), tok.group(1)); continue
+        if not law: continue
+        a = int(tok.group(2)); b = int(tok.group(4)) if tok.group(4) else a; sub = tok.group(3) or ''
+        for n in range(a, b + 1): out.append([law, str(n) + (sub if n == a else '')])
+    return [list(x) for x in dict.fromkeys(tuple(x) for x in out)]
+def arts_jo(jo):   # 판결문 참조조문 「도로교통법 제44조 제1항, 제4항, 제148조의2 제3항 …」 → [[법, '44', 구?], …]
+    out = []; law = None; old = False
+    for tok in re.finditer(r'(구\s+)?(도로교통법|교통사고처리\s*특례법|특정범죄\s*가중처벌\s*등에\s*관한\s*법률|자동차관리법|형사소송법|형법)(\s*시행규칙|\s*시행령)?|제(\d+)조(의\d+)?', jo):
+        if tok.group(2):
+            nm = re.sub(r'\s+', ' ', tok.group(2)).replace('교통사고처리특례법', '교통사고처리 특례법')
+            law = None if tok.group(3) else nm; old = bool(tok.group(1)); continue
+        if law: out.append([law, tok.group(4) + (tok.group(5) or ''), old])
+    return out
+def ym_of(t):
+    for rx in (r'(\d{4})\.\s?(\d{1,2})', r'(\d{4})(\d{2})\d{2}\)', r'(\d{4})년\s?(\d{1,2})월', r'(\d{4})년'):
+        g = re.search(rx, t)
+        if g: return '%s-%02d' % (g.group(1), int(g.group(2))) if g.lastindex >= 2 else g.group(1)
+    return None
+def main():
+    O = {}; E = []
+    def obj(i, t, **p): O[i] = dict(id=i, t=t, **{k: v for k, v in p.items() if v is not None}); return i
+    def edge(a, rel, b, grade, src, **p): E.append([a, rel, b, dict(g=grade, src=src, **p)])
+    oi = J(os.path.join(D, 'onto-int.json')); rows = [r for r in oi['items'] if r[6] == GU]
+    by_cits = {}
+    for r in rows:
+        i = obj('INT-%s' % r[0], 'INT', nm=r[1], lat=r[2], lon=r[3], cits=r[4] or 0, st=r[5], dong=(r[7] or '')[:8], dongnm=r[8], has=r[11])
+        if r[4]: by_cits[str(r[4])] = i
+        if r[9]: edge(i, '들어감', obj('PLC-%s' % r[9], 'PLC'), 'A', 'onto-int.json')
+    net = J(os.path.join(D, 'sig-net-seocho.json'))
+    for l in net['links']:
+        a, b = by_cits.get(str(l[0])), by_cits.get(str(l[1]))
+        if a and b and a != b: edge(a, '인접', b, 'B', 'sig-net-seocho.json', m=l[2], s=l[3])
+    ta = J(os.path.join(D, 'taas10-seocho.json')); dv = ta['dic']['v']; R = 70
+    for code, nm in dv.items(): obj('VIO-%s' % code, 'VIO', nm=nm)
+    INTs = [O[k] for k in O if O[k]['t'] == 'INT']
+    for it in INTs:
+        cs = [c for c in ta['cells'] if m(c[0], c[1], it['lat'], it['lon']) <= R]
+        if not cs: continue
+        yrs = [sum(c[2 + k] for c in cs) for k in range(10)]
+        a = obj('ACC-%s' % it['id'], 'ACC', y0=2016, years=yrs, dead=sum(c[12] for c in cs), serious=sum(c[13] for c in cs), ped=sum(c[14] for c in cs), night=sum(c[18] for c in cs), tod=[sum(c[19 + k] for c in cs) for k in range(4)], cells=len(cs), r=R)
+        edge(it['id'], '발생', a, 'C', 'taas10-seocho.json(70m 안 100m 칸)')
+        vc = collections.Counter()
+        for c in cs: vc[c[23]] += c[24]
+        for code, n in vc.items(): edge(a, '주요원인', 'VIO-%s' % code, 'C', 'taas10-seocho.json(칸마다 주 위반 하나)', n=n)
+    al = J(os.path.join(D, 'gargo-alerts-seoul.json'))
+    for it in INTs:
+        for c in al['cam']:
+            if c[2] and len(c) > 7 and c[7] == 'p' and m(c[1], c[0], it['lat'], it['lon']) <= 100:
+                edge(it['id'], '보유', obj('CAM-%.6f,%.6f' % (c[0], c[1]), 'CAM', lim=c[2], road=c[5] or None, place=c[6] or None), 'C', 'gargo-alerts-seoul.json(100m 안)')
+        for z in al['sz']:
+            d = m(z[1], z[0], it['lat'], it['lon'])
+            if d <= 300: edge(it['id'], '가까움', obj('ATT-SZ-%.5f,%.5f' % (z[0], z[1]), 'ATT', kind=z[2], nm=z[3] or None), 'C', 'gargo-alerts-seoul.json(300m 안)', d=round(d))
+    ks = J(os.path.join(D, 'sig-ksc-seocho.json'))
+    for it in ks['items']:
+        tgt = by_cits.get(str(it['no']))
+        if not tgt: continue
+        for n, h in enumerate(it.get('hist') or []):
+            a = obj('ACT-%s-%d' % (it['no'], n + 1), 'ACT', what=h, ym=ym_of(h), public=1)
+            edge(a, '대상', tgt, 'A', 'sig-ksc-seocho.json hist(교통과 출력물)')
+            why = re.search(r'([^()]+?)\s*(?:을|를)?\s*(?:관련|위한|위해)', h)   # 「사고잦은곳 관련 개선」 「꼬리물기 해소를 위한 시차제」 꼴만 — 조치 자체(연장·신설…)는 이유가 아니다
+            r = obj('REC-%s' % a, 'REC', text=(why.group(1).strip() if why else '이력 글에 이유가 적혀 있지 않다 — 교통과 내부 문서 확인'), internal=1)
+            edge(a, '근거기록', r, 'A' if why else 'E', 'sig-ksc-seocho.json hist')
+    tl = J(os.path.join(CORE, 'src', 'tbook-law.json')); title_idx = {l['title']: k for k, l in enumerate(tl['laws'])}
+    used = set(t for v in VIO_LAW.values() for t in v)
+    law_ids = {}
+    for k, l in enumerate(tl['laws']):
+        if l['title'] not in used: continue
+        law_ids[k] = obj('LAW-T%d' % k, 'LAW', title=l['title'], meta=l['meta'], penalty=l.get('penalty'), arts=arts_meta(l['meta']))
+    for code, titles in VIO_LAW.items():
+        for t in titles:
+            if t not in title_idx: raise SystemExit('T-Book 범칙금 DB 에 없는 제목: ' + t)
+            edge('VIO-%s' % code, '근거', law_ids[title_idx[t]], 'C', 'VIO_LAW 이름 맞대기(build.py) · 확인 필요')
+    def verified(p): return bool(p and p.get('c') and p.get('d') and p.get('nm') != '조회실패')   # T-Book PRECDOC 의 「조회실패」(원문을 못 받은 것)는 확인된 판례가 아니다
+    unver = sorted(no for no, p in tl['precdoc'].items() if not verified(p))
+    for no, p in tl['precdoc'].items():
+        if not verified(p): continue
+        jo = p.get('jo') or ''
+        pid = obj('PREC-%s' % no, 'PREC', no=no, court=p.get('c'), date=p.get('d'), nm=p.get('nm'), jo=jo or None)
+        ja = arts_jo(jo)
+        for k, lid in law_ids.items():
+            la = set(tuple(x) for x in O[lid]['arts'])
+            hit = [x for x in ja if (x[0], x[1]) in la and x[0] != '교통사고처리 특례법']   # 교특법 §3 은 12대 중과실이 모두 같은 조라 판례를 가르지 못한다 — 도로교통법 등 나머지 조가 같을 때만
+            if hit: edge(lid, '해석', pid, 'C' if all(x[2] for x in hit) else 'A', '판결문 참조조문 ↔ 범칙금 DB 조문(같은 조)', arts=sorted(set('%s 제%s조' % (x[0], x[1]) for x in hit)))
+    # T-Book 범칙금 DB 의 처리 글(handle)이 적은 판례 사건번호 — 원문 대조된 판례(PRECDOC)에 있으면 「T-Book 본문이 그 항목의 해석으로 적은 판례」(등급 A)
+    for k, lid in law_ids.items():
+        for no in sorted(set(re.findall(r'(\d{4}[가-힣]{1,3}\d+)', tl['laws'][k].get('handle') or ''))):
+            if verified(tl['precdoc'].get(no)) and not any(e[0] == lid and e[2] == 'PREC-' + no for e in E): edge(lid, '해석', 'PREC-' + no, 'A', 'T-Book 범칙금 DB handle 글에 적힌 사건번호 · 원문 대조(PRECDOC)')
+    used_ids = set(i for e in E for i in (e[0], e[2]))
+    O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
+    srcs = ['onto-int.json', 'sig-net-seocho.json', 'taas10-seocho.json', 'gargo-alerts-seoul.json', 'sig-ksc-seocho.json']
+    doc = {'schema': 'onto-core/1', 'area': '서울특별시 서초구(11650)', 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
+           'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
+           'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',
+           'count': dict(collections.Counter(v['t'] for v in O.values())), 'edges_count': dict(collections.Counter(e[1] for e in E)),
+           'objects': sorted(O.values(), key=lambda v: v['id']), 'edges': E}
+    os.makedirs(os.path.join(CORE, 'data'), exist_ok=True); p = os.path.join(CORE, 'data', 'core-seocho.json')
+    json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    print(doc['count'], doc['edges_count'], os.path.getsize(p), 'B')
+if __name__ == '__main__': main()

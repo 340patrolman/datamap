@@ -14,7 +14,7 @@
 #   · 차량 신호(직진·좌회전·유턴·버스)는 황색이 3~6초다 → 「황색 바로 앞 구간 = 녹색 · 바로 뒤 = 적색」으로 읽는다(추정이라고 화면에 밝힌다).
 #   · 보행 신호는 황색이 없어 이 방법으로 색을 가릴 수 없다 → 구간 길이만 싣고 색은 비워 둔다.
 #   · 36000(= 3600초)은 「모름」 · 5초 넘게 끊긴 자리(통신 끊김)에 걸친 구간은 버린다.
-import sys, os, json, time, gzip, glob, datetime, statistics, urllib.request, urllib.error
+import sys, os, json, time, gzip, glob, datetime, statistics, math, urllib.request, urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -63,6 +63,8 @@ POOL_ORDER = {'timing': ['KEY1', 'KEY2'], 'phase': ['KEY1', 'KEY2'], 'fusion': [
 POOL_URL = {'timing': BASE, 'phase': BASEP, 'fusion': BASEF}
 POOL_PROBE_Q = {'timing': '&pageNo=1&numOfRows=3', 'phase': '&pageNo=1&numOfRows=3', 'fusion': '&pageNo=1&numOfRows=3&itstId=4036'}
 RECHECK = 1800
+DAYCAP_EP = {'fusion': 970}   # (2026-10-14 소유자 「둘째 열쇠도 하루 한도를 거의 채우면서」) KEY2 는 Fusion 말고는 404 라 한도를 나눌 API 가 없다 — 1,000 에서 30 여유
+DAYCAP = 900   # (2026-10-14) 공식 안내 하루 1,000회 — 열쇠마다인지 API 마다인지 몰라 짝(열쇠, API)마다 세고 900 에서 멈춘다
 
 
 def keyval(label):
@@ -74,12 +76,12 @@ class KeyPool:
         self.ep, self.gap0 = ep, gap
         self.order = [k for k in POOL_ORDER[ep] if keyval(k)]
         self.f = os.path.join(RAW, 'pool_%s.json' % ep)
-        self.st = {k: {'state': 'alive' if i == 0 else 'unknown', 'next': 0.0, 'rest': 0.0, 'why': '', 'last': 0.0} for i, k in enumerate(self.order)}   # 첫 열쇠는 살았다고 보고 시작한다(살펴보는 호출도 5분 제한을 먹는다)
+        self.st = {k: {'state': 'alive' if i == 0 else 'unknown', 'next': 0.0, 'rest': 0.0, 'why': '', 'last': 0.0, 'dd': '', 'dn': 0} for i, k in enumerate(self.order)}   # 첫 열쇠는 살았다고 보고 시작한다(살펴보는 호출도 5분 제한을 먹는다)
         try:
             old = json.load(open(self.f, encoding='utf-8'))
             for k, v in old.get('st', {}).items():
                 if k in self.st:
-                    self.st[k].update({x: v[x] for x in ('state', 'next', 'rest', 'why', 'last') if x in v})
+                    self.st[k].update({x: v[x] for x in ('state', 'next', 'rest', 'why', 'last', 'dd', 'dn') if x in v})
         except Exception:
             pass
         self.n429 = 0; self.hr = datetime.datetime.now().strftime('%Y%m%d_%H'); self.cnt = {}
@@ -93,9 +95,16 @@ class KeyPool:
     def say(self, *a):
         print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[풀 %s]' % self.ep, *a, flush=True)
 
+    def today(self):
+        return datetime.datetime.fromtimestamp(time.time() + 9 * 3600, datetime.timezone.utc).strftime('%Y-%m-%d')   # 한국 날짜
+
+    def capped(self, k):
+        S = self.st[k]
+        return S.get('dd') == self.today() and S.get('dn', 0) >= DAYCAP_EP.get(self.ep, DAYCAP)
+
     def alive(self):
         nw = time.time()
-        return [k for k in self.order if self.st[k]['state'] == 'alive' and self.st[k]['rest'] <= nw]
+        return [k for k in self.order if self.st[k]['state'] == 'alive' and self.st[k]['rest'] <= nw and not self.capped(k)]
 
     def gap(self):
         return max(30, self.gap0 // max(1, len(self.alive())))
@@ -135,12 +144,21 @@ class KeyPool:
         al = self.alive()
         if not al:
             k = self.order[0]
+            if all(self.capped(x) for x in self.order if self.st[x]['state'] == 'alive') and self.capped(k):
+                nw = time.time(); mid = nw - (nw + 9 * 3600) % 86400 + 86400 + 5   # 다음 날 0시(한국) 5초 뒤
+                return k, mid - nw
             return k, max(0.0, max(self.st[k]['last'] + self.gap0, self.st[k]['rest']) - time.time())
         k = min(al, key=lambda x: self.st[x]['last'])
         return k, max(0.0, self.st[k]['last'] + self.gap0 - time.time())
 
     def mark(self, k):
-        self.st[k]['last'] = time.time(); self.save()
+        S = self.st[k]; S['last'] = time.time(); d = self.today()
+        if S.get('dd') != d:
+            S['dd'], S['dn'] = d, 0
+        S['dn'] = S.get('dn', 0) + 1
+        if S['dn'] == DAYCAP_EP.get(self.ep, DAYCAP):
+            self.say('%s 오늘 %d번 — 이 짝은 다음 날 0시까지 멈춘다' % (k, S['dn']))
+        self.save()
 
     def tally(self, k, c):
         h = datetime.datetime.now().strftime('%Y%m%d_%H')
@@ -154,7 +172,7 @@ class KeyPool:
         if not self.cnt:
             return
         try:
-            line = '%s %s ' % (self.hr, self.ep) + ' · '.join('%s 성공 %d(분당 %.3f) 404 %d 429 %d 그밖 %d' % (k, v['ok'], v['ok'] / 60.0, v['404'], v['429'], v['etc']) for k, v in sorted(self.cnt.items()))
+            line = '%s %s ' % (self.hr, self.ep) + ' · '.join('%s 성공 %d(분당 %.3f) 404 %d 429 %d 그밖 %d · 오늘 누적 %d' % (k, v['ok'], v['ok'] / 60.0, v['404'], v['429'], v['etc'], self.st.get(k, {}).get('dn', 0)) for k, v in sorted(self.cnt.items()))
             open(os.path.join(RAW, 'throughput.log'), 'a', encoding='utf-8').write(line + '\n')
         except Exception:
             pass
@@ -171,7 +189,10 @@ class KeyPool:
         elif c in (401, 403):
             S.update(rest=time.time() + RECHECK, why='HTTP %d 인증 거절' % c)
             self.say('%s 인증 거절(HTTP %d) — 이 열쇠를 %d분 쉰다' % (k, c, RECHECK // 60))
-        elif c == 429:
+        elif c == 429 or (self.ep == 'fusion' and '"22"' in (body or '')[:200]):
+            if self.ep == 'fusion' and ('LIMIT' in (body or '').upper() or '"22"' in (body or '')[:200]):
+                S['dd'], S['dn'] = self.today(), DAYCAP_EP.get(self.ep, DAYCAP)   # 일일 한도 넘김 — 그날은 멈춘다(다음 날 0시에 다시)
+                self.say('%s 일일 한도 넘김 응답 — 그날은 멈춘다' % k); self.save(); return 60
             try:
                 w = int(json.loads(body).get('retryAfterSeconds', self.gap0)) + 5
             except Exception:
@@ -1275,6 +1296,8 @@ def build():
                 o['dq'] = 'dir'   # 방위 이름이 실제와 다르다(직각 방향이 함께 녹색) — 지도는 경고를 붙인다
             if r.get('src') == 'p':
                 o['src'] = 'p'   # 신호 상태 API 로 읽은 기록(색이 추정이 아니라 상태 값 그대로)
+            elif r.get('src') == 'f':
+                o['src'] = 'f'   # (2026-10-14) Fusion 지금 한 줄로 잡은 새 닻 — 녹색 길이·자리는 같은 교차로의 다른 기록(fz.base)에서 빌렸다
             if r.get('pd'):
                 o['pd'] = [[q['d'], q.get('g'), q.get('y'), q.get('r'), q.get('o'), q['n']] + ([q['cx']] if q.get('cx') else []) for q in r['pd'] if q.get('g') is not None and abs(q['g'] + q['y'] + q['r'] - r['cyc']) <= 3.5]   # 보행 신호 [방위, 녹색, 점멸, 적색, 녹색 시작, 본 횟수] — 주기와 맞는 것만
             if r.get('a'):
@@ -1329,13 +1352,74 @@ def build():
     print('교차로', len(its), '· 닻', sum(1 for L in its.values() if L[-1].get('a')), '· 검증됨', nver, '· 안 맞음', nbad, '->', p, os.path.getsize(p), 'B')
 
 
-def fusion(sample=False, ids=None, rnd=1800):
+FZ_GREEN = ('protected-Movement-Allowed', 'permissive-Movement-Allowed')
+FZ_RED = ('stop-And-Remain', 'stop-Then-Proceed')
+
+
+def fz_anchor(itst, row):
+    """Fusion 한 줄(그 교차로가 보낸 지금 잔여 초 + 상태)에서 새 닻 — 기준 이동류 녹색이 켜진 실제 시각(a).
+    같은 교차로의 줄인 기록(red/)에서 이동류마다 녹색 길이 g·자리 o 를 빌려
+      녹색이면 녹색 시작 = 보낸 시각 + 남은 초 − g · 적색이면 다음 녹색 시작 = 보낸 시각 + 남은 초 → 닻 = 녹색 시작 − o
+    두 이동류 이상이 ±3초 안으로 같은 닻을 가리킬 때만 쓴다(지금 도는 계획이 그 기록의 계획과 같다는 확인). 남은 초 단위 = 0.1초.
+    (2026-10-14 4036 확인: 북 직진 녹색 37.1초 · 북 좌회전 적색 44.1초 · 서 좌회전 적색 63.1초 → 셋 다 같은 닻 ±0.1초)"""
+    T = (row.get('trsmUtcTime') or 0) / 1000.0
+    if not T or time.time() - T > 600:
+        return None                                         # 10분 넘게 묵은 줄은 쓰지 않는다(교차로가 그 뒤로 안 보냈다 — 계획이 바뀌었을 수 있다 · 2026-10-14 게임 세션 권고)
+    obs = {}
+    for d in DIRS:
+        for m in MVS:
+            st, R = row.get('%s%ssgStatNm' % (d, m)), row.get('%s%ssgRmdrCs' % (d, m))
+            if st and R is not None and 0 <= R < 36000:
+                obs[(d, m)] = (st, R / 10.0)
+    if len(obs) < 2:
+        return None
+    now = datetime.datetime.fromtimestamp(T + 9 * 3600, datetime.timezone.utc); dow = (now.weekday() + 1) % 7; day = now.strftime('%Y-%m-%d'); cl = cls_of(dow, day)
+    cands = []
+    for f in glob.glob(os.path.join(RAW, 'red', '%s_*.json' % itst)):
+        try:
+            r = json.load(open(f, encoding='utf-8'))
+        except Exception:
+            continue
+        ci9 = plan_ci(r['cyc'], r['ci']) if r.get('ci') and r.get('cyc') else None
+        if ci9 and abs(ci9 - r['cyc']) <= 2.5 and abs(ci9 - round(ci9)) <= 0.05 and not r.get('dq') and r.get('src') != 'f':   # build 가 닻으로 쓰는 기록만(주기가 계획과 맞고 정수 초)
+            r = dict(r, ci=ci9)
+            same = (cls_of(r['dow'], r['day']) == cl) * 2 + (int(r['from'][:2]) == now.hour)
+            cands.append((same, r['day'] + r['to'], r))
+    for _, _, r in sorted(cands, key=lambda z: (z[0], z[1]), reverse=True)[:6]:
+        ci = float(r['ci']); S = []
+        for x in r['mv']:
+            if x.get('g') is None or x.get('o') is None or abs(x['g'] + x['y'] + x['r'] - r['cyc']) > 3.5:
+                continue
+            o = obs.get((x['d'], x['m']))
+            if not o:
+                continue
+            if o[0] in FZ_GREEN and o[1] <= x['g'] + 0.5:
+                S.append(T + o[1] - x['g'] - x['o'])
+            elif o[0] in FZ_RED and o[1] <= x['r'] + 0.5:
+                S.append(T + o[1] - x['o'])
+        if len(S) < 2:
+            continue
+        rel = [((v - S[0] + ci / 2) % ci) - ci / 2 for v in S]
+        if max(rel) - min(rel) > 3.0:
+            continue
+        a = S[0] + sum(rel) / len(rel)
+        a -= math.ceil((a - T) / ci) * ci                   # 보낸 시각 바로 앞의 녹색 시작으로
+        hm = now.strftime('%H:%M')
+        out = dict(r, day=day, dow=dow, **{'from': hm, 'to': hm}, rows=0, a=round(a, 1), end=round(T, 1), src='f',
+                   fz={'t': round(T, 1), 'n': len(S), 'sd': round(max(rel) - min(rel), 1), 'base': r['day'] + ' ' + r['from']})
+        out.pop('v', None); out.pop('x', None)
+        return out
+    return None
+
+
+def fusion(sample=False, ids=None):
     """지금 한 줄(FusionCurrentInfo) 수집 — 교차로(itstId)마다 최신 잔여 초 + 방향별 상태 이름. 원자료는 섞지 않고
     ../07_API키/out/tdata/fusion/<날짜>.jsonl.gz 에 교차로 한 번 = 한 줄({at, id, key, rows}) · sigdir 에는 넣지 않는다.
     ⚠ 2026-10-14 실측: sggCd 는 어느 꼴(11650 · 650 · 1165000000 · 「서초구」)로도 200 에 빈 배열 — 구 단위로는 안 온다 · itstId 하나씩만 온다(여러 번호를 쉼표로 이어도 빈 배열)
        교차로마다 「그 교차로가 마지막으로 보낸 한 줄」이라 오래된 것도 온다(4039 는 50분 전 값) — trsmTm 을 꼭 같이 본다 · 하루 호출 한도는 아직 모른다
     --sample = 4036 한 줄을 받아 CurrentInfo 와 칸을 견준 표를 찍고 멈춘다(2026-10-14 지시 — 보고 뒤 상시 수집)."""
-    P = KeyPool('fusion'); out = os.path.join(RAW, 'fusion'); os.makedirs(out, exist_ok=True)
+    step = max(30.0, 86400.0 / DAYCAP_EP['fusion'])            # 하루 970 번을 24시간 고르게 — 약 89초에 한 번(밤 시각대 칸도 채운다)
+    P = KeyPool('fusion', gap=int(step)); out = os.path.join(RAW, 'fusion'); os.makedirs(out, exist_ok=True)
     def get(itst, kl):
         u = BASEF + '?apikey=' + keyval(kl) + '&pageNo=1&numOfRows=10&itstId=%s' % itst
         try:
@@ -1358,27 +1442,60 @@ def fusion(sample=False, ids=None, rnd=1800):
         print('| 한쪽에만 | %s | 상태 이름(StatNm) %d칸 |' % (', '.join(sorted(ck - fk)) or '없음', len([x for x in fk - ck if x.endswith('StatNm')])))
         print('상태 이름 값', sorted(set(v for k2, v in one.items() if k2.endswith('StatNm') and v)), '· 보낸 시각', one.get('trsmTm'))
         return
-    if not ids:
-        sd = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))
-        ids = [k for k, v in sd['pts'].items() if 37.44 < v[0] < 37.52 and 126.98 < v[1] < 127.05]   # 서초 둘레(sig-need 와 같은 상자)
+    GU6 = ['서초구', '강남구', '동작구', '관악구', '용산구', '송파구']
+    AXIS = ('반포대로', '서초대로', '강남대로', '남부순환로', '사평대로')   # 먼저 부르는 축(2026-10-14 게임 세션 권고 · 소유자 승인)
+    try:
+        FS = json.load(open(os.path.join(ROOT, 'data', 'fac-signal.json'), encoding='utf-8'))['spots']
+    except Exception:
+        FS = {}
+    onaxis = lambda k: any(len(x) > 1 and x[1] in AXIS for x in FS.get(k, {}).get('in', []))
     while True:
-        t0 = time.time()
-        for itst in ids:
+        sd = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))
+        its = sd.get('its', {})
+        # 대상 = 여섯 구(2026-10-14 소유자 「서초 강남 동작 관악 용산 · 송파까지」) 신호 교차로 전부(fac-signal · 908곳) — 기록이 없는 곳도 하루 한 번은 불러 「T-Data 에 아예 없는 곳」을 가린다(fusion_none.json)
+        nf = os.path.join(RAW, 'fusion_none.json')
+        try:
+            NONE = json.load(open(nf, encoding='utf-8'))
+        except Exception:
+            NONE = {}
+        tday = P.today(); pl = sd.get('pl', {}); nowk = datetime.datetime.fromtimestamp(time.time() + 9 * 3600, datetime.timezone.utc)
+        ck = (cls_of((nowk.weekday() + 1) % 7, nowk.strftime('%Y-%m-%d')), nowk.hour)
+        L = ids or [k for k, v in FS.items() if v.get('gu') in GU6 and NONE.get(k) != tday]
+        haveci = lambda k: any(r.get('ci') for r in its.get(k, []))
+        L = sorted(L, key=lambda k: (GU6.index(FS.get(k, {}).get('gu', '')) if FS.get(k, {}).get('gu') in GU6 else 9,
+                                     0 if haveci(k) else 1,                                                     # 닻을 잡을 수 있는 곳(주기를 아는 곳) 먼저
+                                     0 if not any(x[0] == ck[0] and x[1] == ck[1] for x in pl.get(k, [])) else 1,   # 지금 요일 갈래·시각대 칸이 빈 곳 먼저(96칸 채우기)
+                                     0 if onaxis(k) else 1,
+                                     max([r.get('a') or 0 for r in its.get(k, [])] or [0])))
+        nok = nanc = 0
+        for itst in L:
             P.refresh(); kl, w = P.pick()
-            c, b = get(itst, kl); srv = P.note(kl, c, b); stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            if P.capped(kl):
+                print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 오늘 한도 %d번 — %d분 쉰다(다음 날 0시까지)' % (DAYCAP_EP['fusion'], w // 60), flush=True)
+                time.sleep(w); break
+            if w > 0:
+                time.sleep(w)
+            P.mark(kl); c, b = get(itst, kl); srv = P.note(kl, c, b); stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             if c == 200:
                 try:
+                    J = json.loads(b)
+                    if not J:
+                        NONE[itst] = tday; json.dump(NONE, open(nf, 'w', encoding='utf-8'))   # 빈 배열 = 그 교차로는 T-Data 에 한 줄도 없다(V2X 장비 없음으로 봄 · 날마다 다시 본다)
                     with gzip.open(os.path.join(out, stamp[:8] + '.jsonl.gz'), 'at', encoding='utf-8') as g:
-                        g.write(json.dumps({'at': stamp, 'id': itst, 'key': kl, 'rows': json.loads(b)}, ensure_ascii=False) + '\n')
+                        g.write(json.dumps({'at': stamp, 'id': itst, 'key': kl, 'rows': J}, ensure_ascii=False) + chr(10))
+                    nok += 1
+                    an = fz_anchor(itst, J[0]) if J else None
+                    if an:
+                        json.dump(an, open(os.path.join(RAW, 'red', '%s_%sf.json' % (itst, stamp)), 'w', encoding='utf-8'), ensure_ascii=False); nanc += 1
                 except Exception as e:
-                    print(stamp, '[fusion] 저장 실패', str(e)[:80], flush=True)
+                    print(stamp, '[fusion] 처리 실패', itst, str(e)[:80], flush=True)
             else:
                 print(stamp, '[fusion]', itst, kl, 'HTTP', c, mask(b[:120]), flush=True)
                 if srv:
                     time.sleep(srv)
-            time.sleep(2)
-        print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 한 바퀴', len(ids), '곳', flush=True)
-        time.sleep(max(60, rnd - (time.time() - t0)))
+            time.sleep(step)
+        print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 한 바퀴 %d곳(축 %d) · 받음 %d · 새 닻 %d' % (len(L), sum(1 for k in L if onaxis(k)), nok, nanc), flush=True)
+
 
 
 def pooltest():

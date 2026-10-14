@@ -14,13 +14,13 @@ CHROME = [r'C:\Program Files\Google\Chrome\Application\chrome.exe', r'C:\Program
 
 
 class Chrome:
-    def __init__(self, width=420, height=860, port=0):
+    def __init__(self, width=420, height=860, port=0, extra=()):
         exe = next(c for c in CHROME if os.path.exists(c))
         if not port:
             s = socket.socket(); s.bind(('127.0.0.1', 0)); port = s.getsockname()[1]; s.close()
         self.prof = tempfile.mkdtemp(prefix='cdp_')
         self.p = subprocess.Popen([exe, '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--user-data-dir=' + self.prof,
-                                   '--remote-debugging-port=%d' % port, '--window-size=%d,%d' % (width, height), 'about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                   '--remote-debugging-port=%d' % port, '--window-size=%d,%d' % (width, height)] + list(extra) + ['about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         ws = None
         for _ in range(60):
             try:
@@ -95,6 +95,16 @@ class Chrome:
 
     def phone(self, width=375, height=812):
         self.cmd('Emulation.setDeviceMetricsOverride', width=width, height=height, deviceScaleFactor=2, mobile=True)
+
+    def tap(self, x, y):
+        """화면 자리를 실제 누름으로(스크립트 click 을 안 받는 단추용) — 터치와 마우스 둘 다 보낸다."""
+        try:
+            self.cmd('Input.dispatchTouchEvent', type='touchStart', touchPoints=[{'x': x, 'y': y}])
+            self.cmd('Input.dispatchTouchEvent', type='touchEnd', touchPoints=[])
+        except Exception:
+            pass
+        self.cmd('Input.dispatchMouseEvent', type='mousePressed', x=x, y=y, button='left', clickCount=1)
+        self.cmd('Input.dispatchMouseEvent', type='mouseReleased', x=x, y=y, button='left', clickCount=1)
 
     def shot(self, path):
         r = self.cmd('Page.captureScreenshot', format='png')

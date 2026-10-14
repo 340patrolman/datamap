@@ -308,7 +308,7 @@
   body.more #m2dFold { background: var(--chip); color: var(--ink); border-color: var(--line); }
   @media (max-width: 430px) { #m2dHm, #m2dHp { display: none; } #m2dHourT .wk { display: none; } #m2dTime b { min-width: 34px !important; } #m2dFold { padding: 0 8px; } #m2dDateB { padding: 0 7px; } }
   @media (max-width: 520px) { #m2dLayers { max-height: 77px; } #m2dLayers button { padding: 0 9px; font-size: 12.5px; } #m2dTime button, #m2dPre button, #m2dLayers button { height: 32px; } #m2dTime b { min-width: 64px; font-size: 12px; } .row1 h1 { font-size: 15px; } }
-  /* v2.219.0 도구 모음 — 오른쪽 기둥은 ＋ － 📍 🧰 넷만(나머지는 🧰 안으로 · 단추 자체는 남겨 두고 감춘다) */
+  /* v2.219.1 도구 모음 — 오른쪽 기둥은 ＋ － 📍 🧰 넷만(나머지는 🧰 안으로 · 단추 자체는 남겨 두고 감춘다) */
   body.toolcol #m2dZoom #m2dFit, body.toolcol #m2dZoom #m2dLegB, body.toolcol #m2dZoom #m2dGetB, body.toolcol #m2dZoom #m2dFsB { display: none !important; }
   #m2dTool { position: fixed; right: 58px; bottom: calc(46px + env(safe-area-inset-bottom)); z-index: 6; width: min(292px, calc(100vw - 72px)); max-height: min(80vh, 620px); overflow: auto; display: none; background: var(--panel); color: var(--ink); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.28); padding: 8px; }
   #m2dTool.on { display: block; }
@@ -990,7 +990,7 @@
   · 통계청 · 행안부 · OSM(ODbL) · TAAS·도로교통공단 · 경찰청 · 서울시 · 국가유산청
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
-<script src="js/map2d.js?v=2.219.0"></script>
+<script src="js/map2d.js?v=2.219.1"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

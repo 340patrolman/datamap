@@ -48,6 +48,148 @@ def mask(t):
     return t.replace(k, '***') if k else t
 
 
+# ── 열쇠·API 짝 풀(2026-10-14 소유자 지시 「키-API 짝 풀 구조로」) ─────────────────────────────
+#   T-Data 게이트웨이(apiman)는 열쇠를 API 단위로 묶는다 — 404 = 「이 열쇠에 이 API 계약 없음」.
+#   2026-10-14 12:36 실측: KEY1 = 역사 API 둘(잔여 TimingInformation · 상태 PhaseInformation) 200 · CurrentInfo 404
+#                          KEY2 = 역사 API 둘 404 · CurrentInfo · FusionCurrentInfo 200 → 지금은 두 열쇠가 함께 쓰는 API 가 없다
+#   그래서 엔드포인트마다 열쇠 차례를 두고, 짝(열쇠, 엔드포인트)마다 살았나·죽었나·쉬나를 따로 센다.
+#   · 404 → 그 짝만 죽음 · 30분마다 3줄짜리로 한 번 다시 본다 · 살아나면 저절로 끼운다(승인이 나면 처리량이 저절로 늘어난다)
+#   · 401/403/429 → 그 열쇠를 쉰다(사유를 찍는다) · 429 는 서버가 말한 retryAfterSeconds 만큼
+#   · 고르기 = 살아 있는 열쇠 가운데 그 API 에서 가장 오래 쉰 것 · 열쇠마다 5분 제한(GAP) · 호출 사이 = GAP ÷ 살아 있는 열쇠 수
+#   · 둘 이상 번갈아 쓰는 동안 429 가 세 번 나면 「5분 제한을 같이 쓴다」로 보고 둘째 이후 열쇠를 여섯 시간 쉰다(아직 확인 안 된 것 · 종전 규칙 그대로)
+#   열쇠 값은 keys.json 에서만 읽고 기록에는 KEY1/KEY2 라벨만 남긴다. 상태 = ../07_API키/out/tdata/pool_<엔드포인트>.json · 처리량 = throughput.log(매시)
+BASEF = 'https://t-data.seoul.go.kr/apig/apiman-gateway/tapi/v2xSignalPhaseTimingFusionCurrentInfo/1.0'   # 지금 한 줄(잔여 초 + 방향별 상태 이름) · itstId 또는 sggCd 필수
+POOL_ORDER = {'timing': ['KEY1', 'KEY2'], 'phase': ['KEY1', 'KEY2'], 'fusion': ['KEY2', 'KEY1']}
+POOL_URL = {'timing': BASE, 'phase': BASEP, 'fusion': BASEF}
+POOL_PROBE_Q = {'timing': '&pageNo=1&numOfRows=3', 'phase': '&pageNo=1&numOfRows=3', 'fusion': '&pageNo=1&numOfRows=3&itstId=4036'}
+RECHECK = 1800
+
+
+def keyval(label):
+    return key() if label == 'KEY1' else key2()
+
+
+class KeyPool:
+    def __init__(self, ep, gap=GAP):
+        self.ep, self.gap0 = ep, gap
+        self.order = [k for k in POOL_ORDER[ep] if keyval(k)]
+        self.f = os.path.join(RAW, 'pool_%s.json' % ep)
+        self.st = {k: {'state': 'alive' if i == 0 else 'unknown', 'next': 0.0, 'rest': 0.0, 'why': '', 'last': 0.0} for i, k in enumerate(self.order)}   # 첫 열쇠는 살았다고 보고 시작한다(살펴보는 호출도 5분 제한을 먹는다)
+        try:
+            old = json.load(open(self.f, encoding='utf-8'))
+            for k, v in old.get('st', {}).items():
+                if k in self.st:
+                    self.st[k].update({x: v[x] for x in ('state', 'next', 'rest', 'why', 'last') if x in v})
+        except Exception:
+            pass
+        self.n429 = 0; self.hr = datetime.datetime.now().strftime('%Y%m%d_%H'); self.cnt = {}
+
+    def save(self):
+        try:
+            json.dump({'ep': self.ep, 'at': time.time(), 'st': self.st}, open(self.f, 'w', encoding='utf-8'), ensure_ascii=False)
+        except Exception:
+            pass
+
+    def say(self, *a):
+        print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[풀 %s]' % self.ep, *a, flush=True)
+
+    def alive(self):
+        nw = time.time()
+        return [k for k in self.order if self.st[k]['state'] == 'alive' and self.st[k]['rest'] <= nw]
+
+    def gap(self):
+        return max(30, self.gap0 // max(1, len(self.alive())))
+
+    def probe(self, k):
+        u = POOL_URL[self.ep] + '?apikey=' + keyval(k) + POOL_PROBE_Q[self.ep]
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=60); c = r.status; r.read()
+        except urllib.error.HTTPError as e:
+            c = e.code
+        except Exception:
+            c = 0
+        S = self.st[k]
+        if c in (200, 429):
+            S.update(state='alive', why=''); S['last'] = time.time()
+            self.say('%s 살아 있다(HTTP %d) — 끼운다 · 살아 있는 열쇠 %d개' % (k, c, len(self.alive())))
+        elif c == 404:
+            S.update(state='dead', next=time.time() + RECHECK, why='404 이 API 계약 없음')
+            self.say('%s 아직 안 됨(HTTP 404 · 이 API 계약 없음) — %d분 뒤 다시 본다' % (k, RECHECK // 60))
+        else:
+            S.update(next=time.time() + RECHECK, why='HTTP %d' % c)
+            if S['state'] == 'unknown':
+                S['state'] = 'dead'
+            self.say('%s 살펴보기 HTTP %d — %d분 뒤 다시 본다' % (k, c, RECHECK // 60))
+        self.save()
+        return c
+
+    def refresh(self):
+        nw = time.time()
+        for k in self.order:
+            S = self.st[k]
+            if S['state'] in ('dead', 'unknown') and S['next'] <= nw:
+                self.probe(k)
+
+    def pick(self):
+        """(열쇠 라벨, 기다릴 초) — 살아 있는 열쇠가 없으면 첫 열쇠로 그대로 간다(수집이 끊기지 않게)"""
+        al = self.alive()
+        if not al:
+            k = self.order[0]
+            return k, max(0.0, max(self.st[k]['last'] + self.gap0, self.st[k]['rest']) - time.time())
+        k = min(al, key=lambda x: self.st[x]['last'])
+        return k, max(0.0, self.st[k]['last'] + self.gap0 - time.time())
+
+    def mark(self, k):
+        self.st[k]['last'] = time.time(); self.save()
+
+    def tally(self, k, c):
+        h = datetime.datetime.now().strftime('%Y%m%d_%H')
+        if h != self.hr:
+            self.flush()
+            self.hr, self.cnt = h, {}
+        b = self.cnt.setdefault(k, {'ok': 0, '404': 0, '429': 0, 'etc': 0})
+        b['ok' if c == 200 else ('404' if c == 404 else ('429' if c == 429 else 'etc'))] += 1
+
+    def flush(self):
+        if not self.cnt:
+            return
+        try:
+            line = '%s %s ' % (self.hr, self.ep) + ' · '.join('%s 성공 %d(분당 %.3f) 404 %d 429 %d 그밖 %d' % (k, v['ok'], v['ok'] / 60.0, v['404'], v['429'], v['etc']) for k, v in sorted(self.cnt.items()))
+            open(os.path.join(RAW, 'throughput.log'), 'a', encoding='utf-8').write(line + '\n')
+        except Exception:
+            pass
+
+    def note(self, k, c, body=''):
+        """응답을 받은 뒤 — 짝·열쇠 상태를 고친다. 돌려주는 값 = 서버가 말한 기다림(429) 또는 None"""
+        self.tally(k, c)
+        S = self.st[k]; multi = len(self.alive()) > 1
+        if c == 200:
+            S.update(state='alive', why='')
+        elif c == 404:
+            S.update(state='dead', next=time.time() + RECHECK, why='404 이 API 계약 없음')
+            self.say('%s 이 API 에 계약이 없다(HTTP 404) — 이 짝만 쉰다 · %d분 뒤 다시 본다 · 남은 열쇠 %s' % (k, RECHECK // 60, ','.join(self.alive()) or '없음(첫 열쇠로 계속)'))
+        elif c in (401, 403):
+            S.update(rest=time.time() + RECHECK, why='HTTP %d 인증 거절' % c)
+            self.say('%s 인증 거절(HTTP %d) — 이 열쇠를 %d분 쉰다' % (k, c, RECHECK // 60))
+        elif c == 429:
+            try:
+                w = int(json.loads(body).get('retryAfterSeconds', self.gap0)) + 5
+            except Exception:
+                w = self.gap0
+            S.update(rest=time.time() + w, why='429 5분 제한')
+            if multi:
+                self.n429 += 1
+                if self.n429 >= 3:
+                    for x in self.order[1:]:
+                        self.st[x].update(rest=time.time() + 6 * 3600, why='번갈아 쓰는 동안 429 세 번 — 5분 제한을 같이 쓰는 것으로 봄')
+                    self.n429 = 0
+                    self.say('번갈아 쓰는 동안 429 가 세 번 — 열쇠들이 5분 제한을 같이 쓰는 것으로 본다 · 둘째 이후 열쇠를 여섯 시간 쉰다')
+            self.save()
+            return w
+        self.save()
+        return None
+
+
 def call(itst, rows=1500):
     u = BASE + '?apikey=' + key() + '&pageNo=1&numOfRows=%d&itstId=%s' % (rows, itst)
     req = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
@@ -288,27 +430,8 @@ def sweep(prefer=None, api='t', cap=None):
             time.sleep(w9)
     except Exception:
         pass
-    # 둘째 열쇠 — 살아 있으면(200 · 429 = 알아보는 열쇠) 두 열쇠를 번갈아 쓴다: 열쇠마다 GAP(5분 제한)을 지키고 호출 사이는 GAP ÷ 2.
-    #  ⚠ 5분 제한이 열쇠마다 따로인지는 **확인되지 않았다**(계정이 같으면 같이 쓸 수도) — 번갈아 쓰기 시작한 뒤 429 가 세 번 나면 같이 쓰는 것으로 보고 둘째 열쇠를 여섯 시간 쉰다.
-    #  발급 직후에는 404(「관리자에게 문의」 — 가짜 열쇠와 같은 응답)가 온다 → 30분마다 작은 요청(3줄)으로 다시 본다. 둘째 열쇠가 없거나 죽어도 수집은 첫 열쇠로 그대로 돈다
-    k2 = {'ok': False, 'chk': 0.0, 'last': {1: 0.0, 2: 0.0}, 'n': 0, 'n200': 0, 'n429': 0, 'nemp': 0, 'rest': 0.0}
-    def k2probe():
-        kv = key2(); k2['chk'] = time.time()
-        if not kv or time.time() < k2['rest']:
-            return
-        try:
-            r9 = urllib.request.urlopen(urllib.request.Request((BASEP if api == 'p' else BASE) + '?apikey=' + kv + '&pageNo=1&numOfRows=3', headers={'User-Agent': 'Mozilla/5.0'}), timeout=60); st9 = r9.status; r9.read()
-        except urllib.error.HTTPError as e9:
-            st9 = e9.code
-        except Exception:
-            st9 = 0
-        st8 = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        if st9 in (200, 429):
-            k2['ok'] = True; k2['last'][2] = time.time()
-            print(st8, '둘째 열쇠가 살아 있다(HTTP %d) — 두 열쇠를 번갈아 쓴다(열쇠마다 %d초 · 호출 사이 %d초)' % (st9, GAP, GAP // 2), flush=True)
-        else:
-            print(st8, '둘째 열쇠 아직 안 됨(HTTP %d) — 30분 뒤 다시 본다 · 첫 열쇠로 그대로 돈다' % st9, flush=True)
-        hist(at=st8, api=api, k=2, probe=1, st=st9)
+    # 열쇠 고르기는 풀이 맡는다(KeyPool — 404 짝은 쉬고 30분마다 다시 보고, 살아나면 저절로 번갈아 쓴다)
+    P = KeyPool('phase' if api == 'p' else 'timing')
     W0 = 300 if api == 'p' else 285   # (2026-10-10 19:04 실측 — 줄 수 = 정각 뒤 초 − 8쯤 · 240초에는 234줄이라 문턱 240 에 못 미쳤다 → 285초)  # 정각 뒤 창 — 이때는 교차로마다 300줄쯤이라 한 쪽에 100곳 가까이 들고, 서울 뒤쪽(서초 1668~ · 강남 ~2248)도 20쪽 안이다
     os.makedirs(os.path.join(RAW, 'red'), exist_ok=True)
     spd_at = 0
@@ -383,18 +506,12 @@ def sweep(prefer=None, api='t', cap=None):
         if off is None:
             off = K * dens * t
         page = int((off + dens * t / 2) // 30000) + 1   # K 의 줄 가운데가 드는 쪽 — K 가 쪽 끝에 걸려 되풀이되던 것을 막는다
-        if not k2['ok'] and time.time() - k2['chk'] > 1800:
-            k2probe()
-        kn = 1
-        if k2['ok']:
-            kn = 1 if k2['last'][1] <= k2['last'][2] else 2      # 더 오래 쉰 열쇠
-            w9 = k2['last'][kn] + GAP - time.time()
-            if w9 > 0:
-                time.sleep(w9 + 1); continue                   # 그 열쇠의 5분이 안 찼다 — 기다렸다가 처음부터 다시 고른다(시각·쪽이 달라졌다)
-        kv = key2() if kn == 2 else key()
-        if not kv:
-            k2['ok'] = False; kv, kn = key(), 1
-        k2['last'][kn] = time.time()
+        P.refresh()
+        kl, w9 = P.pick()
+        if w9 > 0:
+            time.sleep(w9 + 1); continue                       # 그 열쇠의 5분이 안 찼다 — 기다렸다가 처음부터 다시 고른다(시각·쪽이 달라졌다)
+        kv, kn = keyval(kl), int(kl[-1])
+        P.mark(kl)
         u = (BASEP if api == 'p' else BASE) + '?apikey=' + kv + '&pageNo=%d&numOfRows=30000' % page
         try:
             try:
@@ -408,19 +525,10 @@ def sweep(prefer=None, api='t', cap=None):
             st = 0; body = str(e)
         stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         if st != 200:
-            print(stamp, '쪽', page, 'HTTP', st, mask(body[:160]) + (' [열쇠 2]' if kn == 2 else ''), flush=True)
+            print(stamp, '쪽', page, 'HTTP', st, mask(body[:160]) + ' [%s]' % kl, flush=True)
             hist(at=stamp, api=api, t=t, page=page, K=K, st=st, k=kn)
-            wait = GAP // 2 if k2['ok'] else GAP
-            if k2['ok']:
-                k2['n'] += 1
-                if st == 429:
-                    k2['n429'] += 1
-                    if k2['n429'] >= 3:
-                        k2['ok'] = False; k2['rest'] = time.time() + 6 * 3600; k2['n429'] = 0
-                        print(stamp, '번갈아 쓰는 동안 429 가 세 번 — 두 열쇠가 5분 제한을 같이 쓰는 것으로 본다 · 둘째 열쇠를 여섯 시간 쉰다(첫 열쇠로 그대로)', flush=True)
-                elif kn == 2 and st in (401, 403, 404):
-                    k2['ok'] = False; k2['chk'] = time.time()
-                    print(stamp, '둘째 열쇠가 안 받아진다(HTTP %d) — 첫 열쇠로 돌아간다 · 30분 뒤 다시 본다' % st, flush=True)
+            srv = P.note(kl, st, body)
+            wait = P.gap()
             if st == 500 and page > 1:
                 # 끝자리 = 찾던 자리(K) 바로 앞 — 줄 수로 되짚으면(쪽 ÷ 밀도 × 초) 자료가 늦게 쌓일 때 너무 앞으로 잡힌다(22:25 — 1667 까지 받아 놓고 끝자리를 1617 로 봤다). 이 시각대에 실제로 받은 맨 뒤 자리(pok)보다 앞으로는 안 당긴다
                 # 한 번 실패로는 끝자리를 당기지 않는다 — 있는 쪽도 가끔 500 이 난다(22:39 에 1514~1527 을 받았는데 22:45 에 같은 둘레가 500). 한 번이면 그 둘레만 다음 한 번 비켜 가고, 잇달아 두 번이면 끝자리로 본다(20분)
@@ -432,12 +540,8 @@ def sweep(prefer=None, api='t', cap=None):
                 elif nfail >= 2:
                     pcap = max(50, min(pcap or 1e9, K - max(1, per // 2))); pcat = time.time()
                 json.dump({'pos': pcap, 'at': pcat}, open(cap_f, 'w'))
-            if st == 429:
-                try: wait = int(json.loads(body).get('retryAfterSeconds', GAP)) + 5
-                except Exception: pass
-                if k2['ok']:
-                    k2['last'][kn] = time.time() + wait - GAP        # 그 열쇠는 서버가 말한 때까지 쉰다 — 다른 열쇠는 제 차례에 그대로
-                    wait = min(wait, GAP // 2)
+            if st == 429 and srv:
+                wait = srv if len(P.alive()) <= 1 else min(srv, P.gap())   # 그 열쇠는 서버가 말한 때까지 쉰다(풀이 rest 로 셈) — 다른 열쇠는 제 차례에 그대로
             time.sleep(wait); continue
         J = json.loads(body); by = {}; seq = []
         for x in J:
@@ -447,16 +551,12 @@ def sweep(prefer=None, api='t', cap=None):
         idx = [pos[i] for i in seq if i in pos]
         if not idx:
             print(stamp, '[상태]' if api == 'p' else '[잔여]', '쪽', page, '줄', len(J), '— 아는 교차로가 없다(밀도', round(dens, 3), ')', flush=True)
-            if k2['ok']:
-                k2['n'] += 1; k2['nemp'] += 1
-            dens *= 0.8; time.sleep(GAP // 2 if k2['ok'] else GAP); continue
+            P.note(kl, 200)
+            dens *= 0.8; time.sleep(P.gap()); continue
         a, b = min(idx), max(idx)
         pok = max(pok, b); nfail = 0
         end_note(b=b); hist(at=stamp, api=api, t=t, page=page, K=K, st=200, a=a, b=b, n=len(seq), k=kn)
-        if k2['ok']:
-            k2['n'] += 1; k2['n200'] += 1
-            if k2['n'] in (6, 24):
-                print(stamp, '두 열쇠 번갈아 %d번 — 받음 %d · 429 %d · 빈 응답 %d' % (k2['n'], k2['n200'], k2['n429'], k2['nemp']), flush=True)
+        P.note(kl, 200)
         if plast and b >= plast * 0.97:
             plast = None                                      # 끝자리 너머가 받아졌다 — 옛 끝자리는 잊는다
         if pcap and b >= pcap:
@@ -496,7 +596,7 @@ def sweep(prefer=None, api='t', cap=None):
                 publish()
             if ncall % 12 == 0:
                 prune()
-        time.sleep(GAP // 2 if k2['ok'] else GAP)
+        time.sleep(P.gap())
 
 
 def segments(rows, k, tail=False):
@@ -1229,6 +1329,73 @@ def build():
     print('교차로', len(its), '· 닻', sum(1 for L in its.values() if L[-1].get('a')), '· 검증됨', nver, '· 안 맞음', nbad, '->', p, os.path.getsize(p), 'B')
 
 
+def fusion(sample=False, ids=None, rnd=1800):
+    """지금 한 줄(FusionCurrentInfo) 수집 — 교차로(itstId)마다 최신 잔여 초 + 방향별 상태 이름. 원자료는 섞지 않고
+    ../07_API키/out/tdata/fusion/<날짜>.jsonl.gz 에 교차로 한 번 = 한 줄({at, id, key, rows}) · sigdir 에는 넣지 않는다.
+    ⚠ 2026-10-14 실측: sggCd 는 어느 꼴(11650 · 650 · 1165000000 · 「서초구」)로도 200 에 빈 배열 — 구 단위로는 안 온다 · itstId 하나씩만 온다(여러 번호를 쉼표로 이어도 빈 배열)
+       교차로마다 「그 교차로가 마지막으로 보낸 한 줄」이라 오래된 것도 온다(4039 는 50분 전 값) — trsmTm 을 꼭 같이 본다 · 하루 호출 한도는 아직 모른다
+    --sample = 4036 한 줄을 받아 CurrentInfo 와 칸을 견준 표를 찍고 멈춘다(2026-10-14 지시 — 보고 뒤 상시 수집)."""
+    P = KeyPool('fusion'); out = os.path.join(RAW, 'fusion'); os.makedirs(out, exist_ok=True)
+    def get(itst, kl):
+        u = BASEF + '?apikey=' + keyval(kl) + '&pageNo=1&numOfRows=10&itstId=%s' % itst
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=60); return r.status, r.read().decode('utf-8', 'ignore')
+        except urllib.error.HTTPError as e:
+            return e.code, e.read().decode('utf-8', 'ignore')
+        except Exception as e:
+            return 0, str(e)
+    if sample:
+        kl, w = P.pick(); P.mark(kl); c, b = get('4036', kl); P.note(kl, c, b)
+        print('itstId 4036 · 열쇠', kl, '· HTTP', c, mask(b[:200]) if c != 200 else '')
+        J = json.loads(b) if c == 200 else []
+        if not J:
+            print('빈 응답 — 멈춘다'); return
+        one = J[0]; cf = os.path.join(RAW, 'probe_v2xSignalPhaseTimingCurrentInfo_KEY2.json')
+        cur = (json.load(open(cf, encoding='utf-8')) or [{}])[0] if os.path.exists(cf) else {}
+        fk, ck = set(one), set(cur)
+        print('| | CurrentInfo | Fusion |'); print('|---|---|---|')
+        print('| 칸 수 | %d | %d |' % (len(ck), len(fk))); print('| 공통 칸 | %d | %d |' % (len(ck & fk), len(ck & fk)))
+        print('| 한쪽에만 | %s | 상태 이름(StatNm) %d칸 |' % (', '.join(sorted(ck - fk)) or '없음', len([x for x in fk - ck if x.endswith('StatNm')])))
+        print('상태 이름 값', sorted(set(v for k2, v in one.items() if k2.endswith('StatNm') and v)), '· 보낸 시각', one.get('trsmTm'))
+        return
+    if not ids:
+        sd = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))
+        ids = [k for k, v in sd['pts'].items() if 37.44 < v[0] < 37.52 and 126.98 < v[1] < 127.05]   # 서초 둘레(sig-need 와 같은 상자)
+    while True:
+        t0 = time.time()
+        for itst in ids:
+            P.refresh(); kl, w = P.pick()
+            c, b = get(itst, kl); srv = P.note(kl, c, b); stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            if c == 200:
+                try:
+                    with gzip.open(os.path.join(out, stamp[:8] + '.jsonl.gz'), 'at', encoding='utf-8') as g:
+                        g.write(json.dumps({'at': stamp, 'id': itst, 'key': kl, 'rows': json.loads(b)}, ensure_ascii=False) + '\n')
+                except Exception as e:
+                    print(stamp, '[fusion] 저장 실패', str(e)[:80], flush=True)
+            else:
+                print(stamp, '[fusion]', itst, kl, 'HTTP', c, mask(b[:120]), flush=True)
+                if srv:
+                    time.sleep(srv)
+            time.sleep(2)
+        print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 한 바퀴', len(ids), '곳', flush=True)
+        time.sleep(max(60, rnd - (time.time() - t0)))
+
+
+def pooltest():
+    """풀 단위 시험(통신 없음) — 응답을 흉내 낸다"""
+    global key2
+    P = KeyPool('timing'); P.st = {k: {'state': 'alive', 'next': 0.0, 'rest': 0.0, 'why': '', 'last': 0.0} for k in P.order}; P.f = os.devnull; ok = True
+    if 'KEY2' not in P.order:
+        print('둘째 열쇠가 keys.json 에 없어 시험을 건너뛴다'); return
+    P.note('KEY2', 404); a = P.alive(); r1 = a == ['KEY1']; ok &= r1; print('① KEY2 404 → 살아 있는 열쇠', a, '맞음' if r1 else '틀림')
+    k, w = P.pick(); r2 = k == 'KEY1'; ok &= r2; print('   그다음 고른 열쇠', k, '맞음' if r2 else '틀림')
+    P.st['KEY2']['next'] = 0; P.probe = lambda kk: P.st[kk].update(state='alive'); P.refresh(); a = P.alive(); r3 = sorted(a) == ['KEY1', 'KEY2']; ok &= r3; print('② 30분 뒤 재확인 200 → 살아 있는 열쇠', a, '맞음' if r3 else '틀림')
+    P.note('KEY1', 429, '{"retryAfterSeconds": 120}'); a = P.alive(); r4 = a == ['KEY2']; ok &= r4; print('③ KEY1 429 → 쉬는 동안 살아 있는 열쇠', a, '맞음' if r4 else '틀림')
+    P.st['KEY1']['rest'] = 0; P.st['KEY1']['last'] = time.time(); P.st['KEY2']['last'] = time.time() - 400; k, w = P.pick(); r5 = k == 'KEY2' and w == 0; ok &= r5; print('④ 라운드로빈 — 오래 쉰 열쇠', k, '기다림', round(w), '맞음' if r5 else '틀림')
+    print('간격(살아 있는 열쇠 2개)', P.gap(), '초')
+    print('모두 맞음' if ok else '틀린 것이 있다')
+
+
 if __name__ == '__main__':
     a = sys.argv[1:]
     if a and a[0] == 'fetch':
@@ -1243,6 +1410,10 @@ if __name__ == '__main__':
     elif a and a[0] == 'sweep':
         pf = read_list(a[2]) if len(a) > 2 and a[1] == '--list' else None
         sweep(pf, 'p' if '--api' in a and a[a.index('--api') + 1] == 'p' else 't', int(a[a.index('--cap') + 1]) if '--cap' in a else None)
+    elif a and a[0] == 'fusion':
+        fusion('--sample' in a, [x for x in a[1:] if x.isdigit()] or None)
+    elif a and a[0] == 'pooltest':
+        pooltest()
     elif a and a[0] == 'testp':
         J = json.load(open(a[1], encoding='utf-8'))
         for i in sorted(set(str(x['itstId']) for x in J)):

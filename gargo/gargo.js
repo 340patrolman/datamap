@@ -561,7 +561,7 @@
      받은 값은 「역 + 진입/도착/출발/전역출발」 단위 — 역 사이 위치와 그 뒤 운행은 시간표 어림 · 못 받거나 고르지 않으면 ④ 시간표 어림(실시간 아님) */
   var SRAPI = { '신분당': '신분당선', '수인분당': '수인분당선', '경의중앙': '경의중앙선', '공항': '공항철도', '우이신설': '우이신설선', '경춘': '경춘선' }, SRTS = { 0: '진입', 1: '도착', 2: '출발', 3: '전 역 출발' };
   function srNbA(i) { var ln = SRD.st[i][2], o = []; SRD.lk.forEach(function (l) { if (l[0] === i && SRD.st[l[1]][2] === ln && o.indexOf(l[1]) < 0) o.push(l[1]); }); return o; }   /* 같은 노선 이웃 모두(역간거리가 안 맞은 이음도) — 방향 가리기용 */
-  function srB(s) { return String(s || '').replace(/\(.*?\)/g, '').replace(/역$/, '').trim(); }
+  function srB(s) { return String(s || '').replace(/\(.*?\)/g, '').trim().replace(/종착$/, '').replace(/역$/, '').trim(); }   /* 종착역 표기에 「성수종착」처럼 붙는 것도 떼고 맞춘다 */
   function srFind(nm) { var b = srB(nm); for (var i = 0; i < SRD.st.length; i++) { var s = SRD.st[i]; if (s[2] === SRS.ln && s[3] && srB(s[1]) === b) return i; } return -1; }
   function srRTms(t) { var m = /^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/.exec(t.recptnDt || ''); return m ? Date.parse(m[1] + '-' + m[2] + '-' + m[3] + 'T' + m[4] + ':' + m[5] + ':' + m[6] + '+09:00') : NaN; }
   function srRTget() { if (!SRS.ln || (SRS.rt && SRS.rt.busy)) return; var ln = SRS.ln; SRS.rt = { busy: 1, ln: ln }; srPaint();
@@ -599,7 +599,7 @@
       if (!SRS.no && SRS.nx < 0) h += '<p class="srn" style="margin-top:4px">' + R.L.length + '대 받음 · ②③(열차가 마지막으로 선 역·가는 쪽)을 고르거나 열차번호를 넣으면 후보를 보인다</p>';
       else if (!C || !C.length) h += '<p class="srn" style="margin-top:4px">맞는 열차가 없다(' + R.L.length + '대 받음 · ' + Math.round((Date.now() - R.t) / 1000) + '초 전) — ④ 시간표 어림으로(<b>실시간 아님</b>)</p>';
       else h += '<div class="srk">' + C.map(function (c) { var t = c.t, on = SRS.tr && SRS.tr.no === String(t.trainNo), ago = c.ms > 0 ? Math.round((Date.now() - c.ms) / 1000) : null;
-        return '<button data-sr="rt|' + esc(String(t.trainNo)) + '"' + (on ? ' class="on"' : '') + '>열차 ' + esc(String(t.trainNo)) + ' · ' + esc(srB(t.statnNm)) + ' ' + (SRTS[t.trainSttus] || '') + ' · ' + esc(srB(t.statnTnm)) + '행' + (t.directAt === '1' || t.directAt === '7' ? ' · 급행' : '') + (t.lstcarAt === '1' ? ' · 막차' : '') + (c.dir === null && !SRS.no ? ' · <u>방향 확인</u>' : '') + (ago != null ? ' <u>' + ago + '초 전 수신</u>' : '') + '</button>'; }).join('') + '</div><p class="srn" style="margin-top:2px"><b>신고자가 탄 열차를 골라야 쓴다</b> — 저절로 정하지 않는다 · 고르지 않으면 ④ 시간표 어림</p>'; }
+        return '<button data-sr="rt|' + esc(String(t.trainNo)) + '"' + (on ? ' class="on"' : '') + '>열차 ' + esc(String(t.trainNo)) + ' · ' + esc(srB(t.statnNm)) + ' ' + (SRTS[t.trainSttus] || '') + ' · ' + esc(srB(t.statnTnm)) + (/종착$/.test(String(t.statnTnm || '')) ? ' 종착' : '행') + (t.directAt === '1' || t.directAt === '7' ? ' · 급행' : '') + (t.lstcarAt === '1' ? ' · 막차' : '') + (c.dir === null && !SRS.no ? ' · <u>방향 확인</u>' : '') + (ago != null ? ' <u>' + ago + '초 전 수신</u>' : '') + '</button>'; }).join('') + '</div><p class="srn" style="margin-top:2px"><b>신고자가 탄 열차를 골라야 쓴다</b> — 저절로 정하지 않는다 · 고르지 않으면 ④ 시간표 어림</p>'; }
     if (SRS.rtMsg) h += '<p class="srn" style="margin-top:2px;font-weight:800">' + esc(SRS.rtMsg) + '</p>';
     return h + '</div>'; }
   function mmS(s) { var neg = s < 0; s = Math.abs(Math.round(s)); return (neg ? '−' : '') + Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }

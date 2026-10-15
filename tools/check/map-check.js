@@ -41,7 +41,7 @@
     /* v2.222.0 🧩 교차로 관계(온톨로지 코어 v1 · Phase 2) — 서초역 카드의 「이 자리의 관계」 안 단추를 누르면 서초역사거리의 사고·주 위반·과거 조치가 펼쳐진다 · 누르기 전에는 코어를 받지 않는다 */
     var ob = document.querySelector('#m2dCard [data-onto]'); ck('카드에 「🧩 교차로 관계 보기」 단추(서초)', !!ob, ob ? '' : '없음'); ck('누르기 전에는 온톨로지 코어를 받지 않는다', !m.onto());
     if (ob) { var det = ob.closest('details'); if (det) det.open = true; ob.click(); }
-    try { m.petGet(); m.uticGet(); m.sbhGet(); } catch (e) {}   /* v2.230.0 반려동물 — 아래 길 자료 검사 뒤에 본다 */
+    try { m.petGet(); m.uticGet(); m.sbhGet(); m.sigUGet(); } catch (e) {}   /* v2.230.0 반려동물 — 아래 길 자료 검사 뒤에 본다 */
     setTimeout(function () { var bx = document.getElementById('m2dOnto'), tx = bx ? String(bx.innerText || '') : '';
       ck('관계 패널이 펼쳐진다 — 교차로 · 사고 해마다 · 주 위반 근거 · 과거 조치 · 비슷한 교차로', /서초역사거리/.test(tx) && /① 사고/.test(tx) && /② 주 위반/.test(tx) && /④ 과거 조치/.test(tx) && /⑤ 비슷한/.test(tx) && /반포대로 축개선/.test(tx), tx.replace(/\s+/g, ' ').slice(0, 120));
       /* v2.223.0 신고 차량 예측 — 설정 세트 셋이 서로 다른 결과 · 🔒 중요업무 두 줄 · 밖으로 나가는 요청 0 · 남기는 것 없음 */
@@ -85,6 +85,8 @@
         setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var SU = m.sigu() || [], c0 = SU[0], sp0 = c0 && c0.spots[0], cdU = sp0 ? m.sigUCard(sp0, c0).replace(/<[^>]+>/g, ' ') : '';
+        ck('🚦 신호 계획(인천·대구·대전) — 세 도시 읽힘 · 카드에 주기·현시 · 「지금 몇 초 남음」은 셈하지 않는다 · 요일 뜻 확인 안 됨 · 출처 「경찰청 도시교통정보센터(UTIC) 제공」', SU.length === 3 && SU.every(function (q) { return q.spots.length > 1000; }) && /주기/.test(cdU) && /셈하지 않는다/.test(cdU) && /확인하지 않았다/.test(cdU) && /UTIC\) 제공/.test(cdU) && !/sigTick/.test(m.sigUCard(sp0, c0)), SU.map(function (q) { return q.cityKo + ' ' + q.spots.length; }).join(' · ')); } catch (e) { ck('신호 계획(UTIC) 검사', false, e.message); }
       try { var SB = m.sbh(), gn9 = SB ? SB.L.filter(function (x) { return x.n === '강남' && x.l === '2호선'; })[0] : null, cd9 = gn9 ? m.sbhCard(gn9).replace(/<[^>]+>/g, ' ') : '';
         ck('🚉 역 붐빔 — 서울 역 자리·0~23시 몫 · 강남(2호선) 18시가 평소의 1.5배 넘음(시간대 몫) · 오늘 요일 배수(평일/주말)를 곱함 · 카드에 「평일·주말이 섞인 값」·「열쇠 발급 대기」', SB && SB.L.length > 300 && gn9 && gn9.r.length === 24 && gn9.w && Math.abs(gn9.r[18] - gn9.r0[18] * gn9.k) < 0.02 && gn9.r0[18] > 1.5 && /평일·주말이 섞인/.test(cd9) && /열쇠 발급 대기/.test(cd9), SB ? SB.L.length + '역 · 강남 18시 ×' + (gn9 ? gn9.r0[18] + ' × ' + gn9.k + ' = ' + gn9.r[18] : '-') : '안 읽힘'); } catch (e) { ck('역 붐빔 검사', false, e.message); }
       try { var U9 = m.utic(), L9 = U9 ? U9.items.filter(function (r) { return r[13] === 'live-ims'; }) : [], O9 = U9 ? U9.items.filter(function (r) { return r[13] !== 'live-ims' && /^서울/.test(String(r[9] || '')); }) : [];

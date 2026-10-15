@@ -5,7 +5,7 @@
   ① 가르고 길 = 머리 없는 크롬으로 가르고(gargo/index.html)를 열어 GARGO.findRoute(일반 모드 · 지금 시각)
   ② 카카오 길 = 같은 출발점(가르고 길 첫머리 + 진행각)·도착점으로 지금 한 번 묻기(priority TIME)
   ③ 겹침 = 카카오 길 길이 가운데 가르고 길 30m 안에 드는 몫 · 거꾸로도 · 거리·시간 나란히
-화면에 찍는다 — 카카오 결과(길 모양·이름·거리·시간)는 저장하지 않는다(카카오 운영정책 제5조) · --save 면 「우리 값 + 비율·겹침 몫」만 07_API키/out/compare/route-YYYYMMDD.jsonl 에(소유자 2026-10-15 「우리와 비교한 결과값은 남겨도 된다」) · 그 밖에 쓰는 것은 하루 호출 수(day.json)
+화면에 찍는다 — 카카오 결과(길 모양·이름·거리·시간)는 저장하지 않는다(카카오 운영정책 제5조) · --save 면 비율·겹침만 묶음 칸에(compare_acc.py · 07_API키/out/compare/acc-YYYYMMDD.json · 시각·우리 값 없이 · 보고는 3건 이상 칸만 — 소유자 2026-10-15 「묶은 값만」) · 그 밖에 쓰는 것은 하루 호출 수(day.json)
 열쇠 = 07_API키/keys.json 「kakao_navi」(출력하지 않는다) · 하루 9,000 넘으면 안 부름 · 401/403/429 면 멈춤
   py -3.12 -X utf8 tools/signal/route-spot.py [짝 번호 …] [-d] [--save]      (-d = 길 이름별 거리·시간을 양쪽 나란히 — 같은 길인데 시간이 어긋날 때 어느 길에서인지)
 """
@@ -64,13 +64,21 @@ def near_frac(A, B, tol=30.0):
 
 
 def save_row(kind, row):
-    """비교 결과 한 줄 — 우리 값과 비율·겹침만(카카오 원래 값은 안 남김 · 소유자 결정 2026-10-15)"""
+    """대조 한 번 → 묶음 칸에 비율만(compare_acc.py · 시각·우리 값은 안 남김 · 소유자 결정 2026-10-15 「묶은 값만」)"""
     if '--save' not in sys.argv:
         return
-    d = os.path.join(RAW, 'out', 'compare'); os.makedirs(d, exist_ok=True)
-    with open(os.path.join(d, '%s-%s.jsonl' % (kind, dt.datetime.now(KST).strftime('%Y%m%d'))), 'a', encoding='utf-8') as f:
-        f.write(json.dumps(row, ensure_ascii=False, separators=(',', ':')) + chr(10))
-
+    import importlib.util as iu
+    sp = iu.spec_from_file_location('compare_acc', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'compare_acc.py')); A = iu.module_from_spec(sp); sp.loader.exec_module(A)
+    try:
+        hol = set(json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data', 'eta-cal.json'), encoding='utf-8')).get('holidays', []))
+    except Exception:
+        hol = set()
+    t = dt.datetime.fromisoformat(row['t'])
+    if kind == 'route':
+        same = min(row['ov_k'], row['ov_g']) >= 0.7
+        A.add('route', t, row['pair'], {'rt': row['rt'], 'rd': row['rd'], 'ovk': row['ov_k'], 'ovg': row['ov_g'], 'rts': row['rt'] if same else None, 'far': bool(row['far']), 'same': same}, hol)
+    else:
+        A.add('seg', t, row['id'], {'rk': row['rk'], 'rkc': row.get('rkc')}, hol)
 
 def main():
     key = json.load(open(os.path.join(RAW, 'keys.json'), encoding='utf-8-sig')).get('kakao_navi')

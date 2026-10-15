@@ -3,7 +3,7 @@
 
 카카오 결과는 저장하지 않는다(카카오 개발자 게시판 답 「임시 캐싱 등의 방법으로 API 호출 및 이용은 금지」 · 「요청 처리 시점에 일회성으로 참조」만).
   → 고정 구간(07_API키/kakao_eta_segments.json · 서초 간선 28 · 실사건 좌표 아님)을 지금 묻고, 같은 시각 우리 계산(제한속도 + 신호 기다림 · etacal-its.py 와 같은 식)
-    과 가장 최근 ITS 실측(30분 안)을 나란히 화면에 찍는다 · --save 면 「우리 계산·ITS + 카카오 ÷ 우리 비율」만 07_API키/out/compare/seg-YYYYMMDD.jsonl 에(카카오 시간 자체는 안 남김 · 소유자 2026-10-15) · 그 밖에 쓰는 것은 하루 호출 수(day.json).
+    과 가장 최근 ITS 실측(30분 안)을 나란히 화면에 찍는다 · --save 면 「카카오 ÷ 우리」 비율만 묶음 칸에(compare_acc.py · 시각·우리 값 없이 · 소유자 2026-10-15 「묶은 값만」) · 그 밖에 쓰는 것은 하루 호출 수(day.json).
   하루 무료 10,000 의 90% 에서 멈춤 · 401/403/429 면 바로 멈춤 · 열쇠는 07_API키/keys.json 「kakao_navi」(출력하지 않는다)
   py -3.12 -X utf8 tools/signal/kakao-spot.py [S01 S07 …] [--save]      (구간을 안 적으면 28개 모두)
 """
@@ -44,13 +44,21 @@ def day_book(add=0):
 
 
 def save_row(kind, row):
-    """비교 결과 한 줄 — 우리 값과 비율·겹침만(카카오 원래 값은 안 남김 · 소유자 결정 2026-10-15)"""
+    """대조 한 번 → 묶음 칸에 비율만(compare_acc.py · 시각·우리 값은 안 남김 · 소유자 결정 2026-10-15 「묶은 값만」)"""
     if '--save' not in sys.argv:
         return
-    d = os.path.join(RAW, 'out', 'compare'); os.makedirs(d, exist_ok=True)
-    with open(os.path.join(d, '%s-%s.jsonl' % (kind, dt.datetime.now(KST).strftime('%Y%m%d'))), 'a', encoding='utf-8') as f:
-        f.write(json.dumps(row, ensure_ascii=False, separators=(',', ':')) + chr(10))
-
+    import importlib.util as iu
+    sp = iu.spec_from_file_location('compare_acc', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'compare_acc.py')); A = iu.module_from_spec(sp); sp.loader.exec_module(A)
+    try:
+        hol = set(json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data', 'eta-cal.json'), encoding='utf-8')).get('holidays', []))
+    except Exception:
+        hol = set()
+    t = dt.datetime.fromisoformat(row['t'])
+    if kind == 'route':
+        same = min(row['ov_k'], row['ov_g']) >= 0.7
+        A.add('route', t, row['pair'], {'rt': row['rt'], 'rd': row['rd'], 'ovk': row['ov_k'], 'ovg': row['ov_g'], 'rts': row['rt'] if same else None, 'far': bool(row['far']), 'same': same}, hol)
+    else:
+        A.add('seg', t, row['id'], {'rk': row['rk'], 'rkc': row.get('rkc')}, hol)
 
 def main():
     key = json.load(open(os.path.join(RAW, 'keys.json'), encoding='utf-8-sig')).get('kakao_navi')

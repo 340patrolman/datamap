@@ -38,6 +38,14 @@
     g.icLoad();   /* v0.15.0 나들목 목록을 미리 받아 둔다 — 검사는 맨 끝(4.2초 뒤) */
     var s9 = g.P(127.019517, 37.516137), t9 = g.P(127.013111, 37.480682), r9 = g.findRoute(s9[0], s9[1], t9[0], t9[1], Date.now() / 1000, null);
     ck('🎯 닿는 자리 — 신사역 → 예술의전당이 양재IC 로 돌지 않는다(9km 아래 · 우면산로로 들어가지 않음)', !!r9 && r9.dist < 9000 && !r9.lims.some(function (q) { return q[2] === '우면산로' || q[2] === '양재대로'; }), r9 ? Math.round(r9.dist) + 'm · ' + r9.lims.map(function (q) { return q[2]; }).filter(function (v, i, A) { return v && v !== A[i - 1]; }).join('›') : '길 없음');
+    /* v0.16.0 음성 안내 — 말소리를 가로채 무엇을 말하는지 · 시작 때 도착 예정 · 회전 300m·곧 · 마지막 신호 뒤 회전(또는 목적지)도 말함(종전엔 앞에 신호가 없으면 말하지 않았다) */
+    if (g.state().route && !g.state().guide && window.speechSynthesis) { var SAID = [], sp0 = speechSynthesis.speak, cn0 = speechSynthesis.cancel; speechSynthesis.speak = function (u) { SAID.push(u.text); }; speechSynthesis.cancel = function () {};
+      try { var vb = document.getElementById('gVoice'); vb.click(); g.guideStart(); var rv9 = g.state().route, ms9 = rv9.mans.filter(function (m) { return m.k !== 'E'; }), m1 = ms9[0], lastSg = rv9.sigs.length ? rv9.sigs[rv9.sigs.length - 1].d : 0, mL = rv9.mans.filter(function (m) { return m.d > lastSg + 30; })[0];
+        if (m1) { rv9.pos = m1.d - 250; g.paint(); rv9.pos = m1.d - 50; g.paint(); }
+        var nL0 = SAID.length, sg9 = rv9.sigs, mE = rv9.mans[rv9.mans.length - 1]; rv9.sigs = []; mL = mE; rv9.pos = mE.d - 250; g.paint(); rv9.sigs = sg9; var saidL = SAID.slice(nL0).join(' | ');   /* 앞에 신호가 하나도 없을 때(마지막 신호 뒤와 같은 처지) 목적지 300m 앞을 말하는지 */
+        var j9 = SAID.join(' | ');
+        ck('🔊 음성 — 시작 때 「도착 예정 … 약 N분」 · 회전 300m 앞·「곧」 · 마지막 신호 뒤 회전·목적지도 말함', /안내를 시작합니다\. 도착 예정 (오전|오후) \d+시/.test(j9) && (!m1 || (/미터 앞 /.test(j9) && /곧 /.test(j9))) && /미터 앞/.test(saidL), j9.slice(0, 120) + ' … 마지막 신호 뒤: ' + (mL ? saidL : '없음'));
+        rv9.pos = 0; g.guideStop(false); vb.click(); } catch (e) { ck('음성 안내 검사', false, e.message); } finally { speechSynthesis.speak = sp0; speechSynthesis.cancel = cn0; } }
     /* v0.14.2 이웃 메움 — 실시간 값이 붙은 길이면 같은 길 이웃 줄(값 없음)도 그 값으로(경부 반포IC~서초IC 13~16km/h 인데 옆 줄은 80 으로 셈하던 것) */
     var Gf = g.state().G, nf = 0, bad9 = 0; if (g.liver()) { for (var ef = 0; ef < Gf.ne; ef++) { var fv = g.fill(ef); if (fv > 0) { nf++; if (!(fv <= 200)) bad9++; } } }
     ck('🧩 실시간 값 없는 줄을 같은 길 이웃 값으로 메움(실시간이 있을 때 · 메운 줄 > 0 · 값 정상)', !g.liver() || (nf > 0 && bad9 === 0), g.liver() ? '메운 줄 ' + nf + ' / ' + Gf.ne : '실시간 없음 — 건너뜀');

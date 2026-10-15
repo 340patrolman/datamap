@@ -45,11 +45,24 @@ def main():
             o['dog'] += dog; o['cat'] += cat; o['all'] += tot   # 세종은 원자료에 「세종특별자치시」·「조치원읍」 두 줄 — 합친다
         else:
             old[s + ' ' + g] = {'dog': dog, 'cat': cat, 'all': tot}; miss.append(s + ' ' + g)   # 2022년 뒤 없어진 이름(인천 중·동·서구 → 제물포·영종·서해·검단 · 옛 군·창원 옛 구) — 지금 구에 나눠 넣지 않는다
+    # (덧붙임) 동 단위 어림 — 행정동마다 동물병원(M11101) + 애완동물·용품 소매(G22001) 점포 수(data/storecls · 소상공인 상가정보)로 구 등록 수를 나눈다
+    import glob
+    cls = json.load(open(os.path.join(ROOT, 'data', 'storecls', 'cls.json'), encoding='utf-8'))['cls']
+    ih = [i for i, c in enumerate(cls) if c[5] == 'M11101'][0]; ip = [i for i, c in enumerate(cls) if c[5] == 'G22001'][0]
+    dong, bygu = {}, {}
+    for f in glob.glob(os.path.join(ROOT, 'data', 'storecls', '[0-9]*.json')):
+        for dc, v in json.load(open(f, encoding='utf-8'))['dong'].items():
+            m = dict((k, n) for k, n in v[2]); h, q = m.get(ih, 0), m.get(ip, 0)
+            dong[dc] = [v[0], h, q, None]; bygu.setdefault(dc[:5], 0); bygu[dc[:5]] += h + q
+    for dc, v in dong.items():
+        g = gu.get(dc[:5]); tb = bygu.get(dc[:5], 0)
+        if g and tb:
+            v[3] = round(g['all'] * (v[1] + v[2]) / tb)
     doc = {'schema': 'tg-pet-reg/1', 'made': datetime.date.today().isoformat(),
            'source': '농림축산식품부 농림축산검역본부 「행정구역별 반려동물등록 개체 수 현황」(공공데이터포털 15125454 · 2022년 말 누계 · 사망 제외 · 이용허락 제한 없음)',
-           'fields': 'gu{시군구 코드: {nm, dog 개 등록, cat 고양이 등록, all 합, per1k_hh 일반가구 1,000곳당 등록(가구 = 2020 총조사 gu-census)}} · city{시도:시 이름: {nm, gus[그 시의 구 코드], dog, cat, all}} — 시 단위로만 나온 줄 · sido{시도 이름: {dog, cat, all}} · old{옛 이름: {dog, cat, all}} — 2022년 뒤 행정구역이 바뀌어 지금 구에 못 맞춘 줄',
+           'fields': 'gu{시군구 코드: {nm, dog 개 등록, cat 고양이 등록, all 합, per1k_hh 일반가구 1,000곳당 등록(가구 = 2020 총조사 gu-census)}} · city{시도:시 이름: {nm, gus[그 시의 구 코드], dog, cat, all}} — 시 단위로만 나온 줄 · sido{시도 이름: {dog, cat, all}} · old{옛 이름: {dog, cat, all}} — 2022년 뒤 행정구역이 바뀌어 지금 구에 못 맞춘 줄 · dong{행정동 8자리: [이름, 동물병원 수, 애완동물·용품 소매 수, 등록 어림(구 등록 × 이 동 업소 ÷ 구 업소 · 업소 없는 구면 null)]} — **어림(D)**: 업소는 손님이 오는 상권에 몰려 사는 곳과 다를 수 있다',
            'note': ['「등록된 수」 — 실제 기르는 수보다 적다(등록 안 한 개는 안 잡힌다)', '고양이는 등록 의무가 아니다 — 최소값으로만 읽는다', '2022년 말 누계 — 그 뒤 새로 생긴 구(화성 등)는 시 단위 city 에', '읍·면·동 단위 공식 자료는 서울에 없다 — 동 단위는 동물병원·미용 등 업소로 어림(따로)'],
-           'n': {'gu': len(gu), 'city': len(city), 'old': len(old)}, 'gu': gu, 'city': city, 'old': old, 'sido': sido}
+           'n': {'gu': len(gu), 'city': len(city), 'old': len(old), 'dong': len(dong)}, 'gu': gu, 'city': city, 'old': old, 'sido': sido, 'dong': dong}
     p = os.path.join(ROOT, 'data', 'pet-reg.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print('시군구', len(gu), '· 시 단위', len(city), '· 못 맞춤', miss)

@@ -109,7 +109,7 @@ export default {
     else if (kind === 'swpos' && seg.length === 1 && env.SUBWAY_KEY) {   /* 요청이 올 때만 부른다(주기 호출 없음) · 실시간 지하철 열쇠는 하루 1,000건 한도이고 /swsub 와 같은 열쇠를 나눠 쓴다 → 같은 호선은 60초 동안 원본을 다시 부르지 않는다(아래 캐시) */
       let ln = ''; try { ln = decodeURIComponent(seg[0]); } catch (e) { ln = ''; }   /* 경로의 한글 호선 이름은 %EB… 로 온다 — 풀어서 검사·사용 */
       if (/^[0-9A-Za-z가-힣\-]{2,12}$/.test(ln)) { ttl = 60; up = 'http://swopenapi.seoul.go.kr/api/subway/' + encodeURIComponent(env.SUBWAY_KEY) + '/json/realtimePosition/0/150/' + encodeURIComponent(ln); } }
-    else if (kind === 'swsub' && seg.length === 1 && seg[0] && env.SUBWAY_KEY) { ttl = 20; up = 'http://swopenapi.seoul.go.kr/api/subway/' + encodeURIComponent(env.SUBWAY_KEY) + '/json/realtimeStationArrival/0/12/' + enc(seg[0]); }
+    else if (kind === 'swsub' && seg.length === 1 && seg[0] && env.SUBWAY_KEY) { ttl = 60;   /* 20 → 60초(2026-10-15 · 하루 1,000건 한도를 /swpos 와 나눠 씀) */ up = 'http://swopenapi.seoul.go.kr/api/subway/' + encodeURIComponent(env.SUBWAY_KEY) + '/json/realtimeStationArrival/0/12/' + enc(seg[0]); }
     else if (kind === 'vwkey' && env.VW_KEY) {
       const q = await quota(ip, env, true); if (q.blocked) return json({ err: '맛보기 하루 한도', ...q }, 429, cors);
       return json({ key: env.VW_KEY, note: '브이월드 키는 340patrolman.github.io 에 묶여 있다 — 다른 주소에서는 열리지 않는다', ...q }, 200, cors);

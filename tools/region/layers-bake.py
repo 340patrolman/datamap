@@ -13,7 +13,7 @@ T = {
  'jct': ('jct.json', 'point', 'seoul+gg', 'taas', 1), 'hot10': ('hot10.json', 'point', 'seoul+gg', 'koroad', 0), 'acc': ('taas-nodes-seocho.json', 'point', 'seocho', 'taas', 1),
  'home': ('home.json', 'grid', 'seoul+gg', 'molit', 1), 'rtc': ('rtms.json', 'grid', 'seoul+gg', 'molit', 0), 'rent': ('rent.json', 'point', 'seoul+gg', 'reb', 0),
  'trd': ('trdar.json · ggtrd.json', 'poly', 'seoul+gg', 'seoul', 1), 'szone': ('szone.json', 'poly', 'seoul+gg', 'sbiz', 0), 'jgg': ('jgg.json', 'poly', 'seoul+gg', 'sgis', 0),
- 'jcnm': ('jcnm.json', 'point', 'seoul+gg', 'its', 0), 'lspd': ('itsl.json + ITS API', 'live', 'national', 'its', 0), 'lcc': ('itscctv.json + ITS API', 'live', 'national', 'its', 0),
+ 'jcnm': ('jcnm.json', 'point', 'seoul+gg', 'its', 0), 'lspd': ('itsl.json + ITS API', 'live', 'national', 'its', 0), 'lcc': ('itscctv.json + ITS API', 'live', 'national', 'its', 0), 'utc': ('cctv-utic-seoul.json', 'point', 'seoul', 'utic', 1),
  'lev': ('ITS API', 'live', 'national', 'its', 0), 'lwx': ('Open-Meteo', 'live', 'national', 'openmeteo', 1), 'lair': ('Open-Meteo', 'live', 'national', 'openmeteo', 1), 'lrad': ('RainViewer', 'live', 'national', 'rainviewer', 0),
  'lak': ('에어코리아 API', 'live', 'national', 'datagokr', 0), 'lkma': ('기상청 API', 'live', 'national', 'datagokr', 0), 'lbus': ('경기 버스 API', 'live', 'gyeonggi', 'datagokr', 0), 'vw': ('브이월드 WMTS', 'live', 'national', 'vworld', 0),
  'bus': ('transit.json', 'point', 'seoul+gg', 'seoul', 0), 'subr': ('transit.json', 'point', 'seoul+gg', 'seoul', 0), 'season': ('season.json', 'point', 'seoul', 'seoul', 0),
@@ -34,7 +34,7 @@ SRC = {'juris': ('국가법령정보센터 원문(각급 법원의 설치와 관
        'exco': ('한국도로공사 고속도로 공공데이터 포털 OpenAPI', '확인 필요'),
        'seoul250f': ('서울 열린데이터광장 OA-22785(장기)·OA-22786(단기) 외국인 생활인구 250m', '공공누리 1유형(출처표시 · 상업적 이용·변경 가능 — 데이터셋 화면 2026-10-06 확인)'),
        'sgis': ('통계청 SGIS(경계 가공 vuski/admdongkor)', 'CC BY 4.0(admdongkor) · SGIS 통계는 확인 필요'), 'taas': ('도로교통공단 TAAS', '확인 필요'), 'koroad': ('도로교통공단 오픈API', '확인 필요'),
-       'molit': ('국토교통부 실거래가(공공데이터포털)', '확인 필요'), 'reb': ('한국부동산원', '확인 필요'), 'sbiz': ('소상공인시장진흥공단', '확인 필요'), 'its': ('국가교통정보센터 ITS', '확인 필요'),
+       'molit': ('국토교통부 실거래가(공공데이터포털)', '확인 필요'), 'reb': ('한국부동산원', '확인 필요'), 'sbiz': ('소상공인시장진흥공단', '확인 필요'), 'its': ('국가교통정보센터 ITS', '확인 필요'), 'utic': ('경찰청 도시교통정보센터(UTIC) 개방데이터 CCTV 목록 — 자리는 같은 이름 교차로에 맞댄 근사', '조건부 — 신청 목적(경찰업무 보조 연구개발) 안 · 「경찰청 도시교통정보센터(UTIC) 제공」 표기 · 목록은 하루 한 번'),
        'openmeteo': ('Open-Meteo', 'CC BY 4.0(Open-Meteo 자료 — 원문 확인 필요)'), 'rainviewer': ('RainViewer', '확인 필요'), 'datagokr': ('공공데이터포털 OpenAPI', '확인 필요'), 'vworld': ('국토교통부 브이월드', '확인 필요(이용약관)'),
        'osm': ('OpenStreetMap', 'ODbL(© OpenStreetMap contributors)'), 'mixed': ('공공데이터포털·서울시·경기도·교육청·OSM 섞임', '확인 필요'), 'ggdata': ('경기데이터드림', '확인 필요'), 'police': ('경찰청 직제 시행규칙 별표2(국가법령정보) × 행정동 · 경찰청 지구대 파출소 주소 현황(공공데이터포털)', '확인 필요')}
 def main():

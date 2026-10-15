@@ -71,6 +71,8 @@
         var NG = m.navg(), o9 = null, q9 = null; NG.L.some(function (o) { if (!o.nm) return false; var nx = (NG.out[o.t] || []).filter(function (q) { return q.nm === o.nm && q.t !== o.f; }); if (nx.length === 1) { o9 = o; q9 = nx[0]; return true; } return false; });
         var MM = { m: {} }; if (q9) MM.m[q9.id] = 20; var FF = q9 ? m.prdFill(MM) : null, oth = NG.L.filter(function (o) { return o.nm && o.nm !== (o9 && o9.nm) && (NG.out[o.t] || []).length; })[0];
         ck('🧩 신고 예측 이웃 메움 — 같은 길 다음 링크 실시간 20km/h → 값 없는 앞 링크 20 · 다른 이름 길은 안 메움', !!FF && Math.abs(FF[o9.id] - 20) < 1e-6 && !(oth && FF[oth.id] > 0 && oth.nm !== q9.nm), o9 ? o9.nm + ' ' + (FF && FF[o9.id]) : '짝 없음'); m.prdFill(null);
+        /* v2.229.0 🎥 교차로 CCTV(UTIC) — 카드에 출처 글 · TOPIS 누리집 단추 · 정차 중·동승자 · 영상 주소·열쇠 없음 */
+        var uc = m.utcCard({ t: { id: 'L010003', nm: '63빌딩', gu: '11560', how: '이름 맞대기(C)' } }); ck('🎥 교차로 CCTV 카드 — 「경찰청 도시교통정보센터(UTIC) 제공」 · TOPIS 공식 누리집 · 정차 중·동승자만 · 영상 주소 없음', /경찰청 도시교통정보센터\(UTIC\) 제공/.test(uc) && /data-utcgo/.test(uc) && /정차 중이거나 동승자만/.test(uc) && !/https?:\/\/[^"']*(cctv|stream|m3u8)/i.test(uc), uc.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 90));
         V0.base = 80; m.vipRun(); var R8 = V0.res.V; V0.base = 0; V0.fast = 110; m.vipRun(); var R9 = V0.res.V; V0.fast = null;
         ck('🔒 속도 80 이면 예상이 더 빨라지고 · 「더 빠름」 110 이면 가장 이른 = 110', R8.base.v === 80 && R8.base.sec < R3.base.sec && R9.fastV === 110 && R9.typed, [TT.fmt(R8.base.sec), R9.fastV].join(' / '));
         V0.fast = 80; m.vipRun(); var R4 = V0.res.V; V0.fast = 130; m.vipRun(); var R5 = V0.res.V;

@@ -7,7 +7,7 @@
   ③ 겹침 = 카카오 길 길이 가운데 가르고 길 30m 안에 드는 몫 · 거꾸로도 · 거리·시간 나란히
 화면에만 찍고 끝낸다 — 카카오 결과는 저장하지 않는다(카카오 개발자 게시판 「임시 캐싱 등 금지」) · 파일에 쓰는 것은 하루 호출 수(07_API키/out/kakao_eta/day.json) 하나
 열쇠 = 07_API키/keys.json 「kakao_navi」(출력하지 않는다) · 하루 9,000 넘으면 안 부름 · 401/403/429 면 멈춤
-  py -3.12 -X utf8 tools/signal/route-spot.py [짝 번호 …]
+  py -3.12 -X utf8 tools/signal/route-spot.py [짝 번호 …] [-d]      (-d = 길 이름별 거리·시간을 양쪽 나란히 — 같은 길인데 시간이 어긋날 때 어느 길에서인지)
 """
 import sys, os, json, math, time, socket, threading, functools, http.server, urllib.request, urllib.parse, urllib.error, datetime as dt
 
@@ -92,7 +92,7 @@ def main():
         low = []
         for no, (a, b) in pairs:
             A, Bn = nodes[a], nodes[b]
-            js = "(function(){var g=GARGO, s=g.P(%f,%f), t=g.P(%f,%f), r=g.findRoute(s[0],s[1],t[0],t[1],Date.now()/1000,null); if(!r) return null; var seq=[], last=''; r.lims.forEach(function(q){ var nm=q[2]||'(이름 없는 길)'; if(nm!==last){ seq.push(nm); last=nm; } }); return JSON.stringify({pts:r.pts, dist:r.dist, time:r.time, seq:seq.join(' › ')});})()" % (A['lon'], A['lat'], Bn['lon'], Bn['lat'])
+            js = "(function(){var g=GARGO, s=g.P(%f,%f), t=g.P(%f,%f), r=g.findRoute(s[0],s[1],t[0],t[1],Date.now()/1000,null); if(!r) return null; var by={}; for (var ii=0; ii<r.lims.length; ii++){ var a0=Math.min(r.lims[ii][0],r.dist), a1=Math.min(ii+1<r.lims.length?r.lims[ii+1][0]:r.dist,r.dist), nm=r.lims[ii][2]||'(이름 없는 길)'; by[nm]=by[nm]||[0,0]; by[nm][0]+=a1-a0; by[nm][1]+=g.tAt(r,a1)-g.tAt(r,a0); } var seq=[], last=''; r.lims.forEach(function(q){ var nm=q[2]||'(이름 없는 길)'; if(nm!==last){ seq.push(nm); last=nm; } }); return JSON.stringify({pts:r.pts, dist:r.dist, time:r.time, seq:seq.join(' › '), by:by});})()" % (A['lon'], A['lat'], Bn['lon'], Bn['lat'])
             rj = c.ev(js)
             if not rj:
                 print('%-3d %-26s  가르고 길 없음' % (no, (a + '→' + b)[:26])); continue
@@ -128,6 +128,13 @@ def main():
             flag = '  ⚠ 엉뚱(가르고가 30% 넘게 돈다)' if far else '  · 다른 길(거리 비슷)' if min(f1, f2) < 0.7 else ''
             if far:
                 low.append(no)
+            if '-d' in sys.argv:
+                kb = {}
+                for rd in x['sections'][0]['roads']:
+                    nm = rd.get('name') or '(이름 없는 길)'; kb.setdefault(nm, [0, 0]); kb[nm][0] += rd['distance']; kb[nm][1] += rd['duration']
+                for nm in list(dict.fromkeys(list(r.get('by', {}).keys()) + list(kb.keys()))):
+                    a9, b9 = r.get('by', {}).get(nm), kb.get(nm)
+                    print('      %-14s 가르고 %s · 카카오 %s' % (nm[:14], '%5dm %4d초' % (a9[0], a9[1]) if a9 else '      -      ', '%5dm %4d초' % (b9[0], b9[1]) if b9 else '-'))
             if flag:
                 kseq, last = [], ''
                 for rd in x['sections'][0]['roads']:

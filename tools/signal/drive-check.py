@@ -10,7 +10,7 @@
 #   교차로 자리 = data/onto-int.json(서울 8,097) · 도착 = 궤적이 그 교차로 30m 안에 처음 든 때(정확도 50m 넘는 점은 안 씀)
 #   py -3.12 -X utf8 tools/signal/drive-check.py [파일 …]      (안 적으면 07_API키/out/drive/*.json 모두)
 #   py -3.12 -X utf8 tools/signal/drive-check.py --selftest     (가짜 궤적으로 셈이 맞는지)
-import sys, os, json, glob, math, statistics as st
+import sys, os, json, glob, math, collections, statistics as st
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DRV = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'drive')
@@ -62,6 +62,10 @@ def report(files):
     for f in files:
         top = json.load(open(f, encoding='utf-8'))
         logs = top.get('logs', []) if top.get('schema') == 'tg-drive-export/1' else [top]
+        lr = (top.get('learn') or {}).get('e') or {}
+        if lr:   # (2026-10-15 가르고 v0.23.0) 다녀 본 길 기억 — 열쇠 「ax,ay>bx,by」 · 칸(w|s|h + a|d|p|n|z) · 초 목록(날짜 없음)
+            cells = collections.Counter(k for v in lr.values() for k in v)
+            lines.append('## 다녀 본 길 기억 · 링크 %d · 칸별 %s · 기록 %d번' % (len(lr), dict(cells.most_common(8)), sum(len(x) for v in lr.values() for x in v.values())))
         for doc in logs:
           if doc.get('schema') != 'tg-drive-log/1':
             print('건너뜀(꼴 아님)', f); continue

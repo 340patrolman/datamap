@@ -51,8 +51,10 @@
   function build(j) {
     var n = j.nx.length, X = new Float32Array(n), Y = new Float32Array(n), bx = j.base[0], by = j.base[1], i;
     for (i = 0; i < n; i++) { X[i] = PX((bx + j.nx[i]) / 1e6); Y[i] = PY((by + j.ny[i]) / 1e6); }
-    var S = j.seg, ns = S.length, SP = new Array(ns), ne = 0;
-    for (i = 0; i < ns; i++) { var s = S[i], a = s[0], b = s[1], g = s[8] >= 0 ? j.geo[s[8]] : null, m = g ? g.length / 2 : 0, P = new Float32Array((m + 2) * 2);
+    var S = j.seg, ns = S.length, SP = new Array(ns), ne = 0, tot = 0, off = 0;
+    for (i = 0; i < ns; i++) { var g0 = S[i][8] >= 0 ? j.geo[S[i][8]] : null; tot += ((g0 ? g0.length / 2 : 0) + 2) * 2; }
+    var BIG = new Float32Array(tot);   /* v0.14.3 길 모양을 한 덩어리에 — 길 줄마다 따로 만들던 배열(서울 26만 줄 · 약 39MB)을 한 버퍼의 조각(subarray)으로 */
+    for (i = 0; i < ns; i++) { var s = S[i], a = s[0], b = s[1], g = s[8] >= 0 ? j.geo[s[8]] : null, m = g ? g.length / 2 : 0, P = BIG.subarray(off, off + (m + 2) * 2); off += (m + 2) * 2;
       P[0] = X[a]; P[1] = Y[a]; if (g) { var lx = bx + j.nx[a], ly = by + j.ny[a]; for (var k = 0; k < m; k++) { lx += g[k * 2]; ly += g[k * 2 + 1]; P[(k + 1) * 2] = PX(lx / 1e6); P[(k + 1) * 2 + 1] = PY(ly / 1e6); } }
       P[(m + 1) * 2] = X[b]; P[(m + 1) * 2 + 1] = Y[b]; SP[i] = P; ne += (s[7] & 1 ? 1 : 0) + (s[7] & 2 ? 1 : 0); }
     /* 방향 있는 줄(길 계산용) — eS 길 줄 번호 · eR 1 = 역방향 */

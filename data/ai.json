@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 161개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 163개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1750,8 +1750,13 @@
   ],
   [
    "live-acc-seoul.json",
-   "2026-10-15 18:20",
+   "2026-10-15 18:51",
    "서울 열린데이터광장 「서울시 실시간 돌발 정보」(AccInfo · TOPIS) — 큰길(ITS 링크)에 걸린 공사·통제·사고"
+  ],
+  [
+   "live-ims-seoul.json",
+   "2026-10-15 19:01",
+   "경찰청 도시교통정보센터(UTIC) 개방데이터 돌발 정보(imsOpenData.do) — 서울(법정동 11…)"
   ],
   [
    "live-seocho.json",
@@ -1760,13 +1765,13 @@
   ],
   [
    "live-spd-seocho.json",
-   "18:20",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015181500"
+   "18:51",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015185000"
   ],
   [
    "live-spd-six.json",
-   "18:20",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015181500"
+   "18:51",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015185000"
   ],
   [
    "livepop.json",
@@ -2025,7 +2030,7 @@
   ],
   [
    "sig-audit.json",
-   "2026-10-15 18:20",
+   "2026-10-15 18:51",
    "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)"
   ],
   [
@@ -2070,7 +2075,7 @@
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-15 18:17",
+   "2026-10-15 18:52",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [
@@ -2087,6 +2092,11 @@
    "spot-seocho.json",
    "",
    "서울시 교통카드 정류장·역별 시간대 하차(2026년 6월 · 노선 합산) · TAAS 사고다발지(2018~2025 선정 · 200m 안 한 자리로 묶고 가장 최근 선정값 — 연도 중복 제거)"
+  ],
+  [
+   "station-events.json",
+   "2026-10-15",
+   "공연 = (재)예술경영지원센터 KOPIS OpenAPI(data/venue-events-kopis.json) · 집회 = 서울특별시경찰청 「오늘의 주요집회」(data/rally-seoul.json) …(전문은 파일에)"
   ],
   [
    "stations-kr.json",

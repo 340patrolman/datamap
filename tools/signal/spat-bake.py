@@ -78,12 +78,27 @@ def kd_today():
     return datetime.datetime.fromtimestamp(time.time() + 9 * 3600, datetime.timezone.utc).strftime('%Y-%m-%d')
 
 
+def kd_pool(label):
+    """짝 기록(pool_<ep>.json 의 dn · 그 짝만 고쳐 쓴다)에서 센 그 열쇠의 오늘 합 — keyday.json 이 지워지거나 0 부터 다시 세어져도 이 값 아래로는 안 내려간다"""
+    t, n = kd_today(), 0
+    for ep in ('timing', 'phase', 'fhist', 'fusion'):
+        try:
+            S = json.load(open(os.path.join(RAW, 'pool_%s.json' % ep), encoding='utf-8'))['st'].get(label, {})
+            if S.get('dd') == t:
+                n += S.get('dn', 0)
+        except Exception:
+            pass
+    return n
+
+
 def kd_get(label):
+    """(2026-10-15 18:23 keyday 가 449 → 46 으로 다시 세어진 것을 봄 — 네 수집이 같은 파일을 고쳐 쓰다 읽기 실패 때 0 부터) 장부와 짝 기록 가운데 큰 쪽"""
     try:
         d = json.load(open(kd_path(), encoding='utf-8'))
-        return d.get(label, 0) if d.get('day') == kd_today() else 0
+        v = d.get(label, 0) if d.get('day') == kd_today() else 0
     except Exception:
-        return 0
+        v = 0
+    return max(v, kd_pool(label))
 
 
 def kd_add(label):
@@ -92,11 +107,13 @@ def kd_add(label):
         try:
             try:
                 d = json.load(open(kd_path(), encoding='utf-8'))
-            except Exception:
+            except FileNotFoundError:
                 d = {}
+            except Exception:
+                time.sleep(0.2); continue                     # 읽다 실패(다른 수집이 바꾸는 중)면 0 부터 세지 말고 다시 읽는다
             if d.get('day') != kd_today():
                 d = {'day': kd_today()}
-            d[label] = d.get(label, 0) + 1
+            d[label] = max(d.get(label, 0), kd_pool(label) - 1) + 1   # 짝 기록보다 작아졌으면 바로잡는다
             t = kd_path() + '.%d.tmp' % os.getpid()
             json.dump(d, open(t, 'w', encoding='utf-8')); os.replace(t, kd_path())
             return d[label]

@@ -410,7 +410,7 @@
   }
   // v2.60.0 경기 상권 추정매출(TBGGESTDEVALLSTM)은 기간이 자료 설명에 없다 — 분기로 읽으면 경기 상권 1,692곳 합(44조)이 경기도 카드 소비 한 분기 전체와 같아지고
   //   한식 점포당 월 5,800만(업종 조사 평균의 2.5배)이 된다. 연간으로 읽으면 점포당 월 1,750만 — 서울(분기 ÷ 3) 1,920만 · KREI 2,308만과 맞는다 → 한 해 값으로 보고 ÷ 12(확인 중).
-  var GGMON = 12, GGMON_NOTE = '경기 상권 추정매출은 자료에 기간이 적혀 있지 않아 크기로 보아 한 해 값으로 읽고 ÷ 12 한 한 달 평균이다(확인 중)';
+  var GGMON = 12, GGMON_NOTE = '경기 상권 추정매출은 자료에 금액의 기간이 적혀 있지 않아 크기로 보아 한 해 값으로 읽고 ÷ 12 한 한 달 평균이다 · 기간 미확정 — 공식 설명(공공데이터포털 15106677)은 「분기 단위로 정리」라 석 달 합계라면 이 값의 4배(경기도에 묻는 중)';
   function ggMon(j) { if (!j || j._m) return j; j._m = 1; (j.items || []).forEach(function (t) { if (t.tot) t.tot = [t.tot[0] / GGMON, t.tot[1] / GGMON]; if (t.ind) t.ind = t.ind.map(function (r) { return [r[0], r[1] / GGMON, r[2] / GGMON]; }); }); return j; }
   function gLoad(gu, then) {   // v1.1.0 경기 상권 — 경기데이터드림 발달·골목상권 영역 + 업종별 추정매출(v2.60.0 한 달 평균 — ggMon)
     if (RLOADG[gu] === 3 || RLOADG[gu] === 2) { if (then) then(); return Promise.resolve(); } if (RLOADG[gu] && RLOADG[gu].then) return RLOADG[gu];

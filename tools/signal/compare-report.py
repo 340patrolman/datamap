@@ -2,7 +2,7 @@
 """쌓인 대조 묶음 보기(07_API키/out/compare/acc-*.json · compare_acc.py 가 쌓음) — 시간대별로 가르고가 카카오보다 얼마나 짧게/길게 잡는지 · 같은 길 몫 · 엉뚱한 길 몫
 
   py -3.12 -X utf8 tools/signal/compare-report.py [며칠(기본 7)]
-화면에만 찍는다 · 칸 건수 3 미만은 보이지 않는다(소유자 2026-10-15 「묶은 값만」) · 비율만 다룬다(시각·우리 값·카카오 원래 값은 쌓여 있지 않다)
+화면에만 찍는다 · 칸 건수 3 미만은 보이지 않는다 · 지난 날 칸은 가운데값·사분위만 남아 날을 합친 사분위는 어림(소유자 2026-10-15 「묶은 값만」) · 비율만 다룬다(시각·우리 값·카카오 원래 값은 쌓여 있지 않다)
 """
 import os, sys, json, glob, datetime as dt
 
@@ -39,6 +39,8 @@ def main():
             for nm, x in v.items():
                 if isinstance(x, list):
                     g.setdefault(nm, []).extend(x)
+                elif isinstance(x, dict) and 'q' in x:   # 지난 날 칸 = [가운데값, 25%, 75%, 건수] — 날을 합칠 때는 가운데값을 건수만큼 넣어 어림
+                    g.setdefault(nm, []).extend([x['q'][0]] * int(x['q'][3]))
                 elif nm != 'n':
                     g[nm] = g.get(nm, 0) + x
     if not C:

@@ -20,6 +20,18 @@ def kind_of(t, hol=()):
     return '일·공휴' if t.strftime('%Y-%m-%d') in hol or t.weekday() == 6 else '토' if t.weekday() == 5 else '평일'
 
 
+def qq(v, p):
+    v = sorted(v); k = (len(v) - 1) * p; a = int(k); b = min(a + 1, len(v) - 1)
+    return v[a] + (v[b] - v[a]) * (k - a)
+
+
+def squash(c):
+    out = {}
+    for nm, x in c.items():
+        out[nm] = {'q': [round(qq(x, .5), 3), round(qq(x, .25), 3), round(qq(x, .75), 3), len(x)]} if isinstance(x, list) and x else x
+    return out
+
+
 def prune(today):
     """지난 날 묶음 파일에서 건수 3 미만 칸을 지운다(한 번의 값이 그대로 남지 않게) · 하루에 한 번"""
     import glob
@@ -32,7 +44,7 @@ def prune(today):
             continue
         if A.get('pruned'):
             continue
-        A['cells'] = {k: v for k, v in A.get('cells', {}).items() if v.get('n', 0) >= 3}
+        A['cells'] = {k: squash(v) for k, v in A.get('cells', {}).items() if v.get('n', 0) >= 3}   # 목록은 지우고 [가운데값, 25%, 75%, 건수] 만(같은 짝을 다시 셈하면 목록으로 카카오 값을 어림할 수 있다 — 신호 수집 세션 2026-10-15)
         A['pruned'] = 1
         json.dump(A, open(f, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 
@@ -46,7 +58,7 @@ def add(kind, t, key, vals, hol=()):
     try:
         A = json.load(open(p, encoding='utf-8'))
     except Exception:
-        A = {'schema': 'tg-compare-acc/1', 'note': '칸마다 비율 목록만 · 시각·우리 값 없음 · 보고는 3건 이상 칸만', 'cells': {}}
+        A = {'schema': 'tg-compare-acc/1', 'note': '그날 칸은 비율 목록 · 지난 날 칸은 [가운데값, 25%, 75%, 건수] 만 · 시각·우리 값 없음 · 3건 미만 칸은 지움', 'cells': {}}
     k = '|'.join([kind, kind_of(t, hol), band(t.hour), str(key)])
     c = A['cells'].setdefault(k, {'n': 0})
     c['n'] += 1

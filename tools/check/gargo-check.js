@@ -126,6 +126,9 @@
         document.getElementById('gCfgB').click(); var cf = document.getElementById('gCfg'), op = cf.style.display === 'block' && cf.querySelectorAll('[data-cs]').length >= 30;
         var b1 = cf.querySelector('[data-cs="fwd:1000"]'); b1.click(); var f1 = g.cfg().fwd, rb = document.getElementById('gCfg').querySelector('[data-cr="fwd"]'); if (rb) rb.click(); var f2 = g.cfg().fwd; document.getElementById('gCfg').querySelector('[data-cx="close"]').click();
         ck('⚙ 설정 판 — 열림 · 앞 범위 1km 로 바꾸면 바로 반영 · ↺ 로 기본값 · 닫힘', op && f1 === 1000 && f2 === 2000 && cf.style.display === 'none', [op, f1, f2].join(' / '));
+        /* v0.12.0 막힘 배율 — ../data/eta-cal.json 을 읽었고 · 평일 08:30 = 출근 칸 값 · 끄면 1 · 가르고가 쓰는 값 = TT.calF(지금) */
+        var wk = new Date(2026, 9, 14, 8, 30).getTime(), f1c = TT.calF(wk), why = TT.calWhy(wk); var cf0 = localStorage.getItem('tg_tt_cfg'); TT.set('calOn', 0); var f0c = TT.calF(wk); if (cf0 == null) localStorage.removeItem('tg_tt_cfg'); else localStorage.setItem('tg_tt_cfg', cf0);   /* 시험 전 그대로 — 「남은 것 없음」 검사 */
+        ck('⏱ 막힘 배율(ITS 실측) — 표를 읽음 · 평일 08:30 출근 칸 ×1~2.5 · 끄면 ×1 · 가르고가 지금 쓰는 값 = TT.calF(지금)', f1c > 1 && f1c <= 2.5 && /평일 출근/.test(why) && f0c === 1 && Math.abs(window.GARGO.calF() - TT.calF(Date.now())) < 1e-9, why + ' · 끔 ' + f0c + ' · 지금 ' + window.GARGO.calF());
       } catch (e) { ck('v0.11.0 검사', false, e.message); }
       /* 건물 이름 찾기 — 칸을 띄우지 않아도 이름 목록(bld6/names.json)으로 */
       var rf = g.localFind('롯데월드몰').concat(g.localFind('송파구청')); ck('건물 이름 찾기(롯데월드몰·송파구청 · 칸을 안 띄워도)', rf.filter(function (x) { return x[0] === '🏢'; }).length >= 2, rf.slice(0, 3).map(function (x) { return x[0] + x[1]; }).join(' · ') + ' · 이름 ' + g.bld().names);

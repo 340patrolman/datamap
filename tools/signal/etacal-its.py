@@ -12,7 +12,10 @@
                  → 아무 때나 닿을 때 기다림 r²/(2C) + 설 확률 r/C × 가감속 4초 — 연동(녹색 물결)은 안 셈
   거리는 출발 첫 링크 30%·도착 끝 링크 70%(구간 굽는 규칙 그대로) · 도착 교차로 신호도 센다(ITS 링크 평균 속도에 링크 끝 대기가 들어 있어 실측과 같은 뜻으로)
 결과(공공 자료라 저장 가능하지만 아직 판단 전이라 저장소 밖): 07_API키/out/eta_cal/report.md · cells.json
-  py -3.12 -X utf8 tools/signal/etacal-its.py [--from YYYYMMDD] [--to YYYYMMDD]
+  py -3.12 -X utf8 tools/signal/etacal-its.py [--from YYYYMMDD] [--to YYYYMMDD] [--bake]
+  --bake → datamap/data/eta-cal.json(tg-eta-cal/1) — 「주행 배율」 f = (실측 − 신호 기다림 − 가감속) ÷ 제한속도 주행 시간 의 요일 갈래 × 시간대 가운데값.
+           지도(신고차량 예측)·가르고가 실시간 통행속도가 없을 때 제한속도 ÷ f 로 달린다고 본다(신호 기다림은 따로 셈하므로 이 배율은 주행 몫만).
+           ITS 는 공공 자료(국가교통정보센터)라 배율 숫자는 저장소에 싣는다 · 카카오 값은 한 번도 들어가지 않는다.
 """
 import sys, os, json, gzip, glob, math, statistics, datetime as dt
 
@@ -180,7 +183,9 @@ def main():
                     continue
                 r, C = rc
                 w += r * r / (2 * C) + (r / C) * ACC
-            rows.append({'id': s['id'], 'kind': dname(t, hol), 'h': t.hour, 'band': band(t.hour), 'its': t_its, 'lim': t_lim, 'sig': t_lim + w, 'miss': miss, 'ns': len(sigs)})
+            mv = t_lim - 2 * ACC
+            rows.append({'id': s['id'], 'kind': dname(t, hol), 'h': t.hour, 'band': band(t.hour), 'its': t_its, 'lim': t_lim, 'sig': t_lim + w, 'miss': miss, 'ns': len(sigs),
+                         'f': max(0.8, (t_its - w - 2 * ACC) / mv) if mv > 0 and miss == 0 else None})   # 신호 값을 다 아는 줄만 배율에
     if not rows:
         print('맞댈 ITS 기록이 없다'); return 1
     os.makedirs(OUT, exist_ok=True)
@@ -215,9 +220,48 @@ def main():
     json.dump({'schema': 'eta-cal-its/1', 'made': dt.datetime.now(KST).isoformat(timespec='seconds'), 'days': days,
                'cells': [{'kind': k[0], 'band': k[1], 'n': c['n'], 'its_over_lim_p50': q(c['its/lim'], .5), 'its_over_sig': [q(c['its/sig'], .25), q(c['its/sig'], .5), q(c['its/sig'], .75)]} for k, c in sorted(cells.items())]},
               open(os.path.join(OUT, 'cells.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    if '--bake' in sys.argv:
+        bake(rows, days, hol)
     print('\n'.join(md[:22]))
     print('→', os.path.join(OUT, 'report.md'))
     return 0
+
+
+BANDS = [('출근', 7, 10), ('낮', 10, 17), ('퇴근', 17, 20), ('저녁', 20, 23), ('밤', 23, 7)]
+KINDS = ['평일', '토', '일·공휴']
+
+
+def bake(rows, days, hol):
+    """요일 갈래 × 시간대 「주행 배율」 — 줄이 30 아래인 칸은 비우고, 읽는 쪽이 정한 차례(토 → 일·공휴 → 평일 · 출근 → 낮)로 메운다(fill 에 적음)"""
+    tab, n = {}, {}
+    for kd in KINDS:
+        for nm, a, b in BANDS:
+            bb = {'출근': '출근 07~09', '낮': '낮 10~16', '퇴근': '퇴근 17~19', '저녁': '저녁 20~22', '밤': '밤 23~06'}[nm]
+            v = [r['f'] for r in rows if r['kind'] == kd and r['band'] == bb and r['f']]
+            n[kd + '|' + nm] = len(v)
+            if len(v) >= 30:
+                tab[kd + '|' + nm] = round(min(2.5, q(v, .5)), 2)
+    fill = {}
+    for kd in KINDS:
+        for nm, a, b in BANDS:
+            k = kd + '|' + nm
+            if k in tab:
+                continue
+            for alt in ([('일·공휴', nm)] if kd == '토' else []) + [(kd, '낮' if nm == '출근' else nm), ('평일', nm)]:
+                ak = alt[0] + '|' + alt[1]
+                if ak in tab:
+                    fill[k] = ak
+                    break
+    y0 = dt.datetime.now(KST).year
+    hd = sorted(d for d in hol if d[:4] in (str(y0), str(y0 + 1)))
+    out = {'schema': 'tg-eta-cal/1', 'made': dt.datetime.now(KST).strftime('%Y-%m-%d %H:%M'),
+           'source': '국가교통정보센터(ITS) 통행속도 — 이 PC 가 약 22분마다 받아 쌓은 것(07_API키/out/livespd) · 신호 = data/sigdir-seoul.json · 길 = data/nav-seocho.json · 굽는 도구 tools/signal/etacal-its.py --bake',
+           'how': '서초 간선 고정 구간 28개(교차로 사이)마다 실측 시간(ITS 링크 통행속도) − 신호 기다림(방향별 직진 적색 r²/2C + 설 확률 × 4초) − 출발·정지 4초×2 를 제한속도 주행 시간으로 나눈 값의 가운데값 · 0.8 아래는 0.8 · 2.5 위는 2.5',
+           'use': '실시간 통행속도가 없는 줄을 제한속도 ÷ f 로 달린다고 본다(신호 기다림은 따로 셈) · 중요업무(정속 가정)에는 쓰지 않는다',
+           'fields': 'f{「요일 갈래|시간대」: 주행 배율(제한속도 주행 시간 × f = 실측에서 신호 기다림·가감속을 뺀 시간)} · n{같은 칸: 맞댄 줄 수(30 아래면 f 없음)} · fill{빈 칸: 대신 쓸 칸} · bands[[이름, 시작 시, 끝 시]] · kinds[요일 갈래] · holidays[일·공휴로 볼 날]', 'days': days, 'bands': [[nm, a, b] for nm, a, b in BANDS], 'kinds': KINDS, 'f': tab, 'n': n, 'fill': fill, 'holidays': hd,
+           'note': '서초 간선 28구간에서 잰 값을 다른 곳에도 쓴다(근사) · 토요일 등 줄이 모자란 칸은 fill 의 칸 값을 쓴다 · 이레 넘게 쌓일 때마다 다시 굽는다'}
+    json.dump(out, open(os.path.join(ROOT, 'data', 'eta-cal.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print('→ data/eta-cal.json', tab, 'fill', fill)
 
 
 if __name__ == '__main__':

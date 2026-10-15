@@ -325,6 +325,28 @@
    "shape": "{items: [222개 × {at: \"서울시어린이병원 건너편\", road: \"헌릉로\", lat: 수(예 37.4569711), lon: 수(예 127.0698521), se: \"2\", lim: 수(예 50), zone: \"99\", yr: \"2023\", sec: \"\"}]}"
   },
   {
+   "file": "cctv-utic-seoul.json",
+   "url": "https://340patrolman.github.io/datamap/data/cctv-utic-seoul.json",
+   "bytes": 40294,
+   "schema": "tg-cctv-utic/1",
+   "date": "2026-10-15",
+   "source": "경찰청 도시교통정보센터(UTIC) 개방데이터 CCTV 목록(cctvOpenData.do) — 서울교통정보센터(TOPIS) 카메라 · cctv_20261015.html",
+   "fields": "[{id UTIC 카메라 번호, no 목록 번호, nm 이름, lat, lon, int 교차로 ID, gu 시군구, how 자리 잡은 법}] — 좌표는 원자료에 없어 같은 이름의 교차로(data/onto-int.json)에 맞댄 근사",
+   "note": "영상은 TOPIS 공식 누리집(topis.seoul.go.kr)에서 본다 — 영상 주소·열쇠는 싣지 않는다 · 영상은 정차 중·동승자만 · 출동 첫 화면 자동 재생 금지 · 이름이 같은 교차로가 둘 이상이거나 없으면 좌표 없음(지어 고르지 않음)",
+   "top": {
+    "note": "[3]",
+    "n": "{4}",
+    "items": "[303]"
+   },
+   "about": {
+    "credit": "교통정보: 경찰청 도시교통정보센터(UTIC) 제공"
+   },
+   "sample": {
+    "items[0]": "{\"id\": \"L010001\", \"no\": 12363, \"nm\": \"2,3호터널\", \"lat\": null, \"lon\": null, \"int\": null, \"gu\": null, \"how\": \"자리 못 찾음\"}",
+    "n.all": "14172"
+   }
+  },
+  {
    "file": "cpi.json",
    "url": "https://340patrolman.github.io/datamap/data/cpi.json",
    "bytes": 2188,
@@ -1252,10 +1274,10 @@
   {
    "file": "live-spd-seocho.json",
    "url": "https://340patrolman.github.io/datamap/data/live-spd-seocho.json",
-   "bytes": 40569,
+   "bytes": 40531,
    "schema": "tg-live-spd/1",
-   "date": "13:50",
-   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015134500",
+   "date": "15:02",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015150000",
    "fields": "m{ITS 링크 ID: 통행속도 km/h(정수)} — data/sig-approach-seocho.json 의 링크와 data/nav-seocho.json 의 등급 1~4 링크 · n 값이 온 링크 수 · want 찾는 링크 수",
    "note": "실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다 · 통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다 · 자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다",
    "top": {
@@ -1264,17 +1286,17 @@
     "m": "{2484}"
    },
    "sample": {
-    "m.1020000101": "34",
+    "m.1020000101": "33",
     "box[0]": "126.955"
    }
   },
   {
    "file": "live-spd-six.json",
    "url": "https://340patrolman.github.io/datamap/data/live-spd-six.json",
-   "bytes": 143567,
+   "bytes": 143457,
    "schema": "tg-live-spd/1",
-   "date": "13:50",
-   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015134500",
+   "date": "15:02",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015150000",
    "fields": "m{ITS 링크 ID: 통행속도 km/h(정수)} — 서초 신호 교차로에 들어오는 링크 + data/nav-six.json(여섯 구 길 묶음)의 등급 1~4 링크(그 파일이 없으면 상자 안 모든 링크) · n 값이 온 링크 수 · want 찾는 링크 수",
    "note": "실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다 · 통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다 · 자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다",
    "top": {
@@ -1283,7 +1305,7 @@
     "m": "{8963}"
    },
    "sample": {
-    "m.1000002701": "8",
+    "m.1000002701": "7",
     "box[0]": "126.875"
    }
   },
@@ -1713,7 +1735,7 @@
   {
    "file": "onto-rules.json",
    "url": "https://340patrolman.github.io/datamap/data/onto-rules.json",
-   "bytes": 19838,
+   "bytes": 21920,
    "schema": "tg-onto-rules/1",
    "date": "2026-10-15",
    "fields": "{\"rules\": \"[{id, area, title, d(정의), s[[출처 종류, 무엇, 날짜]], g(등급 A~E), o[주인 앱·자리 — dm: datamap 경로 · tb: T-Book 함수 · gg: 가르고], t(정답 시험값·확인 방법)}]\", \"field\": \"[{id, date, said(소유자 말 그대로), use[이 말에 기댄 규칙], conf(확인 정도)}]\"}",
@@ -1721,8 +1743,8 @@
     "fields": "{2}",
     "srcKind": "{5}",
     "n": "{3}",
-    "rules": "[22]",
-    "field": "[12]"
+    "rules": "[23]",
+    "field": "[14]"
    },
    "about": {
     "about": "틀리면 사고가 나는 규칙(RULE)과 그 근거가 된 소유자 현장 판단(FK)의 장부 — 세 앱(T-Book · 데이터 압축지도 · 네비 가르고)이 같은 근거를 읽게 한다. 법령 숫자는 옮기지 않고 정본(T-Book) 자리만 가리킨다.",
@@ -2344,18 +2366,18 @@
   {
    "file": "sig-audit.json",
    "url": "https://340patrolman.github.io/datamap/data/sig-audit.json",
-   "bytes": 206223,
+   "bytes": 206538,
    "schema": "tg-sig-audit/1",
-   "date": "2026-10-15 13:50",
+   "date": "2026-10-15 15:05",
    "source": "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)",
    "fields": "spots{교차로 번호: {ok[[길, 글]], bad[[길, 글]]}} — 길: ksc 교통과 현시도 · pol 경찰청 계획 · api 잔여시간×신호 상태 두 API · re 다시 받아 맞대기 · fld 현장 지식(sig-field) · perp 직각 직진 겹침 · opp 마주 오는 직진×좌회전 겹침 · sum 녹+황+적≠주기. 아무 길로도 맞대 보지 못한 교차로는 없다(목록에 없음 = 대조 전)",
    "top": {
     "sum": "{24}",
-    "spots": "{1704}"
+    "spots": "{1705}"
    },
    "sample": {
     "spots.1015": "{\"ok\": [[\"pol\", \"경찰청 계획과 맞음 — 시각대 2칸(주기·옵셋)\"]], \"bad\": []}",
-    "sum.shape_ok": "2376"
+    "sum.shape_ok": "2377"
    }
   },
   {
@@ -2524,9 +2546,9 @@
   {
    "file": "sigdir-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/sigdir-seoul.json",
-   "bytes": 4616006,
+   "bytes": 4649342,
    "schema": "tg-sigdir/1",
-   "date": "2026-10-15 13:51",
+   "date": "2026-10-15 15:05",
    "source": "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간",
    "fields": "pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API, dq dir = 원자료의 방위 이름이 실제와 다름(직각 방향 직진이 함께 녹색 — 초는 쓸 수 있어도 어느 쪽인지는 현장 확인)} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]} · pl{교차로 번호: [[요일 갈래(0 월~목 · 1 금 · 2 토 · 3 일), 시, 주기, 자정 기준 옵셋(기준 이동류 녹색이 켜지는 하루 초 mod 주기), 받은 달-날, 그 옵셋의 기준 이동류 「방위:이동류」(기록마다 기준이 다를 수 있다 — 쓸 때 그 기록의 그 이동류 녹색 시작만큼 옮겨 맞춘다), 1 = 약한 줄(정각 직후 짧은 창에서 받았고 앞 시각대와 주기가 다름 — 바뀌는 사이의 값 …(전문은 파일에)",
    "note": "받은 시간대에 실제로 돈 값이다(하루 계획표가 아니다) · 방위 = 그 신호를 받는 차가 들어오는 쪽 · 잔여시간 API 로 읽은 기록의 색은 황색 3~6초 앞뒤로 읽은 추정이고 src p 기록은 상태 값 그대로 · 이어 센 「지금 몇 초」는 a·ci 로 지도가 계산한 추정",

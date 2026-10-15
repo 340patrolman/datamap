@@ -9,7 +9,7 @@ import sys, os, re, json, glob, datetime, urllib.request, collections
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'utic')
-TERMS_OK = False   # 이용 조건 확인 뒤 True 로(확인한 날·근거를 옆에 적는다)
+TERMS_OK = True    # (2026-10-15 코워크가 첨부 hwp 「요청자 준수사항」 확인 · 소유자 「권고대로」) 목록 지도 표시 = 조건부 가능 — 출처 「경찰청 도시교통정보센터(UTIC)」 표기 · 신청 목적 안 · 목록은 하루 1번만 받기(1초 5회 넘으면 IP 차단) · 영상 중계는 허용 문구 없어 안 함
 
 
 def fetch():
@@ -42,6 +42,7 @@ def build(publish):
             out.append({'id': cid, 'no': int(no), 'nm': nm.strip(), 'lat': None, 'lon': None, 'int': None, 'gu': None, 'how': '자리 못 찾음' if not c else '같은 이름 %d곳' % len(c)}); miss.append(nm.strip())
     doc = {'schema': 'tg-cctv-utic/1', 'made': datetime.date.today().isoformat(),
            'source': '경찰청 도시교통정보센터(UTIC) 개방데이터 CCTV 목록(cctvOpenData.do) — 서울교통정보센터(TOPIS) 카메라 · %s' % os.path.basename(src),
+           'credit': '교통정보: 경찰청 도시교통정보센터(UTIC) 제공',   # 요청자 준수사항 ❷ — 지도에 이 글을 꼭 보인다
            'fields': '[{id UTIC 카메라 번호, no 목록 번호, nm 이름, lat, lon, int 교차로 ID, gu 시군구, how 자리 잡은 법}] — 좌표는 원자료에 없어 같은 이름의 교차로(data/onto-int.json)에 맞댄 근사',
            'note': ['영상은 TOPIS 공식 누리집(topis.seoul.go.kr)에서 본다 — 영상 주소·열쇠는 싣지 않는다', '영상은 정차 중·동승자만 · 출동 첫 화면 자동 재생 금지', '이름이 같은 교차로가 둘 이상이거나 없으면 좌표 없음(지어 고르지 않음)'],
            'n': {'all': len(rows), 'seoul': len(seoul), 'placed': sum(1 for o in out if o['lat']), 'centers': len(cnt)}, 'items': out}

@@ -2,7 +2,7 @@
 # 경찰청 도시교통정보센터(UTIC) 돌발 정보 — 서울 사고·공사·통제(imsOpenData.do · 열쇠 keys.json utic · 이 PC 등록 IP 에서만)
 #   (2026-10-15 · 코워크 시험 「서울 76건 · 서울시 AccInfo 보다 사고가 촘촘」) → data/live-ims-seoul.json (tg-live-ims/1)
 #   신호 수집기(spat-bake.py livespd)가 10분에 한 번 부른다 · UTIC 준수사항: 1초 5회 넘게 부르지 않기 · 출처 「경찰청 도시교통정보센터(UTIC)」 표기 · 신청 목적 안
-#   ⚠ 지금 열쇠(첫 신청 · 목적 「교육·연구용 개인 지도(비영리)」)로는 **데이터지도 표시까지** — 가르고(출동 도구)는 두 번째 신청 승인 뒤(RULE-NAV-5)
+#   열쇠 = 두 번째 신청(2026-10-15 15:41 승인 · 목적 「경찰업무 보조 연구개발」) — 데이터지도 표시 · 가르고(v0.29.0 부터 돌발 합치기)에 쓴다(RULE-NAV-5)
 #   지난 돌발은 07_API키/out/utic/ims/<날짜>.jsonl.gz 에 쌓인다(저장소 밖)
 #   py -3.12 -X utf8 tools/signal/uticims-bake.py
 import os, re, json, gzip, datetime, urllib.request, xml.etree.ElementTree as ET
@@ -32,7 +32,7 @@ def main():
            'source': '경찰청 도시교통정보센터(UTIC) 개방데이터 돌발 정보(imsOpenData.do) — 서울(법정동 11…)',
            'credit': '교통정보: 경찰청 도시교통정보센터(UTIC) 제공',
            'fields': 'items[[돌발 ID, 갈래 글(제목 [ ] 안 · 사고·공사·통제 등), 갈래 코드, 세부 코드, 위도, 경도, 법정동 10자리, 도로 이름, 차로, 시작, 끝(예상), 제목 글, 표준 링크 ID]]',
-           'note': ['지도 표시용 — 가르고(출동) 쓰임은 UTIC 두 번째 신청 승인 뒤', '실제 상황과 몇 분 차이가 날 수 있다 · 끝 시각은 예상', '서울시 AccInfo(data/live-acc-seoul.json)와 겹치는 공사가 있다 — 사고는 이쪽이 촘촘'],
+           'note': ['데이터지도 표시 · 가르고(v0.29.0 부터) 길 계산에 쓴다 — UTIC 두 번째 신청(2026-10-15 승인 · 경찰업무 보조 연구개발)', '실제 상황과 몇 분 차이가 날 수 있다 · 끝 시각은 예상', '서울시 AccInfo(data/live-acc-seoul.json)와 겹치는 공사가 있다 — 사고는 이쪽이 촘촘'],
            'n': len(items), 'items': items}
     json.dump(doc, open(os.path.join(ROOT, 'data', 'live-ims-seoul.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     os.makedirs(os.path.join(RAW, 'out', 'utic', 'ims'), exist_ok=True)

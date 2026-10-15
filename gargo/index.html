@@ -72,6 +72,17 @@
   #gBot .mode { display: flex; gap: 6px; margin: 6px 0 4px; } #gBot .mode button { flex: 1; height: 40px; border-radius: 11px; border: 1px solid var(--line); background: transparent; font-size: calc(13.5px * var(--fz, 1)); font-weight: 800; } #gBot .mode button.on { background: var(--blue); color: #fff; border-color: var(--blue); } #gBot .mode button[data-mode=e].on { background: #b91c1c; border-color: #b91c1c; }
   #gTop .tx small b { font-size: inherit; line-height: inherit; }
   #gBot .big .est { display: block; font-style: normal; font-size: calc(12px * var(--fz, 1)); font-weight: 700; color: #b45309; margin-top: 2px; } :root.dark #gBot .big .est { color: #fbbf24; }
+  /* v0.17.0 신호 판 한 줄 꼴 · 차로 그림 · 긴급 빠른 차로 · 도착 막대 꺾임 막기 */
+  #gSig.cp { padding: 7px 11px; } #gSig.cp .c1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  #gSig.cp .ar { font-size: calc(30px * var(--fz, 1)); line-height: 1; flex: 0 0 auto; } #gSig.cp .now { margin: 0; flex: 0 0 auto; }
+  #gSig.cp .tx1 { font-size: calc(14px * var(--fz, 1)); font-weight: 800; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #gSig.cp .nm { margin-left: auto; text-align: right; min-width: 0; flex: 0 1 auto; } #gSig.cp .nm b { display: block; font-size: calc(13px * var(--fz, 1)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 34vw; } #gSig.cp .nm span { display: block; font-size: calc(11.5px * var(--fz, 1)); white-space: nowrap; opacity: .8; }
+  #gSig.cp .ln { font-size: calc(13px * var(--fz, 1)); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #gSig.cp .src { font-size: calc(10.5px * var(--fz, 1)); margin-top: 1px; }
+  #gTop .tx small.ln3 { display: flex; align-items: center; gap: 8px; margin-top: 4px; opacity: 1; } #gTop .tx small.ln3 em { font-style: normal; font-weight: 800; font-size: calc(13px * var(--fz, 1)); }
+  #gTop .lanes { display: inline-flex; gap: 3px; } #gTop .lanes i { font-style: normal; width: calc(24px * var(--fz, 1)); height: calc(26px * var(--fz, 1)); border-radius: 5px; background: rgba(255,255,255,.14); color: rgba(255,255,255,.45); display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: calc(15px * var(--fz, 1)); }
+  #gTop .lanes i.on { background: #fff; color: #1b54d6; }
+  #gTop .tx small.em { display: block; margin-top: 4px; background: rgba(239,68,68,.25); border-radius: 8px; padding: 3px 8px; font-size: calc(12.5px * var(--fz, 1)); opacity: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #gBot .eta b, #gBot .eta span, #gBot .eta .stop { white-space: nowrap; } #gBot .eta.rg b { font-size: calc(17px * var(--fz, 1)); } #gBot .eta.rg { gap: 9px; } #gBot .eta .stop { padding: 0 12px; flex: 0 0 auto; }
   #gTop .tx small.ic { display: block; font-size: calc(12.5px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.12); border-radius: 8px; padding: 3px 8px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #gTop .tx small.ic b { font-weight: 800; }
   #gBot .mode button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
   #gBot .eta.rg { gap: 10px; } #gBot .eta.rg b { font-size: calc(19px * var(--fz, 1)); letter-spacing: -.4px; }
@@ -184,7 +195,7 @@
   })();
 </script>
 <script src="../js/travel-time.js?v=3"></script>
-<script src="gargo.js?v=0.16.0"></script>
+<script src="gargo.js?v=0.17.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

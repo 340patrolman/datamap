@@ -466,6 +466,13 @@
   function hm(T) { var d = new Date(T * 1000); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   var ARW = { L: '⬅', l: '↖', R: '➡', r: '↗', U: '↩', E: '🏁', S: '⬆' }, MKO = { L: '좌회전', l: '왼쪽 방향', R: '우회전', r: '오른쪽 방향', U: '유턴', E: '목적지', S: '직진' };
   /* 차로 안내 — OSM 에 차로별 진행 방향이 적힌 곳(서초 둘레 141줄뿐)은 차로 번호로, 그 밖은 꺾는 쪽 규칙(좌회전·유턴 = 1차로 · 우회전 = 맨 오른쪽)으로. 차로마다의 속도 자료는 어디에도 없다 — 「어느 차로가 빠르다」는 말은 하지 않는다 */
+  /* v0.17.0 차로 — 몇 차로 가운데 어느 차로(차로 표가 있으면 그것 · 없으면 좌회전·유턴 = 1차로 · 우회전 = 맨 오른쪽) */
+  function laneSet(m) { if (!m || m.e == null || m.k === 'E' || m.k === 'S') return null; var q = G.S[G.eS[m.e]], ti = q[G.eR[m.e] ? 16 : 15], want = m.k === 'U' ? 'reverse' : m.k === 'L' || m.k === 'l' ? 'left' : 'right', nL = q[10] || 0, lt = m.k === 'L' || m.k === 'l' || m.k === 'U';
+    if (ti != null && ti >= 0) { var L = String(G.j.tl[ti]).split('|'), ok = []; L.forEach(function (x, i) { if (x.split(';').some(function (y) { return y.indexOf(want) >= 0; })) ok.push(i + 1); }); if (ok.length) return { n: L.length, ok: ok, tl: 1 }; }
+    return { n: nL, ok: nL ? [lt ? 1 : nL] : [], lt: lt }; }
+  function laneWord(s) { if (!s || !s.ok.length) return ''; return s.ok.length === 1 ? (s.ok[0] === 1 ? '1차로' : s.ok[0] === s.n ? '맨 오른쪽 차로' : s.ok[0] + '차로') : s.ok.join(', ') + '차로'; }
+  function laneStrip(m) { var s = laneSet(m); if (!s || s.n < 2 || s.n > 8 || !s.ok.length) return ''; var ar = m.k === 'L' || m.k === 'l' ? '←' : m.k === 'U' ? '↶' : '→', h = ''; for (var i = 1; i <= s.n; i++) h += '<i class="' + (s.ok.indexOf(i) >= 0 ? 'on' : '') + '">' + (s.ok.indexOf(i) >= 0 ? ar : '↑') + '</i>'; return '<span class="lanes" aria-label="' + s.n + '개 차로 가운데 ' + laneWord(s) + '">' + h + '</span>'; }
+  function emLane(nx, pos) { if (!nx || nx.k === 'E' || nx.k === 'S' || nx.d - pos > 500) return { w: '1차로', why: '막히면 중앙선 쪽 · 버스전용차로' }; var s = laneSet(nx), lt = nx.k === 'L' || nx.k === 'l' || nx.k === 'U'; return { w: lt ? '1차로' : (s && s.n ? '맨 오른쪽 차로' : '맨 오른쪽'), why: lt ? '좌회전 앞' : '우회전 앞' }; }
   function laneHint(m) { if (!m || m.e == null || m.k === 'E' || m.k === 'S') return ''; var q = G.S[G.eS[m.e]], ti = q[G.eR[m.e] ? 16 : 15], want = m.k === 'U' ? 'reverse' : m.k === 'L' || m.k === 'l' ? 'left' : 'right', nL = q[10];
     if (ti != null && ti >= 0) { var L = String(G.j.tl[ti]).split('|'), ok = []; L.forEach(function (x, i) { if (x.split(';').some(function (y) { return y.indexOf(want) >= 0; })) ok.push(i + 1); }); if (ok.length) return L.length + '개 차로 가운데 <b>' + ok.join('·') + '차로</b>'; }
     return (m.k === 'L' || m.k === 'l' || m.k === 'U' ? '<b>1차로</b>(맨 왼쪽)' : '<b>맨 오른쪽 차로</b>') + (nL ? ' <em>· 이 길 ' + nL + '차로</em>' : ''); }
@@ -479,7 +486,7 @@
     var nx = null, n2 = null; for (var i = 0; i < r.mans.length; i++) if (r.mans[i].d > pos + 5) { nx = r.mans[i]; n2 = r.mans[i + 1] || null; break; }
     var known = r.sigs.filter(function (g) { return g.s && g.s.kind !== 'avg'; }).length, wsum = 0; r.sigs.forEach(function (g) { wsum += g.tw || 0; });
     if (guide) { $('gFind').style.display = 'none'; top.style.display = 'flex';
-      top.innerHTML = nx ? '<div class="arw">' + ARW[nx.k] + '</div><div class="tx"><b>' + km(nx.d - pos) + '</b>' + (nx.d - pos <= 300 && nx.k !== 'E' ? '<i class="cd"><u style="width:' + Math.max(2, Math.round((nx.d - pos) / 3)) + '%"></u></i>' : '') + '<span>' + (nx.k === 'E' ? '목적지' : MKO[nx.k]) + (nx.nm ? ' · ' + esc(nx.nm) : '') + (nx.sig ? ' <em>(' + esc(nx.sig) + ')</em>' : '') + '</span>' + (function () { var lh = nx.d - pos < 700 ? laneHint(nx) : ''; return lh ? '<small class="ln2">차로 — ' + lh + '</small>' : ''; })() + (n2 ? '<small>그다음 ' + ARW[n2.k] + ' ' + km(n2.d - nx.d) + ' 뒤 ' + MKO[n2.k] + '</small>' : '') + icLine(r, pos) + '</div>' : '';
+      top.innerHTML = nx ? '<div class="arw">' + ARW[nx.k] + '</div><div class="tx"><b>' + km(nx.d - pos) + '</b>' + (nx.d - pos <= 300 && nx.k !== 'E' ? '<i class="cd"><u style="width:' + Math.max(2, Math.round((nx.d - pos) / 3)) + '%"></u></i>' : '') + '<span>' + (nx.k === 'E' ? '목적지' : MKO[nx.k]) + (nx.nm ? ' · ' + esc(nx.nm) : '') + (nx.sig ? ' <em>(' + esc(nx.sig) + ')</em>' : '') + '</span>' + (function () { var win = limAt(r, pos) >= 70 ? 2000 : 1000, near = nx.d - pos < win, st9 = near ? laneStrip(nx) : '', lh = near && !st9 ? laneHint(nx) : '', o = st9 ? '<small class="ln3">' + st9 + '<em>' + laneWord(laneSet(nx)) + '</em></small>' : lh ? '<small class="ln2">차로 — ' + lh + '</small>' : ''; if (MODE === 'e') { var el9 = emLane(nx, pos); o += '<small class="em">🚨 빠른 차로 <b>' + el9.w + '</b> · ' + el9.why + ' · 안전 확인</small>'; } return o; })() + (n2 ? '<small>그다음 ' + ARW[n2.k] + ' ' + km(n2.d - nx.d) + ' 뒤 ' + MKO[n2.k] + '</small>' : '') + icLine(r, pos) + '</div>' : '';
       barPaint(r, pos);
       var VN = MODE === 'v' ? vipNow(r, pos) : null, vc = VN && !VN.err ? VN.base.cps[0] : null, vf = VN && !VN.err ? VN.fast.cps[0] : null;
       setH(bot, VN && !VN.err ? '<div class="eta vipe"><div><b>' + TT.hm(VN.base.at) + '</b><span>예상 도착 · ' + TT.mmss(VN.base.sec) + '</span></div><div class="fast"><b>' + TT.hm(VN.fast.at) + '</b><span>가장 이른 · ' + VN.fastV + 'km/h</span></div><button id="gStop" class="stop">안내 끝</button></div>' + (vc ? '<div class="vnext">다음 지점 <b>' + esc(vc.nm) + '</b> ' + km(vc.m) + ' — 예상 ' + TT.hm(vc.at) + ' · 가장 이른 ' + TT.hm(vf.at) + '</div>' : '') + '<div class="vn">📌 교차로 통제 개시는 「가장 이른 도착」 시각 기준 · 🔒 기기 안에서만</div>'
@@ -505,16 +512,17 @@
     if (!ns || !(guide || sim)) { sg.style.display = 'none'; return; }
     var dd = Math.max(0, ns.d - pos), st = ns.mv === 'St' || ns.mv === 'Lt' ? sigAt(ns.no, now, ns.side, ns.mv) : null, vNow = me && me.spd > 2 ? me.spd : ns.lim / 3.6, eta = dd / Math.max(1.5, Math.min(vNow, ns.lim / 3.6)), at = ns.mv === 'St' || ns.mv === 'Lt' ? sigAt(ns.no, now + eta, ns.side, ns.mv) : null, h = '';
     sg.style.display = 'block'; if (guide) { var tb = $('gTop').getBoundingClientRect(); sg.style.top = Math.round(tb.bottom + 6) + 'px'; } sg.className = 'sig ' + (!st || st.kind === 'avg' ? 'unk' : st.green ? 'grn' : 'red');
-    h += '<div class="hd"><b>🚦 ' + esc(ns.nm) + '</b><span>' + km(dd) + ' 앞 · ' + (DIRKO[ns.side] || '') + '쪽에서 ' + (ns.mv === 'Lt' ? '좌회전' : ns.mv === 'Rt' ? '우회전' : ns.mv === 'U' ? '유턴' : '직진') + '</span></div>';
-    if (ns.mv === 'Rt' || ns.mv === 'U') h += '<div class="ln">우회전·유턴은 신호 자료가 없다 — 보행자와 직진 차를 보고 간다</div>';
-    else if (!st) h += '<div class="ln">이 신호는 <b>자료가 없다</b> — 눈으로 본다</div>';
-    else if (st.kind === 'avg') h += '<div class="ln">지금 색은 <b>모른다</b>(이 시각대를 아직 못 받았다) · 평균 기다림 ' + Math.round(st.wait) + '초 · 주기 ' + Math.round(st.C) + '초</div>';
-    else { h += '<div class="now"><i></i><b><small>' + (st.green ? '녹색' : '적색') + ' </small>' + Math.ceil(st.remain) + '<small>초</small></b><span>' + (st.green ? '뒤 꺼짐' : '뒤 녹색') + '</span></div>';
-      if (at && at.kind !== 'avg') { h += '<div class="ln">지금 속도로 닿으면(' + Math.round(eta) + '초 뒤) → ' + (at.green ? '<b class="g">녹색 통과</b> <em>(남은 녹색 ' + Math.floor(at.remain) + '초)</em>' : '<b class="r">적색</b> · ' + Math.ceil(at.wait) + '초 기다림') + '</div>';
-        if (!at.green && NOSIG()) h += '<div class="ln adv">🚨 닿을 때 <b class="r">적색</b> — 교차로 통과는 운전자 판단(사이렌·서행·좌우 확인) · 현장 기준: <b>1차로</b> 또는 <b>맨 가 차로</b>로 넘는다</div>';
-        else if (!at.green && !night() && dd > 80) { var adv = advise(ns, dd, now); if (adv) h += '<div class="ln adv">제한속도 안에서 <b>시속 ' + adv.v + 'km</b>쯤이면 녹색에 닿는다 <em>(제한 ' + ns.lim + ' · 서두르라는 뜻이 아니다)</em></div>'; else h += '<div class="ln">제한속도 안에서는 이번 녹색에 못 닿는다 — 서두를 까닭이 없다</div>'; }
-        else if (!at.green && night()) h += '<div class="ln">밤 22~06시에는 속도 안내를 하지 않는다</div>'; }
-      h += '<div class="src">' + (st.kind === 'pl' ? '시각대 표(계획값)' : '방금 받은 값에서 이어 셈') + ' · 수동 조작·감응 신호면 다르다 · 눈으로 확인</div>'; }
+    var MVA = { St: '⬆', Lt: '⬅', Rt: '➡', U: '↩' }, mvk = ns.mv === 'Lt' ? '좌회전' : ns.mv === 'Rt' ? '우회전' : ns.mv === 'U' ? '유턴' : '직진', nmh = '<div class="nm"><b>' + esc(ns.nm) + '</b><span>' + km(dd) + ' · ' + mvk + '</span></div>';
+    sg.classList.add('cp');   /* v0.17.0 한 줄 꼴 — 화살표 · 남은 초 · 이름은 작게 오른쪽 */
+    if (ns.mv === 'Rt' || ns.mv === 'U') h += '<div class="c1"><b class="ar">' + MVA[ns.mv] + '</b><span class="tx1">신호 없음 · 보행자·직진 차</span>' + nmh + '</div>';
+    else if (!st) h += '<div class="c1"><b class="ar">' + MVA[ns.mv] + '</b><span class="tx1">신호 자료 없음 — 눈으로</span>' + nmh + '</div>';
+    else if (st.kind === 'avg') h += '<div class="c1"><b class="ar">' + MVA[ns.mv] + '</b><span class="tx1">색 모름 · 평균 대기 ' + Math.round(st.wait) + '초</span>' + nmh + '</div>';
+    else { h += '<div class="c1"><b class="ar">' + MVA[ns.mv] + '</b><div class="now"><i></i><b><small>' + (st.green ? '녹색' : '적색') + ' </small>' + Math.ceil(st.remain) + '<small>초</small></b></div>' + nmh + '</div>';
+      if (at && at.kind !== 'avg') { h += '<div class="ln">닿으면(' + Math.round(eta) + '초 뒤) ' + (at.green ? '<b class="g">녹색</b> <em>(' + Math.floor(at.remain) + '초 남음)</em>' : '<b class="r">적색</b> · ' + Math.ceil(at.wait) + '초 기다림') + '</div>';
+        if (!at.green && NOSIG()) h += '<div class="ln adv">🚨 닿을 때 <b class="r">적색</b> — 좌우 확인 · <b>1차로</b>·<b>맨 가 차로</b>로</div>';
+        else if (!at.green && !night() && dd > 80) { var adv = advise(ns, dd, now); if (adv) h += '<div class="ln adv"><b>시속 ' + adv.v + 'km</b>쯤이면 녹색 <em>(제한 ' + ns.lim + ' 안 · 서두르지 않는다)</em></div>'; else h += '<div class="ln">제한속도 안에서는 이번 녹색에 못 닿는다 — 서두를 까닭이 없다</div>'; }
+        else if (!at.green && night()) h += '<div class="ln">밤 22~06시 속도 안내 없음</div>'; }
+      h += '<div class="src">' + (st.kind === 'pl' ? '계획값' : '이어 셈') + ' · 눈으로 확인</div>'; }
     sg.innerHTML = h;
     if (guide && voiceOn && st && st.kind !== 'avg' && at && at.kind !== 'avg' && dd < 260 && dd > 120 && lastSay.sig !== ns.no) { lastSay.sig = ns.no; say('앞 ' + ns.nm + ' 신호, ' + (at.green ? '녹색 통과 예상' : '적색, ' + Math.ceil(at.wait) + '초 대기 예상'), 1); }
   }
@@ -522,11 +530,11 @@
   /* v0.16.0 음성 안내 한 번 돌기 — 그림 그릴 때마다 부름(말은 단계마다 한 번) */
   var LASTSAY = '', OVS = 0;
   function turnWords(r, nx, n2, pos, stage) { if (nx.k === 'E') return '목적지'; var ic = (r.ics || []).filter(function (o) { return Math.abs(o.s - nx.d) < 300 && o.k !== '휴게소' && o.k !== '쉼터'; })[0], t = (ic ? ic.nm + '에서 ' : '') + MKO[nx.k] + (nx.nm ? ', ' + nx.nm + ' 방향' : '');
-    if (stage === 0) { var lh = String(laneHint(nx) || '').replace(/<[^>]+>/g, '').split(' · ')[0].replace(/·/g, ', ').trim(); if (lh) t += '. ' + lh; }
+    if (stage === 0 || stage === 3) { var lw = MODE === 'e' ? emLane(nx, pos).w : laneWord(laneSet(nx)); if (lw) t += '. ' + lw + (stage === 3 ? '로 미리 이동' : ''); }   /* 3 = 1km·500m 미리 알림(차로가 셋 넘을 때) */
     if (n2 && n2.k !== 'E' && n2.d - nx.d < 150) t += '. 이어서 ' + MKO[n2.k]; return t; }
   function voiceTick(r, pos, nx, n2) { if (!voiceOn) return; var hw = limAt(r, pos) >= 70;
-    if (nx) { var dm = nx.d - pos, ST = hw ? [[2100, 1700, '2킬로미터 앞 '], [1100, 800, '1킬로미터 앞 '], [550, 380, '500미터 앞 '], [150, 25, '곧 ']] : [[320, 200, ''], [80, 25, '곧 ']];
-      for (var i = 0; i < ST.length; i++) { var a = ST[i]; if (dm <= a[0] && dm > a[1]) { var key = nx.d + ':' + i; if (lastSay.man !== key) { lastSay.man = key; var last = i === ST.length - 1; say((a[2] || Math.round(dm / 50) * 50 + '미터 앞 ') + turnWords(r, nx, n2, pos, i === 0 && !last ? 0 : 1), last ? 2 : 1); } break; } } }
+    if (nx) { var dm = nx.d - pos, ls9 = laneSet(nx), many = ls9 && ls9.n >= 3, ST = hw ? [[2100, 1700, '2킬로미터 앞 '], [1100, 800, '1킬로미터 앞 '], [550, 380, '500미터 앞 '], [150, 25, '곧 ']] : (many ? [[1100, 800, '1킬로미터 앞 ', 3], [550, 380, '500미터 앞 ', 3]] : []).concat([[320, 200, ''], [80, 25, '곧 ']]);
+      for (var i = 0; i < ST.length; i++) { var a = ST[i]; if (dm <= a[0] && dm > a[1]) { var key = nx.d + ':' + i; if (lastSay.man !== key) { lastSay.man = key; var last = i === ST.length - 1; say((a[2] || Math.round(dm / 50) * 50 + '미터 앞 ') + turnWords(r, nx, n2, pos, a[3] || (i === 0 && !last ? 0 : 1)), last ? 2 : 1); } break; } } }
     (r.cong || []).forEach(function (c) { var ahead = c[0] - pos; if (c[2] >= 2 && ahead > 300 && ahead < 700 && !(lastSay.cg && lastSay.cg[c[0]])) { (lastSay.cg = lastSay.cg || {})[c[0]] = 1; say('약 ' + Math.round(ahead / 100) * 100 + '미터 앞부터 정체, 약 ' + (c[1] - c[0] >= 1000 ? (Math.round((c[1] - c[0]) / 100) / 10) + '킬로미터' : Math.round((c[1] - c[0]) / 50) * 50 + '미터'), 0); } });
     var L = limAt(r, pos), v = me && me.spd > 0 && !sim ? me.spd * 3.6 : 0;
     if (MODE === 'n' && !(dest && dest.vip) && L > 0 && v > L + 10) { if (!OVS) OVS = Date.now(); if (Date.now() - OVS > 5000 && Date.now() - (lastSay.ov || 0) > 30000) { lastSay.ov = Date.now(); say('제한속도 ' + L + '킬로미터 구간입니다', 0); } } else OVS = 0; }
@@ -562,7 +570,7 @@
     if (!A || !(guide || cruise)) { el.style.display = 'none'; return; } var h = '';
     if (A.cam && A.cam.d < 800) { h += '<div style="background:#111827;color:#fff;border-radius:12px;padding:7px 11px;font:800 14px system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3)">📷 단속 카메라 ' + km(A.cam.d) + ' 앞 · 제한 <b style="color:#fca5a5">' + A.cam.lim + '</b></div>';
       if (A.cam.d < 400 && !ALS[A.cam.id]) { ALS[A.cam.id] = Date.now(); say('앞에 단속 카메라가 있습니다. 제한속도 ' + A.cam.lim); } }
-    if (A.zone) { h += '<div style="background:#fef3c7;color:#78350f;border:2px solid #f59e0b;border-radius:12px;padding:6px 10px;font:800 13.5px system-ui,sans-serif">🏫 어린이보호구역 근처' + (A.zone.nm ? ' · ' + esc(A.zone.nm) : '') + ' — 제한속도 표지를 본다</div>';
+    if (A.zone) { h += '<div style="background:#fef3c7;color:#78350f;border:2px solid #f59e0b;border-radius:12px;padding:6px 10px;font:800 12.5px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 120px)">🏫 보호구역' + (A.zone.nm ? ' · ' + esc(A.zone.nm) : '') + ' — 표지 확인</div>';
       if (!ALS[A.zone.id]) { ALS[A.zone.id] = Date.now(); say('어린이보호구역입니다'); } }
     el.innerHTML = h; el.style.display = h ? 'flex' : 'none'; }
   /* 안내 중 — 내 길 앞 800m 를 [x, y, 앞 거리] 로 */

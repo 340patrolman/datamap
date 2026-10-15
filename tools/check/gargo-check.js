@@ -165,7 +165,7 @@
         ck('⏱ 막힘 배율(ITS 실측) — 표를 읽음 · 평일 08:30 출근 칸 ×1~2.5 · 끄면 ×1 · 가르고가 지금 쓰는 값 = TT.calF(지금)', f1c > 1 && f1c <= 2.5 && /평일 출근/.test(why) && f0c === 1 && Math.abs(window.GARGO.calF() - TT.calF(Date.now())) < 1e-9, why + ' · 끔 ' + f0c + ' · 지금 ' + window.GARGO.calF());
       } catch (e) { ck('v0.11.0 검사', false, e.message); }
       /* 건물 이름 찾기 — 칸을 띄우지 않아도 이름 목록(bld6/names.json)으로 */
-      var rf = g.localFind('롯데월드몰').concat(g.localFind('송파구청')); ck('건물 이름 찾기(롯데월드몰·송파구청 · 칸을 안 띄워도)', rf.filter(function (x) { return x[0] === '🏢'; }).length >= 2, rf.slice(0, 3).map(function (x) { return x[0] + x[1]; }).join(' · ') + ' · 이름 ' + g.bld().names);
+      /* 건물 이름 검사는 맨 끝으로 — 칸 151개를 한꺼번에 받는 시험과 겹치면 이름 목록(700KB) 받기가 늦다(2026-10-15 두 번 「이름 0」) */
       ck('밤 22~06시에는 속도 권고가 안 나온다(모의 주행 4초)', seen === 0, '신호 판 ' + shown + '번 봄 · 권고 글 ' + seen + '번');
       ck('안내 화면이 뜬다(위 띠)', (document.getElementById('gTop') || {}).offsetHeight > 0, String((document.getElementById('gTop') || {}).innerText || '').split(String.fromCharCode(10)).join(' · '));
       /* 켜놓고 다니기(v0.6.0) — 안내를 끝내고 길을 지운 뒤: 반포대로를 북쪽으로 가는 자리·속도를 넣으면 진행 방향이 위로 돌고, 내 길 앞의 신호가 「남쪽에서 직진」 값으로 잡힌다 */
@@ -193,7 +193,10 @@
       /* v0.15.0 고속도로 모드 — 신사역 → 예술의전당(경부) 길의 나들목 차례 · 경부(제한 70 이상)에서만 안내 판 줄 */
       try { var ic9 = r9 ? (g.icOn(r9) || []).map(function (o) { return o.nm; }) : [], ia = ['잠원IC', '반포IC', '서초IC'].map(function (n) { return ic9.indexOf(n); }), e70 = r9 ? r9.lims.filter(function (q) { return q[1] >= 70; })[0] : null, ln = e70 ? g.icLine(r9, e70[0] + 30) : '', ln0 = g.icLine(r9, 10);
         ck('🛣 고속도로 모드 — 경부 길의 나들목이 잠원IC → 반포IC → 서초IC 차례 · 경부 위에서만 「🛣 … km · 분」 줄', ia.every(function (x, i) { return x >= 0 && (!i || x > ia[i - 1]); }) && /🛣/.test(ln) && /km|m ·/.test(ln) && ln0 === '', ic9.join('›') + ' · ' + ln.replace(/<[^>]+>/g, '').slice(0, 60)); } catch (e) { ck('고속도로 모드 검사', false, e.message); }
+      var bnF = function () { var rf = g.localFind('롯데월드몰').concat(g.localFind('송파구청')); ck('건물 이름 찾기(롯데월드몰·송파구청 · 칸을 안 띄워도)', rf.filter(function (x) { return x[0] === '🏢'; }).length >= 2, rf.slice(0, 3).map(function (x) { return x[0] + x[1]; }).join(' · ') + ' · 이름 ' + g.bld().names + ' · ' + JSON.stringify(g.bld())); };
+      var bnP = g.bld().names ? Promise.resolve() : Promise.resolve(g.bnmLoad());
+      Promise.race([bnP, new Promise(function (ok) { setTimeout(ok, 10000); })]).then(function () { setTimeout(function () { try { bnF(); } catch (e) { ck('건물 이름 찾기', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
-      send(); }, 4200);
+      send(); }, 50); }); }, 4200);
   }
 })();

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#0b3d91">
+<title>역 실측 — 네비 가르고</title>
+<link rel="icon" href="../icon-192.png">
+<script>
+  // 확인코드 관문 — 가르고·데이터 압축지도와 같은 기억(tg_map2d_gate) · 없으면 가르고로 보낸다
+  (function () { var ok = false; try { ok = localStorage.getItem('tg_map2d_gate') === '1'; } catch (e) {} if (!ok) document.documentElement.classList.add('gated');
+    try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {} })();
+</script>
+<style>
+  :root { --ink: #0f172a; --dim: #55627a; --bg: #f2f4f8; --card: #fff; --line: #e2e7ef; --acc: #2f6bff; --ok: #15803d; --warn: #b45309; }
+  :root.dark { --ink: #eef2f7; --dim: #a3aec2; --bg: #0b1220; --card: #141d30; --line: #26324a; --acc: #5b8cff; --ok: #4ade80; --warn: #fbbf24; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; letter-spacing: -.2px; padding: calc(10px + env(safe-area-inset-top)) 12px calc(24px + env(safe-area-inset-bottom)); }
+  button, input { font: inherit; color: inherit; }
+  h1 { font-size: 20px; margin: 4px 0 2px; } .sub { color: var(--dim); font-size: 13.5px; line-height: 1.5; margin: 0 0 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+  .lbl { font-size: 13px; color: var(--dim); font-weight: 700; margin: 0 0 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; } .chips button { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 8px 12px; font-size: 15px; font-weight: 700; }
+  .chips button.on { background: var(--acc); border-color: var(--acc); color: #fff; } .chips button u { text-decoration: none; font-size: 12px; opacity: .8; margin-left: 3px; }
+  .row { display: flex; gap: 8px; margin-top: 8px; } .row input { flex: 1; min-width: 0; height: 46px; border: 1px solid var(--line); background: transparent; border-radius: 12px; padding: 0 12px; font-size: 17px; }
+  #mWatch { text-align: center; } #mTime { font-size: 64px; font-weight: 900; letter-spacing: -2px; font-variant-numeric: tabular-nums; line-height: 1.1; margin: 4px 0 10px; }
+  #mGo { width: 100%; height: 88px; border: 0; border-radius: 20px; font-size: 28px; font-weight: 900; color: #fff; background: #15803d; }
+  #mGo.run { background: #dc2626; } #mGo:disabled { opacity: .45; }
+  .small { display: flex; gap: 8px; margin-top: 8px; } .small button { flex: 1; height: 44px; border: 1px solid var(--line); background: transparent; border-radius: 12px; font-size: 15px; font-weight: 700; }
+  #mStat { font-size: 16px; margin-top: 10px; line-height: 1.6; } #mStat b { font-size: 22px; } .ok { color: var(--ok); font-weight: 800; } .warn { color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; } td, th { border-bottom: 1px solid var(--line); padding: 6px 4px; text-align: left; } th { color: var(--dim); font-weight: 700; font-size: 12.5px; }
+  .note { color: var(--dim); font-size: 12.5px; line-height: 1.55; margin: 8px 0 0; }
+  #mGate { display: none; } :root.gated #mGate { display: block; } :root.gated #mMain { display: none; }
+  a { color: var(--acc); }
+</style>
+</head>
+<body>
+<div id="mGate" class="card"><b>확인코드가 필요합니다.</b><p class="sub">네비 가르고에서 확인코드를 먼저 넣어 주십시오. <a href="./">네비 가르고 열기</a></p></div>
+<div id="mMain">
+  <h1>🚇 역 실측</h1>
+  <p class="sub">도착 예측(선착 역)의 <b>가정값</b>을 실측으로 바꾸는 기록 — 출입구에서 승강장까지 · 순찰차 세운 자리에서 출입구까지. <b>이 기기에만</b> 남고 밖으로 보내지 않습니다. <a href="./">← 가르고</a></p>
+  <div class="card"><p class="lbl">① 역 — 먼저 잴 곳(서초 관내)</p><div class="chips" id="mSt"></div>
+    <div class="row"><input id="mQ" placeholder="다른 역 찾기(이름 앞 글자)" autocomplete="off"></div><div class="chips" id="mHit" style="margin-top:6px"></div></div>
+  <div class="card"><p class="lbl">② 무엇을 재나</p><div class="chips" id="mKind"></div>
+    <div class="row"><input id="mExit" placeholder="출입구 번호(예: 3)" inputmode="numeric" autocomplete="off"><input id="mDir" placeholder="승강장 방향(예: 강남 방면)" autocomplete="off"></div>
+    <div class="row" id="mStopRow" style="display:none"><input id="mStop" placeholder="순찰차 세운 자리(예: 3번 출구 앞 버스정류장 뒤)" autocomplete="off"></div></div>
+  <div class="card" id="mWatch"><p class="lbl" id="mWhat">역을 고르십시오</p><div id="mTime">0.0초</div>
+    <button id="mGo" disabled>▶ 시작</button>
+    <div class="small"><button id="mCancel">✕ 이번 것 취소</button><button id="mUndo">↶ 마지막 기록 지우기</button></div>
+    <div id="mStat"></div></div>
+  <div class="card"><p class="lbl">③ 남긴 실측</p><div id="mList"></div>
+    <div class="small"><button id="mExport">📤 JSON 내보내기</button><button id="mClear">🗑 모두 지우기</button></div>
+    <p class="note">같은 역·출입구·방향·종류를 <b>3번</b> 재면 평균·편차가 굳는다(3번이 되기 전에는 계산에 안 씀). 시각(몇 시·평일/주말)은 저절로 적는다 — 붐비는 때와 한산한 때를 따로 재 두면 좋다. 내보내기 파일에는 역·출입구·방향·초·시간대·날짜만 있다(위치 좌표·신고 내용 없음).</p></div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'tg_gg_meas', $ = function (id) { return document.getElementById(id); };
+  /* 먼저 잴 곳 — 프롬프트(2026-10-15) 첫 대상: 2호선 방배·서초·교대·강남 · 3호선 남부터미널·양재·교대 · 7호선 내방·고속터미널·반포 · 9호선(서초 관내 셋 — 「신고 많은 곳」은 미확인이라 관내 역을 모두 둔다) */
+  var FIRST = [['방배', '2호선'], ['서초', '2호선'], ['교대(법원.검찰청)', '2호선'], ['강남', '2호선'], ['남부터미널(예술의전당)', '3호선'], ['양재(서초구청)', '3호선'], ['교대(법원.검찰청)', '3호선'], ['내방', '7호선'], ['고속터미널', '7호선'], ['반포', '7호선'], ['신반포', '9호선'], ['고속터미널', '9호선'], ['사평', '9호선']];
+  var KINDS = [['walk', '출입구 → 승강장'], ['stop', '순찰차 세운 자리 → 출입구']];
+  var ALL = [], cur = { st: null, ln: null, kind: 'walk' }, t0 = 0, tick = null, wl = null;
+  function load() { var D = null; try { D = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {} if (!D || !Array.isArray(D.rec)) D = { v: 1, rec: [] }; D.rec = D.rec.filter(function (r) { return r && r.st && r.ln && Array.isArray(r.t); }); return D; }
+  function save(D) { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) { alert('저장 공간이 모자랍니다 — 내보내기 뒤 지워 주십시오'); } }
+  function nm(s) { return String(s || '').replace(/\s+/g, ' ').trim().slice(0, 40); }
+  function keyOf() { return { st: cur.st, ln: cur.ln, kind: cur.kind, exit: nm($('mExit').value), dir: nm($('mDir').value), stop: cur.kind === 'stop' ? nm($('mStop').value) : '' }; }
+  function same(a, b) { return a.st === b.st && a.ln === b.ln && a.kind === b.kind && a.exit === b.exit && a.dir === b.dir && (a.stop || '') === (b.stop || ''); }
+  function stat(T) { var v = T.map(function (x) { return x[0]; }), n = v.length, m = v.reduce(function (s, x) { return s + x; }, 0) / (n || 1), sd = n > 1 ? Math.sqrt(v.reduce(function (s, x) { return s + (x - m) * (x - m); }, 0) / (n - 1)) : 0; return { n: n, m: m, sd: sd }; }
+  function sec(s) { return s >= 60 ? Math.floor(s / 60) + '분 ' + (s % 60).toFixed(0) + '초' : s.toFixed(1) + '초'; }
+  function done(st, ln) { return load().rec.some(function (r) { return r.st === st && r.ln === ln && r.t.length >= 3; }); }
+  function chips() { $('mSt').innerHTML = FIRST.map(function (q) { return '<button data-st="' + q[0] + '" data-ln="' + q[1] + '"' + (cur.st === q[0] && cur.ln === q[1] ? ' class="on"' : '') + '>' + q[0].split('(')[0] + '<u>' + q[1] + (done(q[0], q[1]) ? ' ✅' : '') + '</u></button>'; }).join('');
+    $('mKind').innerHTML = KINDS.map(function (k) { return '<button data-kind="' + k[0] + '"' + (cur.kind === k[0] ? ' class="on"' : '') + '>' + k[1] + '</button>'; }).join('');
+    $('mStopRow').style.display = cur.kind === 'stop' ? 'flex' : 'none'; }
+  function paint() { chips(); var k = keyOf(), D = load(), r = D.rec.filter(function (x) { return same(x, k); })[0];
+    $('mGo').disabled = !cur.st; $('mWhat').textContent = cur.st ? cur.st.split('(')[0] + ' ' + cur.ln + ' · ' + (cur.kind === 'walk' ? '출입구 ' + (k.exit || '?') + ' → 승강장' + (k.dir ? '(' + k.dir + ')' : '') : '세운 자리 → 출입구 ' + (k.exit || '?')) : '역을 고르십시오';
+    if (r && r.t.length) { var s = stat(r.t); $('mStat').innerHTML = '이 조합 <b>' + s.n + '번</b> · 평균 <b>' + sec(s.m) + '</b>' + (s.n > 1 ? ' · 편차 ±' + s.sd.toFixed(1) + '초' : '') + '<br>' + (s.n >= 3 ? '<span class="ok">✅ 3번 넘게 — 이 값을 계산에 씁니다(가정값 대신)</span>' : '<span class="warn">' + (3 - s.n) + '번 더 재면 평균이 굳습니다</span>'); }
+    else $('mStat').innerHTML = cur.st ? '<span class="warn">아직 잰 것이 없습니다 — 출입구 번호를 넣고 ▶ 시작</span>' : '';
+    var L = D.rec.slice().sort(function (a, b) { return (a.st + a.ln).localeCompare(b.st + b.ln); });
+    $('mList').innerHTML = L.length ? '<table><tr><th>역</th><th>무엇</th><th>번</th><th>평균</th><th>편차</th></tr>' + L.map(function (r) { var s = stat(r.t); return '<tr><td>' + r.st.split('(')[0] + ' <small>' + r.ln + '</small></td><td>' + (r.kind === 'walk' ? '출입구 ' + (r.exit || '?') + '→승강장' + (r.dir ? ' ' + r.dir : '') : '세운 자리→출입구 ' + (r.exit || '?')) + '</td><td>' + s.n + (s.n >= 3 ? ' ✅' : '') + '</td><td>' + sec(s.m) + '</td><td>' + (s.n > 1 ? '±' + s.sd.toFixed(1) : '-') + '</td></tr>'; }).join('') + '</table>' : '<p class="note">아직 없음</p>'; }
+  function stopTick() { if (tick) clearInterval(tick); tick = null; if (wl) { try { wl.release(); } catch (e) {} wl = null; } }
+  function go() { if (!cur.st) return; if (!t0) { t0 = Date.now(); $('mGo').textContent = '■ 끝(승강장 닿음)'; if (cur.kind === 'stop') $('mGo').textContent = '■ 끝(출입구 닿음)'; $('mGo').classList.add('run');
+      tick = setInterval(function () { $('mTime').textContent = sec((Date.now() - t0) / 1000); }, 100); try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (w) { wl = w; }, function () {}); } catch (e) {} return; }
+    var s = (Date.now() - t0) / 1000; t0 = 0; stopTick(); $('mGo').textContent = '▶ 시작'; $('mGo').classList.remove('run'); $('mTime').textContent = sec(s);
+    if (s < 3 || s > 1800) { alert('3초 아래이거나 30분 넘는 값은 남기지 않습니다'); paint(); return; }
+    var D = load(), k = keyOf(), r = D.rec.filter(function (x) { return same(x, k); })[0], d = new Date(); if (!r) { r = k; r.t = []; D.rec.push(r); }
+    r.t.push([Math.round(s * 10) / 10, d.getHours(), d.getDay() === 0 || d.getDay() === 6 ? 'we' : 'wd', d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2)]); if (r.t.length > 30) r.t.shift(); save(D); paint(); }
+  function cancel() { if (t0) { t0 = 0; stopTick(); $('mGo').textContent = '▶ 시작'; $('mGo').classList.remove('run'); $('mTime').textContent = '0.0초'; } }
+  function undo() { var D = load(), k = keyOf(), r = D.rec.filter(function (x) { return same(x, k); })[0]; if (!r || !r.t.length) return; if (!confirm('이 조합의 마지막 기록(' + sec(r.t[r.t.length - 1][0]) + ')을 지울까요?')) return; r.t.pop(); if (!r.t.length) D.rec.splice(D.rec.indexOf(r), 1); save(D); paint(); }
+  function exportJ() { var D = load(); if (!D.rec.length) { alert('남긴 실측이 없습니다'); return; }
+    var o = { schema: 'tg-station-meas/1', made: new Date().toISOString().slice(0, 10), fields: 'rec[{st 역 이름(서울 열린데이터 OA-12252 표기), ln 노선, kind walk(출입구→승강장)|stop(순찰차 세운 자리→출입구), exit 출입구, dir 승강장 방향, stop 세운 자리 글, t[[초, 시(0~23), wd 평일|we 주말, 날짜]]}] · 3번 넘게 잰 조합만 계산에 쓴다', rec: D.rec };
+    var b = new Blob([JSON.stringify(o, null, 1)], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'station-meas-' + o.made + '.json'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.st) { cancel(); cur.st = b.dataset.st; cur.ln = b.dataset.ln; $('mHit').innerHTML = ''; paint(); }
+    else if (b.dataset.kind) { cancel(); cur.kind = b.dataset.kind; paint(); }
+    else if (b.id === 'mGo') go(); else if (b.id === 'mCancel') cancel(); else if (b.id === 'mUndo') undo(); else if (b.id === 'mExport') exportJ();
+    else if (b.id === 'mClear') { if (confirm('남긴 실측을 모두 지울까요? (내보내기를 먼저 권합니다)')) { try { localStorage.removeItem(KEY); } catch (x) {} paint(); } } });
+  ['mExit', 'mDir', 'mStop'].forEach(function (id) { $(id).addEventListener('input', function () { cancel(); paint(); }); });
+  $('mQ').addEventListener('input', function () { var q = this.value.trim(); if (!q) { $('mHit').innerHTML = ''; return; } $('mHit').innerHTML = ALL.filter(function (s) { return s[0].indexOf(q) === 0; }).slice(0, 12).map(function (s) { return '<button data-st="' + s[0] + '" data-ln="' + s[1] + '">' + s[0] + '<u>' + s[1] + '</u></button>'; }).join('') || '<span class="note">없음</span>'; });
+  fetch('../data/subway-hour-seoul.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { ALL = j && j.stn ? j.stn.map(function (q) { return [q[0], q[1]]; }) : []; }).catch(function () {});
+  window.TGMEAS = { key: KEY, load: load, stat: stat, go: go, set: function (st, ln, kind) { cur.st = st; cur.ln = ln; cur.kind = kind || 'walk'; paint(); }, t0: function (v) { t0 = v; } };   /* 검사 창구 */
+  paint();
+})();
+</script>
+</body>
+</html>

@@ -23,6 +23,7 @@ PRE = ("<script>try{localStorage.setItem('tg_map2d_gate','1');localStorage.setIt
        "window.addEventListener('unhandledrejection',function(e){__ERR.push('rej '+String(e.reason&&e.reason.message||e.reason));});</script>")
 PAGES = {
     'gargo': {'src': 'gargo/index.html', 'url': '/gargo/__check.html#from=37.4919,127.0076&to=37.4844,127.0341&nm=check', 'js': '/tools/check/gargo-check.js', 'wait': 90},
+    'meas': {'src': 'gargo/measure.html', 'url': '/gargo/__mcheck.html', 'js': '/tools/check/measure-check.js', 'wait': 40},
     'map': {'src': 'index.html', 'url': '/__check.html#lat=37.4919&lon=127.0076', 'js': '/tools/check/map-check.js', 'wait': 90},
 }
 PARTS, DONE = {}, {}

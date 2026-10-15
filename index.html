@@ -657,6 +657,16 @@
   #m2dPnl.sized, #m2dRad.sized, #m2dBiz.sized, #m2dTr.sized { max-height: none !important; height: var(--ph); } #m2dPnl.sized.min, #m2dRad.sized.min, #m2dBiz.sized.min, #m2dTr.sized.min { height: auto; max-height: 44px !important; }
   .tzb { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 4px; } .tzb button { height: 30px; min-width: 36px; padding: 0 7px; border-radius: 9px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 12px; font-weight: 900; cursor: pointer; line-height: 1; } .tzb button + button { font-size: 14.5px; } .tzb button:active { background: var(--chipOn); color: var(--chipOnInk); }
   #m2dLeg .lgh .tzb { margin-left: auto; }
+  /* v2.224.0 🧰 단추에 글씨 · PC 범례 창 옮기기·크기 */
+  #m2dZoom #m2dToolB { height: 54px !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0; line-height: 1; }
+  #m2dZoom #m2dToolB .ti { font-size: 19px; } #m2dZoom #m2dToolB .tl { font-size: 9.5px; font-weight: 800; letter-spacing: -.6px; white-space: nowrap; }
+  #m2dLeg .lgh .lgr { display: none; }
+  @media (min-width: 760px) {
+    #m2dLeg { resize: both; min-width: 200px; min-height: 120px; }
+    #m2dLeg .lgh { cursor: move; user-select: none; -webkit-user-select: none; touch-action: none; position: sticky; top: -8px; background: var(--panel); z-index: 1; margin: -8px -10px 4px; padding: 8px 10px 4px; border-radius: 12px 12px 0 0; }
+    #m2dLeg .lgh .lgr { display: inline-block; margin-left: 4px; }
+    body.legdrag { cursor: move; } body.legdrag #m2d { pointer-events: none; }
+  }
   #m2dCard > .tzb { position: absolute; right: 78px; top: 8px; z-index: 4; margin: 0; } #m2dCard > .tzb button { height: 34px; border-radius: 10px; }
   @media (max-width: 759px) { #m2dCard > .tzb { top: 30px; } }
   #m2dCard.haslad > .tzb { display: none; } #m2dLad .tzb { margin: 0 2px 0 auto; } #m2dLad .tzb button { height: 26px; min-width: 32px; padding: 0 6px; border-radius: 8px; font-size: 11.5px; } #m2dLad .tzb button + button { font-size: 13.5px; }
@@ -935,7 +945,7 @@
   <button id="m2dFit" aria-label="전체 보기">전체</button>
   <button id="m2dLegB" aria-label="범례">범례</button>
   <button id="m2dHereB" aria-label="내 위치">📍</button>
-  <button id="m2dToolB" aria-label="도구 모음" aria-haspopup="true" aria-expanded="false">🧰</button>
+  <button id="m2dToolB" aria-label="도구·범례" aria-haspopup="true" aria-expanded="false"><span class="ti">🧰</span><span class="tl">도구·범례</span></button>
   <button id="m2dGetB" aria-label="지역 받기">📥</button>
   <button id="m2dFsB" aria-label="전체화면">⛶</button>
 </div>
@@ -1004,7 +1014,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=1"></script>
-<script src="js/map2d.js?v=2.223.0"></script>
+<script src="js/map2d.js?v=2.224.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

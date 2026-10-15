@@ -67,6 +67,7 @@ irm 'https://datamap-relay.<계정이름>.workers.dev/dg/B552584/ArpltnInforInqi
 - **배포됨**: `https://datamap-relay.knpthe1cop.workers.dev` (대시보드에서 만든 Worker · 비밀값 DG_KEY·ITS_KEY·VW_KEY) → 지도 `data/relay.json` 에 등록(v2.99.0).
 - **첫 시험 결과(2026-10-10)**: 공공데이터포털(에어코리아·TAGO)·브이월드 키 = 통과 · 다른 사이트 Origin = 403 · 목록 밖 = 404 · **ITS = 522(중계에서 닿지 않음)** → `relay.json` 의 `"off": ["its"]` 로 맛보기에서 ITS 갈래만 뺐다.
   - ITS 는 9443 포트다. Worker 「설정 › 런타임 › 호환성 날짜」가 **2024-09-02 앞**이면 표준이 아닌 포트를 무시하고 443 으로 나가 522 가 된다(이 PC 에서 443 은 응답 없음 · 9443 은 응답) → 날짜를 오늘로 바꾸고 다시 시험. 그래도 522 면 ITS 쪽이 Cloudflare 주소를 받지 않는 것.
+- **v4 · v4.1(2026-10-15)** — `/swpos/<호선 이름>`(실시간 열차 위치 · 노선 전체 · 60초 캐시 · 요청 때만) · `/swsub` 캐시 60초. 실시간 지하철 열쇠(SUBWAY_KEY)는 하루 1,000건을 둘이 나눠 쓴다. 배포 = 대시보드 편집기에 worker.js 를 붙여 넣고 「배포」(되돌릴 때는 배포 기록에서 앞 버전).
 - **v2(서울 갈래)** — `worker.js` 가 `/seoul` · `/wsbus` · `/swsub` · `/reach` 를 더 받는다(파일 맨 위 설명).
   1. 대시보드 → datamap-relay → 「코드 편집」 → `tools/relay/worker.js` 내용을 통째로 붙여 넣고 「배포」.
   2. 「설정 › 변수 및 비밀」에 비밀값 추가(없는 것은 그 갈래만 빠진다):

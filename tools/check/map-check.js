@@ -41,6 +41,7 @@
     /* v2.222.0 🧩 교차로 관계(온톨로지 코어 v1 · Phase 2) — 서초역 카드의 「이 자리의 관계」 안 단추를 누르면 서초역사거리의 사고·주 위반·과거 조치가 펼쳐진다 · 누르기 전에는 코어를 받지 않는다 */
     var ob = document.querySelector('#m2dCard [data-onto]'); ck('카드에 「🧩 교차로 관계 보기」 단추(서초)', !!ob, ob ? '' : '없음'); ck('누르기 전에는 온톨로지 코어를 받지 않는다', !m.onto());
     if (ob) { var det = ob.closest('details'); if (det) det.open = true; ob.click(); }
+    try { m.petGet(); } catch (e) {}   /* v2.230.0 반려동물 — 아래 길 자료 검사 뒤에 본다 */
     setTimeout(function () { var bx = document.getElementById('m2dOnto'), tx = bx ? String(bx.innerText || '') : '';
       ck('관계 패널이 펼쳐진다 — 교차로 · 사고 해마다 · 주 위반 근거 · 과거 조치 · 비슷한 교차로', /서초역사거리/.test(tx) && /① 사고/.test(tx) && /② 주 위반/.test(tx) && /④ 과거 조치/.test(tx) && /⑤ 비슷한/.test(tx) && /반포대로 축개선/.test(tx), tx.replace(/\s+/g, ' ').slice(0, 120));
       /* v2.223.0 신고 차량 예측 — 설정 세트 셋이 서로 다른 결과 · 🔒 중요업무 두 줄 · 밖으로 나가는 요청 0 · 남기는 것 없음 */
@@ -84,6 +85,8 @@
         setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var pr = m.petRows({ k: '11650510', gcd: '11650' }), prx = pr.replace(/<[^>]+>/g, ' '), pc = m.petRows({ k: '41281000', gcd: '41281' }).replace(/<[^>]+>/g, ' ');
+        ck('🐕 동 카드 반려동물 — 서초구 공식(개 23,515 · 고양이 271 · 가구 1천당 152) · 같은 시·도 순위 막대 · 동 어림은 「어림」 표시 · 고양이 최소값 · 고양시 구는 시 전체 값', /23,515/.test(prx) && /271/.test(prx) && /152/.test(prx) && /어림/.test(prx) && /최소값/.test(prx) && /고양시 전체 값/.test(pc), prx.replace(/\s+/g, ' ').slice(0, 160)); } catch (e) { ck('반려동물 카드 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       setTimeout(send, 80); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }

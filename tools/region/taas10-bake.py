@@ -63,8 +63,22 @@ def main():
     print('어느 구에도 못 붙인 사망사고(경계에서 %dm 넘게 떨어짐)' % NEAR_M, len(lostF), lostF)
     rp = os.path.join(ROOT, 'data', 'r', 'index.json'); IX = json.load(open(rp, encoding='utf-8')); gb = {}
     keep = {'경기': '41', '서울': '11', '인천': '28'}.get(region)
+    keepS = set(sys.argv[3].split(',')) if len(sys.argv) > 3 and not sys.argv[3].startswith('--') else ({keep} if keep else None)   # (2026-10-15) 「전국」 묶음은 셋째 인자로 그 원자료의 시도를 적는다 — 충청강원 30,36,43,44,51 · 경상전라 26,27,31,47,48,12,52
     for gu, v in list(G.items()):
-        if keep and gu[:2] != keep: print('다른 시도 구 — 쓰지 않음', gu, len(v['cells']), len(v['fatal'])); del G[gu]   # v0.10.102 사고: 경기 원자료 중 서울 경계 안 칸이 서울 구 파일을 덮어썼다 — 그 시도 구만 쓴다(v2.3.1 부터 그런 칸은 gu_finder 가 3km 안 그 시도 구로 보낸다)
+        if keepS and gu[:2] not in keepS: print('다른 시도 구 — 쓰지 않음', gu, len(v['cells']), len(v['fatal'])); del G[gu]   # v0.10.102 사고: 경기 원자료 중 서울 경계 안 칸이 서울 구 파일을 덮어썼다 — 그 시도 구만 쓴다
+    for gu, v in list(G.items()):
+        # (2026-10-15 코워크 발견) 10-05 「전국」 굽기가 경계 3km 안으로 붙은 칸 몇 개로 서울·경기·경북 등 구 파일 22개를 통째로 덮어썼다(중구 10,583 → 17건)
+        #  → 이미 있는 파일보다 건수가 1/5 도 안 되면 덮어쓰지 않는다(--force 면 덮음)
+        pth0 = os.path.join(ROOT, 'data', 'r', gu, 'taas10.json')
+        if '--force' not in sys.argv and os.path.exists(pth0):
+            try:
+                old = json.load(open(pth0, encoding='utf-8')).get('count', 0)
+            except Exception:
+                old = 0
+            new = sum(sum(c[2:12]) for c in v['cells'])
+            if old >= 100 and new * 5 < old:
+                print('있는 파일이 훨씬 큼 — 덮어쓰지 않음', gu, '있는', old, '새', new); del G[gu]
+    # (앞 거르기 덧말) v2.3.1 부터 그런 칸은 gu_finder 가 3km 안 그 시도 구로 보낸다
     for gu, v in G.items():
         cnt = sum(sum(c[2:12]) for c in v['cells'])
         doc = {'schema': 'tg-taas10/1', 'gu': gu,

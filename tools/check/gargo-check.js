@@ -58,6 +58,15 @@
       var A9 = {}; A9[lka] = { nm: '공사', full: true, both: false, txt: '시험 전면통제' }; g.accSet(A9); var rb = g.findRoute(sa[0], sa[1], ta[0], ta[1], Date.now() / 1000, null);
       A9[lka] = { nm: '공사', full: false, both: false, txt: '시험 차로 통제' }; g.accSet(A9); var rc9 = g.findRoute(sa[0], sa[1], ta[0], ta[1], Date.now() / 1000, null); g.accSet(null);
       ck('🚧 공사·통제 — 전면 통제 링크는 피해 간다 · 차로 통제는 그 길로 가되 시간 늘고 「🚧」 줄(live-acc-seoul.json)', !!ea && rb && rb.es.indexOf(ea) < 0 && rc9 && (rc9.es.indexOf(ea) < 0 || ((rc9.accs || []).length > 0 && rc9.time > ra.time)), [lka, rb && rb.es.indexOf(ea), rc9 && (rc9.accs || []).length, ra && Math.round(ra.time), rc9 && Math.round(rc9.time)].join(' · ')); } catch (e) { ck('공사·통제 검사', false, e.message); }
+    /* v0.23.0 다녀 본 길 기억 — ① 길을 따라 움직이면 지난 줄의 시간을 모은다 ② 같은 줄 두 번 = 그 속도를 쓴다 ③ 느리게 기억한 줄은 길 고르기에서 피한다 ④ 시험 뒤 지움 */
+    try { g.lrnReset(); var Gl = g.state().G, sl = g.P(127.0076, 37.4919), tl = g.P(127.0341, 37.4844), rl = g.findRoute(sl[0], sl[1], tl[0], tl[1], Date.now() / 1000, null), dnL = Date.now, tL = dnL();
+      Date.now = function () { return tL; };   /* 화면·경로는 건드리지 않고 길 맞대기만(lrnFeed) */
+      try { for (var dd = 5; dd < Math.min(rl.dist - 20, 1500); dd += 12) { var ii = 1; while (ii < rl.cum.length - 1 && rl.cum[ii] < dd) ii++; var x0 = rl.pts[(ii - 1) * 2], y0 = rl.pts[(ii - 1) * 2 + 1], x1 = rl.pts[ii * 2], y1 = rl.pts[ii * 2 + 1], fr = (dd - rl.cum[ii - 1]) / ((rl.cum[ii] - rl.cum[ii - 1]) || 1), hd = (Math.atan2(x1 - x0, -(y1 - y0)) * 180 / Math.PI + 360) % 360; tL += 1500; g.lrnFeed(x0 + (x1 - x0) * fr, y0 + (y1 - y0) * fr, hd, 8); } } finally { Date.now = dnL; }
+      var nL1 = g.lrnCount();
+      var eL = null; for (var k8 = 0; k8 < rl.es.length; k8++) { var qL = Gl.S[Gl.eS[rl.es[k8]]]; if (qL[2] > 120 && qL[4] <= 4) { eL = rl.es[k8]; break; } }
+      var lenL = Gl.S[Gl.eS[eL]][2]; g.lrnAdd(eL, lenL / (15 / 3.6)); g.lrnAdd(eL, lenL / (15 / 3.6)); var vL = g.lrnSpeed(eL), rl2 = g.findRoute(sl[0], sl[1], tl[0], tl[1], Date.now() / 1000, null);
+      ck('🧠 다녀 본 길 — 길 따라 움직이면 지난 줄을 모은다 · 같은 줄 두 번이면 그 속도(15km/h)를 쓴다 · 느리게 기억한 줄은 길 고르기에서 피하거나 시간이 는다', nL1 > 0 && Math.abs(vL - 15) < 1 && (rl2.es.indexOf(eL) < 0 || rl2.time > rl.time + 3), '모은 줄 ' + nL1 + ' · 속도 ' + vL.toFixed(1) + ' · ' + (rl2.es.indexOf(eL) < 0 ? '피함' : Math.round(rl.time) + '→' + Math.round(rl2.time) + '초'));
+      g.lrnReset(); } catch (e) { ck('다녀 본 길 검사', false, e.message); try { g.lrnReset(); } catch (x) {} }
     /* v0.14.0 주행 기록 — 기본 끔 · 켜면 안내 중 2초마다 기기에 · 끝나면 최근 목록에 · 중요업무·모의 주행은 안 남김 · 시험 뒤 지움 */
     if (st.route && !g.state().guide) { var dv0 = g.drv(); g.guideStart(); var off0 = g.drv().cur; g.guideStop(false);
       localStorage.setItem('tg_gargo_drvon', '1'); g.guideStart(); var dn = Date.now, tt9 = dn(); Date.now = function () { return tt9 += 2500; };

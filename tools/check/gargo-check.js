@@ -34,6 +34,15 @@
       var eb = String(document.getElementById('gBot').innerText || ''), rq = TT.calR(Date.now());
       ck('⏳ 실측 없는 길이 섞이면 도착·남은 시간을 폭으로(「~」 · 「추정」) · 폭 표(eta-cal r) 읽음', !rq || (r0.live >= 0.999 ? !/추정/.test(eb) : (/~/.test(eb) && /추정/.test(eb))), (rq ? rq.join('~') : '표 없음') + ' · 실시간 ' + Math.round((r0.live || 0) * 100) + '% · ' + eb.replace(/\s+/g, ' ').slice(0, 60));
       r0.pos = p0; g.guideStop(false); }
+    /* v0.14.0 주행 기록 — 기본 끔 · 켜면 안내 중 2초마다 기기에 · 끝나면 최근 목록에 · 중요업무·모의 주행은 안 남김 · 시험 뒤 지움 */
+    if (st.route && !g.state().guide) { var dv0 = g.drv(); g.guideStart(); var off0 = g.drv().cur; g.guideStop(false);
+      localStorage.setItem('tg_gargo_drvon', '1'); g.guideStart(); var dn = Date.now, tt9 = dn(); Date.now = function () { return tt9 += 2500; };
+      try { for (var di = 0; di < 7; di++) g.drvPt({ latitude: 37.4919 + di * 1e-4, longitude: 127.0076, accuracy: 6, speed: 11 }); } finally { Date.now = dn; }
+      var cur = g.drv().cur; g.guideStop(false); var all = g.drv().all, L9 = all[all.length - 1];
+      var od9 = g.state().dest, od9c = od9 ? { x: od9.x, y: od9.y, nm: od9.nm } : null; g.guideStart(); g.mode('v'); var vipCur = g.drv().cur; g.drvPt({ latitude: 37.5, longitude: 127.01, accuracy: 5, speed: 10 }); g.guideStop(false); var vipN = g.drv().all.length; g.mode('n'); if (od9c) g.setDest(od9c.x, od9c.y, od9c.nm); g.paint();   /* 기록 중 중요업무로 바뀌면 그 기록을 버린다 · 원래 목적지로 되돌림(81줄과 같은 방식) */
+      localStorage.removeItem('tg_gargo_drvon'); localStorage.removeItem('tg_gargo_drives');
+      ck('🛰 주행 기록 — 기본 끔 · 켜면 2초마다 7점 · 끝나면 기기에 1번(tg-drive-log/1 · 예측 줄 = [교차로, +초, 근거, m, 위도, 경도]) · 중요업무는 안 남김 · 시험 뒤 지움', !dv0.on && off0 === null && cur && cur.pts.length === 7 && all.length === 1 && L9.schema === 'tg-drive-log/1' && L9.plan.rows.length === r0.sigs.length && /^(its|liver|cal|lim)$/.test((L9.plan.rows[0] || [])[2] || 'lim') && vipCur === null && vipN === 1 && !localStorage.getItem('tg_gargo_drives'),
+        [dv0.on, off0, cur && cur.pts.length, all.length, L9 && L9.plan.rows.length, (L9 && L9.plan.rows[0] || []).slice(0, 3).join('/'), vipCur, vipN].join(' · ')); }
     /* 1) 소통 갈래 — 앱 기준표 그대로 */
     var sp = [[60, 1, 100, 0], [40, 1, 100, 1], [20, 1, 100, 2], [30, 3, 50, 0], [20, 3, 50, 1], [10, 3, 50, 2], [22, 6, 30, 0], [13, 6, 30, 1], [8, 6, 30, 2]], bad = [];
     sp.forEach(function (q) { var v = g.spdLv(q[0], q[1], q[2]); if (v !== q[3]) bad.push(q.join('/') + '→' + v); });

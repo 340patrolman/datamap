@@ -117,6 +117,13 @@
     body.guiding #gSig.cp { padding: 2px 9px; } body.guiding #gSig.cp .now b { line-height: .95; } body.guiding #gSig.cp .ar { font-size: calc(22px * var(--fz, 1)); }
     body.guiding #gBot { padding-top: 12px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
   }
+  /* v0.26.0 여러 순찰차 비교 */
+  #gBot details.disp { margin-top: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; } #gBot details.disp summary { font-weight: 800; font-size: calc(14.5px * var(--fz, 1)); cursor: pointer; } #gBot details.disp summary small { font-weight: 600; color: var(--dim); }
+  #gBot .disp .dbtn { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; } #gBot .disp button { border: 1px solid var(--line); background: transparent; border-radius: 10px; padding: 7px 10px; font-weight: 700; font-size: calc(13.5px * var(--fz, 1)); }
+  #gBot .disp .dcar { border-top: 1px solid var(--line); padding: 7px 0; font-size: calc(13.5px * var(--fz, 1)); line-height: 1.5; } #gBot .disp .dcar.top b { color: #1d4ed8; } :root.dark #gBot .disp .dcar.top b { color: #93c5fd; }
+  #gBot .disp .dcar b { font-size: calc(15.5px * var(--fz, 1)); } #gBot .disp .dcar em { font-style: normal; font-weight: 900; font-size: calc(17px * var(--fz, 1)); } #gBot .disp .dcar span { color: var(--dim); } #gBot .disp .dcar span em { color: var(--ink); }
+  #gBot .disp .dcar i { display: block; font-style: normal; color: #b45309; font-size: calc(12.5px * var(--fz, 1)); } #gBot .disp .dln { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: calc(13px * var(--fz, 1)); margin-top: 2px; } #gBot .disp .dln button { padding: 4px 8px; }
+  #gBot .disp .dnt { color: var(--dim); font-size: calc(12px * var(--fz, 1)); line-height: 1.5; margin: 6px 0 0; }
   #gNext { position: fixed; left: 8px; z-index: 5; display: none; align-items: center; gap: 6px; background: #0f1a33; color: #fff; border-radius: 0 0 12px 12px; padding: 6px 12px 7px; box-shadow: 0 6px 16px rgba(9,15,30,.3); }
   #gNext span { font-size: calc(11.5px * var(--fz, 1)); opacity: .75; } #gNext b { font-size: calc(19px * var(--fz, 1)); line-height: 1; } #gNext em { font-style: normal; font-weight: 900; font-size: calc(15px * var(--fz, 1)); }
   body:not(.guiding) #gNext { display: none !important; }
@@ -233,7 +240,7 @@
   })();
 </script>
 <script src="../js/travel-time.js?v=4"></script>
-<script src="gargo.js?v=0.25.0"></script>
+<script src="gargo.js?v=0.26.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

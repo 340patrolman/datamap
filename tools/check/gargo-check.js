@@ -67,6 +67,14 @@
       var lenL = Gl.S[Gl.eS[eL]][2]; g.lrnAdd(eL, lenL / (15 / 3.6)); g.lrnAdd(eL, lenL / (15 / 3.6)); var vL = g.lrnSpeed(eL), rl2 = g.findRoute(sl[0], sl[1], tl[0], tl[1], Date.now() / 1000, null);
       ck('🧠 다녀 본 길 — 길 따라 움직이면 지난 줄을 모은다 · 같은 줄 두 번이면 그 속도(15km/h)를 쓴다 · 기억한 속도로 길 고르기·시간이 바뀐다(퇴근 때는 이웃 메움 값이 더 느려 시간이 줄 수도 있다 — 기억이 메움보다 앞)', nL1 > 0 && Math.abs(vL - 15) < 1 && (rl2.es.indexOf(eL) < 0 || Math.abs(rl2.time - rl.time) > 3), '모은 줄 ' + nL1 + ' · 속도 ' + vL.toFixed(1) + ' · ' + (rl2.es.indexOf(eL) < 0 ? '피함' : Math.round(rl.time) + '→' + Math.round(rl2.time) + '초'));
       g.lrnReset(); } catch (e) { ck('다녀 본 길 검사', false, e.message); try { g.lrnReset(); } catch (x) {} }
+    /* v0.26.0 여러 순찰차 — 빨리 닿는 순서 · 지령 문구 · 참고용 예측 · 밖으로 나가는 요청 없음 · 도착 기록 꼴(좌표 없음) */
+    try { var tg9 = g.P(127.0341, 37.4844); g.setDest(tg9[0], tg9[1], '시험 출동지'); var nr0 = performance.getEntriesByType('resource').length;
+      var c1 = g.P(127.0076, 37.4919), c2 = g.P(127.0262, 37.4936), c3 = g.P(127.0402, 37.4768), DR = g.disp([[c1[0], c1[1], '서초1'], [c2[0], c2[1], '서초2'], [c3[0], c3[1], '서초3']]);
+      var srt = DR && DR.ok.length === 3 && DR.ok[0].t <= DR.ok[1].t && DR.ok[1].t <= DR.ok[2].t && DR.ok.every(function (q) { return q.pm > 0 && q.t > 0; }), od = DR ? g.dispOrder(DR.ok[0]) : '', hx = g.dispHtml(), ext9 = performance.getEntriesByType('resource').slice(nr0).filter(function (e) { return e.name.indexOf(location.origin) !== 0; }).length;
+      ck('🚓 여러 순찰차 — 빨리 닿는 순서로 줄 세움 · 지령 문구 「○호 예상 N분 M초(±…), △△ 쪽 정차」 · 「참고용 예측」·「최종 판단은 현장 경찰관」 · 셈하는 동안 밖으로 나간 요청 0', srt && /^서초\d 예상 \d+(분|초)/.test(od) && /±/.test(od) && /참고용 예측/.test(hx) && /최종 판단은 현장 경찰관/.test(hx) && ext9 === 0, od + ' · ' + (DR ? DR.ok.map(function (q) { return q.c.nm + ' ' + Math.round(q.t) + '초 직선 ' + Math.round(q.st) + (q.why ? ' ' + q.why : ''); }).join(' / ') : '없음') + ' · 바깥 ' + ext9);
+      var a0 = localStorage.getItem('tg_gg_arr'); g.arrAdd({ t: Date.now(), pred: 600, mode: 'e', sim: false, dist: 4230, lo: 500, hi: 720 }, 640); var la = g.arrAll().l, q9 = la[la.length - 1];
+      ck('⏱ 예상·실제 도착 기록 — [날짜, 시, 요일 갈래, 모드, km, 예상, 폭 아래, 폭 위, 실제] · 좌표 없음', q9 && q9.length === 9 && q9[3] === 'e' && q9[4] === 4.2 && q9[5] === 600 && q9[8] === 640 && !/\d{2}\.\d{4,}/.test(JSON.stringify(la)), JSON.stringify(q9));
+      if (a0 == null) localStorage.removeItem('tg_gg_arr'); else localStorage.setItem('tg_gg_arr', a0); g.disp([]); } catch (e) { ck('여러 순찰차 검사', false, e.message); }
     /* v0.24.1 키 작은 폰 규칙 */
     try { var mq = false; for (var si = 0; si < document.styleSheets.length; si++) { try { var rl = document.styleSheets[si].cssRules; for (var ri = 0; ri < rl.length; ri++) if (rl[ri].media && /max-height:\s*620px/.test(rl[ri].media.mediaText) && /#gTop/.test(rl[ri].cssText)) mq = true; } catch (x) {} }
       ck('📱 키 작은 폰(높이 620px 아래)에서 위 판을 줄이는 규칙', mq, String(mq)); } catch (e) { ck('키 작은 폰 규칙', false, e.message); }

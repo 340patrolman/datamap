@@ -71,6 +71,19 @@
   #gBot .sub { font-size: calc(13px * var(--fz, 1)); color: var(--dim); line-height: 1.6; margin: 3px 0 9px; }
   #gBot .mode { display: flex; gap: 6px; margin: 6px 0 4px; } #gBot .mode button { flex: 1; height: 40px; border-radius: 11px; border: 1px solid var(--line); background: transparent; font-size: calc(13.5px * var(--fz, 1)); font-weight: 800; } #gBot .mode button.on { background: var(--blue); color: #fff; border-color: var(--blue); } #gBot .mode button[data-mode=e].on { background: #b91c1c; border-color: #b91c1c; }
   #gTop .tx small b { font-size: inherit; line-height: inherit; }
+  #gBot .big .est { display: block; font-style: normal; font-size: calc(12px * var(--fz, 1)); font-weight: 700; color: #b45309; margin-top: 2px; } :root.dark #gBot .big .est { color: #fbbf24; }
+  #gBot .mode button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+  #gBot .eta.rg { gap: 10px; } #gBot .eta.rg b { font-size: calc(19px * var(--fz, 1)); letter-spacing: -.4px; }
+  /* v0.13.0 카카오내비 참고 — 회전 전 남은 거리 막대 · 왼쪽 경로 소통 막대 */
+  #gTop .tx .cd { display: block; width: 100%; max-width: 240px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); margin: 4px 0 3px; overflow: hidden; }
+  #gTop .tx .cd u { display: block; height: 100%; border-radius: 3px; background: #fff; transition: width .4s linear; }
+  #gBar { display: none; position: fixed; left: 10px; top: 43%; height: 20%; width: 12px; z-index: 4; pointer-events: none; }
+  body.guiding #gBar { display: block; }
+  #gBar .tr { position: absolute; left: 0; right: 0; top: 0; bottom: 0; border-radius: 6px; background: #9aa5b5; box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(15,23,42,.3); overflow: hidden; }
+  #gBar .tr i { position: absolute; left: 0; right: 0; } #gBar .tr .k0 { background: #16a34a; } #gBar .tr .k1 { background: #f59e0b; } #gBar .tr .k2 { background: #dc2626; }
+  #gBar .tr b { position: absolute; left: 2px; right: 2px; height: 8px; margin-bottom: -4px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #1e293b; }
+  #gBar .fl { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); font-size: 16px; }
+  #gBar .me { position: absolute; left: 50%; bottom: -9px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 0 3px #fff, 0 2px 6px rgba(15,23,42,.35); }
   #gTop .tx small.ln2 { font-size: calc(14px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.16); border-radius: 8px; padding: 2px 8px; align-self: flex-start; margin-top: 3px; } #gTop .tx small.ln2 em { font-style: normal; opacity: .8; }
   #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: 13px; border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: calc(14.5px * var(--fz, 1)); font-weight: 700; }
   #gBot .hand { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: calc(12.5px * var(--fz, 1)); color: var(--dim, #64748b); } #gBot .hand span { flex: 1 0 100%; } #gBot .hand button { height: 34px; border-radius: 10px; border: 1px solid var(--line); background: transparent; padding: 0 10px; font-size: calc(13px * var(--fz, 1)); font-weight: 700; color: inherit; }
@@ -140,6 +153,7 @@
 <div id="gTop" aria-live="polite"></div>
 <div id="gSig" aria-live="polite"></div>
 <div id="gSpd"></div>
+<div id="gBar" role="img" aria-label="남은 길 소통"></div>
 <div id="gBtn"><button id="gVoice" aria-label="음성 안내">🔊</button><button id="gCen" aria-label="내 자리로">◎</button><button id="gIn" aria-label="확대">＋</button><button id="gOut" aria-label="축소">－</button><button id="gDark" aria-label="밤 화면">◐</button><button id="gCfgB" aria-label="설정">⚙</button></div>
 <div id="gBot"><div class="hint">길 자료를 읽는 중…</div></div>
 <div id="gMsg"></div><div id="gNote"></div><div id="gPick"></div><div id="gCfg" role="dialog" aria-label="설정"></div>
@@ -168,8 +182,8 @@
         try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
   })();
 </script>
-<script src="../js/travel-time.js?v=2"></script>
-<script src="gargo.js?v=0.12.0"></script>
+<script src="../js/travel-time.js?v=3"></script>
+<script src="gargo.js?v=0.13.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

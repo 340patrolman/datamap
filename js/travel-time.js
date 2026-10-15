@@ -10,7 +10,7 @@
      TT.need(m, sec)                역산 — 거리 m 를 sec 초 안에 가려면 평균 km/h
      TT.vipTwo(segs, opt)           중요업무 두 줄 — 예상 도착(기본 속도) · 가장 이른 도착(직접 입력 · 없으면 기준 속도)
      TT.calAdd(실제초, 계산초) · TT.calK()   보정 — 실측 ÷ 계산 비율을 쌓아 다음 계산에 곱한다(숫자만 저장)
-     TT.calTab(json) · TT.calF(ms) · TT.calWhy(ms)   막힘 배율 — data/eta-cal.json(ITS 실측 · 요일 갈래 × 시간대) · 실시간 통행속도가 없는 줄은 제한속도 ÷ calF 로 달린다고 본다 · 설정 calOn 0 이면 1
+     TT.calTab(json) · TT.calF(ms) · TT.calR(ms) · TT.calWhy(ms)   막힘 배율 — data/eta-cal.json(ITS 실측 · 요일 갈래 × 시간대) · 실시간 통행속도가 없는 줄은 제한속도 ÷ calF 로 달린다고 본다 · 설정 calOn 0 이면 1
      TT.fmt(sec) → 「8분 34초」 · TT.hm(ms) → 「14:05」
    중요업무 끄기 스위치 = 아래 VIP_ON(공개 판에서 이 기능을 빼려면 false — 두 앱 모두 단추가 사라진다) */
 (function (root) {
@@ -49,6 +49,7 @@
   function calKey(ms) { var d = new Date(ms || Date.now()), ds = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2), h = d.getHours(), w = d.getDay();
     var kd = (CT && CT.holidays && CT.holidays.indexOf(ds) >= 0) || w === 0 ? '일·공휴' : w === 6 ? '토' : '평일', bd = h >= 7 && h < 10 ? '출근' : h >= 10 && h < 17 ? '낮' : h >= 17 && h < 20 ? '퇴근' : h >= 20 && h < 23 ? '저녁' : '밤'; return kd + '|' + bd; }
   function calF(ms) { if (!CT || !cfg().calOn) return 1; var k = calKey(ms), v = CT.f[k] != null ? CT.f[k] : CT.fill && CT.fill[k] ? CT.f[CT.fill[k]] : null; return v > 0 ? Math.max(0.8, Math.min(2.5, v)) : 1; }
+  function calR(ms) { if (!CT || !CT.r) return null; var k = calKey(ms), v = CT.r[k] || (CT.fill && CT.fill[k] ? CT.r[CT.fill[k]] : null); return v && v[0] > 0 && v[1] > 0 ? [Math.min(1, v[0]), Math.max(1, v[1])] : null; }   /* 실측 없는 길의 시간 폭 [아래, 위] 배수 */
   function calWhy(ms) { if (!CT) return '표 없음'; if (!cfg().calOn) return '끔'; return calKey(ms).replace('|', ' ') + ' ×' + calF(ms).toFixed(2) + (CT.fill && CT.fill[calKey(ms)] ? '(' + CT.fill[calKey(ms)].replace('|', ' ') + ' 값)' : ''); }
   function run(segs, opt) { opt = opt || {}; var C = cfg(); if (opt.pure) { C.turnS = 0; C.rampS = 0; C.tunK = 1; C.accS = 0; }   /* pure = 거리 ÷ 속도만(검증 기준값) */
     var v0 = +opt.v || 60, useSig = opt.sig !== false, k = opt.cal === false || opt.pure ? 1 : calK(), a0 = opt.mid ? 0 : C.accS, t = a0, d = 0, cps = [], parts = { move: 0, turn: 0, ramp: 0, sig: 0, acc: a0 };   /* mid = 이미 달리는 중(안내 중 다시 셈) — 출발 가감속을 빼고 셈 */
@@ -71,5 +72,5 @@
   function fmt(sec) { sec = Math.round(sec); var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return (h ? h + '시간 ' : '') + (h || m ? m + '분 ' : '') + (s < 10 && (h || m) ? '0' : '') + s + '초'; }
   function hm(ms) { var d = new Date(ms); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function mmss(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2); }
-  root.TT = { VIP_ON: VIP_ON, DEF: DEF, LBL: LBL, RNG: RNG, cfg: cfg, set: set, reset: reset, run: run, need: need, needSegs: needSegs, vipTwo: vipTwo, calAdd: calAdd, calK: calK, calN: calN, calReset: calReset, calTab: calTab, calF: calF, calWhy: calWhy, fmt: fmt, hm: hm, mmss: mmss };
+  root.TT = { VIP_ON: VIP_ON, DEF: DEF, LBL: LBL, RNG: RNG, cfg: cfg, set: set, reset: reset, run: run, need: need, needSegs: needSegs, vipTwo: vipTwo, calAdd: calAdd, calK: calK, calN: calN, calReset: calReset, calTab: calTab, calF: calF, calR: calR, calWhy: calWhy, fmt: fmt, hm: hm, mmss: mmss };
 })(typeof self !== 'undefined' ? self : this);

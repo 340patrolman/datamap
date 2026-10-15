@@ -24,6 +24,16 @@
     ck('가르고가 열린다(문법 · 길 묶음)', true, '길 ' + G.S.length + '줄 · 신호 교차로 ' + G.sig.length + '곳');
     ck('신호 교차로가 있다(서초 묶음 100곳 넘게)', G.sig.length > 100, G.sig.length);
     ck('값 없는 신호도 신호로 친다(T-GIS 800곳 넘게 붙음)', G.XS.length > 800, G.XS.length);
+    /* v0.13.0 카카오내비 참고 — 일반 단추 한 줄 · 안내 중 왼쪽 경로 소통 막대(🏁 · 내 자리 · 신호 점) · 다음 회전 300m 안이면 줄어드는 막대 */
+    if (st.route && !st.guide) { g.paint(); var mb = document.querySelector('#gBot [data-mode="n"]');
+      ck('🚗 「일반」 단추가 한 줄(두 줄로 꺾이지 않음 · 글이 안 잘림)', !!mb && /일반/.test(mb.textContent) && mb.offsetHeight <= 46 && mb.scrollWidth <= mb.clientWidth + 1, mb ? mb.offsetWidth + '×' + mb.offsetHeight : '없음');
+      g.guideStart(); g.paint(); g.paint(); var gb = document.getElementById('gBar'), gbr = gb.getBoundingClientRect(), gtp = document.getElementById('gTop').getBoundingClientRect(), r0 = g.state().route, m0 = r0.mans.filter(function (x) { return x.k !== 'E'; })[0];
+      ck('📊 안내 중 경로 소통 막대 — 보임 · 🏁·내 자리 · 위 안내 판과 안 겹침', getComputedStyle(gb).display === 'block' && !!gb.querySelector('.tr') && !!gb.querySelector('.fl') && !!gb.querySelector('.me') && gbr.top > gtp.bottom, Math.round(gbr.top) + '~' + Math.round(gbr.bottom) + 'px · 신호 점 ' + gb.querySelectorAll('.tr b').length);
+      var cd0 = !!document.querySelector('#gTop .cd'), p0 = r0.pos; if (m0) { r0.pos = m0.d - 150; g.paint(); } var cdu = document.querySelector('#gTop .cd u');
+      ck('↘ 다음 회전 300m 안이면 남은 거리 막대(150m 앞 = 50%) · 그 밖에선 없음', !!m0 && (m0.d - p0 > 300 ? !cd0 : true) && !!cdu && cdu.style.width === '50%', cdu ? cdu.style.width : '없음');
+      var eb = String(document.getElementById('gBot').innerText || ''), rq = TT.calR(Date.now());
+      ck('⏳ 실측 없는 길이 섞이면 도착·남은 시간을 폭으로(「~」 · 「추정」) · 폭 표(eta-cal r) 읽음', !rq || (r0.live >= 0.999 ? !/추정/.test(eb) : (/~/.test(eb) && /추정/.test(eb))), (rq ? rq.join('~') : '표 없음') + ' · 실시간 ' + Math.round((r0.live || 0) * 100) + '% · ' + eb.replace(/\s+/g, ' ').slice(0, 60));
+      r0.pos = p0; g.guideStop(false); }
     /* 1) 소통 갈래 — 앱 기준표 그대로 */
     var sp = [[60, 1, 100, 0], [40, 1, 100, 1], [20, 1, 100, 2], [30, 3, 50, 0], [20, 3, 50, 1], [10, 3, 50, 2], [22, 6, 30, 0], [13, 6, 30, 1], [8, 6, 30, 2]], bad = [];
     sp.forEach(function (q) { var v = g.spdLv(q[0], q[1], q[2]); if (v !== q[3]) bad.push(q.join('/') + '→' + v); });

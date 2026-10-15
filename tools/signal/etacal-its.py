@@ -233,7 +233,7 @@ KINDS = ['평일', '토', '일·공휴']
 
 def bake(rows, days, hol):
     """요일 갈래 × 시간대 「주행 배율」 — 줄이 30 아래인 칸은 비우고, 읽는 쪽이 정한 차례(토 → 일·공휴 → 평일 · 출근 → 낮)로 메운다(fill 에 적음)"""
-    tab, n = {}, {}
+    tab, n, rr = {}, {}, {}
     for kd in KINDS:
         for nm, a, b in BANDS:
             bb = {'출근': '출근 07~09', '낮': '낮 10~16', '퇴근': '퇴근 17~19', '저녁': '저녁 20~22', '밤': '밤 23~06'}[nm]
@@ -241,6 +241,7 @@ def bake(rows, days, hol):
             n[kd + '|' + nm] = len(v)
             if len(v) >= 30:
                 tab[kd + '|' + nm] = round(min(2.5, q(v, .5)), 2)
+                rr[kd + '|' + nm] = [round(q(v, .25) / q(v, .5), 2), round(q(v, .75) / q(v, .5), 2)]
     fill = {}
     for kd in KINDS:
         for nm, a, b in BANDS:
@@ -258,7 +259,7 @@ def bake(rows, days, hol):
            'source': '국가교통정보센터(ITS) 통행속도 — 이 PC 가 약 22분마다 받아 쌓은 것(07_API키/out/livespd) · 신호 = data/sigdir-seoul.json · 길 = data/nav-seocho.json · 굽는 도구 tools/signal/etacal-its.py --bake',
            'how': '서초 간선 고정 구간 28개(교차로 사이)마다 실측 시간(ITS 링크 통행속도) − 신호 기다림(방향별 직진 적색 r²/2C + 설 확률 × 4초) − 출발·정지 4초×2 를 제한속도 주행 시간으로 나눈 값의 가운데값 · 0.8 아래는 0.8 · 2.5 위는 2.5',
            'use': '실시간 통행속도가 없는 줄을 제한속도 ÷ f 로 달린다고 본다(신호 기다림은 따로 셈) · 중요업무(정속 가정)에는 쓰지 않는다',
-           'fields': 'f{「요일 갈래|시간대」: 주행 배율(제한속도 주행 시간 × f = 실측에서 신호 기다림·가감속을 뺀 시간)} · n{같은 칸: 맞댄 줄 수(30 아래면 f 없음)} · fill{빈 칸: 대신 쓸 칸} · bands[[이름, 시작 시, 끝 시]] · kinds[요일 갈래] · holidays[일·공휴로 볼 날]', 'days': days, 'bands': [[nm, a, b] for nm, a, b in BANDS], 'kinds': KINDS, 'f': tab, 'n': n, 'fill': fill, 'holidays': hd,
+           'fields': 'f{「요일 갈래|시간대」: 주행 배율(제한속도 주행 시간 × f = 실측에서 신호 기다림·가감속을 뺀 시간)} · r{같은 칸: [25% ÷ 가운데, 75% ÷ 가운데] — 실측 없는 길의 시간 폭} · n{같은 칸: 맞댄 줄 수(30 아래면 f 없음)} · fill{빈 칸: 대신 쓸 칸} · bands[[이름, 시작 시, 끝 시]] · kinds[요일 갈래] · holidays[일·공휴로 볼 날]', 'days': days, 'bands': [[nm, a, b] for nm, a, b in BANDS], 'kinds': KINDS, 'f': tab, 'r': rr, 'n': n, 'fill': fill, 'holidays': hd,
            'note': '서초 간선 28구간에서 잰 값을 다른 곳에도 쓴다(근사) · 토요일 등 줄이 모자란 칸은 fill 의 칸 값을 쓴다 · 이레 넘게 쌓일 때마다 다시 굽는다'}
     json.dump(out, open(os.path.join(ROOT, 'data', 'eta-cal.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('→ data/eta-cal.json', tab, 'fill', fill)

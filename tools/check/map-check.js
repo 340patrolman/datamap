@@ -86,7 +86,7 @@
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
       try { var pr = m.petRows({ k: '11650510', gcd: '11650' }), prx = pr.replace(/<[^>]+>/g, ' '), pc = m.petRows({ k: '41281000', gcd: '41281' }).replace(/<[^>]+>/g, ' ');
-        ck('🐕 동 카드 반려동물 — 서초구 공식(개 23,515 · 고양이 271 · 가구 1천당 152) · 같은 시·도 순위 막대 · 동 어림은 「어림」 표시 · 고양이 최소값 · 고양시 구는 시 전체 값', /23,515/.test(prx) && /271/.test(prx) && /152/.test(prx) && /어림/.test(prx) && /최소값/.test(prx) && /고양시 전체 값/.test(pc), prx.replace(/\s+/g, ' ').slice(0, 160)); } catch (e) { ck('반려동물 카드 검사', false, e.message); }
+        ck('🐕 동 카드 반려동물 — 서초구 공식(개 23,515 · 고양이 271 · 가구 1천당 152) · 같은 시·도 순위 막대 · 동 어림은 「어림」 표시 · 고양이 최소값 · 고양시 구는 시 전체 값 · 추정(서초 개 3.9만~4.2만) 다른 색 · 시 단위 값에는 추정 없음', /23,515/.test(prx) && /271/.test(prx) && /152/.test(prx) && /어림/.test(prx) && /최소값/.test(prx) && /고양시 전체 값/.test(pc) && /실제로 기르는 수\(추정\)/.test(prx) && /3\.9만~4\.2만/.test(prx) && !/실제로 기르는/.test(pc), prx.replace(/\s+/g, ' ').slice(0, 160)); } catch (e) { ck('반려동물 카드 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       setTimeout(send, 80); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }

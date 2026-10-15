@@ -58,11 +58,25 @@ def main():
         g = gu.get(dc[:5]); tb = bygu.get(dc[:5], 0)
         if g and tb:
             v[3] = round(g['all'] * (v[1] + v[2]) / tb)
+    # (덧붙임 2026-10-15 소유자 「개도 별로 등록 안 하고 고양이는 등록한 사람을 못 봤다 · 유추로 대략」) 실제 수 추정(E) — 전국 기준점 두 벌로 범위
+    #   개 = 등록 ÷ 전국 등록률(전국 등록 누계 ÷ 전국 개 수) · 고양이 = 일반가구 × 전국 가구당 고양이(전국 고양이 ÷ 전국 일반가구 20,926,710 = 2020 총조사)
+    #   기준점: 2022 농식품부 국민의식조사 보도 개 544.8만·고양이 254.1만 / 2024 데일리벳 역산 추정 개 499만·고양이 277만(둘 다 국가 승인 통계 아님)
+    NAT_HH = 20926710
+    dogN = sum(v['dog'] for v in sido.values())
+    ANCH = [('2022 조사 보도', 5448000, 2541000), ('2024 언론 역산', 4990000, 2770000)]
+    rates = [(lab, dogN / D, C / NAT_HH) for lab, D, C in ANCH]
+    for c, v in gu.items():
+        hh = (cen.get(c) or {}).get('hh')
+        dogs = sorted(round(v['dog'] / r / 100) * 100 for _, r, _ in rates)
+        cats = sorted(round(hh * k / 100) * 100 for _, _, k in rates) if hh else None
+        v['est'] = {'dog': dogs, 'cat': cats}
+    est_note = {'how': '개 = 등록 ÷ 전국 등록률 · 고양이 = 일반가구(2020) × 전국 가구당 고양이 — 두 기준점의 범위 [낮음, 높음]', 'anchors': [[lab, round(r, 3), round(k, 4)] for lab, r, k in rates],
+                'grade': 'E 추정', 'caveat': ['등록률을 전국 하나로 씀 — 서울은 등록률이 더 높을 수 있어 실제는 더 적을 수 있다', '고양이는 가구 수만 따라감 — 1인 가구가 많은 곳은 더 많을 수 있다', '기준점(전국 개·고양이 수)은 국가 승인 통계가 아니다']}
     doc = {'schema': 'tg-pet-reg/1', 'made': datetime.date.today().isoformat(),
            'source': '농림축산식품부 농림축산검역본부 「행정구역별 반려동물등록 개체 수 현황」(공공데이터포털 15125454 · 2022년 말 누계 · 사망 제외 · 이용허락 제한 없음)',
-           'fields': 'gu{시군구 코드: {nm, dog 개 등록, cat 고양이 등록, all 합, per1k_hh 일반가구 1,000곳당 등록(가구 = 2020 총조사 gu-census)}} · city{시도:시 이름: {nm, gus[그 시의 구 코드], dog, cat, all}} — 시 단위로만 나온 줄 · sido{시도 이름: {dog, cat, all}} · old{옛 이름: {dog, cat, all}} — 2022년 뒤 행정구역이 바뀌어 지금 구에 못 맞춘 줄 · dong{행정동 8자리: [이름, 동물병원 수, 애완동물·용품 소매 수, 등록 어림(구 등록 × 이 동 업소 ÷ 구 업소 · 업소 없는 구면 null)]} — **어림(D)**: 업소는 손님이 오는 상권에 몰려 사는 곳과 다를 수 있다',
+           'fields': 'gu{시군구 코드: {nm, dog 개 등록, cat 고양이 등록, all 합, per1k_hh 일반가구 1,000곳당 등록(가구 = 2020 총조사 gu-census), est{dog:[낮음,높음], cat:[낮음,높음]|null} 실제 수 추정(E · 아래 est 설명)}} · city{시도:시 이름: {nm, gus[그 시의 구 코드], dog, cat, all}} — 시 단위로만 나온 줄 · sido{시도 이름: {dog, cat, all}} · old{옛 이름: {dog, cat, all}} — 2022년 뒤 행정구역이 바뀌어 지금 구에 못 맞춘 줄 · dong{행정동 8자리: [이름, 동물병원 수, 애완동물·용품 소매 수, 등록 어림(구 등록 × 이 동 업소 ÷ 구 업소 · 업소 없는 구면 null)]} — **어림(D)**: 업소는 손님이 오는 상권에 몰려 사는 곳과 다를 수 있다',
            'note': ['「등록된 수」 — 실제 기르는 수보다 적다(등록 안 한 개는 안 잡힌다)', '고양이는 등록 의무가 아니다 — 최소값으로만 읽는다', '2022년 말 누계 — 그 뒤 새로 생긴 구(화성 등)는 시 단위 city 에', '읍·면·동 단위 공식 자료는 서울에 없다 — 동 단위는 동물병원·미용 등 업소로 어림(따로)'],
-           'n': {'gu': len(gu), 'city': len(city), 'old': len(old), 'dong': len(dong)}, 'gu': gu, 'city': city, 'old': old, 'sido': sido, 'dong': dong}
+           'n': {'gu': len(gu), 'city': len(city), 'old': len(old), 'dong': len(dong)}, 'gu': gu, 'city': city, 'old': old, 'sido': sido, 'dong': dong, 'est': est_note}
     p = os.path.join(ROOT, 'data', 'pet-reg.json')
     json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print('시군구', len(gu), '· 시 단위', len(city), '· 못 맞춤', miss)

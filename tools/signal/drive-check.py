@@ -4,7 +4,9 @@
 #   기록 파일은 저장소에 올리지 않는다 — 07_API키/out/drive/*.json 에만 두고, 결과도 화면과 07_API키/out/drive/check.md 에만
 #   꼴(게임 세션에 제안 · 바뀌면 여기를 맞춘다):
 #     {"schema":"tg-drive-log/1","app":"가르고 판","pts":[[ms, 위도, 경도, 정확도m, 속도m/s|null]],
-#      "plan":{"at":출발 ms,"rows":[[교차로(INT-<T-GIS 코드> · C-ITS 번호 · 이름), 예측 +초, 근거 'its'|'cal'|'lim']]}}
+#      "plan":{"at":출발 ms,"rows":[[신호번호|이름, 예측 +초(닿을 때 · 기다림 전), 근거 its|liver|cal|lim, 출발부터 m, 위도, 경도]]},"re":[[다시 찾은 ms, 새 예측초, 새 거리m]]}
+#   가르고 v0.14.0 내보내기 = gargo-drive-YYYYMMDD.json {"schema":"tg-drive-export/1","logs":[log …]} — 둘 다 읽는다
+#   다시 찾기(re) 뒤에 닿은 교차로는 처음 예측이 아닌 길이라 따로 센다(「다시 찾은 뒤」)
 #   교차로 자리 = data/onto-int.json(서울 8,097) · 도착 = 궤적이 그 교차로 30m 안에 처음 든 때(정확도 50m 넘는 점은 안 씀)
 #   py -3.12 -X utf8 tools/signal/drive-check.py [파일 …]      (안 적으면 07_API키/out/drive/*.json 모두)
 #   py -3.12 -X utf8 tools/signal/drive-check.py --selftest     (가짜 궤적으로 셈이 맞는지)
@@ -43,27 +45,32 @@ def check(doc, find):
     pts = [p for p in doc.get('pts', []) if (p[3] is None or p[3] <= ACCMAX)]
     plan = doc.get('plan') or {}
     t0, out = plan.get('at') or (pts[0][0] if pts else 0), []
-    for key, pred, basis in plan.get('rows', []):
-        ll = find(key)
+    re0 = min([q[0] for q in doc.get('re') or []] or [None]) if doc.get('re') else None
+    for row in plan.get('rows', []):
+        key, pred, basis = row[0], row[1], row[2]
+        ll = (row[4], row[5], str(key)) if len(row) >= 6 and row[4] and row[5] else find(key)
         if not ll:
             out.append((key, pred, basis, None, '자리 못 찾음')); continue
         hit = next((p for p in pts if p[0] >= t0 and dist(p[1], p[2], ll[0], ll[1]) <= NEAR), None)
-        out.append((ll[2], pred, basis, (hit[0] - t0) / 1000.0 if hit else None, '' if hit else '안 지남'))
+        after = bool(hit and re0 and hit[0] > re0)
+        out.append((ll[2], pred, basis + (' · 다시 찾은 뒤' if after else ''), (hit[0] - t0) / 1000.0 if hit else None, '' if hit else '안 지남'))
     return out
 
 
 def report(files):
     find = load_ints(); lines, R = [], []
     for f in files:
-        doc = json.load(open(f, encoding='utf-8'))
-        if doc.get('schema') != 'tg-drive-log/1':
+        top = json.load(open(f, encoding='utf-8'))
+        logs = top.get('logs', []) if top.get('schema') == 'tg-drive-export/1' else [top]
+        for doc in logs:
+          if doc.get('schema') != 'tg-drive-log/1':
             print('건너뜀(꼴 아님)', f); continue
-        rows = check(doc, find)
-        lines.append('## %s · %s · 점 %d' % (os.path.basename(f), doc.get('app', ''), len(doc.get('pts', []))))
-        lines.append('| 교차로 | 근거 | 예측 +초 | 실제 +초 | 실제÷예측 |'); lines.append('|---|---|---|---|---|')
-        for nm, pred, basis, act, why in rows:
+          rows = check(doc, find)
+          lines.append('## %s · %s · 모드 %s · 점 %d · 예측 %s초 · 실시간 몫 %s' % (os.path.basename(f), doc.get('app', ''), doc.get('mode', ''), len(doc.get('pts', [])), (doc.get('plan') or {}).get('sec'), (doc.get('plan') or {}).get('live')))
+          lines.append('| 교차로 | 근거 | 예측 +초 | 실제 +초 | 실제÷예측 |'); lines.append('|---|---|---|---|---|')
+          for nm, pred, basis, act, why in rows:
             r = act / pred if act and pred else None
-            if r: R.append((basis, r))
+            if r and '다시' not in basis: R.append((basis, r))
             lines.append('| %s | %s | %s | %s | %s |' % (nm, basis, round(pred) if pred else '', round(act) if act else why, '%.2f' % r if r else ''))
     if R:
         lines.append('\n근거별 실제÷예측 가운데(1보다 크면 실제가 더 걸림):')
@@ -83,6 +90,8 @@ def selftest():
     rows = check(doc, find)
     assert rows[0][3] is not None and 95 <= rows[0][3] <= 100, rows[0]   # 30m 앞에서 듦 → 약 97초
     assert rows[1][4] == '자리 못 찾음', rows[1]
+    exp = {'schema': 'tg-drive-export/1', 'logs': [dict(doc, re=[[1_000_000 + 50_000, 60, 500]], plan={'at': 1_000_000, 'rows': [[468, 80, 'liver', 1000, a[0], a[1]]]})]}
+    r2 = check(exp['logs'][0], find); assert '다시 찾은 뒤' in r2[0][2] and 95 <= r2[0][3] <= 100, r2
     print('✅ 자체 시험 통과 — 예측 80초 · 실제 %.0f초(비 %.2f) · 없는 교차로는 「자리 못 찾음」' % (rows[0][3], rows[0][3] / 80))
 
 

@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 158개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 159개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1750,23 +1750,23 @@
   ],
   [
    "live-acc-seoul.json",
-   "2026-10-15 15:19",
+   "2026-10-15 17:26",
    "서울 열린데이터광장 「서울시 실시간 돌발 정보」(AccInfo · TOPIS) — 큰길(ITS 링크)에 걸린 공사·통제·사고"
   ],
   [
    "live-seocho.json",
-   "2026-10-15 13:05",
+   "2026-10-15 16:05",
    "서울 열린데이터광장 「서울시 실시간 도시데이터」(OA-21285) · 장소 영역 「서울시 주요 121장소 영역」(OA-21778) — 받은 시각의 한 장(지도는 통신 0 · 다시 받으려면 tools …(전문은 파일에)"
   ],
   [
    "live-spd-seocho.json",
-   "15:14",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015151000"
+   "17:26",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015172500"
   ],
   [
    "live-spd-six.json",
-   "15:14",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015151000"
+   "17:26",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261015172500"
   ],
   [
    "livepop.json",
@@ -1877,6 +1877,11 @@
    "pedbtn-seocho.json",
    "",
    "서울시 보행자작동신호기 관련 정보(OA-15545 · 서울특별시 교통실 교통운영과 · 공공누리 1유형 · 2026-10-04 받음) — 30m 안 버튼을 한 자리로 묶음"
+  ],
+  [
+   "pet-reg.json",
+   "2026-10-15",
+   "농림축산식품부 농림축산검역본부 「행정구역별 반려동물등록 개체 수 현황」(공공데이터포털 15125454 · 2022년 말 누계 · 사망 제외 · 이용허락 제한 없음)"
   ],
   [
    "police-card.json",
@@ -2020,7 +2025,7 @@
   ],
   [
    "sig-audit.json",
-   "2026-10-15 15:15",
+   "2026-10-15 17:26",
    "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)"
   ],
   [
@@ -2065,7 +2070,7 @@
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-15 15:18",
+   "2026-10-15 17:30",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [
@@ -2190,7 +2195,7 @@
   ],
   [
    "utic-ims.json",
-   "2026-10-15 13:06",
+   "2026-10-15 16:05",
    "경찰청 도시교통정보센터(UTIC) 개방데이터 — 돌발정보(www.utic.go.kr/guide/imsOpenData.do · 인증키·등록 IP 로 받음) · 시내 도로의 사고·공사·행사·통제 등"
   ],
   [

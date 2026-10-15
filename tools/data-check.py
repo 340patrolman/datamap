@@ -10,6 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KB = os.path.dirname(ROOT)
 # [파일, 주기(일), 다시 굽는 법(auto = 키만 있으면 혼자 돈다 / hand = 사람·브라우저 단계가 있다), 명령·절차]
 SETS = [
+    ['data/eta-cal.json', 7, 'auto', '막힘 배율(ITS 실측 · 2026-10-15 첫 판 5일치 · 토요일 칸 빔) — `py -3.12 -X utf8 tools/signal/etacal-its.py --bake`(07_API키/out/livespd 가 쌓인 만큼 · 1분) → ai-guide-bake → 커밋 · 배율이 크게 바뀌면 MAP2D 에 한 줄'],
     ['data/rally-seoul.json', 1, 'auto', '서울경찰청 「오늘의 주요집회」 날마다(전날 올라옴) — `py -3.12 -X utf8 tools/region/rally-bake.py`(새 글만 받음 · 지난 90일 · 자리 = 지하철 출입구·브이월드 장소 검색·동 가운데) → ai-guide-bake → 커밋'],
     ['data/r/41111/lamp.json', 183, 'hand', '경기데이터드림 시트 다시 받기(regionwork/ggsheet.py) → `tools/region/gg-life-bake.py`(AED·화장실·주차장·충전소·응급·축제·보안등)'],
     ['data/r/11680/fac.json', 365, 'auto', 'KOSIS 서울 동별 사업체(해마다 새 해) — `tools/region/biz10-bake.py fetch` → `build`(fac-bake 다음)'],

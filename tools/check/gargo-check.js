@@ -29,6 +29,7 @@
       ck('🚗 「일반」 단추가 한 줄(두 줄로 꺾이지 않음 · 글이 안 잘림)', !!mb && /일반/.test(mb.textContent) && mb.offsetHeight <= 46 && mb.scrollWidth <= mb.clientWidth + 1, mb ? mb.offsetWidth + '×' + mb.offsetHeight : '없음');
       g.guideStart(); g.paint(); g.paint(); var gb = document.getElementById('gBar'), gbr = gb.getBoundingClientRect(), gtp = document.getElementById('gTop').getBoundingClientRect(), r0 = g.state().route, m0 = r0.mans.filter(function (x) { return x.k !== 'E'; })[0];
       ck('📊 안내 중 경로 소통 막대 — 보임 · 🏁·내 자리 · 위 안내 판과 안 겹침', getComputedStyle(gb).display === 'block' && !!gb.querySelector('.tr') && !!gb.querySelector('.fl') && !!gb.querySelector('.me') && gbr.top > gtp.bottom, Math.round(gbr.top) + '~' + Math.round(gbr.bottom) + 'px · 신호 점 ' + gb.querySelectorAll('.tr b').length);
+      var gn = document.getElementById('gNext'); ck('⤵ 「그다음」 꼬리 칸 — 안내 중 회전 칸 바로 밑 · 화살표와 거리 · 회전 칸 안에는 「그다음」 줄이 없다', !!gn && getComputedStyle(gn).display === 'flex' && /그다음/.test(gn.textContent) && Math.abs(gn.getBoundingClientRect().top - document.getElementById('gTop').getBoundingClientRect().bottom) < 6 && !/그다음/.test(document.getElementById('gTop').textContent), gn ? gn.textContent : '없음');
       var cd0 = !!document.querySelector('#gTop .cd'), p0 = r0.pos; if (m0) { r0.pos = m0.d - 150; g.paint(); } var cdu = document.querySelector('#gTop .cd u');
       ck('↘ 다음 회전 300m 안이면 남은 거리 막대(150m 앞 = 50%) · 그 밖에선 없음', !!m0 && (m0.d - p0 > 300 ? !cd0 : true) && !!cdu && cdu.style.width === '50%', cdu ? cdu.style.width : '없음');
       var eb = String(document.getElementById('gBot').innerText || ''), rq = TT.calR(Date.now());
@@ -193,9 +194,11 @@
       /* v0.15.0 고속도로 모드 — 신사역 → 예술의전당(경부) 길의 나들목 차례 · 경부(제한 70 이상)에서만 안내 판 줄 */
       try { var ic9 = r9 ? (g.icOn(r9) || []).map(function (o) { return o.nm; }) : [], ia = ['잠원IC', '반포IC', '서초IC'].map(function (n) { return ic9.indexOf(n); }), e70 = r9 ? r9.lims.filter(function (q) { return q[1] >= 70; })[0] : null, ln = e70 ? g.icLine(r9, e70[0] + 30) : '', ln0 = g.icLine(r9, 10);
         ck('🛣 고속도로 모드 — 경부 길의 나들목이 잠원IC → 반포IC → 서초IC 차례 · 경부 위에서만 「🛣 … km · 분」 줄', ia.every(function (x, i) { return x >= 0 && (!i || x > ia[i - 1]); }) && /🛣/.test(ln) && /km|m ·/.test(ln) && ln0 === '', ic9.join('›') + ' · ' + ln.replace(/<[^>]+>/g, '').slice(0, 60)); } catch (e) { ck('고속도로 모드 검사', false, e.message); }
+      var dnF = function () { var d1 = g.dongAt(127.0076, 37.4919), d2 = g.dongAt(127.1000, 37.5133), d3 = g.dongAt(126.9784, 37.5666); ck('📍 지금 위치 — 행정동 찾기(서초역 = 서초구 · 잠실역 = 송파구 · 시청 = 중구)', /^서초구 /.test(d1) && /^송파구 /.test(d2) && /^중구 /.test(d3), [d1, d2, d3].join(' · ')); };
       var bnF = function () { var rf = g.localFind('롯데월드몰').concat(g.localFind('송파구청')); ck('건물 이름 찾기(롯데월드몰·송파구청 · 칸을 안 띄워도)', rf.filter(function (x) { return x[0] === '🏢'; }).length >= 2, rf.slice(0, 3).map(function (x) { return x[0] + x[1]; }).join(' · ') + ' · 이름 ' + g.bld().names + ' · ' + JSON.stringify(g.bld())); };
       var bnP = g.bld().names ? Promise.resolve() : Promise.resolve(g.bnmLoad());
-      Promise.race([bnP, new Promise(function (ok) { setTimeout(ok, 10000); })]).then(function () { setTimeout(function () { try { bnF(); } catch (e) { ck('건물 이름 찾기', false, e.message); }
+      var dnP = Promise.resolve(g.dongLoad()); bnP = Promise.all([bnP, dnP]);
+      Promise.race([bnP, new Promise(function (ok) { setTimeout(ok, 10000); })]).then(function () { setTimeout(function () { try { bnF(); } catch (e) { ck('건물 이름 찾기', false, e.message); } try { dnF(); } catch (e) { ck('지금 위치 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       send(); }, 50); }); }, 4200);
   }

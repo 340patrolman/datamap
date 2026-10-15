@@ -83,6 +83,9 @@
   #gTop .lanes i.on { background: #fff; color: #1b54d6; }
   #gTop .tx small.em { display: block; margin-top: 4px; background: rgba(239,68,68,.25); border-radius: 8px; padding: 3px 8px; font-size: calc(12.5px * var(--fz, 1)); opacity: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #gBot .eta b, #gBot .eta span, #gBot .eta .stop { white-space: nowrap; } #gBot .eta.rg b { font-size: calc(17px * var(--fz, 1)); } #gBot .eta.rg { gap: 9px; } #gBot .eta .stop { padding: 0 12px; flex: 0 0 auto; }
+  #gNext { position: fixed; left: 8px; z-index: 5; display: none; align-items: center; gap: 6px; background: #0f1a33; color: #fff; border-radius: 0 0 12px 12px; padding: 6px 12px 7px; box-shadow: 0 6px 16px rgba(9,15,30,.3); }
+  #gNext span { font-size: calc(11.5px * var(--fz, 1)); opacity: .75; } #gNext b { font-size: calc(19px * var(--fz, 1)); line-height: 1; } #gNext em { font-style: normal; font-weight: 900; font-size: calc(15px * var(--fz, 1)); }
+  body:not(.guiding) #gNext { display: none !important; }
   #gTop .tx small.ic { display: block; font-size: calc(12.5px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.12); border-radius: 8px; padding: 3px 8px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #gTop .tx small.ic b { font-weight: 800; }
   #gBot .mode button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
   #gBot .eta.rg { gap: 10px; } #gBot .eta.rg b { font-size: calc(19px * var(--fz, 1)); letter-spacing: -.4px; }
@@ -163,6 +166,7 @@
 <div id="gOv"><button data-ov="s" class="on">🚦 신호</button><button data-ov="t" class="on">🚗 소통</button></div>
 <div id="gList"></div>
 <div id="gTop" aria-live="polite"></div>
+<div id="gNext" aria-hidden="true"></div>
 <div id="gSig" aria-live="polite"></div>
 <div id="gSpd"></div>
 <div id="gBar" role="img" aria-label="남은 길 소통"></div>
@@ -195,7 +199,7 @@
   })();
 </script>
 <script src="../js/travel-time.js?v=3"></script>
-<script src="gargo.js?v=0.17.0"></script>
+<script src="gargo.js?v=0.18.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

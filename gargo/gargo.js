@@ -182,12 +182,13 @@
     var D = new Float64Array(G.ne).fill(Infinity), PR = new Int32Array(G.ne).fill(-1), h = [], i, e, SA = {}, SB = {}, goal = {};
     function edgesOf(seg) { var out = [], k; for (k = G.oHead[G.S[seg][0]]; k < G.oHead[G.S[seg][0] + 1]; k++) if (G.eS[G.oList[k]] === seg) out.push(G.oList[k]); for (k = G.oHead[G.S[seg][1]]; k < G.oHead[G.S[seg][1] + 1]; k++) if (G.eS[G.oList[k]] === seg) out.push(G.oList[k]); return out; }
     /* 후보 = 가장 가까운 길 + 그것과 나란한 길(맞은편 차로 · 고가 밑 길). 같은 마디에 물린 길은 뺀다(그 갈림길의 회전 제한·신호를 건너뛰게 된다) · 자동차전용과 일반 길은 서로 바꾸지 않는다 · 40m 넘게 먼 길은 뺀다 */
-    function cands(x, y, maxD, n0) { var s0 = G.S[n0.seg]; var out = nearSegs(x, y, maxD, 24).filter(function (o) { if (o.seg === n0.seg) return true; var q = G.S[o.seg]; if (o.d > Math.max(n0.d, 40)) return false; if (q[0] === s0[0] || q[0] === s0[1] || q[1] === s0[0] || q[1] === s0[1]) return false; if ((q[4] <= 2) !== (s0[4] <= 2)) return false; var dd = Math.abs(angDiff(o.brg, n0.brg)); if (dd > 90) dd = 180 - dd; return dd <= 30; }); return out.length ? out : [n0]; }
+    function cands(x, y, maxD, n0, mix) { var s0 = G.S[n0.seg]; var out = nearSegs(x, y, maxD, 24).filter(function (o) { if (o.seg === n0.seg) return true; var q = G.S[o.seg]; if (o.d > Math.max(n0.d, 40)) return false; if (q[0] === s0[0] || q[0] === s0[1] || q[1] === s0[0] || q[1] === s0[1]) return false; if (!mix && (q[4] <= 2) !== (s0[4] <= 2)) return false; var dd = Math.abs(angDiff(o.brg, n0.brg)); if (dd > 90) dd = 180 - dd; return dd <= 30; }); return out.length ? out : [n0]; }
     function along(a) { var p = G.SP[a.seg], al = 0, tot = 0, u; for (u = 0; u + 3 < p.length; u += 2) { var l = Math.hypot(p[u + 2] - p[u], p[u + 3] - p[u + 1]); if (u < a.u) al += l; else if (u === a.u) al += l * a.t; tot += l; } return tot ? al / tot : 0; }
     /* 떠나는 자리 — 가장 가까운 길과, 그보다 24m 안으로 더 먼 나란한 길들(고가 밑·맞은편 차로). 더 먼 길은 1m 에 1초씩 불리하게 · 달리는 중이면 진행 방향과 반대인 쪽에 30초 */
     cands(sx, sy, 400, a0).forEach(function (a) { var fr = along(a); edgesOf(a.seg).forEach(function (se) { var frac = G.eR[se] ? fr : 1 - fr, c = eLen(se) * frac / (eV(se) / 3.6) + (a.d - a0.d) * 1; if (sbrg != null) { var eb = G.eR[se] ? (a.brg + 180) % 360 : a.brg; if (Math.abs(angDiff(sbrg, eb)) > 110) c += 30; } if (c < D[se]) { D[se] = c; heapPush(h, c, se); SA[a.seg] = a; } }); });
     /* 닿는 자리 — 같은 방식(더 먼 길은 1m 에 1초씩 불리하게) */
-    cands(tx, ty, 600, b0).forEach(function (b) { SB[b.seg] = b; edgesOf(b.seg).forEach(function (ge) { goal[ge] = (b.d - b0.d) * 1; }); });
+    /* v0.14.1 닿는 자리는 자동차전용·일반 길을 섞어 후보로 — 예술의전당 교차로 한가운데에서 우면산로(전용) 3m · 남부순환로 3m 인데 전용 길만 후보라 신사역 → 예술의전당이 양재IC 를 돌아 12.3km(카카오 5.5km · route-spot 대조 2026-10-15) · 떠나는 자리는 그대로(고가 위에서 밑길로 잘못 잡지 않게) */
+    cands(tx, ty, 600, b0, true).forEach(function (b) { SB[b.seg] = b; edgesOf(b.seg).forEach(function (ge) { goal[ge] = (b.d - b0.d) * 1; }); });
     var end = -1, bestC = Infinity;
     while (h.length) { var top = heapPop(h), d = top[0]; e = top[1]; if (d > D[e]) continue; if (d >= bestC) break; if (goal[e] != null) { var tc = d + goal[e]; if (tc < bestC) { bestC = tc; end = e; } }
       var nd = G.eB[e], key = nd + '|' + eWay(e), bn = G.ban[key], on = G.only[key];

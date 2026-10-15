@@ -34,6 +34,9 @@
       var eb = String(document.getElementById('gBot').innerText || ''), rq = TT.calR(Date.now());
       ck('⏳ 실측 없는 길이 섞이면 도착·남은 시간을 폭으로(「~」 · 「추정」) · 폭 표(eta-cal r) 읽음', !rq || (r0.live >= 0.999 ? !/추정/.test(eb) : (/~/.test(eb) && /추정/.test(eb))), (rq ? rq.join('~') : '표 없음') + ' · 실시간 ' + Math.round((r0.live || 0) * 100) + '% · ' + eb.replace(/\s+/g, ' ').slice(0, 60));
       r0.pos = p0; g.guideStop(false); }
+    /* v0.14.1 닿는 자리 — 자동차전용(우면산로)과 일반 길(남부순환로)이 겹친 교차로에서 전용 길만 후보로 잡아 돌아가던 것(route-spot 대조 · 신사역 → 예술의전당 12.3km) */
+    var s9 = g.P(127.019517, 37.516137), t9 = g.P(127.013111, 37.480682), r9 = g.findRoute(s9[0], s9[1], t9[0], t9[1], Date.now() / 1000, null);
+    ck('🎯 닿는 자리 — 신사역 → 예술의전당이 양재IC 로 돌지 않는다(9km 아래 · 우면산로로 들어가지 않음)', !!r9 && r9.dist < 9000 && !r9.lims.some(function (q) { return q[2] === '우면산로' || q[2] === '양재대로'; }), r9 ? Math.round(r9.dist) + 'm · ' + r9.lims.map(function (q) { return q[2]; }).filter(function (v, i, A) { return v && v !== A[i - 1]; }).join('›') : '길 없음');
     /* v0.14.0 주행 기록 — 기본 끔 · 켜면 안내 중 2초마다 기기에 · 끝나면 최근 목록에 · 중요업무·모의 주행은 안 남김 · 시험 뒤 지움 */
     if (st.route && !g.state().guide) { var dv0 = g.drv(); g.guideStart(); var off0 = g.drv().cur; g.guideStop(false);
       localStorage.setItem('tg_gargo_drvon', '1'); g.guideStart(); var dn = Date.now, tt9 = dn(); Date.now = function () { return tt9 += 2500; };

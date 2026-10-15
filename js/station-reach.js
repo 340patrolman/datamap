@@ -32,18 +32,18 @@
     return out; }
   function evAdd(i, h, events, ds) { var s = D.st[i], a = 0; (events || []).forEach(function (e) { if ((!e.date || e.date === ds) && (base(e.st) === base(s[1])) && h >= e.h0 && h < e.h1) a += +e.add || 0; }); return a; }
   /* 혼잡 — 그 역 그 시 승하차 몫 r(그 역 보통 = 1) + 행사 가산 → 도보 배수 1 + α(r−1)(0.9~1.8) · 정차 배수 1 + β(r−1)(1~2) · 오차도 도보 배수만큼 */
-  function crowd(i, h, events, ds) { var s = D.st[i], R = s && s[5], r = R ? R[((h % 24) + 24) % 24] : 1, ev = evAdd(i, h, events, ds); r += ev;
+  function crowd(i, h, events, ds, dt) { var s = D.st[i], R = s && s[5], W = s && s[8], r = R ? R[((h % 24) + 24) % 24] : 1, ev = evAdd(i, h, events, ds); if (R && W && (dt === 'wd' || dt === 'we')) r *= dt === 'we' ? W[1] : W[0]; else dt = null; r += ev;   /* dt = 평일 wd · 주말·공휴일 we — 하루 인원 배수를 곱한다(시간대 모양은 같다고 본 어림) */
     var wf = clamp(1 + A.alpha * (r - 1), A.walkMin, A.walkMax), df = clamp(1 + A.beta * (r - 1), 1, A.dwellMax);
-    return { r: Math.round(r * 100) / 100, walkF: wf, dwellF: df, sdF: wf, warn: wf >= A.warnK, ev: ev, noData: !R, assumed: true }; }
+    return { r: Math.round(r * 100) / 100, walkF: wf, dwellF: df, sdF: wf, warn: wf >= A.warnK, ev: ev, noData: !R, dt: dt, assumed: true }; }
   /* 열차 — 앞 역 출발 → 그 역 출발(정차 포함) 누적에서 그 역 정차를 빼 도착 · 사이 역들의 혼잡 정차 늘어남을 더함
      dep0 = 마지막 역을 떠나는(떠난) 때(지금 기준 초) — 떠남: −(지난 초) · 서 있음: 남은 정차(0 아래로 안 내려감)
      모름(unk): 관측 때 이미 지난 시간이 0 ~ 한 구간(떠남) 또는 0 ~ 정차(서 있음) 사이 어딘가 — 가운데로 셈하고 고른 분포의 분산을 더한다 */
-  function train(o, h, events, ds, n) { var P = path(o.i, o.nx, n || 6); if (!P.length) return [];
-    var c0 = crowd(o.i, h, events, ds), ago = Math.max(0, o.ago || 0), dw0 = A.dwell * c0.dwellF, run0 = Math.max(10, P[0].sec - A.dwell), dep0, vU = 0;
+  function train(o, h, events, ds, n, dt) { var P = path(o.i, o.nx, n || 6); if (!P.length) return [];
+    var c0 = crowd(o.i, h, events, ds, dt), ago = Math.max(0, o.ago || 0), dw0 = A.dwell * c0.dwellF, run0 = Math.max(10, P[0].sec - A.dwell), dep0, vU = 0;
     if (o.st === 'arr') { var u = o.unk ? dw0 / 2 : 0; vU = o.unk ? dw0 * dw0 / 12 : 0; dep0 = Math.max(0, dw0 - u - ago); }
     else { var u2 = o.unk ? run0 / 2 : 0; vU = o.unk ? run0 * run0 / 12 : 0; dep0 = -(u2 + ago); }
     var extra = 0, out = [];
-    P.forEach(function (p, k) { var c = crowd(p.i, h, events, ds), T = dep0 + p.sec - A.dwell + extra; extra += A.dwell * (c.dwellF - 1);
+    P.forEach(function (p, k) { var c = crowd(p.i, h, events, ds, dt), T = dep0 + p.sec - A.dwell + extra; extra += A.dwell * (c.dwellF - 1);
       var sd = Math.sqrt(A.sdT0 * A.sdT0 + (A.sdTk * (k + 1)) * (A.sdTk * (k + 1)) + vU); out.push({ i: p.i, k: k + 1, T: T, sd: sd, branch: p.branch, crowd: c, passed: o.st !== 'arr' && !o.unk && ago > run0 && k === 0 }); });
     return out; }
   /* 실측 — 역 실측 도구(tg_gg_meas)에서 그 역(이름 · 노선 표기 맞춤) · 그 종류 3번 이상 잰 조합 · 세울 출구와 같은 출구 먼저 · 없으면 다른 출구들 가운데값(other) */
@@ -52,7 +52,7 @@
       L.push({ m: m, sd: Math.max(5, sd), n: v.length, h: Math.round(hm), exit: r.exit }); });
     if (!L.length) return null; var same = L.filter(function (q) { return exit != null && String(q.exit) === String(exit); })[0]; if (same) return same;
     L.sort(function (a, b) { return a.m - b.m; }); var q = L[L.length >> 1]; return { m: q.m, sd: q.sd, n: q.n, h: q.h, exit: q.exit, other: exit != null }; }
-  function police(i, drive, h, meas, events, ds, exit) { var c = crowd(i, h, events, ds), mw = measOf(meas, i, 'walk', exit), mp = measOf(meas, i, 'stop', exit), walk, park;
+  function police(i, drive, h, meas, events, ds, exit, dt) { var c = crowd(i, h, events, ds, dt), mw = measOf(meas, i, 'walk', exit), mp = measOf(meas, i, 'stop', exit), walk, park;
     if (mw) { var ch = crowd(i, mw.h, events, null); walk = { sec: mw.m * c.walkF / ch.walkF, sd: mw.sd * c.sdF / ch.sdF, assumed: false, n: mw.n, exit: mw.exit, other: !!mw.other }; } else walk = { sec: A.walk * c.walkF, sd: A.sdWalk * c.sdF, assumed: true };
     park = mp ? { sec: mp.m, sd: mp.sd, assumed: false, n: mp.n, exit: mp.exit, other: !!mp.other } : { sec: A.park, sd: A.sdPark, assumed: true };
     var dr = drive || { sec: NaN, sd: 0 }; return { P: dr.sec + park.sec + walk.sec, sd: Math.sqrt(dr.sd * dr.sd + park.sd * park.sd + walk.sd * walk.sd), drive: dr, walk: walk, park: park, crowd: c }; }
@@ -63,13 +63,13 @@
   function mc(muT, sdT, muP, sdP, n, seed) { var R = rng(seed || 12345), w = 0, k; n = n || 20000; function g() { var u = R() || 1e-12, v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
     for (k = 0; k < n; k++) if (muP + sdP * g() < muT + sdT * g()) w++; return w / n; }
   function zOf(p) { var lo = -6, hi = 6, k; for (k = 0; k < 60; k++) { var m = (lo + hi) / 2; if (Phi(m) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
-  function plan(o, drives, h, opt) { opt = opt || {}; var T = train(o, h, opt.events, opt.date, opt.n || 6), tg = opt.target || A.target, z = zOf(tg), EX = opt.exits || {};
-    var C = T.map(function (t) { var p = police(t.i, drives && drives[t.i], h, opt.meas, opt.events, opt.date, EX[t.i]), pr = isFinite(p.P) ? pWin(t.T, t.sd, p.P, p.sd) : null, s = Math.sqrt(t.sd * t.sd + p.sd * p.sd), st = D.st[t.i];
+  function plan(o, drives, h, opt) { opt = opt || {}; var T = train(o, h, opt.events, opt.date, opt.n || 6, opt.dayType), tg = opt.target || A.target, z = zOf(tg), EX = opt.exits || {};
+    var C = T.map(function (t) { var p = police(t.i, drives && drives[t.i], h, opt.meas, opt.events, opt.date, EX[t.i], opt.dayType), pr = isFinite(p.P) ? pWin(t.T, t.sd, p.P, p.sd) : null, s = Math.sqrt(t.sd * t.sd + p.sd * p.sd), st = D.st[t.i];
       return { i: t.i, nm: st[1], ln: st[2], k: t.k, T: t.T, sdT: t.sd, P: p.P, sdP: p.sd, p: pr, slack: isFinite(p.P) ? t.T - p.P - z * s : null, late: isFinite(p.P) && t.T - p.P - z * s < 0, crowd: t.crowd, walk: p.walk, park: p.park, branch: t.branch, passed: t.passed, exits: st[7] || [], assumed: true }; });
     var ok = C.filter(function (c) { return c.p != null && c.p >= tg && !c.passed; }), best = ok[0] || null, close = false, weak = false;
     if (!best) { var q = C.filter(function (c) { return c.p != null && !c.passed; }).sort(function (a, b) { return b.p - a.p; })[0]; if (q) { best = q; close = q.p >= 0.5; weak = q.p < 0.5; } }
     return { cards: C, best: best ? best.i : null, close: close, weak: weak, target: tg, assumed: A }; }
   function calibrate(P) { var r = (P || []).filter(function (x) { return x[0] > 30 && x[1] > 30; }).map(function (x) { return x[1] / x[0]; }).filter(function (v) { return v > 0.4 && v < 2.5; }).sort(function (a, b) { return a - b; });
     if (!r.length) return { k: 1, n: 0, assumed: true }; return { k: clamp(r[r.length >> 1], 0.7, 1.5), n: r.length, assumed: r.length < 5 }; }
-  root.SREACH = { A: A, LN: LN, lineOf: lineOf, load: load, data: function () { return D; }, find: find, path: path, crowd: crowd, train: train, police: police, measOf: measOf, pWin: pWin, mc: mc, Phi: Phi, plan: plan, calibrate: calibrate, VER: '2.1-tg' };
+  root.SREACH = { A: A, LN: LN, lineOf: lineOf, load: load, data: function () { return D; }, find: find, path: path, crowd: crowd, train: train, police: police, measOf: measOf, pWin: pWin, mc: mc, Phi: Phi, plan: plan, calibrate: calibrate, VER: '2.2-tg' };
 })(typeof window !== 'undefined' ? window : this);

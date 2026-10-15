@@ -74,14 +74,14 @@ def main():
         h = hr.get((nm, ln))
         ex = [[e[2] or '', round(e[0], 6), round(e[1], 6)] for e, q in EX.get(base(nm), []) if ll and dist(q[0], q[1], ll[0], ll[1]) < 300]
         idx[s[0]] = len(st)
-        st.append([s[0], nm, ln, round(ll[0], 6) if ll else None, round(ll[1], 6) if ll else None, h[5] if h else None, h[2] if h else None, ex])
+        st.append([s[0], nm, ln, round(ll[0], 6) if ll else None, round(ll[1], 6) if ll else None, h[5] if h else None, h[2] if h else None, ex, h[7:9] if h and len(h) > 8 else None])
     lk = []
     for l in R['links']:
         if l[0] in idx and l[1] in idx:
             lk.append([idx[l[0]], idx[l[1]], round(l[2] * 60), 1 if l[3] >= 0 else 0])
     doc = {'schema': 'tg-train-run/1', 'made': datetime.date.today().isoformat(),
            'source': '역 이음·역 사이 시간 = data/subway-reach.json(국토교통부 TAGO 지하철 평일 시간표에서 읽은 추정) · 역 자리 = 서울시 역사마스터(data/r/stations.json)·data/stations-kr.json · 출입구 = OpenStreetMap(© OpenStreetMap contributors · ODbL · data/exits-kr.json) · 시간대 승하차 몫 = 서울 열린데이터광장 OA-12252(data/subway-hour-seoul.json) — 굽는 도구 tools/region/trainrun-bake.py',
-           'fields': 'st[[역 ID, 역 이름, 노선, 위도, 경도, [0~23시 승하차 몫 — 그 역 5~24시 평균 = 1 · 없으면 null], 하루 평균 승하차|null, [[출구 번호, 위도, 경도]]]] · lk[[역 번호, 다음 역 번호, 초(앞 역 출발 → 다음 역 출발 · 정차 포함), 1 = 역간거리 파일과 맞은 이음 · 0 = 한 역을 건너뛸 수 있는 메움]]',
+           'fields': 'st[[역 ID, 역 이름, 노선, 위도, 경도, [0~23시 승하차 몫 — 그 역 5~24시 평균 = 1 · 없으면 null], 하루 평균 승하차|null, [[출구 번호, 위도, 경도]], [평일 배수, 주말·공휴일 배수]|null(하루 인원 · subway-hour-seoul)]] · lk[[역 번호, 다음 역 번호, 초(앞 역 출발 → 다음 역 출발 · 정차 포함), 1 = 역간거리 파일과 맞은 이음 · 0 = 한 역을 건너뛸 수 있는 메움]]',
            'note': ['역 사이 시간은 시간표 출발 시각 차이로 읽은 추정(정차 포함 · 운영사 소요시간표 아님) · 급행을 가르지 못함',
                     '정차 시간(문 열림)은 따로 없다 — 쓰는 쪽에서 가정값(30초)으로 떼어 쓴다',
                     '출입구는 OSM 자원봉사 지도라 빠진 곳·번호 없는 곳이 있다',

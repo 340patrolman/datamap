@@ -48,6 +48,9 @@ JS = r'''(async function(){ var j = await (await fetch('/data/train-run-seoul.js
   R.lnm = [w1.assumed, Math.round(w1.sec / S.crowd(gr, 14).walkF * S.crowd(gr, 14).walkF), w1.exit, w0.assumed, w0.other];
   /* ⑧ 보정 — 실측 ÷ 예상 가운데 · 짧은 것·말 안 되는 비율 버림 · 0.7~1.5 */
   R.cal = [S.calibrate([[300,330],[600,660],[400,440],[20,100],[300,1500]]), S.calibrate([[300,600],[300,600],[300,600]])];
+  /* ⑩ 요일 — 평일·주말 배수(하루 인원)를 몫에 곱한다 · 교대(2호선) 8시 평일 > 주말 · 요일을 안 주면 전과 같음 */
+  var gy = S.find('교대(법원.검찰청)','2호선'), cw = S.crowd(gy, 8, null, null, 'wd'), ce = S.crowd(gy, 8, null, null, 'we'), cn = S.crowd(gy, 8);
+  R.dt = [cw.r, ce.r, cn.r, Math.round(j.st[gy][5][8] * j.st[gy][8][0] * 100) / 100, cw.dt, ce.dt];
   /* ⑨ 행사 가산 — 그 날·그 역·그 시간만 */
   var e = [{ st: '강남', date: '2026-10-20', h0: 18, h1: 21, add: 1.5 }]; R.ev = [S.crowd(gn, 19, e, '2026-10-20').r - S.crowd(gn, 19, [], '2026-10-20').r, S.crowd(gn, 19, e, '2026-10-21').ev, S.crowd(gn, 22, e, '2026-10-20').ev];
   return JSON.stringify(R); })()'''
@@ -74,6 +77,7 @@ O = R['obs']; ck('⑦ 모름 — 오차가 크고 「방금」보다 일찍(구�
 ck('⑦′ 갈래 — 갈라진 역부터 뒤는 모두 갈래 표시', R['br'] is not None and R['br'].index(True) >= 0 and all(R['br'][R['br'].index(True):]), R['br'])
 L9 = R['lnm']; ck('⑦″ 실측 노선 표기(경부선 → 1호선) 맞음 · 세운 출구(2번) 값 · 다른 출구만 있으면 그 값에 「다른 출구」 표시', L9[0] is False and L9[1] == 100 and L9[2] == '2' and L9[3] is False and L9[4] is True, L9)
 K = R['cal']; ck('⑧ 보정 — 가운데 1.1 · 짧은 것·엉뚱한 비율 버림 · 5번 아래는 가정값 · 위 끝 1.5', abs(K[0]['k'] - 1.1) < 1e-9 and K[0]['n'] == 3 and K[0]['assumed'] and K[1]['k'] == 1.5, K)
+D9 = R['dt']; ck('⑩ 요일 — 교대 8시 평일 몫 > 주말 몫 · 평일 몫 = 시간대 몫 × 평일 배수 · 요일 없으면 시간대 몫 그대로', D9[0] > D9[1] and abs(D9[0] - D9[3]) < 0.02 and D9[2] < D9[0] and D9[4] == 'wd' and D9[5] == 'we', D9)
 E = R['ev']; ck('⑨ 행사 가산 — 그 날·그 역·그 시간에만 +1.5', abs(E[0] - 1.5) < 0.01 and E[1] == 0 and E[2] == 0, E)
 n = sum(1 for x in C if x[1])
 for name, ok, got in C: print(('  ✅ ' if ok else '  ❌ ') + name + (' — ' + got))

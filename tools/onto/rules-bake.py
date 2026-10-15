@@ -83,7 +83,7 @@ RULES = [
          o=['dm:tools/signal/etacal-its.py', 'dm:data/eta-cal.json', 'dm:tools/signal/kakao-spot.py', 'dm:tools/signal/spdnormal-bake.py'], t='data/eta-cal.json 의 원자료가 07_API키/out/livespd 뿐인지'),
     dict(id='RULE-NAV-5', area='길 알림', title='교차로 CCTV 는 목록(이름·번호·자리)만 지도에 — 출처 「경찰청 도시교통정보센터(UTIC)」 표기 · 영상은 TOPIS 공식 사이트 · 목록은 하루 1번만 받기',
          d='UTIC 열쇠는 등록 IP 에서만 동작 — 폰·중계 서버에 넣지 않는다. 영상 중계는 허용 문구가 없어 안 한다. 영상은 정차 중·동승자만 · 출동 첫 화면 자동 재생 금지.',
-         s=[('off', 'UTIC 「경찰청 교통정보 개방데이터 요청자 준수사항」(2026 개방데이터 세부내용.hwp · 메일 2026-10-06) — 신청 목적 외 사용 불가 · UTIC 표기 · 1초 5회 넘으면 IP 차단', '2026-10-15'), ('own', 'FK-CCTV-1', '2026-10-15')], g='A',
+         s=[('off', 'UTIC 「경찰청 교통정보 개방데이터 요청자 준수사항」(2026 개방데이터 세부내용.hwp · 메일 2026-10-06) — 신청 목적 외 사용 불가 · UTIC 표기 · 1초 5회 넘으면 IP 차단', '2026-10-15'), ('own', 'FK-CCTV-1', '2026-10-15'), ('own', 'FK-CCTV-2 — UTIC 신청 목적 「경찰업무 보조 연구개발」', '2026-10-15')], g='A',
          o=['dm:tools/region/utic-cctv-bake.py', 'dm:data/cctv-utic-seoul.json'], t='data/cctv-utic-seoul.json 의 credit 칸 · 영상 주소·열쇠 칸 없음'),
     # 자료 읽는 법
     dict(id='RULE-DATA-1', area='자료', title='서울 상권분석 「당월 매출」은 한 분기(3달) 합계 — 달로 쓰려면 ÷3',
@@ -137,6 +137,7 @@ FIELD = [
          use=['RULE-NAV-4'], conf='소유자 결정 · 첫 말씀은 게임 세션이 전함 · 묶은 값 방식은 소유자가 직접 승인'),
     dict(id='FK-CCTV-1', date='2026-10-15', said='(코워크 권고 (나) 「카메라 이름·위치만 지도에 · 누르면 TOPIS 공식 사이트」에) 권고대로 모두 진행하자',
          use=['RULE-NAV-5'], conf='소유자 결정 · 신청 목적 확인은 형님 몫으로 남음'),
+    dict(id='FK-CCTV-2', date='2026-10-15', said='UTIC 신청 목적 = 경찰업무 보조 연구개발', use=['RULE-NAV-5'], conf='소유자 말씀(게임 세션이 전함) — 준수사항 ❶ 「신청 목적 외 사용 불가」의 기준'),
     dict(id='FK-CAR-NUM', date='2026-10-08', said='고속309 = 고속도로순찰대 3지구대 9호 · 경찰서 교통순찰차는 서마다 01번부터(많으면 06)', use=[], conf='게임 그림에 적용'),
 ]
 

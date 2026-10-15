@@ -8,6 +8,7 @@
     CAM·ATT  = data/gargo-alerts-seoul.json(경찰 관리 · 제한속도 있는 카메라 100m 안 · 어린이보호구역 시설 300m 안 · 근사 C)
     ACT·REC  = data/sig-ksc-seocho.json hist(교통과 출력물 5곳 · 소유자 공개 결정 2026-10-10 · 이력 글 그대로)
     LAW·PREC = ontology-core/src/tbook-law.json(T-Book 범칙금 DB · 원문 대조 판례 — tools/tbook-extract.py 가 읽기만 해서 꺼냄)
+    RULE·FK  = data/onto-rules.json(틀리면 사고 나는 규칙 · 소유자 현장 판단 말 그대로 — 수집기 쪽 세션의 tools/onto/rules-bake.py 가 정본 · 여기서는 값을 고치지 않고 객체·링크로만 옮긴다) — FK → 뒷받침 → RULE(등급 B · 소유자 현장)
   VIO → LAW 는 이름 맞대기 표(아래 VIO_LAW · 등급 C · 확인 필요) · LAW → PREC 은 조문 번호가 같을 때만(교특법 §3 은 12대 중과실 공통이라 빼고)(범칙금 DB meta 「도교법§5」 ↔ 판결문 참조조문 「도로교통법 제5조」 · 등급 A · 「구 ○○법」 이면 C)
   쓰기: py -3.12 -X utf8 ontology-core/build.py            → data/core-seocho.json(서초)
         py -3.12 -X utf8 ontology-core/build.py --area six → data/core-six.json(서초·강남·송파·동작·관악·용산 — 네비 가르고 길 묶음 범위 · 작업지시서 Phase 4)
@@ -127,9 +128,16 @@ def main():
     for k, lid in law_ids.items():
         for no in sorted(set(re.findall(r'(\d{4}[가-힣]{1,3}\d+)', tl['laws'][k].get('handle') or ''))):
             if verified(tl['precdoc'].get(no)) and not any(e[0] == lid and e[2] == 'PREC-' + no for e in E): edge(lid, '해석', 'PREC-' + no, 'A', 'T-Book 범칙금 DB handle 글에 적힌 사건번호 · 원문 대조(PRECDOC)')
+    rl = J(os.path.join(D, 'onto-rules.json'))
+    for r in rl['rules']: obj(r['id'], 'RULE', area=r.get('area'), title=r['title'], d=r['d'], g=r['g'], s=r.get('s') or [], o=r.get('o') or [], test=r.get('t'))   # 장부의 t(시험값) → test(객체의 t 는 타입)
+    for f in rl['field']:
+        obj(f['id'], 'FK', date=f['date'], said=f['said'], conf=f.get('conf'))
+        for u in f.get('use') or []:
+            if u not in O or O[u]['t'] != 'RULE': raise SystemExit('onto-rules.json — 현장 판단 %s 가 없는 규칙 %s 에 기댄다' % (f['id'], u))
+            edge(f['id'], '뒷받침', u, 'B', 'onto-rules.json(소유자 현장 판단)')
     used_ids = set(i for e in E for i in (e[0], e[2]))
-    O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
-    srcs = ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json']
+    O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
+    srcs = ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',

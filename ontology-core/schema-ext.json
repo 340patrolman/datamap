@@ -1,56 +1,273 @@
 {
-  "schema": "onto-core-schema/1",
-  "made": "2026-10-14",
-  "extends": "data/onto-schema.json",
-  "about": "교통 온톨로지 코어 v1 — 세 앱(T-Book · 데이터 압축지도 · 네비 가르고)이 같이 읽는 객체·링크·질문 틀. 객체 이름·ID 규칙은 data/onto-schema.json(tg-onto-schema/1 · 수집기 쪽 세션이 굽는다)을 그대로 따르고, 거기 없는 것(위반유형 VIO · 법규조문 LAW · 판례 PREC · 조치 ACT · 근거기록 REC)만 여기 둔다. 의존성 0(JSON + 순수 JS). 그래프DB·벡터DB·OWL 안 씀.",
-  "rules": [
-    "개인정보(성명·연락처·차량번호·주민번호·사건 당사자)는 넣지 않는다 — 사고는 칸 집계만",
-    "법령·판례 번호는 원문(국가법령정보센터·판결문 참조조문)에 있는 것만 — 없으면 비우고 「미확인」",
-    "숫자는 원자료에서 다시 센 것만(build.py 가 원자료에서 셈 · 시험이 따로 다시 셈)",
-    "링크마다 등급(grade) — onto-schema 의 A~E 를 따른다: A 원문·공식 · B 받은 값 · C 근사(거리 맞대기·이름 맞대기) · D 추정 · E 가설",
-    "비슷한 지점(질문 5)은 한 점수로 합치지 않는다 — 항목마다 가까운 순과 그 값을 보인다(ONTOLOGY-2 결정 D4)",
-    "조치(ACT)는 이미 공개된 사실만 — 내부 사유는 적지 않고 「내부 문서 있음」 표시만",
-    "VIP(대통령 행차) 경로·시각은 어떤 객체에도 넣지 않는다"
-  ],
-  "objectTypes": {
-    "INT": { "name": "교차로", "id": "INT-<T-GIS 코드>", "from": "onto-schema", "required": ["nm", "lat", "lon"], "props": { "nm": "이름", "lat": "위도", "lon": "경도", "cits": "C-ITS·T-Data·경찰청 신호 번호(0 = 없음)", "dong": "행정동 8자리", "dongnm": "행정동 이름", "st": "관할 경찰서 코드(T-GIS)", "has": "신호 자료 비트(1 방향별 초 · 2 경찰청 계획 · 4 교통과 · 8 차로 · 16 C-ITS)" } },
-    "PLC": { "name": "250m 칸", "id": "PLC-<250m 국가격자 번호>", "from": "onto-schema", "required": [], "props": {} },
-    "ACC": { "name": "사고 집계(교차로 둘레 · 해마다)", "id": "ACC-<INT id>", "required": ["years", "y0", "cells"], "props": { "y0": "첫 해", "years": "해마다 건수", "dead": "사망자", "serious": "중상자", "ped": "보행자 피해", "night": "밤(20~6시)", "tod": "0~6 · 6~12 · 12~18 · 18~24시", "cells": "묶은 100m 칸 수", "r": "묶은 반지름 m" } },
-    "VIO": { "name": "위반유형(TAAS 법규위반 코드)", "id": "VIO-<코드>", "required": ["nm"], "props": { "nm": "이름" } },
-    "LAW": { "name": "법규 항목(T-Book 범칙금 DB 한 줄)", "id": "LAW-T<번호>", "required": ["title", "meta"], "props": { "title": "항목 이름", "meta": "조문(T-Book 글 그대로)", "penalty": "범칙금·벌점(T-Book 글 그대로)", "arts": "meta 에서 뗀 [법, 조] 목록" } },
-    "PREC": { "name": "판례(원문 대조된 것)", "id": "PREC-<사건번호>", "required": ["no", "court", "date"], "props": { "no": "사건번호", "court": "법원", "date": "선고일", "nm": "사건명", "jo": "참조조문(판결문 그대로)" } },
-    "CAM": { "name": "단속 카메라(경찰 · 제한속도 있음)", "id": "CAM-<경도6>,<위도6>", "required": ["lim"], "props": { "lim": "제한속도", "road": "도로 이름", "place": "설치 자리 글" } },
-    "ATT": { "name": "어린이보호구역 시설", "id": "ATT-SZ-<경도>,<위도>", "required": ["kind"], "props": { "kind": "시설 종류", "nm": "이름" } },
-    "ACT": { "name": "조치", "id": "ACT-<C-ITS 번호>-<차례>", "required": ["what"], "props": { "what": "무엇을(이력 글 그대로)", "ym": "언제(글에서 뗀 연·월 · 없으면 null)", "public": "공개 여부" } },
-    "REC": { "name": "근거기록(조치의 「왜」)", "id": "REC-<ACT id>", "required": ["text"], "props": { "text": "이유 글", "internal": "내부 문서 있음 1" } }
+ "schema": "onto-core-schema/1",
+ "made": "2026-10-14",
+ "extends": "data/onto-schema.json",
+ "about": "교통 온톨로지 코어 v1 — 세 앱(T-Book · 데이터 압축지도 · 네비 가르고)이 같이 읽는 객체·링크·질문 틀. 객체 이름·ID 규칙은 data/onto-schema.json(tg-onto-schema/1 · 수집기 쪽 세션이 굽는다)을 그대로 따르고, 거기 없는 것(위반유형 VIO · 법규조문 LAW · 판례 PREC · 조치 ACT · 근거기록 REC)만 여기 둔다. 의존성 0(JSON + 순수 JS). 그래프DB·벡터DB·OWL 안 씀.",
+ "rules": [
+  "개인정보(성명·연락처·차량번호·주민번호·사건 당사자)는 넣지 않는다 — 사고는 칸 집계만",
+  "법령·판례 번호는 원문(국가법령정보센터·판결문 참조조문)에 있는 것만 — 없으면 비우고 「미확인」",
+  "숫자는 원자료에서 다시 센 것만(build.py 가 원자료에서 셈 · 시험이 따로 다시 셈)",
+  "링크마다 등급(grade) — onto-schema 의 A~E 를 따른다: A 원문·공식 · B 받은 값 · C 근사(거리 맞대기·이름 맞대기) · D 추정 · E 가설",
+  "비슷한 지점(질문 5)은 한 점수로 합치지 않는다 — 항목마다 가까운 순과 그 값을 보인다(ONTOLOGY-2 결정 D4)",
+  "조치(ACT)는 이미 공개된 사실만 — 내부 사유는 적지 않고 「내부 문서 있음」 표시만",
+  "VIP(대통령 행차) 경로·시각은 어떤 객체에도 넣지 않는다"
+ ],
+ "objectTypes": {
+  "INT": {
+   "name": "교차로",
+   "id": "INT-<T-GIS 코드>",
+   "from": "onto-schema",
+   "required": [
+    "nm",
+    "lat",
+    "lon"
+   ],
+   "props": {
+    "nm": "이름",
+    "lat": "위도",
+    "lon": "경도",
+    "cits": "C-ITS·T-Data·경찰청 신호 번호(0 = 없음)",
+    "dong": "행정동 8자리",
+    "dongnm": "행정동 이름",
+    "st": "관할 경찰서 코드(T-GIS)",
+    "has": "신호 자료 비트(1 방향별 초 · 2 경찰청 계획 · 4 교통과 · 8 차로 · 16 C-ITS)"
+   }
   },
-  "linkTypes": {
-    "들어감": { "from": "INT", "to": "PLC" },
-    "발생": { "from": "INT", "to": "ACC" },
-    "주요원인": { "from": "ACC", "to": "VIO", "props": { "n": "그 위반이 주 위반인 칸들의 건수 합" } },
-    "근거": { "from": "VIO", "to": "LAW" },
-    "해석": { "from": "LAW", "to": "PREC" },
-    "보유": { "from": "INT", "to": "CAM" },
-    "가까움": { "from": "INT", "to": "ATT", "props": { "d": "거리 m" } },
-    "인접": { "from": "INT", "to": "INT", "props": { "m": "길이 m", "s": "제한속도로 달리는 초" } },
-    "대상": { "from": "ACT", "to": "INT" },
-    "근거기록": { "from": "ACT", "to": "REC" }
+  "PLC": {
+   "name": "250m 칸",
+   "id": "PLC-<250m 국가격자 번호>",
+   "from": "onto-schema",
+   "required": [],
+   "props": {}
   },
-  "functions": {
-    "q1": "이 교차로는 왜 위험한가 — 사고 해마다 · 주 위반 · 시간대 · 시설 · 과거 조치",
-    "q2": "이 신호·시설을 왜 바꿨고 바꾼 뒤 어떻게 됐나 — 조치 · 근거 · 앞뒤 사고(해 단위)",
-    "q3": "이 위반유형의 근거 조문·판례·범칙금·벌점",
-    "q4": "이 경로에서 주의할 지점(Phase 4 · 네비 가르고)",
-    "q5": "이 교차로와 비슷한 교차로 — 항목마다 가까운 순(합치지 않는다)"
+  "ACC": {
+   "name": "사고 집계(교차로 둘레 · 해마다)",
+   "id": "ACC-<INT id>",
+   "required": [
+    "years",
+    "y0",
+    "cells"
+   ],
+   "props": {
+    "y0": "첫 해",
+    "years": "해마다 건수",
+    "dead": "사망자",
+    "serious": "중상자",
+    "ped": "보행자 피해",
+    "night": "밤(20~6시)",
+    "tod": "0~6 · 6~12 · 12~18 · 18~24시",
+    "cells": "묶은 100m 칸 수",
+    "r": "묶은 반지름 m"
+   }
   },
-  "similarity": {
-    "about": "질문 5 의 항목 — 가중치로 합치지 않는다. 항목마다 따로 가까운 순 5곳을 그 값과 함께 보인다.",
-    "dims": [
-      { "k": "mainv", "name": "주 위반이 같다", "how": "주요원인 VIO 가 같은 곳 가운데 그 건수가 가까운 순" },
-      { "k": "night", "name": "밤 사고 몫", "how": "밤(20~6시) ÷ 전체 의 차가 작은 순" },
-      { "k": "total", "name": "사고 규모", "how": "10년 합의 로그 차가 작은 순" },
-      { "k": "fac", "name": "시설 구성", "how": "카메라 수·보호구역 시설 수의 차가 작은 순" }
-    ]
+  "VIO": {
+   "name": "위반유형(TAAS 법규위반 코드)",
+   "id": "VIO-<코드>",
+   "required": [
+    "nm"
+   ],
+   "props": {
+    "nm": "이름"
+   }
   },
-  "grades": "A 원문·공식 · B 받은 값 · C 근사 · D 추정 · E 가설 (data/onto-schema.json 과 같다)"
+  "LAW": {
+   "name": "법규 항목(T-Book 범칙금 DB 한 줄)",
+   "id": "LAW-T<번호>",
+   "required": [
+    "title",
+    "meta"
+   ],
+   "props": {
+    "title": "항목 이름",
+    "meta": "조문(T-Book 글 그대로)",
+    "penalty": "범칙금·벌점(T-Book 글 그대로)",
+    "arts": "meta 에서 뗀 [법, 조] 목록"
+   }
+  },
+  "PREC": {
+   "name": "판례(원문 대조된 것)",
+   "id": "PREC-<사건번호>",
+   "required": [
+    "no",
+    "court",
+    "date"
+   ],
+   "props": {
+    "no": "사건번호",
+    "court": "법원",
+    "date": "선고일",
+    "nm": "사건명",
+    "jo": "참조조문(판결문 그대로)"
+   }
+  },
+  "CAM": {
+   "name": "단속 카메라(경찰 · 제한속도 있음)",
+   "id": "CAM-<경도6>,<위도6>",
+   "required": [
+    "lim"
+   ],
+   "props": {
+    "lim": "제한속도",
+    "road": "도로 이름",
+    "place": "설치 자리 글"
+   }
+  },
+  "ATT": {
+   "name": "어린이보호구역 시설",
+   "id": "ATT-SZ-<경도>,<위도>",
+   "required": [
+    "kind"
+   ],
+   "props": {
+    "kind": "시설 종류",
+    "nm": "이름"
+   }
+  },
+  "ACT": {
+   "name": "조치",
+   "id": "ACT-<C-ITS 번호>-<차례>",
+   "required": [
+    "what"
+   ],
+   "props": {
+    "what": "무엇을(이력 글 그대로)",
+    "ym": "언제(글에서 뗀 연·월 · 없으면 null)",
+    "public": "공개 여부"
+   }
+  },
+  "REC": {
+   "name": "근거기록(조치의 「왜」)",
+   "id": "REC-<ACT id>",
+   "required": [
+    "text"
+   ],
+   "props": {
+    "text": "이유 글",
+    "internal": "내부 문서 있음 1"
+   }
+  },
+  "RULE": {
+   "name": "규칙(틀리면 사고 나는 것)",
+   "id": "RULE-<영역>-<번호>",
+   "required": [
+    "title",
+    "d",
+    "g"
+   ],
+   "props": {
+    "area": "영역(관할·신호·수집·길 알림·자료·앱 기준)",
+    "title": "한 줄",
+    "d": "정의",
+    "g": "등급 A~E",
+    "s": "출처 [[종류 law/off/own/meas/app, 무엇, 날짜]]",
+    "o": "주인 앱 자리(dm: datamap 경로 · tb: T-Book 함수 · gg: 가르고)",
+    "test": "정답 시험값·확인 방법(장부의 t)"
+   },
+   "src": "data/onto-rules.json(수집기 쪽 세션 · tools/onto/rules-bake.py 가 정본)"
+  },
+  "FK": {
+   "name": "소유자 현장 판단(말 그대로)",
+   "id": "FK-<영역>-<이름>",
+   "required": [
+    "said",
+    "date"
+   ],
+   "props": {
+    "date": "말한 날",
+    "said": "소유자 말 그대로",
+    "conf": "확인 정도"
+   },
+   "src": "data/onto-rules.json field"
+  }
+ },
+ "linkTypes": {
+  "들어감": {
+   "from": "INT",
+   "to": "PLC"
+  },
+  "발생": {
+   "from": "INT",
+   "to": "ACC"
+  },
+  "주요원인": {
+   "from": "ACC",
+   "to": "VIO",
+   "props": {
+    "n": "그 위반이 주 위반인 칸들의 건수 합"
+   }
+  },
+  "근거": {
+   "from": "VIO",
+   "to": "LAW"
+  },
+  "해석": {
+   "from": "LAW",
+   "to": "PREC"
+  },
+  "보유": {
+   "from": "INT",
+   "to": "CAM"
+  },
+  "가까움": {
+   "from": "INT",
+   "to": "ATT",
+   "props": {
+    "d": "거리 m"
+   }
+  },
+  "인접": {
+   "from": "INT",
+   "to": "INT",
+   "props": {
+    "m": "길이 m",
+    "s": "제한속도로 달리는 초"
+   }
+  },
+  "대상": {
+   "from": "ACT",
+   "to": "INT"
+  },
+  "근거기록": {
+   "from": "ACT",
+   "to": "REC"
+  },
+  "뒷받침": {
+   "from": "FK",
+   "to": "RULE"
+  }
+ },
+ "functions": {
+  "q1": "이 교차로는 왜 위험한가 — 사고 해마다 · 주 위반 · 시간대 · 시설 · 과거 조치",
+  "q2": "이 신호·시설을 왜 바꿨고 바꾼 뒤 어떻게 됐나 — 조치 · 근거 · 앞뒤 사고(해 단위)",
+  "q3": "이 위반유형의 근거 조문·판례·범칙금·벌점",
+  "q4": "이 경로에서 주의할 지점(Phase 4 · 네비 가르고)",
+  "q5": "이 교차로와 비슷한 교차로 — 항목마다 가까운 순(합치지 않는다)",
+  "q6": "이 규칙은 무엇에 기대나 — 정의 · 출처 · 등급 · 주인 앱 자리 · 시험값 · 소유자 현장 말(그대로)"
+ },
+ "similarity": {
+  "about": "질문 5 의 항목 — 가중치로 합치지 않는다. 항목마다 따로 가까운 순 5곳을 그 값과 함께 보인다.",
+  "dims": [
+   {
+    "k": "mainv",
+    "name": "주 위반이 같다",
+    "how": "주요원인 VIO 가 같은 곳 가운데 그 건수가 가까운 순"
+   },
+   {
+    "k": "night",
+    "name": "밤 사고 몫",
+    "how": "밤(20~6시) ÷ 전체 의 차가 작은 순"
+   },
+   {
+    "k": "total",
+    "name": "사고 규모",
+    "how": "10년 합의 로그 차가 작은 순"
+   },
+   {
+    "k": "fac",
+    "name": "시설 구성",
+    "how": "카메라 수·보호구역 시설 수의 차가 작은 순"
+   }
+  ]
+ },
+ "grades": "A 원문·공식 · B 받은 값 · C 근사 · D 추정 · E 가설 (data/onto-schema.json 과 같다)"
 }

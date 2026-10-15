@@ -13,7 +13,10 @@ Promise.all([fetch('../data/core-seocho.json').then(function (r) { return r.json
   /* 검증기가 결함을 정말 잡는지 — 일부러 망가뜨린 사본(고아 링크 · 타입 위반 · 필수 속성 누락 · ID 중복 · 차량번호 꼴) */
   var bad = JSON.parse(JSON.stringify(core)); bad.edges.push(['INT-521', '발생', 'ACC-없는것', { g: 'C', src: '시험' }]); bad.edges.push(['INT-521', '근거', 'LAW-T0', { g: 'C', src: '시험' }]);
   bad.objects.push({ id: 'INT-999999', t: 'INT', nm: '시험' }); bad.objects.push(JSON.parse(JSON.stringify(bad.objects[0]))); bad.objects.push({ id: 'REC-시험', t: 'REC', text: '12가 3456 차가 지나감' });
+  bad.objects.push({ id: 'RULE-X-9', t: 'RULE', d: '정의만', g: 'C' }); bad.edges.push(['FK-BANPO-1', '뒷받침', 'INT-521', { g: 'B', src: '시험' }]);
   R.negative = ontoValidate(bad, schema);
+  /* 질문 6 — 규칙·현장 판단(장부 그대로) */
+  R.rules = o.rules(); R.rulesSig = o.rules('신호'); R.why = {}; o.rules().forEach(function (r) { R.why[r.id] = o.why(r.id); }); R.whyBad = o.why('INT-521');
   /* 질문 5 「주 위반이 같다」 목록의 실제 주 위반 */
   R.q5mv = {}; S.forEach(function (i) { R.q5mv[i] = (R.q5[i].dims.mainv.list || []).map(function (x) { var q = o.q1(x.id); return q.mainViolations[0] ? q.mainViolations[0].id : null; }); R.q5mv[i + '_me'] = R.q1[i].mainViolations[0] ? R.q1[i].mainViolations[0].id : null; });
   window.__R = R; document.getElementById('out').textContent = JSON.stringify(R, null, 1).slice(0, 4000);

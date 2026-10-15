@@ -71,7 +71,17 @@ for i, t in T.items():
     ck('질문5 %s — 항목 넷 따로(합친 점수 없음) · 자기 빼고 5곳까지' % t['nm'], ok, {k: [x['nm'] for x in d['list'][:3]] for k, d in dims.items()})
     mv = dims.get('mainv', {}).get('list') or []
     ck('질문5 %s — 「주 위반이 같다」 목록은 정말 주 위반이 같다' % t['nm'], len(mv) > 0 and all(x == R['q5mv'][i + '_me'] for x in R['q5mv'][i]), (R['q5mv'][i + '_me'], R['q5mv'][i]))
-NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))
+RL = J(os.path.join(D, 'onto-rules.json')); RR = {r['id']: r for r in RL['rules']}
+ck('질문6 — 규칙 %d · 영역 「신호」 %d 가 장부와 같다' % (len(RL['rules']), sum(1 for r in RL['rules'] if r.get('area') == '신호')), [x['id'] for x in R['rules']] == sorted(RR) and len(R['rulesSig']) == sum(1 for r in RL['rules'] if r.get('area') == '신호'), [len(R['rules']), len(R['rulesSig'])])
+bad6 = []
+for rid, r in RR.items():
+    w = R['why'][rid]; want = sorted([f for f in RL['field'] if rid in (f.get('use') or [])], key=lambda f: f['date'])
+    if (w['title'], w['d'], w['g'], w['s'], w['o'], w['test']) != (r['title'], r['d'], r['g'], r.get('s') or [], r.get('o') or [], r.get('t')): bad6.append(rid + ' 규칙 글')
+    if [(f['id'], f['said'], f['date']) for f in w['field']] != [(f['id'], f['said'], f['date']) for f in want]: bad6.append(rid + ' 현장 말')
+ck('질문6 — 규칙마다 정의·출처·등급·주인 자리·시험값과 기댄 현장 말이 장부 글자 그대로', not bad6, bad6[:3])
+ck('질문6 — 반포 관할 규칙(RULE-JUR-2)에 형님 말 「반포본동·반포2동은…」이 붙어 있다', any(f['id'] == 'FK-BANPO-1' and f['said'].startswith('반포본동·반포2동은') for f in R['why']['RULE-JUR-2']['field']), [f['id'] for f in R['why']['RULE-JUR-2']['field']])
+ck('질문6 — 규칙이 아닌 것을 물으면 null', R['whyBad'] is None, R['whyBad'])
+NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))
 n = sum(1 for x in C if x[1])
 for name, ok, got in C: print(('  ✅ ' if ok else '  ❌ ') + name + (' — ' + got if got else ''))
 print(('✅ 온톨로지 코어 시험 통과 %d/%d' if n == len(C) else '❌ 온톨로지 코어 시험 실패 %d/%d') % (n, len(C)))

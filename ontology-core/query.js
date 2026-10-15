@@ -66,5 +66,12 @@
         fac: { name: '시설 구성(카메라·보호구역)', list: top(all, function (q) { return Math.abs(q.cams.length - me.cams.length) + Math.abs(q.zones.length - me.zones.length); }) }
       }, notes: ['항목마다 따로 가까운 순 — 한 점수로 합치지 않는다(ONTOLOGY-2 결정 D4)'] };
   };
+  /* 질문 6 — 이 규칙은 무엇에 기대나(data/onto-rules.json · 값은 장부 그대로) · rules(영역) = 그 영역 규칙 목록 */
+  P.rules = function (area) { var self = this; return Object.keys(this.O).filter(function (i) { var o = self.O[i]; return o.t === 'RULE' && (!area || o.area === area); }).sort().map(function (i) { var o = self.O[i]; return { id: o.id, area: o.area, title: o.title, g: o.g, n: self.back(o.id, '뒷받침').length }; }); };
+  P.why = function (ruleId) { var r = this.O[ruleId]; if (!r || r.t !== 'RULE') return null;
+    return { id: r.id, area: r.area, title: r.title, d: r.d, g: r.g, s: r.s || [], o: r.o || [], test: r.test || null,
+      field: this.back(ruleId, '뒷받침').map(function (x) { return { id: x.o.id, date: x.o.date, said: x.o.said, conf: x.o.conf || null }; }).sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); }),
+      notes: ['규칙·현장 판단은 장부(data/onto-rules.json) 글 그대로 — 법령 숫자는 정본(T-Book) 자리만 가리킨다'] }; };
+  P.q6 = P.why;
   if (typeof module !== 'undefined' && module.exports) module.exports = OntoCore; else root.OntoCore = OntoCore;
 })(typeof self !== 'undefined' ? self : this);

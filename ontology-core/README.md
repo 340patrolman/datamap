@@ -16,6 +16,7 @@
 | `validate.js` | `ontoValidate(core, schema)` — ID 중복 · 고아 링크 · 타입 위반 · 필수 속성 · 등급·출처 · 개인정보 꼴 |
 | `test/run.py` + `test/test.html` | 시험 — 원자료에서 **따로 센 정답**과 머리 없는 크롬에서 돈 query.js 의 답을 맞댐 · 망가뜨린 사본으로 검증기 시험 |
 | `tools/tbook-block.py` | T-Book `ontology.html`(ver.4.2 「서초 교차로 — 자료로 시작」)에 넣는 정적 블록 `data/tbook-block-seocho.json` — 조치 이력 5곳 + 10년 사고 상위 25곳(겹쳐 26곳)의 부분 그래프를 **값 그대로** 뗀다(250m 칸·이웃 교차로는 뺌) · 넣는 패치 = `../12_티북패치기록/onto_v42.py` |
+| RULE · FK (2026-10-15) | `data/onto-rules.json`(수집기 쪽 세션이 굽는 규칙 장부 — 틀리면 사고 나는 규칙 21 · 소유자 현장 판단 11 말 그대로)을 build.py 가 객체로 옮기고 FK → **뒷받침** → RULE 로 잇는다 · 값은 고치지 않는다 · `query.js` `rules(영역)` · `why(RULE-…)`(= q6 — 정의·출처·등급·주인 앱 자리·시험값·기댄 현장 말) |
 | `build.py --area six` | 서초·강남·송파·동작·관악·용산 한 장 `data/core-six.json`(네비 가르고 범위 · 기본 실행의 서초 결과는 그대로) |
 | `tools/gargo-risk.py` | 가르고 「⚠ 이 길 주의 교차로」 표 `../gargo/risk-six.json` — core-six 의 교차로마다 질문 1 답을 한 줄로(값 그대로) |
 | `test/risk-run.py` | 위 표 2,157줄을 core-six + query.js q1 과 맞댐 · 여섯 구 코어의 서초 교차로가 서초 코어보다 줄지 않음 |

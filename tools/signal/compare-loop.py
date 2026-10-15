@@ -50,12 +50,15 @@ def main():
     log('켬')
     done = None
     while True:
-        open(lock, 'w').write(str(os.getpid()))
-        if os.path.exists(stop):
-            os.remove(stop); os.remove(lock); log('끔'); return
-        n = now(); key = n.strftime('%Y%m%d%H')
-        if HOURS[0] <= n.hour < HOURS[1] and n.minute >= 5 and done != key:
-            done = key; one()
+        try:   # 2026-10-15 14:48 기록 없이 멈췄다 — 한 바퀴에서 무슨 일이 나도 고리는 이어 가고 남긴다
+            open(lock, 'w').write(str(os.getpid()))
+            if os.path.exists(stop):
+                os.remove(stop); os.remove(lock); log('끔'); return
+            n = now(); key = n.strftime('%Y%m%d%H')
+            if HOURS[0] <= n.hour < HOURS[1] and n.minute >= 5 and done != key:
+                done = key; one()
+        except Exception as e:
+            log('고리 오류', type(e).__name__, str(e)[:160])
         time.sleep(60)
 
 

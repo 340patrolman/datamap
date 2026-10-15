@@ -1527,9 +1527,14 @@ def fusion(sample=False, ids=None):
     --sample = 4036 한 줄을 받아 CurrentInfo 와 칸을 견준 표를 찍고 멈춘다(2026-10-14 지시 — 보고 뒤 상시 수집)."""
     def fz_step():
         """남은 Fusion 몫(열쇠마다 KEYCAP − 오늘 쓴 수 − 역사 훑기 남길 몫)을 오늘 남은 시간에 고르게 — 두 열쇠면 약 2배로 촘촘"""
-        left = 86400 - (time.time() + 9 * 3600) % 86400
+        # (2026-10-15) 시각대 무게 — T-Data 역사 자료는 6시간 묶음(01·07·13·19시 시작)의 첫 두 시간에만 서버 순서 뒤쪽(서초 1,668번째~)까지 나오고
+        #  셋째 시간부터 끝이 짧아진다(넷째 시간 700~1,300번째에서 끊김 · sweep_hist 10-13~15 실측) → 서초의 그 시각대 칸은 Fusion 만 메운다.
+        #  그래서 묶음 셋째~여섯째 시간은 무게 2 · 첫 두 시간은 0.5 로 남은 몫을 나눈다(하루 합 한도는 그대로)
+        wt = lambda h: 0.5 if (h - 1) % 6 < 2 else 2.0
+        sod = (time.time() + 9 * 3600) % 86400; h0 = int(sod // 3600)
+        W = (3600 - sod % 3600) * wt(h0) + sum(3600 * wt(h) for h in range(h0 + 1, 24))
         room = sum(max(0, KEYCAP - kd_get(k) - hist_reserve()) for k in P.order if P.st[k]['state'] == 'alive')
-        return max(30.0, left / max(1, room))
+        return max(30.0, W / max(1, room) / wt(h0))
     step = 30.0                                                 # 첫 값 — 풀(P)이 생긴 뒤 부를 때마다 fz_step() 으로 다시 셈
     P = KeyPool('fusion', gap=30); out = os.path.join(RAW, 'fusion'); os.makedirs(out, exist_ok=True)
     def get(itst, kl):

@@ -32,13 +32,20 @@ JS = r'''(async function(){ var j = await (await fetch('/data/train-run-seoul.js
   var o2b = { i: bb, nx: sc, st: 'dep', ago: 0 }, ds = {}, dsec = [400, 60, 30, 30, 30, 30]; P6.forEach(function(p, k){ ds[p.i] = { sec: dsec[k], sd: 20 }; }); var pl = S.plan(o2b, ds, 14);
   var firstOk = pl.cards.filter(function(c){ return c.p >= 0.8; })[0]; R.rec = [!!firstOk && pl.best === firstOk.i && firstOk.k > 1, pl.close, pl.cards.map(function(c){ return [c.nm, Math.round(c.p*100), Math.round(c.slack), c.late]; })];
   var ds2 = {}; P6.forEach(function(p){ ds2[p.i] = { sec: 3000, sd: 30 }; }); var pl2 = S.plan(o2b, ds2, 14); var mx = pl2.cards.slice().sort(function(a,b){ return b.p - a.p; })[0];
-  R.close = [pl2.close, pl2.best === mx.i, pl2.cards.length === 6 && pl2.cards.every(function(c){ return c.late; })];
+  R.close = [pl2.close, pl2.weak, pl2.best === mx.i, pl2.cards.length === 6 && pl2.cards.every(function(c){ return c.late; })];
   /* ⑥ 실측 3번 넘게 → 가정값 아님 · 2번이면 가정값 */
   var M3 = { rec: [{ st: '서초', ln: '2호선', kind: 'walk', exit: '4', t: [[50,14,'wd','x'],[60,14,'wd','x'],[55,14,'wd','x']] }] }, M2 = { rec: [{ st: '서초', ln: '2호선', kind: 'walk', exit: '4', t: [[50,14,'wd','x'],[60,14,'wd','x']] }] };
   var p3 = S.police(sc, { sec: 100, sd: 10 }, 14, M3), p2 = S.police(sc, { sec: 100, sd: 10 }, 14, M2); R.meas = [p3.walk.assumed, Math.round(p3.walk.sec), p3.walk.n, p2.walk.assumed];
-  /* ⑦ 모름(몇 초 전인지 모름)이면 열차 오차가 커진다 · 도착(정차 중)이면 출발보다 늦게 닿는다 */
-  var Tu = S.train({ i: bb, nx: sc, st: 'dep', ago: null }, 14), Tk = S.train({ i: bb, nx: sc, st: 'dep', ago: 0 }, 14), Ta = S.train({ i: bb, nx: sc, st: 'arr', ago: 0 }, 14);
-  R.obs = [Math.round(Tu[0].sd), Math.round(Tk[0].sd), Math.round(Ta[0].T - Tk[0].T)];
+  /* ⑦ 모름 = 떠난 지 0~한 구간 사이 어딘가(가운데로 셈 · 오차 큼) → 「방금」보다 일찍 닿는다 · 「서 있다 · 2분 전」(정차보다 오래)이면 지금 떠나는 것으로(음수 안 됨) */
+  var Tu = S.train({ i: bb, nx: sc, st: 'dep', ago: 0, unk: true }, 14), Tk = S.train({ i: bb, nx: sc, st: 'dep', ago: 0 }, 14), Ta = S.train({ i: bb, nx: sc, st: 'arr', ago: 0 }, 14), Ta2 = S.train({ i: bb, nx: sc, st: 'arr', ago: 120 }, 14), Tg = S.train({ i: bb, nx: sc, st: 'dep', ago: 40 }, 14);
+  R.obs = [Math.round(Tu[0].sd), Math.round(Tk[0].sd), Math.round(Ta[0].T - Tk[0].T), Math.round(Tk[0].T - Tu[0].T), Math.round(Ta2[0].T - Tk[0].T), Math.round(Tk[0].T - Tg[0].T)];
+  /* ⑦′ 갈래 — 갈라진 뒤 역은 모두 갈래 표시 */
+  var br = null; j.st.forEach(function(st0, a){ if (br) return; (j.lk.filter(function(l){ return l[0] === a; })).forEach(function(l){ if (br) return; var P9 = S.path(a, l[1], 8), k9 = P9.findIndex(function(q){ return q.branch; }); if (k9 >= 0 && k9 < P9.length - 1) br = P9; }); });
+  R.br = br ? br.map(function(q){ return q.branch; }) : null;
+  /* ⑦″ 실측 노선 표기 — 역 실측은 승하차 자료 표기(경부선)로 남는다 → 1호선 역에 맞는다 · 출구가 같으면 그 출구 값 */
+  var gr = S.find('구로', '1호선'), MM = { rec: [{ st: '구로', ln: '경부선', kind: 'walk', exit: '1', t: [[40,14,'wd','x'],[40,14,'wd','x'],[40,14,'wd','x']] }, { st: '구로', ln: '경부선', kind: 'walk', exit: '2', t: [[100,14,'wd','x'],[100,14,'wd','x'],[100,14,'wd','x']] }] };
+  var w1 = S.police(gr, { sec: 100, sd: 10 }, 14, MM, null, null, '2').walk, w0 = S.police(gr, { sec: 100, sd: 10 }, 14, MM, null, null, '9').walk;
+  R.lnm = [w1.assumed, Math.round(w1.sec / S.crowd(gr, 14).walkF * S.crowd(gr, 14).walkF), w1.exit, w0.assumed, w0.other];
   /* ⑧ 보정 — 실측 ÷ 예상 가운데 · 짧은 것·말 안 되는 비율 버림 · 0.7~1.5 */
   R.cal = [S.calibrate([[300,330],[600,660],[400,440],[20,100],[300,1500]]), S.calibrate([[300,600],[300,600],[300,600]])];
   /* ⑨ 행사 가산 — 그 날·그 역·그 시간만 */
@@ -61,9 +68,11 @@ X = R['crowd']; ck('③ 혼잡 배수 — 몫 1 = 도보·정차 ×1 · 몫이 �
 B = R['both']; ck('④ 혼잡이 커지면 경찰 도착이 늦어지고(도보) 열차 도착도 늦어진다(정차) — 같이 넣은 확률 > 도보만 늘린 확률', B[1] > B[0] and B[3] > B[2] and B[4] > B[5], B)
 M = R['mid']; ck('④′ 사이 역(서초)이 붐비면 뒤 역(교대) 열차 도착이 늦어진다 · 그 역 도착은 그대로', M[0] == M[1] and M[3] > M[2], M)
 ck('⑤ 권고 — 기준 80% 넘는 가장 가까운 역', R['rec'][0] and not R['rec'][1], R['rec'][2])
-ck('⑤′ 넘는 역이 없으면 가장 높은 역을 「경합」 · 모두 「이미 늦음」', R['close'] == [True, True, True], R['close'])
+ck('⑤′ 넘는 역이 없고 가장 높은 역도 50% 아래 → 「경합」 아님(weak) · 가장 높은 역 · 모두 늦음', R['close'] == [False, True, True, True], R['close'])
 ck('⑥ 실측 3번 → 가정값 아님(55초 · 3번) · 2번 → 가정값', R['meas'] == [False, 55, 3, True], R['meas'])
-ck('⑦ 몇 초 전인지 모르면 열차 오차가 커지고 · 「정차 중」은 「출발」보다 정차만큼 늦게 닿는다', R['obs'][0] > R['obs'][1] + 30 and R['obs'][2] == 30, R['obs'])
+O = R['obs']; ck('⑦ 모름 — 오차가 크고 「방금」보다 일찍(구간 절반쯤) · 「서 있다」는 정차만큼 늦게 · 「서 있다·2분 전」은 지금 떠남과 같음 · 「떠난 지 40초」는 40초 일찍', O[0] > O[1] + 20 and O[2] == 30 and 50 <= O[3] <= 90 and O[4] == 0 and O[5] == 40, O)
+ck('⑦′ 갈래 — 갈라진 역부터 뒤는 모두 갈래 표시', R['br'] is not None and R['br'].index(True) >= 0 and all(R['br'][R['br'].index(True):]), R['br'])
+L9 = R['lnm']; ck('⑦″ 실측 노선 표기(경부선 → 1호선) 맞음 · 세운 출구(2번) 값 · 다른 출구만 있으면 그 값에 「다른 출구」 표시', L9[0] is False and L9[1] == 100 and L9[2] == '2' and L9[3] is False and L9[4] is True, L9)
 K = R['cal']; ck('⑧ 보정 — 가운데 1.1 · 짧은 것·엉뚱한 비율 버림 · 5번 아래는 가정값 · 위 끝 1.5', abs(K[0]['k'] - 1.1) < 1e-9 and K[0]['n'] == 3 and K[0]['assumed'] and K[1]['k'] == 1.5, K)
 E = R['ev']; ck('⑨ 행사 가산 — 그 날·그 역·그 시간에만 +1.5', abs(E[0] - 1.5) < 0.01 and E[1] == 0 and E[2] == 0, E)
 n = sum(1 for x in C if x[1])

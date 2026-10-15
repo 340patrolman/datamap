@@ -51,7 +51,7 @@
     <div id="mStat"></div></div>
   <div class="card"><p class="lbl">③ 남긴 실측</p><div id="mList"></div>
     <div class="small"><button id="mExport">📤 JSON 내보내기</button><button id="mClear">🗑 모두 지우기</button></div>
-    <p class="note">같은 역·출입구·방향·종류를 <b>3번</b> 재면 평균·편차가 굳는다(3번이 되기 전에는 계산에 안 씀). 시각(몇 시·평일/주말)은 저절로 적는다 — 붐비는 때와 한산한 때를 따로 재 두면 좋다. 내보내기 파일에는 역·출입구·방향·초·시간대·날짜만 있다(위치 좌표·신고 내용 없음).</p></div>
+    <p class="note">같은 역·출입구·방향·종류를 <b>3번 이상</b> 재면 평균·편차가 굳는다(3번이 되기 전에는 계산에 안 씀). 시각(몇 시·평일/주말)은 저절로 적는다 — 붐비는 때와 한산한 때를 따로 재 두면 좋다. 내보내기 파일에는 역·출입구·방향·초·시간대·날짜만 있다(위치 좌표·신고 내용 없음).</p></div>
 </div>
 <script>
 (function () {
@@ -74,7 +74,7 @@
     $('mStopRow').style.display = cur.kind === 'stop' ? 'flex' : 'none'; }
   function paint() { chips(); var k = keyOf(), D = load(), r = D.rec.filter(function (x) { return same(x, k); })[0];
     $('mGo').disabled = !cur.st; $('mWhat').textContent = cur.st ? cur.st.split('(')[0] + ' ' + cur.ln + ' · ' + (cur.kind === 'walk' ? '출입구 ' + (k.exit || '?') + ' → 승강장' + (k.dir ? '(' + k.dir + ')' : '') : '세운 자리 → 출입구 ' + (k.exit || '?')) : '역을 고르십시오';
-    if (r && r.t.length) { var s = stat(r.t); $('mStat').innerHTML = '이 조합 <b>' + s.n + '번</b> · 평균 <b>' + sec(s.m) + '</b>' + (s.n > 1 ? ' · 편차 ±' + s.sd.toFixed(1) + '초' : '') + '<br>' + (s.n >= 3 ? '<span class="ok">✅ 3번 넘게 — 이 값을 계산에 씁니다(가정값 대신)</span>' : '<span class="warn">' + (3 - s.n) + '번 더 재면 평균이 굳습니다</span>'); }
+    if (r && r.t.length) { var s = stat(r.t); $('mStat').innerHTML = '이 조합 <b>' + s.n + '번</b> · 평균 <b>' + sec(s.m) + '</b>' + (s.n > 1 ? ' · 편차 ±' + s.sd.toFixed(1) + '초' : '') + '<br>' + (s.n >= 3 ? '<span class="ok">✅ 3번 이상 — 이 값을 계산에 씁니다(가정값 대신)</span>' : '<span class="warn">' + (3 - s.n) + '번 더 재면 평균이 굳습니다</span>'); }
     else $('mStat').innerHTML = cur.st ? '<span class="warn">아직 잰 것이 없습니다 — 출입구 번호를 넣고 ▶ 시작</span>' : '';
     var L = D.rec.slice().sort(function (a, b) { return (a.st + a.ln).localeCompare(b.st + b.ln); });
     $('mList').innerHTML = L.length ? '<table><tr><th>역</th><th>무엇</th><th>번</th><th>평균</th><th>편차</th></tr>' + L.map(function (r) { var s = stat(r.t); return '<tr><td>' + r.st.split('(')[0] + ' <small>' + r.ln + '</small></td><td>' + (r.kind === 'walk' ? '출입구 ' + (r.exit || '?') + '→승강장' + (r.dir ? ' ' + r.dir : '') : '세운 자리→출입구 ' + (r.exit || '?')) + '</td><td>' + s.n + (s.n >= 3 ? ' ✅' : '') + '</td><td>' + sec(s.m) + '</td><td>' + (s.n > 1 ? '±' + s.sd.toFixed(1) : '-') + '</td></tr>'; }).join('') + '</table>' : '<p class="note">아직 없음</p>'; }
@@ -88,7 +88,7 @@
   function cancel() { if (t0) { t0 = 0; stopTick(); $('mGo').textContent = '▶ 시작'; $('mGo').classList.remove('run'); $('mTime').textContent = '0.0초'; } }
   function undo() { var D = load(), k = keyOf(), r = D.rec.filter(function (x) { return same(x, k); })[0]; if (!r || !r.t.length) return; if (!confirm('이 조합의 마지막 기록(' + sec(r.t[r.t.length - 1][0]) + ')을 지울까요?')) return; r.t.pop(); if (!r.t.length) D.rec.splice(D.rec.indexOf(r), 1); save(D); paint(); }
   function exportJ() { var D = load(); if (!D.rec.length) { alert('남긴 실측이 없습니다'); return; }
-    var o = { schema: 'tg-station-meas/1', made: new Date().toISOString().slice(0, 10), fields: 'rec[{st 역 이름(서울 열린데이터 OA-12252 표기), ln 노선, kind walk(출입구→승강장)|stop(순찰차 세운 자리→출입구), exit 출입구, dir 승강장 방향, stop 세운 자리 글, t[[초, 시(0~23), wd 평일|we 주말, 날짜]]}] · 3번 넘게 잰 조합만 계산에 쓴다', rec: D.rec };
+    var o = { schema: 'tg-station-meas/1', made: new Date().toISOString().slice(0, 10), fields: 'rec[{st 역 이름(서울 열린데이터 OA-12252 표기), ln 노선, kind walk(출입구→승강장)|stop(순찰차 세운 자리→출입구), exit 출입구, dir 승강장 방향, stop 세운 자리 글, t[[초, 시(0~23), wd 평일|we 주말, 날짜]]}] · 3번 이상 잰 조합만 계산에 쓴다', rec: D.rec };
     var b = new Blob([JSON.stringify(o, null, 1)], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'station-meas-' + o.made + '.json'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
   document.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return;
     if (b.dataset.st) { cancel(); cur.st = b.dataset.st; cur.ln = b.dataset.ln; $('mHit').innerHTML = ''; paint(); }

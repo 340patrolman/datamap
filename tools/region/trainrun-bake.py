@@ -27,24 +27,54 @@ def main():
     pos = {}
     for it in list(S1) + [x for x in S2 if isinstance(x, list)]:
         pos.setdefault(base(it[0]), []).append((str(it[1]), float(it[2]), float(it[3])))   # (노선, 경도, 위도)
-    hr = {(q[0], q[1]): q for q in HR}
+    LN = {'경부선': '1호선', '경인선': '1호선', '경원선': '1호선', '장항선': '1호선', '분당선': '수인분당', '수인선': '수인분당', '경의선': '경의중앙', '중앙선': '경의중앙', '과천선': '4호선', '안산선': '4호선', '일산선': '3호선', '9호선2~3단계': '9호선', '공항철도 1호선': '공항', '우이신설선': '우이신설', '경춘선': '경춘', '경강선': '경강'}   # js/station-reach.js 의 LN 과 같게
+    hr = {}
+    for q in HR:
+        hr.setdefault((q[0], LN.get(q[1], q[1])), q)
     keep = [s for s in R['stn'] if s[3] == '']
-    st, idx, miss = [], {}, []
-    for s in keep:
+    nb = {}
+    for l in R['links']:
+        nb.setdefault(l[0], []).append((l[1], l[2] * 60))
+    LL, miss = {}, []
+    for s in keep:   # 첫 자리 — 노선 숫자가 맞는 점 · 이름 앞이 맞는 점 · 같은 이름 점이 1.5km 안에 모여 있으면 그 자리
         nm, ln = s[1], s[2]; C = pos.get(base(nm), []); dg = digit(ln)
-        pick = [c for c in C if dg and digit(c[0]) == dg] or [c for c in C if ln[:2] in c[0]] or (C if C and all(dist(c[2], c[1], C[0][2], C[0][1]) < 1500 for c in C) else [])   # 노선 표기가 달라도(경부선 = 1호선 등) 같은 이름 점이 한자리에 모여 있으면 그 자리
-        if not pick:
-            miss.append(nm + ' ' + ln); lon = lat = None
-        else:
-            lon, lat = pick[0][1], pick[0][2]
-        h = hr.get((nm, ln)) or next((q for (n2, l2), q in hr.items() if n2 == nm and l2.startswith(ln[:2])), None)
-        ex = []
-        if lat:
-            for e in E:
-                if abs(e[0] - lat) < 0.007 and abs(e[1] - lon) < 0.009 and dist(e[0], e[1], lat, lon) < 600 and (not e[3] or base(e[3]).startswith(base(nm)[:2])):
-                    ex.append([e[2] or '', round(e[0], 6), round(e[1], 6)])
+        pick = [c for c in C if dg and digit(c[0]) == dg] or [c for c in C if ln[:2] in c[0]] or (C if C and all(dist(c[2], c[1], C[0][2], C[0][1]) < 1500 for c in C) else [])
+        LL[s[0]] = (pick[0][2], pick[0][1]) if pick else None
+    for rnd in range(4):   # 이웃 역과 맞대 보기 — 이웃(5분 안)과 모두 6km 넘게 떨어진 자리는 버리고, 비었으면 이웃 가운데에 가장 가까운 같은 이름 점(4km 안)
+        for s in keep:
+            nn = [LL.get(t) for t, sec in nb.get(s[0], []) if sec <= 300 and LL.get(t)]
+            if not nn:
+                continue
+            my, cy, cx = LL.get(s[0]), sum(q[0] for q in nn) / len(nn), sum(q[1] for q in nn) / len(nn)
+            if my and min(dist(my[0], my[1], q[0], q[1]) for q in nn) > 6000:
+                LL[s[0]] = my = None
+            if not my:
+                C = sorted(pos.get(base(s[1]), []), key=lambda c: dist(c[2], c[1], cy, cx))
+                if C and dist(C[0][2], C[0][1], cy, cx) < 4000:
+                    LL[s[0]] = (C[0][2], C[0][1])
+    # 출구 — 출구마다 가장 가까운 역 자리(600m 안) 하나에만 · 출구 이름(OSM)이 있으면 그 이름의 역 · 같은 자리(300m 안) 같은 이름 역(갈아타는 노선)은 같이
+    spots = [(base(s[1]), LL[s[0]]) for s in keep if LL.get(s[0])]
+    EX = {}
+    for e in E:
+        cand = [(dist(e[0], e[1], q[0], q[1]), b0, q) for b0, q in spots if abs(e[0] - q[0]) < 0.007 and abs(e[1] - q[1]) < 0.009]
+        cand = [c for c in cand if c[0] < 600]
+        if not cand:
+            continue
+        if e[3]:
+            nmd = [c for c in cand if c[1] == base(e[3])]
+            if not nmd:
+                continue
+            cand = nmd
+        cand.sort(key=lambda c: c[0]); EX.setdefault(cand[0][1], []).append((e, cand[0][2]))
+    st, idx = [], {}
+    for s in keep:
+        nm, ln, ll = s[1], s[2], LL.get(s[0])
+        if not ll:
+            miss.append(nm + ' ' + ln)
+        h = hr.get((nm, ln))
+        ex = [[e[2] or '', round(e[0], 6), round(e[1], 6)] for e, q in EX.get(base(nm), []) if ll and dist(q[0], q[1], ll[0], ll[1]) < 300]
         idx[s[0]] = len(st)
-        st.append([s[0], nm, ln, round(lat, 6) if lat else None, round(lon, 6) if lon else None, h[5] if h else None, h[2] if h else None, ex])
+        st.append([s[0], nm, ln, round(ll[0], 6) if ll else None, round(ll[1], 6) if ll else None, h[5] if h else None, h[2] if h else None, ex])
     lk = []
     for l in R['links']:
         if l[0] in idx and l[1] in idx:

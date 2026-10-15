@@ -15,7 +15,7 @@
     M.t0(Date.now() - 1500); M.go();   /* 3초 아래 — 안 남김 */
     window.alert = al;
     var D = M.load(), r = D.rec[0], s = r ? M.stat(r.t) : null, st = String(document.getElementById('mStat').innerText || '');
-    ck('세 번 재면 평균 44초 · 편차 ±4초 · 「3번 넘게 — 계산에 씀」 · 3초 아래 값은 안 남김', D.rec.length === 1 && s && s.n === 3 && Math.abs(s.m - 44) < 0.3 && Math.abs(s.sd - 4) < 0.3 && /3번 넘게/.test(st), s ? s.n + '번 · ' + s.m.toFixed(1) + ' ± ' + s.sd.toFixed(1) : '없음');
+    ck('세 번 재면 평균 44초 · 편차 ±4초 · 「3번 이상 — 계산에 씀」 · 3초 아래 값은 안 남김', D.rec.length === 1 && s && s.n === 3 && Math.abs(s.m - 44) < 0.3 && Math.abs(s.sd - 4) < 0.3 && /3번 이상/.test(st), s ? s.n + '번 · ' + s.m.toFixed(1) + ' ± ' + s.sd.toFixed(1) : '없음');
     ck('저장 꼴 — 역·노선·종류·출입구·방향 + [초, 시, 평일/주말, 날짜] · 좌표 없음', r && r.st === '방배' && r.ln === '2호선' && r.kind === 'walk' && r.exit === '3' && r.dir === '서초 방면' && r.t[0].length === 4 && !/lat|lon|좌표/.test(JSON.stringify(D)), r ? JSON.stringify(r).slice(0, 120) : '');
     ck('잰 역에 ✅ 표시', /✅/.test(document.querySelector('#mSt button').innerText), document.querySelector('#mSt button').innerText);
     try { localStorage.removeItem(M.key); } catch (e) {}

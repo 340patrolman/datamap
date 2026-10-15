@@ -107,6 +107,16 @@
   /* v0.24.0 모드 색 — 긴급 출동 빨간 테 · 중요업무 보라 테 */
   body.mode-e #gTop { box-shadow: 0 0 0 3px #ef4444, 0 10px 28px rgba(9,15,30,.45); } body.mode-e #gBot { box-shadow: 0 -3px 0 #ef4444, 0 -8px 28px rgba(15,23,42,.16); }
   body.mode-v #gTop { box-shadow: 0 0 0 3px #a855f7, 0 10px 28px rgba(9,15,30,.45); } body.mode-v #gBot { box-shadow: 0 -3px 0 #a855f7, 0 -8px 28px rgba(15,23,42,.16); }
+  /* v0.24.1 키 작은 폰 — 위 판 줄이기(신호 남은 초 숫자는 그대로) */
+  @media (max-height: 620px) {
+    body.guiding #gTop { padding: 6px 10px 6px 6px; gap: 8px; border-radius: 14px; }
+    body.guiding #gTop .arw { width: calc(42px * var(--fz, 1)); height: calc(42px * var(--fz, 1)); font-size: calc(27px * var(--fz, 1)); border-radius: 10px; }
+    body.guiding #gTop .tx b { font-size: calc(24px * var(--fz, 1)); } body.guiding #gTop .tx span { font-size: calc(13px * var(--fz, 1)); }
+    body.guiding #gTop .lanes i { height: calc(18px * var(--fz, 1)); width: calc(19px * var(--fz, 1)); font-size: calc(11.5px * var(--fz, 1)); }
+    body.guiding #gTop .tx small.ln3 { margin-top: 2px; } body.guiding #gTop .nx2 { font-size: calc(10.5px * var(--fz, 1)); }
+    body.guiding #gSig.cp { padding: 2px 9px; } body.guiding #gSig.cp .now b { line-height: .95; } body.guiding #gSig.cp .ar { font-size: calc(22px * var(--fz, 1)); }
+    body.guiding #gBot { padding-top: 12px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  }
   #gNext { position: fixed; left: 8px; z-index: 5; display: none; align-items: center; gap: 6px; background: #0f1a33; color: #fff; border-radius: 0 0 12px 12px; padding: 6px 12px 7px; box-shadow: 0 6px 16px rgba(9,15,30,.3); }
   #gNext span { font-size: calc(11.5px * var(--fz, 1)); opacity: .75; } #gNext b { font-size: calc(19px * var(--fz, 1)); line-height: 1; } #gNext em { font-style: normal; font-weight: 900; font-size: calc(15px * var(--fz, 1)); }
   body:not(.guiding) #gNext { display: none !important; }
@@ -223,7 +233,7 @@
   })();
 </script>
 <script src="../js/travel-time.js?v=4"></script>
-<script src="gargo.js?v=0.24.0"></script>
+<script src="gargo.js?v=0.24.1"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

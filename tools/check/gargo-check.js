@@ -65,8 +65,11 @@
       var nL1 = g.lrnCount();
       var eL = null; for (var k8 = 0; k8 < rl.es.length; k8++) { var qL = Gl.S[Gl.eS[rl.es[k8]]]; if (qL[2] > 120 && qL[4] <= 4) { eL = rl.es[k8]; break; } }
       var lenL = Gl.S[Gl.eS[eL]][2]; g.lrnAdd(eL, lenL / (15 / 3.6)); g.lrnAdd(eL, lenL / (15 / 3.6)); var vL = g.lrnSpeed(eL), rl2 = g.findRoute(sl[0], sl[1], tl[0], tl[1], Date.now() / 1000, null);
-      ck('🧠 다녀 본 길 — 길 따라 움직이면 지난 줄을 모은다 · 같은 줄 두 번이면 그 속도(15km/h)를 쓴다 · 느리게 기억한 줄은 길 고르기에서 피하거나 시간이 는다', nL1 > 0 && Math.abs(vL - 15) < 1 && (rl2.es.indexOf(eL) < 0 || rl2.time > rl.time + 3), '모은 줄 ' + nL1 + ' · 속도 ' + vL.toFixed(1) + ' · ' + (rl2.es.indexOf(eL) < 0 ? '피함' : Math.round(rl.time) + '→' + Math.round(rl2.time) + '초'));
+      ck('🧠 다녀 본 길 — 길 따라 움직이면 지난 줄을 모은다 · 같은 줄 두 번이면 그 속도(15km/h)를 쓴다 · 기억한 속도로 길 고르기·시간이 바뀐다(퇴근 때는 이웃 메움 값이 더 느려 시간이 줄 수도 있다 — 기억이 메움보다 앞)', nL1 > 0 && Math.abs(vL - 15) < 1 && (rl2.es.indexOf(eL) < 0 || Math.abs(rl2.time - rl.time) > 3), '모은 줄 ' + nL1 + ' · 속도 ' + vL.toFixed(1) + ' · ' + (rl2.es.indexOf(eL) < 0 ? '피함' : Math.round(rl.time) + '→' + Math.round(rl2.time) + '초'));
       g.lrnReset(); } catch (e) { ck('다녀 본 길 검사', false, e.message); try { g.lrnReset(); } catch (x) {} }
+    /* v0.24.1 키 작은 폰 규칙 */
+    try { var mq = false; for (var si = 0; si < document.styleSheets.length; si++) { try { var rl = document.styleSheets[si].cssRules; for (var ri = 0; ri < rl.length; ri++) if (rl[ri].media && /max-height:\s*620px/.test(rl[ri].media.mediaText) && /#gTop/.test(rl[ri].cssText)) mq = true; } catch (x) {} }
+      ck('📱 키 작은 폰(높이 620px 아래)에서 위 판을 줄이는 규칙', mq, String(mq)); } catch (e) { ck('키 작은 폰 규칙', false, e.message); }
     /* v0.24.0 모드 색 · 음성 빠르기 */
     try { g.mode('e'); g.paint(); var me1 = document.body.classList.contains('mode-e'); g.mode('n'); g.paint(); var me0 = !document.body.classList.contains('mode-e') && !document.body.classList.contains('mode-v');
       ck('🎨 긴급 출동이면 화면에 빨간 테(mode-e) · 일반으로 돌아오면 없음 · ⚙ 음성 빠르기 기본 1.05 · 공휴일 판정 함수', me1 && me0 && g.cfg().vrate === 1.05 && typeof TT.isHol === 'function', [me1, me0, g.cfg().vrate].join(' · ')); } catch (e) { ck('모드 색 검사', false, e.message); }

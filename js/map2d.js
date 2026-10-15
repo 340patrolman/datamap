@@ -3585,7 +3585,7 @@
   function prdFill(M9) { if (!M9 || !M9.m || !NAVG) return null; if (MFILL.m === M9.m) return MFILL.f; var G = NAVG, F = {}, inn = G.inn;
     if (!inn) { inn = G.inn = {}; G.L.forEach(function (o) { (inn[o.t] = inn[o.t] || []).push(o); }); }
     function walk(o0, fwd) { var cur = o0, d = o0.m * 0.5; for (var k = 0; k < 6; k++) { var best = null, ba = 46; (fwd ? G.out[cur.t] || [] : inn[cur.f] || []).forEach(function (q) { if (q.nm !== o0.nm || (fwd ? q.t === cur.f : q.f === cur.t)) return; var ad = Math.abs(fwd ? prdAng(cur.b1, q.b0) : prdAng(q.b1, cur.b0)); if (ad < ba) { ba = ad; best = q; } });
-        if (!best) return null; var v = spdOf(M9, best.id); if (v) return [v, d + best.m * 0.5]; d += best.m; if (d > 700) return null; cur = best; } return null; }
+        if (!best || d > 700) return null; var v = spdOf(M9, best.id); if (v) return [v, d + best.m * 0.5]; d += best.m; cur = best; } return null; }   /* 거리는 메울 링크 가운데부터 — 긴 링크는 첫 걸음에 700m 를 넘어 안 메운다(우면산터널에 앞 교차로 막힘 12km/h 가 붙던 것) */
     G.L.forEach(function (o) { if (!o.nm || spdOf(M9, o.id)) return; var A = walk(o, true), B = walk(o, false); if (!A && !B) return; var w1 = A ? 1 / Math.max(50, A[1]) : 0, w2 = B ? 1 / Math.max(50, B[1]) : 0; F[o.id] = ((A ? A[0] * w1 : 0) + (B ? B[0] * w2 : 0)) / (w1 + w2); });
     MFILL = { m: M9.m, f: F }; return F; }
   function prdV(o) { var M9 = spdMap(), v = spdOf(M9, o.id); if (v) return [v, 1]; var F9 = prdFill(M9), fv = F9 && F9[o.id]; if (fv > 0) return [Math.max(4, Math.min(o.lim > 0 ? o.lim : 200, fv)), 0]; return [(o.lim > 0 ? o.lim : 30) / prdF(), 0]; }

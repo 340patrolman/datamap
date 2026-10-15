@@ -106,10 +106,10 @@
   function liveFill() { FILL = null; if (!LIVE.m || !G) return; var ne = G.ne, F = new Float32Array(ne), inH, inL, i, e;
     var cnt = new Int32Array(G.n + 1); for (e = 0; e < ne; e++) cnt[G.eB[e] + 1]++; for (i = 0; i < G.n; i++) cnt[i + 1] += cnt[i]; inH = cnt.slice(); inL = new Int32Array(ne); var pos = cnt.slice(); for (e = 0; e < ne; e++) inL[pos[G.eB[e]]++] = e;
     function nmOf(x) { return G.S[G.eS[x]][5]; }
-    function walk(e0, fwd) { var cur = e0, d = 0, nm = nmOf(e0); for (var k = 0; k < 6; k++) { var best = -1, ba = 46, a0, a1, j;
+    function walk(e0, fwd) { var cur = e0, d = eLen(e0) * 0.5, nm = nmOf(e0); for (var k = 0; k < 6; k++) {   /* d = 메울 줄 가운데에서 잰 거리 — 긴 줄(우면산터널 1,964m)은 첫 걸음에 벌써 700m 를 넘어 메우지 않는다 */ var best = -1, ba = 46, a0, a1, j;
         if (fwd) { a0 = G.oHead[G.eB[cur]]; a1 = G.oHead[G.eB[cur] + 1]; } else { a0 = inH[G.eA[cur]]; a1 = inH[G.eA[cur] + 1]; }
         for (j = a0; j < a1; j++) { var f = fwd ? G.oList[j] : inL[j]; if (G.eS[f] === G.eS[cur] || nmOf(f) !== nm) continue; var ad = Math.abs(fwd ? angDiff(eBrgIn(cur), eBrgOut(f)) : angDiff(eBrgIn(f), eBrgOut(cur))); if (ad < ba) { ba = ad; best = f; } }
-        if (best < 0) return null; d += eLen(fwd ? cur : best) * (k === 0 && fwd ? 0.5 : 1); var v = eLive(best); if (v) return [v, d + eLen(best) * 0.5]; if (d > 700) return null; cur = best; } return null; }
+        if (best < 0 || d > 700) return null; var v = eLive(best); if (v) return [v, d + eLen(best) * 0.5]; d += eLen(best); cur = best; } return null; }
     for (e = 0; e < ne; e++) { var q = G.S[G.eS[e]]; if (q[5] == null || q[5] < 0 || q[4] > 5 || eLive(e)) continue; var A = walk(e, true), B = walk(e, false); if (!A && !B) continue; var w1 = A ? 1 / Math.max(50, A[1]) : 0, w2 = B ? 1 / Math.max(50, B[1]) : 0; F[e] = ((A ? A[0] * w1 : 0) + (B ? B[0] * w2 : 0)) / (w1 + w2); }
     FILL = F; }
   var AREA_KO = /[?&]pk=seoul(?![a-z])/.test(location.search) ? '서울 25구' : '서초·강남·송파·동작·관악·용산';

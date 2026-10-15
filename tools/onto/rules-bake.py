@@ -75,6 +75,10 @@ RULES = [
     dict(id='RULE-NAV-3', area='길 알림', title='조작하는 자리에서 다른 교차로 값을 보이지 않는다 — 300m 넘으면 「이 자리에는 자료가 없습니다」',
          d='자료 없는 다른 교차로가 50m 넘게 더 가까우면 먼 자료를 이 자리 것으로 보이지 않는다.',
          s=[('app', 'T-Book 신호 v0.2~0.3 설계', '2026-09-10')], g='A', o=['tb-signal(자매 앱)'], t='—'),
+    dict(id='RULE-NAV-4', area='길 알림', title='걸리는 시간 보정은 공공 실측(ITS 통행속도)으로만 — 카카오 등 민간 길찾기 결과는 그 자리 맞대 보기(검증)에만 쓰고 저장·보정값에 쓰지 않는다',
+         d='민간 길찾기 API 는 보통 결과 저장·2차 이용을 막는다(약관 원문은 소유자 확인 몫). 맞대 보기에서 차이가 크면 ITS 배율이나 길 고르기를 고친다 — 숫자를 옮겨 오지 않는다.',
+         s=[('own', 'FK-NAV-KAKAO', '2026-10-15'), ('meas', '게임 세션 판단 — kakao_eta.py 수집 중단 · kakao-spot.py 저장 0', '2026-10-15')], g='B',
+         o=['dm:tools/signal/etacal-its.py', 'dm:data/eta-cal.json', 'dm:tools/signal/kakao-spot.py', 'dm:tools/signal/spdnormal-bake.py'], t='data/eta-cal.json 의 원자료가 07_API키/out/livespd 뿐인지'),
     # 자료 읽는 법
     dict(id='RULE-DATA-1', area='자료', title='서울 상권분석 「당월 매출」은 한 분기(3달) 합계 — 달로 쓰려면 ÷3',
          d='공공 추정이 업종 조사 평균보다 3배 넘게 크면 기간 단위부터 의심한다. 경기 상권 추정은 확인 중.',
@@ -121,6 +125,8 @@ FIELD = [
          use=['RULE-DATA-2'], conf='공개 범위 결정 · 교통과 현시도 원본·판독 JSON 은 여전히 비공개'),
     dict(id='FK-TGIS-LINK', date='2026-10-02', said='T-GIS 「(연등)」 교차로는 부모 교차로 신호에 딸려 돈다(LK_CS_CDE = 부모 코드)', use=['RULE-SIG-1'],
          conf='자료로 확인(서초·방배 비 0 87곳 중 70곳이 「(연등)」)'),
+    dict(id='FK-NAV-KAKAO', date='2026-10-15', said='내가 지금 이렇게 카카오로 보정하는게 맞는거지 보조적으로만 사용하고 · 너의 권고대로 진행하자',
+         use=['RULE-NAV-4'], conf='소유자 결정(권고 = ITS 로 보정 · 카카오는 검증만)'),
     dict(id='FK-CAR-NUM', date='2026-10-08', said='고속309 = 고속도로순찰대 3지구대 9호 · 경찰서 교통순찰차는 서마다 01번부터(많으면 06)', use=[], conf='게임 그림에 적용'),
 ]
 

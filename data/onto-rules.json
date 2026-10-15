@@ -15,9 +15,9 @@
  },
  "grades": "A 원문·공식 · B 받은 값 · C 근사 · D 추정 · E 가설(앱 기준 포함)",
  "n": {
-  "rules": 21,
-  "field": 11,
-  "fieldUsed": 7
+  "rules": 22,
+  "field": 12,
+  "fieldUsed": 8
  },
  "rules": [
   {
@@ -324,6 +324,32 @@
    "t": "—"
   },
   {
+   "id": "RULE-NAV-4",
+   "area": "길 알림",
+   "title": "걸리는 시간 보정은 공공 실측(ITS 통행속도)으로만 — 카카오 등 민간 길찾기 결과는 그 자리 맞대 보기(검증)에만 쓰고 저장·보정값에 쓰지 않는다",
+   "d": "민간 길찾기 API 는 보통 결과 저장·2차 이용을 막는다(약관 원문은 소유자 확인 몫). 맞대 보기에서 차이가 크면 ITS 배율이나 길 고르기를 고친다 — 숫자를 옮겨 오지 않는다.",
+   "s": [
+    [
+     "own",
+     "FK-NAV-KAKAO",
+     "2026-10-15"
+    ],
+    [
+     "meas",
+     "게임 세션 판단 — kakao_eta.py 수집 중단 · kakao-spot.py 저장 0",
+     "2026-10-15"
+    ]
+   ],
+   "g": "B",
+   "o": [
+    "dm:tools/signal/etacal-its.py",
+    "dm:data/eta-cal.json",
+    "dm:tools/signal/kakao-spot.py",
+    "dm:tools/signal/spdnormal-bake.py"
+   ],
+   "t": "data/eta-cal.json 의 원자료가 07_API키/out/livespd 뿐인지"
+  },
+  {
    "id": "RULE-DATA-1",
    "area": "자료",
    "title": "서울 상권분석 「당월 매출」은 한 분기(3달) 합계 — 달로 쓰려면 ÷3",
@@ -551,6 +577,15 @@
     "RULE-SIG-1"
    ],
    "conf": "자료로 확인(서초·방배 비 0 87곳 중 70곳이 「(연등)」)"
+  },
+  {
+   "id": "FK-NAV-KAKAO",
+   "date": "2026-10-15",
+   "said": "내가 지금 이렇게 카카오로 보정하는게 맞는거지 보조적으로만 사용하고 · 너의 권고대로 진행하자",
+   "use": [
+    "RULE-NAV-4"
+   ],
+   "conf": "소유자 결정(권고 = ITS 로 보정 · 카카오는 검증만)"
   },
   {
    "id": "FK-CAR-NUM",

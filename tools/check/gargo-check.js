@@ -67,6 +67,9 @@
       var lenL = Gl.S[Gl.eS[eL]][2]; g.lrnAdd(eL, lenL / (15 / 3.6)); g.lrnAdd(eL, lenL / (15 / 3.6)); var vL = g.lrnSpeed(eL), rl2 = g.findRoute(sl[0], sl[1], tl[0], tl[1], Date.now() / 1000, null);
       ck('🧠 다녀 본 길 — 길 따라 움직이면 지난 줄을 모은다 · 같은 줄 두 번이면 그 속도(15km/h)를 쓴다 · 느리게 기억한 줄은 길 고르기에서 피하거나 시간이 는다', nL1 > 0 && Math.abs(vL - 15) < 1 && (rl2.es.indexOf(eL) < 0 || rl2.time > rl.time + 3), '모은 줄 ' + nL1 + ' · 속도 ' + vL.toFixed(1) + ' · ' + (rl2.es.indexOf(eL) < 0 ? '피함' : Math.round(rl.time) + '→' + Math.round(rl2.time) + '초'));
       g.lrnReset(); } catch (e) { ck('다녀 본 길 검사', false, e.message); try { g.lrnReset(); } catch (x) {} }
+    /* v0.24.0 모드 색 · 음성 빠르기 */
+    try { g.mode('e'); g.paint(); var me1 = document.body.classList.contains('mode-e'); g.mode('n'); g.paint(); var me0 = !document.body.classList.contains('mode-e') && !document.body.classList.contains('mode-v');
+      ck('🎨 긴급 출동이면 화면에 빨간 테(mode-e) · 일반으로 돌아오면 없음 · ⚙ 음성 빠르기 기본 1.05 · 공휴일 판정 함수', me1 && me0 && g.cfg().vrate === 1.05 && typeof TT.isHol === 'function', [me1, me0, g.cfg().vrate].join(' · ')); } catch (e) { ck('모드 색 검사', false, e.message); }
     /* v0.14.0 주행 기록 — 기본 끔 · 켜면 안내 중 2초마다 기기에 · 끝나면 최근 목록에 · 중요업무·모의 주행은 안 남김 · 시험 뒤 지움 */
     if (st.route && !g.state().guide) { var dv0 = g.drv(); g.guideStart(); var off0 = g.drv().cur; g.guideStop(false);
       localStorage.setItem('tg_gargo_drvon', '1'); g.guideStart(); var dn = Date.now, tt9 = dn(); Date.now = function () { return tt9 += 2500; };

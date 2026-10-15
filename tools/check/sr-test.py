@@ -9,7 +9,7 @@ from cdp import Chrome
 s = socket.socket(); s.bind(('127.0.0.1', 0)); port = s.getsockname()[1]; s.close()
 H = functools.partial(http.server.SimpleHTTPRequestHandler, directory=ROOT); H.log_message = lambda *a: None
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', port), H); threading.Thread(target=srv.serve_forever, daemon=True).start()
-JS = r'''(async function(){ var j = await (await fetch('/data/train-run-seoul.json')).json(), S = window.SR; S.load(j); var R = {};
+JS = r'''(async function(){ var j = await (await fetch('/data/train-run-seoul.json')).json(), S = window.SREACH; S.load(j); var R = {};
   /* ① 해석 계산 대 몬테카를로 — 2%p 안 */
   R.mc = [[300,40,280,60],[300,40,300,40],[200,30,260,50],[500,80,420,30],[120,20,180,90]].map(function(c){ return [Math.round(S.pWin(c[0],c[1],c[2],c[3])*1000)/1000, Math.round(S.mc(c[0],c[1],c[2],c[3],40000,7)*1000)/1000]; });
   /* ② 진행 방향 — 방배(2호선)에서 서초 쪽 */

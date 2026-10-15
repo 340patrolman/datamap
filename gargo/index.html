@@ -124,6 +124,21 @@
   #gBot .disp .dcar b { font-size: calc(15.5px * var(--fz, 1)); } #gBot .disp .dcar em { font-style: normal; font-weight: 900; font-size: calc(17px * var(--fz, 1)); } #gBot .disp .dcar span { color: var(--dim); } #gBot .disp .dcar span em { color: var(--ink); }
   #gBot .disp .dcar i { display: block; font-style: normal; color: #b45309; font-size: calc(12.5px * var(--fz, 1)); } #gBot .disp .dln { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: calc(13px * var(--fz, 1)); margin-top: 2px; } #gBot .disp .dln button { padding: 4px 8px; }
   #gBot .disp .dnt { color: var(--dim); font-size: calc(12px * var(--fz, 1)); line-height: 1.5; margin: 6px 0 0; }
+  /* v0.27.0 열차 안 신고 — 태블릿에서도 크게 · 밤 화면 */
+  #gSR { position: fixed; inset: 0; z-index: 40; display: none; overflow: auto; background: var(--solid); color: var(--ink); padding: calc(10px + env(safe-area-inset-top)) 12px calc(20px + env(safe-area-inset-bottom)); font-size: calc(16px * var(--fz, 1)); }
+  #gSR > * { max-width: 760px; margin-left: auto; margin-right: auto; }
+  #gSR .srh { display: flex; align-items: center; gap: 10px; } #gSR .srh b { flex: 1; font-size: calc(20px * var(--fz, 1)); } #gSR .srh button { width: 48px; height: 48px; border-radius: 14px; border: 1px solid var(--line); background: transparent; font-size: 22px; }
+  #gSR .srq { margin-top: 12px; } #gSR .srq p { margin: 0 0 6px; font-weight: 800; color: var(--dim); font-size: calc(14px * var(--fz, 1)); } #gSR .srq p small { font-weight: 600; }
+  #gSR .srk { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; } #gSR .srk button { min-height: 44px; padding: 6px 13px; border-radius: 12px; border: 1px solid var(--line); background: transparent; font-weight: 800; font-size: calc(16px * var(--fz, 1)); } #gSR .srk button.on { background: #2f6bff; border-color: #2f6bff; color: #fff; } #gSR .srk u { text-decoration: none; font-weight: 600; font-size: .78em; opacity: .75; }
+  #gSR .srb { font-weight: 900; font-size: calc(17px * var(--fz, 1)); margin: 14px 0 6px; }
+  #gSR .src { border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; margin-bottom: 10px; } #gSR .src.best { border: 3px solid #16a34a; } #gSR .src.late { opacity: .72; }
+  #gSR .src .h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; } #gSR .src .h b { font-size: calc(22px * var(--fz, 1)); } #gSR .src .h small { color: var(--dim); }
+  #gSR em.bd { font-style: normal; background: #16a34a; color: #fff; border-radius: 8px; padding: 1px 8px; font-weight: 900; } #gSR em.as { font-style: normal; background: #fef3c7; color: #92400e; border-radius: 8px; padding: 1px 8px; font-weight: 800; font-size: .82em; } :root.dark #gSR em.as { background: #451a03; color: #fcd34d; }
+  #gSR .pb { position: relative; height: 30px; border-radius: 10px; background: rgba(148,163,184,.25); overflow: hidden; margin: 8px 0 6px; } #gSR .pb i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #16a34a, #22c55e); } #gSR .src.late .pb i { background: #94a3b8; } #gSR .pb span { position: relative; padding-left: 10px; line-height: 30px; font-weight: 900; }
+  #gSR .tt { font-size: calc(17px * var(--fz, 1)); } #gSR .tt b { font-size: calc(20px * var(--fz, 1)); font-variant-numeric: tabular-nums; } #gSR .sl { margin-top: 3px; font-weight: 800; } #gSR .src.late .sl { color: #dc2626; }
+  #gSR .ex { color: var(--dim); font-size: calc(13.5px * var(--fz, 1)); margin-top: 4px; line-height: 1.5; } #gSR .wn { margin-top: 6px; background: rgba(245,158,11,.16); color: #b45309; border-radius: 10px; padding: 6px 9px; font-weight: 800; } :root.dark #gSR .wn { color: #fbbf24; }
+  #gSR .src button.go { margin-top: 8px; width: 100%; min-height: 48px; border: 0; border-radius: 14px; background: #2f6bff; color: #fff; font-weight: 900; font-size: calc(17px * var(--fz, 1)); }
+  #gSR .srn { color: var(--dim); font-size: calc(13px * var(--fz, 1)); line-height: 1.6; margin-top: 12px; }
   #gNext { position: fixed; left: 8px; z-index: 5; display: none; align-items: center; gap: 6px; background: #0f1a33; color: #fff; border-radius: 0 0 12px 12px; padding: 6px 12px 7px; box-shadow: 0 6px 16px rgba(9,15,30,.3); }
   #gNext span { font-size: calc(11.5px * var(--fz, 1)); opacity: .75; } #gNext b { font-size: calc(19px * var(--fz, 1)); line-height: 1; } #gNext em { font-style: normal; font-weight: 900; font-size: calc(15px * var(--fz, 1)); }
   body:not(.guiding) #gNext { display: none !important; }
@@ -240,7 +255,8 @@
   })();
 </script>
 <script src="../js/travel-time.js?v=4"></script>
-<script src="gargo.js?v=0.26.0"></script>
+<script src="../js/station-reach.js?v=1"></script>
+<script src="gargo.js?v=0.27.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

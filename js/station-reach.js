@@ -1,17 +1,17 @@
-/* 선착 역 계산(SR) — 열차 안 신고: 열차보다 먼저 닿을 수 있는 역 · 그 확률 · 언제까지 떠나야 하나 — 우리 판 ver.2(2026-10-15)
+/* 선착 역 계산(SREACH · 가르고 안 음성 받아쓰기 SR 과 겹치지 않게) — 열차 안 신고: 열차보다 먼저 닿을 수 있는 역 · 그 확률 · 언제까지 떠나야 하나 — 우리 판 ver.2(2026-10-15)
    소유자가 붙인 「도착 예측 ver.1」 프롬프트의 규격을 따른다(받기로 한 subway_intercept.js 가 이 PC 에 없어 직접 짰다 — 오면 같은 입력으로 맞대 본다).
    자료 = data/train-run-seoul.json(tools/region/trainrun-bake.py) · 계산은 모두 기기 안에서(이 파일은 바깥에 아무것도 부르지 않는다).
    결과는 「후보」·「예상」이다 — 최종 판단은 현장 경찰관. 가정값은 assumed:true 로 돌려주고 화면은 「가정값」 배지를 붙인다(실측 3번 넘게 들어온 역만 뗀다).
 
-   SR.load(json)                                 자료 넣기
-   SR.find(이름, 노선)                            역 번호
-   SR.path(역, 다음 역, n)                        진행 방향으로 n 역 [{i, sec(출발 → 그 역 출발 누적)}]
-   SR.crowd(역, 시, events, 날짜)                 {r 몫, walkF 도보 배수, dwellF 정차 배수, sdF, warn, assumed}
-   SR.train(obs, 시, events, 날짜, n)              obs = {i 마지막 역, nx 다음 역, st 'dep'(출발)|'arr'(도착·정차), ago 몇 초 전(null = 모름)} → 역마다 열차 도착 {T, sd}
-   SR.police(역, drive{sec, sd}, 시, meas, events, 날짜) → {P, sd, walk{…, assumed}, park{…}}
-   SR.pWin(muT, sdT, muP, sdP)                    해석 계산 P(경찰이 먼저) · SR.mc(…, n, seed) 몬테카를로
-   SR.plan(obs, drives{역: {sec, sd}}, 시, opt)   후보 역 카드 + 권고(기준 확률 넘는 가장 가까운 역 · 없으면 가장 높은 역 「경합」)
-   SR.calibrate([[예상, 실제], …])                 주행 보정 배수 */
+   SREACH.load(json)                                 자료 넣기
+   SREACH.find(이름, 노선)                            역 번호
+   SREACH.path(역, 다음 역, n)                        진행 방향으로 n 역 [{i, sec(출발 → 그 역 출발 누적)}]
+   SREACH.crowd(역, 시, events, 날짜)                 {r 몫, walkF 도보 배수, dwellF 정차 배수, sdF, warn, assumed}
+   SREACH.train(obs, 시, events, 날짜, n)              obs = {i 마지막 역, nx 다음 역, st 'dep'(출발)|'arr'(도착·정차), ago 몇 초 전(null = 모름)} → 역마다 열차 도착 {T, sd}
+   SREACH.police(역, drive{sec, sd}, 시, meas, events, 날짜) → {P, sd, walk{…, assumed}, park{…}}
+   SREACH.pWin(muT, sdT, muP, sdP)                    해석 계산 P(경찰이 먼저) · SR.mc(…, n, seed) 몬테카를로
+   SREACH.plan(obs, drives{역: {sec, sd}}, 시, opt)   후보 역 카드 + 권고(기준 확률 넘는 가장 가까운 역 · 없으면 가장 높은 역 「경합」)
+   SREACH.calibrate([[예상, 실제], …])                 주행 보정 배수 */
 (function (root) {
   'use strict';
   /* 가정값 — 모두 assumed:true 로 나간다 · 실측(역 실측 도구 tg_gg_meas)이 들어오면 그 역의 도보·세운 자리 값만 바뀐다 */
@@ -62,5 +62,5 @@
   function zOf(p) { var lo = -6, hi = 6, k; for (k = 0; k < 60; k++) { var m = (lo + hi) / 2; if (Phi(m) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
   function calibrate(P) { var r = (P || []).filter(function (x) { return x[0] > 30 && x[1] > 30; }).map(function (x) { return x[1] / x[0]; }).filter(function (v) { return v > 0.4 && v < 2.5; }).sort(function (a, b) { return a - b; });
     if (!r.length) return { k: 1, n: 0, assumed: true }; return { k: clamp(r[r.length >> 1], 0.7, 1.5), n: r.length, assumed: r.length < 5 }; }
-  root.SR = { A: A, load: load, data: function () { return D; }, find: find, path: path, crowd: crowd, train: train, police: police, measOf: measOf, pWin: pWin, mc: mc, Phi: Phi, plan: plan, calibrate: calibrate, VER: '2.0-tg' };
+  root.SREACH = { A: A, load: load, data: function () { return D; }, find: find, path: path, crowd: crowd, train: train, police: police, measOf: measOf, pWin: pWin, mc: mc, Phi: Phi, plan: plan, calibrate: calibrate, VER: '2.0-tg' };
 })(typeof window !== 'undefined' ? window : this);

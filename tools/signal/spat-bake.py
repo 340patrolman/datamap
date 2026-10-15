@@ -615,6 +615,10 @@ def sweep(prefer=None, api='t', cap=None):
         todo = pick(okf) or pick((lambda i: pos[i] < pcap * 0.97) if pcap else (lambda i: True))
         if not todo:
             print(now.strftime('%H:%M:%S'), '지금 받을 곳이 없다' + ('(끝자리 %d 안쪽에는)' % pcap if pcap else '') + ' — 5분 뒤 다시 본다', flush=True); time.sleep(GAP); continue
+        if api != 't' and (now.hour - 1) % 6 >= 2 and not set(todo) & set(i for T in stage['basket'] for i in T):
+            # (2026-10-15) 6시간 묶음 셋째~여섯째 시간에는 서버 자료 끝이 짧아 바구니(서초) 교차로에 못 닿는다 — 상태·잔여+상태 훑기는 이 창을 쉬고
+            #  아낀 하루 몫을 Fusion(교차로 하나씩 · 서초 그 시각대 칸을 메움)이 쓰게 한다. 잔여 훑기(t)는 그대로(통행속도·올리기를 같이 맡는다)
+            print(now.strftime('%H:%M:%S'), '바구니에 못 닿는 시각대 — 이 창은 쉰다(Fusion 몫으로)', flush=True); time.sleep(GAP); continue
         ps = sorted(pos[i] for i in todo)
         per = int(30000 / max(dens * t, 1.0))                 # 한 쪽에 드는 교차로 수(정각 창에서는 100곳 안팎)
         if len(ps) > 2 and per >= 20:

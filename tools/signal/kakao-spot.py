@@ -77,7 +77,7 @@ def main():
             continue
         P = [(lid, L[lid]['m'] * ((E.F1 - E.F0) if len(ids) == 1 else (1 - E.F0) if i == 0 else E.F1 if i == len(ids) - 1 else 1.0), L[lid]['lim']) for i, lid in enumerate(ids)]
         m = sum(x[1] for x in P)
-        ours = sum(x[1] / (x[2] / 3.6) for x in P) + 2 * E.ACC
+        mv = sum(x[1] / (x[2] / 3.6) for x in P); ours = mv + 2 * E.ACC
         seen = None
         for lid in ids:
             no = N.get(L[lid]['t'])
@@ -114,7 +114,7 @@ def main():
         if r9:
             rat.append(r9)
         if r9:
-            save_row('seg', {'t': now.isoformat(timespec='seconds'), 'id': s['id'], 'ours': round(ours), 'its': round(its) if its else None, 'rk': round(r9, 3), 'calF': round(E_calF(now), 3)})
+            save_row('seg', {'t': now.isoformat(timespec='seconds'), 'id': s['id'], 'ours': round(ours), 'its': round(its) if its else None, 'rk': round(r9, 3), 'calF': round(E_calF(now), 3), 'rkc': round(kd / (ours + mv * (E_calF(now) - 1)), 3)})   # rkc = 카카오 ÷ 막힘 배율을 곱한 우리 계산(지도·가르고가 실시간 없을 때 쓰는 값)
         print('%-4s %-6s %-30s %6s초 %6d초 %7s %6s' % (s['id'], s['road'], (s['from'] + '→' + s['to'])[:30], kd if kd else '-', ours,
                                                   ('%d초' % its) if its else '-', ('%.2f' % r9) if r9 else '-'))
         time.sleep(0.3)

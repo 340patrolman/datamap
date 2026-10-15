@@ -107,8 +107,10 @@ def kd_add(label):
 
 def hist_reserve():
     """오늘 남은 시간 동안 역사 훑기(잔여·상태 둘)가 열쇠 하나로 더 부를 어림 — 열쇠마다 API 하나에 5분(GAP)에 한 번 꼴"""
-    left = 86400 - (time.time() + 9 * 3600) % 86400
-    return int(3 * left / GAP) + 5                         # 역사 훑기 셋(잔여·상태·잔여+상태)
+    sod = (time.time() + 9 * 3600) % 86400; h0 = int(sod // 3600)
+    nk = lambda h: 3 if (h - 1) % 6 < 2 else 1             # (2026-10-15) 묶음 셋째~여섯째 시간은 잔여 훑기 하나만 돈다(상태·잔여+상태는 쉼)
+    sec = (3600 - sod % 3600) * nk(h0) + sum(3600 * nk(h) for h in range(h0 + 1, 24))
+    return int(sec / GAP) + 5                              # 역사 훑기(잔여·상태·잔여+상태)가 오늘 더 부를 어림
 
 
 def keyval(label):

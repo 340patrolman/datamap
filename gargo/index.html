@@ -72,6 +72,7 @@
   #gBot .mode { display: flex; gap: 6px; margin: 6px 0 4px; } #gBot .mode button { flex: 1; height: 40px; border-radius: 11px; border: 1px solid var(--line); background: transparent; font-size: calc(13.5px * var(--fz, 1)); font-weight: 800; } #gBot .mode button.on { background: var(--blue); color: #fff; border-color: var(--blue); } #gBot .mode button[data-mode=e].on { background: #b91c1c; border-color: #b91c1c; }
   #gTop .tx small b { font-size: inherit; line-height: inherit; }
   #gBot .big .est { display: block; font-style: normal; font-size: calc(12px * var(--fz, 1)); font-weight: 700; color: #b45309; margin-top: 2px; } :root.dark #gBot .big .est { color: #fbbf24; }
+  #gTop .tx small.ic { display: block; font-size: calc(12.5px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.12); border-radius: 8px; padding: 3px 8px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #gTop .tx small.ic b { font-weight: 800; }
   #gBot .mode button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
   #gBot .eta.rg { gap: 10px; } #gBot .eta.rg b { font-size: calc(19px * var(--fz, 1)); letter-spacing: -.4px; }
   /* v0.13.0 카카오내비 참고 — 회전 전 남은 거리 막대 · 왼쪽 경로 소통 막대 */
@@ -183,7 +184,7 @@
   })();
 </script>
 <script src="../js/travel-time.js?v=3"></script>
-<script src="gargo.js?v=0.14.4"></script>
+<script src="gargo.js?v=0.15.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

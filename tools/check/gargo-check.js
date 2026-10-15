@@ -35,6 +35,7 @@
       ck('⏳ 실측 없는 길이 섞이면 도착·남은 시간을 폭으로(「~」 · 「추정」) · 폭 표(eta-cal r) 읽음', !rq || (r0.live >= 0.999 ? !/추정/.test(eb) : (/~/.test(eb) && /추정/.test(eb))), (rq ? rq.join('~') : '표 없음') + ' · 실시간 ' + Math.round((r0.live || 0) * 100) + '% · ' + eb.replace(/\s+/g, ' ').slice(0, 60));
       r0.pos = p0; g.guideStop(false); }
     /* v0.14.1 닿는 자리 — 자동차전용(우면산로)과 일반 길(남부순환로)이 겹친 교차로에서 전용 길만 후보로 잡아 돌아가던 것(route-spot 대조 · 신사역 → 예술의전당 12.3km) */
+    g.icLoad();   /* v0.15.0 나들목 목록을 미리 받아 둔다 — 검사는 맨 끝(4.2초 뒤) */
     var s9 = g.P(127.019517, 37.516137), t9 = g.P(127.013111, 37.480682), r9 = g.findRoute(s9[0], s9[1], t9[0], t9[1], Date.now() / 1000, null);
     ck('🎯 닿는 자리 — 신사역 → 예술의전당이 양재IC 로 돌지 않는다(9km 아래 · 우면산로로 들어가지 않음)', !!r9 && r9.dist < 9000 && !r9.lims.some(function (q) { return q[2] === '우면산로' || q[2] === '양재대로'; }), r9 ? Math.round(r9.dist) + 'm · ' + r9.lims.map(function (q) { return q[2]; }).filter(function (v, i, A) { return v && v !== A[i - 1]; }).join('›') : '길 없음');
     /* v0.14.2 이웃 메움 — 실시간 값이 붙은 길이면 같은 길 이웃 줄(값 없음)도 그 값으로(경부 반포IC~서초IC 13~16km/h 인데 옆 줄은 80 으로 셈하던 것) */
@@ -181,6 +182,9 @@
         g.setMe(hx, hy, 5, hd, 11); ck('다시 움직이면 앞 신호가 돌아온다', !!(g.ahead() && g.ahead().sig));
         ck('끝내면 지도가 북쪽 위로 돌아오고 찾기 칸이 다시 보인다', g.cruise(false) === false && g.view.rot === 0 && !document.body.classList.contains('guiding') && document.getElementById('gFind').style.display !== 'none');
       } catch (e) { ck('켜놓고 다니기 검사', false, e && e.message); }
+      /* v0.15.0 고속도로 모드 — 신사역 → 예술의전당(경부) 길의 나들목 차례 · 경부(제한 70 이상)에서만 안내 판 줄 */
+      try { var ic9 = r9 ? (g.icOn(r9) || []).map(function (o) { return o.nm; }) : [], ia = ['잠원IC', '반포IC', '서초IC'].map(function (n) { return ic9.indexOf(n); }), e70 = r9 ? r9.lims.filter(function (q) { return q[1] >= 70; })[0] : null, ln = e70 ? g.icLine(r9, e70[0] + 30) : '', ln0 = g.icLine(r9, 10);
+        ck('🛣 고속도로 모드 — 경부 길의 나들목이 잠원IC → 반포IC → 서초IC 차례 · 경부 위에서만 「🛣 … km · 분」 줄', ia.every(function (x, i) { return x >= 0 && (!i || x > ia[i - 1]); }) && /🛣/.test(ln) && /km|m ·/.test(ln) && ln0 === '', ic9.join('›') + ' · ' + ln.replace(/<[^>]+>/g, '').slice(0, 60)); } catch (e) { ck('고속도로 모드 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       send(); }, 4200);
   }

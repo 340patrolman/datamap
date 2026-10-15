@@ -52,6 +52,12 @@
     /* v0.14.2 이웃 메움 — 실시간 값이 붙은 길이면 같은 길 이웃 줄(값 없음)도 그 값으로(경부 반포IC~서초IC 13~16km/h 인데 옆 줄은 80 으로 셈하던 것) */
     var Gf = g.state().G, nf = 0, bad9 = 0; if (g.liver()) { for (var ef = 0; ef < Gf.ne; ef++) { var fv = g.fill(ef); if (fv > 0) { nf++; if (!(fv <= 200)) bad9++; } } }
     ck('🧩 실시간 값 없는 줄을 같은 길 이웃 값으로 메움(실시간이 있을 때 · 메운 줄 > 0 · 값 정상)', !g.liver() || (nf > 0 && bad9 === 0), g.liver() ? '메운 줄 ' + nf + ' / ' + Gf.ne : '실시간 없음 — 건너뜀');
+    /* v0.22.0 공사·통제 — 길 위 한 링크를 「전면 통제」로 두면 그 줄을 피해 돌고 · 「차로 통제」면 그 길로 가되 시간이 늘고 🚧 표시 */
+    try { var Ga = g.state().G, sa = g.P(127.0076, 37.4919), ta = g.P(127.0341, 37.4844), ra = g.findRoute(sa[0], sa[1], ta[0], ta[1], Date.now() / 1000, null), ea = null, lka = null;
+      for (var ia9 = Math.floor(ra.es.length / 2); ia9 < ra.es.length; ia9++) { var qa = Ga.S[Ga.eS[ra.es[ia9]]], la = qa[Ga.eR[ra.es[ia9]] ? 14 : 13]; if (la != null && la >= 0 && qa[2] > 80) { ea = ra.es[ia9]; lka = Ga.j.links[la]; break; } }
+      var A9 = {}; A9[lka] = { nm: '공사', full: true, both: false, txt: '시험 전면통제' }; g.accSet(A9); var rb = g.findRoute(sa[0], sa[1], ta[0], ta[1], Date.now() / 1000, null);
+      A9[lka] = { nm: '공사', full: false, both: false, txt: '시험 차로 통제' }; g.accSet(A9); var rc9 = g.findRoute(sa[0], sa[1], ta[0], ta[1], Date.now() / 1000, null); g.accSet(null);
+      ck('🚧 공사·통제 — 전면 통제 링크는 피해 간다 · 차로 통제는 그 길로 가되 시간 늘고 「🚧」 줄(live-acc-seoul.json)', !!ea && rb && rb.es.indexOf(ea) < 0 && rc9 && (rc9.es.indexOf(ea) < 0 || ((rc9.accs || []).length > 0 && rc9.time > ra.time)), [lka, rb && rb.es.indexOf(ea), rc9 && (rc9.accs || []).length, ra && Math.round(ra.time), rc9 && Math.round(rc9.time)].join(' · ')); } catch (e) { ck('공사·통제 검사', false, e.message); }
     /* v0.14.0 주행 기록 — 기본 끔 · 켜면 안내 중 2초마다 기기에 · 끝나면 최근 목록에 · 중요업무·모의 주행은 안 남김 · 시험 뒤 지움 */
     if (st.route && !g.state().guide) { var dv0 = g.drv(); g.guideStart(); var off0 = g.drv().cur; g.guideStop(false);
       localStorage.setItem('tg_gargo_drvon', '1'); g.guideStart(); var dn = Date.now, tt9 = dn(); Date.now = function () { return tt9 += 2500; };

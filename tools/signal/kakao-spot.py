@@ -3,9 +3,9 @@
 
 카카오 결과는 저장하지 않는다(카카오 개발자 게시판 답 「임시 캐싱 등의 방법으로 API 호출 및 이용은 금지」 · 「요청 처리 시점에 일회성으로 참조」만).
   → 고정 구간(07_API키/kakao_eta_segments.json · 서초 간선 28 · 실사건 좌표 아님)을 지금 묻고, 같은 시각 우리 계산(제한속도 + 신호 기다림 · etacal-its.py 와 같은 식)
-    과 가장 최근 ITS 실측(30분 안)을 나란히 화면에만 찍고 끝낸다. 파일에 쓰는 것은 하루 호출 수(07_API키/out/kakao_eta/day.json · 숫자 하나)뿐.
+    과 가장 최근 ITS 실측(30분 안)을 나란히 화면에 찍는다 · --save 면 「우리 계산·ITS + 카카오 ÷ 우리 비율」만 07_API키/out/compare/seg-YYYYMMDD.jsonl 에(카카오 시간 자체는 안 남김 · 소유자 2026-10-15) · 그 밖에 쓰는 것은 하루 호출 수(day.json).
   하루 무료 10,000 의 90% 에서 멈춤 · 401/403/429 면 바로 멈춤 · 열쇠는 07_API키/keys.json 「kakao_navi」(출력하지 않는다)
-  py -3.12 -X utf8 tools/signal/kakao-spot.py [S01 S07 …]      (구간을 안 적으면 28개 모두)
+  py -3.12 -X utf8 tools/signal/kakao-spot.py [S01 S07 …] [--save]      (구간을 안 적으면 28개 모두)
 """
 import sys, os, json, time, urllib.request, urllib.parse, urllib.error, importlib.util, datetime as dt
 
@@ -14,6 +14,17 @@ spec = importlib.util.spec_from_file_location('etacal', os.path.join(HERE, 'etac
 E = importlib.util.module_from_spec(spec); spec.loader.exec_module(E)
 RAW, KST = E.RAW, E.KST
 DAY = os.path.join(RAW, 'out', 'kakao_eta', 'day.json')
+
+
+def E_calF(t):
+    """그 시각 막힘 배율(data/eta-cal.json) — 비교 줄에 같이 남겨 보정 전후를 가를 수 있게"""
+    try:
+        j = json.load(open(os.path.join(E.ROOT, 'data', 'eta-cal.json'), encoding='utf-8'))
+        kd = '일·공휴' if t.strftime('%Y-%m-%d') in j.get('holidays', []) or t.weekday() == 6 else '토' if t.weekday() == 5 else '평일'
+        h = t.hour; bd = '출근' if 7 <= h < 10 else '낮' if 10 <= h < 17 else '퇴근' if 17 <= h < 20 else '저녁' if 20 <= h < 23 else '밤'
+        k = kd + '|' + bd; return j['f'].get(k) or j['f'].get(j.get('fill', {}).get(k, ''), 1)
+    except Exception:
+        return 1
 CAP = 9000
 URL = 'https://apis-navi.kakaomobility.com/v1/directions'
 
@@ -30,6 +41,15 @@ def day_book(add=0):
     os.makedirs(os.path.dirname(DAY), exist_ok=True)
     json.dump(b, open(DAY, 'w', encoding='utf-8'))
     return b['calls']
+
+
+def save_row(kind, row):
+    """비교 결과 한 줄 — 우리 값과 비율·겹침만(카카오 원래 값은 안 남김 · 소유자 결정 2026-10-15)"""
+    if '--save' not in sys.argv:
+        return
+    d = os.path.join(RAW, 'out', 'compare'); os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, '%s-%s.jsonl' % (kind, dt.datetime.now(KST).strftime('%Y%m%d'))), 'a', encoding='utf-8') as f:
+        f.write(json.dumps(row, ensure_ascii=False, separators=(',', ':')) + chr(10))
 
 
 def main():
@@ -93,6 +113,8 @@ def main():
         r9 = kd / ours if kd else None
         if r9:
             rat.append(r9)
+        if r9:
+            save_row('seg', {'t': now.isoformat(timespec='seconds'), 'id': s['id'], 'ours': round(ours), 'its': round(its) if its else None, 'rk': round(r9, 3), 'calF': round(E_calF(now), 3)})
         print('%-4s %-6s %-30s %6s초 %6d초 %7s %6s' % (s['id'], s['road'], (s['from'] + '→' + s['to'])[:30], kd if kd else '-', ours,
                                                   ('%d초' % its) if its else '-', ('%.2f' % r9) if r9 else '-'))
         time.sleep(0.3)

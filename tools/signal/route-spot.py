@@ -5,9 +5,9 @@
   ① 가르고 길 = 머리 없는 크롬으로 가르고(gargo/index.html)를 열어 GARGO.findRoute(일반 모드 · 지금 시각)
   ② 카카오 길 = 같은 출발점(가르고 길 첫머리 + 진행각)·도착점으로 지금 한 번 묻기(priority TIME)
   ③ 겹침 = 카카오 길 길이 가운데 가르고 길 30m 안에 드는 몫 · 거꾸로도 · 거리·시간 나란히
-화면에만 찍고 끝낸다 — 카카오 결과는 저장하지 않는다(카카오 개발자 게시판 「임시 캐싱 등 금지」) · 파일에 쓰는 것은 하루 호출 수(07_API키/out/kakao_eta/day.json) 하나
+화면에 찍는다 — 카카오 결과(길 모양·이름·거리·시간)는 저장하지 않는다(카카오 운영정책 제5조) · --save 면 「우리 값 + 비율·겹침 몫」만 07_API키/out/compare/route-YYYYMMDD.jsonl 에(소유자 2026-10-15 「우리와 비교한 결과값은 남겨도 된다」) · 그 밖에 쓰는 것은 하루 호출 수(day.json)
 열쇠 = 07_API키/keys.json 「kakao_navi」(출력하지 않는다) · 하루 9,000 넘으면 안 부름 · 401/403/429 면 멈춤
-  py -3.12 -X utf8 tools/signal/route-spot.py [짝 번호 …] [-d]      (-d = 길 이름별 거리·시간을 양쪽 나란히 — 같은 길인데 시간이 어긋날 때 어느 길에서인지)
+  py -3.12 -X utf8 tools/signal/route-spot.py [짝 번호 …] [-d] [--save]      (-d = 길 이름별 거리·시간을 양쪽 나란히 — 같은 길인데 시간이 어긋날 때 어느 길에서인지)
 """
 import sys, os, json, math, time, socket, threading, functools, http.server, urllib.request, urllib.parse, urllib.error, datetime as dt
 
@@ -61,6 +61,15 @@ def near_frac(A, B, tol=30.0):
             if min(dseg(p, B[j - 1], B[j]) for j in range(1, len(B))) <= tol:
                 ok += L / n
     return ok / tot if tot else 0.0
+
+
+def save_row(kind, row):
+    """비교 결과 한 줄 — 우리 값과 비율·겹침만(카카오 원래 값은 안 남김 · 소유자 결정 2026-10-15)"""
+    if '--save' not in sys.argv:
+        return
+    d = os.path.join(RAW, 'out', 'compare'); os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, '%s-%s.jsonl' % (kind, dt.datetime.now(KST).strftime('%Y%m%d'))), 'a', encoding='utf-8') as f:
+        f.write(json.dumps(row, ensure_ascii=False, separators=(',', ':')) + chr(10))
 
 
 def main():
@@ -142,6 +151,7 @@ def main():
                     if nm != last:
                         kseq.append(nm); last = nm
                 print('      가르고: ' + r.get('seq', '')); print('      카카오: ' + ' › '.join(kseq))
+            save_row('route', {'t': now.isoformat(timespec='seconds'), 'pair': no, 'from': a, 'to': b, 'g_m': round(r['dist']), 'g_s': round(r['time']), 'rt': round(r['time'] / max(1, sm['duration']), 3), 'rd': round(r['dist'] / max(1, sm['distance']), 3), 'ov_k': round(f1, 3), 'ov_g': round(f2, 3), 'far': bool(far)})
             print('%-3d %-26s %5.1fkm %5.1f분 %5.1fkm %5.1f분 %6d%% %6d%%%s' % (no, (a + '→' + b)[:26], r['dist'] / 1000, r['time'] / 60, sm['distance'] / 1000, sm['duration'] / 60, round(f1 * 100), round(f2 * 100), flag))
             time.sleep(0.3)
         print('엉뚱한 길(가르고 거리 > 카카오 × 1.3) 짝: %s · 오늘 카카오 호출 %d건 · 「다른 길(거리 비슷)」은 대안 길이라 틀린 것이 아니다' % (', '.join(map(str, low)) or '없음', day_book()))

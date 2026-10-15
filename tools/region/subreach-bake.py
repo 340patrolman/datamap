@@ -100,6 +100,25 @@ def main():
         else: hold.append((a, b, km, good))
     for a, b, km, good in hold:   # 칸이 여럿 남은 이음
         EDGE[(a, b)] = good[0]   # 가장 짧은 칸 — 이웃 역 사이는 배차 간격보다 짧아서, 남는 칸은 뒤 열차와 짝지어진 더 긴 칸이다(앞 열차와 짝지어진 더 짧은 칸은 빠르기 상한에서 걸러진다)
+    SEO = set(); sp = os.path.join(API, 'subfreq', 'seoul_links.json')   # (2026-10-16) TAGO 시간표가 비거나 한쪽뿐인 구간(2호선 성수·신정 지선 · 7호선 장암)은 서울 열린데이터 열차 번호 시간표(tools/region/subtt-seoul.py)로 — TAGO 로 읽은 이음은 그대로 둔다
+    if os.path.exists(sp):
+        for a, b, w, n in json.load(open(sp, encoding='utf-8')):
+            if a in info and b in info and (a, b) not in EDGE:
+                EDGE[(a, b)] = w; SEO.add((a, b)); PAIR.setdefault((a, b), None)
+    print('서울 열차 시간표로 메운 이음', len(SEO))
+    FEW = set()   # (2026-10-16) 하루 몇 편뿐인 구간(경춘 광운대 · 경의중앙 임진강·도라산 · 서해선 시우 등)은 30초 칸에 5편이 안 모여 못 읽었다 → 같은 행선지 열차를 하나씩 짝지어 모든 편의 차이가 1분 안으로 한결같을 때만(2편 이상) 그 가운데값
+    for (a, b), km in list(PAIR.items()):
+        if (a, b) in EDGE or (b, a) in EDGE: continue
+        for ud in 'UD':
+            da, db = dep.get((a, ud)) or {}, dep.get((b, ud)) or {}; ds = []
+            for e, va in da.items():
+                vb = db.get(e) or []
+                for x in va:
+                    k = bisect.bisect_right(vb, x + 0.4)
+                    if k < len(vb) and vb[k] - x <= 20: ds.append(vb[k] - x)
+            if len(ds) >= 2 and max(ds) - min(ds) <= 1.0 and (not km or any((8 if q < 1.2 else 18) <= q / (sorted(ds)[len(ds) // 2] / 60) <= 120 for q in km)):
+                EDGE[(a, b)] = round(sorted(ds)[len(ds) // 2], 1); FEW.add((a, b)); break
+    print('몇 편뿐인 구간에서 짝지어 읽은 이음', len(FEW), [(info[a][1], info[a][0], info[b][0], EDGE[(a, b)]) for a, b in FEW][:12])
     SYM = set()   # 종점으로 들어가는 쪽은 종점에 「출발」이 없어 못 읽는다 → 반대 방향에서 읽은 시간을 그대로 쓴다(같은 구간 · 표시 sym)
     for (a, b) in list(PAIR):
         if (a, b) not in EDGE and (b, a) in EDGE: EDGE[(a, b)] = EDGE[(b, a)]; SYM.add((a, b))
@@ -143,14 +162,14 @@ def main():
         stn.append(row)
     links = [[a, b, w, -1 if (not PAIR[(a, b)] or (a, b) in GEO) else min(PAIR[(a, b)], key=lambda q: abs(q / (w / 60) - 35))] + ([1] if (a, b) in SYM else []) for (a, b), w in sorted(EDGE.items())]
     doc = {'schema': 'tg-subway-reach/1', 'made': datetime.date.today().isoformat(),
-           'source': '역의 이음·거리 = 국가철도공단 역간거리 파일 24개(공공데이터포털 15041460 등 · 2025-06-30~2026-06-30판) · 역 사이 시간 = 국토교통부 TAGO 지하철정보(1613000/SubwayInfo) 역별 평일 시간표',
+           'source': '역의 이음·거리 = 국가철도공단 역간거리 파일 24개(공공데이터포털 15041460 등 · 2025-06-30~2026-06-30판) · 역 사이 시간 = 국토교통부 TAGO 지하철정보(1613000/SubwayInfo) 역별 평일 시간표 · TAGO 가 빈 구간은 서울 열린데이터 SearchSTNTimeTableByIDService',
            'how': '이웃한 두 역에서 같은 방향·같은 행선지 열차의 출발 시각 차이를 30초 칸에 모아 가장 많이 모인 칸을 그 구간 시간으로 읽었다(정차 포함 · 거리로 본 빠르기가 시속 18~120km(1.2km 안 되는 짧은 구간은 8부터) 안인 칸만). 갈아타기 = 같은 이름 역끼리 걷기 %d분(가정) + 옮겨 타는 역의 낮 평균 배차 간격 절반. 가장 빠른 길(다익스트라).' % WALK,
            'note': ['**시간표에서 읽어 낸 추정이다** — 시간표에 열차 번호가 없어 구간 시간을 출발 시각 차이로 읽었다. 운영사가 낸 소요시간 표가 아니다',
                     '갈아타는 걷기 %d분은 **가정값**이다(역마다 실제는 1~10분) · 기다림은 낮(10~16시) 배차 기준' % WALK,
                     '처음 타는 역에서 기다리는 시간은 넣지 않았다 — 배차가 드문 역은 data/subway-freq.json 의 간격만큼 더 걸린다',
                     '급행을 가르지 못해 완행에 가까운 값이다(급행을 타면 더 짧다) · 이름이 다른 환승(걸어서 옮기는 역)은 잇지 못했다',
                     '-1 = 닿지 않음(수도권 밖 도시철도 · 시간표에서 구간 시간을 못 읽어 길이 끊긴 역) — 「멀다」가 아니라 「못 셈」',
-                    '못 센 수도권 역(2026-10-10 밤 판): 인천2호선 15역(원자료 시간표에 상행·하행이 섞여 있다) · 2호선 성수·신정 지선 6역(원자료에 시간표가 없다) · 자기부상 5역 · 경의중앙 3역 등 — 동해선·대경선은 수도권과 이어지지 않아 -1 이 맞다',
+                    '2호선 성수·신정 지선 · 7호선 장암 구간은 TAGO 시간표가 비어(또는 한 방향뿐) 서울 열린데이터 「역코드로 지하철역별 열차 시간표」(열차 번호 있음 · 같은 열차의 두 역 출발 차이 가운데값 · 평일)로 메웠다(2026-10-16 · tools/region/subtt-seoul.py) — 못 센 역: 인천2호선(원자료 시간표에 상행·하행이 섞여 있다) · 자기부상 · 경의중앙 끝 몇 역 등 · 동해선·대경선은 수도권과 이어지지 않아 -1 이 맞다',
                     '눈으로 맞대 본 값(참고): 판교→강남역 14분 · 잠실→강남역 13분 · 사당→강남역 11분 · 홍대입구→서울역(공항철도) 8분 · 수원→서울시청 70분 · 인천→서울역 76분 — 흔히 아는 시간과 비슷하다. 갈아타는 길은 걷기·기다림 가정 때문에 실제보다 5~10분 길게 나오는 편이다',
                     'links 의 km -1 = 역간거리 파일이 못 이은 자리를 같은 노선의 가까운 역으로 메운 것(시간표에서 한결같은 시간이 읽힌 것만 · 한 역을 건너뛴 이음이 섞일 수 있으나 시간은 그 구간의 실제 시간표 값이다) — 노선도를 그릴 때는 km 가 있는 이음만 쓴다'],
            'dest': [[x[0], x[1]] for x in DEST],

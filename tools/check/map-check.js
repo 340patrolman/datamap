@@ -67,6 +67,10 @@
         V0.cp = cpS; V0.base = 0; m.vipRun();
         var wk = new Date(2026, 9, 14, 17, 30).getTime(), fk = TT.calF(wk), whyk = TT.calWhy(wk); var cf0 = localStorage.getItem('tg_tt_cfg'); TT.set('calOn', 0); var fk0 = TT.calF(wk); if (cf0 == null) localStorage.removeItem('tg_tt_cfg'); else localStorage.setItem('tg_tt_cfg', cf0);   /* 시험 전 그대로 — 「남은 것 없음」 검사 */
         ck('⏱ 막힘 배율(ITS 실측) — 표를 읽음 · 평일 17:30 퇴근 칸 ×1~2.5 · 끄면 ×1 · 신고 예측이 쓰는 값 = TT.calF(지금)', fk > 1 && fk <= 2.5 && /평일 퇴근/.test(whyk) && fk0 === 1 && Math.abs(m.prdF() - TT.calF(Date.now())) < 1e-9, whyk + ' · 끔 ' + fk0 + ' · 지금 ' + m.prdF());
+        /* v2.228.0 이웃 메움 — 같은 이름으로 곧게 이어지는 다음 링크에만 실시간 20km/h 를 주면 앞 링크도 20 으로 메운다 · 이름 다른 링크는 안 메운다 */
+        var NG = m.navg(), o9 = null, q9 = null; NG.L.some(function (o) { if (!o.nm) return false; var nx = (NG.out[o.t] || []).filter(function (q) { return q.nm === o.nm && q.t !== o.f; }); if (nx.length === 1) { o9 = o; q9 = nx[0]; return true; } return false; });
+        var MM = { m: {} }; if (q9) MM.m[q9.id] = 20; var FF = q9 ? m.prdFill(MM) : null, oth = NG.L.filter(function (o) { return o.nm && o.nm !== (o9 && o9.nm) && (NG.out[o.t] || []).length; })[0];
+        ck('🧩 신고 예측 이웃 메움 — 같은 길 다음 링크 실시간 20km/h → 값 없는 앞 링크 20 · 다른 이름 길은 안 메움', !!FF && Math.abs(FF[o9.id] - 20) < 1e-6 && !(oth && FF[oth.id] > 0 && oth.nm !== q9.nm), o9 ? o9.nm + ' ' + (FF && FF[o9.id]) : '짝 없음'); m.prdFill(null);
         V0.base = 80; m.vipRun(); var R8 = V0.res.V; V0.base = 0; V0.fast = 110; m.vipRun(); var R9 = V0.res.V; V0.fast = null;
         ck('🔒 속도 80 이면 예상이 더 빨라지고 · 「더 빠름」 110 이면 가장 이른 = 110', R8.base.v === 80 && R8.base.sec < R3.base.sec && R9.fastV === 110 && R9.typed, [TT.fmt(R8.base.sec), R9.fastV].join(' / '));
         V0.fast = 80; m.vipRun(); var R4 = V0.res.V; V0.fast = 130; m.vipRun(); var R5 = V0.res.V;

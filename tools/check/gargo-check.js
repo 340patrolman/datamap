@@ -269,6 +269,18 @@
       var bnP = g.bld().names ? Promise.resolve() : Promise.resolve(g.bnmLoad());
       var dnP = Promise.resolve(g.dongLoad()); bnP = Promise.all([bnP, dnP]); bnP = Promise.all([bnP, Promise.resolve(g.risk()), Promise.resolve(g.alrLoad()), Promise.resolve(g.busLoad())]).then(function () { return new Promise(function (ok) { setTimeout(ok, 600); }); });
       Promise.race([bnP, new Promise(function (ok) { setTimeout(ok, 10000); })]).then(function () { setTimeout(function () { try { bnF(); } catch (e) { ck('건물 이름 찾기', false, e.message); } try { buF(); } catch (e) { ck('버스전용차로 검사', false, e.message); } try { mkF(); } catch (e) { ck('길 위 표시 검사', false, e.message); } try { dnF(); } catch (e) { ck('지금 위치 검사', false, e.message); }
+      var offF = function () { /* v0.30.0 경로 이탈 — 벗어나 있는 동안 다시 찾기를 여러 번 해도 「경로를 벗어났습니다」·「새 경로입니다」는 한 번씩 · 길로 돌아왔다가 다시 벗어나면 그때 또 한 번 */
+    if (g.state().guide) g.guideStop(false); if (!g.state().route) { var sO = g.P(127.0076, 37.4919), tO = g.P(127.0341, 37.4844); g.setMe(sO[0], sO[1], 5, null, 0); g.setDest(tO[0], tO[1], '시험 출동지', false, true); g.plan(true); } if (!g.state().route) { ck('경로 이탈 안내 검사 — 길을 만들지 못함', false, ''); return; } if (window.speechSynthesis) { var SAY2 = [], sp2 = speechSynthesis.speak, cn2 = speechSynthesis.cancel, st2 = window.setTimeout, me2 = g.state().me, mk2 = me2 ? { x: me2.x, y: me2.y } : null; speechSynthesis.speak = function (u) { SAY2.push(u.text); }; speechSynthesis.cancel = function () {}; window.setTimeout = function (f, ms) { if (ms === 1500) { f(); return 0; } return st2.apply(window, arguments); };
+      try { var vb2 = document.getElementById('gVoice'); vb2.click(); g.guideStart(); var ds2 = g.state().dest, rr2 = g.state().route, x0 = rr2.pts[0], y0 = rr2.pts[1], dx = ds2.x - x0, dy = ds2.y - y0, dl = Math.hypot(dx, dy) || 1, ux = -dx / dl, uy = -dy / dl, nRe = 0, p0 = g.plan;
+        var off2 = function (k) { for (var j = 0; j < 4; j++) g.setMe(x0 + ux * 260 * k + uy * 7 * j, y0 + uy * 260 * k - ux * 7 * j, 5, null, 6); g.offe().last -= 20000; };
+        for (var k2 = 1; k2 <= 5; k2++) off2(k2);
+        var said1 = SAY2.join(' | '), nOff1 = (said1.match(/경로를 벗어났습니다/g) || []).length, nNew1 = (said1.match(/새 경로입니다/g) || []).length, on1 = g.offe().on;
+        var rr3 = g.state().route; for (var j3 = 0; j3 < 4; j3++) g.setMe(rr3.pts[0], rr3.pts[1], 5, null, 6); var on2 = g.offe().on;
+        var rr4 = g.state().route, x4 = rr4.pts[0], y4 = rr4.pts[1]; for (var j4 = 0; j4 < 4; j4++) g.setMe(x4 + ux * 300, y4 + uy * 300, 5, null, 6);
+        var said2 = SAY2.join(' | '), nOff2 = (said2.match(/경로를 벗어났습니다/g) || []).length;
+        ck('🔇 경로 이탈 안내 한 번 — 벗어난 채 다시 찾기 5번에 「경로를 벗어났습니다」 1번 · 「새 경로입니다」 1번 이하 · 길로 세 번 돌아오면 끝 · 다시 벗어나면 또 1번(v0.30.0 · 소유자 「너무 많이 말한다」)', nOff1 === 1 && nNew1 <= 1 && on1 && !on2 && nOff2 === 2, '벗어남 ' + nOff1 + ' · 새 경로 ' + nNew1 + ' · 이탈 중 ' + on1 + ' → 돌아옴 ' + !on2 + ' · 다시 벗어남 누적 ' + nOff2 + ' · ' + said2.slice(0, 160));
+        g.guideStop(false); vb2.click(); } catch (e) { ck('경로 이탈 안내 검사', false, e.message); } finally { speechSynthesis.speak = sp2; speechSynthesis.cancel = cn2; window.setTimeout = st2; if (mk2) { g.setMe(mk2.x, mk2.y, 5, null, 0); g.plan(true); } } } };
+      try { offF(); } catch (e) { ck('경로 이탈 안내 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       send(); }, 50); }); }, 4200);
   }

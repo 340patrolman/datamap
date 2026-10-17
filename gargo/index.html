@@ -223,6 +223,12 @@
   body.guiding #gSig { right: auto; width: auto; max-width: calc(100vw - 72px); } body.guiding #gSig.cp .nm { margin-left: 10px; }
   /* v0.32.0 아래 막대 오른쪽 = 지금 달리는 길(참고 · 소유자 「왼편 = 중요 · 오른편 = 참고」) — 길면 줄임표 */
   #gBot .eta .here { flex: 1 1 auto; min-width: 0; padding-left: 10px; border-left: 1px solid var(--line); } #gBot .eta .here b { font-size: calc(15px * var(--fz, 1)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); } #gBot .eta .here span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* v0.33.0 위 상자들은 화면 왼쪽 절반 안(가운데 경로선을 넘지 않게) — 글은 3·4줄로 접힌다(소유자 「2줄을 3줄 4줄로 늘려서라도 길을 가리지 않게」) */
+  body.guiding #gTop { max-width: max(178px, calc(50vw - 22px)); } body.guiding #gTop .tx span, body.guiding #gTop .tx small.ln2, body.guiding #gTop .tx small.ic, body.guiding #gTop .tx small.em { white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
+  body.guiding #gTop .tx small.ln3 { flex-wrap: wrap; } body.guiding #gTop .lanes { flex-wrap: wrap; } body.guiding #gTop .tx small.ln2 { font-size: calc(13px * var(--fz, 1)); }
+  body.guiding #gSig { max-width: max(178px, calc(50vw - 22px)); } body.guiding #gSig.cp .c1 { flex-wrap: wrap; row-gap: 0; } body.guiding #gSig.cp .nm { margin-left: 0; text-align: left; flex: 1 1 100%; order: 3; } body.guiding #gSig.cp .nm b, body.guiding #gSig.cp .nm span { display: inline; max-width: none; white-space: normal; } body.guiding #gSig.cp .nm span::before { content: ' · '; }
+  body.guiding #gSig.cp .tx1 { white-space: normal; } body.guiding #gSig .ln.eco, body.guiding #gSig.cp .ln { white-space: normal; word-break: keep-all; }
+  body.guiding #gSig.cp .now b small:first-child { display: none; }   /* 남은 초 크기는 ⚙ 설정 그대로 · 좁은 상자에서는 「적색/녹색」 낱말을 빼고 점·숫자 색으로 */ body.guiding #gSig.cp .now i { width: 14px; height: 14px; } body.guiding #gSig.cp .ar { font-size: calc(22px * var(--fz, 1)); } body.guiding #gSig.cp .c1 { column-gap: 6px; }   /* v0.33.0 좁은 상자에서도 화살표·색·초가 한 줄 */
 </style>
 </head>
 <body>
@@ -265,7 +271,7 @@
 </script>
 <script src="../js/travel-time.js?v=4"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.32.1"></script>
+<script src="gargo.js?v=0.33.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

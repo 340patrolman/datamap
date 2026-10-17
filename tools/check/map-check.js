@@ -41,7 +41,7 @@
     /* v2.222.0 🧩 교차로 관계(온톨로지 코어 v1 · Phase 2) — 서초역 카드의 「이 자리의 관계」 안 단추를 누르면 서초역사거리의 사고·주 위반·과거 조치가 펼쳐진다 · 누르기 전에는 코어를 받지 않는다 */
     var ob = document.querySelector('#m2dCard [data-onto]'); ck('카드에 「🧩 교차로 관계 보기」 단추(서초)', !!ob, ob ? '' : '없음'); ck('누르기 전에는 온톨로지 코어를 받지 않는다', !m.onto());
     if (ob) { var det = ob.closest('details'); if (det) det.open = true; ob.click(); }
-    try { m.petGet(); m.uticGet(); m.sbhGet(); m.sigUGet(); } catch (e) {}   /* v2.230.0 반려동물 — 아래 길 자료 검사 뒤에 본다 */
+    try { m.petGet(); m.uticGet(); m.sbhGet(); m.sigUGet(); m.pbzGet(); m.pbzSd('11'); } catch (e) {}   /* v2.230.0 반려동물 — 아래 길 자료 검사 뒤에 본다 */
     setTimeout(function () { var bx = document.getElementById('m2dOnto'), tx = bx ? String(bx.innerText || '') : '';
       ck('관계 패널이 펼쳐진다 — 교차로 · 사고 해마다 · 주 위반 근거 · 과거 조치 · 비슷한 교차로', /서초역사거리/.test(tx) && /① 사고/.test(tx) && /② 주 위반/.test(tx) && /④ 과거 조치/.test(tx) && /⑤ 비슷한/.test(tx) && /반포대로 축개선/.test(tx), tx.replace(/\s+/g, ' ').slice(0, 120));
       /* v2.223.0 신고 차량 예측 — 설정 세트 셋이 서로 다른 결과 · 🔒 중요업무 두 줄 · 밖으로 나가는 요청 0 · 남기는 것 없음 */
@@ -85,6 +85,8 @@
         setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var PZ = m.pbz() || {}, dv15 = document.createElement('div'); dv15.innerHTML = m.pbzRows({ k: '11650510', gcd: '11650' }) || ''; var tx15 = dv15.innerText || '';
+        ck('🐾 반려동물 산업 — 갈래 10 · 서초구 동물병원 있음 · 동 카드에 이 구 갈래별 수·「해마다 영업 중인 곳」 그래프·출처 · 상호·주소 칸 없음(v2.236.0)', PZ.kinds && PZ.kinds.length === 10 && PZ.gu && PZ.gu['11650'] && PZ.gu['11650'].n[0] > 0 && /반려동물 산업/.test(tx15) && /해마다 영업 중인 곳/.test(tx15) && /LOCALDATA/.test(tx15) && !/상호|사업장명/.test(JSON.stringify(PZ).replace(/상호·주소/g, '')), (PZ.kinds ? PZ.kinds.length : 0) + '갈래 · 서초 병원 ' + (PZ.gu && PZ.gu['11650'] ? PZ.gu['11650'].n[0] : '-') + ' · ' + tx15.replace(/\s+/g, ' ').slice(0, 90)); } catch (e) { ck('반려동물 산업 검사', false, e.message); }
       try { var lv14 = m.sdLive('1552'), dv14 = document.createElement('div'); dv14.innerHTML = m.sigDirHtml('1552') || ''; var tx14 = dv14.innerText || '', n14 = (tx14.match(/[①②③④⑤⑥⑦⑧] /g) || []).length;
         if (tx14) ck('🚦 이수역(1552) 신호 카드 — 계획 + 방향 표로 그리면 머리글이 「경찰청 계획」(받은 값이라 적지 않음) · 받은 값으로 그리면 방향 셋 넘게(지금 시각과 같은 계획 줄의 받은 값을 다른 요일 갈래에서도 씀 · v2.234.0)', lv14 && lv14.ok && (lv14.pd ? /경찰청 계획/.test(tx14) && !/실제로 돈 값/.test(tx14.split('\n')[0]) : n14 >= 3), (lv14 && (lv14.pd ? '계획+방향표' : lv14.xd ? '같은 계획 줄 ' + lv14.tod[0] + '/' + lv14.tod[1] + '시' : '받은 값')) + ' · 방향 ' + n14); } catch (e) { ck('이수역 신호 카드 검사', false, e.message); }
       try { var SU = m.sigu() || [], c0 = SU[0], sp0 = c0 && c0.spots[0], cdU = sp0 ? m.sigUCard(sp0, c0).replace(/<[^>]+>/g, ' ') : '';

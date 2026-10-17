@@ -221,6 +221,8 @@
   /* v0.31.0 글 상자는 글 길이만큼(소유자 「여백이 너무 많다 · 신축적으로」) — 위 회전 판·신호 판 모두 오른쪽 단추 줄 앞까지만 늘어난다 */
   body.guiding #gTop { right: auto; max-width: calc(100vw - 72px); width: auto; } body.guiding #gTop .tx { flex: 0 1 auto; padding-right: 4px; }
   body.guiding #gSig { right: auto; width: auto; max-width: calc(100vw - 72px); } body.guiding #gSig.cp .nm { margin-left: 10px; }
+  /* v0.32.0 아래 막대 오른쪽 = 지금 달리는 길(참고 · 소유자 「왼편 = 중요 · 오른편 = 참고」) — 길면 줄임표 */
+  #gBot .eta .here { flex: 1 1 auto; min-width: 0; padding-left: 10px; border-left: 1px solid var(--line); } #gBot .eta .here b { font-size: calc(15px * var(--fz, 1)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); } #gBot .eta .here span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
 <body>
@@ -263,7 +265,7 @@
 </script>
 <script src="../js/travel-time.js?v=4"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.31.0"></script>
+<script src="gargo.js?v=0.32.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

@@ -74,7 +74,7 @@ def static_rules():
         c = g.count(needle)
         out.append([name, c == n, '%d곳(바라는 수 %d)' % (c, n)])
     has('가르고 규칙 · 속도 권고는 제한속도에서 아래로만 찾는다', 'for (var v = ns.lim; v >= 20; v -= 5)')
-    has('가르고 규칙 · 밤 22~06시에는 속도 권고를 안 낸다', "if (!NOSIG() && !night() && dd > 80) { var cam9")   # v0.31.0 통과 가능 속도 줄(녹색·적색 모두) — 밤·긴급·중요업무에는 없음
+    has('가르고 규칙 · 밤 22~06시에는 속도 권고를 안 낸다', "if (!NOSIG() && !(dest && dest.vip) && !night() && dd > 80 && !cg9)")   # v0.31.0 통과 가능 속도 줄(녹색·적색 모두) — 밤·긴급·중요업무에는 없음
     has('가르고 규칙 · 밤 판정 22시·6시', 'return h >= 22 || h < 6;')
     has('가르고 규칙 · 길 계산 속도는 제한속도를 넘지 않는다', 'Math.max(4, Math.min(lim, v))')
     has('가르고 규칙 · 속도 권고 글은 한 곳뿐', "🟢 통과 가능 <b>")   # v0.31.0 spdRange 한 곳

@@ -3072,10 +3072,16 @@
     var age = Date.now() / 1000 - r.a; if (r.x && !r.v) return { rec: r, age: age, why: 'bad' };
     if (age >= 0 && (age <= 12 * 60 || (r.v && age <= 120 * 60))) return { rec: r, age: age, ok: 1 };
     var pd0 = sdPlanDev(no, r); if (age >= 0 && age <= 20 * 3600 && pd0 != null && Math.abs(pd0) <= 6) return { rec: r, age: age, ok: 1, plan: pd0 };   /* v2.116.0 받은 닻이 지금 도는 경찰청 계획(같은 주기 · 옵셋 = 자정 기준)과 ±6초로 맞으면 낡아도 이어 센다 */
-    var pdr = planDirRec(no); if (pdr) return { rec: pdr, age: age, ok: 1, pd: 1, real: r };   /* 받은 시각대 값이 없으면 경찰청 계획 + 방향 표로 */
-    /* 같은 날 받은 닻은 시각대 표가 아직 없어도 3시간까지는 이어 센다(그 사이 주기가 다른 기록이 없을 때) — 오래됐다고 밝힌다 */
-    var TD = D.sigd.tod && D.sigd.tod[String(no)], dn = new Date(), tdc = TD ? TD.filter(function (q) { return q[1] === dn.getHours(); })[0] : null;
-    if (HOUR == null && age >= 0 && age <= 3 * 3600 && !(tdc && Math.abs(tdc[2] - r.ci) > 1)) return { rec: r, age: age, ok: 1, stale: 1 };
+    /* 같은 날 받은 닻은 시각대 표가 아직 없어도 3시간까지는 이어 센다(그 사이 주기가 다른 기록이 없을 때) — 오래됐다고 밝힌다
+       v2.235.0 시각대 표는 같은 요일 갈래로(tod 0 평일 · 1 토 · 2 일·공휴일 — 종전엔 갈래를 안 가려 평일 9시 230초가 토 9시 190초 닻을 막았다) · 닻 뒤에 받은 기록 중 주기가 1.5초 넘게 다른 것이 있으면 안 씀 */
+    var TD = D.sigd.tod && D.sigd.tod[String(no)], dn = new Date(), sc9 = sdCls(dn), tk9 = sc9 === 2 ? 1 : sc9 === 3 ? 2 : 0, tdc = TD ? TD.filter(function (q) { return q[0] === tk9 && q[1] === dn.getHours(); })[0] : null;
+    var rd9 = new Date(r.a * 1000), rdk = rd9.getFullYear() + '-' + ('0' + (rd9.getMonth() + 1)).slice(-2) + '-' + ('0' + rd9.getDate()).slice(-2), rhm = ('0' + rd9.getHours()).slice(-2) + ':' + ('0' + rd9.getMinutes()).slice(-2);
+    var cf9 = (L || []).some(function (o) { return o !== r && o.day === rdk && String(o.to) > rhm && Math.abs((o.ci || o.cyc) - r.ci) > 1.5; });
+    var stOk = HOUR == null && age >= 0 && age <= 3 * 3600 && !cf9 && !(tdc && Math.abs(tdc[2] - r.ci) > 1);
+    var pdr = planDirRec(no), pdPart = pdr && pdr.pdn && pdr.pdn[0] < pdr.pdn[1];
+    /* v2.235.0 이수역(1552) 토 09시 — 계획 + 방향 표가 덜 읽힌 것(4현시 중 1현시만 방향을 앎)이면 다 읽힌 받은 닻을 먼저(소유자 「아직도 완성이 안 되었다」) */
+    if (pdr && !(pdPart && stOk)) return { rec: pdr, age: age, ok: 1, pd: 1, real: r };   /* 받은 시각대 값이 없으면 경찰청 계획 + 방향 표로 */
+    if (stOk) return { rec: r, age: age, ok: 1, stale: 1, pdSkip: pdPart ? 1 : 0 };
     return { rec: r, age: age, why: 'old' }; }
   function phNear(pos, c, a, b) { var best = null; [['A', a], ['B', b]].forEach(function (R) { var A = String(R[1] || '').split(' ').map(Number).filter(function (v) { return v > 0; }), acc = 0; A.forEach(function (v, i) { var d = (((pos - acc) % c) + c) % c; if (d > c / 2) d -= c; if (!best || Math.abs(d) < Math.abs(best[0])) best = [d, i + 1, R[0]]; acc += v; }); }); return best || [pos > c / 2 ? pos - c : pos, 1, 'A']; }
   function sigRowAt(s, ms) { var d = new Date(ms), pn = s.dow && s.dow[String(d.getDay() + 1)], rows = pn && s.plans && s.plans[pn]; if (!rows || !rows.length) return null; var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), cur = null; rows.forEach(function (q) { if (q[0] <= hm && q[1] > 0) cur = q; }); return cur || rows[rows.length - 1]; }

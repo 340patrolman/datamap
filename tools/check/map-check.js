@@ -85,6 +85,7 @@
         setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var qg = document.getElementById('m2dGuideB'), qr = qg && qg.getBoundingClientRect(), fr = document.getElementById('m2dFold').getBoundingClientRect(); ck('📖 맨 위 줄 「이용방법 안내」 단추가 보이고 레이어 단추와 같은 줄 (v2.245.0)', !!qg && qr.width > 30 && Math.abs(qr.top - fr.top) < 4, qg ? qg.textContent + ' ' + Math.round(qr.width) + 'px' : '없음'); } catch (e) { ck('사용설명서 단추 검사', false, e.message); }
       try { var xP = new XMLHttpRequest(); xP.open('GET', 'data/tgis-pe.json', false); xP.send(); var JP = JSON.parse(xP.responseText).pe, okP = Object.keys(JP).filter(function (k) { return JP[k][4]; });
         ck('🚥 T-GIS 관할 코드 → 경찰서 이름 — 31 가운데 25 넘게 이름 · 340 = 서울서초경찰서 · 360 = 서울송파경찰서 · 410 = 서울수서경찰서 (v2.244.0)', okP.length >= 25 && JP['340'][0] === '서울서초경찰서' && JP['360'][0] === '서울송파경찰서' && JP['410'][0] === '서울수서경찰서', okP.length + ' / ' + Object.keys(JP).length); } catch (e) { ck('T-GIS 관할 이름 검사', false, e.message); }
       try { m.volsLoad(); var dvC = document.createElement('div'); dvC.innerHTML = m.volsCardHtml(0) || ''; var tvC = dvC.innerText || '';

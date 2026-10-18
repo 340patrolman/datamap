@@ -929,6 +929,26 @@
     body.m2d-nudge #m2dToolB, body.m2d-nudge #m2dLegB { animation: m2dBreathe 3.5s ease-in-out 6; }
     @keyframes m2dBreathe { 0%, 100% { background-color: var(--panel, #fff); box-shadow: 0 0 0 2px rgba(250,204,21,.35), 0 4px 14px rgba(15,23,42,.18); } 50% { background-color: #fef3c7; box-shadow: 0 0 0 4px rgba(250,204,21,.95), 0 4px 18px rgba(234,179,8,.45); } }
   }
+  /* v2.245.0 사용설명서 단추 */
+  #m2dQC button.qguide { background: #1d4ed8; color: #fff; border-color: #1d4ed8; font-weight: 800; } .newdot { font-style: normal; display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 8px; background: #dc2626; color: #fff; font-size: 10.5px; font-weight: 900; line-height: 16px; vertical-align: 1px; }
+  .pguide { display: block; width: 100%; text-align: left; margin: 6px 0 8px; padding: 9px 12px; border-radius: 12px; border: 1.5px solid #1d4ed8; background: rgba(29,78,216,.08); color: var(--ink); font-size: 13.5px; font-weight: 800; cursor: pointer; }
+  /* v2.245.0 맨 위 줄 「📖 이용방법 안내」(소유자 · 늘 보임) · 넓으면 위 줄과 날짜·칩 줄을 한 줄로, 좁으면 두 줄 */
+  #m2dGuideB { flex: 0 0 auto; height: 40px; padding: 0 12px; border-radius: 20px; border: 1.5px solid #1d4ed8; background: var(--panel); color: #1d4ed8; font-size: 13.5px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+  :root.dark #m2dGuideB { color: #93b4ff; border-color: #5b8cff; }
+  #m2dGuideB .sm { display: none; }
+  @media (max-width: 560px) { #m2dGuideB .lg { display: none; } #m2dGuideB .sm { display: inline; } #m2dGuideB { padding: 0 10px; } }
+  @media (max-width: 430px) { #m2dRegB .lg { display: none; } #m2dRegB { padding: 0 8px; flex-shrink: 0; } #m2dTop .row1 .back { padding: 0 2px; } #m2dGuideB { padding: 0 8px; } #m2dFold { padding: 0 8px !important; } }
+  @media (max-width: 400px) { #m2dTop .row1 .sp { display: none; } #m2dDN { margin-left: auto; } }
+  @media (max-width: 365px) { #m2dGuideB .sm { display: none; } #m2dGuideB { width: 36px; padding: 0; } }
+  @media (max-width: 340px) { #m2dFold .lg { display: none; } }
+  #m2dGuideB { position: relative; } #m2dGuideB .newdot { position: absolute; top: -5px; right: -4px; margin: 0; padding: 0 4px; font-size: 10px; line-height: 15px; }
+  @media (min-width: 900px) {
+    #m2dTop { display: flex; flex-wrap: wrap; align-items: center; column-gap: 12px; }
+    #m2dTop > * { flex: 1 1 100%; }
+    #m2dTop > .row1 { flex: 0 0 auto; }
+    #m2dTop > .row1 .sp { flex: 0 0 4px; }
+    #m2dTop > #m2dChips { flex: 1 1 0; min-width: 0; margin-top: 0 !important; }
+  }
 </style>
 </head>
 <body>
@@ -937,11 +957,12 @@
   <!-- v2.18.0 네이버·카카오 지도처럼 — 맨 위 찾기 칸 · 밤낮 · 레이어 단추 / 그 아래 날짜·시각·빠른 칩 한 줄(옆으로 민다) / 시각 칩을 누르면 시각 막대 -->
   <div class="row1">
     <a class="back" href="https://340patrolman.github.io/traffic-game/" aria-label="교통경찰 게임으로">←</a>
-    <button id="m2dRegB" aria-expanded="false" aria-controls="m2dReg">📍 지역 고르기</button>
+    <button id="m2dRegB" aria-expanded="false" aria-controls="m2dReg" aria-label="지역 고르기">📍 지역<span class="lg"> 고르기</span></button>
     <button id="m2dFindB" aria-expanded="false" aria-label="찾기 — 동·교차로·길·역·정류장">🔍</button>
     <span class="sp"></span>
     <button id="m2dDN" aria-label="화면 밝기">🌓</button>
-    <button id="m2dFold" aria-expanded="false" aria-controls="m2dPanel" aria-label="레이어 고르기">🗂 레이어 <b id="m2dLayN">0</b></button>
+    <button id="m2dFold" aria-expanded="false" aria-controls="m2dPanel" aria-label="레이어 고르기">🗂<span class="lg"> 레이어</span> <b id="m2dLayN">0</b></button>
+    <button id="m2dGuideB" data-pguide="1" aria-label="이용방법 안내 — 무엇을 알 수 있고 할 수 있나">📖<span class="lg"> 이용방법 안내</span><span class="sm"> 안내</span></button>
   </div>
   <div id="m2dChips" role="toolbar" aria-label="날짜 · 시각 · 빠른 묶음">
     <button id="m2dDateB" aria-label="날짜 고르기"></button><input id="m2dDate" type="date" aria-label="행사·집회 날짜" tabindex="-1">
@@ -1036,7 +1057,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=4"></script>
-<script src="js/map2d.js?v=2.244.0"></script>
+<script src="js/map2d.js?v=2.245.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

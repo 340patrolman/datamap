@@ -27,11 +27,19 @@ def backfill():
     print('채움', n, '· 모두', len(have))
 def main():
     HOL = set(json.load(open(os.path.join(ROOT, 'data', 'holidays.json'), encoding='utf-8')).get('days', {}))   # 공휴일 = 일요일 갈래(소유자 2026-10-11 「신호값이 평일과 휴일이 달라 — 통행량이 다르니까」 · 신호 계획의 TOD 4 = 일·공휴일과 같게)
+    KEEP = set()   # (2026-10-18) 10-14 부터 쌓인 곳에 여섯 구 링크가 섞인다 → 서초 판은 livespd-bake 의 서초 링크(신호 접근로 + nav-seocho 등급 1~4)만
+    for v in json.load(open(os.path.join(ROOT, 'data', 'sig-approach-seocho.json'), encoding='utf-8'))['spots'].values():
+        for rows in v['in'].values():
+            for r in rows:
+                for lk, _ in r[4]: KEEP.add(str(lk))
+    for x in json.load(open(os.path.join(ROOT, 'data', 'nav-seocho.json'), encoding='utf-8'))['links']:
+        if x[5] <= 4: KEEP.add(str(x[0]))
     C = collections.defaultdict(list); days = collections.defaultdict(set); n = 0; t0 = t1 = None
     for x in lines():
         d = datetime.datetime.fromtimestamp(x['at']); wd = d.weekday(); cl = 3 if d.date().isoformat() in HOL else 0 if wd <= 3 else 1 if wd == 4 else 2 if wd == 5 else 3; days[cl].add(d.date().isoformat()); n += 1
         t0 = x['at'] if t0 is None else min(t0, x['at']); t1 = x['at'] if t1 is None else max(t1, x['at'])
-        for k, v in x['m'].items(): C[(k, cl, d.hour)].append(v)
+        for k, v in x['m'].items():
+            if k in KEEP: C[(k, cl, d.hour)].append(v)
     if not n: print('쌓인 것이 없다'); return 1
     out = collections.defaultdict(dict); cells = 0
     for (k, cl, h), v in C.items():

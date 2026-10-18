@@ -85,6 +85,8 @@
         setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var xP = new XMLHttpRequest(); xP.open('GET', 'data/tgis-pe.json', false); xP.send(); var JP = JSON.parse(xP.responseText).pe, okP = Object.keys(JP).filter(function (k) { return JP[k][4]; });
+        ck('🚥 T-GIS 관할 코드 → 경찰서 이름 — 31 가운데 25 넘게 이름 · 340 = 서울서초경찰서 · 360 = 서울송파경찰서 · 410 = 서울수서경찰서 (v2.244.0)', okP.length >= 25 && JP['340'][0] === '서울서초경찰서' && JP['360'][0] === '서울송파경찰서' && JP['410'][0] === '서울수서경찰서', okP.length + ' / ' + Object.keys(JP).length); } catch (e) { ck('T-GIS 관할 이름 검사', false, e.message); }
       try { m.volsLoad(); var dvC = document.createElement('div'); dvC.innerHTML = m.volsCardHtml(0) || ''; var tvC = dvC.innerText || '';
         if (tvC) ck('🚙 통행량 방향 — 카드에 「도심 쪽 · 바깥 쪽」 하루 대수 · 출퇴근 흐름(아침·저녁 많은 쪽) · 화살표는 도심을 가리킨 것이라는 설명 · 날짜 갈래 wd/sa/su (v2.241.0)', /도심 쪽/.test(tvC) && /바깥 쪽/.test(tvC) && /출퇴근 흐름/.test(tvC) && /길의 실제 방향이 아니다/.test(tvC) && /^(wd|sa|su)$/.test(m.volDay()), tvC.replace(/\s+/g, ' ').slice(0, 120)); } catch (e) { ck('통행량 방향 검사', false, e.message); }
       try { m.vipTest('clear'); var A0 = [0, 0], B0 = [1000, 0], C0 = [2000, 0]; m.vipTest('add', A0); m.vipTest('add', C0); m.vipTest('mode', 'via'); var ix = m.vipTest('add', [1000, 80]); var nm1 = m.vipTest('name').join(','), last1 = m.vipTest('cp')[2] === C0, md1 = m.vipTest('pick'); m.vipTest('mode', true); m.vipTest('add', [3000, 0]); var nm2 = m.vipTest('name').join(','); m.vipTest('clear');

@@ -37,7 +37,7 @@ try:
     ck('처음 화면에 「서초 교차로 — 자료로 시작」 단추', '서초 교차로 — 자료로 시작' in c.ev('document.getElementById("ctlin").innerText'))
     c.go(U('#core'), 1.2)
     lst = c.ev('[].map.call(document.querySelectorAll("#ctlin .ch"),function(b){return b.textContent}).join("\\n")')
-    ck('#core — 교차로 %d곳 목록 · 조치 5곳이 먼저' % len(INTS), lst.count('· 10년') == len(INTS) and all('조치' in x for x in lst.split('\n')[:5]), lst.split('\n')[:6])
+    ck('#core — 교차로 %d곳 목록 · 조치 있는 곳(교통과 출력물 2곳 · 2026-10-18)이 먼저' % len(INTS), lst.count('· 10년') == len(INTS) and all('조치' in x for x in lst.split('\n')[:2]) and '조치' not in lst.split('\n')[2], lst.split('\n')[:4])
     ck('#core — 해시를 떼어 낸다', c.ev('location.hash') == '', c.ev('location.hash'))
     bad = []
     for r in REF:
@@ -66,7 +66,7 @@ try:
     ck('교차로 %d곳 모두 — 이름·주 위반 3·법규·판례·시설·조치(앞뒤 2해)가 전체 코어 + query.js 답과 같다' % len(REF), not bad, bad[:3])
     c.go(U('#core=INT-548'), 0.8)
     t = c.ev('document.getElementById("msgs").innerText')
-    ck('서울성모병원 — 2022.06 조치 「앞 2해 24건 → 뒤 2해 17건」 · 2025.11 「꼬리물기 해소」 · 뒤 두 해 아직', '24건 → 뒤 2해(2023·2024) 17건' in t and '꼬리물기 해소' in t and '아직 지나지 않았다' in t, t[:200])
+    ck('서울성모병원 — 교통과 조치 이력이 나오지 않는다(2026-10-18 공공데이터만 · 교통과 출력물은 2곳)', '꼬리물기 해소' not in t and '서울성모병원' in t, t[:200])
     ob = c.ev('JSON.stringify([].filter.call(document.querySelectorAll(".bub"),function(b){return b.scrollWidth>b.clientWidth+1}).map(function(b){return b.scrollWidth+"/"+b.clientWidth}))')
     ck('말풍선 안 넘침(해마다 사고 표 포함)', ob == '[]', ob)
     ck('375px 가로 넘침 없음', c.ev('document.documentElement.scrollWidth<=document.documentElement.clientWidth+1'), c.ev('document.documentElement.scrollWidth'))

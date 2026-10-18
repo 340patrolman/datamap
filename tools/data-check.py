@@ -36,7 +36,7 @@ SETS = [
     ['data/foreign.json', 365, 'auto', '외국인 — 행안부 외국인주민(해마다 11월 1일 · 다음 해 말 공표) · 법무부 등록외국인(연말) → `tools/region/foreign-bake.py` → `tools/region/foreign-detail.py`'],
     ['data/police.json', 183, 'auto', '경찰 관할·지구대 — 별표2 개정(직제 시행규칙)·지구대 주소 새 판(공공데이터포털 15077036) → 13_관할경계 다시 맞춤 → `tools/region/police-bake.py`'],
     ['data/base/index.json', 182, 'auto', '전국 바탕 조각 — kr.pbf 새로 → `tools/map2d-build/tiles-bake.py`(5분) → `tools/map2d-build/sgg-bake.py` → `tools/region/publish-data.py tiles`'],
-    ['data/r/11650/home.json', 2, 'auto', '주택 실거래 — 지번 좌표가 다 찰 때까지 날마다 `tools/region/home-bake.py geo`(브이월드 하루 한도 · 거래 많은 지번부터) → `build` · 다 차면 주기를 31일로 · 새 달은 END 를 올리고 `fetch <서비스>` 8개 동시'],
+    ['data/r/11650/home.json', 31, 'auto', '주택 실거래 — 2026-10-18 지번 좌표 다 참(좌표 있음 2,861,120 · 없음 18,437 = 주소 변환이 못 찾은 것) → 주기 31일 · 새 달은 home-bake.py 의 END 를 올리고 `fetch <서비스>` 8개 동시 → `geo`(새 지번만) → `build` → profile-bake → `publish-data.py push <시도…>`'],
     ['data/r/11650/pts250.json', 92, 'auto', '점 자료 250m 칸 — 상가·안전·생활시설·정류장·사고 중 하나를 다시 구우면 `tools/region/pts250-bake.py`(3분)'],
     ['data/r/11650/taas250.json', 365, 'hand', 'TAAS 사고 250m — 앱 안 브라우저 TAAS GIS 화면에서 법정동 5자리 코드 × 해 × 등급으로 다시 모아(MAP2D.md v2.4.0 ⑧ · 새 해 자료가 열리면) 07_API키/out/region/taas250/raw_*.json → `tools/region/taas250-bake.py`'],
     ['data/r/11650/grid.json', 365, 'auto', '250m 격자 뼈대 — 행정동 경계(hjd)가 바뀌면 `tools/region/grid250.py`(약 5분) 다음 live250·rtms build'],

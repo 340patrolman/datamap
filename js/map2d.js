@@ -2072,7 +2072,7 @@
     var h = nowH(), dt = new Date(pickDate() + 'T00:00'), we = weOf(dt), hn = holOf(dt), r = $('m2dHour'); if (!r) return;
     r.value = h; $('m2dHourT').innerHTML = h + '시<span class="wk"> · ' + (hn ? '공휴일(주말로 봄)' : we ? '주말' : '평일') + '</span>' + (HOUR == null ? '' : ' ✎'); $('m2dNowBtn').classList.toggle('on', HOUR == null);
     var db = $('m2dDateB'); if (db) { db.textContent = '📅 ' + (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + '일월화수목금토'[dt.getDay()] + (hn ? ' · ' + hn : '') + ')'; db.title = hn ? hn + ' — 한국천문연구원 특일 정보(공휴일은 주말과 같이 본다)' : ''; db.classList.toggle('we', we); }
-    var tb = $('m2dTimeB'); if (tb) { tb.textContent = HOUR == null ? '🕒 지금 ' + h + '시' : '🕒 ' + h + '시 보기'; tb.classList.toggle('set', HOUR != null); }
+    var tb = $('m2dTimeB'); if (tb) { var td = pickDate() === ymdOf(new Date()), dl = (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + '일월화수목금토'[dt.getDay()] + ')'; tb.textContent = '📅 ' + dl + ' · ' + (HOUR == null ? '지금 ' + h + '시' : h + '시'); tb.classList.toggle('set', HOUR != null || !td); tb.classList.toggle('we', we); tb.title = (td && HOUR == null ? '오늘 · 지금' : '시뮬레이션 중 — 고른 날짜·시각으로 보는 중') + (hn ? ' · ' + hn : '') + ' — 눌러서 날짜·시각 고르기'; }
   }
   if ($('m2dHour')) {
     $('m2dHour').addEventListener('input', function () { setHour(+this.value); });

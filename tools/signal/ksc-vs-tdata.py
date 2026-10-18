@@ -53,9 +53,17 @@ def main():
             if not q0 or not q1 or q0[0] != q1[0]: continue
             pn, c = q0[0], q0[1]; lab = '(시각대 표) %s %d시' % (DK[cl], hr)
             if abs(c - cyc) > 2.5: rows.append([lab, pn, c, cyc, '❌', '', '']); sc['cyc_bad'] += 1; continue
-            Kd = {(r[0], r[1]): r for r in x['dir'].get(str(pn), []) if r[3] is not None}; kd = tuple(rk.split(':')) if rk else None
-            if not kd or kd not in Kd: continue
-            v = cdev(off, (x['pat'][str(pn)]['off'] + Kd[kd][6]) % c, c); ok = v <= TOL; sc['cyc_ok'] += 1; sc['off_ok' if ok else 'off_bad'] += 1
+            Kd = {(r[0], r[1]): r for r in x['dir'].get(str(pn), []) if r[3] is not None}; kd = tuple(rk.split(':')) if rk else None; sc['cyc_ok'] += 1
+            sh = 0.0
+            if kd and kd not in Kd:   # 기준 이동류가 현시도에 없으면(초를 비운 이동류 등) 같은 요일 갈래·주기의 받은 기록에서 그 이동류와 현시도에 있는 이동류의 녹색 시작 차이만큼 옮긴다(지도 kscTd 와 같은 법)
+                for o in reversed(L):
+                    if o.get('cl') != cl or abs((o.get('ci') or o['cyc']) - cyc) > 0.6: continue
+                    mm = {(m[0], m[1]): m for m in o['mv'] if m[5] is not None}
+                    if kd not in mm: continue
+                    alt = [k2 for k2 in mm if k2 in Kd and mm[k2][2] is not None]
+                    if alt: sh = mm[alt[0]][5] - mm[kd][5]; kd = alt[0]; break
+            if not kd or kd not in Kd: rows.append([lab, pn, c, cyc, '', '', '(기준 이동류가 현시도에 없어 옵셋은 못 견줌)']); continue
+            v = cdev((off + sh) % c, (x['pat'][str(pn)]['off'] + Kd[kd][6]) % c, c); ok = v <= TOL; sc['off_ok' if ok else 'off_bad'] += 1
             rows.append([lab, pn, c, cyc, '', '', '%d초%s (기준 %s %s)' % (v, '' if ok else ' ❌', BW.get(kd[0], kd[0]), MV.get(kd[1], kd[1]))])
         f = lambda a, b: '%d / %d' % (sc[a], sc[a] + sc[b])
         md += ['- 주기 맞음 **%s** · 방향별 녹색 맞음 **%s** · 옵셋(±%d초) 맞음 **%s**' % (f('cyc_ok', 'cyc_bad'), f('g_ok', 'g_bad'), TOL, f('off_ok', 'off_bad')), '',

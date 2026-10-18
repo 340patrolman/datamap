@@ -229,6 +229,7 @@
   body.guiding #gSig { max-width: max(178px, calc(50vw - 22px)); } body.guiding #gSig.cp .c1 { flex-wrap: wrap; row-gap: 0; } body.guiding #gSig.cp .nm { margin-left: 0; text-align: left; flex: 1 1 100%; order: 3; } body.guiding #gSig.cp .nm b, body.guiding #gSig.cp .nm span { display: inline; max-width: none; white-space: normal; } body.guiding #gSig.cp .nm span::before { content: ' · '; }
   body.guiding #gSig.cp .tx1 { white-space: normal; } body.guiding #gSig .ln.eco, body.guiding #gSig.cp .ln { white-space: normal; word-break: keep-all; }
   body.guiding #gSig.cp .now b small:first-child { display: none; }   /* 남은 초 크기는 ⚙ 설정 그대로 · 좁은 상자에서는 「적색/녹색」 낱말을 빼고 점·숫자 색으로 */ body.guiding #gSig.cp .now i { width: 14px; height: 14px; } body.guiding #gSig.cp .ar { font-size: calc(22px * var(--fz, 1)); } body.guiding #gSig.cp .c1 { column-gap: 6px; }   /* v0.33.0 좁은 상자에서도 화살표·색·초가 한 줄 */
+  body.guiding #gSig .ln.eco.ovr { background: rgba(245,158,11,.16); border-radius: 7px; padding: 1px 6px; } body.guiding #gSig .ln.eco.em { background: rgba(239,68,68,.16); border-radius: 7px; padding: 1px 6px; }   /* v0.34.0 제한 넘는 속도 사실(노랑) · 긴급 운행 속도(빨강) */
 </style>
 </head>
 <body>
@@ -271,7 +272,7 @@
 </script>
 <script src="../js/travel-time.js?v=4"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.33.0"></script>
+<script src="gargo.js?v=0.34.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

@@ -41,7 +41,7 @@
     /* v2.222.0 🧩 교차로 관계(온톨로지 코어 v1 · Phase 2) — 서초역 카드의 「이 자리의 관계」 안 단추를 누르면 서초역사거리의 사고·주 위반·과거 조치가 펼쳐진다 · 누르기 전에는 코어를 받지 않는다 */
     var ob = document.querySelector('#m2dCard [data-onto]'); ck('카드에 「🧩 교차로 관계 보기」 단추(서초)', !!ob, ob ? '' : '없음'); ck('누르기 전에는 온톨로지 코어를 받지 않는다', !m.onto());
     if (ob) { var det = ob.closest('details'); if (det) det.open = true; ob.click(); }
-    try { m.petGet(); m.uticGet(); m.sbhGet(); m.sigUGet(); m.pbzGet(); m.pbzSd('11'); } catch (e) {} try { m.econLoad && m.econLoad(); } catch (e) {}   /* v2.230.0 반려동물 — 아래 길 자료 검사 뒤에 본다 */
+    try { m.petGet(); m.uticGet(); m.sbhGet(); m.sigUGet(); m.pbzGet(); m.pbzSd('11'); } catch (e) {} try { m.econLoad && m.econLoad(); m.volsLoad && m.volsLoad(); } catch (e) {}   /* v2.230.0 반려동물 — 아래 길 자료 검사 뒤에 본다 */
     setTimeout(function () { var bx = document.getElementById('m2dOnto'), tx = bx ? String(bx.innerText || '') : '';
       ck('관계 패널이 펼쳐진다 — 교차로 · 사고 해마다 · 주 위반 근거 · 과거 조치 · 비슷한 교차로', /서초역사거리/.test(tx) && /① 사고/.test(tx) && /② 주 위반/.test(tx) && /④ 과거 조치/.test(tx) && /⑤ 비슷한/.test(tx) && /반포대로 축개선/.test(tx), tx.replace(/\s+/g, ' ').slice(0, 120));
       /* v2.223.0 신고 차량 예측 — 설정 세트 셋이 서로 다른 결과 · 🔒 중요업무 두 줄 · 밖으로 나가는 요청 0 · 남기는 것 없음 */
@@ -85,6 +85,8 @@
         setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { m.volsLoad(); var dvC = document.createElement('div'); dvC.innerHTML = m.volsCardHtml(0) || ''; var tvC = dvC.innerText || '';
+        if (tvC) ck('🚙 통행량 방향 — 카드에 「도심 쪽 · 바깥 쪽」 하루 대수 · 출퇴근 흐름(아침·저녁 많은 쪽) · 화살표는 도심을 가리킨 것이라는 설명 · 날짜 갈래 wd/sa/su (v2.241.0)', /도심 쪽/.test(tvC) && /바깥 쪽/.test(tvC) && /출퇴근 흐름/.test(tvC) && /길의 실제 방향이 아니다/.test(tvC) && /^(wd|sa|su)$/.test(m.volDay()), tvC.replace(/\s+/g, ' ').slice(0, 120)); } catch (e) { ck('통행량 방향 검사', false, e.message); }
       try { m.vipTest('clear'); var A0 = [0, 0], B0 = [1000, 0], C0 = [2000, 0]; m.vipTest('add', A0); m.vipTest('add', C0); m.vipTest('mode', 'via'); var ix = m.vipTest('add', [1000, 80]); var nm1 = m.vipTest('name').join(','), last1 = m.vipTest('cp')[2] === C0, md1 = m.vipTest('pick'); m.vipTest('mode', true); m.vipTest('add', [3000, 0]); var nm2 = m.vipTest('name').join(','); m.vipTest('clear');
         ck('🔒 중요업무 경유지 — 「경유지 넣기」로 누른 자리는 덜 돌아가는 사이에 끼움(도착 그대로) · 경유지 모드는 켜 둔 채(잇달아 넣기) · 「지점 더하기」는 뒤에 붙어 도착이 됨 · 이름 출발/경유/도착 (v2.240.0)', ix === 1 && last1 && md1 === 'via' && nm1 === '출발,경유 1,도착' && nm2 === '출발,경유 1,경유 2,도착', ix + ' · ' + nm1 + ' → ' + nm2); } catch (e) { ck('중요업무 경유지 검사', false, e.message); }
       try { var nb0 = document.querySelectorAll('.m2d-stamp').length; m.stampAt(100, 100, '#dc2626'); var st1 = document.querySelectorAll('.m2d-stamp').length, sc = [].slice.call(document.styleSheets).some(function (ss) { try { return [].slice.call(ss.cssRules).some(function (r) { return /m2dBreathe/.test(r.cssText) && /prefers-reduced-motion/.test(r.cssText); }); } catch (e2) { return false; } });

@@ -907,6 +907,28 @@
   .pwgrab { position: fixed; z-index: 30; width: 14px; margin-left: -7px; cursor: ew-resize; touch-action: none; display: none; }
   .pwgrab i { position: absolute; left: 5px; top: 50%; width: 4px; height: 46px; margin-top: -23px; border-radius: 3px; background: var(--line); box-shadow: 0 0 0 1px var(--panel); }
   .pwgrab:hover i, .pwgrab.drag i { background: var(--acc); }
+  /* v2.239.0 누르고 싶게 · 찍히는 느낌 · 처음 한 번 손가락(움직임 줄이기면 색·테두리만) */
+  .m2d-stamp { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 6; }
+  .m2d-stamp b { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%; background: var(--sc); border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+  .m2d-stamp .sh { position: absolute; left: -10px; top: 6px; width: 20px; height: 6px; border-radius: 50%; background: rgba(0,0,0,.28); }
+  .m2d-stamp .rp { position: absolute; left: -10px; top: -10px; width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--sc); opacity: 0; }
+  .m2d-hint { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 7; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+  .m2d-hint .ring { position: absolute; top: 10px; width: 56px; height: 56px; border-radius: 50%; border: 3px dashed rgba(37,99,235,.8); }
+  .m2d-hint .hand { font-size: 40px; line-height: 1; position: relative; top: 18px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .m2d-hint b { margin-top: 26px; background: rgba(15,23,42,.88); color: #fff; padding: 7px 12px; border-radius: 12px; font-size: 14.5px; white-space: nowrap; } .m2d-hint small { background: rgba(15,23,42,.7); color: #e2e8f0; padding: 3px 9px; border-radius: 9px; font-size: 12px; }
+  body.m2d-nudge #m2dToolB, body.m2d-nudge #m2dLegB { box-shadow: 0 0 0 3px rgba(250,204,21,.85), 0 4px 14px rgba(15,23,42,.18); }
+  @media (prefers-reduced-motion: no-preference) {
+    .m2d-stamp b { animation: m2dDrop .26s cubic-bezier(.2,.8,.3,1.4) both; } .m2d-stamp .sh { animation: m2dShadow .26s ease-out both; }
+    .m2d-stamp .rp { animation: m2dRipple .7s ease-out .2s both; } .m2d-stamp .rp.r2 { animation-delay: .42s; }
+    @keyframes m2dDrop { 0% { transform: translateY(-28px) scale(1.3); } 70% { transform: translateY(0) scale(.9); } 100% { transform: translateY(0) scale(1); } }
+    @keyframes m2dShadow { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes m2dRipple { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(3.2); opacity: 0; } }
+    .m2d-hint .ring { animation: m2dRing 1.6s ease-out 2; } .m2d-hint .hand { animation: m2dTap 1.6s ease-in-out 2; }
+    @keyframes m2dRing { 0% { transform: scale(.5); opacity: 0; } 35% { opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
+    @keyframes m2dTap { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(8px) scale(.92); } 45% { transform: translateY(8px) scale(.92); } }
+    body.m2d-nudge #m2dToolB, body.m2d-nudge #m2dLegB { animation: m2dBreathe 3.5s ease-in-out 6; }
+    @keyframes m2dBreathe { 0%, 100% { background-color: var(--panel, #fff); box-shadow: 0 0 0 2px rgba(250,204,21,.35), 0 4px 14px rgba(15,23,42,.18); } 50% { background-color: #fef3c7; box-shadow: 0 0 0 4px rgba(250,204,21,.95), 0 4px 18px rgba(234,179,8,.45); } }
+  }
 </style>
 </head>
 <body>
@@ -1014,7 +1036,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=4"></script>
-<script src="js/map2d.js?v=2.238.0"></script>
+<script src="js/map2d.js?v=2.239.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

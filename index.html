@@ -953,6 +953,13 @@
   /* v2.246.0 날짜·시각 한 단추 — 오늘·지금이 아니면 붉게(시뮬레이션 중) · 날짜 고르기는 펼친 시각 막대 맨 앞 */
   #m2dTime #m2dDateB { height: 34px; border-radius: 17px; background: var(--panel); white-space: nowrap; }
   #m2dTimeB.we:not(.set) { color: #dc2626; }
+  /* v2.247.0 빠른 묶음 — 한 줄에 안 들어가면(폰) 두세 줄로 다 보이고, 지도를 만지면(끌기·확대·누르기 · 위 단추) 접혀 고른 것만 · 「☰ 메뉴」로 다시 펼침 · 펼친 줄은 지도를 밀지 않고 위에 겹친다(fitTop) */
+  body:not(.top1) #m2dChips { flex-wrap: wrap; overflow: visible; row-gap: 6px; }
+  body:not(.top1) #m2dQC { display: contents; }
+  body.chipfold:not(.top1) #m2dQC button:not(.on) { display: none; }
+  #m2dChipT { display: none; }
+  body:not(.top1) #m2dChips > #m2dChipT { display: inline-flex; align-items: center; color: var(--ink2); border-style: dashed; }
+  body.chipfold:not(.top1) #m2dChips > #m2dChipT { color: var(--acc); border: 1.5px solid var(--acc); font-weight: 800; }
 </style>
 </head>
 <body>
@@ -971,6 +978,7 @@
   <div id="m2dChips" role="toolbar" aria-label="날짜 · 시각 · 빠른 묶음">
     <button id="m2dTimeB" aria-expanded="false" aria-controls="m2dTime" aria-label="날짜·시각 고르기">📅 오늘 · 지금</button>
     <span id="m2dQC"></span>
+    <button id="m2dChipT" aria-expanded="true" aria-label="빠른 묶음 펼치기·접기">접기 ▴</button>
   </div>
   <div id="m2dTime"><button id="m2dDateB" aria-label="날짜 고르기"></button><input id="m2dDate" type="date" aria-label="행사·집회 날짜" tabindex="-1"><button id="m2dNowBtn" class="on" aria-label="지금 시각으로">지금</button><button id="m2dHm" aria-label="한 시간 앞">◀</button><input id="m2dHour" type="range" min="0" max="23" step="1" aria-label="볼 시각"><button id="m2dHp" aria-label="한 시간 뒤">▶</button><b id="m2dHourT"></b></div>
   <div id="m2dFindRow"><input id="m2dFind" type="search" placeholder="동 · 교차로 · 역 · 병원 · 도로 번호(올 23-05 · 경부 400.1)" enterkeyhint="search" autocomplete="off" aria-label="찾기"></div>
@@ -1060,7 +1068,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=4"></script>
-<script src="js/map2d.js?v=2.246.1"></script>
+<script src="js/map2d.js?v=2.247.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;
@@ -1088,9 +1096,13 @@
     var cd = document.getElementById("m2dCard"); if (cd && window.MutationObserver) new MutationObserver(function () { if (cd.classList.contains("on") && small()) setPan(false); }).observe(cd, { attributes: true, attributeFilter: ["class"] });
     document.getElementById("m2d").addEventListener("pointerdown", function () { if (small()) setPan(false); });
     var di = document.getElementById("m2dDate"); document.getElementById("m2dDateB").onclick = function () { try { di.showPicker(); } catch (e) { di.style.pointerEvents = "auto"; di.focus(); di.click(); } };
-    function fitTop() { var t = document.getElementById('m2dTop'), c = document.getElementById('m2d'), mo = document.getElementById('m2dMore'); var h = t.offsetHeight - (mo ? mo.offsetHeight + (mo.offsetHeight ? 6 : 0) : 0); document.documentElement.style.setProperty("--toph", h + "px"); c.style.top = h + "px"; c.style.height = (window.innerHeight - h) + 'px'; window.dispatchEvent(new Event('m2dresize')); }
+    function fitTop() { var t = document.getElementById('m2dTop'), c = document.getElementById('m2d'), mo = document.getElementById('m2dMore'); var h = t.offsetHeight - (mo ? mo.offsetHeight + (mo.offsetHeight ? 6 : 0) : 0), ch = document.getElementById('m2dChips'), fb = ch && ch.querySelector('button'); if (ch && fb && !document.body.classList.contains('top1')) h -= Math.max(0, ch.offsetHeight - fb.offsetHeight); document.documentElement.style.setProperty("--toph", h + "px"); c.style.top = h + "px"; c.style.height = (window.innerHeight - h) + 'px'; window.dispatchEvent(new Event('m2dresize')); }
     function topOne() { var b = document.body, c = document.getElementById('m2dChips'); if (!c) return; if (window.innerWidth < 900) { b.classList.remove('top1'); return; } b.classList.add('top1'); if (c.scrollWidth > c.clientWidth + 1) b.classList.remove('top1'); }
     window.addEventListener("resize", topOne); topOne(); var qc0 = document.getElementById('m2dQC'); if (qc0 && window.MutationObserver) new MutationObserver(topOne).observe(qc0, { childList: true, subtree: true, characterData: true });
+    var ct = document.getElementById('m2dChipT');
+    function chipFold(f) { var b = document.body; if (b.classList.contains('chipfold') === f) return; b.classList.toggle('chipfold', f); if (ct) { ct.textContent = f ? '☰ 메뉴 ▾' : '접기 ▴'; ct.setAttribute('aria-expanded', f ? 'false' : 'true'); } }
+    if (ct) ct.onclick = function () { chipFold(!document.body.classList.contains('chipfold')); };
+    document.addEventListener('pointerdown', function (e) { if (document.body.classList.contains('top1') || !e.target.closest || e.target.closest('#m2dChips') || e.target.closest('#m2dTime')) return; chipFold(true); }, true);
     window.addEventListener("resize", fitTop); fitTop();
     // v0.10.92 소유자 「스마트폰에서는 열면 자동으로 전체화면」 — 브라우저는 손가락이 닿아야 전체화면을 허락한다 → 첫 터치 때 한 번(아이폰 사파리는 이 기능이 없다 — 홈 화면에 추가하면 주소창 없이 열린다)
     var phone = window.matchMedia && matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820, de = document.documentElement;

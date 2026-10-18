@@ -6,7 +6,7 @@
     인접      = data/sig-net-seocho.json(신호 교차로 사이 길 · C-ITS 번호로 INT 에 이음)
     ACC·VIO  = data/taas10-seocho.json(TAAS 2016~2025 · 100m 칸 · 주 법규위반 코드 dic.v) — 교차로에서 70m 안 칸을 묶음(jct-bake 와 같은 반지름 · 근사 C)
     CAM·ATT  = data/gargo-alerts-seoul.json(경찰 관리 · 제한속도 있는 카메라 100m 안 · 어린이보호구역 시설 300m 안 · 근사 C)
-    ACT·REC  = data/sig-ksc-seocho.json hist(교통과 출력물 5곳 · 소유자 공개 결정 2026-10-10 · 이력 글 그대로)
+    ACT·REC  = data/sig-ksc-seocho.json hist(교통과 출력물 — 2026-10-18 부터 공개 자료에 값이 없는 2곳(서초역사거리·삼호가든사거리)만 · 이력 글 그대로)
     LAW·PREC = ontology-core/src/tbook-law.json(T-Book 범칙금 DB · 원문 대조 판례 — tools/tbook-extract.py 가 읽기만 해서 꺼냄)
     RULE·FK  = data/onto-rules.json(틀리면 사고 나는 규칙 · 소유자 현장 판단 말 그대로 — 수집기 쪽 세션의 tools/onto/rules-bake.py 가 정본 · 여기서는 값을 고치지 않고 객체·링크로만 옮긴다) — FK → 뒷받침 → RULE(등급 B · 소유자 현장)
   VIO → LAW 는 이름 맞대기 표(아래 VIO_LAW · 등급 C · 확인 필요) · LAW → PREC 은 조문 번호가 같을 때만(교특법 §3 은 12대 중과실 공통이라 빼고)(범칙금 DB meta 「도교법§5」 ↔ 판결문 참조조문 「도로교통법 제5조」 · 등급 A · 「구 ○○법」 이면 C)

@@ -57,8 +57,8 @@ for i, t in T.items():
             if (a['compare']['beforeN'], a['compare']['afterN']) != (b, f): ok2 = False; bad.append((a['what'], a['compare'], b, f))
         elif y and 2018 <= y <= 2023: ok2 = False; bad.append(('비교가 있어야 하는데 없음', a['what']))
     ck('질문2 %s — 조치 앞뒤 사고(앞 2해 vs 뒤 2해)가 원자료와 같다' % t['nm'], ok2 and len(q2['actions']) == len(t['hist']), bad[:2] or '%d 조치' % len(q2['actions']))
-q2 = R['q2'].get('INT-548') or {'actions': []}   # (2026-10-18 소유자 「2곳만 올린 걸로」) 교통과 출력물은 서초역사거리·삼호가든사거리만 — 서울성모병원 조치 이력은 이제 없다
-ck('질문2 서울성모병원 — 교통과 출력물을 뺀 뒤 조치 이력이 남지 않는다(공개 자료만)', len(q2['actions']) == 0, q2['actions'][:1])
+q2 = R['q2']['INT-548']; last = [a for a in q2['actions'] if a['ym'] == '2025-11']
+ck('질문2 서울성모병원 — 2025.11 시차제: 이유 「꼬리물기 해소」 · 뒤 두 해가 아직 없다고 밝힘', last and last[0]['reason'] == '꼬리물기 해소' and last[0]['compare'] is None and '아직' in (last[0]['noCompare'] or ''), last)
 law = {l['title']: l for l in tl['laws']}
 q3 = R['q3']['VIO-02']; L = q3['laws'][0] if q3['laws'] else None
 ck('질문3 신호위반 — 근거 항목·조문·범칙금 글이 T-Book 범칙금 DB 와 글자까지 같다', L and L['title'] == '① 신호위반·안전표지 위반' and L['meta'] == law[L['title']]['meta'] and L['penalty'] == law[L['title']]['penalty'], L and (L['meta'], L['penalty']))

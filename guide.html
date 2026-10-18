@@ -37,6 +37,7 @@
   .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; } .flow .st { flex: 1 1 170px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; position: relative; }
   .flow .st b { display: block; font-size: 15px; } .flow .st small { color: var(--ink2); font-size: 13px; } .flow .ar { align-self: center; font-size: 20px; color: var(--ink2); }
   ul.rule { margin: 8px 0; padding-left: 20px; } ul.rule li { margin: 4px 0; font-size: 14px; }
+  table.spec { width: 100%; border-collapse: collapse; font-size: 15px; } table.spec th { text-align: left; white-space: nowrap; vertical-align: top; padding: 9px 12px 9px 0; color: var(--ink2); width: 7.5em; } table.spec td { padding: 9px 0; line-height: 1.6; } table.spec tr + tr th, table.spec tr + tr td { border-top: 1px solid rgba(127,127,127,.25); } table.spec small { color: var(--ink2); }
   .hide { display: none !important; } .empty { color: var(--ink2); font-size: 14px; }
   .gate { max-width: 560px; margin: 60px auto; text-align: center; } .gate a { color: var(--acc); font-weight: 800; }
 </style>
@@ -45,14 +46,14 @@
 <header>
   <div class="hd"><h1>📖 데이터 압축지도 사용설명서</h1><a href="./">← 지도로</a></div>
   <div class="sr"><input id="q" type="search" placeholder="찾기 — 예: 신호, 사고, 관할, 반려동물, 침수, 매출" autocomplete="off"></div>
-  <nav><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#make">🛠 어떻게 만들었나</a></nav>
+  <nav><a href="#how">🚀 쓰는 법</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
 </header>
 <main id="main"><p class="empty">설명서를 읽는 중…</p></main>
 <script>
 (function () {
   var G = null, TAB = null, main = document.getElementById('main'), q = document.getElementById('q');
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function kb(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB'; }
+  function kb(n) { return n >= 1073741824 ? (n / 1073741824).toFixed(1) + 'GB' : n >= 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB'; }
   function path(a) { return '<div class="path">' + a.map(function (x, i) { return (i ? '<u>›</u>' : '') + '<i>' + esc(x) + '</i>'; }).join('') + '</div>'; }
   var ok = false; try { ok = localStorage.getItem('tg_map2d_gate') === '1'; } catch (e) {}
   if (!ok) { main.innerHTML = '<div class="gate"><p>이 설명서는 데이터 압축지도를 쓰는 사람을 위한 것이다.</p><p><a href="./">지도에서 확인코드를 넣고 들어온 뒤</a> 🧰 도구 › 📖 사용설명서로 다시 연다.</p></div>'; return; }
@@ -62,6 +63,9 @@
     var w = (q.value || '').trim().toLowerCase(), h = '';
     var nH = G.n.help, nL = G.n.layers;
     h += '<section id="top"><div class="kpi"><span><b>' + G.tasks.length + '</b><small>할 수 있는 일</small></span><span><b>' + nL + '</b><small>레이어(켜고 끄는 층)</small></span><span><b>' + G.files.length + '</b><small>자료 파일</small></span><span><b>' + G.tools.length + '</b><small>도구</small></span></div><p class="lead">지도 판 ' + esc(G.ver) + ' · 설명서 ' + esc(G.made) + ' · 이 설명서는 지도 코드와 자료 목록에서 저절로 뽑아 만든다(지도와 어긋나지 않게).</p></section>';
+    /* 0 쓰는 법 · 알아낼 수 있는 것 (2026-10-18) */
+    if (!w && G.howto) h += '<section id="how"><h2>🚀 쓰는 법</h2><p class="lead">처음이면 이 차례대로.</p><div class="grid">' + G.howto.map(function (t) { return '<div class="card"><h3><span class="ic">' + esc(t[0]) + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div></section>';
+    if (G.infer) { var I = G.infer.filter(function (t) { return hit(t.join(' '), w); }); if (I.length) h += '<section id="infer"><h2>🔎 이 지도로 알아낼 수 있는 것</h2><p class="lead">자료를 겹쳐 보면 숫자 하나로는 안 보이는 것을 어림할 수 있다 — 근거는 카드에 함께 나오고, 판단은 사람이 한다.</p><div class="grid">' + I.map(function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div></section>'; }
     /* 1 할 수 있는 일 */
     var T = G.tasks.filter(function (t) { return hit(t.join(' '), w); });
     h += '<section id="task"><h2>🧭 할 수 있는 일</h2><p class="lead">무엇을 알 수 있고 무엇을 할 수 있는지 — 그리고 어디를 누르면 되는지.</p><div class="grid">' + (T.length ? T.map(function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p>' + path(t[3]) + (t[4] ? '<a class="go" href="./#ly=' + encodeURIComponent(t[4]) + '">지도에서 켜 보기 ›</a>' : '') + '</div>'; }).join('') : '<p class="empty">찾는 말이 든 일이 없다.</p>') + '</div></section>';
@@ -78,6 +82,18 @@
       if (hc) h += (w ? '<div class="grp" style="font-size:17px">' + esc(c[1]) + '</div>' : '') + hc; });
     if (!any) h += '<p class="empty">찾는 말이 든 레이어가 없다.</p>';
     h += '</section>';
+    /* 3-1 제원 (2026-10-18) */
+    if (!w && G.spec) { var S = G.spec, Z = S.size, rg = Z.regions || {}, rsum = 0; Object.keys(rg).forEach(function (k) { rsum += rg[k]; });
+      h += '<section id="spec"><h2>📋 제원</h2><p class="lead">이 지도 앱의 기본 정보.</p><table class="spec"><tbody>'
+        + '<tr><th>이름 · 판</th><td>데이터 압축지도 · 판 ' + esc(G.ver) + ' (설명서 ' + esc(G.made) + ')</td></tr>'
+        + '<tr><th>형태</th><td>웹 앱(PWA) — 앱 장터 설치 없이 주소로 연다 · 홈 화면에 추가하면 앱처럼 · 확인코드로 들어온다 · 검색에 걸리지 않게 막아 두었다</td></tr>'
+        + '<tr><th>쓸 수 있는 기기</th><td>' + S.platform.map(function (p) { return p[0] + ' <b>' + esc(p[1]) + '</b> — ' + esc(p[2]); }).join('<br>') + '</td></tr>'
+        + '<tr><th>총크기</th><td><b>약 ' + kb(Z.total) + '</b> = 지도 사이트 ' + kb(Z.site) + ' + 전국 지역 자료 ' + kb(rsum) + '(권역 저장소 ' + Object.keys(rg).length + '곳) + 바탕 지도 조각 ' + kb(Z.tiles) + '<br><small>한 번에 다 받지 않는다 — 처음 열 때는 지도 코드(약 ' + kb(Z.code) + ')와 바탕만, 나머지는 켠 레이어 · 고른 지역만 그때 받는다. 한 번 받은 것은 기기에 남아 다음엔 빨리 열린다.</small></td></tr>'
+        + '<tr><th>범위</th><td>전국 ' + S.sidos + '개 시도(광주·전남 통합) · ' + S.gus + '개 시군구 · 행정동 ' + S.dongs.toLocaleString() + '곳 — 자료마다 범위가 다르다(서울·수도권만 있는 자료가 있다 · 카드와 자료 목록에 적힘)</td></tr>'
+        + '<tr><th>담긴 것</th><td>레이어 ' + G.n.layers + '개 · 자료 파일 ' + G.files.length + '개 · 도구 ' + G.tools.length + '개</td></tr>'
+        + '<tr><th>통신</th><td>같은 사이트의 자료 파일만 읽는다 · 실시간 층(돌발·소통·날씨 등)은 사용자가 켤 때만 바깥 서비스에 묻는다 · 개인정보를 보내거나 저장하지 않는다 · 통신이 안 되는 곳은 「📥 지역 받기」로 미리 받아 둔다</td></tr>'
+        + '<tr><th>업데이트</th><td><b>공공데이터가 올라오는 대로 업데이트된다.</b> ' + esc(S.update) + '</td></tr>'
+        + '</tbody></table></section>'; }
     /* 3 자료 목록 */
     var F = G.files.filter(function (f) { return hit(f.f + ' ' + f.s + ' ' + f.k + ' ' + f.n, w); });
     h += '<section id="data"><h2>📦 자료 목록</h2><p class="lead">지도가 읽는 자료 파일 ' + G.files.length + '개 — 파일마다 출처(기관·자료 이름), 칸의 뜻, 한계를 적어 두었다. 눌러서 펼친다.</p>' + (F.length ? F.map(function (f) { return '<details class="file"><summary>' + esc(f.f) + ' <span class="sz">' + kb(f.b) + '</span></summary>' + (f.s ? '<p><b>출처</b><br>' + esc(f.s) + '</p>' : '') + (f.k ? '<p><b>무엇이 들었나(칸)</b><br>' + esc(f.k) + '</p>' : '') + (f.n ? '<p><b>읽을 때 주의</b><br>' + esc(f.n) + '</p>' : '') + '</details>'; }).join('') : '<p class="empty">찾는 말이 든 자료가 없다.</p>') + '</section>';

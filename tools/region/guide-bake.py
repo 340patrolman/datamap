@@ -31,6 +31,45 @@ TASKS = [
     ['❓', '이 레이어가 뭐지?', '레이어 이름 옆 ❓ 를 누르면 무엇을 보여 주고 어떻게 읽는지, 출처와 한계가 나온다. 범례(📖)는 색과 크기의 뜻.', ['레이어', '이름 옆 ❓'], ''],
 ]
 
+# (2026-10-18 소유자 「윗부분은 사용방법과 유추해낼 수 있는 내용 · 아래 자료 설명에는 앱 총크기·안드로이드 아이폰 윈도우에서 다 된다는 것까지 기본 제원부터 · 공공데이터가 올라오는 대로 업데이트」)
+HOWTO = [
+    ['1', '들어오기', '주소를 열고 확인코드를 한 번 넣는다(T-Book 에서 열면 묻지 않는다). 폰은 「홈 화면에 추가」로 앱처럼 쓴다.'],
+    ['2', '자리 잡기', '맨 위 「📍 지역」으로 시도·시군구·동을 고르거나 🔍 로 교차로·역·길 이름을 찾는다. 📍(오른쪽 기둥)은 지금 내 위치.'],
+    ['3', '레이어 켜기', '「🗂 레이어」를 열어 보고 싶은 층을 켠다. 위 칩(인구·교통·지역경찰·생활안전 …)을 누르면 주제별로 한 번에 켜진다. 이름 옆 ❓ = 이 층이 무엇인지.'],
+    ['4', '눌러서 읽기', '지도의 동·교차로·점을 누르면 카드가 열린다 — 값, 출처, 기준일, 한계가 함께 나온다. 「📝 이 지역 설명」은 숫자를 글로 풀어 준다.'],
+    ['5', '때를 바꿔 보기', '「📅 날짜 시각」 단추로 다른 날·시각을 고르면 그때의 신호·인파·흐름을 시뮬레이션한다(지금이 아니면 단추가 붉은 바탕).'],
+    ['6', '도구 쓰기', '🧰 도구·범례에서 반경 분석 · 신고 차량 예측 · 중요업무 시각표 · 창업 자리 · 세금 계산 · 네비 가르고 · 지역 받기(통신 없을 때).'],
+]
+INFER = [
+    ['🚓', '어디에 먼저 서야 하나', '사고 다발 · 밤 사고 · 주점 몰림 · 인파 시각을 겹치면 순찰·단속 자리와 시간을 고를 수 있다(겹친 근거는 카드에 나온다 — 한 점수로 더하지 않는다).'],
+    ['🚦', '언제 막히나 · 얼마나 걸리나', '교차로 신호 주기 · 평소 속도(요일·시각) · 지금 속도를 견주면 출동·호송 때 걸리는 시간과 막히는 고비를 어림한다.'],
+    ['🚨', '도주 차량이 지금쯤 어디에', '신고 시각·방향과 도로·신호로 1·2·3·5분 안에 닿을 수 있는 길을 그린다 — 선배치 자리를 고르는 참고.'],
+    ['👥', '그 동네는 어떤 곳인가', '연령·가구·외국인·생활인구·학교·학원·상권·집값·구매력을 같이 보면 민원·사건의 배경(누가, 언제, 왜 붐비는지)을 읽는다.'],
+    ['🌧', '날씨가 바뀌면 무엇이 위험한가', '침수 이력·지하차도·결빙 우려·쉼터를 겹쳐 큰비·눈·더위 때 먼저 볼 곳을 고른다.'],
+    ['📈', '바뀌고 있는 것', '해마다 쌓인 자료(사고 10년·매출 분기·인구·업종 증감·집값 흐름)로 늘고 주는 흐름을 본다 — 「왜」는 카드의 근거와 함께 사람이 판단한다.'],
+]
+PLATFORM = [['🤖', '안드로이드 폰·태블릿', '크롬 · 삼성 인터넷 — 「홈 화면에 추가」(앱 설치)'], ['🍎', '아이폰 · 아이패드', '사파리 — 공유 › 「홈 화면에 추가」'],
+            ['🪟', '윈도우 PC', '크롬 · 엣지 — 주소창 오른쪽 설치 단추 또는 즐겨찾기'], ['💻', '맥 · 그 밖', '최신 크롬·사파리·엣지·파이어폭스면 된다(따로 깔 프로그램 없음)']]
+
+
+def site_sizes():
+    """지도 사이트(이 저장소에서 올리는 파일) + 권역 자료 저장소 8곳 + 바탕 조각 저장소 크기 — 바이트"""
+    import subprocess
+    fs = subprocess.run(['git', 'ls-files', '-z'], cwd=ROOT, capture_output=True).stdout.decode('utf-8', 'replace').split(chr(0))
+    skip = ('tools/', 'ontology-core/', '07_', '.git')
+    site = sum(os.path.getsize(os.path.join(ROOT, f)) for f in fs if f and not f.startswith(skip) and not f.endswith('.md') and os.path.exists(os.path.join(ROOT, f)))
+    code = sum(os.path.getsize(os.path.join(ROOT, f)) for f in ('index.html', 'js/map2d.js', 'sw.js', 'manifest.json') if os.path.exists(os.path.join(ROOT, f)))
+    def dsz(d):
+        t = 0
+        for r, ds, xs in os.walk(d):
+            ds[:] = [x for x in ds if x != '.git']
+            t += sum(os.path.getsize(os.path.join(r, x)) for x in xs)
+        return t
+    par = os.path.dirname(ROOT)
+    reg = {x: dsz(os.path.join(par, x)) for x in sorted(os.listdir(par)) if x.startswith('datamap-data-') and os.path.isdir(os.path.join(par, x))}
+    tiles = dsz(os.path.join(par, 'datamap-tiles')) if os.path.isdir(os.path.join(par, 'datamap-tiles')) else 0
+    return {'site': site, 'code': code, 'regions': reg, 'tiles': tiles, 'total': site + sum(reg.values()) + tiles}
+
 
 def js_list(src, start_pat):
     i = src.index(start_pat); j = i + len(start_pat) - 1; d = 0
@@ -66,7 +105,10 @@ def main():
         for grp in top[2]:
             for sub in grp[2]:
                 for key in sub[1]: where.setdefault(key, []).append([top[1], grp[1], sub[0]])
-    out = {'schema': 'tg-guide/1', 'made': datetime.date.today().isoformat(), 'ver': ver, 'tasks': TASKS, 'tools': tools, 'cats': cats, 'layers': layers, 'help': helps, 'where': where, 'files': files,
+    rj = json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))['gus']
+    spec = dict(size=site_sizes(), gus=len(rj), sidos=len(set(g['sido'] for g in rj)), dongs=sum(g.get('n', 0) for g in rj), platform=PLATFORM,
+                update='공공기관이 새 자료를 올리면(날마다·달마다·분기·해마다 — 자료마다 다름) 받아서 다시 굽고 지도에 올린다 · 실시간 층은 켤 때마다 그 자리에서 묻는다 · 자료마다 기준일은 카드와 자료 목록에 적혀 있다')
+    out = {'schema': 'tg-guide/1', 'made': datetime.date.today().isoformat(), 'ver': ver, 'howto': HOWTO, 'infer': INFER, 'spec': spec, 'tasks': TASKS, 'tools': tools, 'cats': cats, 'layers': layers, 'help': helps, 'where': where, 'files': files,
            'n': {'layers': len(layers), 'help': sum(1 for k2 in layers if k2 in helps), 'files': len(files)}}
     json.dump(out, open(os.path.join(ROOT, 'data', 'guide.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     miss = [k2 for k2 in layers if k2 not in helps]

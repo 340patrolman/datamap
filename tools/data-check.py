@@ -10,6 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KB = os.path.dirname(ROOT)
 # [파일, 주기(일), 다시 굽는 법(auto = 키만 있으면 혼자 돈다 / hand = 사람·브라우저 단계가 있다), 명령·절차]
 SETS = [
+    ['data/spd-normal-seocho.json', 7, 'auto', '평소 속도 서초(tg-spd-normal/1 · 10-18 첫 판 = 월~목 4날·금 1·토 1·일 2 → 금·토·일 갈래는 잠정) — 이레마다 `py -3.12 -X utf8 tools/signal/spdnormal-bake.py`(07_API키/out/livespd 가 쌓인 만큼) → ai-guide-bake → 커밋 · 네 갈래 모두 3날 넘으면(provisional 모두 False) 주기를 31일로 · 카카오 결과는 쓰지 않는다(RULE-NAV-4)'],
     ['data/cctv-utic-seoul.json', 7, 'auto', '교차로 CCTV 목록(UTIC · 서울 TOPIS) — `py -3.12 -X utf8 tools/region/utic-cctv-bake.py fetch` → `build --publish`(이 PC IP 에서만 · **하루 1번 넘게 부르지 않는다** — 1초 5회면 IP 차단) → 커밋 · 출처 「경찰청 도시교통정보센터(UTIC)」 표기 유지'],
     ['data/eta-cal.json', 7, 'auto', '막힘 배율(ITS 실측 · 2026-10-15 첫 판 5일치 · 토요일 칸 빔) — `py -3.12 -X utf8 tools/signal/etacal-its.py --bake`(07_API키/out/livespd 가 쌓인 만큼 · 1분) → ai-guide-bake → 커밋 · 배율이 크게 바뀌면 MAP2D 에 한 줄'],
     ['data/station-events.json', 1, 'auto', '역 둘레 큰 행사(공연 끝·집회 · 가르고 「열차 안 신고」 혼잡 가산) — rally-seoul 다음에 `py -3.12 -X utf8 tools/region/stnevent-bake.py`(1초) → ai-guide-bake → 커밋'],
@@ -101,7 +102,6 @@ def last_commit(path):
 
 # v2.99.0 날짜가 정해진 일 — 기한 DUE_SOON 일 앞부터 알린다 [날짜, 누가(형님/코워크/Claude), 할 일]
 DATES = [
-    ['2026-10-18', 'Claude', '평소 속도 서초 첫 판 — `py -3.12 -X utf8 tools/signal/spdnormal-bake.py`(07_API키/out/livespd 이레치 · 10-15 시험판은 평일 4일·일 1일이라 안 올림 · 금·토 갈래 날 수 확인 뒤) → data/spd-normal-seocho.json → ai-guide-bake → 커밋 · 게임 세션에 꼴(tg-spd-normal/1) 알림 · 카카오 결과는 보정에 쓰지 않는다(RULE-NAV-4)'],
     ['2026-10-21', 'Claude', '평소 속도 여섯 구 — `py -3.12 -X utf8 tools/signal/spdnormal-bake.py six` → data/spd-normal-six/<구>.json + index.json(구마다 쪼갬 · 게임 세션과 정한 꼴 · 10-18 시험 16구 끝) → ai-guide-bake → 커밋 · 게임 세션에 알림(가르고가 경로 상자와 겹치는 구만 받음) · 서초 한 장도 같이 다시 굽기'],
     ['2026-11-12', 'Claude', '수능(2026-11-19) 시험장 — 서울시교육청·경기도교육청·인천시교육청이 시험지구·시험장 학교를 공고하면(보통 시험 1~2주 전) 출처 붙여 굽기 · 당일 교통 통제·수험생 수송 자리 · 10-14 에는 아직 공고 전이라 못 찾음(more-sources csat)'],
     ['2027-04-04', '코워크→형님', '브이월드 개발키 만료(2027-04-04) — 3월 초까지 운영키 전환 신청 · 바뀌면 각 기기 🔑 와 맛보기 중계 VW_KEY 다시 넣기'],

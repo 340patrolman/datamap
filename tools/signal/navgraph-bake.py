@@ -85,10 +85,10 @@ def main():
     def load(fn):
         try: return json.load(open(os.path.join(ROOT, 'data', fn), encoding='utf-8'))
         except Exception as e: print(fn, '못 읽음', e); return {}
-    sd = load('sigdir-seoul.json'); its = sd.get('its', {}); NEAR_OK = {'4036'}
+    sd = load('sigdir-seoul.json'); its = sd.get('its', {})
     for no, p in (sd.get('pts') or {}).items():
         if not (LB[0] < p[0] < LB[1] and LB[2] < p[1] < LB[3]): continue
-        hit = snap(p[1], p[0]) or (snap(p[1], p[0], 30, XA)[:1] if no in NEAR_OK else [])   # 2026-10-18 갈림 노드가 없는 자리(서초경찰서 앞 4036 — 이면도로가 도로망에 없음)만 30m 안 가장 가까운 노드 하나 — 교통과 값을 뺀 뒤 T-Data 값이 이 자리에 붙게 · 모든 점에 풀면 길 가운데 횡단보도 신호 수백 곳이 새로 붙어 길 계산이 크게 바뀐다(따로 판단)
+        hit = snap(p[1], p[0])
         if not hit: lost['sigdir'] += 1; continue
         recs = its.get(no) or []
         for d, k in hit: put(k, 'sd', [no, p[2], len(recs), 1 if any('a' in x for x in recs) else 0, d], d, 4)   # 서울 T-Data: [번호, 이름, 기록 수, 닻(이어 세기) 있음, 붙인 거리 m]

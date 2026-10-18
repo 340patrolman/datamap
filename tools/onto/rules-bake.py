@@ -56,10 +56,10 @@ RULES = [
          d='서울(공공데이터포털)·인천·대구·대전(UTIC) 계획 모두 같은 체계로 읽는다. 문서대로 읽으면 토요일이 평일 계획이 되어 주말 신호 예측이 하루씩 어긋난다. 세 도시는 그 도시 실측 대조 전이라 「어림」.',
          s=[('off', 'UTIC sig_code.hwp · PlanCrossRoadInfoService.hwp 「1 월요일 … 7 일요일」(자료와 다름)', '2026-10-18'), ('meas', '서울 T-Data 실제 주기 × 계획: 토 관측 929건 중 7번 89% · 일 601건 중 1번 87%', '2026-10-18')],
          g='B', o=['dm:tools/signal/tod-bake.py', 'dm:tools/signal/utic-tod-bake.py', 'dm:js/map2d.js(신호 카드)', 'tb-signal(자매 앱)'], t='07_API키/out/utic/doc/요일코드_대조_20261018.md'),
-    dict(id='RULE-SIG-7', area='신호', title='신호값은 공개 자료로 찾아지는 것(T-Data 실측 · 경찰청 공개 계획)을 먼저 싣고, 교통과 출력물은 공개 자료에 값이 없는 곳만 싣고 나머지는 맞춰 보기에만',
-         d='공개 자료에 값이 없는 서초역사거리·삼호가든사거리만 교통과 출력물로 메운다. 서초경찰서·서울성모병원·강남터미널고가밑은 실측으로 싣고 교통과 값과 맞대 본다(tools/signal/ksc-compare.py · 결과는 저장소 밖).',
+    dict(id='RULE-SIG-7', area='신호', title='교통과 신호 출력물(소유자가 공개를 정한 서초 5곳)이 맞는 자료 · T-Data 실시간은 그것과 맞춰 본다 · 그 밖의 교차로는 공개 자료로 찾아지는 값(T-Data 실측 · 경찰청 공개 계획)을 먼저',
+         d='반포대로 서초역사거리·서초경찰서·서울성모병원·강남터미널고가밑 + 삼호가든사거리 5곳은 교통과 출력물 값을 싣고, T-Data 실측과 맞대 본다(tools/signal/ksc-compare.py · 결과는 저장소 밖 · 10-18 세 곳 87% 일치). 10-18 낮에 2곳으로 줄였다가 소유자 지시로 5곳으로 되돌림.',
          s=[('own', 'FK-SIG-FINDFIRST', '2026-10-18'), ('meas', '세 곳 교통과 계획 ↔ T-Data 실측 주기 87%(142/164칸) 맞음 · 성모병원 92%', '2026-10-18')],
-         g='A', o=['dm:tools/signal/ksc-bake.py(OK 2곳)', 'dm:tools/signal/ksc-compare.py'], t='07_API키/신호앱/교통과_실측대조_<날짜>.md'),
+         g='A', o=['dm:tools/signal/ksc-bake.py(OK 5곳)', 'dm:tools/signal/ksc-compare.py'], t='07_API키/신호앱/교통과_실측대조_<날짜>.md'),
     # 신호 — 수집
     dict(id='RULE-COL-1', area='수집', title='T-Data 는 열쇠·API 짝마다 5분에 한 번 · 하루 1,000 — 이 프로젝트는 열쇠마다 모든 API 합 999 로 멈춘다',
          d='404 = 그 짝에 계약 없음(30분마다 다시 봄) · 429 = 5분 제한. 두 열쇠(KEY1·KEY2) 모두 신호 API 여섯 가지 승인(2026-10-14 15:40).',

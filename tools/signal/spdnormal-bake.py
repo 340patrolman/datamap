@@ -34,6 +34,10 @@ def main():
                 for lk, _ in r[4]: KEEP.add(str(lk))
     for x in json.load(open(os.path.join(ROOT, 'data', 'nav-seocho.json'), encoding='utf-8'))['links']:
         if x[5] <= 4: KEEP.add(str(x[0]))
+    SIX = 'six' in sys.argv[1:]   # (2026-10-18) py … spdnormal-bake.py six → data/spd-normal-six.json(여섯 구 · livespd-bake 의 want6 = 서초 링크 + nav-six 등급 1~4 · 같은 꼴)
+    if SIX:
+        for x in json.load(open(os.path.join(ROOT, 'data', 'nav-six.json'), encoding='utf-8'))['links']:
+            if x[5] <= 4: KEEP.add(str(x[0]))
     C = collections.defaultdict(list); DD = collections.defaultdict(set); days = collections.defaultdict(set); n = 0; t0 = t1 = None
     for x in lines():
         d = datetime.datetime.fromtimestamp(x['at']); wd = d.weekday(); cl = 3 if d.date().isoformat() in HOL else 0 if wd <= 3 else 1 if wd == 4 else 2 if wd == 5 else 3; days[cl].add(d.date().isoformat()); n += 1
@@ -53,6 +57,7 @@ def main():
                     '공휴일은 일요일 갈래(3)에 넣었다(data/holidays.json — 신호 계획의 「일·공휴일」과 같게) · 행사 · 비·눈 온 날은 가르지 않았다 · 값이 안 오는 링크(지난 차가 없음)는 그 칸이 비어 있다',
                     '쓰임: 지금 속도가 평소보다 얼마나 느린가(이상 알아채기) · 길 안내의 시간대별 걸리는 시간 · 사건·공사 앞뒤 견주기'],
            'fields': 'links{ITS 링크 ID: {「요일 갈래-시」: [가운데값 km/h, 아래 사분위 km/h, 본 횟수, 본 날 수, 잠정 1|0(본 날 수 < need_days)]}} — 요일 갈래 0 월~목 · 1 금 · 2 토 · 3 일·공휴일 · days = 갈래마다 쌓인 날 수 · provisional = 갈래 전체가 아직 잠정인가(앞 세 칸은 첫 판과 같은 뜻 — 덧붙이기만)', 'links': dict(sorted(out.items()))}
-    p = os.path.join(ROOT, 'data', 'spd-normal-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    if SIX: doc['source'] = doc['source'].replace('서초구 + 2km', '여섯 구(서초·강남·동작·관악·용산·송파) + 둘레') ; doc['area'] = 'six'
+    p = os.path.join(ROOT, 'data', 'spd-normal-six.json' if SIX else 'spd-normal-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('잠정 칸', prov, '/', cells); print('받은 판', n, '·', doc['from'], '~', doc['to'], '· 요일 갈래마다 날 수', doc['days'], '· 링크', len(out), '· 칸', cells, '· 바이트', os.path.getsize(p)); return 0
 if __name__ == '__main__': sys.exit(backfill() if sys.argv[1:2] == ['backfill'] else main())

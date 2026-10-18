@@ -10,6 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KB = os.path.dirname(ROOT)
 # [파일, 주기(일), 다시 굽는 법(auto = 키만 있으면 혼자 돈다 / hand = 사람·브라우저 단계가 있다), 명령·절차]
 SETS = [
+    ['data/rone-shop.json', 92, 'auto', '상가·오피스 임대료·공실률·수익률(한국부동산원 R-ONE 임대동향 · 분기 · 전국 표본 상권) — 분기 공표 뒤(대개 다음 분기 둘째 달) `py -3.12 -X utf8 tools/region/roneshop-bake.py fetch`(rone-shop.json + data/r/rent.json 같이) → ai-guide-bake → guide-bake → 커밋 · 새 상권이 생기면 자리 찾기 결과(역·행정동·장소 검색)를 눈으로 확인'],
     ['data/spd-normal-seocho.json', 7, 'auto', '평소 속도 서초(tg-spd-normal/1 · 10-18 첫 판 = 월~목 4날·금 1·토 1·일 2 → 금·토·일 갈래는 잠정) — 이레마다 `py -3.12 -X utf8 tools/signal/spdnormal-bake.py`(07_API키/out/livespd 가 쌓인 만큼) → ai-guide-bake → 커밋 · 네 갈래 모두 3날 넘으면(provisional 모두 False) 주기를 31일로 · 카카오 결과는 쓰지 않는다(RULE-NAV-4)'],
     ['data/cctv-utic-seoul.json', 7, 'auto', '교차로 CCTV 목록(UTIC · 서울 TOPIS) — `py -3.12 -X utf8 tools/region/utic-cctv-bake.py fetch` → `build --publish`(이 PC IP 에서만 · **하루 1번 넘게 부르지 않는다** — 1초 5회면 IP 차단) → 커밋 · 출처 「경찰청 도시교통정보센터(UTIC)」 표기 유지'],
     ['data/eta-cal.json', 7, 'auto', '막힘 배율(ITS 실측 · 2026-10-15 첫 판 5일치 · 토요일 칸 빔) — `py -3.12 -X utf8 tools/signal/etacal-its.py --bake`(07_API키/out/livespd 가 쌓인 만큼 · 1분) → ai-guide-bake → 커밋 · 배율이 크게 바뀌면 MAP2D 에 한 줄'],

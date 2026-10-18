@@ -10,7 +10,7 @@
     if (m && m.view) { clearInterval(poll); setTimeout(function () { try { run(m); } catch (e) { ck('검사 스크립트가 끝까지 돌았다', false, e && e.message); send(); } }, 7000); }
     else if (Date.now() - t0 > 40000) { clearInterval(poll); ck('지도가 열린다(문법)', false, (window.__ERR || []).join(' | ') || 'TGMap2D 없음'); send(); }
   }, 300);
-  function run(m) {
+  function run(m) { try { m.rentN && m.rentN(); } catch (e0) {}
     ck('지도가 열린다(문법)', true);
     var cv = document.querySelector('canvas'); ck('캔버스에 크기가 있다', !!cv && cv.width > 100 && cv.height > 100, cv ? cv.width + '×' + cv.height : '없음');
     var v = m.view; ck('보는 자리 값이 숫자다', v && isFinite(v.s) && v.s > 0, v ? JSON.stringify(v).slice(0, 120) : '');
@@ -85,6 +85,7 @@
         setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var rn = TGMap2D.rentN(), rc = TGMap2D.rentCardHtml('남포동') || ''; ck('💰 상가 임대료 전국(R-ONE) — 표본 상권 300곳 넘고 부산 남포동 카드에 소득수익률 (v2.248.0)', rn > 300 && /소득수익률/.test(rc) && /천원/.test(rc), '상권 ' + rn + ' · 카드 ' + rc.length + '자'); } catch (e) { ck('상가 임대료 전국 검사', false, e.message); }
       try { var ctg = document.getElementById('m2dChipT'), wasF = document.body.classList.contains('chipfold'); if (!document.body.classList.contains('top1')) { if (wasF) ctg.click(); var hq = [].slice.call(document.querySelectorAll('#m2dQC button')).every(function (x) { return x.offsetWidth > 0; }); ctg.click(); var hid = [].slice.call(document.querySelectorAll('#m2dQC button:not(.on)')).every(function (x) { return x.offsetWidth === 0; }); if (!wasF) ctg.click(); ck('빠른 묶음 — 펼치면 칩이 다 보이고 접으면 고른 것만 (v2.247.0)', hq && hid, 'all ' + hq + ' · fold ' + hid); } else ck('빠른 묶음 — 넓은 화면 한 줄(접기 단추 없음) (v2.247.0)', ctg.offsetWidth === 0, ''); } catch (e) { ck('빠른 묶음 접기 검사', false, e.message); }
       try { var tbb = document.getElementById('m2dTimeB'), dbb = document.getElementById('m2dDateB'), chp = document.getElementById('m2dChips'); ck('📅 날짜·시각 한 단추 — 칩 줄엔 하나(📅 …·…시) · 날짜 고르기는 시각 막대 안 · 칩 줄이 잘리지 않음 (v2.246.0)', !!tbb && /📅 .+\) \d+시/.test(tbb.textContent) && !!dbb && !!dbb.closest('#m2dTime') && (innerWidth < 900 || chp.scrollWidth <= chp.clientWidth + 1), tbb ? tbb.textContent : '없음'); } catch (e) { ck('날짜·시각 한 단추 검사', false, e.message); }
       try { var qg = document.getElementById('m2dGuideB'), qr = qg && qg.getBoundingClientRect(), fr = document.getElementById('m2dFold').getBoundingClientRect(); ck('📖 맨 위 줄 「이용방법 안내」 단추가 보이고 레이어 단추와 같은 줄 (v2.245.0)', !!qg && qr.width > 30 && Math.abs(qr.top - fr.top) < 4, qg ? qg.textContent + ' ' + Math.round(qr.width) + 'px' : '없음'); } catch (e) { ck('사용설명서 단추 검사', false, e.message); }

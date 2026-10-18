@@ -1,6 +1,6 @@
 {
 "schema": "tg-layers/1",
-"built": "2026-10-15",
+"built": "2026-10-18",
 "note": "층 목록 한 표(설계서 5장) — scope: national 전국 공통 · seoul+gg · seoul · gyeonggi · seocho(서초 바탕만) · license 「확인 필요」 = 유료 기능 자동 제외(paid_ok false) · ODbL 은 공유 조건 때문에 false · estimate = 화면에 「추정」",
 "layers": [
 {
@@ -89,7 +89,7 @@
 },
 {
 "key": "sub",
-"name": "🚇 지하철역",
+"name": "🚇 지하철역(서초)",
 "group": "바탕",
 "default": true,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -396,6 +396,34 @@
 "paid_ok": false
 },
 {
+"key": "b100g",
+"name": "🌡 생활업종 증감(시군구 · 국세청 월간)",
+"group": "주거·부동산",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
+"key": "wagep",
+"name": "💳 구매력(시군구 배경값 · 국세청)",
+"group": "주거·부동산",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "land",
 "name": "📐 필지 — 공시지가·용도·건물(누르면 · 브이월드)",
 "group": "주거·부동산",
@@ -676,6 +704,20 @@
 "paid_ok": false
 },
 {
+"key": "sbh",
+"name": "🚉 역 붐빔(시간대 · 승하차)",
+"group": "도로·교통",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "nrl",
 "name": "🌙 밤 22~03시 지하철 승차 변화(역마다 · 2019년 → 지금)",
 "group": "도로·교통",
@@ -873,7 +915,7 @@
 },
 {
 "key": "hot",
-"name": "⚠ 사고다발지",
+"name": "⚠ 사고다발지(서초)",
 "group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -887,7 +929,7 @@
 },
 {
 "key": "drunk",
-"name": "🍺 음주 사고 다발지",
+"name": "🍺 음주 사고 다발지(서초)",
 "group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -901,7 +943,7 @@
 },
 {
 "key": "risk",
-"name": "🟥 사고위험지역",
+"name": "🟥 사고위험지역(서초)",
 "group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -929,7 +971,7 @@
 },
 {
 "key": "szh",
-"name": "🧒 보호구역 어린이 사고",
+"name": "🧒 보호구역 어린이 사고(서초)",
 "group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1026,6 +1068,20 @@
 "paid_ok": false
 },
 {
+"key": "sigu",
+"name": "🚦 신호 계획(인천·대구·대전 · UTIC)",
+"group": "도로·교통",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "sigx",
 "name": "🔢 신호 교차로 번호",
 "group": "도로·교통",
@@ -1069,13 +1125,13 @@
 },
 {
 "key": "rent",
-"name": "💰 상가 임대료·공실률",
+"name": "💰 상가 임대료·공실률·수익률(전국 · 부동산원)",
 "group": "소비·상권",
 "default": false,
 "file": "rent.json",
 "kind": "point",
-"scope": "seoul+gg",
-"cover": "서울·경기",
+"scope": "national",
+"cover": "전국",
 "src": "한국부동산원",
 "license": "확인 필요",
 "estimate": false,
@@ -1181,7 +1237,7 @@
 },
 {
 "key": "vol",
-"name": "🚙 교통량",
+"name": "🚙 교통량(서초)",
 "group": "이동·동선",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1195,7 +1251,7 @@
 },
 {
 "key": "bike",
-"name": "🚲 따릉이",
+"name": "🚲 따릉이(서초)",
 "group": "이동·동선",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1209,7 +1265,7 @@
 },
 {
 "key": "pol",
-"name": "👮 경찰 관서",
+"name": "👮 경찰 관서(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1237,7 +1293,7 @@
 },
 {
 "key": "er",
-"name": "🏥 응급실",
+"name": "🏥 응급실(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1251,7 +1307,7 @@
 },
 {
 "key": "hosp",
-"name": "🩺 병원·의원",
+"name": "🩺 병원·의원(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1265,7 +1321,7 @@
 },
 {
 "key": "phar",
-"name": "💊 약국",
+"name": "💊 약국(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1279,7 +1335,7 @@
 },
 {
 "key": "bar",
-"name": "🍺 주점(밤 순찰)",
+"name": "🍺 주점(밤 순찰 · 서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1307,7 +1363,7 @@
 },
 {
 "key": "play",
-"name": "🎤 노래방·PC방",
+"name": "🎤 노래방·PC방(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1321,7 +1377,7 @@
 },
 {
 "key": "inn",
-"name": "🏨 숙박",
+"name": "🏨 숙박(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1335,7 +1391,7 @@
 },
 {
 "key": "heat",
-"name": "🥵 무더위쉼터",
+"name": "🥵 무더위쉼터(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1349,7 +1405,7 @@
 },
 {
 "key": "cold",
-"name": "🥶 한파쉼터",
+"name": "🥶 한파쉼터(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1363,7 +1419,7 @@
 },
 {
 "key": "hyd",
-"name": "🧯 소화전",
+"name": "🧯 소화전(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1377,7 +1433,7 @@
 },
 {
 "key": "wc",
-"name": "🚻 화장실",
+"name": "🚻 화장실(서초)",
 "group": "치안·안전",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1391,7 +1447,7 @@
 },
 {
 "key": "school",
-"name": "🏫 학교",
+"name": "🏫 학교(서초)",
 "group": "교육·돌봄",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1405,7 +1461,7 @@
 },
 {
 "key": "kids",
-"name": "🧸 유치원·어린이집",
+"name": "🧸 유치원·어린이집(서초)",
 "group": "교육·돌봄",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1419,7 +1475,7 @@
 },
 {
 "key": "pg",
-"name": "🛝 놀이터",
+"name": "🛝 놀이터(서초)",
 "group": "교육·돌봄",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1433,7 +1489,7 @@
 },
 {
 "key": "park",
-"name": "🌳 공원",
+"name": "🌳 공원(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1447,7 +1503,7 @@
 },
 {
 "key": "welf",
-"name": "🧓 복지시설",
+"name": "🧓 복지시설(서초)",
 "group": "교육·돌봄",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1461,7 +1517,7 @@
 },
 {
 "key": "kyr",
-"name": "🧓 경로당(서울시)",
+"name": "🧓 경로당(전국)",
 "group": "교육·돌봄",
 "default": false,
 "file": "fac.json(kyr)",
@@ -1475,7 +1531,7 @@
 },
 {
 "key": "cc",
-"name": "👶 어린이집(서울시)",
+"name": "👶 어린이집(전국)",
 "group": "교육·돌봄",
 "default": false,
 "file": "fac.json(cc)",
@@ -1489,7 +1545,7 @@
 },
 {
 "key": "kg",
-"name": "🎒 유치원(교육청)",
+"name": "🎒 유치원(전국)",
 "group": "교육·돌봄",
 "default": false,
 "file": "fac.json(kg)",
@@ -1587,7 +1643,7 @@
 },
 {
 "key": "gov",
-"name": "🏢 관공서·주민센터",
+"name": "🏢 관공서·주민센터(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1601,7 +1657,7 @@
 },
 {
 "key": "lib",
-"name": "📚 도서관",
+"name": "📚 도서관(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1615,7 +1671,7 @@
 },
 {
 "key": "post",
-"name": "📮 우체국",
+"name": "📮 우체국(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1629,7 +1685,7 @@
 },
 {
 "key": "bank",
-"name": "🏦 은행·ATM",
+"name": "🏦 은행·ATM(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1643,7 +1699,7 @@
 },
 {
 "key": "conv",
-"name": "🏪 편의점",
+"name": "🏪 편의점(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1657,7 +1713,7 @@
 },
 {
 "key": "fuel",
-"name": "⛽ 주유소",
+"name": "⛽ 주유소(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1671,7 +1727,7 @@
 },
 {
 "key": "ev",
-"name": "🔌 전기차 충전",
+"name": "🔌 전기차 충전(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1685,7 +1741,7 @@
 },
 {
 "key": "pk",
-"name": "🅿 주차장",
+"name": "🅿 주차장(서초)",
 "group": "생활시설",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -1811,7 +1867,7 @@
 },
 {
 "key": "pkcctv",
-"name": "📸 불법주정차 단속 CCTV",
+"name": "📸 불법주정차 단속 CCTV(서초)",
 "group": "도로·교통",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -2007,7 +2063,7 @@
 },
 {
 "key": "spota",
-"name": "🗂 길목 다발지(참고)",
+"name": "🗂 길목 다발지(참고 · 서초)",
 "group": "교통사고",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -2063,7 +2119,7 @@
 },
 {
 "key": "her",
-"name": "🏛 국가유산",
+"name": "🏛 국가유산(서초)",
 "group": "행사·역사",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -2146,6 +2202,20 @@
 "paid_ok": false
 },
 {
+"key": "petb",
+"name": "🐾 반려동물 업체(병원·미용·호텔 등 · 전국)",
+"group": "생활시설",
+"default": false,
+"file": "*-seocho.json / pubdata(OSM·서울시)",
+"kind": "point",
+"scope": "seocho",
+"cover": "서초 둘레",
+"src": "공공데이터포털·서울시·경기도·교육청·OSM 섞임",
+"license": "확인 필요",
+"estimate": false,
+"paid_ok": false
+},
+{
 "key": "flt",
 "name": "🌊 침수 흔적(2010~2025)",
 "group": "날씨·계절",
@@ -2175,7 +2245,7 @@
 },
 {
 "key": "fldl",
-"name": "🌧 큰비 때 먼저 볼 길(잠긴 해 × 돌아가는 부담)",
+"name": "🌧 큰비 때 먼저 볼 길(잠긴 해 × 돌아가는 부담 · 서초)",
 "group": "날씨·계절",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",
@@ -2259,7 +2329,7 @@
 },
 {
 "key": "pbtn",
-"name": "🚸 보행자작동신호기",
+"name": "🚸 보행자작동신호기(서초)",
 "group": "도로·교통",
 "default": false,
 "file": "*-seocho.json / pubdata(OSM·서울시)",

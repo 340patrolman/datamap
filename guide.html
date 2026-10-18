@@ -46,7 +46,7 @@
 <header>
   <div class="hd"><h1>📖 데이터 압축지도 사용설명서</h1><a href="./">← 지도로</a></div>
   <div class="sr"><input id="q" type="search" placeholder="찾기 — 예: 신호, 사고, 관할, 반려동물, 침수, 매출" autocomplete="off"></div>
-  <nav><a href="#how">🚀 쓰는 법</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
+  <nav><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
 </header>
 <main id="main"><p class="empty">설명서를 읽는 중…</p></main>
 <script>
@@ -63,6 +63,11 @@
     var w = (q.value || '').trim().toLowerCase(), h = '';
     var nH = G.n.help, nL = G.n.layers;
     h += '<section id="top"><div class="kpi"><span><b>' + G.tasks.length + '</b><small>할 수 있는 일</small></span><span><b>' + nL + '</b><small>레이어(켜고 끄는 층)</small></span><span><b>' + G.files.length + '</b><small>자료 파일</small></span><span><b>' + G.tools.length + '</b><small>도구</small></span></div><p class="lead">지도 판 ' + esc(G.ver) + ' · 설명서 ' + esc(G.made) + ' · 이 설명서는 지도 코드와 자료 목록에서 저절로 뽑아 만든다(지도와 어긋나지 않게).</p></section>';
+    /* 0-0 이 지도만의 특징 · 활용 범위 · 왜 이런 자료까지 (2026-10-18) */
+    if (!w && G.about) { var A = G.about, cd = function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; };
+      h += '<section id="about"><h2>🌟 이 지도는</h2><p class="lead"><b>' + esc(A.lead) + '</b></p><div class="grid">' + A.feat.map(cd).join('') + '</div>'
+        + '<h3 class="grp">누가 쓰나 — 활용 범위</h3><div class="grid">' + A.who.map(cd).join('') + '</div>'
+        + '<h3 class="grp">왜 이런 자료까지 넣었나</h3><div class="grid">' + A.why.map(cd).join('') + '</div></section>'; }
     /* 0 쓰는 법 · 알아낼 수 있는 것 (2026-10-18) */
     if (!w && G.howto) h += '<section id="how"><h2>🚀 쓰는 법</h2><p class="lead">처음이면 이 차례대로.</p><div class="grid">' + G.howto.map(function (t) { return '<div class="card"><h3><span class="ic">' + esc(t[0]) + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div></section>';
     if (G.infer) { var I = G.infer.filter(function (t) { return hit(t.join(' '), w); }); if (I.length) h += '<section id="infer"><h2>🔎 이 지도로 알아낼 수 있는 것</h2><p class="lead">자료를 겹쳐 보면 숫자 하나로는 안 보이는 것을 어림할 수 있다 — 근거는 카드에 함께 나오고, 판단은 사람이 한다.</p><div class="grid">' + I.map(function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div></section>'; }

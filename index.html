@@ -942,13 +942,13 @@
   @media (max-width: 365px) { #m2dGuideB .sm { display: none; } #m2dGuideB { width: 36px; padding: 0; } }
   @media (max-width: 340px) { #m2dFold .lg { display: none; } }
   #m2dGuideB { position: relative; } #m2dGuideB .newdot { position: absolute; top: -5px; right: -4px; margin: 0; padding: 0 4px; font-size: 10px; line-height: 15px; }
-  body.top1 #m2dTop { display: flex; flex-wrap: wrap; align-items: center; column-gap: clamp(4px, .6vw, 12px); }
+  body.top1 #m2dTop { display: flex; flex-wrap: wrap; align-items: center; column-gap: clamp(3px, .5vw, 12px); }
   body.top1 #m2dTop > * { flex: 1 1 100%; }
-  body.top1 #m2dTop > .row1 { flex: 0 0 auto; gap: clamp(3px, .35vw, 6px); }
+  body.top1 #m2dTop > .row1 { flex: 0 0 auto; gap: clamp(2px, .3vw, 6px); }
   body.top1 #m2dTop > .row1 .sp { flex: 0 0 2px; }
-  body.top1 #m2dTop > #m2dChips { flex: 1 1 0; min-width: 0; margin-top: 0 !important; gap: clamp(3px, .35vw, 6px); }
-  body.top1 #m2dChips > button, body.top1 #m2dQC button { padding: 0 clamp(7px, .62vw, 12px); }
-  body.top1 #m2dRegB, body.top1 #m2dGuideB { padding: 0 clamp(8px, .65vw, 13px); }
+  body.top1 #m2dTop > #m2dChips { flex: 1 1 0; min-width: 0; margin-top: 0 !important; gap: clamp(2px, .3vw, 6px); }
+  body.top1 #m2dChips > button, body.top1 #m2dQC button { padding: 0 clamp(6px, .55vw, 12px); }
+  body.top1 #m2dRegB, body.top1 #m2dGuideB { padding: 0 clamp(7px, .55vw, 13px); }
   @media (min-width: 900px) { body:not(.top1) #m2dChips { flex-wrap: wrap; overflow: visible; row-gap: 6px; } body:not(.top1) #m2dQC { display: contents; } }
   /* v2.246.0 날짜·시각 한 단추 — 오늘·지금이 아니면 붉게(시뮬레이션 중) · 날짜 고르기는 펼친 시각 막대 맨 앞 */
   #m2dTime #m2dDateB { height: 34px; border-radius: 17px; background: var(--panel); white-space: nowrap; }
@@ -966,7 +966,7 @@
     <span class="sp"></span>
     <button id="m2dDN" aria-label="화면 밝기">🌓</button>
     <button id="m2dFold" aria-expanded="false" aria-controls="m2dPanel" aria-label="레이어 고르기">🗂<span class="lg"> 레이어</span> <b id="m2dLayN">0</b></button>
-    <button id="m2dGuideB" data-pguide="1" aria-label="이용방법 안내 — 무엇을 알 수 있고 할 수 있나">📖<span class="lg"> 이용방법 안내</span><span class="sm"> 안내</span></button>
+    <button id="m2dGuideB" data-pguide="1" aria-label="이용방법 안내 — 무엇을 알 수 있고 할 수 있나">📖<span class="lg"> 이용방법</span><span class="sm"> 안내</span></button>
   </div>
   <div id="m2dChips" role="toolbar" aria-label="날짜 · 시각 · 빠른 묶음">
     <button id="m2dTimeB" aria-expanded="false" aria-controls="m2dTime" aria-label="날짜·시각 고르기">📅 오늘 · 지금</button>
@@ -1060,7 +1060,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=4"></script>
-<script src="js/map2d.js?v=2.246.0"></script>
+<script src="js/map2d.js?v=2.246.1"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

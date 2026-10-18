@@ -34,25 +34,25 @@ def main():
                 for lk, _ in r[4]: KEEP.add(str(lk))
     for x in json.load(open(os.path.join(ROOT, 'data', 'nav-seocho.json'), encoding='utf-8'))['links']:
         if x[5] <= 4: KEEP.add(str(x[0]))
-    C = collections.defaultdict(list); days = collections.defaultdict(set); n = 0; t0 = t1 = None
+    C = collections.defaultdict(list); DD = collections.defaultdict(set); days = collections.defaultdict(set); n = 0; t0 = t1 = None
     for x in lines():
         d = datetime.datetime.fromtimestamp(x['at']); wd = d.weekday(); cl = 3 if d.date().isoformat() in HOL else 0 if wd <= 3 else 1 if wd == 4 else 2 if wd == 5 else 3; days[cl].add(d.date().isoformat()); n += 1
         t0 = x['at'] if t0 is None else min(t0, x['at']); t1 = x['at'] if t1 is None else max(t1, x['at'])
         for k, v in x['m'].items():
-            if k in KEEP: C[(k, cl, d.hour)].append(v)
+            if k in KEEP: C[(k, cl, d.hour)].append(v); DD[(k, cl, d.hour)].add(d.date().isoformat())
     if not n: print('쌓인 것이 없다'); return 1
-    out = collections.defaultdict(dict); cells = 0
+    out = collections.defaultdict(dict); cells = 0; prov = 0; NEED = 3   # (2026-10-18 소유자) 요일 갈래마다 3날(3주) 미만으로 본 칸은 「잠정」
     for (k, cl, h), v in C.items():
         if len(v) < 3: continue
-        v.sort(); out[k]['%d-%d' % (cl, h)] = [round(statistics.median(v)), v[len(v) // 4], len(v)]; cells += 1
+        nd = len(DD[(k, cl, h)]); v.sort(); out[k]['%d-%d' % (cl, h)] = [round(statistics.median(v)), v[len(v) // 4], len(v), nd, 1 if nd < NEED else 0]; cells += 1; prov += nd < NEED
     f = lambda t: datetime.datetime.fromtimestamp(t).strftime('%Y-%m-%d %H:%M')
-    doc = {'schema': 'tg-spd-normal/1', 'made': datetime.date.today().isoformat(), 'from': f(t0), 'to': f(t1), 'snaps': n, 'days': {str(k): len(v) for k, v in sorted(days.items())},
+    doc = {'schema': 'tg-spd-normal/1', 'made': datetime.date.today().isoformat(), 'from': f(t0), 'to': f(t1), 'snaps': n, 'days': {str(k): len(v) for k, v in sorted(days.items())}, 'need_days': NEED, 'provisional': {str(k): len(v) < NEED for k, v in sorted(days.items())},
            'source': '국가교통정보센터(ITS) 실시간 소통정보 trafficInfo 를 약 10분마다 받아 쌓은 것(tools/signal/livespd-bake.py → 저장소 밖 livespd/) — 서초구 + 2km 의 신호 접근로와 큰길(등급 1~4)',
-           'note': ['**쌓인 날 수(days)가 적으면 「평소」라고 부를 수 없다** — 요일 갈래마다 몇 날을 봤는지 꼭 같이 본다(한두 날이면 그날의 사정일 뿐이다)',
+           'note': ['**본 날 수가 요일 갈래마다 3날(3주) 미만인 칸은 「잠정」**(칸 다섯째 값 1 · provisional) — 지도·가르고는 「잠정」이라고 같이 보여야 한다', '**쌓인 날 수(days)가 적으면 「평소」라고 부를 수 없다** — 요일 갈래마다 몇 날을 봤는지 꼭 같이 본다(한두 날이면 그날의 사정일 뿐이다)',
                     '통행속도 = 그 링크를 지난 차들의 평균 속도(km/h). 가운데값 = 보통 때 · 아래 사분위 = 막히는 쪽 · 한 칸에 세 번 미만 본 것은 싣지 않았다',
                     '공휴일은 일요일 갈래(3)에 넣었다(data/holidays.json — 신호 계획의 「일·공휴일」과 같게) · 행사 · 비·눈 온 날은 가르지 않았다 · 값이 안 오는 링크(지난 차가 없음)는 그 칸이 비어 있다',
                     '쓰임: 지금 속도가 평소보다 얼마나 느린가(이상 알아채기) · 길 안내의 시간대별 걸리는 시간 · 사건·공사 앞뒤 견주기'],
-           'fields': 'links{ITS 링크 ID: {「요일 갈래-시」: [가운데값 km/h, 아래 사분위 km/h, 본 횟수]}} — 요일 갈래 0 월~목 · 1 금 · 2 토 · 3 일·공휴일', 'links': dict(sorted(out.items()))}
+           'fields': 'links{ITS 링크 ID: {「요일 갈래-시」: [가운데값 km/h, 아래 사분위 km/h, 본 횟수, 본 날 수, 잠정 1|0(본 날 수 < need_days)]}} — 요일 갈래 0 월~목 · 1 금 · 2 토 · 3 일·공휴일 · days = 갈래마다 쌓인 날 수 · provisional = 갈래 전체가 아직 잠정인가(앞 세 칸은 첫 판과 같은 뜻 — 덧붙이기만)', 'links': dict(sorted(out.items()))}
     p = os.path.join(ROOT, 'data', 'spd-normal-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
-    print('받은 판', n, '·', doc['from'], '~', doc['to'], '· 요일 갈래마다 날 수', doc['days'], '· 링크', len(out), '· 칸', cells, '· 바이트', os.path.getsize(p)); return 0
+    print('잠정 칸', prov, '/', cells); print('받은 판', n, '·', doc['from'], '~', doc['to'], '· 요일 갈래마다 날 수', doc['days'], '· 링크', len(out), '· 칸', cells, '· 바이트', os.path.getsize(p)); return 0
 if __name__ == '__main__': sys.exit(backfill() if sys.argv[1:2] == ['backfill'] else main())

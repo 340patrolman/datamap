@@ -102,7 +102,7 @@ def last_commit(path):
 # v2.99.0 날짜가 정해진 일 — 기한 DUE_SOON 일 앞부터 알린다 [날짜, 누가(형님/코워크/Claude), 할 일]
 DATES = [
     ['2026-10-18', 'Claude', '평소 속도 서초 첫 판 — `py -3.12 -X utf8 tools/signal/spdnormal-bake.py`(07_API키/out/livespd 이레치 · 10-15 시험판은 평일 4일·일 1일이라 안 올림 · 금·토 갈래 날 수 확인 뒤) → data/spd-normal-seocho.json → ai-guide-bake → 커밋 · 게임 세션에 꼴(tg-spd-normal/1) 알림 · 카카오 결과는 보정에 쓰지 않는다(RULE-NAV-4)'],
-    ['2026-10-21', 'Claude', '평소 속도 여섯 구 — live-spd-six 기록 이레치(10-14 부터) · spdnormal-bake 에 여섯 구 판을 더해 굽기 · eta-cal(게임 세션 · etacal-its)과 같은 원자료'],
+    ['2026-10-21', 'Claude', '평소 속도 여섯 구 — `py -3.12 -X utf8 tools/signal/spdnormal-bake.py six` → data/spd-normal-six/<구>.json + index.json(구마다 쪼갬 · 게임 세션과 정한 꼴 · 10-18 시험 16구 끝) → ai-guide-bake → 커밋 · 게임 세션에 알림(가르고가 경로 상자와 겹치는 구만 받음) · 서초 한 장도 같이 다시 굽기'],
     ['2026-11-12', 'Claude', '수능(2026-11-19) 시험장 — 서울시교육청·경기도교육청·인천시교육청이 시험지구·시험장 학교를 공고하면(보통 시험 1~2주 전) 출처 붙여 굽기 · 당일 교통 통제·수험생 수송 자리 · 10-14 에는 아직 공고 전이라 못 찾음(more-sources csat)'],
     ['2027-04-04', '코워크→형님', '브이월드 개발키 만료(2027-04-04) — 3월 초까지 운영키 전환 신청 · 바뀌면 각 기기 🔑 와 맛보기 중계 VW_KEY 다시 넣기'],
     ['2027-01-31', 'Claude', '해마다 1월 — data/biz-rates.json(최저임금·4대보험·카드 수수료·기준금리) · 세금 계산 요율(tax-rules.json) 새 해 고시 확인'],

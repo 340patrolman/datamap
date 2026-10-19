@@ -107,7 +107,7 @@
   body.guiding #gTop .tx .cd { margin: 3px 0 2px; height: 5px; } body.guiding #gTop .tx small.ic, body.guiding #gTop .tx small.em { margin-top: 3px; padding: 2px 7px; }
   body.guiding #gSig.cp { padding: 5px 10px; cursor: pointer; } body.guiding #gSig.cp:not(.open) .ln:not(.eco), body.guiding #gSig.cp:not(.open) .src { display: none; } body.guiding #gSig .ln.eco { font-size: calc(12.5px * var(--fz, 1)); margin-top: 1px; }   /* v0.31.0 통과 가능 속도 줄은 늘 보임 · 나머지는 누르면 */
   body.guiding #gSig.cp .ar { font-size: calc(26px * var(--fz, 1)); }
-  /* v0.24.0 모드 색 — 긴급 출동 빨간 테 · 중요업무 보라 테 */
+  /* v0.24.0 모드 색 — 긴급 출동 빨간 테 · 업무 보라 테 */
   body.mode-e #gTop { box-shadow: 0 0 0 3px #ef4444, 0 10px 28px rgba(9,15,30,.45); } body.mode-e #gBot { box-shadow: 0 -3px 0 #ef4444, 0 -8px 28px rgba(15,23,42,.16); }
   body.mode-v #gTop { box-shadow: 0 0 0 3px #a855f7, 0 10px 28px rgba(9,15,30,.45); } body.mode-v #gBot { box-shadow: 0 -3px 0 #a855f7, 0 -8px 28px rgba(15,23,42,.16); }
   /* v0.24.1 키 작은 폰 — 위 판 줄이기(신호 남은 초 숫자는 그대로) */
@@ -199,7 +199,7 @@
   body.guiding #gBot { border-radius: 20px 20px 0 0; }
   #gSpd .cur { background: #18233a; color: #fff; } #gSpd .cur span { color: #a9b6d0; }
   #gBot .mode button.on { background: #18233a; color: #fff; border-color: #18233a; } :root.dark #gBot .mode button.on { background: #2f6bff; border-color: #2f6bff; }
-  /* 🔒 중요업무 */
+  /* 🔒 업무 */
   #gFind #gVip { width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(15,23,42,.08); font-size: calc(17px * var(--fz, 1)); flex: 0 0 auto; } #gFind #gVip.on { background: #18233a; color: #fff; box-shadow: 0 0 0 3px #facc15; }
   body.vip #gFind { box-shadow: 0 0 0 3px #facc15, var(--sh); }
   #gBot .vip { border: 2px solid #18233a; border-radius: 14px; padding: 10px 12px; margin: 8px 0 6px; } :root.dark #gBot .vip { border-color: #facc15; }
@@ -234,7 +234,7 @@
 </head>
 <body>
 <canvas id="gMap"></canvas>
-<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="어디로? 주소·이름을 적거나 🎤 말한다" aria-label="목적지 찾기"><button id="gMic" aria-label="음성으로 목적지">🎤</button><button id="gVip" aria-label="중요업무 — 기기 안에서만" hidden>🔒</button></div>
+<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="어디로? 주소·이름을 적거나 🎤 말한다" aria-label="목적지 찾기"><button id="gMic" aria-label="음성으로 목적지">🎤</button><button id="gVip" aria-label="업무 — 기기 안에서만" hidden>🔒</button></div>
 <div id="gOv"><button data-ov="s" class="on">🚦 신호</button><button data-ov="t" class="on">🚗 소통</button></div>
 <div id="gList"></div>
 <div id="gTop" aria-live="polite"></div>
@@ -270,9 +270,9 @@
         try { localStorage.setItem('tg_map2d_gate', '1'); } catch (e2) {} document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); }); });
   })();
 </script>
-<script src="../js/travel-time.js?v=4"></script>
+<script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.36.1"></script>
+<script src="gargo.js?v=0.36.2"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

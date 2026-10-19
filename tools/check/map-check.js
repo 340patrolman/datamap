@@ -10,7 +10,8 @@
     if (m && m.view) { clearInterval(poll); setTimeout(function () { try { run(m); } catch (e) { ck('검사 스크립트가 끝까지 돌았다', false, e && e.message); send(); } }, 7000); }
     else if (Date.now() - t0 > 40000) { clearInterval(poll); ck('지도가 열린다(문법)', false, (window.__ERR || []).join(' | ') || 'TGMap2D 없음'); send(); }
   }, 300);
-  function run(m) { try { m.rentN && m.rentN(); } catch (e0) {}
+  function run(m) {
+ try { m.rentN && m.rentN(); } catch (e0) {}
     ck('지도가 열린다(문법)', true);
     var cv = document.querySelector('canvas'); ck('캔버스에 크기가 있다', !!cv && cv.width > 100 && cv.height > 100, cv ? cv.width + '×' + cv.height : '없음');
     var v = m.view; ck('보는 자리 값이 숫자다', v && isFinite(v.s) && v.s > 0, v ? JSON.stringify(v).slice(0, 120) : '');
@@ -44,7 +45,7 @@
     try { m.petGet(); m.uticGet(); m.sbhGet(); m.sigUGet(); m.pbzGet(); m.pbzSd('11'); } catch (e) {} try { m.econLoad && m.econLoad(); m.volsLoad && m.volsLoad(); } catch (e) {}   /* v2.230.0 반려동물 — 아래 길 자료 검사 뒤에 본다 */
     setTimeout(function () { var bx = document.getElementById('m2dOnto'), tx = bx ? String(bx.innerText || '') : '';
       ck('관계 패널이 펼쳐진다 — 교차로 · 사고 해마다 · 주 위반 근거 · 과거 조치 · 비슷한 교차로', /서초역사거리/.test(tx) && /① 사고/.test(tx) && /② 주 위반/.test(tx) && /④ 과거 조치/.test(tx) && /⑤ 비슷한/.test(tx) && /반포대로 축개선/.test(tx), tx.replace(/\s+/g, ' ').slice(0, 120));
-      /* v2.223.0 신고 차량 예측 — 설정 세트 셋이 서로 다른 결과 · 🔒 중요업무 두 줄 · 밖으로 나가는 요청 0 · 남기는 것 없음 */
+      /* v2.223.0 신고 차량 예측 — 설정 세트 셋이 서로 다른 결과 · 🔒 업무 두 줄 · 밖으로 나가는 요청 0 · 남기는 것 없음 */
       var P0 = m.prd(), V0 = m.vip(), ls0 = Object.keys(localStorage).sort().join(','), h0 = location.hash; window.__NET = []; var of = window.fetch, ox = XMLHttpRequest.prototype.open, oo = window.open;
       m.navGet().then(function () { try {
         P0.p = m.LL(127.0076, 37.4935); P0.hd = 'nt'; P0.base = Date.now(); P0.ago = 0; P0.wait = 0;
@@ -53,18 +54,18 @@
         window.fetch = function (u) { __NET.push(String(u && u.url || u)); return of.apply(this, arguments); }; XMLHttpRequest.prototype.open = function (mm, u) { __NET.push(String(u)); return ox.apply(this, arguments); }; window.open = function (u) { __NET.push('open ' + u); return null; };
         P0.set = 'v'; V0.cp = [m.LL(127.0076, 37.4919), m.LL(127.0142, 37.4934), m.LL(127.0341, 37.4844)]; V0.base = 0; V0.fast = null; m.vipRun(); m.prdShow(); var R3 = V0.res && V0.res.V, card = String((document.getElementById('m2dCard') || {}).innerText || '');
         ck('신고 차량 예측 — 일반·도주 결과가 다르다(도주 = 신호 무시 · 평균 ×' + TT.cfg().runK + ' → 2분 안에 더 많은 길) · 일반은 적색에 서는 교차로를 낸다', r1 && r2 && r2.n2 > r1.n2 && r2.stops === 0, JSON.stringify([r1, r2]));
-        ck('🔒 중요업무 — 서초역 → 교대역 → 양재역 지점 둘 · 기본 60 · 직접 입력 없으면 가장 이른 = 100 · 가장 이른 쪽이 빠르다', R3 && !R3.err && R3.base.cps.filter(function (c) { return /^(출발|지점|경유|도착)/.test(c.nm); }).length === 2 && R3.base.v === 60 && R3.fastV === 100 && !R3.typed && R3.fast.sec < R3.base.sec && R3.base.parts.sig === 0, R3 ? TT.fmt(R3.base.sec) + ' / ' + TT.fmt(R3.fast.sec) + ' · ' + (V0.res.m / 1000).toFixed(1) + 'km' : (V0.res && V0.res.err) || '없음');
-        ck('🔒 중요업무 카드 — 두 줄 · 「교차로 통제 개시는 가장 이른 도착 시각 기준」 · 지점별 표 · 「중요업무」 말만', /예상 도착/.test(card) && /가장 이른 도착/.test(card) && /교차로 통제 개시는/.test(card) && /도착 · /.test(card) && !/행차|경호|VIP/.test(card), card.replace(/\s+/g, ' ').slice(0, 90));
-        var cd = document.getElementById('m2dCard'); ck('🔒 중요업무 카드에는 「의견·PC로 보내기」가 없다', !cd.querySelector('[data-pc],[data-fb]'), cd.querySelectorAll('[data-pc],[data-fb]').length + '개');
+        ck('🔒 업무 — 서초역 → 교대역 → 양재역 지점 둘 · 기본 60 · 직접 입력 없으면 가장 이른 = 100 · 가장 이른 쪽이 빠르다', R3 && !R3.err && R3.base.cps.filter(function (c) { return /^(출발|지점|경유|도착)/.test(c.nm); }).length === 2 && R3.base.v === 60 && R3.fastV === 100 && !R3.typed && R3.fast.sec < R3.base.sec && R3.base.parts.sig === 0, R3 ? TT.fmt(R3.base.sec) + ' / ' + TT.fmt(R3.fast.sec) + ' · ' + (V0.res.m / 1000).toFixed(1) + 'km' : (V0.res && V0.res.err) || '없음');
+        ck('🔒 업무 카드 — 두 줄 · 「교차로 통제 개시는 가장 이른 도착 시각 기준」 · 지점별 표 · 「업무」 말만', /예상 도착/.test(card) && /가장 이른 도착/.test(card) && /교차로 통제 개시는/.test(card) && /도착 · /.test(card) && !/행차|경호|VIP/.test(card), card.replace(/\s+/g, ' ').slice(0, 90));
+        var cd = document.getElementById('m2dCard'); ck('🔒 업무 카드에는 「의견·PC로 보내기」가 없다', !cd.querySelector('[data-pc],[data-fb]'), cd.querySelectorAll('[data-pc],[data-fb]').length + '개');
         var ix3 = R3 ? R3.base.cps.filter(function (c) { return /^🚦 /.test(c.nm); }) : [], inc = R3 && R3.base.cps.every(function (c, i, A) { return !i || c.t > A[i - 1].t; });
         ck('🔒 교차로마다 도착 — 신호 교차로 줄이 3곳 넘게 · 시각이 차례로 늘어난다 · 카드에 「정속 가정」', ix3.length >= 3 && inc && /정속 가정/.test(String((document.getElementById('m2dCard') || {}).innerText || '')), ix3.slice(0, 3).map(function (c) { return c.nm + ' +' + TT.mmss(c.t); }).join(' · '));
         /* v2.226.0 관내 밖 고속도로 기준점 — 판교IC → 한남대교남단(이름으로 고름) = 경부고속도로로 양재IC → 서초IC → 반포IC 차례 · 강남대로로 빠지지 않는다 */
         var cpS = V0.cp; V0.cp = []; ['판교IC', '한남대교남단'].forEach(function (q) { var f = m.vipFind(q); if (f) { var p9 = [f.p[0], f.p[1]]; p9.wide = 1; p9.nm = f.nm; V0.cp.push(p9); } }); V0.base = 90; m.vipRun();
         var RG = V0.res && V0.res.V, gN = RG ? RG.base.cps.map(function (c) { return c.nm; }) : [], gi = ['🛣 양재IC', '🛣 서초IC', '🛣 반포IC'].map(function (n) { return gN.indexOf(n); });
-        ck('🔒 중요업무 관내 밖 — 판교IC → 한남대교남단 · 경부 양재IC → 서초IC → 반포IC 차례 · 강남역 안 지남 · 이름 「도착 · 한남대교」', V0.cp.length === 2 && gi.every(function (x) { return x >= 0; }) && gi[0] < gi[1] && gi[1] < gi[2] && !gN.some(function (n) { return /강남역/.test(n); }) && /^도착 · 한남대교/.test(gN[gN.length - 1]), gN.filter(function (n) { return /^🛣|^도착/.test(n); }).map(function (n, i) { var c = RG.base.cps[gN.indexOf(n)]; return n + ' +' + TT.mmss(c.t); }).join(' · '));
+        ck('🔒 업무 관내 밖 — 판교IC → 한남대교남단 · 경부 양재IC → 서초IC → 반포IC 차례 · 강남역 안 지남 · 이름 「도착 · 한남대교」', V0.cp.length === 2 && gi.every(function (x) { return x >= 0; }) && gi[0] < gi[1] && gi[1] < gi[2] && !gN.some(function (n) { return /강남역/.test(n); }) && /^도착 · 한남대교/.test(gN[gN.length - 1]), gN.filter(function (n) { return /^🛣|^도착/.test(n); }).map(function (n, i) { var c = RG.base.cps[gN.indexOf(n)]; return n + ' +' + TT.mmss(c.t); }).join(' · '));
         V0.cp = []; ['여의하류IC', '청담대교남단'].forEach(function (q) { var f = m.vipFind(q); if (f) { var p9 = [f.p[0], f.p[1]]; p9.wide = 1; V0.cp.push(p9); } }); V0.base = 80; m.vipRun();   /* 이름 찾기는 앞 지점에서 가까운 것 — 하나씩 차례로 넣는다 */
         var RO = V0.res && V0.res.V, oN = RO ? RO.base.cps.map(function (c) { return c.nm; }) : [], oi = ['🛣 여의상류IC', '🌉 한강대교', '🌉 동작대교', '🌉 한남대교', '🌉 성수대교', '🌉 영동대교'].map(function (n) { return oN.indexOf(n); });
-        ck('🔒 중요업무 올림픽대로 — 여의하류IC → 청담대교남단 · 여의상류IC·한강대교·동작대교·한남대교·성수대교·영동대교 차례(다리 밑을 지나는 자리)', oi.every(function (x, i) { return x >= 0 && (!i || x > oi[i - 1]); }), oi.join(',') + ' · ' + oN.filter(function (n) { return /^🌉/.test(n); }).join(' '));
+        ck('🔒 업무 올림픽대로 — 여의하류IC → 청담대교남단 · 여의상류IC·한강대교·동작대교·한남대교·성수대교·영동대교 차례(다리 밑을 지나는 자리)', oi.every(function (x, i) { return x >= 0 && (!i || x > oi[i - 1]); }), oi.join(',') + ' · ' + oN.filter(function (n) { return /^🌉/.test(n); }).join(' '));
         V0.cp = cpS; V0.base = 0; m.vipRun();
         var wk = new Date(2026, 9, 14, 17, 30).getTime(), fk = TT.calF(wk), whyk = TT.calWhy(wk); var cf0 = localStorage.getItem('tg_tt_cfg'); TT.set('calOn', 0); var fk0 = TT.calF(wk); if (cf0 == null) localStorage.removeItem('tg_tt_cfg'); else localStorage.setItem('tg_tt_cfg', cf0);   /* 시험 전 그대로 — 「남은 것 없음」 검사 */
         ck('⏱ 막힘 배율(ITS 실측) — 표를 읽음 · 평일 17:30 퇴근 칸 ×1~2.5 · 끄면 ×1 · 신고 예측이 쓰는 값 = TT.calF(지금)', fk > 1 && fk <= 2.5 && /평일 퇴근/.test(whyk) && fk0 === 1 && Math.abs(m.prdF() - TT.calF(Date.now())) < 1e-9, whyk + ' · 끔 ' + fk0 + ' · 지금 ' + m.prdF());
@@ -79,10 +80,10 @@
         V0.fast = 80; m.vipRun(); var R4 = V0.res.V; V0.fast = 130; m.vipRun(); var R5 = V0.res.V;
         ck('🔒 직접 입력 80 이면 가장 이른 = 80 · 130 은 받지 않는다(범위 30~120)', R4.fastV === 80 && R4.typed && !!R5.err, [R4.fastV, R5.err].join(' / '));
         var NET = __NET.slice(); window.fetch = of; XMLHttpRequest.prototype.open = ox; window.open = oo;
-        var blocked = null; window.fetch('https://api.vworld.kr/req/x').then(function () { blocked = false; }, function (e) { blocked = /중요업무/.test(String(e && e.message)); });
-        ck('🔒 중요업무 중 밖으로 나간 요청 0 · 이 기기에 남은 것 없음 · 주소창 그대로', NET.length === 0 && Object.keys(localStorage).sort().join(',') === ls0 && location.hash === h0, NET.slice(0, 3).join(' | ') || ('요청 0 · 저장 열쇠 그대로'));
-        var x9 = document.getElementById('m2dX'); if (x9) x9.click(); ck('🔒 카드를 닫으면 중요업무 지점·시각이 지워진다', V0.cp.length === 0 && !V0.res && P0.set === 'n', V0.cp.length + ' · ' + P0.set);
-        setTimeout(function () { ck('🔒 중요업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
+        var blocked = null; window.fetch('https://api.vworld.kr/req/x').then(function () { blocked = false; }, function (e) { blocked = /업무/.test(String(e && e.message)); });
+        ck('🔒 업무 중 밖으로 나간 요청 0 · 이 기기에 남은 것 없음 · 주소창 그대로', NET.length === 0 && Object.keys(localStorage).sort().join(',') === ls0 && location.hash === h0, NET.slice(0, 3).join(' | ') || ('요청 0 · 저장 열쇠 그대로'));
+        var x9 = document.getElementById('m2dX'); if (x9) x9.click(); ck('🔒 카드를 닫으면 업무 지점·시각이 지워진다', V0.cp.length === 0 && !V0.res && P0.set === 'n', V0.cp.length + ' · ' + P0.set);
+        setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
       try { var rn = TGMap2D.rentN(), rc = TGMap2D.rentCardHtml('남포동') || ''; ck('💰 상가 임대료 전국(R-ONE) — 표본 상권 300곳 넘고 부산 남포동 카드에 소득수익률 (v2.248.0)', rn > 300 && /소득수익률/.test(rc) && /천원/.test(rc), '상권 ' + rn + ' · 카드 ' + rc.length + '자'); } catch (e) { ck('상가 임대료 전국 검사', false, e.message); }
@@ -94,7 +95,7 @@
       try { m.volsLoad(); var dvC = document.createElement('div'); dvC.innerHTML = m.volsCardHtml(0) || ''; var tvC = dvC.innerText || '';
         if (tvC) ck('🚙 통행량 방향 — 카드에 「도심 쪽 · 바깥 쪽」 하루 대수 · 출퇴근 흐름(아침·저녁 많은 쪽) · 화살표는 도심을 가리킨 것이라는 설명 · 날짜 갈래 wd/sa/su (v2.241.0)', /도심 쪽/.test(tvC) && /바깥 쪽/.test(tvC) && /출퇴근 흐름/.test(tvC) && /길의 실제 방향이 아니다/.test(tvC) && /^(wd|sa|su)$/.test(m.volDay()), tvC.replace(/\s+/g, ' ').slice(0, 120)); } catch (e) { ck('통행량 방향 검사', false, e.message); }
       try { m.vipTest('clear'); var A0 = [0, 0], B0 = [1000, 0], C0 = [2000, 0]; m.vipTest('add', A0); m.vipTest('add', C0); m.vipTest('mode', 'via'); var ix = m.vipTest('add', [1000, 80]); var nm1 = m.vipTest('name').join(','), last1 = m.vipTest('cp')[2] === C0, md1 = m.vipTest('pick'); m.vipTest('mode', true); m.vipTest('add', [3000, 0]); var nm2 = m.vipTest('name').join(','); m.vipTest('clear');
-        ck('🔒 중요업무 경유지 — 「경유지 넣기」로 누른 자리는 덜 돌아가는 사이에 끼움(도착 그대로) · 경유지 모드는 켜 둔 채(잇달아 넣기) · 「지점 더하기」는 뒤에 붙어 도착이 됨 · 이름 출발/경유/도착 (v2.240.0)', ix === 1 && last1 && md1 === 'via' && nm1 === '출발,경유 1,도착' && nm2 === '출발,경유 1,경유 2,도착', ix + ' · ' + nm1 + ' → ' + nm2); } catch (e) { ck('중요업무 경유지 검사', false, e.message); }
+        ck('🔒 업무 경유지 — 「경유지 넣기」로 누른 자리는 덜 돌아가는 사이에 끼움(도착 그대로) · 경유지 모드는 켜 둔 채(잇달아 넣기) · 「지점 더하기」는 뒤에 붙어 도착이 됨 · 이름 출발/경유/도착 (v2.240.0)', ix === 1 && last1 && md1 === 'via' && nm1 === '출발,경유 1,도착' && nm2 === '출발,경유 1,경유 2,도착', ix + ' · ' + nm1 + ' → ' + nm2); } catch (e) { ck('업무 경유지 검사', false, e.message); }
       try { var nb0 = document.querySelectorAll('.m2d-stamp').length; m.stampAt(100, 100, '#dc2626'); var st1 = document.querySelectorAll('.m2d-stamp').length, sc = [].slice.call(document.styleSheets).some(function (ss) { try { return [].slice.call(ss.cssRules).some(function (r) { return /m2dBreathe/.test(r.cssText) && /prefers-reduced-motion/.test(r.cssText); }); } catch (e2) { return false; } });
         ck('👆 찍히는 느낌 — 지점 표시 「쿵」 요소가 생기고(1.1초 뒤 사라짐) · 숨 쉬는 단추·찍힘 움직임은 「움직임 줄이기」가 아닐 때만 · 되풀이 6번까지(끝없지 않음) (v2.239.0)', st1 === nb0 + 1 && sc, '찍힘 ' + nb0 + '→' + st1 + ' · 움직임 줄이기 규칙 ' + sc); } catch (e) { ck('찍히는 느낌 검사', false, e.message); }
       try { var nS = m.sggN(), iS = -1, iG = -1; for (var k = 0; k < nS; k++) { var gg = m.sggAt(k); if (gg.sido === '서울특별시' && gg.name === '서초구') iS = k; if (gg.sido === '경기도' && gg.name === '성남시') iG = k; }

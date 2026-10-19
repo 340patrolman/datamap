@@ -18,7 +18,7 @@ JS = r'''(function(){ localStorage.removeItem('tg_tt_cfg'); localStorage.removeI
   var on=T.run(S,{v:60,cal:false}), off=T.run(S,{v:60,sig:false,cal:false});
   R.on=on.sec; R.off=off.sec; R.cps=off.cps.map(function(c){return [c.nm,Math.round(c.t*10)/10]});
   R.need=Math.round(T.need(10000,600+2*C.accS)*10)/10;
-  /* 중요업무 두 줄 — 직접 입력 없음(100 기준) · 80 입력 · 범위 밖 130 · 29 */
+  /* 업무 두 줄 — 직접 입력 없음(100 기준) · 80 입력 · 범위 밖 130 · 29 */
   var a=T.vipTwo(seg,{}), b=T.vipTwo(seg,{fast:80}), c=T.vipTwo(seg,{fast:130}), d=T.vipTwo(seg,{fast:29});
   R.vip=[a.base.v, a.fast.v, a.fastV, a.typed, b.fastV, b.typed, !!c.err, !!d.err, Math.round(a.base.sec), Math.round(a.fast.sec)];
   /* 설정 — 범위 밖 거부 · 저장 · 항목 되돌리기 · 전체 되돌리기 */
@@ -40,7 +40,7 @@ finally:
     except OSError: pass
 for v, want in ((60, '10분 00초'), (70, '8분 34초'), (90, '6분 40초'), (100, '6분 00초')):
     ck('기준값 10km / %dkm/h = %s' % (v, want), R['v%d' % v] == want, R['v%d' % v])
-D = R['def']; ck('기본값 — 전방 2,000m · 후방 1,000m · 남은 초 2배 · 중요업무 60 · 가장 이른 100 · 허용 30~120', (D['fwd'], D['back'], D['sz'], D['vipV'], D['vipFast'], D['vMin'], D['vMax']) == (2000, 1000, 2, 60, 100, 30, 120), D)
+D = R['def']; ck('기본값 — 전방 2,000m · 후방 1,000m · 남은 초 2배 · 업무 60 · 가장 이른 100 · 허용 30~120', (D['fwd'], D['back'], D['sz'], D['vipV'], D['vipFast'], D['vMin'], D['vMax']) == (2000, 1000, 2, 60, 100, 30, 120), D)
 acc, turn, ramp, tk = D['accS'], D['turnS'], D['rampS'], D['tunK']
 mv = 3000 / (60 / 3.6) + 1000 / (60 * tk / 3.6) + 2000 / (60 / 3.6)
 want_off = mv + 2 * turn + ramp + 2 * acc; want_on = want_off + 40 + acc
@@ -48,8 +48,8 @@ ck('신호 무시 = 신호 기다림(과 신호 가감속)만 0 · 회전·진�
 cp1 = acc + 3000 / (60 / 3.6) + turn
 ck('체크포인트별 통과 예정(출발 기준 초)', abs(R['cps'][0][1] - cp1) < 0.1 and R['cps'][1][0] == '나' and abs(R['cps'][1][1] - (want_off - acc)) < 0.1, R['cps'])
 ck('역산 — 10km 를 10분(+가감속) 안에 = 평균 60km/h', R['need'] == 60.0, R['need'])
-V = R['vip']; ck('중요업무 두 줄 — 입력 없으면 가장 이른 = 100km/h · 80 입력이면 80 · 130·29 는 거부', V[:8] == [60, 100, 100, False, 80, True, True, True], V)
-ck('중요업무 — 10km 예상(60) 10분 08초 · 가장 이른(100) 6분 08초(가감속 포함)', V[8] == 600 + 2 * acc and V[9] == 360 + 2 * acc, V[8:])
+V = R['vip']; ck('업무 두 줄 — 입력 없으면 가장 이른 = 100km/h · 80 입력이면 80 · 130·29 는 거부', V[:8] == [60, 100, 100, False, 80, True, True, True], V)
+ck('업무 — 10km 예상(60) 10분 08초 · 가장 이른(100) 6분 08초(가감속 포함)', V[8] == 600 + 2 * acc and V[9] == 360 + 2 * acc, V[8:])
 S = R['set']; ck('설정 — 범위 밖 거부 · 저장 · 항목 되돌리기 · 전체 되돌리기', S == [True, False, 3000, 2000, True, 2], S)
 L = R['cal']; ck('보정 — 짧은 주행 안 쌓음 · 실측 ÷ 계산 1.1 을 다음 계산에 곱함', L[0] is False and L[1] is True and L[2] == 1.1 and L[3] == round((600 + 2 * acc) * 1.1) and L[4] == 1, L)
 ck('이 기기에 남는 것은 설정·보정 숫자 열쇠 둘뿐', set(R['keys']) <= {'tg_tt_cfg', 'tg_tt_cal'}, R['keys'])

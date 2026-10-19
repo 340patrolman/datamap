@@ -115,14 +115,14 @@
     /* v0.24.0 모드 색 · 음성 빠르기 */
     try { g.mode('e'); g.paint(); var me1 = document.body.classList.contains('mode-e'); g.mode('n'); g.paint(); var me0 = !document.body.classList.contains('mode-e') && !document.body.classList.contains('mode-v');
       ck('🎨 긴급 출동이면 화면에 빨간 테(mode-e) · 일반으로 돌아오면 없음 · ⚙ 음성 빠르기 기본 1.05 · 공휴일 판정 함수', me1 && me0 && g.cfg().vrate === 1.05 && typeof TT.isHol === 'function', [me1, me0, g.cfg().vrate].join(' · ')); } catch (e) { ck('모드 색 검사', false, e.message); }
-    /* v0.14.0 주행 기록 — 기본 끔 · 켜면 안내 중 2초마다 기기에 · 끝나면 최근 목록에 · 중요업무·모의 주행은 안 남김 · 시험 뒤 지움 */
+    /* v0.14.0 주행 기록 — 기본 끔 · 켜면 안내 중 2초마다 기기에 · 끝나면 최근 목록에 · 업무·모의 주행은 안 남김 · 시험 뒤 지움 */
     if (st.route && !g.state().guide) { var dv0 = g.drv(); g.guideStart(); var off0 = g.drv().cur; g.guideStop(false);
       localStorage.setItem('tg_gargo_drvon', '1'); g.guideStart(); var dn = Date.now, tt9 = dn(); Date.now = function () { return tt9 += 2500; };
       try { for (var di = 0; di < 7; di++) g.drvPt({ latitude: 37.4919 + di * 1e-4, longitude: 127.0076, accuracy: 6, speed: 11 }); } finally { Date.now = dn; }
       var cur = g.drv().cur; g.guideStop(false); var all = g.drv().all, L9 = all[all.length - 1];
-      var od9 = g.state().dest, od9c = od9 ? { x: od9.x, y: od9.y, nm: od9.nm } : null; g.guideStart(); g.mode('v'); var vipCur = g.drv().cur; g.drvPt({ latitude: 37.5, longitude: 127.01, accuracy: 5, speed: 10 }); g.guideStop(false); var vipN = g.drv().all.length; g.mode('n'); if (od9c) g.setDest(od9c.x, od9c.y, od9c.nm); g.paint();   /* 기록 중 중요업무로 바뀌면 그 기록을 버린다 · 원래 목적지로 되돌림(81줄과 같은 방식) */
+      var od9 = g.state().dest, od9c = od9 ? { x: od9.x, y: od9.y, nm: od9.nm } : null; g.guideStart(); g.mode('v'); var vipCur = g.drv().cur; g.drvPt({ latitude: 37.5, longitude: 127.01, accuracy: 5, speed: 10 }); g.guideStop(false); var vipN = g.drv().all.length; g.mode('n'); if (od9c) g.setDest(od9c.x, od9c.y, od9c.nm); g.paint();   /* 기록 중 업무로 바뀌면 그 기록을 버린다 · 원래 목적지로 되돌림(81줄과 같은 방식) */
       localStorage.removeItem('tg_gargo_drvon'); localStorage.removeItem('tg_gargo_drives');
-      ck('🛰 주행 기록 — 기본 끔 · 켜면 2초마다 7점 · 끝나면 기기에 1번(tg-drive-log/1 · 예측 줄 = [교차로, +초, 근거, m, 위도, 경도]) · 중요업무는 안 남김 · 시험 뒤 지움', !dv0.on && off0 === null && cur && cur.pts.length === 7 && all.length === 1 && L9.schema === 'tg-drive-log/1' && L9.plan.rows.length === r0.sigs.length && /^(its|liver|cal|lim)$/.test((L9.plan.rows[0] || [])[2] || 'lim') && vipCur === null && vipN === 1 && !localStorage.getItem('tg_gargo_drives'),
+      ck('🛰 주행 기록 — 기본 끔 · 켜면 2초마다 7점 · 끝나면 기기에 1번(tg-drive-log/1 · 예측 줄 = [교차로, +초, 근거, m, 위도, 경도]) · 업무는 안 남김 · 시험 뒤 지움', !dv0.on && off0 === null && cur && cur.pts.length === 7 && all.length === 1 && L9.schema === 'tg-drive-log/1' && L9.plan.rows.length === r0.sigs.length && /^(its|liver|cal|lim)$/.test((L9.plan.rows[0] || [])[2] || 'lim') && vipCur === null && vipN === 1 && !localStorage.getItem('tg_gargo_drives'),
         [dv0.on, off0, cur && cur.pts.length, all.length, L9 && L9.plan.rows.length, (L9 && L9.plan.rows[0] || []).slice(0, 3).join('/'), vipCur, vipN].join(' · ')); }
     /* 1) 소통 갈래 — 앱 기준표 그대로 */
     var sp = [[60, 1, 100, 0], [40, 1, 100, 1], [20, 1, 100, 2], [30, 3, 50, 0], [20, 3, 50, 1], [10, 3, 50, 2], [22, 6, 30, 0], [13, 6, 30, 1], [8, 6, 30, 2]], bad = [];
@@ -173,13 +173,13 @@
     /* v0.10.0 — 길 요약 판을 다시 그려도(위치가 올 때마다) 펼친 칸은 펼친 채 */
     var stp = document.querySelector('#gBot details.steps'); if (stp) { stp.open = true; g.paint(); } var stp2 = document.querySelector('#gBot details.steps'); ck('길 요약 판을 다시 그려도 펼친 「가는 차례」는 펼친 채', !!(stp2 && stp2.open)); if (stp2) stp2.open = false;
     g.risk();   /* ⚠ 이 길 주의 교차로 표(risk-six.json) — 받기만 걸어 두고 아래 4초 뒤에 잰다 */
-    /* v0.11.0 🔒 중요업무 — 밖으로 나가는 요청을 모두 적어 둔다(fetch·XHR·sendBeacon·window.open) · 그 사이 주소 찾기·음성을 시도하고 4초 뒤에 잰다 */
+    /* v0.11.0 🔒 업무 — 밖으로 나가는 요청을 모두 적어 둔다(fetch·XHR·sendBeacon·window.open) · 그 사이 주소 찾기·음성을 시도하고 4초 뒤에 잰다 */
     window.__NET = []; var of = window.fetch, ox = XMLHttpRequest.prototype.open, ob = navigator.sendBeacon, oo = window.open;
     window.fetch = function (u) { __NET.push(String(u && u.url || u)); return of.apply(this, arguments); }; XMLHttpRequest.prototype.open = function (m, u) { __NET.push(String(u)); return ox.apply(this, arguments); };
     if (ob) navigator.sendBeacon = function (u) { __NET.push('beacon ' + u); return false; }; window.open = function (u) { __NET.push('open ' + u); return null; };
     window.__NETX = function () { window.fetch = of; XMLHttpRequest.prototype.open = ox; if (ob) navigator.sendBeacon = ob; window.open = oo; };
     var pl0 = JSON.stringify(g.places()), od = g.state().dest, od0 = od ? { x: od.x, y: od.y, nm: od.nm } : null; g.mode('v'); g.findRun('반포대로 201', true); g.micGo(); var vp = g.P(127.0142, 37.4934); g.setDest(vp[0], vp[1], '시험 중요 지점');
-    ck('🔒 중요업무 — 목적지를 최근 목적지에 남기지 않는다', JSON.stringify(g.places()) === pl0 || !/시험 중요 지점/.test(JSON.stringify(g.places())), '');
+    ck('🔒 업무 — 목적지를 최근 목적지에 남기지 않는다', JSON.stringify(g.places()) === pl0 || !/시험 중요 지점/.test(JSON.stringify(g.places())), '');
     g.mode('n'); if (od0) g.setDest(od0.x, od0.y, od0.nm); g.paint();   /* 아래 시험은 일반 모드·원래 목적지로 */
     /* 잇기 — 길 요약 판의 넘기기 단추 넷(데이터지도·티맵·카카오맵·네이버지도) · 데이터지도는 목적지 좌표로 같은 사이트의 지도를 연다 */
     var hb = document.querySelectorAll('#gBot [data-hand]'); ck('넘기기 단추 넷', hb.length === 4, [].map.call(hb, function (b) { return b.textContent; }).join(' · '));
@@ -209,15 +209,15 @@
         ck('⚠ 칸 글 — 이름·10년 건수·주 위반이 들어가고 근사라고 밝힌다', /⚠ 이 길 주의 교차로 \d+곳/.test(RH) && RL && RH.indexOf(RL[0].q[1]) >= 0 && /근사/.test(RH) && /주 위반/.test(RH), RH.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 90));
         var far = g.findRoute.apply(null, (function () { var a = g.P(127.0076, 37.4919), b = g.P(127.0090, 37.4925); return [a[0], a[1], b[0], b[1], Date.now() / 1000, null]; })()); ck('⚠ 짧은 길은 지나는 교차로만(전체 표를 쏟지 않는다)', !far || g.riskOn(far).length <= 3, far ? g.riskOn(far).length + '곳' : '길 없음');
       } catch (e) { ck('⚠ 이 길 주의 교차로 검사', false, e.message); }
-      /* v0.11.0 🔒 중요업무 · ⚙ 설정 · 글씨 배율 */
+      /* v0.11.0 🔒 업무 · ⚙ 설정 · 글씨 배율 */
       try { var NET = (window.__NET || []).slice(); window.__NETX && window.__NETX(); var bad = NET.filter(function (u) { return /^(open |beacon )/.test(u) || /^https?:/.test(u) && u.indexOf(location.origin) !== 0 || /vworld|relay|workers\.dev|반포대로/.test(decodeURIComponent(u)); });
-        ck('🔒 중요업무 중 밖으로 나간 요청 0(주소 찾기·음성·중계·다른 앱 — 같은 사이트 자료 파일만)', bad.length === 0, bad.slice(0, 3).join(' | ') || NET.length + '건 모두 같은 사이트');
+        ck('🔒 업무 중 밖으로 나간 요청 0(주소 찾기·음성·중계·다른 앱 — 같은 사이트 자료 파일만)', bad.length === 0, bad.slice(0, 3).join(' | ') || NET.length + '건 모두 같은 사이트');
         var rv = g.findRoute.apply(null, (function () { var a = g.P(127.0076, 37.4919), b = g.P(127.0341, 37.4844); return [a[0], a[1], b[0], b[1], Date.now() / 1000, null]; })()); g.vipSet(0, null); var V0 = g.vipNow(rv, 0); g.vipSet(70, 90); var V1 = g.vipNow(rv, 0); g.vipSet(0, null);
         var sm = g.vipSegs(rv).reduce(function (a, x) { return a + x.m; }, 0);
-        ck('🔒 중요업무 두 줄 — 기본 60 · 직접 입력 없으면 가장 이른 = 100 · 70/90 고르면 그 값 · 가장 이른 쪽이 더 빠름', V0 && V0.base.v === 60 && V0.fastV === 100 && !V0.typed && V1.base.v === 70 && V1.fastV === 90 && V1.typed && V0.fast.sec < V0.base.sec, V0 ? TT.fmt(V0.base.sec) + ' / ' + TT.fmt(V0.fast.sec) : '없음');
+        ck('🔒 업무 두 줄 — 기본 60 · 직접 입력 없으면 가장 이른 = 100 · 70/90 고르면 그 값 · 가장 이른 쪽이 더 빠름', V0 && V0.base.v === 60 && V0.fastV === 100 && !V0.typed && V1.base.v === 70 && V1.fastV === 90 && V1.typed && V0.fast.sec < V0.base.sec, V0 ? TT.fmt(V0.base.sec) + ' / ' + TT.fmt(V0.fast.sec) : '없음');
         ck('🔒 구간 합 = 길 거리 · 마지막 지점 = 목적지 · 신호 기다림 0(60km/h 순수 이동 + 회전·진출입·가감속만)', Math.abs(sm - rv.dist) < 3 && V0.base.cps.length >= 2 && Math.abs(V0.base.raw - (sm / (60 / 3.6) + V0.base.parts.turn + V0.base.parts.ramp + V0.base.parts.acc + (V0.base.parts.move - sm / (60 / 3.6)))) < 1 && V0.base.parts.sig === 0, Math.round(sm) + ' / ' + Math.round(rv.dist) + 'm · 지점 ' + (V0 && V0.base.cps.length));
-        var bx = g.vipBox(rv); ck('🔒 요약 판 — 「교차로 통제 개시는 가장 이른 도착 시각 기준」 고정 · 「중요업무」 말만(행차·경호 낱말 없음)', /교차로 통제 개시는/.test(bx) && /가장 이른 도착/.test(bx) && !/행차|경호|VIP/.test(bx + document.body.innerHTML), '');
-        g.mode('v'); g.paint(); var bb = document.getElementById('gBot'); ck('🔒 중요업무 요약 판 — 집·근무지·즐겨찾기·다른 앱으로 넘기기 단추가 없다', !bb.querySelector('[data-pl],[data-hand]'), bb.querySelectorAll('[data-pl],[data-hand]').length + '개');
+        var bx = g.vipBox(rv); ck('🔒 요약 판 — 「교차로 통제 개시는 가장 이른 도착 시각 기준」 고정 · 「업무」 말만(행차·경호 낱말 없음)', /교차로 통제 개시는/.test(bx) && /가장 이른 도착/.test(bx) && !/행차|경호|VIP/.test(bx + document.body.innerHTML), '');
+        g.mode('v'); g.paint(); var bb = document.getElementById('gBot'); ck('🔒 업무 요약 판 — 집·근무지·즐겨찾기·다른 앱으로 넘기기 단추가 없다', !bb.querySelector('[data-pl],[data-hand]'), bb.querySelectorAll('[data-pl],[data-hand]').length + '개');
         g.mode('n');
         var CF0 = g.cfg(), sig = document.getElementById('gSig'); ck('⚙ 기본값 — 앞 2,000m · 뒤 1,000m · 남은 초 2배 · 글씨 1.15', CF0.fwd === 2000 && CF0.back === 1000 && CF0.sz === 2 && CF0.fz === 1.15, JSON.stringify([CF0.fwd, CF0.back, CF0.sz, CF0.fz]));
         sig.insertAdjacentHTML('beforeend', '<div class="now" id="__nw"><i></i><b>녹색 12초</b></div>'); var px = function () { return parseFloat(getComputedStyle(document.querySelector('#__nw b')).fontSize); }, p1 = px();

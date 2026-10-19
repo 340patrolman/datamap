@@ -660,7 +660,7 @@
       : tryLeftMs() < 15000 ? '<small class="lg-n" style="display:block"><b style="color:#b45309">🎟 오늘 맛보기 ' + TRY.min + '분을 다 썼다</b> — 내일 다시 ' + TRY.min + '분 · 실시간을 더 쓰려면 <b>본인 API 키(무료)</b>를 받아 「🔑」에 넣는다(넣은 기기는 제한 없음): data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청 — 받는 곳은 지도 아래 「🔎 없는 자료 찾는 법」에도 있다 · 받아 둔 자료로 그리는 층(신호 이어 세기 · 접근성 등)은 통신이 아니라 그대로 쓴다</small>'
       : '<div class="lg-btns"><button data-ltry="go">🎟 맛보기 켜기(오늘 ' + Math.ceil(tryLeftMs() / 60000) + '분 남음 · 키 없이)</button></div><small class="lg-n">맛보기 = 이 지도 운영자의 키로 잠깐 본다 — <b>기기마다 하루 ' + TRY.min + '분</b>(켜 둔 동안만 센다 · 여러 사람이 나눠 씀) · 더 쓰려면 키를 직접 받아 「🔑」에 넣는다 — 무료(data.go.kr · its.go.kr · vworld.kr 회원가입 뒤 신청) · 넣은 기기는 제한 없음</small>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-ltry]'); if (!b) return; e.preventDefault(); if (b.getAttribute('data-ltry') === 'stop') tryStop(); else tryStart(); });
-  function itsGet(path, q) { if (vipOn()) return Promise.reject(new Error('🔒 중요업무 중'));
+  function itsGet(path, q) { if (vipOn()) return Promise.reject(new Error('🔒 업무 중'));
     if (!LK.its && tryOn() && !TRY.off.its) return tryGet('its', path, q + '&getType=json').then(function (t) { try { return JSON.parse(t); } catch (e) { throw new Error('맛보기 중계: 응답이 JSON 이 아님'); } });
     if (!LK.its) return Promise.reject(new Error('ITS 키 없음'));
     if (itsQuota() >= itsMax()) return Promise.reject(new Error(itsTier() === 'op' ? '이 기기에서 이번 달 ITS 9,500건을 다 썼다' : '이 기기에서 이번 달 ITS ' + itsMax() + '건을 다 썼다(개발키 월 100건) — 운영키(월 10,000건) 승인 뒤 「운영키」를 누른다'));
@@ -790,7 +790,7 @@
   function pmGrade(v, small) { if (v == null) return null; var c = small ? [15, 35, 75] : [30, 80, 150]; return v <= c[0] ? 0 : v <= c[1] ? 1 : v <= c[2] ? 2 : 3; }
   var PMG = [['좋음', '#2563eb'], ['보통', '#16a34a'], ['나쁨', '#f59e0b'], ['매우나쁨', '#dc2626']];
   // ---------- 공공데이터포털 실시간(v1.9.0) ----------
-  function dgGet(path, q) { if (vipOn()) return Promise.reject(new Error('🔒 중요업무 중'));
+  function dgGet(path, q) { if (vipOn()) return Promise.reject(new Error('🔒 업무 중'));
     if (!LK.dgk && !tryOn()) return Promise.reject(new Error('공공데이터포털 키 없음 — 범례 「🔑 공공데이터포털 키」 또는 「🎟 맛보기」'));
     var k = LK.dgk ? (LK.dgk.indexOf('%') >= 0 ? LK.dgk : encodeURIComponent(LK.dgk)) : '';
     return (LK.dgk ? fetch('https://apis.data.go.kr/' + path + '?serviceKey=' + k + q).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }) : tryGet('dg', path, q))
@@ -1237,7 +1237,7 @@
       if (!SHOWTM) SHOWTM = setTimeout(function () { SHOWTM = 0; SHOWAT = 0; if (sel && sel.it === SHOWIT && $('m2dCard').classList.contains('on')) show(SHOWIT); }, 40); return; }
     BOOTT.nshow = (BOOTT.nshow || 0) + 1; SHOWIT = it; try { show0(it); } finally { SHOWAT = performance.now(); } }
   function show0(it) {
-    if (PRD.set === 'v' && (!it || it.kind !== 'prd')) { VIPM.cp = []; VIPM.res = null; VIPM.pick = false; VIPM.goal = null; VIPM.fast = null; VIPM.base = 0; PRD.set = 'n'; PRD.sig = 1; PRD.k = 1; }   /* 🔒 카드를 닫거나 다른 카드로 가면 중요업무를 지운다 */
+    if (PRD.set === 'v' && (!it || it.kind !== 'prd')) { VIPM.cp = []; VIPM.res = null; VIPM.pick = false; VIPM.goal = null; VIPM.fast = null; VIPM.base = 0; PRD.set = 'n'; PRD.sig = 1; PRD.k = 1; }   /* 🔒 카드를 닫거나 다른 카드로 가면 업무를 지운다 */
     if (PRD.set !== 'v' && PRD.p && (!it || it.kind !== 'prd')) { PRD.p = null; PRD.res = null; PRD.pick = false; }   /* v2.241.0 소유자 「아까 찍었던 지점이 아직도 검은색으로 남아 있다」 — 신고 차량 예측 지점은 그 카드가 열린 동안만 */
     var card = $('m2dCard'), h = '';
     if (!it) { card.classList.remove('on'); return; }
@@ -3669,12 +3669,12 @@
      속도 = 지금 그 링크의 평균 통행속도(실시간 소통 층이 받은 값 · 15분 안 · 제한속도로 자르지 않는다 — 남의 차를 보는 것이라 실제 흐름이 기준) · 없으면 제한속도(0 이면 30) × 배수.
      신호 = 신호 교차로에 들어설 때 한 번(같은 번호의 노드들은 한 교차로 — 안쪽 링크에서는 다시 안 선다) · 나가는 방향으로 이동류를 정한다(직진·좌회전 · 우회전 0 · 유턴 안 봄) → prdWait: 지금 색을 알면 남은 초(황색은 지나간다고 봄) · 모르면 평균 (주기−녹색)²÷(2×주기) · 자료 없으면 0.
      내는 것 = ① 곧장 갈 때 시간표(신호·나들목) ② 적색에 걸려 서게 되는 교차로 ③ 1·2·3·5분 안에 닿는 길(색) + 자료 밖으로 나가는 길. 「갈 수 있는 바깥 테두리」이지 「여기 있다」가 아니다 */
-  /* v2.223.0 🔒 중요업무 카드가 열려 있는 동안 — 바깥 서비스(브이월드·ITS·공공데이터·레이더·홍수지도·날씨·중계)로 가는 요청을 막는다 · 같은 사이트 자료 파일은 받는다(카드에 밝힘) */
+  /* v2.223.0 🔒 업무 카드가 열려 있는 동안 — 바깥 서비스(브이월드·ITS·공공데이터·레이더·홍수지도·날씨·중계)로 가는 요청을 막는다 · 같은 사이트 자료 파일은 받는다(카드에 밝힘) */
   function vipOn() { var c = document.getElementById('m2dCard'); return PRD.set === 'v' && !!c && c.classList.contains('on'); }
-  (function () { var of = window.fetch; if (!of || of.__vip) return; var wf = function (u) { var s9 = String(u && u.url || u); if (vipOn() && /^https?:/i.test(s9) && s9.indexOf(location.origin + '/') !== 0) return Promise.reject(new Error('🔒 중요업무 중 — 밖으로 묻지 않는다')); return of.apply(this, arguments); }; wf.__vip = 1; window.fetch = wf; })();
+  (function () { var of = window.fetch; if (!of || of.__vip) return; var wf = function (u) { var s9 = String(u && u.url || u); if (vipOn() && /^https?:/i.test(s9) && s9.indexOf(location.origin + '/') !== 0) return Promise.reject(new Error('🔒 업무 중 — 밖으로 묻지 않는다')); return of.apply(this, arguments); }; wf.__vip = 1; window.fetch = wf; })();
   var PRD = { p: null, hd: 'nt', ago: 0, wait: 0, k: 1, base: 0, pick: false, res: null }, PRDC = [[60, '#dc2626', '1분'], [120, '#f97316', '2분'], [180, '#eab308', '3분'], [300, '#16a34a', '5분']], PRDH = 300, PRDA = { nt: '↑', ne: '↗', et: '→', se: '↘', st: '↓', sw: '↙', wt: '←', nw: '↖' };
   var NAVG = null, NAVGP = null;
-  /* v2.223.0 설정 세트 — n 일반 신고차량(신호 대기 적용 · 도로 평균 속도) · r 도주 차량(신호 무시 · 평균 × 배율) · v 🔒 중요업무(신호 무시 · 고른 속도 · 지점별 시각표) */
+  /* v2.223.0 설정 세트 — n 일반 신고차량(신호 대기 적용 · 도로 평균 속도) · r 도주 차량(신호 무시 · 평균 × 배율) · v 🔒 업무(신호 무시 · 고른 속도 · 지점별 시각표) */
   PRD.set = 'n'; PRD.sig = 1;
   /* v2.244.0 T-GIS 관할 경찰서 코드(110~410) → 이름 — data/tgis-pe.json(tools/signal/tgis-pe-bake.py · 교차로가 든 행정동을 맡는 경찰서로 맞춤 · 31 가운데 29 가 80% 넘게 한 서) */
   var TGPE = null;
@@ -3682,7 +3682,7 @@
     if (q && q[4]) return esc(q[0]) + ' <em>(원자료 코드 ' + pe + ' · 교차로 자리의 동으로 맞춤 ' + Math.round(q[1] * 100) + '%)</em>';
     if (q) return '경찰서 코드 ' + pe + ' <em>(' + esc(q[0]) + '로 보이나 ' + Math.round(q[1] * 100) + '%뿐 — 두 서가 나눠 맡는 곳)</em>';
     return '경찰서 코드 ' + pe; }
-  var VIPM = { cp: [], pick: false, base: 0, fast: null, t0: 0, goal: null, res: null };   /* 🔒 중요업무 지점·속도 — 메모리에만(저장·주소창·통신 없음) */
+  var VIPM = { cp: [], pick: false, base: 0, fast: null, t0: 0, goal: null, res: null };   /* 🔒 업무 지점·속도 — 메모리에만(저장·주소창·통신 없음) */
   function navGet() { if (NAVGP) return NAVGP; fetch('data/eta-cal.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (window.TT && TT.calTab) { TT.calTab(j); PRDF.t = 0; } }).catch(function () {}); NAVGP = Promise.all([fetch('data/nav-seocho.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }), fetch('data/nav-arterial.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }), fetch('data/nav-express.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })]).then(function (A) { var N = {}, L = [], out = {}, nm = {}, seen = {}, ban = {};
       /* 서초 그래프(골목·회전 제한) → 간선 그래프(v2.150.0 nav-arterial — 서초구청에서 제한속도로 15분 안에 닿는 마디의 큰길 · 서울 쪽 신호 붙음) → 수도권 고속·도시고속 뼈대(v2.148.0). 같은 원자료 ID — 겹치는 노드·링크는 앞의 것을 쓴다 */
       A.forEach(function (jx, gi) { if (!jx) return;
@@ -3696,7 +3696,7 @@
   function prdAng(b1, b0) { var d = (b0 - b1) * 180 / Math.PI; return ((d + 540) % 360) - 180; }
   function prdTurnA(b1, b0) { var d = prdAng(b1, b0); return Math.abs(d) <= 45 ? 'St' : d > 45 && d <= 135 ? 'Rt' : d < -45 && d >= -135 ? 'Lt' : 'Ut'; }
   /* 그 링크를 달리는 속도 km/h 와 「실시간 값인가」 — 실시간 소통 층이 받은 값이 15분 안이면 그 흐름 속도 그대로(제한속도로 자르지 않는다) */
-  /* v2.227.0 막힘 배율 — 실시간 값이 없는 줄은 제한속도 ÷ f(ITS 실측 · data/eta-cal.json · 요일 갈래 × 시간대 · 1분마다 다시 셈) · 중요업무 길(vipW·vipTwo)에는 안 씀 */
+  /* v2.227.0 막힘 배율 — 실시간 값이 없는 줄은 제한속도 ÷ f(ITS 실측 · data/eta-cal.json · 요일 갈래 × 시간대 · 1분마다 다시 셈) · 업무 길(vipW·vipTwo)에는 안 씀 */
   var PRDF = { t: 0, f: 1 };
   function prdF() { var n = Date.now(); if (n - PRDF.t > 60000) PRDF = { t: n, f: window.TT && TT.calF ? TT.calF(n) : 1 }; return PRDF.f; }
   /* v2.228.0 이웃 메움 — 실시간 값이 없는 링크(이름 있는 길)는 같은 이름으로 곧게(45° 안) 이어지는 앞뒤 링크를 700m·여섯 걸음까지 따라가 처음 만난 실시간 값을 거리 반비례로(경부 반포~서초: 값 붙은 링크 13~16km/h 인데 옆 링크를 제한속도로 셈하던 것 · 가르고 v0.14.2 와 같은 규칙) · 실시간 한 장이 바뀔 때만 다시 셈 */
@@ -3749,7 +3749,7 @@
   function prdMin(t) { return '+' + (t / 60).toFixed(1) + '분'; }
   function prdWTxt(w, t) { if (w[1] === 'i') return '<b style="color:#64748b">신호 무시</b>(기다림 0으로 봄)'; return w[1] === 'r' ? '<b style="color:#dc2626">적색 · ' + Math.round(w[0]) + '초 섬</b> · ' + prdMin(t + w[0]) + '에 출발' : w[1] === 'g' ? '<b style="color:#16a34a">녹색 통과</b>' : w[1] === 'y' ? '<b style="color:#a16207">황색(지나간다고 봄)</b>' : w[1] === 'u' ? '<b style="color:#64748b">색 모름</b>' + (w[0] ? ' · 평균 ' + Math.round(w[0]) + '초 기다린다고 봄' : ' · 바로 출발한다고 봄') : '<b style="color:#64748b">신호 자료 없음</b> · 기다림 0으로 봄'; }
   function prdCard() { var R = PRD.res, bt = function (k, v, t, act) { return '<button data-prd="' + k + ':' + v + '"' + (act ? ' style="background:#1d4ed8;color:#fff;border-color:#1d4ed8"' : '') + '>' + t + '</button>'; };
-    var TC = window.TT ? TT.cfg() : { runK: 1.3 }, sets = '<div class="lg-btns">' + bt('set', 'n', '일반 신고차량', PRD.set === 'n') + bt('set', 'r', '도주 차량', PRD.set === 'r') + (window.TT && TT.VIP_ON ? bt('set', 'v', '🔒 중요업무', PRD.set === 'v') : '') + '</div>';
+    var TC = window.TT ? TT.cfg() : { runK: 1.3 }, sets = '<div class="lg-btns">' + bt('set', 'n', '일반 신고차량', PRD.set === 'n') + bt('set', 'r', '도주 차량', PRD.set === 'r') + (window.TT && TT.VIP_ON ? bt('set', 'v', '🔒 업무', PRD.set === 'v') : '') + '</div>';
     if (PRD.set === 'v') return vipCard(bt, sets);
     var h = '<h3>🚨 신고 차량 예측</h3>' + sets + '<div class="lg-btns">' + bt('sig', 1, PRD.sig ? '🚦 신호 대기 적용' : '🚦 신호 대기 무시', PRD.sig) + '</div><p class="sdnt" style="margin:0 0 8px;color:#b45309"><b>갈 수 있는 바깥 테두리</b>이지 「여기 있다」가 아니다 — ' + (R && R.nlv ? '지금 그 길의 평균 통행속도(값이 없는 길은 제한속도)' : '제한속도') + (PRD.k > 1 ? '의 ' + PRD.k + '배' : '') + '로 달리고 ' + (PRD.sig ? '신호를 지킨다고' : '<b>신호를 무시한다고</b>(기다림 0 · 회전 감속은 셈)') + ' 볼 때. ' + (PRD.sig ? '신호를 안 지키거나 혼자 더 빨리 달리면 더 멀리, 막히면 덜 간다.' : '막히면 덜 간다.') + '</p>';
     if (!PRD.p) return h + '<p class="desc"><b>신고 자리를 지도에서 누른다</b> — 그 차가 있던 길 위를 누른다. 그다음 진행 방위·신고 시각을 고른다.</p><div class="lg-btns">' + bt('pick', 1, '📍 지도에서 자리 고르기', PRD.pick) + '</div><p class="sdnt">서초구 둘레(+2km)는 골목까지 · 서초에서 15분쯤 닿는 권역(용산·성동·송파·성남·영등포·관악·수원 북쪽·용인 수지)은 큰길(대로)까지 · 그 밖 수도권은 고속도로·도시고속도로만 따라간다 · 차량번호·신고 내용은 넣는 칸이 없다(자리와 방향만).</p>';
@@ -3769,7 +3769,7 @@
     h += '<div class="lg-btns" style="pointer-events:none">' + PRDC.map(function (c) { return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12.5px;margin-right:8px"><i style="display:inline-block;width:18px;height:5px;border-radius:3px;background:' + c[1] + '"></i>' + c[2] + ' 안</span>'; }).join('') + '</div>';
     h += ttSetHtml();
     return h + sdMore('<p class="sdnt">셈법 — 신고 자리에서 그 방위로 가는 길을 잡고 길마다 가장 이른 도착 시각으로 퍼뜨린다(5분까지). 속도 = 지금 그 길의 평균 통행속도(실시간 소통 층이 15분 안에 받은 값 · 제한속도로 자르지 않는다) · 값이 없으면 제한속도. 신호 = 교차로에 들어설 때 한 번, 나가는 방향(직진·좌회전 · 우회전은 기다림 0 · 유턴은 안 봄)의 신호를 그 시각으로 센다 — 지금 색을 아는 곳은 남은 초 그대로, 모르는 곳은 평균 (주기 − 녹색)² ÷ (2 × 주기), 신호 자료가 없는 곳은 0. 황색은 지나간다고 본다(바깥 테두리라서).</p><p class="sdnt">한계 — 서초구 + 2km 둘레는 골목까지 · 서초구청에서 제한속도로 15분 안에 닿는 권역은 큰길(차로 3 이상·대로·국도)까지 — 행정 경계가 아니라 길로 이어진 권역 · 그 밖 수도권은 고속·도시고속도로만(나간 뒤는 「여기로 나감」에 길 이름만) · 서초 밖에는 회전 제한 자료가 없고, 경기도 쪽 교차로는 신호 자료가 없어 기다림이 0 이다(그만큼 실제보다 멀리 나온다) · 회전 금지는 자료(TURNINFO)에 적힌 것만 · 과속 단속 카메라 앞에서 줄이는 것은 안 넣었다 · 신호값은 받은 값·계획에서 이어 센 추정이라 감응·수동 운영 때는 다르다 · 차량번호·신고 내용은 넣는 칸이 없고 어디에도 저장하지 않는다.</p>' + src('길 = 국가교통정보센터 표준노드링크(data/nav-seocho.json · 간선 data/nav-arterial.json · 수도권 고속·도시고속 data/nav-express.json) · 신호 = 서울시 T-Data · 서초경찰서 교통과 현시도 · 통행속도 = 국가교통정보센터 실시간 소통(켜 둔 경우)'), 'prd', 'ⓘ 셈법·한계'); }
-  /* ---------- v2.223.0 🔒 중요업무 — 지점 사이를 길로 잇는다(가장 짧은 길 · 금지 회전·유턴 지킴 · 꺾임마다 30m 무게) → 구간 목록 → TT.vipTwo ----------
+  /* ---------- v2.223.0 🔒 업무 — 지점 사이를 길로 잇는다(가장 짧은 길 · 금지 회전·유턴 지킴 · 꺾임마다 30m 무게) → 구간 목록 → TT.vipTwo ----------
      기기 안에서만 셈 · 지점·경로·시각은 저장하지 않는다(메모리 · 「모두 지우기」로 바로 지움) · 주소창에도 안 남긴다 */
   function vipSnap(p) { var G = NAVG, L = []; G.L.forEach(function (o) { var bb = o.bb; if (p[0] < bb[0] - 120 || p[0] > bb[1] + 120 || p[1] < bb[2] - 120 || p[1] > bb[3] + 120) return; var bd = null;
       for (var i = 1; i < o.pts.length; i++) { var A = o.pts[i - 1], B = o.pts[i], dx = B[0] - A[0], dy = B[1] - A[1], L2 = dx * dx + dy * dy; if (!L2) continue; var f = Math.max(0, Math.min(1, ((p[0] - A[0]) * dx + (p[1] - A[1]) * dy) / L2)), d = dTrue(p, [A[0] + f * dx, A[1] + f * dy]); if (d <= 120 && (!bd || d < bd.d)) bd = { o: o, f: (o.cum[i - 1] + f * (o.cum[i] - o.cum[i - 1])) / (o.cum[o.pts.length - 1] || 1), d: d }; }
@@ -3826,7 +3826,7 @@
     segs.forEach(function (g) { if (g.cp) cpPos.push(g.pos); });
     var t0 = VIPM.t0 || Date.now(), V = TT.vipTwo(segs, { base: VIPM.base || TT.cfg().vipV, fast: VIPM.fast, t0: t0 }); VIPM.res = { V: V, path: path, m: m, segs: segs, t0: t0, start: cps[0].nm, cpPos: cpPos, nCp: VIPM.cp.length - 1 }; }
   function vhms(ms) { var d = new Date(ms); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2); }
-  function vipCard(bt, sets) { var C = TT.cfg(), Rv = VIPM.res, B0 = VIPM.base || C.vipV, h = '<h3>🔒 중요업무 — 교차로마다 도착 시각</h3>' + sets;
+  function vipCard(bt, sets) { var C = TT.cfg(), Rv = VIPM.res, B0 = VIPM.base || C.vipV, h = '<h3>🔒 업무 — 교차로마다 도착 시각</h3>' + sets;
     h += '<p class="sdnt" style="margin:0 0 6px">지도에서 <b>출발 → 지점 → … → 도착</b>을 차례로 누른다. 길을 따라 이어 지점마다 통과 예정 시각을 낸다(신호 대기 0 · 회전·진출입 감속은 셈). <b>🔒 이 기기 안에서만 셈하고 저장하지 않는다</b> — 「모두 지우기」나 카드를 닫으면 사라진다. 이 카드가 열려 있는 동안 바깥 서비스(브이월드·ITS·공공데이터·레이더·중계)로는 묻지 않는다. 지도 조각·자료 파일은 같은 사이트에서 화면 둘레만큼 받는다(지점·시각은 보내지 않는다).</p>';
     h += '<p class="sdnt" style="margin:0 0 6px">📍 <b>출발</b> = 관내 진입 지점 또는 첫 출발 · <b>도착</b> = 관내 통과(나가는) 지점 또는 도착 — 사이에 지점을 더 넣어도 된다.</p>';
     h += '<div class="lg-btns">' + bt('vp', 1, (VIPM.pick === true ? '✅ ' : '') + '📍 지점 더하기(뒤에) (' + VIPM.cp.length + ')', VIPM.pick === true) + (VIPM.cp.length >= 2 ? bt('vw', 1, (VIPM.pick === 'via' ? '✅ ' : '') + '➕ 경유지 넣기', VIPM.pick === 'via') : '') + bt('vn', 1, '🔎 이름으로 ' + (VIPM.pick === 'via' ? '경유지' : '지점') + ' 더하기', 0) + bt('vu', 1, '↶ 마지막 빼기', 0) + bt('vx', 1, '🗑 모두 지우기', 0) + '</div>' + (VIPM.pick === 'via' ? '<p class="sdnt" style="margin:2px 0 4px;color:#1d4ed8"><b>➕ 경유지 모드</b> — 지도에서 들를 곳을 누르면 덜 돌아가는 두 지점 사이에 끼운다(도착은 그대로).</p>' : '') + (VIPM.cp.length ? '<div class="cap">지점 차례 — ↑ 앞으로 · ✕ 빼기</div>' + VIPM.cp.map(function (q, k) { return '<div class="r"><b>' + esc(NAVG ? vipName(q, k, VIPM.cp.length) : (k === 0 ? '출발' : k === VIPM.cp.length - 1 ? '도착' : '경유 ' + k)) + '</b><span>' + (k > 0 ? bt('vk', k, '↑', 0) : '') + bt('vd', k, '✕', 0) + '</span></div>'; }).join('') : '') + '<p class="sdnt" style="margin:2px 0 6px">관내 밖도 된다 — 수도권 고속도로·도시고속도로(올림픽대로·경부고속도로 등)는 나들목·다리가 기준점 줄로 나온다. 이름으로: 「판교IC」 「양재IC」 「한남대교남단」 「여의상류IC」 「청담대교」.</p>';
@@ -3852,7 +3852,7 @@
     VIPM.cp.forEach(function (p, i) { var sp = S(p); ctx.beginPath(); ctx.arc(sp[0], sp[1], 11, 0, 6.2832); ctx.fillStyle = i === 0 ? '#16a34a' : i === VIPM.cp.length - 1 && i > 0 ? '#dc2626' : '#1b54d6'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(i === 0 ? '출' : String(i), sp[0], sp[1] + 0.5); });
     ctx.restore(); }
   /* 주행시간 설정 — 가르고 ⚙ 와 같은 값(js/travel-time.js · 이 기기 tg_tt_cfg) */
-  var TTSET = [['vipV', '중요업무 기본 속도', [60, 70, 80, 90, 100]], ['vipFast', '가장 이른 도착 기준(입력 없을 때)', [80, 90, 100, 110]], ['vMin', '직접 입력 — 가장 느린', [20, 30, 40]], ['vMax', '직접 입력 — 가장 빠른', [100, 110, 120]], ['turnS', '회전 감속(초/번)', [0, 3, 6, 10]], ['rampS', '진출입로 감속(초/번)', [0, 5, 8, 12]], ['accS', '출발·정지 가감속(초/번)', [0, 2, 4, 6]], ['tunK', '터널·지하차도 속도 배율', [0.8, 0.9, 1]], ['runK', '도주 차량 속도 배율', [1.2, 1.3, 1.5]], ['calOn', '막힘 배율 — 실시간 소통 없을 때 ITS 실측(요일·시간대)', [0, 1], { 0: '끔', 1: '켬' }]];
+  var TTSET = [['vipV', '업무 기본 속도', [60, 70, 80, 90, 100]], ['vipFast', '가장 이른 도착 기준(입력 없을 때)', [80, 90, 100, 110]], ['vMin', '직접 입력 — 가장 느린', [20, 30, 40]], ['vMax', '직접 입력 — 가장 빠른', [100, 110, 120]], ['turnS', '회전 감속(초/번)', [0, 3, 6, 10]], ['rampS', '진출입로 감속(초/번)', [0, 5, 8, 12]], ['accS', '출발·정지 가감속(초/번)', [0, 2, 4, 6]], ['tunK', '터널·지하차도 속도 배율', [0.8, 0.9, 1]], ['runK', '도주 차량 속도 배율', [1.2, 1.3, 1.5]], ['calOn', '막힘 배율 — 실시간 소통 없을 때 ITS 실측(요일·시간대)', [0, 1], { 0: '끔', 1: '켬' }]];
   function ttSetHtml() { if (!window.TT) return ''; var C = TT.cfg(), D = TT.DEF; return '<details class="sdmore"><summary>⚙ 주행시간 설정 — 가르고와 같은 값(이 기기)</summary>' + TTSET.map(function (it) { var k = it[0], o = it[2].slice(); if (o.indexOf(C[k]) < 0) o.push(C[k]); return '<div class="cap">' + it[1] + (k === 'calOn' && TT.calWhy ? ' · 지금 ' + TT.calWhy() : '') + (C[k] !== D[k] ? ' <button data-ttr="' + k + '" style="border:0;background:none;color:#1d4ed8;font-weight:800">↺ 기본 ' + D[k] + '</button>' : '') + '</div><div class="lg-btns">' + o.map(function (v) { return '<button data-tts="' + k + ':' + v + '"' + (v === C[k] ? ' style="background:#1d4ed8;color:#fff;border-color:#1d4ed8"' : '') + '>' + (it[3] && it[3][v] != null ? it[3][v] : v) + (v === D[k] ? ' · 기본' : '') + '</button>'; }).join('') + '</div>'; }).join('') + '<div class="lg-btns" style="margin-top:8px"><button data-ttx="all">전체 기본값으로</button></div></details>'; }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-tts],[data-ttr],[data-ttx]'); if (!b || !window.TT) return; e.preventDefault(); var a = b.getAttribute('data-tts');
     if (a) { var i = a.indexOf(':'); TT.set(a.slice(0, i), +a.slice(i + 1)); PRDF.t = 0; } else if (b.hasAttribute('data-ttr')) TT.reset(b.getAttribute('data-ttr')); else if (confirm('주행시간 설정을 모두 기본값으로 되돌릴까요?')) TT.reset(); else return;
@@ -6629,7 +6629,7 @@
   function fbHtml() { return '<div class="fbx"><div class="lg-btns">' + navHtml() + '<button data-pc="1">💻 PC로 보내기</button><button data-fb="1">📝 틀린 곳·헷갈린 곳 알리기</button></div><div id="m2dFbF"></div></div>'; }
   var FB_KIND = [['bad', '❌ 숫자·내용이 틀림'], ['hard', '🤔 헷갈림·찾기 어려움'], ['want', '➕ 이런 게 있으면 좋겠다']];
   function fbForm(el) { el.innerHTML = '<div class="lg-btns">' + FB_KIND.map(function (k, i) { return '<button data-fbk="' + k[0] + '" class="' + (i === 0 ? 'on' : '') + '">' + k[1] + '</button>'; }).join('') + '</div><textarea id="m2dFbT" placeholder="무엇이 어떻게 다른지 · 현장에서 본 값 · 바라는 것 — 이름·전화 등 개인정보는 적지 마십시오"></textarea><div class="lg-btns"><button data-fbs="share">📤 보내기(카톡 등)</button><button data-fbs="copy">📋 글로 복사</button></div><small class="lg-n">이 글은 이 기기에서만 만들어진다 — 서버로 가지 않는다. 보내기를 누르면 폰 공유 창이 뜬다.</small>'; }
-  function fbText() { if (vipOn()) return '(중요업무 중 — 내용을 담지 않는다)'; var c = $('m2dCard'), h3 = c && c.querySelector('h3'), k = (c && c.querySelector('[data-fbk].on') || {}).getAttribute ? c.querySelector('[data-fbk].on').getAttribute('data-fbk') : 'bad', kn = (FB_KIND.filter(function (x) { return x[0] === k; })[0] || FB_KIND[0])[1];
+  function fbText() { if (vipOn()) return '(업무 중 — 내용을 담지 않는다)'; var c = $('m2dCard'), h3 = c && c.querySelector('h3'), k = (c && c.querySelector('[data-fbk].on') || {}).getAttribute ? c.querySelector('[data-fbk].on').getAttribute('data-fbk') : 'bad', kn = (FB_KIND.filter(function (x) { return x[0] === k; })[0] || FB_KIND[0])[1];
     var v = (document.querySelector('script[src*="map2d.js"]') || {}).src || '', ver = (v.match(/v=([\d.]+)/) || [])[1] || '', m = TAPM || (view && [view.cx, view.cy]), ll = m ? [LAT0 - m[1] / KY, m[0] / KX + LON0] : null;
     var body = c ? (c.innerText || '').replace(/📝 틀린 곳[\s\S]*$/, '').replace(/\n{2,}/g, '\n').slice(0, 900) : '';
     var lay = LAYERS.filter(function (l) { return on[l[0]]; }).map(function (l) { return l[0]; }).join(',');
@@ -6655,7 +6655,7 @@
   function pcTitle() { var h3 = document.querySelector('#m2dCard.on h3'); return '데이터 압축지도' + (h3 ? ' — ' + h3.innerText.slice(0, 40) : ''); }
   function pcForm(el) { var ml = ''; try { ml = localStorage.getItem('tg_map2d_mail') || ''; } catch (e) {}
     el.innerHTML = '<div class="simc"><b style="font-size:12.5px">💻 PC에서 이어 보기</b><p class="cap">지금 자리·넓이·켠 층' + (TAPM ? '·누른 곳(카드)' : '') + '이 주소 하나에 담긴다. PC에서 열면 같은 화면이 뜬다(처음 한 번은 확인코드를 묻는다).</p><div class="lg-btns"><button data-pcs="share">📤 공유(카톡 나와의 채팅 등)</button><button data-pcs="mail">📧 내 메일로' + (ml ? ' (' + esc(ml.replace(/^(.{2}).*(@.*)$/, '$1…$2')) + ')' : '') + '</button><button data-pcs="copy">📋 주소 복사</button>' + (ml ? '<button data-pcs="mailx">메일 주소 바꾸기</button>' : '') + '</div><small class="lg-n">메일 주소는 이 기기에만 남는다(보내는 것은 폰의 메일 앱) · 주소에는 위치·층 이름만 들어간다 — 확인코드·키·입력값은 안 들어간다.</small></div>'; }
-  function pcMail(ask) { if (vipOn()) { toast('🔒 중요업무 중에는 보내지 않는다'); return; } var ml = ''; try { ml = localStorage.getItem('tg_map2d_mail') || ''; } catch (e) {}
+  function pcMail(ask) { if (vipOn()) { toast('🔒 업무 중에는 보내지 않는다'); return; } var ml = ''; try { ml = localStorage.getItem('tg_map2d_mail') || ''; } catch (e) {}
     if (ask || !ml) { var a = prompt('PC에서 받아 볼 내 메일 주소(이 기기에만 저장)', ml); if (a == null) return; ml = a.trim(); try { localStorage.setItem('tg_map2d_mail', ml); } catch (e) {} }
     var c = $('m2dCard'), body = c && c.classList.contains('on') ? (c.innerText || '').replace(/💻 PC로[\s\S]*$/, '').replace(/\n{2,}/g, '\n').slice(0, 700) : '';
     location.href = 'mailto:' + encodeURIComponent(ml) + '?subject=' + encodeURIComponent('[지도] ' + pcTitle()) + '&body=' + encodeURIComponent('PC에서 열기:\n' + pcUrl() + '\n\n--- 보던 카드(앞부분) ---\n' + body); }

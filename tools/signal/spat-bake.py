@@ -1654,6 +1654,12 @@ def fusion(sample=False, ids=None):
                 print(stamp, '[fusion]', itst, kl, 'HTTP', c, mask(b[:120]), flush=True)
                 if srv:
                     time.sleep(srv)
+            try:   # 2026-10-19 역사 API 가 서초에 못 닿는 시각대(10~12·16~18·22~00·04~06시)에는 sweep(t)이 500 이라 build 를 안 불러 Fusion 닻이 지도에 안 실렸다(10:35~10:52 made 00:27 그대로) — sigdir 이 12분 넘게 그대로면 여기서 굽고 올린다 · sweep 이 굽는 동안은 파일이 새로워 건너뛴다
+                sp9 = os.path.join(ROOT, 'data', 'sigdir-seoul.json')
+                if not sample and not ids and time.time() - os.path.getmtime(sp9) > 720:
+                    build(); publish()
+            except Exception as e9:
+                print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 굽기·올리기 실패', str(e9)[:80], flush=True)
             step = fz_step(); time.sleep(step)
         print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 한 바퀴 %d곳(축 %d) · 받음 %d · 새 닻 %d' % (len(L), sum(1 for k in L if onaxis(k)), nok, nanc), flush=True)
 

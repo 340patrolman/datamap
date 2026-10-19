@@ -11,11 +11,11 @@ import os, sys, time, json, datetime, subprocess, importlib.util, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.join(os.path.dirname(ROOT), '07_API키')
-OUT = os.path.join(KB, 'TData_새벽시험_20261019.md')
+DAY = datetime.date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else datetime.date(2026, 10, 19)
+OUT = os.path.join(KB, 'TData_새벽시험_%s.md' % DAY.strftime('%Y%m%d'))
 sp = importlib.util.spec_from_file_location('sb', os.path.join(ROOT, 'tools', 'signal', 'spat-bake.py')); SB = importlib.util.module_from_spec(sp); sp.loader.exec_module(SB)
 PICK = [('1668', '2610', '경문고교'), ('1822', '22979', '씨티극장(연등)'), ('1840', '1375', '서초롯데캐슬아파트'), ('1856', '7513', '시민의숲공영주차장'), ('1873', '146', '탑성마을'),
         ('1891', '2665', '예술의전당'), ('1912', '3993', '내방역동측'), ('1928', '4031', '강남터미널고가밑'), ('1944', '4568', '파고타워앞'), ('1963', '24001', '서초소방서(연등)')]
-DAY = datetime.date(2026, 10, 19)
 at = lambda h, m: datetime.datetime.combine(DAY, datetime.time(h, m))
 
 

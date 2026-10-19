@@ -10,6 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KB = os.path.dirname(ROOT)
 # [파일, 주기(일), 다시 굽는 법(auto = 키만 있으면 혼자 돈다 / hand = 사람·브라우저 단계가 있다), 명령·절차]
 SETS = [
+    ['data/runaway-sido.json', 365, 'auto', '가출·실종 신고(시도경찰청 · 해마다 · 대개 5~9월에 지난해 줄이 올라옴) — 열두 파일을 `tools/region/dgfile.py <번호>` 로 다시 받고(번호는 runaway-bake.py 머리말) `py -3.12 -X utf8 tools/region/runaway-bake.py` → ai-guide-bake → 커밋 · 일곱 청(서울·인천·대전·세종·경기남부·경기북부·경남)이 새로 내면 SRC 에 더한다 · 정보공개청구(경찰서별) 회신이 오면 시군구로 바꾼다'],
     ['data/rone-shop.json', 92, 'auto', '상가·오피스 임대료·공실률·수익률(한국부동산원 R-ONE 임대동향 · 분기 · 전국 표본 상권) — 분기 공표 뒤(대개 다음 분기 둘째 달) `py -3.12 -X utf8 tools/region/roneshop-bake.py fetch`(rone-shop.json + data/r/rent.json 같이) → ai-guide-bake → guide-bake → 커밋 · 새 상권이 생기면 자리 찾기 결과(역·행정동·장소 검색)를 눈으로 확인'],
     ['data/spd-normal-seocho.json', 7, 'auto', '평소 속도 서초(tg-spd-normal/1 · 10-18 첫 판 = 월~목 4날·금 1·토 1·일 2 → 금·토·일 갈래는 잠정) — 이레마다 `py -3.12 -X utf8 tools/signal/spdnormal-bake.py`(07_API키/out/livespd 가 쌓인 만큼) → ai-guide-bake → 커밋 · 네 갈래 모두 3날 넘으면(provisional 모두 False) 주기를 31일로 · 카카오 결과는 쓰지 않는다(RULE-NAV-4)'],
     ['data/cctv-utic-seoul.json', 7, 'auto', '교차로 CCTV 목록(UTIC · 서울 TOPIS) — `py -3.12 -X utf8 tools/region/utic-cctv-bake.py fetch` → `build --publish`(이 PC IP 에서만 · **하루 1번 넘게 부르지 않는다** — 1초 5회면 IP 차단) → 커밋 · 출처 「경찰청 도시교통정보센터(UTIC)」 표기 유지'],

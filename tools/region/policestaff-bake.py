@@ -31,6 +31,59 @@ def num(x):
     except Exception: return None
 
 
+def dgcsv(n):
+    """공공데이터포털 파일(tools/region/dgfile.py 가 받은 07_API키/out/dg/<번호>/x.csv) — utf-8 이 아니면 cp949"""
+    import csv, io as _io
+    p = os.path.join(KB, '07_API키', 'out', 'dg', str(n), 'x.csv')
+    if not os.path.exists(p): return []
+    b = open(p, 'rb').read()
+    for e in ('utf-8-sig', 'cp949'):
+        try: return list(csv.reader(_io.StringIO(b.decode(e))))
+        except UnicodeDecodeError: pass
+    return []
+
+
+def st_official():
+    """경찰서별 공식 파일 — 정원(15092089) · 살인·강도·절도·폭력 발생(15084592) → police-card 경찰서 번호로"""
+    PC = json.load(open(os.path.join(ROOT, 'data', 'police-card.json'), encoding='utf-8'))['st']
+    SDC = {str(x[0]): x[5] for x in json.load(open(os.path.join(ROOT, 'data', 'police.json'), encoding='utf-8'))['stations']}
+    PRE = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주']
+    SDP = {'강원': '강원', '경남': '경상남', '경북': '경상북', '경기': '경기', '전남': '전남', '전북': '전라북', '충남': '충청남', '충북': '충청북'}
+    idx = collections.defaultdict(list)
+    for sid, v in PC.items(): idx[re.sub('경찰서$', '', v['n'])].append(sid)
+    def match(nm, pre=None):
+        r9 = match0(nm, pre)
+        if r9 and pre and pre in SDP and not SDC.get(r9, '').startswith(SDP[pre]): return None   # 이름만 같은 다른 청 경찰서(강원 고성 ↔ 경남 고성)
+        return r9
+    def match0(nm, pre=None):
+        b0 = nm.replace(' ', '')
+        if b0 in idx and len(idx[b0]) == 1: return idx[b0][0]   # 강서·수서·달서·성서처럼 「서」로 끝나는 이름
+        b = re.sub('서$', '', nm.replace(' ', ''))
+        if b in idx and len(idx[b]) == 1: return idx[b][0]
+        if pre and b.startswith(pre) and b[len(pre):] in idx and len(idx[b[len(pre):]]) == 1: return idx[b[len(pre):]][0]
+        for q in ([pre] if pre else []) + PRE:
+            c = b[len(q):] if b.startswith(q) else (b if q == pre else None)
+            if c and c in idx:
+                if len(idx[c]) == 1: return idx[c][0]
+                cand = [x for x in idx[c] if SDC.get(x, '').startswith(SDP.get(q, q))]
+                if len(cand) == 1: return cand[0]
+        return None
+    out = collections.defaultdict(dict); miss = []
+    A = dgcsv(15092089)
+    for r in A[1:]:
+        nm = '인천제물포' if r[2] == '인천중부' else r[2]   # 2026-07 인천중부 → 제물포·영종 — 2025 정원은 제물포에 둔다(영종 몫 포함)
+        sid = match(nm.replace('경남 ', '경남'), r[1][:2])
+        if sid: out[sid]['cop'] = int(r[3].replace(',', '')); out[sid]['cop_y'] = r[0]
+        else: miss.append(r[2])
+    B = dgcsv(15084592)
+    for r in B[1:]:
+        sid = match(r[1])
+        if not sid: miss.append(r[1]); continue
+        out[sid].update({'k_murder': int(r[2].replace(',', '')), 'k_robbery': int(r[3].replace(',', '')), 'k_theft': int(r[4].replace(',', '')), 'k_viol': int(r[5].replace(',', '')), 'k_y': r[0]})
+    print('경찰서 공식 파일 이음', len(out), '못 이음', miss)
+    return dict(out)
+
+
 def main():
     y = datetime.date.today().year
     # ① 시도 담당주민수
@@ -124,12 +177,16 @@ def main():
     nk = collections.defaultdict(lambda: collections.defaultdict(lambda: [None, None, None]))
     for r in NK: nk[r['C1_NM']][r['PRD_DE']][{'B01': 0, 'B02': 1, 'B04': 2}[r['C2']]] = num(r['DT'])
     nat_kind = {k: dict(sorted(v.items())) for k, v in nk.items()}
+    st_off = st_official()
+    # 시도청 현원 2005~(15048477) · 서울 경찰서별 경찰관 2011~(15114290) · 시도청 가정폭력 검거·조치(15127380) · 서울 경찰서별 지역경찰 관서(15114084)
+    def table(n): T = dgcsv(n); return [T[0], T[1:]] if T else None
+    dg = {'sdc_now': table(15048477), 'seoul_cop': table(15114290), 'dv_sdc': table(15127380), 'seoul_box': table(15114084)}
     press2 = json.load(open(os.path.join(ROOT, 'tools', 'region', 'police-press.json'), encoding='utf-8'))   # 기사 원문 대조한 보도 숫자(사람이 고치는 표)
     doc = {'schema': 'tg-police-staff/1', 'made': datetime.date.today().isoformat(),
-           'source': '경찰공무원 1인당 담당주민수 = 통계청 e-지방지표 DT_1YL15013(경찰청 · 정원) · 경찰관 수 = 행정안전부 DT_11001N_2013_A051(시군구 · 2020 이 마지막) · 범죄 발생지 = 경찰청 범죄통계 DT_132004_A030 · 시도경찰청 발생·검거 = 경찰청 범죄통계 DT_132004_A003~A020 (KOSIS 국가통계포털)',
-           'fields': 'cop_sido{시도: {해: [경찰 1인당 담당주민, 주민등록인구, 경찰공무원 정원]}} · cop_kind{KOSIS 시도 코드(시군구 줄은 KOSIS 에 값이 없다): {n, sido, y{해: {pop 주민(등록외국인 포함), all 합계, p10k 만 명당, npa 경찰청 소속, hq 지방청 본청, st 경찰서, box 지구대파출소, cg 해경 소속, cg_hq·cg_st·cg_box}}}} · crime_sgg{KOSIS 코드: {n 시군구, sido, y{해: {all 계, strong 강력, theft 절도, viol 폭력, fraud 지능, vice 풍속, drug 마약, traffic 교통}}}} · crime_sdc{시도경찰청: {해: {죄종: [발생, 검거, 검거인원]}}} · sdc_q{시도경찰청: {분기 YYYYQ: [발생, 검거, 검거인원]}}(총계) · nat{proc 처리기간·catch 발생부터 검거까지·clue 수사단서·decide 사법경찰관 결정·hour 발생 시간: {cols, v{죄종: {해: [칸…]}}}} · proc 는 2011~2022 옛 표(범죄자 기준)를 앞에 이음 · press 보도로 알려진 수사관 1인당 사건 접수(공식 통계 아님) · nat_kind{죄종: {해: [발생, 검거, 검거인원]}}(전국 · DT_132004_A001) · press2{src{열쇠: {t, o, d, url}}, items[[갈래, 지표, 단위, src, {칸: 값 | [앞, 뒤]}, 단위(전국·청·서)]]}(tools/region/police-press.json · 기사 원문 대조한 것만) · catalog[[표 ID, 이름, 처음 해, 끝 해]](경찰청 KOSIS 표)',
+           'source': '경찰공무원 1인당 담당주민수 = 통계청 e-지방지표 DT_1YL15013(경찰청 · 정원) · 경찰관 수 = 행정안전부 DT_11001N_2013_A051(시군구 · 2020 이 마지막) · 범죄 발생지 = 경찰청 범죄통계 DT_132004_A030 · 시도경찰청 발생·검거 = 경찰청 범죄통계 DT_132004_A003~A020 (KOSIS 국가통계포털) · 경찰서별 정원·강력범죄·시도청 현원·서울 경찰서별 경찰관·지역경찰 관서·가정폭력 = 공공데이터포털 경찰청 파일 15092089·15084592·15048477·15114290·15114084·15127380',
+           'fields': 'cop_sido{시도: {해: [경찰 1인당 담당주민, 주민등록인구, 경찰공무원 정원]}} · cop_kind{KOSIS 시도 코드(시군구 줄은 KOSIS 에 값이 없다): {n, sido, y{해: {pop 주민(등록외국인 포함), all 합계, p10k 만 명당, npa 경찰청 소속, hq 지방청 본청, st 경찰서, box 지구대파출소, cg 해경 소속, cg_hq·cg_st·cg_box}}}} · crime_sgg{KOSIS 코드: {n 시군구, sido, y{해: {all 계, strong 강력, theft 절도, viol 폭력, fraud 지능, vice 풍속, drug 마약, traffic 교통}}}} · crime_sdc{시도경찰청: {해: {죄종: [발생, 검거, 검거인원]}}} · sdc_q{시도경찰청: {분기 YYYYQ: [발생, 검거, 검거인원]}}(총계) · nat{proc 처리기간·catch 발생부터 검거까지·clue 수사단서·decide 사법경찰관 결정·hour 발생 시간: {cols, v{죄종: {해: [칸…]}}}} · proc 는 2011~2022 옛 표(범죄자 기준)를 앞에 이음 · press 보도로 알려진 수사관 1인당 사건 접수(공식 통계 아님) · nat_kind{죄종: {해: [발생, 검거, 검거인원]}}(전국 · DT_132004_A001) · st{경찰서 번호: {cop 경찰서 정원, cop_y, k_murder 살인 · k_robbery 강도 · k_theft 절도 · k_viol 폭력 발생, k_y}}(공공데이터포털 15092089·15084592 · 경찰서 이름을 police-card 와 맞춤) · dg{sdc_now 시도청 현원 2005~ · seoul_cop 서울 경찰서별 경찰관 2011~ · dv_sdc 시도청 가정폭력 검거·조치 · seoul_box 서울 경찰서별 지구대·파출소·치안센터: [머리, 줄…]}(공공데이터포털 15048477·15114290·15127380·15114084 · 글자 그대로) · press2{src{열쇠: {t, o, d, url}}, items[[갈래, 지표, 단위, src, {칸: 값 | [앞, 뒤]}, 단위(전국·청·서)]]}(tools/region/police-press.json · 기사 원문 대조한 것만) · catalog[[표 ID, 이름, 처음 해, 끝 해]](경찰청 KOSIS 표)',
            'note': ['경찰관 수(소속별)는 2020 이 마지막 공개이고 KOSIS 에는 시도 줄에만 값이 있다 — 경찰서별 인원은 공개 통계에 없다', '1인당 담당주민수는 정원 기준(현원 아님)', '범죄 발생지 = 범죄가 일어난 곳(검거한 경찰서가 아님) · 시는 구로 나누지 않은 곳이 있다(창원·포항 등)', '검거 건수에는 앞 해 발생 사건 검거가 들어 있어 검거율이 100% 를 넘을 수 있다'],
-           'cop_sido': {k: dict(sorted(v.items())) for k, v in sido.items()}, 'cop_kind': cop_sgg, 'crime_sgg': crime_sgg, 'crime_sdc': crime_sdc, 'sdc_q': sdc_q, 'nat': natd, 'press': press, 'press2': press2, 'nat_kind': nat_kind, 'catalog': catalog}
+           'cop_sido': {k: dict(sorted(v.items())) for k, v in sido.items()}, 'cop_kind': cop_sgg, 'crime_sgg': crime_sgg, 'crime_sdc': crime_sdc, 'sdc_q': sdc_q, 'nat': natd, 'press': press, 'press2': press2, 'nat_kind': nat_kind, 'st': st_off, 'dg': dg, 'catalog': catalog}
     json.dump(doc, open(os.path.join(ROOT, 'data', 'police-staff.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print('시도', len(sido), '시군구 경찰관', len(cop_sgg), '시군구 범죄', len(crime_sgg), '청', len(crime_sdc))
     print('서울', sido.get('서울특별시', {}).get('2024'), '| 서초 범죄', [v for v in crime_sgg.values() if v['n'] == '서초구'][:1])

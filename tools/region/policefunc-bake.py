@@ -22,7 +22,7 @@ FN = [
     ['shop', '정보', '가게', '곳', '상가업소'], ['biz_i', '정보', '사업체(정보도 같은 값)', '곳', '노동·경제 현장 — 공개 지표가 적다'],
     ['frn', '외사', '외국인주민', '명', '행안부 2024.11'], ['frn_w', '외사', '외국인근로자', '명', '같은 표'], ['frn_m', '외사', '결혼이민자', '명', '같은 표'], ['frn_s', '외사', '유학생', '명', '같은 표'], ['frn_k', '외사', '외국국적동포', '명', '같은 표'], ['minbak', '외사', '외국인관광 도시민박', '곳', '지방행정 인허가'],
 ]
-DEN = [['pop', '주민', '명'], ['km2', '넓이', '㎢'], ['emp', '종사자', '명']]
+DEN = [['pop', '주민', '명'], ['km2', '넓이', '㎢'], ['emp', '종사자', '명'], ['live', '생활인구(평일 24시간 평균 · 서울)', '명']]
 CLS = {'bar': [108, 109, 110, 111], 'yu': [108, 109], 'sing': [219], 'gosi': [68], 'pc': [216, 218], 'motel': [65], 'massage': [239]}
 SIDO = {'11': '서울', '26': '부산', '27': '대구', '28': '인천', '29': '광주', '30': '대전', '31': '울산', '36': '세종', '41': '경기', '42': '강원', '51': '강원', '43': '충북', '44': '충남', '45': '전북', '52': '전북', '46': '전남', '12': '광주·전남', '47': '경북', '48': '경남', '50': '제주'}
 
@@ -49,13 +49,13 @@ def main():
             v = {'pop': jm.get('계'), 'km2': d.get('넓이_km2'), 'emp': sg.get('종사자'), 'biz': sg.get('사업체'), 'biz_i': sg.get('사업체'), 'shop': (d.get('가게(상가업소)') or {}).get('계'),
                  'old70': sum(ag.get(k, 0) or 0 for k in ('70~79', '80~89', '90~99', '100~')) if ag else None, 'under10': ag.get('0~9') if ag else None, 'kid': KID.get(code[:8]),
                  'acc': round(ac['계'] / 10, 1) if ac.get('계') is not None else None, 'dead10': ac.get('사망자'), 'ped10': ac.get('보행자 피해'), 'moto10': ac.get('이륜·원동기 가해'),
-                 'sub': tr.get('역 하루 승차'), 'bus': tr.get('버스 하루 승차'),
+                 'sub': tr.get('역 하루 승차'), 'bus': tr.get('버스 하루 승차'), 'live': (lambda a: round(sum(a) / len(a)) if a else None)((d.get('머무는 사람(생활인구)') or {}).get('평일 시간대(0~23시)')),
                  'frn': fr.get('합계'), 'frn_w': fr.get('외국인근로자'), 'frn_m': fr.get('결혼이민자'), 'frn_s': fr.get('유학생'), 'frn_k': fr.get('외국국적동포'),
                  'minbak': d.get('외국인관광 도시민박(업소 수 · 영업+휴업)') if isinstance(d.get('외국인관광 도시민박(업소 수 · 영업+휴업)'), (int, float)) else None}
             for k in CLS: v[k] = sc.get(k) if sc else None
             DONG[code[:8]] = {'n': d.get('이름'), 'gu': p['gu'], 'gn': p['name'], 'v': v}
     print('동', len(DONG))
-    keys = [f[0] for f in FN] + ['pop', 'km2']
+    keys = [f[0] for f in FN] + ['pop', 'km2', 'live']
     CK = {'c_viol', 'c_theft', 'c_strong', 'c_fraud', 'c_drug', 'c_traffic'}
     # 시군구 묶음(KOSIS 범죄 발생지와 같은 열쇠)
     SG = {}

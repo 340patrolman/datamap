@@ -116,6 +116,41 @@ def st_official():
     for r in dgcsv(15144536)[1:]: car[match(r[1], '충남')] = int(r[2])
     for sid, v in car.items():
         if sid: out[sid]['car112'] = v
+    # 청 공개 경찰서별 5대 범죄 발생·검거(서울 15054738 · 부산 15036510(발생만) · 인천 15070377 · 경기북부 15086083 · 강원 15107518 · 세종 15127530)
+    KN = {'살인': 'murder', '강도': 'robbery', '강간': 'sex', '성범죄': 'sex', '강간강제추행': 'sex', '강간·강제추행': 'sex', '절도': 'theft', '폭력': 'viol'}
+    def kn(x): x = re.sub(r'\s|발생|검거', '', x); return KN.get(x) or next((v for k, v in KN.items() if x.startswith(k)), None)
+    f5 = collections.defaultdict(lambda: collections.defaultdict(lambda: [None, None])); f5y = {}
+    def put(sid, k, i, v, y):
+        if sid and k and v not in (None, ''):
+            a = f5[sid][k]; a[i] = (a[i] or 0) + int(str(v).replace(',', '')); f5y[sid] = y
+    for r in dgcsv(15054738)[1:]: put(match('서울' + r[0].replace(' ', '')), kn(r[1]), 0 if r[2].startswith('발생') else 1, r[3], '2025')
+    T = dgcsv(15036510)
+    for r in T[1:]:
+        if r[2] != '경찰서': continue
+        sid = match('부산' + r[1].replace(' ', ''))
+        for c, v in zip(T[0][3:], r[3:]): put(sid, kn(c), 0, v, '2025')
+    T = dgcsv(15070377)
+    for r in T[1:]:
+        k = kn(r[0]); i = 0 if '발생' in r[0] else 1
+        for c, v in zip(T[0][1:], r[1:]): put(match('인천' + c.replace(' ', '')), k, i, v, '2025')
+    T = dgcsv(15086083)
+    if T:
+        yy = max(r[0] for r in T[1:])
+        for r in T[1:]:
+            if r[0] != yy or r[2] not in ('발생건수', '검거건수'): continue
+            for c, v in zip(T[0][3:], r[3:]): put(match(c.replace(' ', ''), '경기'), kn(r[1]), 0 if r[2] == '발생건수' else 1, v, yy)
+    T = dgcsv(15107518)
+    for r in T[1:]:
+        sid = match(r[0].replace(' ', ''), '강원')
+        for c, v in zip(T[0][1:], r[1:]): put(sid, kn(c), 0 if '발생' in c else 1, v, '2025')
+    T = dgcsv(15127530)
+    if T:
+        yy = max(r[0] for r in T[1:])
+        for r in T[1:]:
+            if r[0] == yy:
+                sid = match('세종' + r[1].replace(' ', '')); put(sid, kn(r[2]), 0, r[3], yy); put(sid, kn(r[2]), 1, r[4], yy)
+    for sid, v in f5.items(): out[sid]['f5'] = {k: list(x) for k, x in v.items()}; out[sid]['f5_y'] = f5y.get(sid)
+    print('5대 범죄(청 공개) 경찰서', len(f5))
     for sid in out: out[sid]['n'] = PC[sid]['n'] if sid in PC else None
     print('경찰서 공식 파일 이음', len(out), '못 이음', sorted(set(miss)), '· 순찰차', sum(1 for k in car if k), '/', len(car))
     return dict(out), dict(sat_sdc), sat_y
@@ -232,7 +267,7 @@ def main():
     press2 = json.load(open(os.path.join(ROOT, 'tools', 'region', 'police-press.json'), encoding='utf-8'))   # 기사 원문 대조한 보도 숫자(사람이 고치는 표)
     doc = {'schema': 'tg-police-staff/1', 'made': datetime.date.today().isoformat(),
            'source': '경찰공무원 1인당 담당주민수 = 통계청 e-지방지표 DT_1YL15013(경찰청 · 정원) · 경찰관 수 = 행정안전부 DT_11001N_2013_A051(시군구 · 2020 이 마지막) · 범죄 발생지 = 경찰청 범죄통계 DT_132004_A030 · 시도경찰청 발생·검거 = 경찰청 범죄통계 DT_132004_A003~A020 (KOSIS 국가통계포털) · 경찰서별 정원·강력범죄·시도청 현원·서울 경찰서별 경찰관·지역경찰 관서·가정폭력 = 공공데이터포털 경찰청 파일 15092089·15084592·15048477·15114290·15114084·15127380',
-           'fields': 'cop_sido{시도: {해: [경찰 1인당 담당주민, 주민등록인구, 경찰공무원 정원]}} · cop_kind{KOSIS 시도 코드(시군구 줄은 KOSIS 에 값이 없다): {n, sido, y{해: {pop 주민(등록외국인 포함), all 합계, p10k 만 명당, npa 경찰청 소속, hq 지방청 본청, st 경찰서, box 지구대파출소, cg 해경 소속, cg_hq·cg_st·cg_box}}}} · crime_sgg{KOSIS 코드: {n 시군구, sido, y{해: {all 계, strong 강력, theft 절도, viol 폭력, fraud 지능, vice 풍속, drug 마약, traffic 교통}}}} · crime_sdc{시도경찰청: {해: {죄종: [발생, 검거, 검거인원]}}} · sdc_q{시도경찰청: {분기 YYYYQ: [발생, 검거, 검거인원]}}(총계) · nat{proc 처리기간·catch 발생부터 검거까지·clue 수사단서·decide 사법경찰관 결정·hour 발생 시간: {cols, v{죄종: {해: [칸…]}}}} · proc 는 2011~2022 옛 표(범죄자 기준)를 앞에 이음 · press 보도로 알려진 수사관 1인당 사건 접수(공식 통계 아님) · nat_kind{죄종: {해: [발생, 검거, 검거인원]}}(전국 · DT_132004_A001) · st{경찰서 번호: {cop 경찰서 정원, cop_y, k_murder 살인 · k_robbery 강도 · k_theft 절도 · k_viol 폭력 발생, k_y}}(공공데이터포털 15092089·15084592 · 경찰서 이름을 police-card 와 맞춤) · st 에 덧붙임: sat_all 치안고객만족도 종합 · sat_civ 민원 · sat_112 112신고 · sat_trf 교통 · sat_inv 수사(점 · 15064412·15064323·15064400·15064404·15064409 · 해는 sat_y) · dui_hr[0~23시 음주단속 건수](15128722) · car112 112 순찰차 대수(서울·경기북부·강원·충남 · 15114083·15144083·15125675·15144536) · sat_sdc{시도청: 같은 칸} · pb112{"경찰서 번호|지구대·파출소 이름": [112 출동 건수, 기간]}(광주청 15113437) · dg{sdc_now 시도청 현원 2005~ · seoul_cop 서울 경찰서별 경찰관 2011~ · dv_sdc 시도청 가정폭력 검거·조치 · seoul_box 서울 경찰서별 지구대·파출소·치안센터: [머리, 줄…]}(공공데이터포털 15048477·15114290·15127380·15114084 · 글자 그대로) · press2{src{열쇠: {t, o, d, url}}, items[[갈래, 지표, 단위, src, {칸: 값 | [앞, 뒤]}, 단위(전국·청·서)]]}(tools/region/police-press.json · 기사 원문 대조한 것만) · catalog[[표 ID, 이름, 처음 해, 끝 해]](경찰청 KOSIS 표)',
+           'fields': 'cop_sido{시도: {해: [경찰 1인당 담당주민, 주민등록인구, 경찰공무원 정원]}} · cop_kind{KOSIS 시도 코드(시군구 줄은 KOSIS 에 값이 없다): {n, sido, y{해: {pop 주민(등록외국인 포함), all 합계, p10k 만 명당, npa 경찰청 소속, hq 지방청 본청, st 경찰서, box 지구대파출소, cg 해경 소속, cg_hq·cg_st·cg_box}}}} · crime_sgg{KOSIS 코드: {n 시군구, sido, y{해: {all 계, strong 강력, theft 절도, viol 폭력, fraud 지능, vice 풍속, drug 마약, traffic 교통}}}} · crime_sdc{시도경찰청: {해: {죄종: [발생, 검거, 검거인원]}}} · sdc_q{시도경찰청: {분기 YYYYQ: [발생, 검거, 검거인원]}}(총계) · nat{proc 처리기간·catch 발생부터 검거까지·clue 수사단서·decide 사법경찰관 결정·hour 발생 시간: {cols, v{죄종: {해: [칸…]}}}} · proc 는 2011~2022 옛 표(범죄자 기준)를 앞에 이음 · press 보도로 알려진 수사관 1인당 사건 접수(공식 통계 아님) · nat_kind{죄종: {해: [발생, 검거, 검거인원]}}(전국 · DT_132004_A001) · st{경찰서 번호: {cop 경찰서 정원, cop_y, k_murder 살인 · k_robbery 강도 · k_theft 절도 · k_viol 폭력 발생, k_y}}(공공데이터포털 15092089·15084592 · 경찰서 이름을 police-card 와 맞춤) · st 에 덧붙임: sat_all 치안고객만족도 종합 · sat_civ 민원 · sat_112 112신고 · sat_trf 교통 · sat_inv 수사(점 · 15064412·15064323·15064400·15064404·15064409 · 해는 sat_y) · dui_hr[0~23시 음주단속 건수](15128722) · car112 112 순찰차 대수(서울·경기북부·강원·충남 · 15114083·15144083·15125675·15144536) · f5{murder 살인·robbery 강도·sex 성범죄·theft 절도·viol 폭력: [발생, 검거]}·f5_y(청이 공개한 경찰서별 5대 범죄 — 서울·부산(발생만)·인천·경기북부·강원·세종) · sat_sdc{시도청: 같은 칸} · pb112{"경찰서 번호|지구대·파출소 이름": [112 출동 건수, 기간]}(광주청 15113437) · dg{sdc_now 시도청 현원 2005~ · seoul_cop 서울 경찰서별 경찰관 2011~ · dv_sdc 시도청 가정폭력 검거·조치 · seoul_box 서울 경찰서별 지구대·파출소·치안센터: [머리, 줄…]}(공공데이터포털 15048477·15114290·15127380·15114084 · 글자 그대로) · press2{src{열쇠: {t, o, d, url}}, items[[갈래, 지표, 단위, src, {칸: 값 | [앞, 뒤]}, 단위(전국·청·서)]]}(tools/region/police-press.json · 기사 원문 대조한 것만) · catalog[[표 ID, 이름, 처음 해, 끝 해]](경찰청 KOSIS 표)',
            'note': ['경찰관 수(소속별)는 2020 이 마지막 공개이고 KOSIS 에는 시도 줄에만 값이 있다 — 경찰서별 인원은 공개 통계에 없다', '1인당 담당주민수는 정원 기준(현원 아님)', '범죄 발생지 = 범죄가 일어난 곳(검거한 경찰서가 아님) · 시는 구로 나누지 않은 곳이 있다(창원·포항 등)', '검거 건수에는 앞 해 발생 사건 검거가 들어 있어 검거율이 100% 를 넘을 수 있다'],
            'cop_sido': {k: dict(sorted(v.items())) for k, v in sido.items()}, 'cop_kind': cop_sgg, 'crime_sgg': crime_sgg, 'crime_sdc': crime_sdc, 'sdc_q': sdc_q, 'nat': natd, 'press': press, 'press2': press2, 'nat_kind': nat_kind, 'st': st_off, 'sat_sdc': sat_sdc, 'sat_y': sat_y, 'pb112': pbx, 'dg': dg, 'catalog': catalog}
     json.dump(doc, open(os.path.join(ROOT, 'data', 'police-staff.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))

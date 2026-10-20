@@ -50,7 +50,22 @@ def crime_units():
     return U, key, PSF
 
 
+
+def nid_map():
+    """행정동 8자리 → 그 동을 기본으로 맡는 경찰서 수(police.json labels 의 「~」 앞 · 반포 현장 기준 FIELD) — polcard-bake 와 같은 규칙"""
+    import importlib.util as _iu
+    pol = json.load(open(os.path.join(ROOT, 'data', 'police.json'), encoding='utf-8')); out = {}
+    try:
+        sp = _iu.spec_from_file_location('polcard_bake', os.path.join(ROOT, 'tools', 'region', 'polcard-bake.py')); m = _iu.module_from_spec(sp); sp.loader.exec_module(m); FIELD = m.FIELD
+    except Exception:
+        FIELD = {}
+    for code, li in pol['dong'].items():
+        ids = [x for x in str(pol['labels'][li]).split('~')[0].split(',') if x != '']
+        out[code[:8]] = len(FIELD[code]) if code in FIELD else max(1, len(ids))
+    return out
+
 def main():
+    NID = nid_map()
     PC = D('police-card.json')['st']; AR = D('acc-rate-police.json')['st']; POL = D('police.json')['stations']; GT = D('gu-tax.json')['gu']
     SDC = {str(s[0]): s[5] for s in POL}
     KID = {}
@@ -89,12 +104,12 @@ def main():
         n = st['n']; s = short(n); a = AR.get(sid, {})
         kid = 0.0; wsum = wpop = 0.0
         for dg in st.get('dongs', []):
-            c = str(dg[0])[:8]; w = 1.0 / (1 + len(dg[4] or [])); kid += KID.get(c, 0) * w
+            c = str(dg[0])[:8]; w = 1.0 / NID.get(c, 1 + len(dg[4] or [])); kid += KID.get(c, 0) * w
             g = GT.get(c[:5]) or GT.get(c[:4] + '0')
             if g and g.get('wage') and dg[3]: wsum += g['wage'][0] * dg[3] * w; wpop += dg[3] * w
         cr = dict.fromkeys(CRK, 0.0); cok = True; share = collections.Counter()
         for dg in st.get('dongs', []):
-            c = str(dg[0])[:8]; w = 1.0 / (1 + len(dg[4] or [])); k = ckey(c); p = (dg[3] or 0) * w
+            c = str(dg[0])[:8]; w = 1.0 / NID.get(c, 1 + len(dg[4] or [])); k = ckey(c); p = (dg[3] or 0) * w
             if not k or not upop[k]: cok = False; continue
             share[k] += p / upop[k]
             for g in k[1]:

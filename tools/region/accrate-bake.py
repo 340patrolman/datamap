@@ -78,7 +78,22 @@ def roads(dong_of):
     out = {k: round(v, 3) for k, v in L.items()}; json.dump(out, open(p, 'w', encoding='utf-8')); return out
 
 
+
+def nid_map():
+    """행정동 8자리 → 그 동을 기본으로 맡는 경찰서 수(police.json labels 의 「~」 앞 · 반포 현장 기준 FIELD) — polcard-bake 와 같은 규칙"""
+    import importlib.util as _iu
+    pol = json.load(open(os.path.join(ROOT, 'data', 'police.json'), encoding='utf-8')); out = {}
+    try:
+        sp = _iu.spec_from_file_location('polcard_bake', os.path.join(ROOT, 'tools', 'region', 'polcard-bake.py')); m = _iu.module_from_spec(sp); sp.loader.exec_module(m); FIELD = m.FIELD
+    except Exception:
+        FIELD = {}
+    for code, li in pol['dong'].items():
+        ids = [x for x in str(pol['labels'][li]).split('~')[0].split(',') if x != '']
+        out[code[:8]] = len(FIELD[code]) if code in FIELD else max(1, len(ids))
+    return out
+
 def main():
+    NID = nid_map()
     from shapely.geometry import shape, Point
     from shapely.strtree import STRtree
     G = json.load(open(HJD, encoding='utf-8'))['features']; geoms, codes, meta = [], [], {}
@@ -109,7 +124,7 @@ def main():
     for sid, st in PC.items():
         pop = km2 = road = vv = vk = 0.0; vok = True
         for dg in st.get('dongs', []):
-            c = str(dg[0])[:8]; w = 1.0 / (1 + len(dg[4] or [])); p = (dg[3] or 0) * w
+            c = str(dg[0])[:8]; w = 1.0 / NID.get(c, 1 + len(dg[4] or [])); p = (dg[3] or 0) * w
             pop += p; km2 += (dg[2] or 0) * w; road += rd.get(c, 0) * w
             u = unit(*meta[c]) if c in meta else None
             if u and u in veh and upop[u]: vv += veh[u][0] * p / upop[u]; vk += veh[u][1] * p / upop[u]

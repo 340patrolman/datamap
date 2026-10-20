@@ -963,6 +963,9 @@
   /* v2.252.0 경찰서·시도청 지표표 */
   .pix-ctl { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; } .pix-ctl select { height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 13px; padding: 0 8px; max-width: 100%; }
   .pix-wrap { overflow-x: auto; } table.pix { width: 100%; font-size: 12.5px; } table.pix td, table.pix th { white-space: nowrap; padding: 4px 6px; } table.pix td:nth-child(3) { position: relative; min-width: 84px; } .pix-bar { display: block; height: 4px; border-radius: 2px; margin-top: 2px; } table.pix tr[data-pixst] { cursor: pointer; }
+  /* v2.253.0 경찰 통계 모음 단위 띠 */
+  .ps-lv { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; margin-right: 4px; vertical-align: 1px; } .ps-nat { background: #dbeafe; color: #1e3a8a; } .ps-sdc { background: #dcfce7; color: #14532d; } .ps-st { background: #fef3c7; color: #78350f; } .ps-press { background: #f1f5f9; color: #475569; border: 1px dashed #94a3b8; }
+  .ps-sec { margin: 14px 0 4px; padding: 6px 10px; border-radius: 10px; background: var(--ink); color: var(--panel); font-weight: 800; font-size: 14px; } table.pix tr.pix-nat td { background: rgba(37,99,235,.08); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -1071,7 +1074,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.252.0"></script>
+<script src="js/map2d.js?v=2.253.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

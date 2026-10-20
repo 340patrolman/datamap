@@ -10,6 +10,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KB = os.path.dirname(ROOT)
 # [파일, 주기(일), 다시 굽는 법(auto = 키만 있으면 혼자 돈다 / hand = 사람·브라우저 단계가 있다), 명령·절차]
 SETS = [
+    ['data/police-staff.json', 120, 'auto', '경찰 통계 모음(KOSIS) — 경찰청 범죄통계 새 해(대개 다음 해 봄)·분기(분기마다)가 나오면 07_API키/out/policestaff/ 의 그 표 json 을 지우고 `py -3.12 -X utf8 tools/region/policestaff-bake.py` → policeidx-bake.py · 보도 숫자는 tools/region/police-press.json 에 원문 대조한 것만 덧붙인다'],
+    ['data/npa-stats.json', 90, 'auto', '경찰청 누리집 경찰통계자료 표 — `py -3.12 -X utf8 tools/region/npastat-bake.py`(표가 바뀌면 카드의 표 이름 찾기 npaT 를 확인)'],
     ['data/police-index.json', 365, 'auto', '경찰서·시도청 지표표(사건 ÷ 주민·학생·자동차·주행·넓이·길·가게) — police-card · acc-rate-police · dui-catch-st · call112 · police-stats · dong-kidage · gu-tax 가운데 하나라도 다시 구우면 `py -3.12 -X utf8 tools/region/policeidx-bake.py`'],
     ['data/acc-rate-police.json', 365, 'auto', '경찰서별 사고 비율(주민·자동차·넓이·길·주행거리) — KOSIS 교통안전공단 시군구 주행거리 새 해(대개 다음 해 여름)가 나오면 accrate-bake.py 의 YEAR 를 올리고(2023 대조도 한 해 올림) `py -3.12 -X utf8 tools/region/accrate-bake.py` · police-card(사고·주민)를 다시 구웠을 때도 다시 · 표준노드링크 새 판이면 07_API키/out/accrate/road_dong.json 을 지우고 다시'],
     ['data/runaway-sido.json', 365, 'auto', '가출·실종 신고(시도경찰청 · 해마다 · 대개 5~9월에 지난해 줄이 올라옴) — 열두 파일을 `tools/region/dgfile.py <번호>` 로 다시 받고(번호는 runaway-bake.py 머리말) `py -3.12 -X utf8 tools/region/runaway-bake.py` → ai-guide-bake → 커밋 · 일곱 청(서울·인천·대전·세종·경기남부·경기북부·경남)이 새로 내면 SRC 에 더한다 · 정보공개청구(경찰서별) 회신이 오면 시군구로 바꾼다'],

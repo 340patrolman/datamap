@@ -22,6 +22,34 @@ D = lambda f: json.load(open(os.path.join(ROOT, 'data', f), encoding='utf-8'))
 def short(n): return re.sub(r'경찰서$', '', re.sub(r'^서울', '', n))
 
 
+CRK = ['all', 'strong', 'theft', 'viol', 'fraud', 'drug', 'traffic']
+SH = {'서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구', '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전', '울산광역시': '울산', '세종특별자치시': '세종', '경기도': '경기도', '강원특별자치도': '강원도', '강원도': '강원도',
+      '충청북도': '충청북도', '충청남도': '충청남도', '전북특별자치도': '전라북도', '전라북도': '전라북도', '전라남도': '전라남도', '경상북도': '경상북도', '경상남도': '경상남도', '제주특별자치도': '제주도'}
+SDC_SIDO = {'서울특별시경찰청': '서울특별시', '부산광역시경찰청': '부산광역시', '대구광역시경찰청': '대구광역시', '인천광역시경찰청': '인천광역시', '광주경찰청': '광주광역시', '대전광역시경찰청': '대전광역시', '울산광역시경찰청': '울산광역시', '세종특별자치시경찰청': '세종특별자치시',
+            '강원특별자치도경찰청': '강원특별자치도', '충청북도경찰청': '충청북도', '충청남도경찰청': '충청남도', '전라북도경찰청': '전북특별자치도', '전남경찰청': '전라남도', '경상북도경찰청': '경상북도', '경상남도경찰청': '경상남도', '제주특별자치도경찰청': '제주특별자치도'}
+
+
+def crime_units():
+    """범죄 발생지(시군구 · 2023~2025 한 해 평균) — accrate-bake 의 묶음 열쇠(시도, 시군구)로"""
+    import importlib.util
+    sp = importlib.util.spec_from_file_location('ar', os.path.join(ROOT, 'tools', 'region', 'accrate-bake.py')); ar = importlib.util.module_from_spec(sp); sp.loader.exec_module(ar)
+    PSF = D('police-staff.json'); U = {}
+    for v in PSF['crime_sgg'].values():
+        ys = [y for y in v['y'] if v['y'][y].get('all') is not None]
+        if not ys: continue
+        U[(v['sido'], v['n'])] = {k: sum(v['y'][y].get(k) or 0 for y in ys) / len(ys) for k in CRK}
+    G = json.load(open(ar.HJD, encoding='utf-8'))['features']; meta = {}
+    for f in G:
+        q = f['properties']; meta[str(q.get('adm_cd2') or '')[:8]] = (q['sidonm'], q['sggnm'])
+    def key(c):
+        if c not in meta: return None
+        u = ar.unit(*meta[c]); sd = SH.get(u[0], u[0]); g = u[1]
+        if g.startswith('중·동·서구'): return ('인천', ('중구', '동구', '서구'))
+        if sd == '세종': return ('세종', ('세종',))
+        return (sd, (g,))
+    return U, key, PSF
+
+
 def main():
     PC = D('police-card.json')['st']; AR = D('acc-rate-police.json')['st']; POL = D('police.json')['stations']; GT = D('gu-tax.json')['gu']
     SDC = {str(s[0]): s[5] for s in POL}
@@ -37,6 +65,13 @@ def main():
     PS = D('police-stats.json'); cy = PS.get('crimeYear'); CR = {k: sum(x[0] for x in v.values()) for k, v in (PS.get('crime') or {}).items()}
     EN = {k: (v.get('2024') or {}).get('n') for k, v in (PS.get('enf') or {}).items()}
     out = {}; miss = collections.Counter()
+    CU, ckey, PSF = crime_units(); upop = collections.Counter(); seen = set()
+    for st in PC.values():
+        for dg in st.get('dongs', []):
+            c = str(dg[0])[:8]
+            if c in seen: continue
+            seen.add(c); k = ckey(c)
+            if k: upop[k] += dg[3] or 0
     for sid, st in PC.items():
         n = st['n']; s = short(n); a = AR.get(sid, {})
         kid = 0.0; wsum = wpop = 0.0
@@ -44,6 +79,16 @@ def main():
             c = str(dg[0])[:8]; w = 1.0 / (1 + len(dg[4] or [])); kid += KID.get(c, 0) * w
             g = GT.get(c[:5]) or GT.get(c[:4] + '0')
             if g and g.get('wage') and dg[3]: wsum += g['wage'][0] * dg[3] * w; wpop += dg[3] * w
+        cr = dict.fromkeys(CRK, 0.0); cok = True; share = collections.Counter()
+        for dg in st.get('dongs', []):
+            c = str(dg[0])[:8]; w = 1.0 / (1 + len(dg[4] or [])); k = ckey(c); p = (dg[3] or 0) * w
+            if not k or not upop[k]: cok = False; continue
+            share[k] += p / upop[k]
+            for g in k[1]:
+                u = CU.get((k[0], g))
+                if not u: cok = False; continue
+                for x in CRK: cr[x] += u[x] * p / upop[k]
+        cexact = 1 if share and all(v > 0.98 for v in share.values()) else 0
         dui = DU.get(n)
         if dui is None and n == '고성경찰서': dui = DU.get(('강원' if '강원' in SDC.get(sid, '') else '경남') + '고성경찰서')
         if dui is None and n == '인천제물포경찰서': dui = DU.get('인천중부경찰서')   # 2026-07 인천중부 → 제물포·영종으로 나뉨 — 2024 인천중부 값을 제물포에 둔다(영종 몫 포함 · 영종은 빈칸)
@@ -51,9 +96,10 @@ def main():
         call = CALL.get(s) if n.startswith('서울') else CALL.get('@' + s)
         num = {'acc': a.get('acc'), 'dead': round((st.get('acc') or {}).get('dead', 0) / 10, 1) if st.get('acc') else None, 'dui': dui, 'call': call,
                'crime': CR.get(s) if n.startswith('서울') else None, 'enf': EN.get(s) if n.startswith('서울') else None}
+        for x in CRK: num['c_' + x] = round(cr[x], 1) if cok and share else None
         den = {'pop': a.get('pop') or st.get('pop'), 'kid': round(kid) or None, 'emp': st.get('emp'), 'shop': st.get('shop'), 'frn': st.get('frn'), 'km2': a.get('km2') or st.get('km2'),
                'road': a.get('road_km'), 'veh': a.get('veh'), 'vkm': a.get('vkm'), 'wage': round(wsum / wpop) if wpop else None}
-        out[sid] = {'n': n, 'sdc': SDC.get(sid, ''), 'num': num, 'den': den}
+        out[sid] = {'n': n, 'sdc': SDC.get(sid, ''), 'num': num, 'den': den, 'cx': cexact}
     # 시도경찰청 묶음 — 분자·분모는 더하고(없는 서가 하나라도 있으면 그 칸은 빈칸) 소득은 주민 가중 평균
     sd = collections.OrderedDict()
     for sid, v in sorted(out.items(), key=lambda x: x[1]['sdc']):
@@ -71,11 +117,23 @@ def main():
             for k in list(g[part]):
                 if isinstance(g[part][k], float): g[part][k] = round(g[part][k], 1)
         g['den']['wage'] = round(g['_w'][0] / g['_w'][1]) if g['_w'][1] else None; del g['_w']
+        # 시도청은 청이 낸 발생·검거(2023~2025 한 해 평균)로 바꿔 넣는다 — 서 몫 어림을 더한 것보다 맞다
+        cs = PSF['crime_sdc'].get(g['n'])
+        if cs:
+            ys = sorted(cs)
+            for x in CRK:
+                vv = [cs[y][x] for y in ys if cs[y].get(x) and cs[y][x][0] is not None]
+                if vv: g['num']['c_' + x] = round(sum(a[0] for a in vv) / len(vv), 1)
+            vv = [cs[y]['all'] for y in ys if cs[y].get('all')]
+            if vv: g['num']['clr'] = round(sum(a[1] for a in vv) / len(vv), 1); g['den']['occ'] = round(sum(a[0] for a in vv) / len(vv), 1)
+        sd2 = SDC_SIDO.get(g['n']); cp = PSF['cop_sido'].get(sd2 or '', {})
+        if cp:
+            yy = max(cp); g['den']['cop'] = cp[yy][2]; g['cop_y'] = yy
     doc = {'schema': 'tg-police-index/1', 'made': datetime.date.today().isoformat(),
-           'years': {'acc': '2023~2025 한 해 평균', 'dead': '2016~2025 한 해 평균', 'dui': dy, 'call': '서울 %s · 경기북부 %s' % (cyr, gny), 'crime': cy, 'enf': 2024, 'kid': '2026-09', 'veh': '2024', 'wage': 'KOSIS 국세청 연말정산 최근 해'},
-           'source': '교통사고 = 도로교통공단 TAAS 공개 사고(근사) · 음주운전 적발 = 경찰청 15043308 · 112 = 서울경찰청 15114082·경기북부경찰청 15036132 · 5대 범죄·단속 = 서울경찰청 공개 파일(police-stats) · 주민·종사자·가게·외국인 = 주민등록·SGIS·상가업소·행안부(행정동 합) · 학령인구 = 주민등록 연령별(2026-09) · 자동차·주행거리 = KOSIS 교통안전공단 · 도로 = 표준노드링크 · 소득 = 국세청 연말정산(주소지) · 관할 = 직제 시행규칙 별표2',
+           'years': {'acc': '2023~2025 한 해 평균', 'dead': '2016~2025 한 해 평균', 'c_': '2023~2025 한 해 평균(범죄 발생지)', 'cop': '2024 정원', 'dui': dy, 'call': '서울 %s · 경기북부 %s' % (cyr, gny), 'crime': cy, 'enf': 2024, 'kid': '2026-09', 'veh': '2024', 'wage': 'KOSIS 국세청 연말정산 최근 해'},
+           'source': '교통사고 = 도로교통공단 TAAS 공개 사고(근사) · 음주운전 적발 = 경찰청 15043308 · 112 = 서울경찰청 15114082·경기북부경찰청 15036132 · 5대 범죄·단속 = 서울경찰청 공개 파일(police-stats) · 주민·종사자·가게·외국인 = 주민등록·SGIS·상가업소·행안부(행정동 합) · 학령인구 = 주민등록 연령별(2026-09) · 자동차·주행거리 = KOSIS 교통안전공단 · 도로 = 표준노드링크 · 소득 = 국세청 연말정산(주소지) · 범죄 발생·검거 = 경찰청 범죄통계(KOSIS DT_132004_A030 시군구 발생지 · A003~A020 시도경찰청) · 경찰관 = 경찰공무원 정원(e-지방지표 DT_1YL15013 · 2024) · 관할 = 직제 시행규칙 별표2',
            'fields': 'st{경찰서 번호: {n, sdc 시도경찰청, num{acc 교통사고/해, dead 사망자/해, dui 음주운전 적발/해, call 112/해, crime 5대 범죄 발생/해, enf 현장 단속/해}, den{pop 주민, kid 만 6~17세, emp 종사자, shop 가게, frn 외국인주민, km2, road 길 ㎞, veh 자동차, vkm 연간 주행 ㎞, wage 1인당 총급여 만 원}}} · sdc{시도경찰청: 같은 꼴(값이 있는 서만 더한 합) + cnt 서 수 + cov{num.acc 등: 값이 있는 서 수}}',
-           'note': ['행정동 단위 근사 — 두 서 이상이 나눠 맡는 동은 서 수로 똑같이 나눴다', '교통사고는 TAAS 공개 사고를 칸으로 모은 근사 · 경찰 내부 통계와 다르다',
+           'note': ['범죄 발생(c_*)은 시군구 값을 그 안 경찰서의 주민 몫으로 나눈 어림(cx=1 이면 서가 시군구를 혼자 맡아 나누지 않음) · 시도청 줄은 청이 낸 값', '경찰관 1명당은 시도청만(정원 · 경기남부·북부는 시도 한 값뿐이라 빈칸) — 경찰서별 인원은 공개 통계에 없다', '행정동 단위 근사 — 두 서 이상이 나눠 맡는 동은 서 수로 똑같이 나눴다', '교통사고는 TAAS 공개 사고를 칸으로 모은 근사 · 경찰 내부 통계와 다르다',
                     '112·5대 범죄·단속은 공개한 청(서울 · 112 는 경기북부도)만 — 다른 청은 빈칸(없다는 뜻이 아니라 공개 안 함)', '주민 대비는 일터·번화가가, 자동차 대비는 다른 곳 차가 오가는 곳이 크게 나온다 — 여러 분모를 같이 본다',
                     '소득 = 시군구 1인당 총급여(주소지)를 서의 주민 비율로 섞은 값 — 그 서 관할 주민의 실제 소득이 아니다'],
            'st': out, 'sdc': sd, 'miss': dict(miss)}

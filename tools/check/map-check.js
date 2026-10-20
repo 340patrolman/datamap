@@ -10,7 +10,7 @@
     if (m && m.view) { clearInterval(poll); setTimeout(function () { try { run(m); } catch (e) { ck('검사 스크립트가 끝까지 돌았다', false, e && e.message); send(); } }, 7000); }
     else if (Date.now() - t0 > 40000) { clearInterval(poll); ck('지도가 열린다(문법)', false, (window.__ERR || []).join(' | ') || 'TGMap2D 없음'); send(); }
   }, 300);
-  function run(m) { try { m.runwCardHtml && m.runwCardHtml('부산'); } catch (e1) {} try { m.accrRowsHtml && m.accrRowsHtml('0'); } catch (e2) {}
+  function run(m) { try { m.runwCardHtml && m.runwCardHtml('부산'); } catch (e1) {} try { m.accrRowsHtml && m.accrRowsHtml('0'); } catch (e2) {} try { m.pidxHtml && m.pidxHtml(); } catch (e3) {}
  try { m.rentN && m.rentN(); } catch (e0) {}
     ck('지도가 열린다(문법)', true);
     var cv = document.querySelector('canvas'); ck('캔버스에 크기가 있다', !!cv && cv.width > 100 && cv.height > 100, cv ? cv.width + '×' + cv.height : '없음');
@@ -86,6 +86,7 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var px = TGMap2D.pidxHtml({ u: 'sdc', num: 'acc', den: 'pop', sdc: '' }) || ''; var px2 = TGMap2D.pidxHtml({ u: 'st', num: 'dui', den: 'veh', sdc: '서울특별시경찰청' }) || ''; ck('📊 경찰서·시도청 지표표 — 시도청 18곳 교통사고 주민 대비 · 서울 경찰서 음주 적발 자동차 대비 표 (v2.252.0)', (px.match(/<tr>|<tr /g) || []).length >= 18 && /서초/.test(px2) && /전국 /.test(px2), (px.match(/<tr/g) || []).length + '줄 · ' + (px2.match(/<tr/g) || []).length + '줄'); } catch (e) { ck('지표표 검사', false, e.message); }
       try { var ar = TGMap2D.accrRowsHtml('0') || ''; ck('🚗 경찰서별 사고 비율 — 서울중부서 카드에 주민 10만 명당 · 자동차 1만 대당 · 전국 순위 (v2.251.0)', /주민 10만 명당/.test(ar) && /자동차 1만 대당/.test(ar) && /위 \//.test(ar), ar.length + '자'); } catch (e) { ck('경찰서 사고 비율 검사', false, e.message); }
       try { var rw = TGMap2D.runwCardHtml('부산') || ''; ck('🚶 가출·실종 신고(시도) — 부산 카드에 18세 이상 10만 명당 · 서울은 「공개하지 않는다」 (v2.250.0)', /10만 명당/.test(rw) && /공개하지 않는다/.test(TGMap2D.runwCardHtml('서울') || ''), rw.length + '자'); } catch (e) { ck('가출 신고 검사', false, e.message); }
       try { var rn = TGMap2D.rentN(), rc = TGMap2D.rentCardHtml('남포동') || ''; ck('💰 상가 임대료 전국(R-ONE) — 표본 상권 300곳 넘고 부산 남포동 카드에 소득수익률 (v2.248.0)', rn > 300 && /소득수익률/.test(rc) && /천원/.test(rc), '상권 ' + rn + ' · 카드 ' + rc.length + '자'); } catch (e) { ck('상가 임대료 전국 검사', false, e.message); }

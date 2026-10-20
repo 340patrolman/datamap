@@ -960,6 +960,9 @@
   #m2dChipT { display: none; }
   body:not(.top1) #m2dChips > #m2dChipT { display: inline-flex; align-items: center; color: var(--ink2); border-style: dashed; }
   body.chipfold:not(.top1) #m2dChips > #m2dChipT { color: var(--acc); border: 1.5px solid var(--acc); font-weight: 800; }
+  /* v2.252.0 경찰서·시도청 지표표 */
+  .pix-ctl { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; } .pix-ctl select { height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 13px; padding: 0 8px; max-width: 100%; }
+  .pix-wrap { overflow-x: auto; } table.pix { width: 100%; font-size: 12.5px; } table.pix td, table.pix th { white-space: nowrap; padding: 4px 6px; } table.pix td:nth-child(3) { position: relative; min-width: 84px; } .pix-bar { display: block; height: 4px; border-radius: 2px; margin-top: 2px; } table.pix tr[data-pixst] { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -1068,7 +1071,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.251.0"></script>
+<script src="js/map2d.js?v=2.252.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

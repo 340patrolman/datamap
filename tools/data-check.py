@@ -12,6 +12,7 @@ KB = os.path.dirname(ROOT)
 SETS = [
     ['data/rally-hist-seoul.json', 31, 'auto', '서울 주요 집회 달마다(2021~) — `py -3.12 -X utf8 tools/region/rallyhist-bake.py`(새 글만 받고 다시 묶음)'],
     ['data/rally-sdc.json', 365, 'auto', '집회 전국·청 해마다 — 공공데이터포털 파일 새 해(대개 봄)면 07_API키/out/dg/<번호> 를 지우고 dgfile.py 로 다시 받은 뒤 `py -3.12 -X utf8 tools/region/rallysdc-bake.py`'],
+    ['data/police-func.json', 120, 'auto', '경찰 기능별 지표(동·시군구·경찰서) — 상가업소(storecls)·주민·외국인·학령·TAAS·police-staff 를 다시 구우면 `py -3.12 -X utf8 tools/region/policefunc-bake.py` → policeidx-bake.py'],
     ['data/police-staff.json', 120, 'auto', '경찰 통계 모음(KOSIS) — 경찰청 범죄통계 새 해(대개 다음 해 봄)·분기(분기마다)가 나오면 07_API키/out/policestaff/ 의 그 표 json 을 지우고 `py -3.12 -X utf8 tools/region/policestaff-bake.py` → policeidx-bake.py · 보도 숫자는 tools/region/police-press.json 에 원문 대조한 것만 덧붙인다'],
     ['data/npa-stats.json', 90, 'auto', '경찰청 누리집 경찰통계자료 표 — `py -3.12 -X utf8 tools/region/npastat-bake.py`(표가 바뀌면 카드의 표 이름 찾기 npaT 를 확인)'],
     ['data/police-index.json', 365, 'auto', '경찰서·시도청 지표표(사건 ÷ 주민·학생·자동차·주행·넓이·길·가게) — police-card · acc-rate-police · dui-catch-st · call112 · police-stats · dong-kidage · gu-tax 가운데 하나라도 다시 구우면 `py -3.12 -X utf8 tools/region/policeidx-bake.py`'],

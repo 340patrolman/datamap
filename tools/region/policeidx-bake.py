@@ -65,6 +65,9 @@ def main():
     PS = D('police-stats.json'); cy = PS.get('crimeYear'); CR = {k: sum(x[0] for x in v.values()) for k, v in (PS.get('crime') or {}).items()}
     EN = {k: (v.get('2024') or {}).get('n') for k, v in (PS.get('enf') or {}).items()}
     out = {}; miss = collections.Counter()
+    try: PF = D('police-func.json')
+    except Exception: PF = {'st': {}, 'fn': []}
+    PFK = [f[0] for f in PF['fn'] if not f[0].startswith('c_')]
     # 집회(2025) — 서울 = 「오늘의 주요집회」 관할서(rally-hist-seoul · 주요 집회만) · 광주·대구 = 청 공개 경찰서별 개최(rally-sdc)
     RY = '2025'; RAL = {}
     try:
@@ -116,6 +119,8 @@ def main():
         num['duiT'] = sum(so['dui_hr']) if so.get('dui_hr') else None
         for k in ('sat_all', 'sat_civ', 'sat_112', 'sat_trf', 'sat_inv'): num[k] = so.get(k)
         num['rally'] = RAL.get(n)
+        pf = PF['st'].get(sid, {})
+        for k in PFK: num['f_' + k] = pf.get(k)   # 기능별 지표(police-func · 동을 서로 묶은 값)
         out[sid] = {'n': n, 'sdc': SDC.get(sid, ''), 'num': num, 'den': den, 'cx': cexact}
     # 시도경찰청 묶음 — 분자·분모는 더하고(없는 서가 하나라도 있으면 그 칸은 빈칸) 소득은 주민 가중 평균
     sd = collections.OrderedDict()

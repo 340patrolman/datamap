@@ -10,7 +10,7 @@
     if (m && m.view) { clearInterval(poll); setTimeout(function () { try { run(m); } catch (e) { ck('검사 스크립트가 끝까지 돌았다', false, e && e.message); send(); } }, 7000); }
     else if (Date.now() - t0 > 40000) { clearInterval(poll); ck('지도가 열린다(문법)', false, (window.__ERR || []).join(' | ') || 'TGMap2D 없음'); send(); }
   }, 300);
-  function run(m) { try { m.runwCardHtml && m.runwCardHtml('부산'); } catch (e1) {} try { m.accrRowsHtml && m.accrRowsHtml('0'); } catch (e2) {} try { m.pidxHtml && m.pidxHtml(); } catch (e3) {} try { m.pstatHtml && m.pstatHtml(); } catch (e4) {}
+  function run(m) { try { m.runwCardHtml && m.runwCardHtml('부산'); } catch (e1) {} try { m.accrRowsHtml && m.accrRowsHtml('0'); } catch (e2) {} try { m.pidxHtml && m.pidxHtml(); } catch (e3) {} try { m.pstatHtml && m.pstatHtml(); } catch (e4) {} try { m.pfCard && m.pfCard(0); m.pidxHtml && m.pidxHtml({ u: 'dong', num: 'f_frn', den: 'pop', sd2: '11' }); } catch (e5) {}
  try { m.rentN && m.rentN(); } catch (e0) {}
     ck('지도가 열린다(문법)', true);
     var cv = document.querySelector('canvas'); ck('캔버스에 크기가 있다', !!cv && cv.width > 100 && cv.height > 100, cv ? cv.width + '×' + cv.height : '없음');
@@ -86,6 +86,7 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var fc = TGMap2D.pfCard(0) || '', fs = TGMap2D.pidxHtml({ u: 'sgg', num: 'f_bar', den: 'pop', sgs: '서울' }) || '', fd = TGMap2D.pidxHtml({ u: 'dong', num: 'f_frn', den: 'pop', sd2: '11' }) || ''; ck('🧭 기능별 — 서울중부서 카드 지역경찰·여청·형사·교통·외사 · 지표표 서울 시군구 주점 · 서울 행정동 외국인 (v2.258.0)', /지역경찰/.test(fc) && /외사/.test(fc) && /상위/.test(fc) && (fs.match(/<tr/g) || []).length >= 25 && /종로/.test(fs) && (fd.match(/<tr/g) || []).length >= 300, (fs.match(/<tr/g) || []).length + '줄 · 동 ' + (fd.match(/<tr/g) || []).length + '줄'); } catch (e) { ck('기능별 검사', false, e.message); }
       try { var ra = TGMap2D.pidxHtml({ u: 'st', num: 'rally', den: 'cop', sdc: '' }) || ''; ck('📢 지표표 집회 — 서울 주요 집회·광주·대구 경찰서별 ÷ 경찰서 정원 · 종로 들어 있음 (v2.257.0)', /종로/.test(ra) && /광주|대구/.test(ra) && (ra.match(/<tr/g) || []).length >= 40, (ra.match(/<tr/g) || []).length + '줄'); } catch (e) { ck('지표표 집회 검사', false, e.message); }
       try { var rl = TGMap2D.pstatHtml() || ''; ck('📢 집회·시위 5년 — 전국 개최·경찰력 동원 · 청마다 해마다 · 서울 주요 집회 달마다·해마다·경찰서마다·시각·요일 (v2.256.0)', /집회·시위 — 5년/.test(rl) && /경찰력 동원/.test(rl) && /서울 주요 집회 — 달마다/.test(rl) && /부산/.test(rl) && /대구중부|중부/.test(rl), rl.length + '자'); } catch (e) { ck('집회 5년 검사', false, e.message); }
       try { var sa = TGMap2D.pidxHtml({ u: 'st', num: 'sat_inv', den: 'pop', sdc: '서울특별시경찰청' }) || '', du = TGMap2D.pidxHtml({ u: 'st', num: 'duiT', den: 'car', sdc: '서울특별시경찰청' }) || '', ps = TGMap2D.pstatHtml() || ''; ck('👮 지역경찰·교통경찰 — 수사 만족도 점수(나누지 않음) · 음주단속 ÷ 112 순찰차 · 통계 모음 음주단속 시간대·만족도·순찰차·지구대 112 (v2.255.0)', /점수/.test(sa) && /서초/.test(sa) && /서초/.test(du) && /음주단속 — 몇 시에/.test(ps) && /치안고객만족도/.test(ps) && /112 순찰차/.test(ps) && /수완/.test(ps), (sa.match(/<tr/g) || []).length + '줄 · ' + (du.match(/<tr/g) || []).length + '줄'); } catch (e) { ck('지역경찰·교통경찰 검사', false, e.message); }

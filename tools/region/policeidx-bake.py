@@ -102,7 +102,9 @@ def main():
         so = PSF.get('st', {}).get(sid, {})
         for k in ('k_murder', 'k_robbery', 'k_theft', 'k_viol'): num[k] = so.get(k)
         num['k4'] = sum(so[k] for k in ('k_murder', 'k_robbery', 'k_theft', 'k_viol')) if 'k_viol' in so else None
-        den['cop'] = so.get('cop')
+        den['cop'] = so.get('cop'); den['car'] = so.get('car112')
+        num['duiT'] = sum(so['dui_hr']) if so.get('dui_hr') else None
+        for k in ('sat_all', 'sat_civ', 'sat_112', 'sat_trf', 'sat_inv'): num[k] = so.get(k)
         out[sid] = {'n': n, 'sdc': SDC.get(sid, ''), 'num': num, 'den': den, 'cx': cexact}
     # 시도경찰청 묶음 — 분자·분모는 더하고(없는 서가 하나라도 있으면 그 칸은 빈칸) 소득은 주민 가중 평균
     sd = collections.OrderedDict()
@@ -111,7 +113,7 @@ def main():
         g['cnt'] += 1
         for part in ('num', 'den'):
             for k, x in v[part].items():
-                if k == 'wage': continue
+                if k == 'wage' or k.startswith('sat_'): continue   # 점수는 더하지 않는다 — 청 줄은 청이 낸 값
                 if x is None: continue
                 g[part][k] = (g[part].get(k) or 0) + x; g['_cov'][part + '.' + k] = g['_cov'].get(part + '.' + k, 0) + 1
         if v['den'].get('wage') and v['den'].get('pop'): g['_w'][0] += v['den']['wage'] * v['den']['pop']; g['_w'][1] += v['den']['pop']
@@ -122,6 +124,7 @@ def main():
                 if isinstance(g[part][k], float): g[part][k] = round(g[part][k], 1)
         g['den']['wage'] = round(g['_w'][0] / g['_w'][1]) if g['_w'][1] else None; del g['_w']
         # 시도청은 청이 낸 발생·검거(2023~2025 한 해 평균)로 바꿔 넣는다 — 서 몫 어림을 더한 것보다 맞다
+        for k, v in (PSF.get('sat_sdc', {}).get(g['n']) or {}).items(): g['num'][k] = v
         cs = PSF['crime_sdc'].get(g['n'])
         if cs:
             ys = sorted(cs)
@@ -131,10 +134,10 @@ def main():
             vv = [cs[y]['all'] for y in ys if cs[y].get('all')]
             if vv: g['num']['clr'] = round(sum(a[1] for a in vv) / len(vv), 1); g['den']['occ'] = round(sum(a[0] for a in vv) / len(vv), 1)
     doc = {'schema': 'tg-police-index/1', 'made': datetime.date.today().isoformat(),
-           'years': {'acc': '2023~2025 한 해 평균', 'dead': '2016~2025 한 해 평균', 'c_': '2023~2025 한 해 평균(범죄 발생지)', 'cop': '2025 경찰서 정원(공공데이터포털 15092089 · 시도청 본청·기동대 등은 안 들어감)', 'k_': '2025 경찰서별 강력범죄 발생(15084592)', 'dui': dy, 'call': '서울 %s · 경기북부 %s' % (cyr, gny), 'crime': cy, 'enf': 2024, 'kid': '2026-09', 'veh': '2024', 'wage': 'KOSIS 국세청 연말정산 최근 해'},
+           'years': {'acc': '2023~2025 한 해 평균', 'dead': '2016~2025 한 해 평균', 'c_': '2023~2025 한 해 평균(범죄 발생지)', 'cop': '2025 경찰서 정원(공공데이터포털 15092089 · 시도청 본청·기동대 등은 안 들어감)', 'k_': '2025 경찰서별 강력범죄 발생(15084592)', 'duiT': '2025 관서별 음주단속(15128722)', 'sat_': '치안고객만족도 — 종합·민원·112 = %s · 교통·수사 = %s' % (PSF.get('sat_y', {}).get('sat_all'), PSF.get('sat_y', {}).get('sat_trf')), 'car': '112 순찰차 — 서울·경기북부·강원·충남 청 공개분', 'dui': dy, 'call': '서울 %s · 경기북부 %s' % (cyr, gny), 'crime': cy, 'enf': 2024, 'kid': '2026-09', 'veh': '2024', 'wage': 'KOSIS 국세청 연말정산 최근 해'},
            'source': '교통사고 = 도로교통공단 TAAS 공개 사고(근사) · 음주운전 적발 = 경찰청 15043308 · 112 = 서울경찰청 15114082·경기북부경찰청 15036132 · 5대 범죄·단속 = 서울경찰청 공개 파일(police-stats) · 주민·종사자·가게·외국인 = 주민등록·SGIS·상가업소·행안부(행정동 합) · 학령인구 = 주민등록 연령별(2026-09) · 자동차·주행거리 = KOSIS 교통안전공단 · 도로 = 표준노드링크 · 소득 = 국세청 연말정산(주소지) · 범죄 발생·검거 = 경찰청 범죄통계(KOSIS DT_132004_A030 시군구 발생지 · A003~A020 시도경찰청) · 경찰관 = 경찰공무원 정원(e-지방지표 DT_1YL15013 · 2024) · 관할 = 직제 시행규칙 별표2',
            'fields': 'st{경찰서 번호: {n, sdc 시도경찰청, num{acc 교통사고/해, dead 사망자/해, dui 음주운전 적발/해, call 112/해, crime 5대 범죄 발생/해, enf 현장 단속/해}, den{pop 주민, kid 만 6~17세, emp 종사자, shop 가게, frn 외국인주민, km2, road 길 ㎞, veh 자동차, vkm 연간 주행 ㎞, wage 1인당 총급여 만 원}}} · sdc{시도경찰청: 같은 꼴(값이 있는 서만 더한 합) + cnt 서 수 + cov{num.acc 등: 값이 있는 서 수}}',
-           'note': ['범죄 발생(c_*)은 시군구 값을 그 안 경찰서의 주민 몫으로 나눈 어림(cx=1 이면 서가 시군구를 혼자 맡아 나누지 않음) · 시도청 줄은 청이 낸 값', '경찰관 1명당 = 경찰서 정원(2025 · 공공데이터포털 경찰청 파일) — 시도청 줄은 그 청 경찰서 정원의 합(본청·기동대·부속 기관 인원은 안 들어감)', '행정동 단위 근사 — 두 서 이상이 나눠 맡는 동은 서 수로 똑같이 나눴다', '교통사고는 TAAS 공개 사고를 칸으로 모은 근사 · 경찰 내부 통계와 다르다',
+           'note': ['치안고객만족도(sat_*)는 점수(100점) — 비율로 나누지 않고 시도청 줄은 청이 낸 값 · 전국 = 경찰서 평균', '112 순찰차는 서울·경기북부·강원·충남만 공개(다른 청은 빈칸)', '범죄 발생(c_*)은 시군구 값을 그 안 경찰서의 주민 몫으로 나눈 어림(cx=1 이면 서가 시군구를 혼자 맡아 나누지 않음) · 시도청 줄은 청이 낸 값', '경찰관 1명당 = 경찰서 정원(2025 · 공공데이터포털 경찰청 파일) — 시도청 줄은 그 청 경찰서 정원의 합(본청·기동대·부속 기관 인원은 안 들어감)', '행정동 단위 근사 — 두 서 이상이 나눠 맡는 동은 서 수로 똑같이 나눴다', '교통사고는 TAAS 공개 사고를 칸으로 모은 근사 · 경찰 내부 통계와 다르다',
                     '112·5대 범죄·단속은 공개한 청(서울 · 112 는 경기북부도)만 — 다른 청은 빈칸(없다는 뜻이 아니라 공개 안 함)', '주민 대비는 일터·번화가가, 자동차 대비는 다른 곳 차가 오가는 곳이 크게 나온다 — 여러 분모를 같이 본다',
                     '소득 = 시군구 1인당 총급여(주소지)를 서의 주민 비율로 섞은 값 — 그 서 관할 주민의 실제 소득이 아니다'],
            'st': out, 'sdc': sd, 'miss': dict(miss)}

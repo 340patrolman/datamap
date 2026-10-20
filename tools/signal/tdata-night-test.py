@@ -16,7 +16,9 @@ OUT = os.path.join(KB, 'TData_새벽시험_%s.md' % DAY.strftime('%Y%m%d'))
 sp = importlib.util.spec_from_file_location('sb', os.path.join(ROOT, 'tools', 'signal', 'spat-bake.py')); SB = importlib.util.module_from_spec(sp); sp.loader.exec_module(SB)
 PICK = [('1668', '2610', '경문고교'), ('1822', '22979', '씨티극장(연등)'), ('1840', '1375', '서초롯데캐슬아파트'), ('1856', '7513', '시민의숲공영주차장'), ('1873', '146', '탑성마을'),
         ('1891', '2665', '예술의전당'), ('1912', '3993', '내방역동측'), ('1928', '4031', '강남터미널고가밑'), ('1944', '4568', '파고타워앞'), ('1963', '24001', '서초소방서(연등)')]
-at = lambda h, m: datetime.datetime.combine(DAY, datetime.time(h, m))
+H0 = int(sys.argv[2]) if len(sys.argv) > 2 else 3   # (10-20) 시작 시 — 6시간 묶음(01·07·13·19시)의 셋째 시간이면 같은 조건: 3 · 9 · 15 · 21 (밤에 PC 가 잠들어 03시가 두 번 못 돌아 낮 시각도 받게)
+T0 = datetime.datetime.combine(DAY, datetime.time(H0, 0))
+at = lambda h, m: T0 + datetime.timedelta(hours=h - 3, minutes=m)
 
 
 def wait(t):
@@ -59,9 +61,9 @@ def main():
     ok = sum(1 for r in rows if r[5] == 200 and r[6])
     from collections import Counter
     c = Counter(str(r[5]) for r in rows)
-    L = ['# T-Data 신호 역사 API — 새벽 3시대 교차로 하나씩 호출 시험 (%s)' % DAY.isoformat(), '',
+    L = ['# T-Data 신호 역사 API — %02d시대(6시간 묶음 셋째 시간) 교차로 하나씩 호출 시험 (%s)' % (H0, DAY.isoformat()), '',
          '- API: v2xSignalPhaseTimingInformation (잔여시간 역사) · `itstId` 하나 · `numOfRows=3000` · 열쇠 KEY1/KEY2 번갈아 · 3분 간격',
-         '- 시각대: 01시 시작 6시간 묶음의 셋째 시간(03시대) — 10-15 실측으로 묶음 뒤쪽 시간에 서버 순서 뒤쪽 교차로가 500 으로 끊기던 자리',
+         '- 시각대: %02d시 시작 6시간 묶음의 셋째 시간(%02d시대)' % (H0 - 2, H0) + ' — 10-15 실측으로 묶음 뒤쪽 시간에 서버 순서 뒤쪽 교차로가 500 으로 끊기던 자리',
          '- 시험 동안 잔여시간 훑기 %s개를 멈췄다가 03:33 다시 띄움: %s' % (stopped or '?', (rs or '').replace(chr(10), ' / ')), '',
          '## 결과: 성공(200·줄 있음) %d / 10 · 응답 코드 %s' % (ok, dict(c)), '',
          '| 시각 | 열쇠 | 서버 순서 | 번호 | 교차로 | 응답 | 줄 수 | 걸린 초 | 비고 |', '|---|---|---|---|---|---|---|---|---|']

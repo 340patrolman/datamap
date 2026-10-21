@@ -22,7 +22,7 @@ FN = [
     ['shop', '정보', '가게', '곳', '상가업소'], ['biz_i', '정보', '사업체(정보도 같은 값)', '곳', '노동·경제 현장 — 공개 지표가 적다'],
     ['frn', '외사', '외국인주민', '명', '행안부 2024.11'], ['frn_w', '외사', '외국인근로자', '명', '같은 표'], ['frn_m', '외사', '결혼이민자', '명', '같은 표'], ['frn_s', '외사', '유학생', '명', '같은 표'], ['frn_k', '외사', '외국국적동포', '명', '같은 표'], ['minbak', '외사', '외국인관광 도시민박', '곳', '지방행정 인허가'],
 ]
-DEN = [['pop', '주민', '명'], ['km2', '넓이', '㎢'], ['emp', '종사자', '명'], ['live', '생활인구(평일 24시간 평균 · 서울)', '명']]
+DEN = [['pop', '주민', '명'], ['km2', '넓이', '㎢'], ['emp', '종사자', '명'], ['live', '생활인구(평일 24시간 평균 · 서울)', '명'], ['day', '주간인구 어림(2020 주간인구지수 × 지금 주민)', '명']]
 CLS = {'bar': [108, 109, 110, 111], 'yu': [108, 109], 'sing': [219], 'gosi': [68], 'pc': [216, 218], 'motel': [65], 'massage': [239]}
 SIDO = {'11': '서울', '26': '부산', '27': '대구', '28': '인천', '29': '광주', '30': '대전', '31': '울산', '36': '세종', '41': '경기', '42': '강원', '51': '강원', '43': '충북', '44': '충남', '45': '전북', '52': '전북', '46': '전남', '12': '광주·전남', '47': '경북', '48': '경남', '50': '제주'}
 
@@ -55,7 +55,34 @@ def main():
             for k in CLS: v[k] = sc.get(k) if sc else None
             DONG[code[:8]] = {'n': d.get('이름'), 'gu': p['gu'], 'gn': p['name'], 'v': v}
     print('동', len(DONG))
-    keys = [f[0] for f in FN] + ['pop', 'km2', 'live']
+    # 주간인구지수(2020 인구총조사 KOSIS DT_1PA2020 · 시군구 — 일반구는 시) → 동 주민 × 지수 = 주간인구 어림
+    KS = {'11': '서울', '21': '부산', '22': '대구', '23': '인천', '24': '광주', '25': '대전', '26': '울산', '29': '세종', '31': '경기도', '32': '강원도', '33': '충청북도', '34': '충청남도', '35': '전라북도', '36': '전라남도', '37': '경상북도', '38': '경상남도', '39': '제주도'}
+    DI = collections.defaultdict(lambda: [0, 0]); DN = collections.defaultdict(list)
+    try:
+        for r in json.load(open(os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'policestaff', 'dayidx2020.json'), encoding='utf-8')):
+            c = r['C1']
+            if len(c) != 5: continue
+            k = (KS.get(c[:2]), '세종' if c[:2] == '29' else r['C1_NM'])
+            if r['ITM_ID'] == 'T00': DI[k][0] = float(r['DT'])
+            elif r['ITM_ID'] == 'T30': DI[k][1] = float(r['DT'])
+        for k in DI: DN[k[1]].append(k)
+    except Exception as e:
+        print('주간인구 없음', e)
+    def dayidx(k):
+        if not k: return None
+        P = Dd = 0
+        for g in k[1]:
+            kk = (k[0], g) if (k[0], g) in DI else (DN[g][0] if len(DN.get(g, [])) == 1 else None)
+            if not kk or not DI[kk][0]: return None
+            P += DI[kk][0]; Dd += DI[kk][1]
+        return Dd / P if P else None
+    miss_d = 0
+    for code, d in DONG.items():
+        ix = dayidx(ckey(code)); p0 = d['v'].get('pop')
+        d['v']['day'] = round(p0 * ix) if ix and p0 else None
+        if ix is None: miss_d += 1
+    print('주간인구 지수 못 붙인 동', miss_d)
+    keys = [f[0] for f in FN] + ['pop', 'km2', 'live', 'day']
     CK = {'c_viol', 'c_theft', 'c_strong', 'c_fraud', 'c_drug', 'c_traffic'}
     # 시군구 묶음(KOSIS 범죄 발생지와 같은 열쇠)
     SG = {}
@@ -103,7 +130,7 @@ def main():
     doc = {'schema': 'tg-police-func/1', 'made': datetime.date.today().isoformat(),
            'source': '행정동 = 주민등록(행안부) · SGIS 사업체·종사자 2023 · 소상공인시장진흥공단 상가업소 소분류(2026-06) · 주민등록 연령별(2026-09) · TAAS 2016~2025 · 대중교통 승하차 · 행안부 외국인주민(2024.11) · 지방행정 인허가(도시민박) · 범죄 발생지 = 경찰청 범죄통계(KOSIS DT_132004_A030 · 2023~2025 한 해 평균 · 시군구까지만) · 관할 = 직제 시행규칙 별표2',
            'fields': 'fn[[열쇠, 기능, 이름, 단위, 덧말]] · den[[열쇠, 이름, 단위]] · sgg{「시도 시군구」: {n, sido, gus[걸친 구], v{열쇠: 값}}}(시군구 = KOSIS 범죄 발생지와 같은 묶음 · 일반구는 시) · st{경찰서 번호: {열쇠: 값}}(동을 서로 · 나눠 맡는 동은 똑같이 나눔) · 동은 data/police-func/<시도 2자리>.json',
-           'note': ['기능마다 지표를 따로 둔다 — 한 점수로 더하지 않는다', '「안보」 기능은 동·시군구 단위 공개 지표가 없다(북한이탈주민 거주 등은 시도 단위·비공개) — 청구 대상', '정보 기능도 공개 지표가 적어 사업체·가게를 바탕으로만 둔다', '범죄 발생은 시군구까지만 공개 — 경찰서·동에는 싣지 않는다(경찰서는 지표표의 어림값을 본다)', '가게 수는 상가업소 등록 기준 — 실제 영업과 다를 수 있다'],
+           'note': ['주간인구(day) = 2020 인구총조사 주간인구지수(통근·통학 유입·유출 반영 · 시군구, 일반구는 시)를 동 주민에 곱한 어림 — 같은 시군구 안 동은 같은 지수', '기능마다 지표를 따로 둔다 — 한 점수로 더하지 않는다', '「안보」 기능은 동·시군구 단위 공개 지표가 없다(북한이탈주민 거주 등은 시도 단위·비공개) — 청구 대상', '정보 기능도 공개 지표가 적어 사업체·가게를 바탕으로만 둔다', '범죄 발생은 시군구까지만 공개 — 경찰서·동에는 싣지 않는다(경찰서는 지표표의 어림값을 본다)', '가게 수는 상가업소 등록 기준 — 실제 영업과 다를 수 있다'],
            'fn': FN, 'den': DEN, 'sgg': sgg, 'st': st}
     json.dump(doc, open(os.path.join(ROOT, 'data', 'police-func.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print('시군구 묶음', len(sgg), '경찰서', len(st), '동 파일', len(by), '·', os.path.getsize(os.path.join(ROOT, 'data', 'police-func.json')), 'B')

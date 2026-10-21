@@ -136,7 +136,7 @@ def main():
             num['g5'] = sum(x[0] or 0 for x in f5.values()); g5c = [x[1] for x in f5.values() if x[1] is not None]
             num['g5c'] = sum(g5c) if len(g5c) == len(f5) else None; den['g5o'] = num['g5'] if num['g5c'] is not None else None
             for k in ('murder', 'robbery', 'sex', 'theft', 'viol'): num['g5_' + k] = (f5.get(k) or [None])[0]
-        den['live'] = PF['st'].get(sid, {}).get('live')
+        den['live'] = PF['st'].get(sid, {}).get('live'); den['day'] = PF['st'].get(sid, {}).get('day')
         num['duiT'] = sum(so['dui_hr']) if so.get('dui_hr') else None
         for k in ('sat_all', 'sat_civ', 'sat_112', 'sat_trf', 'sat_inv'): num[k] = so.get(k)
         num['rally'] = RAL.get(n)

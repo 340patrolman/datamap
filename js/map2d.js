@@ -1266,7 +1266,7 @@
       var lv = liveNow(d);
       if (lv) { h += row('생활인구 지금', lv.n.toLocaleString() + '명 <em>(' + (lv.we ? '주말' : '평일') + ' ' + lv.h + '시 평균)</em>') + row('하루 폭', Math.min.apply(null, lv.arr).toLocaleString() + ' ~ ' + Math.max.apply(null, lv.arr).toLocaleString() + '명') +
         '<div class="cap">시간대별 생활인구(명 · 그 시각 동 안에 있는 사람 · 0~23시 ' + (lv.we ? '주말' : '평일') + ' 평균)</div>' + bar(lv.arr, '#f97316'); }
-      h += salesRows(d) + dongIndRows(d) + sclsRows(null, d.name, '11650') + schlDong(d, '11650');
+      h += salesRows(d) + dongIndRows(d) + sclsRows(null, d.name, '11650') + esigRows(null, d.name, '11650') + schlDong(d, '11650');
       var ag = D.st && D.st.agg && D.st.agg[d.name];   // 🏪 등록 상가(소상공인시장진흥공단 · v0.10.65)
       if (ag) h += row('등록 상가', (ag.all || 0).toLocaleString() + '곳 · 음식 ' + (ag.food || 0) + ' · 주점 ' + (ag.bar || 0) + ' · 노래방·PC방 ' + (ag.play || 0) + ' · 숙박 ' + (ag.inn || 0) + ' · 편의점 ' + (ag.conv || 0));
       var sz2 = D.sz ? D.sz.zones.filter(function (z) { var q = P(z.lon, z.lat); return inPoly(d, q); }).length : 0; if (D.sz) h += row('어린이보호구역', sz2 + '곳');
@@ -2316,7 +2316,7 @@
     var lv = liveNow(d);
     if (lv) h += row('생활인구 지금', lv.n.toLocaleString() + '명 <em>(' + (lv.we ? '주말' : '평일') + ' ' + lv.h + '시 평균)</em>') + row('하루 폭', Math.min.apply(null, lv.arr).toLocaleString() + ' ~ ' + Math.max.apply(null, lv.arr).toLocaleString() + '명') +
       '<div class="cap">시간대별 생활인구(명 · 그 시각 동 안에 있는 사람 · 0~23시 ' + (lv.we ? '주말' : '평일') + ' 평균)</div>' + bar(lv.arr, '#f97316');
-    h += salesRows(d) + dongIndRows(d) + sclsRows(d.k) + schlDong(d);
+    h += salesRows(d) + dongIndRows(d) + sclsRows(d.k) + esigRows(d.k) + schlDong(d);
     if (d.old) { var o = { name: '옛 ' + d.old.name, live: d.old.live, sales: d.old.sales, pre: R };
       h += '<p class="desc">이 동은 옛 ' + esc(d.old.name) + '에서 나뉘었다 — 생활인구(2026.7)·카드 매출 원자료가 옛 동 하나로만 있어 아래는 <b>옛 ' + esc(d.old.name) + ' 전체</b> 값이다(나눠 지어내지 않는다).</p>';
       var lo = liveNow(o); if (lo) h += row('옛 ' + esc(d.old.name) + ' 생활인구', lo.n.toLocaleString() + '명 <em>(' + lo.h + '시)</em>') + '<div class="cap">옛 ' + esc(d.old.name) + ' 시간대별 생활인구(명 · 0~23시 ' + (lo.we ? '주말' : '평일') + ' 평균)</div>' + bar(lo.arr, '#fdba74');
@@ -2352,6 +2352,31 @@
     h += '<p class="sdnt" style="margin:4px 0"><b>등록된 점포 수다 — 지금 영업하는지 · 얼마나 파는지는 모른다.</b> 업종은 사업자가 등록한 대표 업종 하나다(고깃집이 「백반/한정식」으로 등록돼 있기도 하다). 위 매출 표(서울 상권분석 100업종)와는 분류가 달라 서로 맞대지지 않는다. 소상공인시장진흥공단 상가(상권)정보를 행정동 경계로 나눠 센 것.</p>';
     return sdMore(h, 'scls', '🏬 등록 상가 ' + q[1].toLocaleString() + '곳 — 소분류로 보기'); }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-scls]'); if (!b) return; e.preventDefault(); var sd = b.getAttribute('data-scls'); SCLSW = sd; SDXO.scls = 1; b.textContent = '받는 중…'; sclsGet(sd).then(function () { SCLSW = 0; agReshow(); }); });
+  /* v2.261.0 📶 업종 조기 신호(온톨로지 Phase 3 ③ · data/esig/<시도 2자리>.json · tools/onto/esig-bake.py) — 동 × 업종(인허가 30)마다 개업 흐름 · 폐업>개업 이어짐 · 1년 생존을 신호 비트로 따로(점수 없음).
+     단추를 눌러야 그 시도 것만 받는다(서울 약 100KB). 말: 늘어나는 · 줄어드는 · 드나듦이 잦은 — 「유망·추천·투자·기회」는 쓰지 않는다. 작은 수는 말하지 않는다(파일 params). */
+  var ESIG = {}, ESIGP = {}, ESIGW = 0;
+  function esigGet(sd) { if (ESIGP[sd]) return ESIGP[sd]; ESIGP[sd] = fetch('data/esig/' + sd + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { ESIG[sd] = j || { gu: {}, bad: 1 }; }).catch(function () { ESIG[sd] = { gu: {}, bad: 1 }; delete ESIGP[sd]; }); return ESIGP[sd]; }
+  function esigRows(k, nm, gp) {
+    if (!k && !(nm && gp)) return ''; var sd = String(k || gp).slice(0, 2), J = ESIG[sd];
+    if (!J) return '<div class="lg-btns" style="margin:6px 0 0"><button data-esig="' + sd + '">📶 업종 조기 신호 보기(개업·폐업 흐름 · 인허가 30업종)' + (ESIGW === sd ? ' — 받는 중…' : '') + '</button></div>';
+    var gu = String(k || gp).slice(0, 5), G = J.gu && J.gu[gu], q = null;
+    if (G && k) q = G.dong[String(k).slice(0, 8)];
+    if (G && !k) Object.keys(G.dong).forEach(function (c) { if (!q && G.dong[c].n === nm) q = G.dong[c]; });
+    if (J.bad) return '<p class="sdnt">업종 조기 신호 자료를 받지 못했다.</p>';
+    var P = J.params || {}, C = J.cats || [], F = J.flags || {}, FC = { 1: '#15803d', 2: '#b45309', 4: '#b91c1c', 8: '#7c3aed' };
+    var h = '<div class="cap">📶 업종 조기 신호 — 인허가 개업·폐업으로 본 흐름(업종마다 따로 · 한 점수로 더하지 않음)</div>';
+    if (!q || !q.rows.length) h += '<p class="sdnt">이 동은 말할 만한 신호가 없다' + (q && q.quiet ? '(작아서 말하지 않은 업종 ' + q.quiet + '갈래)' : '') + '.</p>';
+    else q.rows.forEach(function (r) { var fl = Object.keys(F).filter(function (b) { return r[8] & +b; });
+      h += '<div class="sdrow" style="margin:5px 0;padding:4px 6px;border-left:3px solid ' + (FC[fl[0]] || '#64748b') + '"><b>' + esc(C[r[0]] || '') + '</b> <small>지금 영업 ' + r[1].toLocaleString() + '곳</small><br>'
+        + fl.map(function (b) { return '<span style="display:inline-block;margin:1px 4px 1px 0;padding:0 5px;border-radius:8px;font-size:11.5px;color:#fff;background:' + FC[b] + '">' + esc(F[b]) + '</span>'; }).join('')
+        + '<br><small>개업 한 해 평균 ' + r[2] + ' → ' + r[3] + '곳 · 최근 두 해 폐업 ' + r[4].join('·') + ' / 개업 ' + r[5].join('·') + (r[6] != null ? ' · 1년 생존 ' + r[6] + '%(구 같은 업종 ' + r[7] + '%)' : '') + '</small>'
+        + (r[9] ? '<br><small style="color:#475569">서울 상권분석 「' + esc(r[9][3]) + '」' + (r[9][4] === 'diff' ? '(업종 범위가 다름)' : '') + ' — 점포 ' + r[9][0].toLocaleString() + ' · 최근 4분기 개업 ' + r[9][1] + ' · 폐업 ' + r[9][2] + '</small>' : '') + '</div>'; });
+    if (q && q.redev) h += '<p class="sdnt" style="margin:4px 0">🏗 이 동 입주 예정 — ' + q.redev.map(function (x) { return esc(x[0]) + ' ' + esc(x[1] || '') + (x[2] ? ' · ' + Number(x[2]).toLocaleString() + '세대' : ''); }).join(' / ') + ' — 재건축 철거·입주로 개업·폐업이 한꺼번에 움직일 수 있다.</p>';
+    h += '<p class="sdnt" style="margin:4px 0"><b>조기 신호이지 예언이 아니다.</b> 개업이 늘어난 것은 경쟁이 늘어난 것일 수 있고, 폐업이 많은 것은 철거·이전일 수 있다. 큰 시설 안 식품관·팝업은 「드나듦이 잦음」으로 잡힐 수 있다. 인허가 30업종만 본다(사무실·소매 대부분은 없다). '
+      + '기준: 앞 세 해 ↔ 뒤 두 해 한 해 평균 개업이 ' + (P.up || '') + '배 이상이면 늘어남 · ' + (P.down || '') + '배 이하면 줄어듦 · 뒤 두 해 모두 폐업 > 개업 · 1년 생존이 구의 같은 업종보다 ' + Math.round((P.surv_gap || 0) * 100) + '%p 넘게 낮음 · 앞 세 해 개업 ' + (P.min_open_pre || '') + '곳 · 지금 영업 ' + (P.min_now || '') + '곳 밑은 말하지 않음 — 이 지도가 정한 값. '
+      + '출처: 행정안전부 지방행정인허가(개업일·폐업일) · 서울시 상권분석서비스(서울) · 업종 맞댐은 이름으로 한 것(근사).</p>';
+    return sdMore(h, 'esig', '📶 업종 조기 신호' + (q && q.rows.length ? ' — ' + q.rows.length + '갈래' : '')); }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-esig]'); if (!b) return; e.preventDefault(); var sd = b.getAttribute('data-esig'); ESIGW = sd; SDXO.esig = 1; b.textContent = '받는 중…'; esigGet(sd).then(function () { ESIGW = 0; agReshow(); }); });
   function dongIndRows(x) {   // 행정동 — 업종 × 연령 · 업종 × 시간대 · 주점·유흥
     var d = typeof x === 'string' ? { name: x } : x, ind = d.rg ? d.x && d.x.ind : D.trdar && D.trdar.dong && D.trdar.dong[d.name]; if (!ind || !ind.length) return d.rg && d.x === null ? '<p class="desc">업종 표를 받는 중…</p>' : '';
     return barRows(ind, '이 동') + indMix(ind, '이 동') + '<div class="cap">업종 × 연령(%) — 이 동 매출 많은 업종 8' + (ind.length > 8 ? ' · 모두 ' + ind.length + '업종' : '') + '</div>' + indTable(ind, 'age') + '<div class="cap">업종 × 시간대(%)</div>' + indTable(ind, 'tb') + indRest(ind);

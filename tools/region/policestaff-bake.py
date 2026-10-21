@@ -53,6 +53,8 @@ def st_official():
     for sid, v in PC.items(): idx[re.sub('경찰서$', '', v['n'])].append(sid)
     def match(nm, pre=None):
         if re.sub('(경찰)?서$', '', nm.replace(' ', '')) == '인천중부': nm = '인천제물포'   # 2026-07 인천중부 → 제물포·영종 — 그 전 자료는 제물포에(영종 몫 포함)
+        nm0 = re.sub('(경찰)?서$', '', nm.replace(' ', ''))
+        if nm0 in ('수원중부', '수원남부', '수원서부'): nm = {'수원중부': '수원장안', '수원남부': '수원영통', '수원서부': '수원권선'}[nm0]   # 2025-08-05 수원팔달서 개서와 함께 이름 바뀜(경인일보 2025-08-05) — 그 전 자료는 팔달서가 떨어져 나가기 전 관할의 값
         r9 = match0(nm, pre)
         if r9 and pre and pre in SDP and not SDC.get(r9, '').startswith(SDP[pre]): return None   # 이름만 같은 다른 청 경찰서(강원 고성 ↔ 경남 고성)
         return r9

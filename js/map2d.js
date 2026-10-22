@@ -2417,7 +2417,7 @@
   function enfRows(name) { var r = enfOf(name), E = D.enf; if (!r) return '';
     function rk(j) { var v = r[j], n = 1; E.items.forEach(function (x) { if (x[j] > v) n++; }); return n; }
     var lab = ['', '중앙선 침범', '신호위반', '음주운전', '무면허운전', '속도위반'], ord = [5, 2, 1, 3, 4];
-    return row(E.year + '년 단속', ord.map(function (j) { return lab[j] + ' ' + r[j].toLocaleString() + '건 <em>(서울 ' + E.items.length + '서 중 ' + rk(j) + '위)</em>'; }).join('<br>')) +
+    return row(E.year + '년 단속(서울청 15097296)', ord.map(function (j) { return lab[j] + ' ' + r[j].toLocaleString() + '건 <em>(서울 ' + E.items.length + '서 중 ' + rk(j) + '위)</em>' + (j === 3 ? ' <small>— 🍺 음주운전 적발(경찰청 15043308 · 2024)과 출처가 다르다</small>' : ''); }).join('<br>')) +
       '<p class="desc">경찰서 한 해 합계 — 무인 장비와 경찰관 현장단속이 섞여 있다(속도위반은 대부분 무인 장비로 본다 · 추정). 카메라 한 대 단위 건수는 공개되지 않는다. 출처 ' + esc(E.source) + '</p>'; }
   // v0.10.84 카메라 설치 전후 둘레 사고(참고 지표) — 설치 해를 빼고 앞뒤 3년씩 연평균을 견주고, 같은 해 서초 전체 변화와 나란히 보인다
   var CAM_R = 150, CAM_W = 3;
@@ -5328,7 +5328,7 @@
     ['f_shop', '가게', 'dong', '정보', 'c'], ['f_biz_i', '사업체', 'dong', '정보', 'c'],
     ['f_frn', '외국인주민', 'dong', '외사', 's'], ['f_frn_w', '외국인근로자', 'dong', '외사', 'c'], ['f_frn_m', '결혼이민자', 'dong', '외사', 'c'], ['f_frn_s', '유학생', 'dong', '외사', 'c'], ['f_frn_k', '외국국적동포', 'dong', '외사', 'c'], ['f_minbak', '외국인관광 도시민박', 'dong', '외사', 'c'],
     ['_sec', '안보(북한이탈주민 신변보호 등)', 'none', '안보'],
-    ['sat_all', '치안고객만족도 종합', 'st', '만족도', 'v'], ['sat_112', '112 만족도', 'st', '만족도', 'v'], ['sat_trf', '교통 만족도', 'st', '만족도', 'v'], ['sat_inv', '수사 만족도', 'st', '만족도', 'v']];
+    ['sat_all', '치안고객만족도 종합', 'st', '만족도', 'v'], ['sat_civ', '민원 만족도', 'st', '만족도', 'v'], ['sat_112', '112 만족도', 'st', '만족도', 'v'], ['sat_trf', '교통 만족도', 'st', '만족도', 'v'], ['sat_inv', '수사 만족도', 'st', '만족도', 'v']];
   var JPGI = { '지역경찰': '🏪', '여청': '🧒', '형사': '🔪', '수사': '💸', '교통': '🚗', '경비': '📢', '정보': '🗞', '외사': '🌏', '안보': '🛡', '만족도': '😊' }, JPO = true, JPSD = {}, JPSR = {};
   try { JPO = localStorage.getItem('tg_map2d_jpo') !== '0'; } catch (e) {}
   function jpPbSd(i) { return POL2 && POL2.pbox[i] ? jpSidSd(POL2.pbox[i][6]) : null; }
@@ -5341,8 +5341,8 @@
     else { var G9 = PFN.sgg[key]; if (!G9) return { v: v, none: 1 }; Object.keys(G9.v).forEach(function (k) { v[/^c_/.test(k) ? k : 'f_' + k] = G9.v[k]; }); pop = G9.v.pop; }
     return { v: v, pop: pop }; }
   function jpF(x) { return x == null ? '–' : Math.abs(x) >= 100 ? Math.round(x).toLocaleString() : Math.abs(x) >= 10 ? String(Math.round(x * 10) / 10) : String(Math.round(x * 100) / 100); }
-  function jpRow(q, val, pop, approx, cov) { if (q[4] === 't') return '<div class="r"><b>' + esc(q[1]) + '</b><span>' + esc(String(val)) + '</span></div>'; var t = q[4] === 's' && pop ? jpF(val) + '명 · 주민의 ' + (val / pop * 100).toFixed(1) + '%' : q[4] === 'x' && pop ? jpF(val) + '명 · 주민의 ' + (val / pop).toFixed(2) + '배' : q[4] === 'v' ? val + '점' : jpF(val) + (q[4] === 'c' && pop && !/^(cop|car)$/.test(q[0]) ? ' <small>· 주민 1만 명당 ' + jpF(val / pop * 1e4) + '</small>' : '');
-    return '<div class="r"><b>' + esc(q[1]) + '</b><span>' + (approx ? '<span title="시군구 값을 주민 몫으로 나눈 어림">≈ </span>' : '') + t + (cov ? ' <small>(' + cov + ')</small>' : '') + '</span></div>'; }
+  function jpRow(q, val, pop, approx, cov, sr) { var srh = sr ? '<div class="jpsr">' + esc(sr) + '</div>' : ''; if (q[4] === 't') return '<div class="r"><b>' + esc(q[1]) + '</b><span>' + esc(String(val)) + '</span></div>' + srh; var t = q[4] === 's' && pop ? jpF(val) + '명 · 주민의 ' + (val / pop * 100).toFixed(1) + '%' : q[4] === 'x' && pop ? jpF(val) + '명 · 주민의 ' + (val / pop).toFixed(2) + '배' : q[4] === 'v' ? val + '점' : jpF(val) + (q[4] === 'c' && pop && !/^(cop|car)$/.test(q[0]) ? ' <small>· 주민 1만 명당 ' + jpF(val / pop * 1e4) + '</small>' : '');
+    return '<div class="r"><b>' + esc(q[1]) + '</b><span>' + (approx ? '<span title="시군구 값을 주민 몫으로 나눈 어림">≈ </span>' : '') + t + (cov ? ' <small>(' + cov + ')</small>' : '') + '</span></div>' + srh; }
   function jpCtx(level, key) { var st = [], gi = -1, pt = null;
     if (level === 'sdc') return { st: [], gi: -1, sdc: key };
     if (level === 'dong') { var d = allDong().filter(function (q) { return q.k === key; })[0]; st = (polOf(key) || []).map(function (q) { return [q[0], q[1]]; }); pt = d && d.c; }
@@ -5358,20 +5358,44 @@
     if (!PIDX) need.push(pidxGet()); if (!PFN) need.push(pfnGet()); if (!POL2) need.push(polLoad());
     if (POL2) { var sd = level === 'dong' ? String(key).slice(0, 2) : level === 'pb' ? jpPbSd(key) : null; if (sd && !PFD[sd]) need.push(pfdGet(sd)); }
     if (need.length) { Promise.all(need).then(re, re); return '<p class="desc">👮 관내 파악 자료를 받는 중…</p>'; }
-    if (level === 'sdc' && !PSF) need.push(psfGet()); if (level === 'sdc' && !JPD['data/runaway-sido.json']) need.push(jpGet('data/runaway-sido.json')); if (need.length) { Promise.all(need).then(re, re); return '<p class="desc">👮 관내 파악 자료를 받는 중…</p>'; }
+    if ((level === 'sdc' || level === 'st') && !PSF) need.push(psfGet()); if (level === 'sdc' && !JPD['data/runaway-sido.json']) need.push(jpGet('data/runaway-sido.json')); if (need.length) { Promise.all(need).then(re, re); return '<p class="desc">👮 관내 파악 자료를 받는 중…</p>'; }
     var fk = level === 'sgg' ? jbSggKey(SGG[key] && SGG[key].g) : key, R = jpVals(level, fk), C = jpCtx(level, key), h = '', nv = 0, nu = 0;
     Object.keys(JPGI).forEach(function (g) { var rows = '', up = {}, ord = [];
       JPL.filter(function (q) { return q[3] === g; }).forEach(function (q) { var m = q[2], val = R.v[q[0]], av = m === 'dong' || (m === 'st' && level === 'st') || (m === 'sgg' && (level === 'sgg' || level === 'st')) || (q[0] === 'call' && level === 'pb' && val != null) || (level === 'sdc' && m !== 'nat' && m !== 'none');
-        if (av && val != null) { var cv9 = level === 'sdc' && m === 'st' && R.v._cov && R.v._cov['num.' + q[0]] != null && R.v._cov['num.' + q[0]] < R.v._cnt ? R.v._cnt + '서 중 ' + R.v._cov['num.' + q[0]] + '서 합' : ''; rows += jpRow(q, val, R.pop, m === 'sgg' && level === 'st' && !R.v._cx, cv9); nv++; return; }
+        if (av && val != null) { var cv9 = level === 'sdc' && m === 'st' && R.v._cov && R.v._cov['num.' + q[0]] != null && R.v._cov['num.' + q[0]] < R.v._cnt ? R.v._cnt + '서 중 ' + R.v._cov['num.' + q[0]] + '서 합' : ''; rows += jpRow(q, val, R.pop, m === 'sgg' && level === 'st' && !R.v._cx, cv9, jpSrc(q, level, key, C, R)); nv++; return; }
         var t = av ? '-' : m === 'st' ? (level === 'sgg' ? 'stdown' : 'st') : m; if (!up[t]) { up[t] = []; ord.push(t); } up[t].push(q[1]); nu++; });
       var ups = ord.map(function (t) { return '<div class="jpu">' + jpUp(t, C, level) + ' <small>— ' + up[t].map(esc).join(' · ') + '</small></div>'; }).join('');
-      var sch = (g === '여청' && level !== 'sdc' ? jpSchHtml(level, key, it0, re) : '') + jpExtra(level, key, g, re);   /* 학교 = 여청 갈래 안(소유자 「학교는 경찰 카테고리로 들어가」) */
+      var sch = (g === '여청' && level !== 'sdc' ? jpSchHtml(level, key, it0, re) : '') + jpExtra(level, key, g, re);
+      if (g === '만족도' && rows) { var SY = PSF && PSF.sat_y ? PSF.sat_y : { sat_all: '2025', sat_civ: '2025', sat_112: '2025', sat_trf: '2024', sat_inv: '2024' }; rows += '<p class="lg-n">종합·민원·112 = ' + esc(SY.sat_all) + ' · 교통·수사 = ' + esc(SY.sat_trf) + ' — <b>해가 섞여 있다</b>(종합이 분야 점수보다 높은 까닭은 민원 점수가 높아서다).</p>'; }
+      if (g === '형사' && (level === 'st' || level === 'sdc') && R.v.k4 != null && R.v.g5 != null) { var V9 = R.v, dd = [['성범죄', V9.g5_sex || 0, 0, '5대 범죄에만'], ['폭력', V9.g5_viol, V9.k_viol], ['절도', V9.g5_theft, V9.k_theft], ['살인', V9.g5_murder, V9.k_murder], ['강도', V9.g5_robbery, V9.k_robbery]].filter(function (q) { return q[1] != null && q[2] != null && q[1] !== q[2]; });
+        if (dd.length) rows += '<p class="lg-n">⚠ 살인·강도·절도·폭력(경찰서 집계 ' + jpF(V9.k4) + ')과 5대 범죄(청 공개 ' + jpF(V9.g5) + ')가 다른 까닭: ' + dd.map(function (q) { return q[3] ? q[0] + ' ' + jpF(q[1]) + '건은 ' + q[3] : q[0] + ' — 출처가 달라 ' + jpF(Math.abs(q[1] - q[2])) + '건 다르다(경찰서 집계 ' + jpF(q[2]) + ' vs 청 공개 ' + jpF(q[1]) + ')'; }).join(' · ') + '.</p>'; }
+      if (g === '교통' && level === 'st' && R.v.dui != null && POL2 && POL2.byI[key]) { var ef = enfOf(POL2.byI[key][1]); if (ef) rows += '<p class="lg-n">⚠ 음주 숫자가 둘이다 — 🍺 음주운전 적발 ' + jpF(R.v.dui) + '(경찰청 15043308 · 2024 · 적발 1건당 1줄 원자료) · 경찰서 카드 단속 순위의 음주운전 ' + ef[3].toLocaleString() + '(서울청 15097296 · ' + esc(D.enf.year) + ' 경찰서별 교통법규 위반 단속 수) — 출처가 달라 다르다.</p>'; }   /* 학교 = 여청 갈래 안(소유자 「학교는 경찰 카테고리로 들어가」) */
       if (rows || ups || sch) h += '<div class="cap">' + JPGI[g] + ' ' + g + '</div>' + rows + ups + sch; });
     var LV = { dong: '이 행정동', pb: '이 지구대·파출소 구역(근사)', st: '이 경찰서 관할', sgg: '이 시군구', sdc: '이 시도청' }[level];
     return '<details class="jp"' + (JPO ? ' open' : '') + '><summary>👮 관내 파악 — 경찰 기능별 <small>(' + LV + ' 값 ' + nv + ' · 다른 단위에만 있는 자료 ' + nu + ')</small></summary><p class="sdnt" style="margin:2px 0 4px">공개 자료가 <b>가장 작게 나오는 단위</b>로만 적는다 — 더 큰 단위에만 있으면 「⬆ … 단위로만 공개」(누르면 그 단위) · 아래로 나눠 지어내지 않는다(경찰서 범죄 발생만 ≈ 어림) · 동·지구대 값은 행정동 자료를 묶은 것 · 지구대 구역은 근사.</p>' + h + '</details>'; }
   /* 🏫 관내 학교 — data/school-police/<시도>.json(다른 세션 · tg-school-police/1 · 한국교육시설안전원 초중등학교위치 + 학구도 · 사립·각종학교 포함 · 학교 자리의 행정동 → 경찰서(서초·방배 둘레는 jur-seocho 현장 경계) → 지구대(가장 가까운 곳 · 근사)) — 지도 규칙과 같은 셈을 미리 구운 표 */
   var SPOL = {}, SPOLP = {};
   function spolGet(sd) { if (SPOLP[sd]) return SPOLP[sd]; SPOLP[sd] = fetch('data/school-police/' + sd + '.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (j) { SPOL[sd] = j || { s: {}, st: {}, pb: {} }; }); return SPOLP[sd]; }
+  /* v2.273.0 줄마다 출처 · 기준(소유자 지시 · 값은 그대로) — 번호·기준일은 굽는 스크립트와 원자료 제목(07_API키/out/dg/<번호>/_meta.json)에서 맞춤 · 112·순찰차·5대 범죄·집회는 청마다 파일이 달라 그 서의 청 것으로 */
+  var JPSRC = { shop: '소상공인시장진흥공단 상가업소 · 2026-06', age: '행안부 주민등록 연령별 · 2026-09', sgis: '통계청 SGIS 사업체·종사자 · 2023', frn: '행안부 외국인주민 · 2024.11',
+    f_minbak: '행안부 지방행정 인허가(외국인관광 도시민박 15044966) · 2026-10-05', f_acc: 'TAAS · 2016~2025 한 해 평균', taas10: 'TAAS · 2016~2025 합', f_live: '서울시 행정동 생활인구(KT 추정) · 2026-07 평일 평균',
+    cop: '경찰청 15092089 경찰서별 경찰관 현황 · 2025-12-31', k4: '경찰청 15084592 경찰서별 강력범죄 발생 · 2025', dui: '경찰청 15043308 「경찰청_음주운전」 적발 · 2024', duiT: '경찰청 15128722 관서별 시간대별 음주단속 · 2025',
+    _dv: '경찰청 15127380 시도청별 가정폭력 검거·조치 · 2025-12-31', _miss: '청 공개 「실종아동등 가출인 접수·해제」(전국 15129413 등) · 가장 새 해',
+    sat: { sat_all: ['15064412', '종합'], sat_civ: ['15064323', '민원'], sat_112: ['15064400', '112'], sat_trf: ['15064404', '교통'], sat_inv: ['15064409', '수사'] },
+    call: { '서울특별시경찰청': '서울청 15114082 · 2025 출동', '경기도북부경찰청': '경기북부청 15036132 · 2025 접수' },
+    car: { '서울특별시경찰청': '서울청 15114083 · 2025-12-31', '경기도북부경찰청': '경기북부청 15144083 · 2026-06-19', '강원특별자치도경찰청': '강원청 15125675 · 2025-12-31', '충청남도경찰청': '충남청 15144536 · 2025-12-31' },
+    g5: { '서울특별시경찰청': '서울청 15054738', '부산광역시경찰청': '부산청 15036510(발생만)', '인천광역시경찰청': '인천청 15070377', '경기도북부경찰청': '경기북부청 15086083', '강원특별자치도경찰청': '강원청 15107518', '세종특별자치시경찰청': '세종청 15127530' },
+    rally: { '서울특별시경찰청': '서울청 「오늘의 주요집회」 · 2025(주요 집회만)', '광주경찰청': '광주청 15119358 · 2025', '대구광역시경찰청': '대구청 15066382 · 2025' } };
+  function jpSrc(q, level, key, C, R) { var k = q[0], X = JPSRC, sdn = C && C.sdc, sum = level === 'sdc' ? ' · 그 청 경찰서 합' : '', ps = PSF && PSF.st && level === 'st' ? PSF.st[String(key)] : null;
+    if (/^f_(bar|yu|sing|gosi|pc|motel|massage|shop)$/.test(k)) return X.shop; if (/^f_(old70|kid|under10)$/.test(k)) return X.age; if (/^f_(biz|biz_i|emp)$/.test(k)) return X.sgis; if (/^f_frn/.test(k)) return X.frn;
+    if (/^f_(dead10|ped10|moto10)$/.test(k)) return X.taas10; if (k === 'f_sub' || k === 'f_bus') return '교통카드 역·정류장 승하차 하루 평균' + (/서울/.test(sdn || '') || /^11/.test(String(key)) ? ' · 2026-06' : ' · 시·도 파일 기준달');
+    if (/^c_/.test(k)) return 'KOSIS 경찰청 범죄통계 DT_132004_A030 · 2023~2025 평균' + (level === 'st' && !(R && R.v._cx) ? ' · 시군구 값을 주민 몫으로 나눈 어림' : sum);
+    if (X.sat[k]) { var y = PSF && PSF.sat_y ? PSF.sat_y[k] : (/trf|inv/.test(k) ? '2024' : '2025'); return '치안고객만족도 관서별 ' + X.sat[k][0] + ' · ' + y + (level === 'sdc' ? ' · 경찰서 평균' : ''); }
+    if (k === 'call') { if (level === 'pb') return '광주청 15113437 지구대·파출소별 112 출동'; if (level === 'sdc') return '청 공개 경찰서별 112 합(청마다 접수·출동 기준 다름)'; if (X.call[sdn]) return X.call[sdn]; if (ps && ps.call112) return '청 공개 파일 ' + ps.call112[2] + ' · ' + ps.call112[1]; return '청 공개 경찰서별 112'; }
+    if (k === 'car') return (X.car[sdn] || '청 공개 112 순찰차') + sum;
+    if (/^g5/.test(k)) return (X.g5[sdn] || '청 공개 경찰서별 5대 범죄') + ' · ' + (ps && ps.f5_y ? ps.f5_y : '2025') + sum;
+    if (k === 'rally') return (X.rally[sdn] || '청 공개 집회') + sum;
+    return (X[k] || '') + (X[k] && /^(cop|k4|dui|duiT)$/.test(k) ? sum : ''); }
   function jpSidSd(sid) { if (!POL2) return null; if (JPSD[sid] !== undefined) return JPSD[sid]; var ks = Object.keys(POL2.dong), r = null; for (var j = 0; j < ks.length; j++) { var st = polOf(ks[j]); if (st && st.some(function (q) { return q[0] === sid; })) { r = ks[j].slice(0, 2); break; } } return (JPSD[sid] = r); }
   function jpSchHtml(level, key, it0, re) { var gus = level === 'sgg' ? unitGus({ t: 'sgg', id: key }) : null, sd = level === 'dong' ? String(key).slice(0, 2) : level === 'pb' ? jpPbSd(key) : level === 'st' ? jpSidSd(key) : gus && gus.length ? gus[0].slice(0, 2) : null;
     if (!sd) return ''; if (!SPOL[sd]) { spolGet(sd).then(re); return '<div class="jpst">🏫 관내 학교</div><p class="desc">학교 관할 표를 받는 중…</p>'; }

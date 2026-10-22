@@ -5,7 +5,7 @@
 #   지구대·파출소 = 경찰청 「전국 지구대 파출소 주소 현황」(공공데이터포털 15077036 · 2025-12-31 · 2,047곳) → 주소를 브이월드 좌표로
 #   ⚠ 지구대·파출소 관할 경계는 공개 자료가 없다 → 자리만 · 「가장 가까운 지구대」는 근사(관할이 아님)라고 밝힌다
 #   py -3.12 -X utf8 tools/region/police-bake.py → data/police.json
-import csv, json, os, time, urllib.request, urllib.parse, re
+import collections, csv, json, os, time, urllib.request, urllib.parse, re
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.dirname(ROOT); J = os.path.join(KB, '13_관할경계'); OUT = os.path.join(KB, '07_API키', 'out', 'police')
 
@@ -37,6 +37,34 @@ def main():
     for k8, lab in FIELD.items():
         if lab not in labels: labels.append(lab)
         if k8 in dong: dong[k8] = labels.index(lab)
+    # 2026-10-22 이름이 같은 경찰서(강원 고성 143 · 경남 고성 249) — 관할 결과표(13_관할경계)가 이름으로 서를 찾아 강원 고성군 동이 경남 고성서로 잡혀 있었다.
+    #   동 코드의 시도와 서의 시도청이 어긋나면 같은 이름의 맞는 시도청 서로 바꾼다(관할 지도·경찰서 카드·지표표가 모두 이 표를 읽는다)
+    SDW = {'11': '서울', '26': '부산', '27': '대구', '28': '인천', '29': '광주', '30': '대전', '31': '울산', '36': '세종', '41': '경기', '42': '강원', '51': '강원', '43': '충청북', '44': '충청남',
+           '45': '전라북', '52': '전라북', '46': '전남', '47': '경상북', '48': '경상남', '50': '제주'}
+    SDW2 = {'12': ('광주', '전남'), '29': ('광주',), '46': ('전남',)}
+    BYI = {x[0]: x for x in stations}; samen = collections.defaultdict(list)
+    for x in stations: samen[x[1]].append(x[0])
+    def ok_sd(sid, c2):
+        sd = BYI[sid][5] if sid in BYI else ''
+        return any(w in sd for w in SDW2.get(c2, (SDW.get(c2, ''),))) if (SDW.get(c2) or SDW2.get(c2)) else True
+    fixed = 0
+    for k8, li in list(dong.items()):
+        lab = labels[li]; parts = lab.split('~'); changed = False; out = []
+        for part in parts:
+            ids = []
+            for t in part.split(','):
+                if t == '': continue
+                sid = int(t)
+                if sid in BYI and not ok_sd(sid, k8[:2]):
+                    alt = [x for x in samen[BYI[sid][1]] if x != sid and ok_sd(x, k8[:2])]
+                    if len(alt) == 1: sid = alt[0]; changed = True
+                ids.append(str(sid))
+            out.append(','.join(ids))
+        if changed:
+            nl = '~'.join(out)
+            if nl not in labels: labels.append(nl)
+            dong[k8] = labels.index(nl); fixed += 1
+    print('시도가 어긋난 관할 바로잡음', fixed, '동')
     byname = {re.sub(r'경찰서$', '', s[1]): s[0] for s in stations}
     cp = os.path.join(OUT, 'geo.json'); cache = json.load(open(cp, encoding='utf-8')) if os.path.exists(cp) else {}
     rows = list(csv.reader(open(os.path.join(OUT, 'pbox.csv'), encoding='cp949')))[1:]; pbox = []; miss = []; nosm = 0

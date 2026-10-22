@@ -102,8 +102,9 @@ def main():
         for gname in uk.split(' ', 1)[1].split('·'):
             u = CU.get((g['sido'], gname))
             if u:
-                for kk in ('strong', 'theft', 'viol', 'fraud', 'drug', 'traffic'): crm['c_' + kk] += u[kk]
+                for kk in ('strong', 'theft', 'viol', 'fraud', 'drug', 'traffic', 'all'): crm['c_' + kk] += u.get(kk) or 0
         for kk in CK: v[kk] = round(crm[kk], 1) if crm else None
+        v['c_all'] = round(crm['c_all'], 1) if crm else None   # 2026-10-22 관내 브리핑 — 시군구 범죄 합계(모든 죄종 · 덧붙인 칸)
         sgg[uk] = {'n': g['n'], 'sido': g['sido'], 'gus': sorted(g['gus']), 'v': v}
     # 경찰서(동 → 서 · 나눠 맡으면 똑같이)
     ST = collections.defaultdict(lambda: collections.Counter()); SH = collections.defaultdict(collections.Counter)

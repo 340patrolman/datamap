@@ -53,7 +53,7 @@ def main():
                  'frn': fr.get('합계'), 'frn_w': fr.get('외국인근로자'), 'frn_m': fr.get('결혼이민자'), 'frn_s': fr.get('유학생'), 'frn_k': fr.get('외국국적동포'),
                  'minbak': d.get('외국인관광 도시민박(업소 수 · 영업+휴업)') if isinstance(d.get('외국인관광 도시민박(업소 수 · 영업+휴업)'), (int, float)) else None}
             for k in CLS: v[k] = sc.get(k) if sc else None
-            DONG[code[:8]] = {'n': d.get('이름'), 'gu': p['gu'], 'gn': p['name'], 'v': v}
+            DONG[code[:8]] = {'n': d.get('이름'), 'gu': p['gu'], 'gn': p['name'], 'v': v, 'c': d.get('가운데')}
     print('동', len(DONG))
     # 주간인구지수(2020 인구총조사 KOSIS DT_1PA2020 · 시군구 — 일반구는 시) → 동 주민 × 지수 = 주간인구 어림
     KS = {'11': '서울', '21': '부산', '22': '대구', '23': '인천', '24': '광주', '25': '대전', '26': '울산', '29': '세종', '31': '경기도', '32': '강원도', '33': '충청북도', '34': '충청남도', '35': '전라북도', '36': '전라남도', '37': '경상북도', '38': '경상남도', '39': '제주도'}
@@ -118,14 +118,52 @@ def main():
                 x = d['v'].get(kk)
                 if x is not None: ST[i][kk] += x / len(ids); SH[i][kk] += 1
     st = {str(i): {k: round(v[k], 1) for k in v} for i, v in ST.items()}
+    # 지구대·파출소(근사) — 그 동을 맡는 경찰서(번지로 나눠 맡으면 둘 다)의 지구대·파출소 가운데 동 한가운데에서 가장 가까운 곳(지도 「지구대·파출소 관할(근사)」 층 pbOfP 와 같은 규칙)
+    import math
+    PB = collections.defaultdict(lambda: {'v': collections.Counter(), 'has': collections.Counter(), 'nd': 0})
+    PBI = {}
+    for i, b in enumerate(pol['pbox']): PBI[i] = b
+    BYS = collections.defaultdict(list)
+    for i, b in PBI.items(): BYS[b[6]].append(i)
+    SN = {s[0]: s[1] for s in pol['stations']}
+    def dist(a, b):
+        return math.hypot((a[0] - b[0]) * math.cos(math.radians(a[1])) * 111320, (a[1] - b[1]) * 110540)
+    for code, li in pol['dong'].items():
+        d = DONG.get(code[:8])
+        if not d or not d.get('c'): continue
+        ids = [int(x) for part in str(pol['labels'][li]).split('~') for x in part.split(',') if x != '']
+        best = None; bd = 1e18
+        for sid in ids:
+            for i in BYS.get(sid, []):
+                b = PBI[i]
+                if b[3] is None: continue
+                dd = dist(d['c'], (b[4], b[3]))
+                if dd < bd: bd = dd; best = i
+        if best is None: continue
+        g = PB[best]; g['nd'] += 1
+        for kk in keys:
+            if kk in CK: continue
+            x = d['v'].get(kk)
+            if x is not None: g['v'][kk] += x; g['has'][kk] += 1
+        d['pb'] = best
+    try: P112 = json.load(open(os.path.join(ROOT, 'data', 'police-staff.json'), encoding='utf-8')).get('pb112', {})
+    except Exception: P112 = {}
+    print('지구대·파출소(근사) 묶음', len(PB), '/', len(PBI))
     # 동 파일(시도 2자리마다)
     by = collections.defaultdict(dict)
     for code, d in DONG.items():
         by[code[:2]][code] = [d['n'], d['gn'], [d['v'].get(k) for k in keys if k not in CK]]
+    pbs = collections.defaultdict(dict)
+    for i, g in PB.items():
+        b = PBI[i]; first = next((c for c, d in DONG.items() if d.get('pb') == i), None)
+        if not first: continue
+        vals = [round(g['v'][k], 1) if g['has'][k] else None for k in keys if k not in CK]
+        c112 = P112.get('%s|%s' % (b[6], b[0]))
+        pbs[first[:2]][str(i)] = [b[0] + ('파출소' if b[1] else '지구대'), SN.get(b[6], b[2]), g['nd'], vals, c112[0] if c112 else None]
     os.makedirs(os.path.join(ROOT, 'data', 'police-func'), exist_ok=True)
     dk = [k for k in keys if k not in CK]
     for sd, x in by.items():
-        json.dump({'schema': 'tg-police-func-dong/1', 'sido': SIDO.get(sd, sd), 'keys': dk, 'fields': 'dong{행정동 8자리: [이름, 시군구, [keys 차례 값…]]}', 'dong': x},
+        json.dump({'schema': 'tg-police-func-dong/1', 'sido': SIDO.get(sd, sd), 'keys': dk, 'fields': 'dong{행정동 8자리: [이름, 시군구, [keys 차례 값…]]} · pb{police.json pbox 차례: [이름, 경찰서, 묶인 동 수, [keys 차례 값…], 112 출동(광주만)]}(지구대·파출소 관할 근사 — 그 동을 맡는 서의 지구대 가운데 동 한가운데에서 가장 가까운 곳 · 동이 하나도 안 묶인 지구대는 없다)', 'dong': x, 'pb': pbs.get(sd, {})},
                   open(os.path.join(ROOT, 'data', 'police-func', sd + '.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     doc = {'schema': 'tg-police-func/1', 'made': datetime.date.today().isoformat(),
            'source': '행정동 = 주민등록(행안부) · SGIS 사업체·종사자 2023 · 소상공인시장진흥공단 상가업소 소분류(2026-06) · 주민등록 연령별(2026-09) · TAAS 2016~2025 · 대중교통 승하차 · 행안부 외국인주민(2024.11) · 지방행정 인허가(도시민박) · 범죄 발생지 = 경찰청 범죄통계(KOSIS DT_132004_A030 · 2023~2025 한 해 평균 · 시군구까지만) · 관할 = 직제 시행규칙 별표2',

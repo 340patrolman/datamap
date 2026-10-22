@@ -3769,7 +3769,7 @@
     while (H.length) { var cur = pop(), t = cur[0], o = G.L[cur[1]], lb = lab[o.ix]; if (t > PRDH || lb.b < t - 1e-6) continue; var nd = G.N[o.t], pend = lb.pend;
       if (nd.no && nd.no !== G.N[o.f].no) { var dir = SDO[prdHd(o.b1)], ws = prdWait(nd.no, dir, 'St', T0 + t * 1000), fst = PRD.wait && o === o0; if (fst && ws[1] === 'u') ws = [0, 'u'];
         pend = { no: nd.no, dir: dir, b: o.b1, t: t, first: fst };
-        if (sig[nd.no] == null || t < sig[nd.no]) { sig[nd.no] = t; if (ws[1] === 'r') stops[nd.no] = { t: t, w: ws[0], p: nd.p }; else delete stops[nd.no]; if (ws[1] === 'u' || ws[1] === 'n') unk[nd.no] = 1; else delete unk[nd.no]; } }
+        if (sig[nd.no] == null || t < sig[nd.no]) { sig[nd.no] = t; if (ws[1] === 'r' && ws[0] >= 1) stops[nd.no] = { t: t, w: ws[0], p: nd.p }; else delete stops[nd.no]; if (ws[1] === 'u' || ws[1] === 'n') unk[nd.no] = 1; else delete unk[nd.no]; } }
       else if (!nd.no) pend = null;
       var O = G.out[o.t] || []; if (!O.length && !nd.inn && o.nm && (nd.ex || !/길$/.test(o.nm)) && (outs[o.nm] == null || t < outs[o.nm])) outs[o.nm] = t;   /* 서초구 밖에서 큰길이 끊긴 자리 = 자료의 끝(구 안 막다른 길·골목 끝은 빼고) */
       O.forEach(function (q) { if (q.t === o.f || G.ban[o.t + '|' + o.id + '|' + q.id]) return; var dep = t, pd2 = null;
@@ -3790,7 +3790,7 @@
   function prdGo() { navGet().then(function () { if (KSC === undefined) kscGet(); prdRun(); sel = null; show({ kind: 'prd' }); draw(); }); }
   function prdOpen() { PRD.pick = true; navGet(); if (KSC === undefined) kscGet(); if (!on.sgm) { on.sgm = true; try { paintLayers(); } catch (e) {} } toast('🚨 신고 자리를 지도에서 누른다'); sel = null; show({ kind: 'prd' }); draw(); }
   function prdMin(t) { return '+' + (t / 60).toFixed(1) + '분'; }
-  function prdWTxt(w, t) { if (w[1] === 'i') return '<b style="color:#64748b">신호 무시</b>(기다림 0으로 봄)'; return w[1] === 'r' ? '<b style="color:#dc2626">적색 · ' + Math.round(w[0]) + '초 섬</b> · ' + prdMin(t + w[0]) + '에 출발' : w[1] === 'g' ? '<b style="color:#16a34a">녹색 통과</b>' : w[1] === 'y' ? '<b style="color:#a16207">황색(지나간다고 봄)</b>' : w[1] === 'u' ? '<b style="color:#64748b">색 모름</b>' + (w[0] ? ' · 평균 ' + Math.round(w[0]) + '초 기다린다고 봄' : ' · 바로 출발한다고 봄') : '<b style="color:#64748b">신호 자료 없음</b> · 기다림 0으로 봄'; }
+  function prdWTxt(w, t) { if (w[1] === 'i') return '<b style="color:#64748b">신호 무시</b>(기다림 0으로 봄)'; return w[1] === 'r' && w[0] < 1 ? '<b style="color:#16a34a">적색 끝 · 곧 녹색 — 바로 통과</b>' : w[1] === 'r' ? '<b style="color:#dc2626">적색 · ' + Math.round(w[0]) + '초 섬</b> · ' + prdMin(t + w[0]) + '에 출발' : w[1] === 'g' ? '<b style="color:#16a34a">녹색 통과</b>' : w[1] === 'y' ? '<b style="color:#a16207">황색(지나간다고 봄)</b>' : w[1] === 'u' ? '<b style="color:#64748b">색 모름</b>' + (w[0] ? ' · 평균 ' + Math.round(w[0]) + '초 기다린다고 봄' : ' · 바로 출발한다고 봄') : '<b style="color:#64748b">신호 자료 없음</b> · 기다림 0으로 봄'; }
   function prdCard() { var R = PRD.res, bt = function (k, v, t, act) { return '<button data-prd="' + k + ':' + v + '"' + (act ? ' style="background:#1d4ed8;color:#fff;border-color:#1d4ed8"' : '') + '>' + t + '</button>'; };
     var TC = window.TT ? TT.cfg() : { runK: 1.3 }, sets = '<div class="lg-btns">' + bt('set', 'n', '일반 신고차량', PRD.set === 'n') + bt('set', 'r', '도주 차량', PRD.set === 'r') + (window.TT && TT.VIP_ON ? bt('set', 'v', '🔒 업무', PRD.set === 'v') : '') + '</div>';
     if (PRD.set === 'v') return vipCard(bt, sets);

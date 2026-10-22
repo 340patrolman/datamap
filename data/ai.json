@@ -1765,12 +1765,12 @@
   ],
   [
    "live-acc-seoul.json",
-   "2026-10-22 11:47",
+   "2026-10-22 12:31",
    "서울 열린데이터광장 「서울시 실시간 돌발 정보」(AccInfo · TOPIS) — 큰길(ITS 링크)에 걸린 공사·통제·사고"
   ],
   [
    "live-ims-seoul.json",
-   "2026-10-22 11:47",
+   "2026-10-22 12:31",
    "경찰청 도시교통정보센터(UTIC) 개방데이터 돌발 정보(imsOpenData.do) — 서울(법정동 11…)"
   ],
   [
@@ -1780,13 +1780,13 @@
   ],
   [
    "live-spd-seocho.json",
-   "11:47",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261022114500"
+   "12:31",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261022123000"
   ],
   [
    "live-spd-six.json",
-   "11:47",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261022114500"
+   "12:31",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261022123000"
   ],
   [
    "livepop.json",
@@ -1990,7 +1990,7 @@
   ],
   [
    "rally-seoul.json",
-   "2026-10-21",
+   "2026-10-22",
    "서울특별시경찰청 「오늘의 주요집회」(www.smpa.go.kr/user/nd54882.do · 집회/시위 게시판) 본문 글 · 자리 = OpenStreetMap 지하철 출입구(© OpenStreet …(전문은 파일에)"
   ],
   [
@@ -2090,7 +2090,7 @@
   ],
   [
    "sig-audit.json",
-   "2026-10-22 11:54",
+   "2026-10-22 12:35",
    "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)"
   ],
   [
@@ -2135,7 +2135,7 @@
   ],
   [
    "sigdir-seoul.json",
-   "2026-10-22 11:54",
+   "2026-10-22 12:39",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [
@@ -2175,7 +2175,7 @@
   ],
   [
    "station-events.json",
-   "2026-10-21",
+   "2026-10-22",
    "공연 = (재)예술경영지원센터 KOPIS OpenAPI(data/venue-events-kopis.json) · 집회 = 서울특별시경찰청 「오늘의 주요집회」(data/rally-seoul.json) …(전문은 파일에)"
   ],
   [

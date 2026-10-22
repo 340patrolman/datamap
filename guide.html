@@ -18,7 +18,7 @@
   nav { max-width: 1100px; margin: 8px auto 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; } nav::-webkit-scrollbar { display: none; }
   nav a { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; background: var(--chip); color: var(--ink); text-decoration: none; font-weight: 700; font-size: 13.5px; }
   main { max-width: 1100px; margin: 0 auto; padding: 12px 16px 60px; }
-  section { margin-top: 22px; } h2 { font-size: 19px; margin: 0 0 4px; } .lead { color: var(--ink2); margin: 0 0 12px; font-size: 14px; }
+  section { margin-top: 22px; scroll-margin-top: 150px; } h2 { font-size: 19px; margin: 0 0 4px; } .lead { color: var(--ink2); margin: 0 0 12px; font-size: 14px; }
   .kpi { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; } .kpi span { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; } .kpi b { font-size: 20px; display: block; line-height: 1.1; } .kpi small { color: var(--ink2); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
@@ -57,7 +57,7 @@
   function path(a) { return '<div class="path">' + a.map(function (x, i) { return (i ? '<u>›</u>' : '') + '<i>' + esc(x) + '</i>'; }).join('') + '</div>'; }
   var ok = false; try { ok = localStorage.getItem('tg_map2d_gate') === '1'; } catch (e) {}
   if (!ok) { main.innerHTML = '<div class="gate"><p>이 설명서는 데이터 압축지도를 쓰는 사람을 위한 것이다.</p><p><a href="./">지도에서 확인코드를 넣고 들어온 뒤</a> 🧰 도구 › 📖 사용설명서로 다시 연다.</p></div>'; return; }
-  fetch('data/guide.json').then(function (r) { return r.json(); }).then(function (j) { G = j; TAB = G.cats[0][0]; paint(); if (location.hash) { var el = document.getElementById(location.hash.slice(1)); if (el) setTimeout(function () { el.scrollIntoView(); }, 60); } }).catch(function () { main.innerHTML = '<p class="empty">설명서 자료(data/guide.json)를 읽지 못했다.</p>'; });
+  fetch('data/guide.json').then(function (r) { return r.json(); }).then(function (j) { G = j; TAB = G.cats[0][0]; paint(); if (location.hash) { var go = function () { var el = document.getElementById(location.hash.slice(1)), hd = document.querySelector('header'); if (el) window.scrollTo(0, el.getBoundingClientRect().top + scrollY - (hd ? hd.offsetHeight + 8 : 0)); }; setTimeout(go, 60); setTimeout(go, 600); } }).catch(function () { main.innerHTML = '<p class="empty">설명서 자료(data/guide.json)를 읽지 못했다.</p>'; });
   function hit(t, w) { if (!w) return true; t = t.toLowerCase(); return w.split(/\s+/).every(function (x) { return t.indexOf(x) >= 0; }); }
   function paint() {
     var w = (q.value || '').trim().toLowerCase(), h = '';

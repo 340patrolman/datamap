@@ -153,6 +153,55 @@ def st_official():
                 sid = match('세종' + r[1].replace(' ', '')); put(sid, kn(r[2]), 0, r[3], yy); put(sid, kn(r[2]), 1, r[4], yy)
     for sid, v in f5.items(): out[sid]['f5'] = {k: list(x) for k, x in v.items()}; out[sid]['f5_y'] = f5y.get(sid)
     print('5대 범죄(청 공개) 경찰서', len(f5))
+    # 112 신고(청이 공개한 경찰서별 · 청마다 접수/출동 기준이 다를 수 있다) — 인천 3081475 · 경남 15006967 · 울산 15007069 · 제주 15007251 · 충남 15007055 · 충북 15039573 · 대구 15065363 · 부산 15067163 · 경북 15007169
+    def nn(v):
+        try: return int(str(v).replace(',', '').strip())
+        except ValueError: return None
+    c112 = {}
+    def yrows(n, pre, skip=()):
+        T = dgcsv(n)
+        if not T: return
+        last = max(T[1:], key=lambda r: r[0]); y = re.sub(r'\D', '', last[0])[:4]
+        for c, v in zip(T[0][1:], last[1:]):
+            c = c.replace(' ', '')
+            if c in skip or not nn(v): continue
+            sid = match(pre + c) if pre else match(c)
+            if sid: c112[sid] = [nn(v), y, n]
+            else: miss.append('112 ' + c)
+    yrows(3081475, '인천'); yrows(15007069, '울산', ('울산청',)); yrows(15007251, '제주'); yrows(15067163, '부산', ('계', '부산청'))
+    T = dgcsv(15039573)
+    if T:
+        last = max(T[1:], key=lambda r: r[0])
+        for c, v in zip(T[0][1:], last[1:]):
+            sid = match(c.replace(' ', ''), '충북')
+            if sid and nn(v): c112[sid] = [nn(v), last[0], 15039573]
+    T = dgcsv(15007169)
+    if T:
+        last = max(T[1:], key=lambda r: r[0])
+        for c, v in zip(T[0][1:], last[1:]):
+            if c.endswith('청') or not nn(v): continue
+            sid = match(c.replace(' ', ''), '경북')
+            if sid: c112[sid] = [nn(v), last[0], 15007169]
+    T = dgcsv(15006967)
+    if T:
+        yc = max(range(1, len(T[0])), key=lambda i: T[0][i])
+        for r in T[1:]:
+            sid = match(r[0].replace(' ', ''), '경남')
+            if sid and nn(r[yc]): c112[sid] = [nn(r[yc]), re.sub(r'\D', '', T[0][yc]), 15006967]
+    T = dgcsv(15065363)
+    if T:
+        yy = max(r[0][:4] for r in T[1:] if r[0][:4].isdigit())
+        for r in T[1:]:
+            if r[0][:4] != yy or '청' in r[0][4:]: continue
+            sid = match('대구' + r[0][4:].replace(' ', ''))
+            if sid: c112[sid] = [sum(nn(x) or 0 for x in r[1:]), yy, 15065363]
+    T = dgcsv(15007055)
+    for r in (T or [])[1:]:
+        if r[0].endswith('청') or '순찰대' in r[0]: continue
+        sid = match(r[0].replace(' ', ''), '충남')
+        if sid: c112[sid] = [sum(nn(x) or 0 for x in r[1:]), '2026-06 파일', 15007055]
+    for sid, v in c112.items(): out[sid]['call112'] = v
+    print('112(청 공개 경찰서별)', len(c112))
     for sid in out: out[sid]['n'] = PC[sid]['n'] if sid in PC else None
     print('경찰서 공식 파일 이음', len(out), '못 이음', sorted(set(miss)), '· 순찰차', sum(1 for k in car if k), '/', len(car))
     return dict(out), dict(sat_sdc), sat_y

@@ -55,6 +55,7 @@
   .prdlg { position: relative; height: 26px; margin: 6px 6px 0; } .prdlg i { display: block; height: 9px; border-radius: 5px; } .prdlg span { position: absolute; top: 11px; font-size: 11px; color: var(--ink2); transform: translateX(-50%); white-space: nowrap; } .prdlg span:first-of-type { transform: none; } .prdlg span:last-of-type { transform: translateX(-100%); }
   .prdpt { border: 1.5px solid #111827; border-radius: 10px; padding: 7px 9px; margin: 6px 0; font-size: 13.5px; line-height: 1.6; position: relative; } .prdpt button { position: absolute; right: 6px; top: 4px; border: 0; background: none; font-size: 16px; cursor: pointer; color: var(--ink2); }
   .prdkp button i { display: inline-block; min-width: 22px; padding: 0 4px; margin-right: 5px; border-radius: 10px; font-style: normal; font-weight: 800; font-size: 11px; color: #fff; text-align: center; } .prdkp button.on { outline: 2px solid #111827; } details.prdmore > summary { cursor: pointer; font-weight: 700; font-size: 13px; margin: 8px 0 4px; color: var(--ink2); }
+  .prddir button { font-size: 13.5px; } .prddir button.on { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
   .dh { margin: 12px 0 4px; padding-top: 8px; border-top: 1px solid var(--line); font-weight: 800; font-size: 14px; }
   .pyr { font-size: 11px; margin: 4px 0 6px; }
   .pyr > div { display: grid; grid-template-columns: 1fr 40px 1fr; align-items: center; gap: 4px; min-height: 15px; }
@@ -1079,7 +1080,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.266.0"></script>
+<script src="js/map2d.js?v=2.267.0"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

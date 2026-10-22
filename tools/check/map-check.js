@@ -86,6 +86,7 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var gd = TGMap2D.pidxHtml({ u: 'st', num: 'acc', den: 'pop', sdc: '' }) || ''; ck('📖 지표표 「자세한 설명」 단추 → 사용설명서 #police (v2.263.0)', /data-guidesec="police"/.test(gd), gd.length + '자'); } catch (e) { ck('자세한 설명 단추 검사', false, e.message); }
       try { var pbh = TGMap2D.pidxHtml({ u: 'pb', num: 'f_bar', den: 'pop', sd2: '11' }) || ''; ck('👮 지표표 지구대·파출소별(근사) — 서울 주점 주민 대비 · 방배서 지구대 들어 있음 (v2.262.0)', (pbh.match(/<tr/g) || []).length >= 150 && /방배서/.test(pbh), (pbh.match(/<tr/g) || []).length + '줄'); } catch (e) { ck('지구대 단위 검사', false, e.message); }
       try { var cl = TGMap2D.pidxHtml({ u: 'st', num: 'call', den: 'pop', sdc: '' }) || ''; ck('📞 112 경찰서별 11개 청(서울·경기북부 + 인천·경남·울산·제주·충남·충북·대구·부산·경북) (v2.261.0)', (cl.match(/<tr/g) || []).length >= 150 && /해운대|부산진/.test(cl) && /창원/.test(cl), (cl.match(/<tr/g) || []).length + '줄'); } catch (e) { ck('112 넓힘 검사', false, e.message); }
       try { var dy = TGMap2D.pidxHtml({ u: 'st', num: 'acc', den: 'day', sdc: '' }) || ''; ck('🏢 주간인구 어림 분모 — 전국 경찰서 사고 ÷ 주간인구 (v2.260.0)', (dy.match(/<tr/g) || []).length >= 250 && /경찰청 전국/.test(dy), (dy.match(/<tr/g) || []).length + '줄'); } catch (e) { ck('주간인구 검사', false, e.message); }

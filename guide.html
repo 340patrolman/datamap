@@ -46,7 +46,7 @@
 <header>
   <div class="hd"><h1>📖 데이터 압축지도 사용설명서</h1><a href="./">← 지도로</a></div>
   <div class="sr"><input id="q" type="search" placeholder="찾기 — 예: 신호, 사고, 관할, 반려동물, 침수, 매출" autocomplete="off"></div>
-  <nav><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
+  <nav><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#police">👮 경찰 통계</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
 </header>
 <main id="main"><p class="empty">설명서를 읽는 중…</p></main>
 <script>
@@ -57,7 +57,7 @@
   function path(a) { return '<div class="path">' + a.map(function (x, i) { return (i ? '<u>›</u>' : '') + '<i>' + esc(x) + '</i>'; }).join('') + '</div>'; }
   var ok = false; try { ok = localStorage.getItem('tg_map2d_gate') === '1'; } catch (e) {}
   if (!ok) { main.innerHTML = '<div class="gate"><p>이 설명서는 데이터 압축지도를 쓰는 사람을 위한 것이다.</p><p><a href="./">지도에서 확인코드를 넣고 들어온 뒤</a> 🧰 도구 › 📖 사용설명서로 다시 연다.</p></div>'; return; }
-  fetch('data/guide.json').then(function (r) { return r.json(); }).then(function (j) { G = j; TAB = G.cats[0][0]; paint(); }).catch(function () { main.innerHTML = '<p class="empty">설명서 자료(data/guide.json)를 읽지 못했다.</p>'; });
+  fetch('data/guide.json').then(function (r) { return r.json(); }).then(function (j) { G = j; TAB = G.cats[0][0]; paint(); if (location.hash) { var el = document.getElementById(location.hash.slice(1)); if (el) setTimeout(function () { el.scrollIntoView(); }, 60); } }).catch(function () { main.innerHTML = '<p class="empty">설명서 자료(data/guide.json)를 읽지 못했다.</p>'; });
   function hit(t, w) { if (!w) return true; t = t.toLowerCase(); return w.split(/\s+/).every(function (x) { return t.indexOf(x) >= 0; }); }
   function paint() {
     var w = (q.value || '').trim().toLowerCase(), h = '';
@@ -70,6 +70,17 @@
         + '<h3 class="grp">왜 이런 자료까지 넣었나</h3><div class="grid">' + A.why.map(cd).join('') + '</div></section>'; }
     /* 0 쓰는 법 · 알아낼 수 있는 것 (2026-10-18) */
     if (!w && G.howto) h += '<section id="how"><h2>🚀 쓰는 법</h2><p class="lead">처음이면 이 차례대로.</p><div class="grid">' + G.howto.map(function (t) { return '<div class="card"><h3><span class="ic">' + esc(t[0]) + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div></section>';
+    /* 0-2 경찰 통계·기능별 분석 (2026-10-22) */
+    if (G.police) { var PO = G.police, pj = function (a) { return a.join(' '); };
+      var ph = '', ps = PO.steps.filter(function (t) { return hit(pj(t), w); }), pf = PO.fn.filter(function (t) { return hit(pj(t), w); }), pu = PO.units.filter(function (t) { return hit(pj(t), w); }), pd = PO.dens.filter(function (t) { return hit(pj(t), w); }), pw = PO.where.filter(function (t) { return hit(pj(t), w); });
+      if (!w) ph += '<p class="lead"><b>' + esc(PO.lead) + '</b></p>';
+      if (pw.length) ph += '<h3>어디서 보나</h3><div class="grid">' + pw.map(function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div>';
+      if (ps.length) ph += '<h3>어떻게 만들었나 — 과정</h3><div class="grid">' + ps.map(function (t) { return '<div class="card"><h3><span class="ic">' + esc(t[0]) + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div>';
+      if (pf.length) ph += '<h3>분야(기능)별 설명</h3>' + pf.map(function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p><b>무엇을 보나</b> — ' + esc(t[2]) + '</p><p><b>어떻게 읽나</b> — ' + esc(t[3]) + '</p><p class="lg-n"><b>출처</b> — ' + esc(t[4]) + '</p></div>'; }).join('');
+      if (pu.length) ph += '<h3>단위 — 어디까지 나눠 보나</h3><table class="spec"><tbody>' + pu.map(function (t) { return '<tr><th>' + t[0] + ' ' + esc(t[1]) + '</th><td>' + esc(t[2]) + '</td></tr>'; }).join('') + '</tbody></table>';
+      if (pd.length) ph += '<h3>견줄 것(분모) — 무엇으로 나누나</h3><table class="spec"><tbody>' + pd.map(function (t) { return '<tr><th>' + esc(t[0]) + '</th><td>' + esc(t[1]) + '</td></tr>'; }).join('') + '</tbody></table>';
+      if (!w) ph += '<h3>읽을 때 주의</h3><ul>' + PO.limits.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+      if (ph) h += '<section id="police"><h2>👮 경찰 통계·기능별 분석</h2>' + ph + '</section>'; }
     if (G.infer) { var I = G.infer.filter(function (t) { return hit(t.join(' '), w); }); if (I.length) h += '<section id="infer"><h2>🔎 이 지도로 알아낼 수 있는 것</h2><p class="lead">자료를 겹쳐 보면 숫자 하나로는 안 보이는 것을 어림할 수 있다 — 근거는 카드에 함께 나오고, 판단은 사람이 한다.</p><div class="grid">' + I.map(function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div></section>'; }
     /* 1 할 수 있는 일 */
     var T = G.tasks.filter(function (t) { return hit(t.join(' '), w); });

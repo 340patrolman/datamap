@@ -5693,7 +5693,7 @@
     if (PIX.u === 'pb') h += '<p class="lg-n">지구대·파출소 관할 경계는 공개되지 않아, 행정동마다 그 동을 맡는 경찰서의 지구대·파출소 가운데 동 한가운데에서 가장 가까운 곳으로 묶은 어림이다(지도 「지구대·파출소 관할(근사)」 층과 같은 규칙) · 112 는 광주청만 지구대별로 공개</p>';
     if (PIX.num === 'rally') h += '<p class="desc" style="color:#b45309">⚠ 서울은 서울청 「오늘의 주요집회」에 실린 <b>주요 집회만</b>이고 광주·대구는 청이 낸 <b>전체 개최</b>다 — 서울과 광주·대구의 크기를 서로 견주지 말고 같은 청 안에서 본다(시도청을 골라서).</p>';
     if (PIX.u === 'st' && /^c_/.test(PIX.num)) h += '<p class="lg-n">≈ = 경찰서가 시군구를 다른 서와 나눠 맡아 시군구 범죄 수를 주민 몫으로 나눈 어림(범죄 발생지 통계는 시군구까지만 나온다)</p>';
-    h += '<div class="lg-btns"><button data-pixcopy="1">📋 표 복사(엑셀에 붙이기)</button></div>';
+    h += '<div class="lg-btns"><button data-pixcopy="1">📋 표 복사(엑셀에 붙이기)</button><button data-guidesec="police">📖 자세한 설명(과정·분야별)</button></div>';
     return h + '<p class="lg-n">' + (PIDX.note || []).map(esc).join(' · ') + '</p>' + src(PIDX.source); }
   document.addEventListener('change', function (e) { var s9 = e.target.closest && e.target.closest('[data-pix]'); if (!s9) return; PIX[s9.getAttribute('data-pix')] = s9.value; if (s9.getAttribute('data-pix') === 'u' && s9.value === 'sdc') PIX.sdc = ''; if (/^sat_/.test(PIX.num)) PIX.den = 'none';   /* 만족도는 점수 — 나누지 않는다 */ if (PIX.u === 'sgg' || PIX.u === 'dong') pfnGet(); if (PIX.u === 'dong' || PIX.u === 'pb') pfdGet(PIX.sd2 || '11'); try { localStorage.setItem('tg_map2d_pidx', JSON.stringify(PIX)); } catch (e2) {} show({ kind: 'pidx' }); });
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-pixcopy]'); if (!b || !PIDX) return; var D9 = PIXD[PIX.den] || PIXD.none, nat = pidxNat();
@@ -5714,7 +5714,7 @@
   function psLv(k) { return '<span class="ps-lv ps-' + k + '">' + ({ nat: '🇰🇷 경찰청 전국', sdc: '🏢 시도경찰청', st: '🚓 경찰서', press: '📰 보도 · 공식 통계 아님' })[k] + '</span>'; }
   function psRowY(t, label) { var hd = t.rows[0], r = t.rows.filter(function (x) { return String(x[0]).replace(/\s/g, '') === label.replace(/\s/g, ''); })[0]; if (!r) return [[], []]; var ys = [], vs = []; hd.slice(1).forEach(function (h, i) { var y = (String(h).match(/\d{2,4}/) || [''])[0]; if (y.length === 2) y = '20' + y; if (y) { ys.push(y); vs.push(psN(r[i + 1])); } }); return [ys, vs]; }
   function pstatCard() { if (!PSF) { psfGet(); return '<h3>👮 경찰 통계 모음</h3><p class="desc">받는 중…</p>'; } if (PSF.err) return '<h3>👮 경찰 통계 모음</h3><p class="desc">자료를 못 받았다.</p>';
-    var h = '<h3>👮 경찰 통계 모음 <small style="font-weight:400;color:var(--ink2)">공식 통계 → 보도는 따로</small></h3><p class="desc">칸마다 단위를 띠로 붙였다 — ' + psLv('nat') + ' ' + psLv('sdc') + ' ' + psLv('st') + ' ' + psLv('press') + '</p>', N = PSF.nat || {}, NK = PSF.nat_kind || {};
+    var h = '<h3>👮 경찰 통계 모음 <small style="font-weight:400;color:var(--ink2)">공식 통계 → 보도는 따로</small></h3><div class="lg-btns"><button data-guidesec="police">📖 자세한 설명 — 만든 과정 · 단위 · 분모 · 분야별</button></div><p class="desc">칸마다 단위를 띠로 붙였다 — ' + psLv('nat') + ' ' + psLv('sdc') + ' ' + psLv('st') + ' ' + psLv('press') + '</p>', N = PSF.nat || {}, NK = PSF.nat_kind || {};
     var lastY = function (o) { var k = Object.keys(o || {}).sort(); return k[k.length - 1]; };
     var fm0 = function (x) { return Math.round(x).toLocaleString(); };
     h += '<div class="ps-sec">🇰🇷 경찰청 전국 단위</div>';
@@ -9618,7 +9618,8 @@
   /* v2.245.0 사용설명서를 찾기 쉽게(소유자 「사용설명서를 어디다 붙여 놓았는지 안 보인다」) — 위 칩 줄 맨 앞 「📖 사용법」 · 레이어 판 맨 위 줄 · 🧰 도구 맨 위 · 아직 안 열어 본 기기엔 「새」 */
   function guideSeen() { try { return localStorage.getItem('tg_map2d_guide1') === '1'; } catch (e) { return true; } }
   function guideDot() { var b = $('m2dGuideB'); if (!b) return; var d = b.querySelector('.newdot'); if (guideSeen()) { if (d) d.remove(); } else if (!d) b.insertAdjacentHTML('beforeend', '<i class="newdot">새</i>'); }
-  function guideOpen() { try { localStorage.setItem('tg_map2d_guide1', '1'); } catch (e) {} window.open('guide.html', '_blank', 'noopener'); guideDot(); }
+  function guideOpen(sec) { try { localStorage.setItem('tg_map2d_guide1', '1'); } catch (e) {} window.open('guide.html' + (sec ? '#' + sec : ''), '_blank', 'noopener'); guideDot(); }
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-guidesec]'); if (!b) return; e.preventDefault(); guideOpen(b.getAttribute('data-guidesec')); });
   guideDot();
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-pguide]')) { e.preventDefault(); guideOpen(); } });
   /* ---------- v2.239.0 누르고 싶게 · 찍히는 느낌 · 처음 한 번 손가락 ---------- */

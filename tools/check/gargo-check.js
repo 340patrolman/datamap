@@ -152,7 +152,8 @@
         var key = G.eB[e] + '|' + G.S[G.eS[e]][6], w2 = G.S[G.eS[f]][6], bn = G.ban[key], on = G.only[key]; if ((bn && bn[w2]) || (on && !on[w2])) ban++; }
       ck(o[0] + ' · 줄이 끊기지 않는다', brk === 0, '끊긴 곳 ' + brk);
       /* v0.5.0 길 고르기 품질 — 골목으로 돌지 않는다(골목·생활도로 길이 몫 20% 아래) · 꺾는 곳이 적다(9번 아래) · 에움(길 ÷ 직선) 1.7 아래 */
-      var al = 0, tot = 0; r.es.forEach(function (e2) { var q2 = G.S[G.eS[e2]]; tot += q2[2]; if (q2[4] >= 6) al += q2[2]; }); var alp = tot ? al / tot * 100 : 0, turns = r.mans.length - 1, det = r.dist / line;
+      var rq = g.noLive ? g.noLive(function () { return g.findRoute(a[0], a[1], b[0], b[1], now, null); }) || r : r;   /* 2026-10-23 길 고르기 품질(골목·꺾음·에움)은 실시간 소통·돌발을 뺀 길로 본다 — 사당역→서울대입구역이 그 시각 막힘을 돌아 에움 2.70 으로 10분마다 오가며 걸렸다(돌아가는 것은 맞는 동작) */
+      var al = 0, tot = 0; rq.es.forEach(function (e2) { var q2 = G.S[G.eS[e2]]; tot += q2[2]; if (q2[4] >= 6) al += q2[2]; }); var alp = tot ? al / tot * 100 : 0, turns = rq.mans.length - 1, det = rq.dist / line;
       /* 2026-10-14 큰길로만 돌아가는 길(골목 5% 이하 · 꺾음 4번 이하)은 에움 2.0 까지 — 교대역→예술의전당이 12:10 소통 값에서 서초대로 › 반포대로 › 우면산로(2.9km · 꺾음 2 · 골목 0%)로 1.75 가 나왔다. v0.5.1 판도 같은 값 → 길 찾기 탓이 아니라 그 시각 소통 탓. 1.7 은 골목·지그재그를 잡으려는 기준이다 */
       /* 고속터미널→방배역은 떠나는 자리가 중앙분리된 큰길의 동쪽행 차로에 붙어 한 번 돌아야 하는 구간이다(큰길 유턴 자리가 길 자료에 없다 — 알려진 한계) → 에움은 2.0 까지 */
       ck(o[0] + ' · 골목으로 돌지 않는다(20% 아래) · 꺾음 9번 아래 · 에움 1.7 아래', line < 600 || (alp <= 20 && turns <= 9 && det <= (/고속터미널→방배역/.test(o[0]) || (alp <= 5 && turns <= 4) ? 2.0 : 1.7)), '골목 ' + Math.round(alp) + '% · 꺾음 ' + turns + ' · 에움 ' + det.toFixed(2));
@@ -238,7 +239,7 @@
       try { var b1 = document.getElementById('gStop'); if (b1) b1.click(); var b2 = document.getElementById('gClr'); if (b2) b2.click();
         ck('목적지가 없으면 「켜놓고 다니기」 단추가 있다', !!document.getElementById('gCruise'));
         var bt0 = String(document.getElementById('gBot').innerText || ''); ck('목적지가 없으면 지금 색을 아는 신호 수와 까닭을 보인다(v0.6.2)', /지금 색·남은 초를 아는 신호 \d+곳/.test(bt0), bt0.replace(/\s+/g, ' ').slice(0, 80));
-        var pa = g.P(127.0113, 37.4835), pb = g.P(127.0076, 37.4925), rr = g.findRoute(pa[0], pa[1], pb[0], pb[1], Date.now() / 1000, null), ii = Math.floor(rr.pts.length / 2 / 3) * 2, hx = rr.pts[ii], hy = rr.pts[ii + 1], hd = (Math.atan2(rr.pts[ii + 2] - hx, -(rr.pts[ii + 3] - hy)) * 180 / Math.PI + 360) % 360;
+        var pa = g.P(127.0113, 37.4835), pb = g.P(127.0076, 37.4925), rr = g.findRoute(pa[0], pa[1], pb[0], pb[1], (function () { var d9 = new Date(); d9.setHours(14, 0, 0, 0); return d9.getTime() / 1000; })(), null),   /* 2026-10-23 밤(22시대)에 관문을 돌리면 그 시각 소통으로 길이 달라져 자리가 반포대로를 벗어났다 — 자리 잡기용 길은 낮 14시 값으로 */ ii = Math.floor(rr.pts.length / 2 / 3) * 2, hx = rr.pts[ii], hy = rr.pts[ii + 1], hd = (Math.atan2(rr.pts[ii + 2] - hx, -(rr.pts[ii + 3] - hy)) * 180 / Math.PI + 360) % 360;
         g.setMe(hx, hy, 5, hd, 11); var onC = g.cruise(), A = g.ahead(), top2 = String(document.getElementById('gTop').innerText || '');
         ck('켜놓고 다니기가 켜진다(위 띠 · 진행 방향이 위)', onC === true && /켜놓고 다니기/.test(top2) && Math.abs(g.view.rot - hd) < 1 && g.view.s >= 0.25 && g.view.s <= 0.9 && Math.abs(g.view.s - Math.max(0.25, Math.min(0.9, document.getElementById('gMap').clientHeight * 0.68 / g.cfg().fwd))) < 0.01, 'rot ' + Math.round(g.view.rot) + ' / 방위 ' + Math.round(hd) + ' · 배율 ' + g.view.s.toFixed(2));
         var asc = A && A.sigs.every(function (x, i2) { return x.d <= g.cfg().fwd && (!i2 || x.d >= A.sigs[i2 - 1].d); });

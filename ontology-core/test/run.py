@@ -173,6 +173,21 @@ for tg in (521, 548, 1026, 324):
         g = (a['acc']['cells'], a['acc']['total'], a['acc']['dead'], a['acc']['ped']) if a['acc'] else None
         if exp != g: ok = False; got.append((a['dir'], exp, g))
     ck('질문9 %s — 쪽마다 길에 걸친 사고 칸·10년 건수·사망·보행자가 TAAS 따로 셈과 같다' % q['nm'], ok, got[:3] or [(a['dir'], a['acc'] and a['acc']['total']) for a in q['approaches']])
+# ---- 질문 11 · 칸 ↔ 생활인구(2026-10-23) — data/r/<서울 구>/live250.json · onto-int 칸 · rd-cell 에서 따로 ----
+LV = {}
+for g_ in sorted(os.listdir(os.path.join(D, 'r'))):
+    f_ = os.path.join(D, 'r', g_, 'live250.json')
+    if g_.startswith('11') and os.path.exists(f_):
+        for k_, v_ in J(f_)['cells'].items():
+            o_ = LV.setdefault(k_, {'wd': [0] * 24, 'we': [0] * 24}); o_['wd'] = [a + b for a, b in zip(o_['wd'], v_['wd'])]; o_['we'] = [a + b for a, b in zip(o_['we'], v_['we'])]
+for tg in (521, 548, 1026, 324):
+    i = 'INT-%d' % tg; q = R['q11'][i]; cell = oi[tg][9]; sp_ = SA.get(str(oi[tg][4])) or {'in': {}}
+    cs = {RCX['cells'][ci] for rs in sp_['in'].values() for r in rs for l in r[4] for ci in RCX['links'].get(l[0], [])} | {cell}
+    wd = [sum(LV[c_]['wd'][h] for c_ in cs if c_ in LV) for h in range(24)]
+    hb = [sum(LV[cell]['wd'][h] for h in range(6 * k, 6 * k + 6)) for k in range(4)]
+    ok = q['here']['wd'] == LV[cell]['wd'] and q['here']['we'] == LV[cell]['we'] and q['around']['wd'] == wd and q['around']['cells'] == len(cs) and q['bins']['peopleWd'] == [round(v / sum(hb) * 1000) / 10 for v in hb]
+    ck('질문11 %s — 교차로 칸·둘레 칸 합 시간대 사람과 6시간 몫이 생활인구 격자 따로 셈과 같다' % q['nm'], ok, (q['here']['peakWd'], q['around']['cells'], len(cs), q['bins']))
+ck('질문11 — 교차로가 아닌 것을 물으면 null', R['q11bad'] is None)
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))

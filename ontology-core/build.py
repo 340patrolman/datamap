@@ -3,6 +3,7 @@
   모든 값은 이미 있는 공개 자료 파일에서 다시 센다(지어낸 값 없음). 링크마다 출처 파일과 등급(A~E).
   원천:
     INT·PLC  = data/onto-int.json(T-GIS 교차로 · C-ITS 번호 · 250m 칸 · 행정동 10자리 → 앞 8자리)
+               PLC 사람 = data/r/<서울 구>/live250.json(서울 생활인구 내국인 250m 격자 · 2026-09-07~13 한 주 · 평일·주말 0~23시 평균 · 연령 구성) — 칸 번호가 열쇠 · 값 그대로(2026-10-23)
     EVT      = 사건(2026-10-23 엮임 지도 둘째) = data/onto-events.json(tools/onto/evt-bake.py — 집회·공연·돌발 · 침수는 해마다) → 교차로 「근처」(집회 300m·공연 500m·돌발 150m · 근사 C)
                침수는 data/season-seocho.json 흔적 점이 교차로 100m 안이면 「흔적」(그 해 흔적 수·가장 깊은 침수심) · 교차로에 안 닿는 사건은 싣지 않는다
     APR·RD   = 접근로·도로 구간(2026-10-23 엮임 지도 셋째) = data/sig-approach-seocho.json(신호 교차로에 들어오는 쪽마다 ITS 링크) → 교차로 「들어오는길」 접근로 「이룸」 도로 구간(ITS 링크 · 등급 B)
@@ -147,6 +148,24 @@ def acl_build(obj, edge, rds, nv, ta):
         obj(cid, 'ACL', lat=c[0], lon=c[1], y0=2016, years=c[2:12], dead=c[12], serious=c[13], ped=c[14], night=c[18], tod=c[19:23], mv=c[23], mvnm=dv.get(c[23]), mvn=c[24], typ=c[25])
         edge(best[0], '사고칸', cid, 'C', 'taas10(100m 사고 칸 가운데가 구간 선 %dm 안 · 가장 가까운 구간 하나 · 방향 섞임)' % ACL_R, d=round(best[1])); n += 1
     return n
+def plc_people(O):
+    """250m 칸(PLC)에 서울 생활인구(내국인) 250m 격자 값을 그대로 붙인다(속성 — 칸 번호가 열쇠 · 등급 A).
+       wd/we = 평일·주말 하루 평균 0~23시(명) · ad/an = 평일 낮(11~14시)·밤(0~4시) 연령 8칸 % — data/r/<서울 구>/live250.json(tools/region/live250-bake.py)"""
+    used = []; L = {}
+    for g in sorted(os.listdir(os.path.join(D, 'r'))):
+        f = 'r/%s/live250.json' % g
+        if not g.startswith('11') or not os.path.exists(os.path.join(D, f)): continue
+        cs = J(os.path.join(D, f))['cells']; hit = False
+        for k, v in cs.items():
+            o = O.get('PLC-' + k)
+            if o is None: continue
+            p = L.setdefault(k, {'wd': [0] * 24, 'we': [0] * 24, 'ad': v['ad'], 'an': v['an'], 'sd': 0}); hit = True
+            p['wd'] = [a + b for a, b in zip(p['wd'], v['wd'])]; p['we'] = [a + b for a, b in zip(p['we'], v['we'])]
+            s_ = sum(v['wd'])
+            if s_ > p['sd']: p['ad'], p['an'], p['sd'] = v['ad'], v['an'], s_   # 칸이 두 구 파일에 나뉘어 있으면 사람 수는 더하고 연령 구성은 많은 쪽
+        if hit: used.append(f)
+    for k, p in L.items(): O['PLC-' + k].update(wd=p['wd'], we=p['we'], ad=p['ad'], an=p['an'])
+    return used
 def dng_build(O, obj, rows):
     hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
     ec = J(os.path.join(D, 'econ-dong.json'))['dong']; dr = {x[0]: x for x in J(os.path.join(D, 'dui-ref-seoul.json'))['items']}
@@ -257,7 +276,8 @@ def main():
             edge(f['id'], '뒷받침', u, 'B', 'onto-rules.json(소유자 현장 판단)')
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
-    srcs = ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json']
+    pplf = plc_people(O)
+    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',

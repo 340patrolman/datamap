@@ -88,6 +88,26 @@
       flood: R.fy ? { years: R.fy, last: R.fl, dep: R.fd, detour: R.dt } : null, acc: this.rdAcc([R]), feeds: feeds, cells: this.follow(rdId, '지남').map(function (z) { return z.o.id; }),
       notes: ['k = 교차로에서 거슬러 간 차례(0 이 교차로에 바로 닿는 링크)', '돌아가는 부담은 그 길 한 구간이 통째로 막혔다고 본 제한속도 기준 값'] };
   };
+  /* 질문 11 — 이 교차로 둘레 사람과 사고 시각(2026-10-23 칸 ↔ 생활인구): 교차로가 든 250m 칸의 평일·주말 시간대 사람 · 들어오는 길이 지나는 칸들의 합 ·
+     6시간 네 갈래(0~6·6~12·12~18·18~24)마다 「사람 몫」과 「사고 몫」(교차로 70m 사고 묶음)을 나란히 — 둘을 한 점수로 섞지 않는다 */
+  P.q11 = function (intId) {
+    var it = this.O[intId]; if (!it || it.t !== 'INT') return null; var self = this;
+    var pc = this.follow(intId, '들어감')[0], C = pc ? pc.o : null;
+    function bins(a) { var b = [0, 0, 0, 0]; a.forEach(function (v, h) { b[Math.floor(h / 6)] += v; }); return b; }
+    function pct(b) { var t = sum(b); return t ? b.map(function (v) { return Math.round(v / t * 1000) / 10; }) : null; }
+    function peak(a) { var m = -1, h = null; a.forEach(function (v, i) { if (v > m) { m = v; h = i; } }); return { h: h, n: m }; }
+    var here = C && C.wd ? { id: C.id, wd: C.wd, we: C.we, ad: C.ad, an: C.an, peakWd: peak(C.wd), peakWe: peak(C.we), dayWd: sum(C.wd), dayWe: sum(C.we) } : null;
+    var cells = {}; this.follow(intId, '들어오는길').forEach(function (a) { self.follow(a.o.id, '이룸').forEach(function (r) { self.follow(r.o.id, '지남').forEach(function (z) { cells[z.o.id] = z.o; }); }); });
+    if (C) cells[C.id] = C;
+    var ids = Object.keys(cells).sort(), wd = [], we = [], miss = 0;
+    for (var h = 0; h < 24; h++) { wd[h] = 0; we[h] = 0; }
+    ids.forEach(function (k) { var o = cells[k]; if (!o.wd) { miss++; return; } o.wd.forEach(function (v, h) { wd[h] += v; }); o.we.forEach(function (v, h) { we[h] += v; }); });
+    var A = (this.follow(intId, '발생')[0] || {}).o, acc = A && A.tod ? A.tod : null;
+    return { id: intId, nm: it.nm, here: here,
+      around: ids.length - miss ? { cells: ids.length, noData: miss, wd: wd, we: we, peakWd: peak(wd), peakWe: peak(we) } : null,
+      bins: { names: ['0~6시', '6~12시', '12~18시', '18~24시'], peopleWd: here ? pct(bins(here.wd)) : null, acc: acc ? pct(acc) : null, accN: acc },
+      notes: ['사람 = 서울 생활인구(내국인) 250m 격자 · 2026-09-07~13 한 주 평균(추석 피함) · 3명 이하 칸은 0 · 서울 밖 칸은 값 없음', '사람 몫은 「그 칸에 머문 사람」을 시간마다 더한 것 — 지나간 차량 수가 아니다', '사고 몫 = 교차로 70m 안 사고 칸 10년 시간대(TAAS) · 두 몫은 나란히 볼 뿐 한 점수로 섞지 않는다', '둘레 = 교차로 칸 + 들어오는 길이 지나는 칸(사람 수를 그냥 더함 — 칸끼리 겹치지 않는다)'] };
+  };
   /* 질문 2 — 왜 바꿨고 바꾼 뒤 어떻게 됐나(해 단위 · 앞 2해 vs 뒤 2해 · 바꾼 해는 뺀다) */
   P.q2 = function (intId) {
     var self = this, it = this.O[intId]; if (!it) return null; var acc = this.follow(intId, '발생')[0], A = acc ? acc.o : null;

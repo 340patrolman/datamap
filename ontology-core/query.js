@@ -152,7 +152,7 @@
   P.q16 = function (stnId, since, k) {
     var S = this.O[stnId]; if (!S || S.t !== 'STN') return null; var self = this; since = since || '';
     function hh(t) { var mm = /(\d{1,2}):(\d{2})\s*$/.exec(String(t || '')); return mm ? +mm[1] : null; }
-    var ev = this.back(stnId, '근처역').filter(function (x) { return String(x.o.d0) >= since; }).map(function (x) { var e = x.o, h = hh(e.d1); return { id: e.id, kind: e.kind, d0: e.d0, d1: e.d1 || null, nm: e.nm, n: e.n == null ? null : e.n, d: x.p.d, endHour: h, stnShareAtEnd: h != null && S.hr ? S.hr[h] : null }; })
+    var ev = this.back(stnId, '근처역').filter(function (x) { return String(x.o.d0) >= since; }).map(function (x) { var e = x.o, h = hh(e.d1); if (h == null && e.kind === '공연' && e.dur) { var ts = String(e.times || '').match(/\d{1,2}:\d{2}/g) || [], u = ts.filter(function (t, i) { return ts.indexOf(t) === i; }); if (u.length === 1) { var p = u[0].split(':'); h = Math.floor(((+p[0]) * 60 + (+p[1]) + e.dur) / 60) % 24; } }   /* 공연 = 시작 시각이 하나뿐일 때만 시작 + 공연시간 */ return { id: e.id, kind: e.kind, d0: e.d0, d1: e.d1 || null, nm: e.nm, n: e.n == null ? null : e.n, d: x.p.d, endHour: h, stnShareAtEnd: h != null && S.hr ? S.hr[h] : null }; })
       .sort(function (a, b) { return a.d0 < b.d0 ? -1 : a.d0 > b.d0 ? 1 : (a.id < b.id ? -1 : 1); });
     var ints = this.follow(stnId, '가까운교차로').map(function (x) { var q = self.q1(x.o.id); return { id: q.id, nm: q.nm, d: x.p.d, total: q.acc ? q.acc.total : 0, ped: q.acc ? q.acc.ped : 0 }; }).sort(function (a, b) { return b.total - a.total || a.d - b.d; });
     var pk = -1, ph = null; (S.hr || []).forEach(function (v, i) { if (v > pk) { pk = v; ph = i; } });

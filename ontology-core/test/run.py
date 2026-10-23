@@ -257,6 +257,8 @@ for nm_ in ('남부터미널', '교대', '서초', '고속터미널'):
     ne = sum(1 for e_ in EVS if e_['id'] in CEV and e_['kind'] in ('집회', '공연') and e_.get('lat') and m(la, lo, e_['lat'], e_['lon']) <= (1000 if e_['kind'] == '공연' and (e_.get('n') or 0) > 1500 else 500))
     ni = sorted(k_ for k_, r_ in oi.items() if r_[6] == '11650' and m(la, lo, r_[2], r_[3]) <= 300)
     ck('질문16 %s역 — 하루 승하차·근처 집회·공연 수·300m 안 교차로가 원자료 따로 셈과 같다' % nm_, q['day'] == (SHR[nm_] or None) and q['nEvents'] == ne and sorted(int(x['id'][4:]) for x in q['ints']) == ni, (q['day'], SHR[nm_], q['nEvents'], ne, len(q['ints']), len(ni)))
+E16 = [e_ for e_ in R['q16']['STN-남부터미널']['events'] if e_['kind'] == '공연' and e_['endHour'] is not None]
+ck('질문16 남부터미널 — 공연 끝나는 시각(시작 하나 + 공연시간)과 그 시각 역 몫이 채워진다', E16 and all(0 <= e_['endHour'] < 24 and e_['stnShareAtEnd'] is not None for e_ in E16), (len(E16), E16[:1]))
 ck('질문16 — 역이 아닌 것을 물으면 null', R['q16bad'] is None)
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])

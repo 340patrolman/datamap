@@ -10,6 +10,8 @@
                도로 구간 값 = nav-seocho(길 이름·길이·제한속도·등급·차로) · spd-normal-seocho(월~목 8·18·3시 평소 속도 · 잠정 표시) · flood-link-seocho(침수 흔적 해 수·마지막 해·침수심·돌아가는 부담 초)
                도로 구간 → TAAS 100m 사고 칸 「사고칸」(ACL · 칸 가운데가 구간 선 50m 안 · 가장 가까운 구간 하나에만 · 칸은 방향이 없어 맞은편 차로 사고도 섞임 · 근사 C · 2026-10-23)
                도로 구간 → 250m 칸 「지남」(rd-cell-seocho) · 범위는 서초구 + 경계 밖 2km 뿐(여섯 구 코어에서도 그 밖 교차로는 접근로가 없다)
+    STA·PBX  = 관할 경찰서·지구대·파출소(2026-10-23) — 교차로 「관할」 경찰서(jur-seocho 현장 기준 경계 → 밖이면 police.json 별표2 × 행정동 · 나눠 맡는 동은 둘 다 C · T-GIS 관할 코드와 맞는지 tg)
+               지구대·파출소 「소속」 경찰서(경찰청 주소 현황 · A) · 교차로 「가까운지구대」(그 서의 지구대·파출소 가운데 가장 가까운 곳 · 관할 경계 비공개 — 근사 C · d m)
     DNG      = 교차로가 든 행정동(onto-int 행정동 코드 · 2026-10-23 엮임 지도 첫째) — 값은 그 동을 열쇠로 가진 파일에서 그대로:
                house-dong(세대·1인 세대) · mig-dong(주민) · foreign-dong(외국인주민) · econ-dong(국민연금 가입 사업장·가입자) · dui-ref-seoul(주점 점포·호프 0~6시 결제) · police.json(별표2 관할서)
     인접      = data/sig-net-seocho.json(신호 교차로 사이 길 · C-ITS 번호로 INT 에 이음)
@@ -166,6 +168,51 @@ def plc_people(O):
         if hit: used.append(f)
     for k, p in L.items(): O['PLC-' + k].update(wd=p['wd'], we=p['we'], ad=p['ad'], an=p['an'])
     return used
+def pip(lo, la, ring):   # 점이 고리(경도·위도) 안인가 — 짝홀 셈
+    c = False; n = len(ring)
+    for i in range(n):
+        x1, y1 = ring[i][0], ring[i][1]; x2, y2 = ring[i - 1][0], ring[i - 1][1]
+        if (y1 > la) != (y2 > la) and lo < (x2 - x1) * (la - y1) / (y2 - y1) + x1: c = not c
+    return c
+def sta_build(obj, edge, INTs):
+    """관할 경찰서(STA)·지구대·파출소(PBX). 교차로 → 관할서 = jur-seocho 현장 기준 경계(서초·방배와 이웃 서 · 반포4동은 반포대로) 안이면 그 서,
+       밖이면 police.json 별표2 × 행정동(두 서가 나눠 맡는 동은 둘 다 · 「~」 뒤는 일부 번지). 지구대·파출소 관할 경계는 공개 자료가 없어
+       그 서의 지구대·파출소 가운데 가장 가까운 곳(근사 C · 지도 pbNear·학교 school-police 와 같은 셈). T-GIS 교차로 관할 코드(tgis-pe 이름 맞춤)와 맞는지 tg 로 적는다."""
+    P = J(os.path.join(D, 'police.json')); Z = J(os.path.join(D, 'jur-seocho.json'))['zones']; PE = J(os.path.join(D, 'tgis-pe.json'))['pe']
+    byname = {s[1]: s for s in P['stations']}; boxes = collections.defaultdict(list)
+    for k, b in enumerate(P['pbox']): boxes[b[6]].append((k, b))
+    def sta(no):
+        s = P['stations'][no] if P['stations'][no][0] == no else next(x for x in P['stations'] if x[0] == no)
+        return obj('STA-%d' % no, 'STA', no=no, nm=s[1], tel=s[4] or None, sido=s[5] or None, lat=s[2], lon=s[3])
+    def pbx(k, b):
+        return obj('PBX-%d' % k, 'PBX', nm=b[0] + ('지구대' if b[1] == 0 else '파출소'), kind='지구대' if b[1] == 0 else '파출소', st=b[6], lat=b[3], lon=b[4], addr=b[5] or None, osm=1 if len(b) > 7 and b[7] else None)
+    seen = set()
+    for it in INTs:
+        hit = [z for z in Z if any(pip(it['lon'], it['lat'], r) for r in z['rings'])]
+        if len(hit) == 1 and hit[0]['name'] in byname:
+            js = [(byname[hit[0]['name']][0], 'B', '현장 기준 경계(jur-seocho · 별표2 행정동 + 반포 현장 판단)', None)]
+        else:
+            lab = P['dong'].get(it.get('dong') or '')
+            if lab is None: continue
+            t = P['labels'][lab]
+            if '~' in t: a, b = t.split('~'); js = [(int(a), 'B', '별표2 × 행정동(주 관서)', None), (int(b), 'C', '별표2 × 행정동(일부 번지만)', 'part')]
+            else:
+                ns = [int(x) for x in t.split(',')]
+                js = [(n, 'B' if len(ns) == 1 else 'C', '별표2 × 행정동' + ('' if len(ns) == 1 else '(두 서가 나눠 맡는 동 — 어느 쪽인지 번지로만 갈림)'), None if len(ns) == 1 else 'shared') for n in ns]
+        pe = PE.get(str(it.get('st'))); tgn = pe[0] if pe and pe[4] else None
+        if tgn and len(js) == 1 and js[0][3] is None and tgn != O_STA_NM(js[0][0], P) and tgn in byname:   # 경계와 T-GIS 관할 코드가 다른 서 — 둘 다 적고 C(소유자 확인 대기)
+            js = [(js[0][0], 'C', js[0][2] + ' — T-GIS 관할 코드와 다름', 'disagree'), (byname[tgn][0], 'C', 'T-GIS 교차로 관할 코드(tgis-pe 이름 맞춤) — 경계와 다름', 'tgis')]
+        for n, g, how, kind in js:
+            s = sta(n); tg = None if tgn is None else (1 if tgn == O_STA_NM(n, P) else 0)
+            edge(it['id'], '관할', s, g, 'police.json·jur-seocho.json·tgis-pe.json(' + how + ')', kind=kind, tg=tg)
+            if n not in seen:
+                seen.add(n)
+                for k, b in boxes.get(n, []): edge(pbx(k, b), '소속', s, 'A', '경찰청 전국 지구대·파출소 주소 현황(police.json pbox)')
+        n0 = js[0][0]; bs = boxes.get(n0, [])
+        if bs:
+            k, b = min(bs, key=lambda kb: (m(it['lat'], it['lon'], kb[1][3], kb[1][4]), kb[0]))
+            edge(it['id'], '가까운지구대', 'PBX-%d' % k, 'C', '그 관할서의 지구대·파출소 가운데 가장 가까운 곳(관할 경계 비공개 — 근사)', d=round(m(it['lat'], it['lon'], b[3], b[4])))
+def O_STA_NM(n, P): return next(x[1] for x in P['stations'] if x[0] == n)
 def dng_build(O, obj, rows):
     hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
     ec = J(os.path.join(D, 'econ-dong.json'))['dong']; dr = {x[0]: x for x in J(os.path.join(D, 'dui-ref-seoul.json'))['items']}
@@ -231,6 +278,7 @@ def main():
             if d <= 300: edge(it['id'], '가까움', obj('ATT-SZ-%.5f,%.5f' % (z[0], z[1]), 'ATT', kind=z[2], nm=z[3] or None), 'C', 'gargo-alerts-seoul.json(300m 안)', d=round(d))
     evt_build(O, obj, edge, INTs)
     rd_build(obj, edge, by_cits)
+    sta_build(obj, edge, INTs)
     acl_build(obj, edge, sorted(O_RD), {l[0]: l for l in J(os.path.join(D, 'nav-seocho.json'))['links']}, ta)
     ks = J(os.path.join(D, 'sig-ksc-seocho.json'))
     for it in ks['items']:
@@ -277,7 +325,7 @@ def main():
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
     pplf = plc_people(O)
-    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json']
+    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',
@@ -287,7 +335,7 @@ def main():
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print(doc['count'], doc['edges_count'], os.path.getsize(p), 'B')
     # 지도용 가벼운 판(2026-10-23 게임 세션 부탁 — 지도는 q1·q2·q3·q5 만 쓴다): 사건·접근로·도로 구간·250m 칸과 그 링크를 뺀 같은 꼴 · 값은 그대로
-    LITE = {'EVT', 'APR', 'RD', 'PLC', 'ACL'}; keep = {o['id'] for o in doc['objects'] if o['t'] not in LITE}
+    LITE = {'EVT', 'APR', 'RD', 'PLC', 'ACL', 'STA', 'PBX'}; keep = {o['id'] for o in doc['objects'] if o['t'] not in LITE}
     lite = dict(doc, lite='지도용 — 뺀 객체 ' + ','.join(sorted(LITE)) + ' · 전체는 ' + OUTF, objects=[o for o in doc['objects'] if o['id'] in keep], edges=[e for e in E if e[0] in keep and e[2] in keep])
     lite['count'] = dict(collections.Counter(v['t'] for v in lite['objects'])); lite['edges_count'] = dict(collections.Counter(e[1] for e in lite['edges']))
     pl = p[:-5] + '-map.json'; json.dump(lite, open(pl, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

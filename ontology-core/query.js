@@ -108,6 +108,23 @@
       bins: { names: ['0~6시', '6~12시', '12~18시', '18~24시'], peopleWd: here ? pct(bins(here.wd)) : null, acc: acc ? pct(acc) : null, accN: acc },
       notes: ['사람 = 서울 생활인구(내국인) 250m 격자 · 2026-09-07~13 한 주 평균(추석 피함) · 3명 이하 칸은 0 · 서울 밖 칸은 값 없음', '사람 몫은 「그 칸에 머문 사람」을 시간마다 더한 것 — 지나간 차량 수가 아니다', '사고 몫 = 교차로 70m 안 사고 칸 10년 시간대(TAAS) · 두 몫은 나란히 볼 뿐 한 점수로 섞지 않는다', '둘레 = 교차로 칸 + 들어오는 길이 지나는 칸(사람 수를 그냥 더함 — 칸끼리 겹치지 않는다)'] };
   };
+  /* 질문 12 — 이 교차로는 어느 서·어느 지구대 몫인가(2026-10-23): 관할 경찰서(대표번호) · 가장 가까운 지구대·파출소(근사) · 그 서의 다른 지구대 가까운 차례 */
+  P.q12 = function (intId) {
+    var it = this.O[intId]; if (!it || it.t !== 'INT') return null; var self = this;
+    var st = this.follow(intId, '관할').map(function (x) { return { id: x.o.id, nm: x.o.nm, tel: x.o.tel || null, g: x.p.g, kind: x.p.kind || null, tgis: x.p.tg == null ? null : x.p.tg, how: x.p.src }; });
+    var nb = this.follow(intId, '가까운지구대')[0];
+    var others = st.length ? this.back(st[0].id, '소속').map(function (x) { return { id: x.o.id, nm: x.o.nm, kind: x.o.kind, d: Math.round(Math.hypot((x.o.lon - it.lon) * 88400, (x.o.lat - it.lat) * 111000)) }; }).sort(function (a, b) { return a.d - b.d || (a.id < b.id ? -1 : 1); }) : [];
+    return { id: intId, nm: it.nm, stations: st, pbox: nb ? { id: nb.o.id, nm: nb.o.nm, kind: nb.o.kind, addr: nb.o.addr || null, d: nb.p.d, g: nb.p.g } : null, others: others.slice(0, 4),
+      notes: ['관할서 = 현장 기준 경계(서초·방배 · 반포4동은 반포대로) 또는 별표2 × 행정동 — 번지로 나뉜 동은 두 서를 다 적는다', '지구대·파출소 = 관할 경계가 공개되지 않아 그 서의 가장 가까운 곳(근사) — 실제 담당 구역과 다를 수 있다', 'tgis = 서울시 T-GIS 교차로 관할 코드와 맞는지(1 맞음 · 0 다름 · null 코드 이름을 모름)', 'kind disagree·tgis = 경계와 T-GIS 관할 코드가 다른 서를 가리킨다(서로 맞닿은 길 위 교차로가 대부분) — 둘 다 적고 앞이 경계 쪽 · 형님 확인 대기'] };
+  };
+  /* 질문 13 — 이 지구대·파출소 몫(가장 가까운 지구대로 묶은 근사) 교차로: 10년 사고 많은 순 */
+  P.q13 = function (pbxId, k) {
+    var B = this.O[pbxId]; if (!B || B.t !== 'PBX') return null; var self = this, S = this.follow(pbxId, '소속')[0];
+    var ints = this.back(pbxId, '가까운지구대').map(function (x) { var q = self.q1(x.o.id); return { id: q.id, nm: q.nm, d: x.p.d, total: q.acc ? q.acc.total : 0, night: q.acc ? q.acc.night : 0, main: q.mainViolations[0] ? q.mainViolations[0].nm : null }; })
+      .sort(function (a, b) { return b.total - a.total || (a.id < b.id ? -1 : 1); });
+    return { id: pbxId, nm: B.nm, kind: B.kind, station: S ? { id: S.o.id, nm: S.o.nm, tel: S.o.tel || null } : null, nInt: ints.length, ints: ints.slice(0, k || 10),
+      notes: ['가장 가까운 지구대로 묶은 근사 — 공식 담당 구역이 아니다', '교차로 사고는 70m 안 칸 묶음이라 이웃 교차로끼리 겹친다 — 더하지 않았다'] };
+  };
   /* 질문 2 — 왜 바꿨고 바꾼 뒤 어떻게 됐나(해 단위 · 앞 2해 vs 뒤 2해 · 바꾼 해는 뺀다) */
   P.q2 = function (intId) {
     var self = this, it = this.O[intId]; if (!it) return null; var acc = this.follow(intId, '발생')[0], A = acc ? acc.o : null;

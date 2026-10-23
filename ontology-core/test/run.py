@@ -188,6 +188,26 @@ for tg in (521, 548, 1026, 324):
     ok = q['here']['wd'] == LV[cell]['wd'] and q['here']['we'] == LV[cell]['we'] and q['around']['wd'] == wd and q['around']['cells'] == len(cs) and q['bins']['peopleWd'] == [round(v / sum(hb) * 1000) / 10 for v in hb]
     ck('질문11 %s — 교차로 칸·둘레 칸 합 시간대 사람과 6시간 몫이 생활인구 격자 따로 셈과 같다' % q['nm'], ok, (q['here']['peakWd'], q['around']['cells'], len(cs), q['bins']))
 ck('질문11 — 교차로가 아닌 것을 물으면 null', R['q11bad'] is None)
+# ---- 질문 12·13 · 관할서·지구대(2026-10-23) — jur-seocho 경계·police.json 에서 따로(서초 교차로는 모두 현장 기준 경계 안) ----
+PJ = J(os.path.join(D, 'police.json')); JZ = J(os.path.join(D, 'jur-seocho.json'))['zones']
+def inside(lo, la, ring):
+    n_ = 0
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+        if (y1 > la) != (y2 > la) and lo < x1 + (x2 - x1) * (la - y1) / (y2 - y1): n_ += 1
+    return n_ % 2 == 1
+SNO = {s_[1]: s_[0] for s_ in PJ['stations']}; PBN = collections.defaultdict(list)
+for k_, b_ in enumerate(PJ['pbox']): PBN[b_[6]].append((k_, b_))
+def jur_of(tg):
+    r = oi[tg]; z = [z_['name'] for z_ in JZ if any(inside(r[3], r[2], [tuple(p_) for p_ in rg]) for rg in z_['rings'])]
+    no = SNO[z[0]]; kb = min(PBN[no], key=lambda x: (m(r[2], r[3], x[1][3], x[1][4]), x[0]))
+    return no, 'PBX-%d' % kb[0], round(m(r[2], r[3], kb[1][3], kb[1][4]))
+for tg in (521, 548, 1026, 324, 5928):
+    q = R['q12']['INT-%d' % tg]; no, pb, d = jur_of(tg)
+    ck('질문12 %s — 관할서(앞)·가장 가까운 지구대·거리가 경계·주소 현황 따로 셈과 같다' % q['nm'], q['stations'][0]['id'] == 'STA-%d' % no and q['pbox']['id'] == pb and q['pbox']['d'] == d, (q['stations'], q['pbox'], no, pb, d))
+cnt = collections.Counter(jur_of(r_[0])[1] for r_ in oi.values() if r_[6] == '11650')
+ck('질문13 — 지구대·파출소마다 묶인 교차로 수가 따로 셈과 같다(서초 %d곳)' % len(cnt), {k_: v_['nInt'] for k_, v_ in R['q13'].items() if v_['nInt']} == dict(cnt), sorted(cnt.items())[:4])
+ck('질문12 서울성모병원 — 경계(방배)와 T-GIS(서초)가 달라 둘 다 C 로 적는다', [(x['id'], x['g'], x['kind']) for x in R['q12']['INT-548']['stations']] == [('STA-27', 'C', 'disagree'), ('STA-23', 'C', 'tgis')], R['q12']['INT-548']['stations'])
+ck('질문12·13 — 다른 것을 물으면 null', R['q12bad'] is None and R['q13bad'] is None)
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))

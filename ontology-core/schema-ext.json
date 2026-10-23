@@ -299,6 +299,41 @@
     "mvn": "그 건수",
     "typ": "주 사고유형 코드"
    }
+  },
+  "STA": {
+   "name": "경찰서",
+   "id": "STA-<police.json 관서 번호>",
+   "from": "police.json(stations)",
+   "required": [
+    "no",
+    "nm"
+   ],
+   "props": {
+    "no": "관서 번호",
+    "nm": "이름",
+    "tel": "대표번호(경찰민원24 2026-09-09)",
+    "sido": "시도청",
+    "lat": "청사 위도",
+    "lon": "청사 경도"
+   }
+  },
+  "PBX": {
+   "name": "지구대·파출소",
+   "id": "PBX-<police.json pbox 차례>",
+   "from": "police.json(pbox · 경찰청 전국 지구대 파출소 주소 현황 2025-12-31)",
+   "required": [
+    "nm",
+    "st"
+   ],
+   "props": {
+    "nm": "이름",
+    "kind": "지구대·파출소",
+    "st": "소속 경찰서 번호",
+    "lat": "위도(브이월드 주소 좌표)",
+    "lon": "경도",
+    "addr": "주소",
+    "osm": "1 = 자리를 OSM 이름으로 잡음"
+   }
   }
  },
  "linkTypes": {
@@ -396,6 +431,24 @@
    "from": "RD",
    "to": "ACL",
    "name": "도로 구간 → 그 길에 걸친 100m 사고 칸(가운데 50m 안 · 가장 가까운 구간 하나 · 방향 섞임 · d m)",
+   "grade": "C"
+  },
+  "관할": {
+   "from": "INT",
+   "to": "STA",
+   "name": "교차로 → 관할 경찰서(현장 기준 경계 · 별표2 × 행정동 · kind shared = 두 서가 나눠 맡는 동 · part = 일부 번지 · tg = T-GIS 관할 코드와 맞음 1/다름 0)",
+   "grade": "B"
+  },
+  "소속": {
+   "from": "PBX",
+   "to": "STA",
+   "name": "지구대·파출소 → 소속 경찰서",
+   "grade": "A"
+  },
+  "가까운지구대": {
+   "from": "INT",
+   "to": "PBX",
+   "name": "교차로 → 그 관할서의 가장 가까운 지구대·파출소(관할 경계 비공개 — 근사 · d m)",
    "grade": "C"
   }
  },

@@ -13,6 +13,7 @@
     도착     = 교차로 「도착」 지구대·파출소(data/onto-reach-<area>.json · tools/onto/reach-bake.py · s0 제한속도 · s8·s18 평일 8·18시 평소 속도 + eta-cal 배율 · 다섯 곳 · 견주는 값 C)
     STA·PBX  = 관할 경찰서·지구대·파출소(2026-10-23) — 교차로 「관할」 경찰서(jur-seocho 현장 기준 경계 → 밖이면 police.json 별표2 × 행정동 · 나눠 맡는 동은 둘 다 C · T-GIS 관할 코드와 맞는지 tg)
                지구대·파출소 「소속」 경찰서(경찰청 주소 현황 · A) · 교차로 「가까운지구대」(그 서의 지구대·파출소 가운데 가장 가까운 곳 · 관할 경계 비공개 — 근사 C · d m)
+    STN      = 지하철역(2026-10-23 · data/r/stations.json 자리 · subway-hour-seoul 교통카드 승하차 2026-07~09 · 시간대 몫) → 「가까운교차로」(300m · C) · 사건(집회·공연) 「근처역」(500m · 1,500석 넘는 공연장 1km · C)
     DNG      = 교차로가 든 행정동(onto-int 행정동 코드 · 2026-10-23 엮임 지도 첫째) — 값은 그 동을 열쇠로 가진 파일에서 그대로:
                house-dong(세대·1인 세대) · mig-dong(주민) · foreign-dong(외국인주민) · econ-dong(국민연금 가입 사업장·가입자) · dui-ref-seoul(주점 점포·호프 0~6시 결제) · police.json(별표2 관할서)
     인접      = data/sig-net-seocho.json(신호 교차로 사이 길 · C-ITS 번호로 INT 에 이음)
@@ -175,6 +176,8 @@ ASOF = {
     'rd-cell-seocho.json': 'ITS 표준노드링크 2026-09-14판',
     'jur-seocho.json': '별표2 2026-08-31 시행 · 반포 현장 기준 2026-10-04',
     'tgis-pe.json': 'T-GIS 관할 코드 × 별표2(2026-10-18 맞춤)',
+    'r/stations.json': '서울 역사마스터(역 대표 점)',
+    'subway-hour-seoul.json': '교통카드 지하철 시간대 승하차 2026-07~09 합계',
 }
 def asof_of(s): return ASOF.get(s) or (ASOF['live250'] if s.endswith('/live250.json') else ASOF['taas10-seocho.json'].replace('(2026-10-04 받음)', '(권역 저장소 판)') if s.endswith('/taas10.json') else None)
 def plc_people(O):
@@ -250,6 +253,31 @@ def sta_build(obj, edge, INTs):
                 for k2, b2 in boxes.get(b[6], []): edge(pbx(k2, b2), '소속', s_, 'A', '경찰청 전국 지구대·파출소 주소 현황(police.json pbox)')
             edge(it['id'], '도착', 'PBX-%d' % k, 'C', '07_API키/out/onto/onto-reach-%s.json(비공개 · ITS 길 · 제한속도 / 평소 속도 + eta-cal 배율 · 견주는 값 — 실제 출동 시간 아님)' % AREA, r=r, s0=s0, s8=s8, s18=s18, c8=c8, c18=c18)
 def O_STA_NM(n, P): return next(x[1] for x in P['stations'] if x[0] == n)
+STN_INT_R = 300   # 역 → 교차로 「가까운교차로」 300m 안(근사 C)
+def stn_build(O, obj, edge, INTs):
+    """지하철역(STN — 역 이름 하나 · 노선 여럿). 자리 = data/r/stations.json(서울 역사마스터 · 역 대표 점) · 승하차 = data/subway-hour-seoul.json(교통카드 2026-07~09 · 노선 합)
+       역 → 교차로 「가까운교차로」(300m 안 · d) · 사건(집회·공연) → 역 「근처역」(역에서 500m 안 · 1,500석 넘는 공연장은 1km — station-events 와 같은 셈 · d · 근사 C)"""
+    SH = collections.defaultdict(list)
+    for r in J(os.path.join(D, 'subway-hour-seoul.json'))['stn']: SH[r[0].split('(')[0]].append(r)
+    pos = {}
+    for r in J(os.path.join(D, 'r', 'stations.json'))['items']:
+        k = r[0].split('(')[0]; pos.setdefault(k, []).append((r[3], r[2], r[1]))
+    la0 = min(i['lat'] for i in INTs) - 0.006; la1 = max(i['lat'] for i in INTs) + 0.006; lo0 = min(i['lon'] for i in INTs) - 0.008; lo1 = max(i['lon'] for i in INTs) + 0.008
+    for k in sorted(pos):
+        ps = pos[k]; la = sum(p[0] for p in ps) / len(ps); lo = sum(p[1] for p in ps) / len(ps)
+        if not (la0 <= la <= la1 and lo0 <= lo <= lo1): continue
+        near = sorted((round(m(la, lo, i['lat'], i['lon'])), i['id']) for i in INTs if abs(i['lat'] - la) < 0.004 and abs(i['lon'] - lo) < 0.005)
+        near = [x for x in near if x[0] <= STN_INT_R]
+        hs = SH.get(k, []); day = sum(h[2] for h in hs)
+        def prof(i): return [round(sum(h[i][t] * h[2] for h in hs) / day, 2) for t in range(24)] if day else None   # 노선마다 몫을 하루 인원으로 무게 매겨 합침
+        sid = obj('STN-' + k, 'STN', nm=k, lines=sorted({p[2] for p in ps} | {h[1] for h in hs}), lat=round(la, 6), lon=round(lo, 6),
+                  day=day or None, on=sum(h[3] for h in hs) or None, off=sum(h[4] for h in hs) or None, hr=prof(5), hroff=prof(6),
+                  wd=round(sum(h[7] * h[2] for h in hs if len(h) > 7) / day, 3) if day and all(len(h) > 7 for h in hs) else None,
+                  we=round(sum(h[8] * h[2] for h in hs if len(h) > 8) / day, 3) if day and all(len(h) > 8 for h in hs) else None)
+        for d, i in near: edge(sid, '가까운교차로', i, 'C', 'r/stations.json(역 대표 점) · 300m 안', d=d)
+        for e in [v for v in O.values() if v['t'] == 'EVT' and v.get('lat') and v.get('kind') in ('집회', '공연')]:
+            r_ = 1000 if e['kind'] == '공연' and (e.get('n') or 0) > 1500 else 500; d = m(la, lo, e['lat'], e['lon'])
+            if d <= r_: edge(e['id'], '근처역', sid, 'C', 'onto-events.json × r/stations.json(역 %dm 안 — station-events 와 같은 셈)' % r_, d=round(d))
 def dng_build(O, obj, rows):
     hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
     ec = J(os.path.join(D, 'econ-dong.json'))['dong']; dr = {x[0]: x for x in J(os.path.join(D, 'dui-ref-seoul.json'))['items']}
@@ -316,6 +344,7 @@ def main():
     evt_build(O, obj, edge, INTs)
     rd_build(obj, edge, by_cits)
     sta_build(obj, edge, INTs)
+    stn_build(O, obj, edge, INTs)
     acl_build(obj, edge, sorted(O_RD), {l[0]: l for l in J(os.path.join(D, 'nav-seocho.json'))['links']}, ta)
     ks = J(os.path.join(D, 'sig-ksc-seocho.json'))
     for it in ks['items']:
@@ -362,7 +391,7 @@ def main():
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
     pplf = plc_people(O)
-    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json']
+    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'asof': {s: asof_of(s) for s in srcs} | {'src/tbook-law.json': 'T-Book ' + str(tl.get('ver')) + ' 범칙금 DB·원문 대조 판례'},
@@ -379,7 +408,7 @@ def main():
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print(doc['count'], doc['edges_count'], os.path.getsize(p), 'B')
     # 지도용 가벼운 판(2026-10-23 게임 세션 부탁 — 지도는 q1·q2·q3·q5 만 쓴다): 사건·접근로·도로 구간·250m 칸과 그 링크를 뺀 같은 꼴 · 값은 그대로
-    LITE = {'EVT', 'APR', 'RD', 'PLC', 'ACL', 'STA', 'PBX'}; keep = {o['id'] for o in doc['objects'] if o['t'] not in LITE}
+    LITE = {'EVT', 'APR', 'RD', 'PLC', 'ACL', 'STA', 'PBX', 'STN'}; keep = {o['id'] for o in doc['objects'] if o['t'] not in LITE}
     lite = dict(doc, lite='지도용 — 뺀 객체 ' + ','.join(sorted(LITE)) + ' · 전체는 ' + OUTF, objects=[o for o in doc['objects'] if o['id'] in keep], edges=[e for e in E if e[0] in keep and e[2] in keep])
     lite['count'] = dict(collections.Counter(v['t'] for v in lite['objects'])); lite['edges_count'] = dict(collections.Counter(e[1] for e in lite['edges']))
     pl = p[:-5] + '-map.json'; json.dump(lite, open(pl, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

@@ -147,6 +147,19 @@
     return { id: pbxId, nm: B.nm, hour: hour == null ? 18 : hour, nFirst: first.length, under3min: first.filter(function (x) { return x.t <= 180; }).length, first: first, slowerOwn: slower,
       notes: ['가장 빨리 닿는 곳 = 도착 다섯 가운데 그 시각 초가 가장 짧은 곳(견주는 값)', 'slowerOwn = 이 지구대가 가장 가까운(관할 근사) 교차로인데 다른 지구대·파출소가 더 빨리 닿는 곳'] };
   };
+  /* 질문 16 — 이 역에 무슨 일이 몰리나(2026-10-23 역 ↔ 사건): 하루 승하차 · 시간대 몫 · since 뒤에 시작한 집회·공연(끝나는 시각과 그 시각 역 몫) · 300m 안 교차로(10년 사고 많은 순)
+     끝나는 시각의 몫은 그 역 평소 모양이다(행사 날 실제 인원이 아니다) — 「그 시각에 평소 이미 붐비는 역에 행사 끝 인파가 겹치나」를 보는 재료 */
+  P.q16 = function (stnId, since, k) {
+    var S = this.O[stnId]; if (!S || S.t !== 'STN') return null; var self = this; since = since || '';
+    function hh(t) { var mm = /(\d{1,2}):(\d{2})\s*$/.exec(String(t || '')); return mm ? +mm[1] : null; }
+    var ev = this.back(stnId, '근처역').filter(function (x) { return String(x.o.d0) >= since; }).map(function (x) { var e = x.o, h = hh(e.d1); return { id: e.id, kind: e.kind, d0: e.d0, d1: e.d1 || null, nm: e.nm, n: e.n == null ? null : e.n, d: x.p.d, endHour: h, stnShareAtEnd: h != null && S.hr ? S.hr[h] : null }; })
+      .sort(function (a, b) { return a.d0 < b.d0 ? -1 : a.d0 > b.d0 ? 1 : (a.id < b.id ? -1 : 1); });
+    var ints = this.follow(stnId, '가까운교차로').map(function (x) { var q = self.q1(x.o.id); return { id: q.id, nm: q.nm, d: x.p.d, total: q.acc ? q.acc.total : 0, ped: q.acc ? q.acc.ped : 0 }; }).sort(function (a, b) { return b.total - a.total || a.d - b.d; });
+    var pk = -1, ph = null; (S.hr || []).forEach(function (v, i) { if (v > pk) { pk = v; ph = i; } });
+    return { id: stnId, nm: S.nm, lines: S.lines, day: S.day || null, on: S.on || null, off: S.off || null, peak: S.hr ? { h: ph, share: pk } : null, hr: S.hr || null, hroff: S.hroff || null, wd: S.wd || null, we: S.we || null,
+      nEvents: ev.length, events: ev.slice(0, k || 20), ints: ints,
+      notes: ['승하차 = 교통카드 2026-07~09 하루 평균(노선 합 · 갈아타는 사람은 안 잡힘) · 몫 1 = 그 역 5~24시 한 시간 평균', '행사 = 경찰청 주요 집회·KOPIS 1,000석 이상 공연(근사 C) · 끝나는 시각 몫은 평소 모양이지 행사 날 인원이 아니다', '교차로 사고는 70m 안 칸 묶음이라 이웃끼리 겹친다 — 더하지 않았다'] };
+  };
   /* 질문 2 — 왜 바꿨고 바꾼 뒤 어떻게 됐나(해 단위 · 앞 2해 vs 뒤 2해 · 바꾼 해는 뺀다) */
   P.q2 = function (intId) {
     var self = this, it = this.O[intId]; if (!it) return null; var acc = this.follow(intId, '발생')[0], A = acc ? acc.o : null;

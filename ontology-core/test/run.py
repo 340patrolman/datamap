@@ -147,6 +147,7 @@ for rid in ('RD-1210020206', 'RD-1210019704'):
     lid = rid[3:]; q = R['q10'][rid]; feeds = sorted((no, d, rs[0][0] and [l[0] for r in rs for l in r[4]].index(lid)) for no, s_ in SA.items() for d, rs in s_['in'].items() if lid in [l[0] for r in rs for l in r[4]] and any(str(r_[4]) == no and r_[6] == '11650' for r_ in oi.values()))
     ck('질문10 %s — 들어가는 교차로·쪽·차례가 sig-approach 와 같다 · 길이·이름은 nav' % rid, sorted((f['apr'].split('-')[1], f['dir'], f['k']) for f in q['feeds']) == feeds and q['len'] == NVL[lid][3] and q['nm'] == NVL[lid][7], (q['feeds'], feeds))
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
+ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))
 n = sum(1 for x in C if x[1])
 for name, ok, got in C: print(('  ✅ ' if ok else '  ❌ ') + name + (' — ' + got if got else ''))

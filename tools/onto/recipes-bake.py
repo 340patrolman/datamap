@@ -28,6 +28,14 @@ HOW = [
     {'n': '② 무엇과 이어지나', 't': '같은 자리(좌표·행정동·관할), 같은 때(날짜·시각), 같은 코드(학교 ID·교차로 번호)로 다른 자료를 붙인다. 이것이 「엮기」다 — 새 자료를 캐는 것이 아니라 흩어진 공개 자료를 같은 열쇠로 모은다.'},
     {'n': '③ 그래서 무엇을 하나', 't': '모인 값을 사람이 판단하기 쉽게 문장으로 — 갈래마다 따로 보이고 한 점수로 합치지 않는다. 문턱이 있으면 그 출처를 같이 적는다.'},
     {'n': '④ 해 보고 다시 적는다', 't': '한 일과 결과를 남기면 다음 판단의 근거가 된다(온톨로지 「조치」). 개인정보는 적지 않는다 — 사람이 아니라 상황을 적는다.'},
+    {'id': 'chase', 'q': '신고 차량이 빠져나갈 곳 — 어느 관서에 먼저 알리나', 'who': ['지역경찰', '교통', '상황실'], 'start': '신고 자리(큰길·고속도로 위) + 가는 쪽',
+     'steps': [
+         {'n': '출발 길', 'file': 'nav-seoul.json', 'key': '신고 좌표 70m 안 링크 가운데 가는 쪽(방위 60° 안)과 맞는 본선(연결로 아님)', 'take': '길 이름 · 차로 수 · 제한속도', 'grade': 'C'},
+         {'n': '앞에 나오는 진출로', 'file': 'nav-seoul.json', 'key': '본선을 따라가며 연결로(링크 칸 [8]=1)로 갈라지는 마디', 'take': '갈림 이름 · 거리 · 진출로 차로 수 · 본선 차로 수', 'grade': 'A'},
+         {'n': '빠지면 닿는 길', 'file': 'nav-seoul.json', 'key': '진출로를 따라 3km 안 처음 닿는 일반 길', 'take': '길 이름 · 닿는 자리', 'grade': 'A'},
+         {'n': '그 자리 관할', 'file': 'police.json', 'key': '닿는 자리가 든 행정동 → 별표2 관할 경찰서(동 경계 = SGIS)', 'take': '관할 경찰서', 'grade': 'B'}],
+     'judge': '길 자료로 「빠질 수 있는 곳」을 차례로 늘어놓은 것이지 「이리로 갔다」가 아니다. 끝 차로였다면 바로 다음 진출로, 1차로였다면 본선을 먼저 본다(데이터 압축지도 「🚨 신고 차량 예측」이 차로·신호를 넣어 갈 가능성을 어림한다). 관할서 이름은 닿는 자리 하나의 관할이다.',
+     'act': ['가장 가까운 진출로 두 곳의 닿는 길 관할서에 먼저 공조 요청', '본선 다음 큰 나들목 둘레 관서에 이어서', '진출로 끝 신호 교차로는 데이터 압축지도에서 적색 대기 시각을 확인', '차종·색만 공유하고 개인정보는 무전·공조 시스템으로']},
 ]
 GRADE = {'A': '원자료에 그대로 있는 값', 'B': '원자료끼리 코드·이름으로 맞댄 값', 'C': '자리 거리로 붙인 어림(몇 m 안)'}
 
@@ -232,8 +240,75 @@ def run_biz():
     return out
 
 
+def run_chase():
+    nv = D('nav-seoul.json'); N = nv['nodes']; Lk = nv['links']; P = D('police.json')
+    ST = {x[0]: x[1] for x in P['stations']}
+    LAB = [[int(t) for t in str(l).split('~')[0].split(',') if t] for l in P['labels']]
+    out_ = {}
+    for l in Lk:
+        out_.setdefault(l[1], []).append(l)
+    try:
+        from shapely.geometry import shape, Point
+        from shapely.strtree import STRtree
+        G = [f for f in json.load(open(os.path.join(os.path.dirname(ROOT), '13_관할경계', '원자료', 'hjd20260701.geojson'), encoding='utf-8'))['features'] if f['properties']['sido'] in ('11', '41', '28')]
+        polys = [shape(f['geometry']) for f in G]; tree = STRtree(polys)
+    except Exception:
+        G = []
+    def jur(lat, lon):
+        if not G:
+            return '?'
+        pt = Point(lon, lat)
+        for k in tree.query(pt):
+            if polys[int(k)].covers(pt):
+                pr = G[int(k)]['properties']; d8 = pr['adm_cd2'][:8]
+                lab = P['dong'].get(d8)
+                return '%s(%s)' % (' · '.join(ST.get(x, '?') for x in LAB[lab]) if lab is not None else '?', pr['adm_nm'].split(' ')[-1])
+        return '?'
+    def bear(l):
+        a, b = N[l[1]], N[l[2]]
+        return math.degrees(math.atan2(b[0] - a[0], b[1] - a[1])) % 360   # 북 0 · 동 90
+    def first_road(l, road, lim=3000):
+        seen, fr = set(), [(l, l[3])]
+        best = None
+        while fr:
+            x, dd = fr.pop(0)
+            if x[0] in seen or dd > lim:
+                continue
+            seen.add(x[0])
+            if x[8] == 0 and x[7] != road:
+                return x
+            for y in out_.get(x[2], []):
+                fr.append((y, dd + y[3]))
+        return best
+    out = []
+    for nm, la, lo, hd in [('올림픽대로 반포 → 잠실 쪽', 37.5145, 127.0055, 70), ('경부고속도로 양재 → 한남 쪽', 37.4640, 127.0395, 330)]:
+        cand = [l for l in Lk if l[8] == 0 and l[5] <= 3 and dist(la, lo, N[l[1]][1], N[l[1]][0]) < 400]
+        cand = [l for l in cand if min(abs(bear(l) - hd), 360 - abs(bear(l) - hd)) < 60]
+        if not need(cand, 'chase 출발 길 ' + nm):
+            continue
+        cur = min(cand, key=lambda l: dist(la, lo, N[l[1]][1], N[l[1]][0])); road = cur[7]
+        ch = [['출발 길', '%s · %s차로 · 제한 %skm/h' % (road, cur[6], cur[4] or '?'), 'C']]
+        seen, dsum, exits = set(), 0, []
+        while cur and cur[0] not in seen and dsum < 8000 and len(exits) < 4:
+            seen.add(cur[0]); dsum += cur[3]
+            nx = out_.get(cur[2], [])
+            for r in nx:
+                if r[8] == 1 and r[2] != cur[1]:
+                    fr = first_road(r, road)
+                    if fr and (N[cur[2]][3], fr[7]) not in [(e[0], e[4]) for e in exits]:
+                        a = N[fr[1]]
+                        exits.append((N[cur[2]][3] or '이름 없는 갈림', dsum, r[6], cur[6], fr[7], jur(a[1], a[0])))
+            main = [y for y in nx if y[7] == road and y[8] == 0]
+            cur = main[0] if main else None
+        ch.append(['앞에 나오는 진출로', ' / '.join('%s %.1fkm(진출로 %s차로 · 본선 %s차로)' % (e[0], e[1] / 1000, e[2], e[3]) for e in exits) or '8km 안 진출로 없음', 'A'])
+        ch.append(['빠지면 닿는 길', ' / '.join('%s → %s' % (e[0], e[4]) for e in exits) or '—', 'A'])
+        ch.append(['그 자리 관할', ' / '.join('%s → %s' % (e[4], e[5]) for e in exits) or '—', 'B'])
+        out.append({'obj': nm, 'where': [la, lo], 'chain': ch})
+    return out
+
+
 def main():
-    ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'flood': run_flood(), 'foreign': run_foreign(), 'march': run_march(), 'biz': run_biz()}
+    ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'flood': run_flood(), 'foreign': run_foreign(), 'march': run_march(), 'biz': run_biz(), 'chase': run_chase()}
     for r in RECIPES:
         for s in r['steps']:
             f = s['file'].replace('<시도>', '11')

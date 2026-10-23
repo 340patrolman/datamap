@@ -92,6 +92,7 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var rc9 = TGMap2D.tgReach ? TGMap2D.tgReach(72) : ''; ck('🚓 교차로 카드 「빨리 닿는 곳」 — T-GIS 72 에 지구대·파출소 이름과 시간 (v2.287.0)', /빨리 닿는 곳/.test(rc9) && /(지구대|파출소) (\d+분 )?\d+초/.test(rc9), rc9.replace(/<[^>]+>/g, '').slice(0, 120)); } catch (e) { ck('빨리 닿는 곳 검사', false, e.message); }
       try { var f6 = TGMap2D.orcHtml('flood', { i: 0, a: 'x' }) || { ch: [] }, f6j = f6.ch.map(function (c) { return c[0] + '=' + c[1]; }).join(' / ');
         ck('🌧 큰비 출동 여섯 구 판 — 첫 줄 사슬(출동 늦어짐 · 평소 초 → 통제 때) · 서초·강남·송파·동작·관악·용산 (v2.286.0)', /^출동 늦어짐\(경찰 · 시나리오 A\)=.+ — 평소 \d+초 → 통제 때 /.test(f6j) && /서초·강남·송파·동작·관악·용산/.test(f6.html || ''), f6j.slice(0, 160)); } catch (e) { ck('큰비 출동 여섯 구 검사', false, e.message); }
       try { var sg9 = TGMap2D.orcHtml('school', { sd: '41', name: '수원선일초등학교' }) || { ch: [] }, sj9 = sg9.ch.map(function (c) { return c[0] + '=' + c[1]; }).join(' / ');

@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 184개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 186개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1775,12 +1775,12 @@
   ],
   [
    "live-acc-seoul.json",
-   "2026-10-23 20:54",
+   "2026-10-23 21:04",
    "서울 열린데이터광장 「서울시 실시간 돌발 정보」(AccInfo · TOPIS) — 큰길(ITS 링크)에 걸린 공사·통제·사고"
   ],
   [
    "live-ims-seoul.json",
-   "2026-10-23 20:54",
+   "2026-10-23 21:04",
    "경찰청 도시교통정보센터(UTIC) 개방데이터 돌발 정보(imsOpenData.do) — 서울(법정동 11…)"
   ],
   [
@@ -1790,13 +1790,13 @@
   ],
   [
    "live-spd-seocho.json",
-   "20:53",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261023205000"
+   "21:04",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261023210000"
   ],
   [
    "live-spd-six.json",
-   "20:53",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261023205000"
+   "21:04",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261023210000"
   ],
   [
    "livepop.json",
@@ -2084,6 +2084,16 @@
    "{\"srItem\": \"서울시 안심귀갓길 안전시설물(OA-21696 · tbSafeReturnItem · 기준 2022-11) — [위도, 경도, 시설코드, 안심귀갓길, 동, 설치 수, 비고, 관리기 …(전문은 파일에)"
   ],
   [
+   "school-cal-gg.json",
+   "2026-10-23",
+   "나이스 교육정보 개방 포털 학사일정(SchoolSchedule) — 경기도교육청 초·중·고 2574곳 · 20260301_20270228"
+  ],
+  [
+   "school-cal-incheon.json",
+   "2026-10-23",
+   "나이스 교육정보 개방 포털 학사일정(SchoolSchedule) — 인천광역시교육청 초·중·고 551곳 · 20260301_20270228"
+  ],
+  [
    "school-cal-seoul.json",
    "2026-10-12",
    "나이스 교육정보 개방 포털 학사일정(SchoolSchedule) — 서울특별시교육청 초·중·고 1307곳 · 20260301_20270228"
@@ -2110,7 +2120,7 @@
   ],
   [
    "sig-audit.json",
-   "2026-10-23 20:54",
+   "2026-10-23 21:04",
    "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)"
   ],
   [

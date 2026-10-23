@@ -92,6 +92,8 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var sg9 = TGMap2D.orcHtml('school', { sd: '41', name: '수원선일초등학교' }) || { ch: [] }, sj9 = sg9.ch.map(function (c) { return c[0] + '=' + c[1]; }).join(' / ');
+        ck('🎒 경기 학교 사슬 — 수원선일초 학사 일정이 경기 학교 달력(다음 큰 날)에서 · 둘레 어린이보호 CCTV 줄 · 📁 school-cal-gg.json (v2.285.0)', /학사 일정=(다음 큰 날 20|앞으로 큰 날이)/.test(sj9) && /둘레 어린이보호 CCTV\(300m\)=/.test(sj9) && /school-cal-gg\.json/.test(sg9.html || ''), sj9.slice(-160)); } catch (e) { ck('경기 학교 사슬 검사', false, e.message); }
       try { var lg0 = localStorage.getItem('tg_map2d_orclog'); localStorage.setItem('tg_map2d_orclog', JSON.stringify({ 'school|X1': [{ d: '2026-10-23', w: '하교길 서행 지도', r: '민원 "줄어듦", 확인' }] })); var hb9 = TGMap2D.orcHub() || '', cv9 = TGMap2D.orcCsv(); if (lg0 == null) localStorage.removeItem('tg_map2d_orclog'); else localStorage.setItem('tg_map2d_orclog', lg0);
         ck('📒 적은 기록 모아 보기 — 질문 고르기에 1건 · CSV 머리와 따옴표 처리 (v2.284.0)', /내가 적은 기록 1건/.test(hb9) && /^날짜,질문,대상,한 일,결과\n2026-10-23,이 학교 둘레/.test(cv9) && /"민원 ""줄어듦"", 확인"$/.test(cv9), cv9.slice(0, 120)); } catch (e) { ck('적은 기록 모아 보기 검사', false, e.message); }
       try { var cw9 = (TGMap2D.orcEx() || {}).crowd || [], cr9 = cw9.length ? TGMap2D.orcHtml('crowd', { nm: cw9[0].obj }) : null, ix9 = TGMap2D.orcChaseAt(37.5145, 127.0055, 70), ch9 = ix9 != null ? TGMap2D.orcHtml('chase', { ix: ix9 }) : null, cj = ch9 ? ch9.ch.map(function (c) { return c[0] + '=' + c[1]; }).join(' / ') : '';

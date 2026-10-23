@@ -111,7 +111,8 @@
   var LATEP = null;
   function seoulNear() { try { var v = viewLL(); return !(v[2] < 126.70 || v[0] > 127.25 || v[3] < 37.38 || v[1] > 37.72); } catch (e) { return true; } }
   function lateLoad() { if (LATEP) return LATEP; BOOTT.late = 'load'; var F9 = SEOULF || []; SEOULF = null; F9.forEach(function (f) { try { f(); } catch (e) {} });
-    LATEP = Promise.all(LATE.filter(function (k) { return k !== 'pstat'; }).map(get)).then(function () { BOOTT.late = 'done'; BOOTT.net2 = Math.round(performance.now() - BOOTT.t0); var tB = performance.now(); sigdPrep(); bootT('live', livePrep); bootT('trd', trdPrep); bootT('safe', safePrep); bootT('a10', a10Prep); bootT('season', seasonPrep); paintPre(); bootT('sum2', summary); bootT('draw2', draw); if (sel && $('m2dCard').classList.contains('on')) show(sel.it); BOOTT.prep2 = Math.round(performance.now() - tB); });
+    LATEP = Promise.all(LATE.filter(function (k) { return k !== 'pstat'; }).map(get)).then(function () { BOOTT.late = 'done'; BOOTT.net2 = Math.round(performance.now() - BOOTT.t0); var tB = performance.now(), Q9 = [function () { sigdPrep(); }, function () { bootT('live', livePrep); }, function () { bootT('trd', trdPrep); }, function () { bootT('safe', safePrep); }, function () { bootT('a10', a10Prep); }, function () { bootT('season', seasonPrep); }, function () { paintPre(); bootT('sum2', summary); }, function () { bootT('draw2', draw); if (sel && $('m2dCard').classList.contains('on')) show(sel.it); BOOTT.prep2 = Math.round(performance.now() - tB); }], i9 = 0;
+      (function nx9() { if (i9 >= Q9.length) return; var f9 = Q9[i9++]; try { f9(); } catch (e9) {} setTimeout(nx9, 0); })(); });   /* v2.290.1 다른 세션 폰 점검 — 나중 묶음 손질을 한 작업에 이어 돌려 0.4~0.6초 멈췄다(CPU 4배) → 하나씩 나눠 사이에 화면·손가락이 끼어들게 */
     return LATEP; }
   function loadBld() {   // 건물 593KB — 켤 때만
     if (D.bld !== undefined || !seoulNear()) return;

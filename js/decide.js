@@ -83,11 +83,16 @@
     return h; }
   /* 대상 하나에서 결정으로(2026-10-23 게임 세션 「🧩 엮어서 답 찾기」 사슬 카드가 부른다) — tgDecide.open('d1', { int: 'INT-…' }) · #dec=1&int=INT-…
      이 교차로가 시간대 넷 × 목적 셋에서 몇 위인지(이웃 묶음 없이 그 잣대 그대로 · 같은 값은 같은 순위) */
-  function focusBox() { var f = ST.focus, I = DATA.int; if (!f) return ''; if (!I[f]) return '<div class="warn">📌 ' + esc(nm(f)) + ' — 둘레 사고 기록이 없는 교차로라 이 결정의 후보가 아니다</div>';
+  function focusBox() { var f = ST.focus, I = DATA.int, via = '';
+    if (!f && ST.focusLL) { var la = ST.focusLL[0], lo = ST.focusLL[1], best = null, bd = 151;   /* 좌표로 부를 때 — 150m 안 가장 가까운 사고 교차로(게임 세션 큰비 사슬 · polA 좌표) */
+      Object.keys(I).forEach(function (i) { var d = m(la, lo, I[i][1], I[i][2]); if (d < bd) { bd = d; best = i; } });
+      if (!best) return '<div class="warn">📌 누른 자리 150m 안에 둘레 사고 기록이 있는 교차로가 없다 — 이 결정의 후보가 아니다</div>';
+      f = best; via = ' · 누른 자리에서 ' + Math.round(bd) + 'm'; }
+    if (!f) return ''; if (!I[f]) return '<div class="warn">📌 ' + esc(nm(f)) + ' — 둘레 사고 기록이 없는 교차로라 이 결정의 후보가 아니다</div>';
     var rows = SLOTS.map(function (s) { var si = slotIdx(s); return '<tr><td>' + SLOTN[s] + '</td>' + ['사고', '공백'].map(function (g) {
         if (g === '공백' && I[f][11]) return '<td>카메라 있음</td>'; var v = I[f][5][si], n = 1 + Object.keys(I).filter(function (i) { return (g === '사고' || !I[i][11]) && I[i][5][si] > v; }).length; return '<td><b>' + n + '위</b> · ' + v + '</td>'; }).join('') + '</tr>'; }).join('');
     var pn = 1 + Object.keys(I).filter(function (i) { return I[i][7] > I[f][7]; }).length;
-    return '<div class="cd" style="border-color:var(--acc)"><div class="t"><span>📌</span><b>' + esc(I[f][0]) + '</b><span class="s">' + esc(I[f][3]) + ' · 사고 있는 교차로 ' + Object.keys(I).length + '곳 중</span><button data-unfocus="1" style="margin-left:auto;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--ink)">✕</button></div>' +
+    return '<div class="cd" style="border-color:var(--acc)"><div class="t"><span>📌</span><b>' + esc(I[f][0]) + '</b><span class="s">' + esc(I[f][3]) + via + ' · 사고 있는 교차로 ' + Object.keys(I).length + '곳 중</span><button data-unfocus="1" style="margin-left:auto;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--ink)">✕</button></div>' +
       '<table style="width:100%;font-size:12.5px;border-collapse:collapse"><tr><th></th><th>사고</th><th>카메라 공백</th></tr>' + rows + '</table><div class="s">보행자 피해 ' + I[f][7] + ' — ' + pn + '위 · 같은 값은 같은 순위</div>' + btns(f, '대상에서', 'd1:' + ST.slot + ':' + ST.goal) + '</div>'; }
   function btns(i, rank, ctx) { var p = ll(i); return '<div class="btns"><button data-go="' + p[0] + ',' + p[1] + '">🗺 지도에서</button><button data-did="' + i + '|' + rank + '|' + ctx + '">✋ 여기 섰다</button>' + (ctx.indexOf('d1') === 0 && DATA.int[i] && DATA.int[i][10][0] && DATA.vio[DATA.int[i][10][0][0]] && DATA.vio[DATA.int[i][10][0][0]][1].length ? '<a href="' + TB + '" target="_blank" rel="noopener">⚖ T-Book</a>' : '') + '</div>' + (ST.form === i + '|' + ctx ? form(i, rank, ctx) : ''); }
   function form(i, rank, ctx) { return '<div class="fm"><b>기록 — ' + esc(nm(i)) + '</b><select id="m2dDecDid"><option>정체</option><option>위반</option><option>보행자</option><option>순찰</option><option>음주</option><option>통제</option></select>' +
@@ -160,7 +165,7 @@
   function onChange(e) { var k = e.target.getAttribute('data-k'); if (!k) return; ST[k] = e.target.value; if (k === 'date' && !ST.date) ST.date = today(); ST.form = null; paint(); }
   function onClick(e) { e.stopPropagation(); var b = e.target.closest('button,a'); if (!b) return; var a;
     if (b.hasAttribute('data-close')) return close();
-    if (b.hasAttribute('data-unfocus')) { ST.focus = null; paint(); return; }
+    if (b.hasAttribute('data-unfocus')) { ST.focus = null; ST.focusLL = null; paint(); return; }
     if ((a = b.getAttribute('data-tab'))) { ST.tab = a; ST.form = null; paint(); $('m2dDec').scrollTop = 0; return; }
     if ((a = b.getAttribute('data-go'))) { var p = a.split(','); if (window.innerWidth < 760) close(); location.hash = 'v=' + p[0] + ',' + p[1] + ',250&t=' + p[0] + ',' + p[1]; return; }   /* 「PC로 보내기」 꼴 — 보고 자리 표시 없이 그 자리 카드 */
     if ((a = b.getAttribute('data-did'))) { var q = a.split('|'); ST.form = q[0] + '|' + q[2]; paint(); return; }
@@ -175,12 +180,12 @@
     if (b.hasAttribute('data-clear')) { if (confirm('이 기기의 결정 기록을 모두 지울까요? 되돌릴 수 없습니다.')) { logSet([]); paint(); } return; } }
 
   function open(tab, opt) { css(); var el = box(); if (!ST.date) { ST.date = today(); ST.slot = slotOfHour(new Date().getHours()); }
-    if (tab && /^d[1-5]$/.test(tab)) ST.tab = tab; if (opt && opt.int) { ST.focus = String(opt.int); ST.tab = 'd1'; } el.classList.add('on'); paint(); load().then(paint, function (e) { el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정</h3><div class="warn">자료를 읽지 못했습니다(' + esc(e && e.message) + ') — 통신이 되는 곳에서 한 번 열면 다음부터 됩니다.</div>'; }); }
+    if (tab && /^d[1-5]$/.test(tab)) ST.tab = tab; if (opt && opt.int) { ST.focus = String(opt.int); ST.focusLL = null; ST.tab = 'd1'; } else if (opt && isFinite(+opt.lat) && isFinite(+opt.lon)) { ST.focus = null; ST.focusLL = [+opt.lat, +opt.lon]; ST.tab = 'd1'; } el.classList.add('on'); paint(); load().then(paint, function (e) { el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정</h3><div class="warn">자료를 읽지 못했습니다(' + esc(e && e.message) + ') — 통신이 되는 곳에서 한 번 열면 다음부터 됩니다.</div>'; }); }
   function close() { var el = $('m2dDec'); if (el) el.classList.remove('on'); }
   window.tgDecide = { open: open, close: close };
-  function fromHash() { var h = location.hash || '', dm = /(^|[#&])dec=(1|d[1-5])(?=&|$)/.exec(h); if (!dm) return; var im = /(^|[#&])int=(INT-\d+)(?=&|$)/.exec(h);
-    open(dm[2] === '1' ? null : dm[2], im ? { int: im[2] } : null);
-    var rest = h.replace(/^#/, '').split('&').filter(function (x) { return x && !/^(dec|int)=/.test(x); }).join('&');
+  function fromHash() { var h = location.hash || '', dm = /(^|[#&])dec=(1|d[1-5])(?=&|$)/.exec(h); if (!dm) return; var im = /(^|[#&])int=(INT-\d+)(?=&|$)/.exec(h), lm = /(^|[#&])ll=(-?[\d.]+),(-?[\d.]+)(?=&|$)/.exec(h);
+    open(dm[2] === '1' ? null : dm[2], im ? { int: im[2] } : lm ? { lat: +lm[2], lon: +lm[3] } : null);
+    var rest = h.replace(/^#/, '').split('&').filter(function (x) { return x && !/^(dec|int|ll)=/.test(x); }).join('&');
     try { history.replaceState(null, '', location.pathname + location.search + (rest ? '#' + rest : '')); } catch (e) {} }
   window.addEventListener('hashchange', fromHash);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fromHash); else fromHash();

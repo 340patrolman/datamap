@@ -146,6 +146,33 @@ for tg in (521, 548, 1026, 324):
 for rid in ('RD-1210020206', 'RD-1210019704'):
     lid = rid[3:]; q = R['q10'][rid]; feeds = sorted((no, d, rs[0][0] and [l[0] for r in rs for l in r[4]].index(lid)) for no, s_ in SA.items() for d, rs in s_['in'].items() if lid in [l[0] for r in rs for l in r[4]] and any(str(r_[4]) == no and r_[6] == '11650' for r_ in oi.values()))
     ck('질문10 %s — 들어가는 교차로·쪽·차례가 sig-approach 와 같다 · 길이·이름은 nav' % rid, sorted((f['apr'].split('-')[1], f['dir'], f['k']) for f in q['feeds']) == feeds and q['len'] == NVL[lid][3] and q['nm'] == NVL[lid][7], (q['feeds'], feeds))
+# ---- 도로 구간 ↔ 사고 칸(2026-10-23) — 접근로 링크 선과 TAAS 칸에서 따로: 칸 가운데에서 가장 가까운 링크(50m 안) 하나 ----
+cits_sc = {str(r_[4]) for r_ in oi.values() if r_[6] == '11650' and r_[4]}
+LK = sorted({l[0] for no, s_ in SA.items() if no in cits_sc for rs in s_['in'].values() for r in rs for l in r[4]})
+def pline(lid):
+    g = NVL[lid][9]; out = [(g[0], g[1])]
+    for k in range(2, len(g), 2): out.append((out[-1][0] + g[k], out[-1][1] + g[k + 1]))
+    return [(x / 1e5, y / 1e5) for x, y in out]
+def dseg(la, lo, a, b):
+    ax, ay = (a[0] - lo) * 88400.0, (a[1] - la) * 111000.0; bx, by = (b[0] - lo) * 88400.0, (b[1] - la) * 111000.0
+    vx, vy = bx - ax, by - ay; L2 = vx * vx + vy * vy; t = 0 if L2 == 0 else max(0.0, min(1.0, -(ax * vx + ay * vy) / L2)); return math.hypot(ax + t * vx, ay + t * vy)
+PL = {l: pline(l) for l in LK if l in NVL}; OWN = collections.defaultdict(list)
+for c_ in ta['cells']:
+    bd = None
+    for l, pts in PL.items():
+        if abs(pts[0][1] - c_[0]) > 0.02 or abs(pts[0][0] - c_[1]) > 0.02: continue
+        d = min(dseg(c_[0], c_[1], a, b) for a, b in zip(pts, pts[1:]))
+        if d <= 50 and (bd is None or d < bd[1] or (d == bd[1] and 'RD-' + l < 'RD-' + bd[0])): bd = (l, d)
+    if bd: OWN[bd[0]].append(c_)
+ck('도로 구간 ↔ 사고 칸 — 이어진 칸 수가 따로 셈과 같다(서초)', sum(len(v) for v in OWN.values()) == R['nACL'], (sum(len(v) for v in OWN.values()), R['nACL']))
+for tg in (521, 548, 1026, 324):
+    i = 'INT-%d' % tg; q = R['q9'][i]; sp_ = SA.get(str(oi[tg][4])) or {'in': {}}; ok = True; got = []
+    for a in q['approaches']:
+        cs = [c_ for r in sp_['in'][a['dir']] for l in r[4] for c_ in OWN.get(l[0], [])]
+        exp = (len(cs), sum(sum(c_[2:12]) for c_ in cs), sum(c_[12] for c_ in cs), sum(c_[14] for c_ in cs)) if cs else None
+        g = (a['acc']['cells'], a['acc']['total'], a['acc']['dead'], a['acc']['ped']) if a['acc'] else None
+        if exp != g: ok = False; got.append((a['dir'], exp, g))
+    ck('질문9 %s — 쪽마다 길에 걸친 사고 칸·10년 건수·사망·보행자가 TAAS 따로 셈과 같다' % q['nm'], ok, got[:3] or [(a['dir'], a['acc'] and a['acc']['total']) for a in q['approaches']])
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))

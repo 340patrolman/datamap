@@ -7,6 +7,7 @@
                침수는 data/season-seocho.json 흔적 점이 교차로 100m 안이면 「흔적」(그 해 흔적 수·가장 깊은 침수심) · 교차로에 안 닿는 사건은 싣지 않는다
     APR·RD   = 접근로·도로 구간(2026-10-23 엮임 지도 셋째) = data/sig-approach-seocho.json(신호 교차로에 들어오는 쪽마다 ITS 링크) → 교차로 「들어오는길」 접근로 「이룸」 도로 구간(ITS 링크 · 등급 B)
                도로 구간 값 = nav-seocho(길 이름·길이·제한속도·등급·차로) · spd-normal-seocho(월~목 8·18·3시 평소 속도 · 잠정 표시) · flood-link-seocho(침수 흔적 해 수·마지막 해·침수심·돌아가는 부담 초)
+               도로 구간 → TAAS 100m 사고 칸 「사고칸」(ACL · 칸 가운데가 구간 선 50m 안 · 가장 가까운 구간 하나에만 · 칸은 방향이 없어 맞은편 차로 사고도 섞임 · 근사 C · 2026-10-23)
                도로 구간 → 250m 칸 「지남」(rd-cell-seocho) · 범위는 서초구 + 경계 밖 2km 뿐(여섯 구 코어에서도 그 밖 교차로는 접근로가 없다)
     DNG      = 교차로가 든 행정동(onto-int 행정동 코드 · 2026-10-23 엮임 지도 첫째) — 값은 그 동을 열쇠로 가진 파일에서 그대로:
                house-dong(세대·1인 세대) · mig-dong(주민) · foreign-dong(외국인주민) · econ-dong(국민연금 가입 사업장·가입자) · dui-ref-seoul(주점 점포·호프 0~6시 결제) · police.json(별표2 관할서)
@@ -113,6 +114,39 @@ def rd_build(obj, edge, by_cits):
                             edge(rid, '지남', obj('PLC-' + cells[ci], 'PLC'), 'B', 'rd-cell-seocho.json(링크 선을 25m 마다 읽어 250m 칸을 셈)')
                     edge(a, '이룸', rid, 'B', 'sig-approach-seocho.json(교차로에서 거슬러 모은 ITS 링크)', r=ri, k=k)
 O_RD = set()
+ACL_R = 50   # 사고 칸(100m) 가운데가 도로 구간 선에서 50m 안이면 그 칸이 그 길에 걸친다고 본다 — 한 칸은 가장 가까운 구간 하나에만(겹쳐 세지 않게)
+def acl_build(obj, edge, rds, nv, ta):
+    """도로 구간(접근로를 이루는 ITS 링크) → 그 길에 걸친 TAAS 100m 사고 칸 「사고칸」(근사 C). 칸은 방향이 없어 맞은편 차로 사고도 섞인다."""
+    G = collections.defaultdict(list)
+    for rid in rds:
+        L = nv.get(rid[3:])
+        if not L: continue
+        g = L[9]; x, y = g[0], g[1]; pts = [(x / 1e5, y / 1e5)]
+        for k in range(2, len(g), 2): x += g[k]; y += g[k + 1]; pts.append((x / 1e5, y / 1e5))
+        for a, b in zip(pts, pts[1:]):
+            for i in range(int(min(a[1], b[1]) * 500) - 1, int(max(a[1], b[1]) * 500) + 2):
+                for j in range(int(min(a[0], b[0]) * 500) - 1, int(max(a[0], b[0]) * 500) + 2): G[(i, j)].append((rid, a, b))
+    def seg(la, lo, a, b):   # 점에서 선분까지 m(평면 근사 — m() 와 같은 눈금)
+        ax, ay, bx, by = (a[0] - lo) * 88400.0, (a[1] - la) * 111000.0, (b[0] - lo) * 88400.0, (b[1] - la) * 111000.0
+        dx, dy = bx - ax, by - ay; L2 = dx * dx + dy * dy; t = 0 if not L2 else max(0.0, min(1.0, -(ax * dx + ay * dy) / L2))
+        return math.hypot(ax + t * dx, ay + t * dy)
+    dv = ta['dic']['v']; n = 0; M = {}
+    for c in ta['cells']:   # 여섯 구는 구 경계 칸이 두 구 파일에 같은 자리로 들어 있다 — 한 칸으로 더한다(주 위반은 건수가 큰 쪽 · 같은 코드면 더함)
+        k = '%.6f,%.6f' % (c[0], c[1]); o = M.get(k)
+        if o is None: M[k] = list(c); continue
+        for i in range(2, 23): o[i] += c[i]
+        if o[23] == c[23]: o[24] += c[24]
+        elif c[24] > o[24]: o[23], o[24], o[25] = c[23], c[24], c[25]
+    for c in M.values():
+        best = None
+        for rid, a, b in G.get((int(c[0] * 500), int(c[1] * 500)), ()):
+            d = seg(c[0], c[1], a, b)
+            if d <= ACL_R and (best is None or d < best[1] or (d == best[1] and rid < best[0])): best = (rid, d)
+        if not best: continue
+        cid = 'ACL-%.6f,%.6f' % (c[0], c[1])
+        obj(cid, 'ACL', lat=c[0], lon=c[1], y0=2016, years=c[2:12], dead=c[12], serious=c[13], ped=c[14], night=c[18], tod=c[19:23], mv=c[23], mvnm=dv.get(c[23]), mvn=c[24], typ=c[25])
+        edge(best[0], '사고칸', cid, 'C', 'taas10(100m 사고 칸 가운데가 구간 선 %dm 안 · 가장 가까운 구간 하나 · 방향 섞임)' % ACL_R, d=round(best[1])); n += 1
+    return n
 def dng_build(O, obj, rows):
     hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
     ec = J(os.path.join(D, 'econ-dong.json'))['dong']; dr = {x[0]: x for x in J(os.path.join(D, 'dui-ref-seoul.json'))['items']}
@@ -178,6 +212,7 @@ def main():
             if d <= 300: edge(it['id'], '가까움', obj('ATT-SZ-%.5f,%.5f' % (z[0], z[1]), 'ATT', kind=z[2], nm=z[3] or None), 'C', 'gargo-alerts-seoul.json(300m 안)', d=round(d))
     evt_build(O, obj, edge, INTs)
     rd_build(obj, edge, by_cits)
+    acl_build(obj, edge, sorted(O_RD), {l[0]: l for l in J(os.path.join(D, 'nav-seocho.json'))['links']}, ta)
     ks = J(os.path.join(D, 'sig-ksc-seocho.json'))
     for it in ks['items']:
         tgt = by_cits.get(str(it['no']))
@@ -232,7 +267,7 @@ def main():
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print(doc['count'], doc['edges_count'], os.path.getsize(p), 'B')
     # 지도용 가벼운 판(2026-10-23 게임 세션 부탁 — 지도는 q1·q2·q3·q5 만 쓴다): 사건·접근로·도로 구간·250m 칸과 그 링크를 뺀 같은 꼴 · 값은 그대로
-    LITE = {'EVT', 'APR', 'RD', 'PLC'}; keep = {o['id'] for o in doc['objects'] if o['t'] not in LITE}
+    LITE = {'EVT', 'APR', 'RD', 'PLC', 'ACL'}; keep = {o['id'] for o in doc['objects'] if o['t'] not in LITE}
     lite = dict(doc, lite='지도용 — 뺀 객체 ' + ','.join(sorted(LITE)) + ' · 전체는 ' + OUTF, objects=[o for o in doc['objects'] if o['id'] in keep], edges=[e for e in E if e[0] in keep and e[2] in keep])
     lite['count'] = dict(collections.Counter(v['t'] for v in lite['objects'])); lite['edges_count'] = dict(collections.Counter(e[1] for e in lite['edges']))
     pl = p[:-5] + '-map.json'; json.dump(lite, open(pl, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

@@ -232,6 +232,43 @@
     "last": "마지막으로 받은 때(돌발)",
     "dep": "그 해 가장 깊은 침수심 m(침수)"
    }
+  },
+  "APR": {
+   "name": "접근로(신호 교차로에 들어오는 쪽 하나)",
+   "id": "APR-<C-ITS 교차로 번호>-<들어오는 쪽 nt·ne·et·se·st·sw·wt·nw>",
+   "from": "sig-approach-seocho(spots.in)",
+   "required": [
+    "no",
+    "dir"
+   ],
+   "props": {
+    "no": "C-ITS 교차로 번호(= T-Data·경찰청 번호)",
+    "dir": "들어오는 쪽(nt = 북쪽에서 오는 차 · sigdir 과 같은 부호)",
+    "frm": "들어오는 쪽 말",
+    "nm": "길 이름",
+    "rds": "길마다 [이름, 제한속도, 차로, 모은 길이 m]"
+   }
+  },
+  "RD": {
+   "name": "도로 구간(ITS 표준 링크 · 방향 있음)",
+   "id": "RD-<ITS 링크 ID>",
+   "from": "nav-seocho(links)",
+   "required": [
+    "link"
+   ],
+   "props": {
+    "link": "ITS 링크 ID",
+    "nm": "길 이름",
+    "len": "길이 m",
+    "lim": "제한속도 km/h(없으면 비움)",
+    "gr": "도로 등급 1~7",
+    "ln": "차로",
+    "sp": "평소 속도 {「요일 갈래-시」: [가운데값 km/h, 아래 사분위, 본 날 수, 잠정 1|0]} — 월~목 8·18·3시만(spd-normal-seocho)",
+    "fy": "침수 흔적이 찍힌 해 수(30m 안 · flood-link-seocho)",
+    "fl": "마지막 해",
+    "fd": "가장 깊었던 침수심 m",
+    "dt": "그 길 한 구간이 막히면 돌아가는 부담 초(-1 = 돌아갈 길 못 찾음 또는 세지 않음)"
+   }
   }
  },
  "linkTypes": {
@@ -306,6 +343,24 @@
    "to": "INT",
    "name": "그 해 침수 → 흔적 점이 100m 안에 있는 교차로(n 흔적 수 · dep 가장 깊은 침수심)",
    "grade": "C"
+  },
+  "들어오는길": {
+   "from": "INT",
+   "to": "APR",
+   "name": "교차로 → 들어오는 쪽 길(접근로)",
+   "grade": "B"
+  },
+  "이룸": {
+   "from": "APR",
+   "to": "RD",
+   "name": "접근로 → 그 길을 이루는 도로 구간(r 길 차례 · k 교차로에서 거슬러 간 차례)",
+   "grade": "B"
+  },
+  "지남": {
+   "from": "RD",
+   "to": "PLC",
+   "name": "도로 구간 → 지나는 250m 칸",
+   "grade": "B"
   }
  },
  "functions": {

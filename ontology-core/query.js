@@ -54,6 +54,32 @@
     return { id: intId, nm: it.nm, since: since, n: ev.length, counts: cnt, events: ev.slice(0, k || 20), flood: fl,
       notes: ['둘레 반지름 안 사건(근사 C) — 그 교차로에서 일어났다는 뜻이 아니다', '집회 = 경찰청 주요 집회만(신고값) · 공연 = 1,000석 이상 · 돌발 = 2026-10-15 부터 이 PC 가 받은 기록', '침수 = 서울시 침수흔적도(건물·필지 가운데 점 · 100m 안) — 길이 잠겼다는 기록이 아니다'] };
   };
+  /* 질문 9 — 이 교차로로 들어오는 길(2026-10-23 접근로·도로 구간 · 엮임 지도 셋째): 들어오는 쪽마다 길 이름·제한속도·차로 · 평소 속도(월~목 8·18·3시) · 침수 흔적 · 막히면 돌아가는 부담 · 지나는 250m 칸
+     평소 속도 = 그 쪽 ITS 링크 가운데 값 있는 것만 길이를 시간으로 나눈 것(링크마다 가운데값 · 덮은 길이 cov 를 같이 본다) · 본 날이 3날 미만이면 잠정 */
+  P.q9 = function (intId) {
+    var it = this.O[intId]; if (!it || it.t !== 'INT') return null; var self = this, H = ['0-8', '0-18', '0-3'];
+    var aps = this.follow(intId, '들어오는길').map(function (x) {
+      var A = x.o, rds = self.follow(A.id, '이룸').sort(function (a, b) { return a.p.r - b.p.r || a.p.k - b.p.k; }).map(function (y) { return y.o; }), sp = {}, cells = {};
+      H.forEach(function (h) { var t = 0, c = 0, pv = 0; rds.forEach(function (r) { var v = r.sp && r.sp[h]; if (v && v[0] > 0) { t += r.len / v[0] * 3.6; c += r.len; if (v[3]) pv = 1; } }); sp[h] = c ? { kmh: Math.round(c / t * 3.6), cov: c, prov: pv } : null; });
+      var wet = rds.filter(function (r) { return r.fy; });
+      rds.forEach(function (r) { self.follow(r.id, '지남').forEach(function (z) { cells[z.o.id] = 1; }); });
+      return { id: A.id, dir: A.dir, frm: A.frm, nm: A.nm, roads: A.rds, nLinks: rds.length, len: rds.reduce(function (s, r) { return s + r.len; }, 0), speed: sp,
+        flood: wet.length ? { links: wet.length, years: Math.max.apply(null, wet.map(function (r) { return r.fy; })), last: Math.max.apply(null, wet.map(function (r) { return r.fl; })), dep: Math.max.apply(null, wet.map(function (r) { return r.fd || 0; })),
+          detour: Math.max.apply(null, wet.map(function (r) { return r.dt == null ? -1 : r.dt; })), noDetour: wet.filter(function (r) { return r.dt === -1; }).length } : null,
+        cells: Object.keys(cells).sort() };
+    }).sort(function (a, b) { return ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw'].indexOf(a.dir) - ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw'].indexOf(b.dir); });
+    return { id: intId, nm: it.nm, cits: it.cits, n: aps.length, approaches: aps,
+      notes: aps.length ? ['들어오는 쪽은 ITS 링크 방위로 가른 것(대각 교차로는 45° 어긋날 수 있다)', '평소 속도 = 2026-10-11 부터 쌓은 ITS 실시간 소통의 가운데값 · 잠정 = 본 날 3날 미만', '침수 = 그 길 30m 안 침수 흔적(길이 잠겼다는 기록 아님) · 돌아가는 부담은 제한속도·막힘 없음 기준이라 실제보다 작다'] : ['이 교차로는 접근로 자료가 없다(신호 번호가 없거나 서초구 + 2km 밖)'] };
+  };
+  /* 질문 10 — 이 도로 구간이 막히면(2026-10-23): 그 길이 들어가는 교차로·쪽 · 평소 속도 · 침수 · 돌아가는 부담 · 지나는 칸 */
+  P.q10 = function (rdId) {
+    var R = this.O[rdId]; if (!R || R.t !== 'RD') return null; var self = this;
+    var feeds = this.back(rdId, '이룸').map(function (x) { var I = self.back(x.o.id, '들어오는길')[0]; return { apr: x.o.id, dir: x.o.dir, frm: x.o.frm, int: I ? I.o.id : null, intNm: I ? I.o.nm : null, k: x.p.k }; })
+      .sort(function (a, b) { return a.k - b.k || (a.apr < b.apr ? -1 : 1); });
+    return { id: rdId, link: R.link, nm: R.nm, len: R.len, lim: R.lim || null, gr: R.gr || null, ln: R.ln || null, speed: R.sp || null,
+      flood: R.fy ? { years: R.fy, last: R.fl, dep: R.fd, detour: R.dt } : null, feeds: feeds, cells: this.follow(rdId, '지남').map(function (z) { return z.o.id; }),
+      notes: ['k = 교차로에서 거슬러 간 차례(0 이 교차로에 바로 닿는 링크)', '돌아가는 부담은 그 길 한 구간이 통째로 막혔다고 본 제한속도 기준 값'] };
+  };
   /* 질문 2 — 왜 바꿨고 바꾼 뒤 어떻게 됐나(해 단위 · 앞 2해 vs 뒤 2해 · 바꾼 해는 뺀다) */
   P.q2 = function (intId) {
     var self = this, it = this.O[intId]; if (!it) return null; var acc = this.follow(intId, '발생')[0], A = acc ? acc.o : null;

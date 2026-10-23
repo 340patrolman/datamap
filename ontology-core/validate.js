@@ -10,7 +10,7 @@
       var T = OT[o.t]; if (!T) { errors.push('모르는 객체 타입: ' + o.id + ' (' + o.t + ')'); return; }
       if (String(o.id).indexOf(o.t + '-') !== 0) errors.push('ID 머리가 타입과 다름: ' + o.id);
       (T.required || []).forEach(function (k) { if (o[k] == null || o[k] === '') errors.push('필수 속성 없음: ' + o.id + '.' + k); });
-      Object.keys(o).forEach(function (k) { var v = o[k]; if (typeof v !== 'string') return; PII.forEach(function (p) { if (p[0].test(v) && !/^(INT|CAM|ATT|PLC|ACC|ACT|REC|PREC|LAW|VIO|RULE|FK|DNG|EVT)-/.test(v)) warnings.push('개인정보 꼴(' + p[1] + ')?: ' + o.id + '.' + k); }); });
+      Object.keys(o).forEach(function (k) { var v = o[k]; if (typeof v !== 'string') return; PII.forEach(function (p) { if (p[0].test(v) && !/^(INT|CAM|ATT|PLC|ACC|ACT|REC|PREC|LAW|VIO|RULE|FK|DNG|EVT|APR|RD)-/.test(v)) warnings.push('개인정보 꼴(' + p[1] + ')?: ' + o.id + '.' + k); }); });
     });
     core.edges.forEach(function (e, i) {
       var a = O[e[0]], b = O[e[2]], L = LT[e[1]];

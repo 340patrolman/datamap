@@ -121,6 +121,32 @@ for tg in (521, 324, 1159, 4612):
     ck('질문8 %s — 침수 흔적 해·흔적 수가 침수흔적도 따로 셈과 같다' % q['nm'], [(f['year'], f['n']) for f in q['flood']] == sorted(fl.items()), ([(f['year'], f['n']) for f in q['flood']], sorted(fl.items())))
 ck('질문8 서초역사거리 — 최근 먼저 · since(2026-10-01) 거르기', [e['d0'] for e in R['q8']['INT-521']['events']] == sorted([e['d0'] for e in R['q8']['INT-521']['events']], reverse=True) and all(e['d0'] >= '2026-10-01' for e in R['q8since']['events']) and R['q8since']['n'] == sum(1 for e in R['q8']['INT-521']['events'] if e['d0'] >= '2026-10-01'), R['q8since']['counts'])
 ck('질문8 — 교차로가 아닌 것을 물으면 null', R['q8bad'] is None, R['q8bad'])
+# ---- 질문 9·10 · 접근로·도로 구간(2026-10-23) — sig-approach · nav · spd-normal · flood-link · rd-cell 에서 따로 ----
+SA = J(os.path.join(D, 'sig-approach-seocho.json'))['spots']; NVL = {l[0]: l for l in J(os.path.join(D, 'nav-seocho.json'))['links']}
+SN = J(os.path.join(D, 'spd-normal-seocho.json'))['links']; FLK = {x[0]: x for x in J(os.path.join(D, 'flood-link-seocho.json'))['items']}; RCX = J(os.path.join(D, 'rd-cell-seocho.json'))
+for tg in (521, 548, 1026, 324):
+    i = 'INT-%d' % tg; q = R['q9'][i]; sp_ = SA.get(str(oi[tg][4])) or {'in': {}}
+    want = {d: [l[0] for r in rs for l in r[4]] for d, rs in sp_['in'].items()}
+    ck('질문9 %s — 들어오는 쪽과 쪽마다 링크 수가 sig-approach 와 같다' % q['nm'], {a['dir']: a['nLinks'] for a in q['approaches']} == {d: len(v) for d, v in want.items()}, ({a['dir']: a['nLinks'] for a in q['approaches']}, {d: len(v) for d, v in want.items()}))
+    ok = True; got = []
+    for a in q['approaches']:
+        ls = want[a['dir']]
+        for h in ('0-8', '0-18'):
+            t = c_ = 0
+            for lid in ls:
+                v = (SN.get(lid) or {}).get(h); L = NVL.get(lid)
+                if v and v[0] > 0: ln = L[3] if L else 0; t += ln / v[0] * 3.6; c_ += ln
+            exp = round(c_ / t * 3.6) if c_ else None; g = a['speed'][h]['kmh'] if a['speed'][h] else None
+            if exp != g: ok = False; got.append((a['dir'], h, exp, g))
+        wet = [FLK[l] for l in ls if l in FLK]; f = a['flood']
+        if (len(wet), max([w[5] for w in wet] or [0])) != ((f['links'], f['years']) if f else (0, 0)): ok = False; got.append((a['dir'], 'flood', len(wet), f))
+        cs = sorted({'PLC-' + RCX['cells'][ci] for l in ls for ci in RCX['links'].get(l, [])})
+        if cs != a['cells']: ok = False; got.append((a['dir'], 'cells', len(cs), len(a['cells'])))
+    ck('질문9 %s — 쪽마다 평소 속도(월~목 8·18시 · 길이/시간) · 침수 링크 · 지나는 칸이 원자료 따로 셈과 같다' % q['nm'], ok, got[:3])
+for rid in ('RD-1210020206', 'RD-1210019704'):
+    lid = rid[3:]; q = R['q10'][rid]; feeds = sorted((no, d, rs[0][0] and [l[0] for r in rs for l in r[4]].index(lid)) for no, s_ in SA.items() for d, rs in s_['in'].items() if lid in [l[0] for r in rs for l in r[4]] and any(str(r_[4]) == no and r_[6] == '11650' for r_ in oi.values()))
+    ck('질문10 %s — 들어가는 교차로·쪽·차례가 sig-approach 와 같다 · 길이·이름은 nav' % rid, sorted((f['apr'].split('-')[1], f['dir'], f['k']) for f in q['feeds']) == feeds and q['len'] == NVL[lid][3] and q['nm'] == NVL[lid][7], (q['feeds'], feeds))
+ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))
 n = sum(1 for x in C if x[1])
 for name, ok, got in C: print(('  ✅ ' if ok else '  ❌ ') + name + (' — ' + got if got else ''))

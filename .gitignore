@@ -8,3 +8,6 @@ __pycache__/
 
 # 비공개 — 온톨로지 전체 판(도착 시간 포함 · 소유자 2026-10-23 「공개 저장소에서 빼고 비공개 쪽에만」)
 ontology-core/data/private/
+# 비공개 — 관할 도달 공백이 드러나는 자료(소유자 2026-10-23 「앞으로만 안 올라가게」) · 원본은 07_API키/out/onto
+data/onto-reach-*.json
+data/flood-delay-*.json

@@ -1097,19 +1097,19 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.281.0"></script>
+<script src="js/map2d.js?v=2.282.0"></script>
 <script src="js/decide.js?v=3"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;
-    var HX = { '3a1d43815df6e60d5f8673f05157b39f235d4893d17ecc36396bb1e3b047413b': '1', '2dff97fedb7a49ea16554e962a4ce9ddb6eb97990c29a860f1022bae2662e0dc': 'p' };   // 코드 둘(2026-10-06 소유자) — 경찰 동료용 · 시범 사용자용 · 평문은 어디에도 두지 않는다
+    var HX = { '3a1d43815df6e60d5f8673f05157b39f235d4893d17ecc36396bb1e3b047413b': '1', '2dff97fedb7a49ea16554e962a4ce9ddb6eb97990c29a860f1022bae2662e0dc': 'p', '58994a17bff45baf3c677c2096cbabea36962ae7a95f70e95e85a4ec898c5636': '1', '592334eb275db7680a74630cba3879fc115dfda4b13cdb1de435f96bcec9590f': '1', '1fe657b24d63039fe34a0ec609910b728afcd3acc9e5b4000629daf464b36511': '1' };   // 코드 둘(2026-10-06 소유자) — 경찰 동료용 · 시범 사용자용 · 평문은 어디에도 두지 않는다 · v2.282.0 경찰 동료용에 둘째 코드(T-Book v24.09 와 같게 · 2026-10-23 소유자 「권고대로」) + 한/영 안 바꾼 영문 자판 입력 둘(소문자로 맞춰 견줌)
     if (document.documentElement.classList.contains('gated')) setTimeout(function () { try { document.getElementById('m2dGateI').focus(); } catch (e) {} }, 200);
     // 폰 자판은 비밀번호 칸에서 한글 조합을 막아 「ㄱㅛ34」처럼 낱자로 들어온다(2026-10-06 소유자 폰에서 안 들어가짐) → 일반 칸 + 낱자 모아 쓰기 + 빈칸 빼기
     var CH = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', JU = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
     function moa(t) { var o = '', i = 0; while (i < t.length) { var a = CH.indexOf(t.charAt(i)), b = JU.indexOf(t.charAt(i + 1)); if (a >= 0 && b >= 0) { o += String.fromCharCode(0xAC00 + (a * 21 + b) * 28); i += 2; } else { o += t.charAt(i); i++; } } return o; }
     f.addEventListener('submit', function (e) { e.preventDefault(); var raw = document.getElementById('m2dGateI').value || '', v = moa((raw.normalize ? raw.normalize('NFC') : raw).replace(/\s+/g, '')), M = document.getElementById('m2dGateM');
       if (!window.crypto || !crypto.subtle) { M.textContent = '이 브라우저에서는 확인할 수 없습니다(https 주소로 여십시오)'; return; }
-      crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)).then(function (b) { var h = Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+      crypto.subtle.digest('SHA-256', new TextEncoder().encode(v.toLowerCase())).then(function (b) { var h = Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
         if (!HX[h]) { M.textContent = '확인코드가 맞지 않습니다'; return; }
         try { localStorage.setItem('tg_map2d_gate', HX[h]); } catch (e2) {} if (HX[h] === 'p') document.documentElement.classList.add('pilot'); document.documentElement.classList.remove('gated'); M.textContent = ''; window.dispatchEvent(new Event('tggate')); window.dispatchEvent(new Event('resize')); }); });
   })();

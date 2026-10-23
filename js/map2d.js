@@ -5472,11 +5472,12 @@
       if (nx.length) { var y = nx[0], bits = [y[1] ? '초 방학 몫 ' + y[1] + '%' : '', y[4] ? '재량휴업 ' + y[4] + '교' : '', y[6] ? '졸업식 ' + y[6] + '교' : ''].filter(Boolean), cs = (cal.csat || []).filter(function (c) { return c[0] === y[0]; });
         ch.push([5, '학사 일정', '다음 큰 날 ' + y[0] + (cs.length ? ' (수능날)' : '') + ' — ' + bits.join(' · '), 'A']); } else ch.push([5, '학사 일정', '앞으로 큰 날이 자료에 없음', 'A']); }
     return { obj: nm, sub: v[6] + ' · ' + (v[1] || ''), ch: ch, m: P(lo, la) }; }
+  var ORCDIR = { I: '내선', O: '외선', U: '상행', D: '하행' };   /* 지하철 혼잡 방향 코드(recipes-bake DIRK 와 같게 · v2.282.0) */
   function orcEvent(o) { var se = orcJ('data/station-events.json'), sc = orcJ('data/subway-crowd.json'), rl = orcJ('data/rally-seoul.json'), stn = o.stn, t0 = orcToday(); if (!se) return null;
     var all = (se.ev || {})[stn], evs = (all || []).filter(function (e) { return e[0] >= t0; }), ch = [];
     ch.push([0, '다가오는 행사', all ? evs.slice(0, 3).map(function (e) { return e[0].slice(5) + ' ' + e[2] + '~' + e[3] + ' ' + (e[4] == null ? '?' : e[4]) + '명 · ' + String(e[5] || '').slice(0, 24); }).join(' / ') || '앞으로 자료에 없음' : '이 역 둘레에는 큰 공연·집회 자료가 없음', 'C']);
     var cr = sc ? (sc.stn || []).filter(function (x) { return x[0] === stn; }) : [];
-    ch.push([1, '평소 퇴근 혼잡', cr.length ? cr.map(function (x) { return x[1] + ' ' + x[2] + '방향 ' + x[7] + '%'; }).join(' · ') : '혼잡도 자료 없는 역', 'A']);
+    ch.push([1, '평소 퇴근 혼잡', cr.length ? cr.map(function (x) { return x[1] + ' ' + (ORCDIR[x[2]] || x[2] + '방향') + ' ' + x[7] + '%'; }).join(' · ') : '혼잡도 자료 없는 역', 'A']);
     var rr = evs.filter(function (e) { return e[1] === 'r'; }).slice(0, 3).map(function (e) { var q = rl && (rl.items || []).filter(function (x) { return x.d === e[0] && x.from === e[2] && x.n === e[4]; })[0]; return e[0].slice(5) + ' ' + e[2] + ' ' + (q ? q.p + ' · ' + q.st + (q.march ? ' · 행진' : '') : String(e[5] || '')); });
     ch.push([2, '집회 원문', rr.length ? rr.join(' / ') : '앞으로 이 역 둘레 큰 집회는 자료에 없음(받아 둔 날까지)', 'C']);
     return { obj: stn + '역', sub: '앞으로 공연·집회 ' + evs.length + '건', ch: ch }; }

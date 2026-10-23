@@ -342,6 +342,9 @@ def main():
     ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'foreign': run_foreign(), 'march': run_march(), 'biz': run_biz(), 'chase': run_chase(), 'crowd': run_crowd(), 'elder': run_elder()}
     need(all('n' in h for h in HOW), 'HOW 에 레시피가 섞임')
     ids = [r['id'] for r in RECIPES]
+    # 공개 금지(소유자 2026-10-23) — 도달·출동 시간(onto-reach·flood-delay)은 레시피·예시에 넣지 않는다(모은 수는 괜찮다)
+    need('flood' not in ids, '공개 금지 레시피 flood')
+    need(not any(w in json.dumps([RECIPES, ex], ensure_ascii=False) for w in ('onto-reach', 'flood-delay')), '공개 금지 자료(onto-reach·flood-delay)가 레시피에 들어감')
     need(all(k in ids for k in ex), '예시 키가 레시피에 없음 %s' % [k for k in ex if k not in ids])
     for r in RECIPES:
         for s in r['steps']:

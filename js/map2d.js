@@ -9597,7 +9597,7 @@
     var tg = it && it.kind === 'tgis' && it.t ? it.t.c : '';
     return '<div class="onto" id="m2dOnto" data-m="' + Math.round(m[0]) + ',' + Math.round(m[1]) + '" data-tg="' + esc(String(tg)) + '"><button data-onto="1">🧩 교차로 관계 보기 <small>— 사고 → 위반 → 조문·판례 · 시설 · 과거 조치 · 비슷한 곳</small></button></div>'; }
   function ontoLoad() { if (ONQP) return ONQP; ONQP = new Promise(function (ok, no) { if (window.OntoCore) return ok(); var sc = document.createElement('script'); sc.src = 'ontology-core/query.js?v=2'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); })
-      .then(function () { return fetch('ontology-core/data/core-seocho.json').then(function (r) { return r.json(); }); }).then(function (c) { ONQ = new window.OntoCore(c); return ONQ; })
+      .then(function () { return fetch('ontology-core/data/core-seocho-map.json').then(function (r) { return r.json(); }); }).then(function (c) { ONQ = new window.OntoCore(c); return ONQ; })
       .catch(function (e) { ONQP = null; throw e; }); return ONQP; }
   function ontoPaint(box) { var a = String(box.getAttribute('data-m') || '').split(','), m = [+a[0], +a[1]], tg = box.getAttribute('data-tg'), id = tg && ONQ.get('INT-' + tg) ? 'INT-' + tg : null, bd = 80;
     if (!id) ONQ.core.objects.forEach(function (o) { if (o.t !== 'INT') return; var d = dTrue(P(o.lon, o.lat), m); if (d < bd) { bd = d; id = o.id; } });

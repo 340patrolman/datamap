@@ -5549,8 +5549,8 @@
   function orcElder(o) { var sd = orcSdK(o), pf = orcJ('data/police-func/' + sd + '.json'), rs = orcJ('data/rescue119/' + sd + '.json'); if (!pf) return null; var k = orcK(o, pf), dv = k && pf.dong[k]; if (!dv) return { obj: o.name || o.k, ch: [], none: '이 동은 경찰 기능 자료(police-func)에 없다.' };
     var K = pf.keys, va = dv[2], pop = va[K.indexOf('pop')], old = va[K.indexOf('old70')], gi = rs && rs.groups ? rs.groups.indexOf('신변·위치 확인') : -1;
     var hits = rs && gi >= 0 ? (rs.items || []).filter(function (it) { return it[9] && it[9].some(function (a) { return a[0] === k; }); }) : [];
-    var ch = [[0, '어르신 인구', '70세 이상 ' + old + '명 · 주민의 ' + (pop ? 100 * old / pop : 0).toFixed(1) + '%', 'A'], [0, '보행 사고', '보행자 피해 10년 ' + va[K.indexOf('ped10')] + '명', 'A'],
-      [1, '119 신변·위치 확인 출동', hits.map(function (it) { return it[2] + ' 한 해 ' + it[5][gi] + '건(신고→출동 가운데값 ' + orcPy(it[7]) + '분)'; }).join(' · ') || (rs ? '이 동에 걸친 법정동 자료 없음' : '119 구조 출동 자료가 없는 시도'), 'B']];
+    var ch = [[0, '어르신 인구', '70세 이상 ' + old + '명 · 주민의 ' + (pop ? 100 * old / pop : 0).toFixed(1) + '%', 'A'], [1, '보행 사고', '보행자 피해 10년 ' + va[K.indexOf('ped10')] + '명', 'A'],
+      [2, '119 신변·위치 확인 출동', hits.map(function (it) { return it[2] + ' 한 해 ' + it[5][gi] + '건(신고→출동 가운데값 ' + orcPy(it[7]) + '분)'; }).join(' · ') || (rs ? '이 동에 걸친 법정동 자료 없음' : '119 구조 출동 자료가 없는 시도'), 'B']];
     return { obj: dv[0], sub: dv[1] || '', ch: ch }; }
   function orcChase(o) { var G = NAVG, cur = G && G.L[o.ix]; if (!cur) return null; var road = cur.nm, N = G.N, seen = {}, dsum = 0, ex = [], ch = [];
     var first = function (l) { var sn = {}, fr = [[l, l.m]]; while (fr.length) { var q = fr.shift(), x = q[0]; if (sn[x.id] || q[1] > 3000) continue; sn[x.id] = 1; if (!x.rp && x.nm !== road) return x; (G.out[x.t] || []).forEach(function (y) { fr.push([y, q[1] + y.m]); }); } return null; };
@@ -5575,11 +5575,12 @@
     var m9 = t.match(/([가-힣]{2,4})\s?(씨|님|군|양)(?![가-힣])/); if (m9 && !/(장|선생|교사|기사|주임|순경|경장|경사|경위|경감|경정|관|원|사|생)$/.test(m9[1])) return '사람 이름'; return ''; }
   function orcKey(id, o) { if (id === 'march') { var x9 = ((orcJ('data/rally-seoul.json') || {}).items || [])[o.i]; return 'march|' + (x9 ? x9.d + '|' + String(x9.p || '').slice(0, 30) : o.i); } if (id === 'chase') { var l9 = NAVG && NAVG.L[o.ix]; return 'chase|' + (l9 ? l9.id : o.ix); } return id + '|' + (o.id || o.stn || o.nm || o.k || o.name || o.i); }   /* 행진은 날마다 줄 차례가 바뀌어 날짜·장소 글로 */
   function orcBadge(g, R) { return '<u class="orcg g' + esc(g) + '" title="' + esc((R && R.grade && R.grade[g]) || '') + '">' + esc(g) + '</u>'; }
+  function orcFileTxt(id, o, f) { if (id === 'night' && /dui-ref-seoul/.test(f)) return orcDuiF(o).replace('data/', ''); if (id === 'chase' && /nav-seoul/.test(f)) return 'nav-seocho · nav-arterial · nav-express(신고 차량 예측과 같은 길 그래프)'; if (/<시도>/.test(f)) { var sd9 = id === 'school' ? orcSdOf(o) : orcSdK(o); return f.replace('<시도>', sd9); } return f; }   /* v2.284.1 지도가 실제로 읽은 파일로 */
   function orcCard(it) { var R0 = JPD[ORCF]; if (!orcReady(it.r, it.o)) return '<h3>🧩 엮어서 답 찾기</h3><p class="desc">레시피와 자료를 받는 중…</p>'; if (!R0) return '<h3>🧩 엮어서 답 찾기</h3><p class="desc">레시피 파일을 못 받았다.</p>';
     var R = orcR(it.r), res = orcRun(it.r, it.o); if (!R || !res) return '<h3>🧩 엮어서 답 찾기</h3><p class="desc">이 대상을 자료에서 못 찾았다.</p><button class="orcb" data-orc="hub">← 질문 고르기</button>';
     var h = '<h3>🧩 ' + esc(R.q) + '</h3><p class="desc"><b>' + esc(res.obj) + '</b>' + (res.sub ? ' · ' + esc(res.sub) : '') + ' · 쓰는 사람 ' + esc((R.who || []).join('·')) + '</p>';
     if (res.none) return h + '<p class="desc">' + esc(res.none) + '</p><button class="orcb" data-orc="hub">← 질문 고르기</button>';
-    h += '<div class="orcs">' + res.ch.map(function (c, i) { var st = R.steps[c[0]] || {}; return '<div class="orcr"><i>' + (ORCN[i] || i + 1) + '</i><div><b>' + esc(c[1]) + '</b> ' + orcBadge(c[3], R0) + '<span>' + esc(c[2]) + '</span><small>🔗 ' + esc(st.key || '') + ' · 📁 ' + esc(st.file || '') + '</small></div></div>'; }).join('') + '</div>';
+    h += '<div class="orcs">' + res.ch.map(function (c, i) { var st = R.steps[c[0]] || {}, fl9 = orcFileTxt(it.r, it.o, st.file || ''); return '<div class="orcr"><i>' + (ORCN[i] || i + 1) + '</i><div><b>' + esc(c[1]) + '</b> ' + orcBadge(c[3], R0) + '<span>' + esc(c[2]) + '</span><small>🔗 ' + esc(st.key || '') + ' · 📁 ' + esc(fl9) + '</small></div></div>'; }).join('') + '</div>';
     h += '<p class="lg-n">등급 ' + ['A', 'B', 'C'].map(function (g) { return orcBadge(g, R0) + ' ' + esc((R0.grade || {})[g] || ''); }).join(' · ') + '</p>';
     h += '<div class="dh">⚖ 판단할 때 지킬 것</div><p class="desc">' + esc(R.judge || '') + '</p>';
     h += '<div class="dh">✅ 할 일 후보</div><ul class="lg-n">' + (R.act || []).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>';

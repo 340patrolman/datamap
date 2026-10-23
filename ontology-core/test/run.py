@@ -248,6 +248,7 @@ ck('질문15 반포지구대 — 가장 빨리 닿는 교차로 수·자기 몫�
 ck('질문14·15 — 다른 것을 물으면 null', R['q14bad'] is None and R['q15bad'] is None)
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])
+CS = J(os.path.join(CORE, 'data', 'core-seocho.json')); ck('출처마다 기준일 — 코어 sources 의 모든 파일에 asof 글이 있다(%d)' % len(CS['sources']), set(CS['asof']) == set(CS['sources']) and all(CS['asof'].values()), [k for k, v in CS['asof'].items() if not v])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))
 n = sum(1 for x in C if x[1])
 for name, ok, got in C: print(('  ✅ ' if ok else '  ❌ ') + name + (' — ' + got if got else ''))

@@ -151,6 +151,32 @@ def acl_build(obj, edge, rds, nv, ta):
         obj(cid, 'ACL', lat=c[0], lon=c[1], y0=2016, years=c[2:12], dead=c[12], serious=c[13], ped=c[14], night=c[18], tod=c[19:23], mv=c[23], mvnm=dv.get(c[23]), mvn=c[24], typ=c[25])
         edge(best[0], '사고칸', cid, 'C', 'taas10(100m 사고 칸 가운데가 구간 선 %dm 안 · 가장 가까운 구간 하나 · 방향 섞임)' % ACL_R, d=round(best[1])); n += 1
     return n
+# 출처마다 「언제의 세계인가」(2026-10-23 · 다른 AI 의견 중 받아들인 것 — 기준일 없는 값은 쓰지 않는다) — 파일 안 source·note 글에 적힌 기준을 그대로 옮긴 표 · 새 출처를 더하면 여기도 한 줄
+ASOF = {
+    'live250': '서울 생활인구 250m 격자 2026-09-07~13 한 주 평균',
+    'onto-int.json': 'T-GIS 교차로(2026-10-11 받음) · C-ITS 번호 · 행정동 경계 2026-07',
+    'sig-net-seocho.json': 'ITS 표준노드링크 2026-09-14판 · 신호 자료는 번호로 따로',
+    'taas10-seocho.json': 'TAAS 사고 2016~2025(2026-10-04 받음)',
+    'gargo-alerts-seoul.json': '무인단속카메라·어린이보호구역 표준데이터(2026-10-12~14 받음)',
+    'sig-ksc-seocho.json': '서초서 교통과 출력물 5곳(2026-09-11 판독 · 출력물마다 시행일 다름)',
+    'onto-rules.json': '규칙 장부(2026-10-18)',
+    'house-dong.json': '주민등록 세대 2026-08-31',
+    'mig-dong.json': '행정안전부 인구이동(2026-10-09 받음 · 최근 12달)',
+    'foreign-dong.json': '외국인주민 현황 2024-11-01',
+    'econ-dong.json': '국민연금 가입 사업장 2026-08',
+    'dui-ref-seoul.json': '상가정보·상권 추정매출·TAAS 2016~2025(2026-10-15 구움)',
+    'police.json': '직제 시행규칙 별표2 2026-08-31 시행 · 지구대·파출소 주소 2025-12-31 · 대표번호 2026-09-09',
+    'onto-events.json': '집회 지난 90일 · 공연 앞 90일~뒤 21일 · 돌발 2026-10-15~ 받은 기록 · 침수 2010~2025(굽는 날 기준)',
+    'season-seocho.json': '침수흔적도 2010~2025(2015·2021 없음)',
+    'sig-approach-seocho.json': 'ITS 표준노드링크 2026-09-14판',
+    'nav-seocho.json': 'ITS 표준노드링크 2026-09-14판',
+    'spd-normal-seocho.json': 'ITS 실시간 소통 2026-10-11~ 쌓음(요일 갈래 3날 미만은 잠정)',
+    'flood-link-seocho.json': '침수흔적도 2010~2025 × ITS 2026-09-14판',
+    'rd-cell-seocho.json': 'ITS 표준노드링크 2026-09-14판',
+    'jur-seocho.json': '별표2 2026-08-31 시행 · 반포 현장 기준 2026-10-04',
+    'tgis-pe.json': 'T-GIS 관할 코드 × 별표2(2026-10-18 맞춤)',
+}
+def asof_of(s): return ASOF.get(s) or (ASOF['live250'] if s.endswith('/live250.json') else ASOF['taas10-seocho.json'].replace('(2026-10-04 받음)', '(권역 저장소 판)') if s.endswith('/taas10.json') else None)
 def plc_people(O):
     """250m 칸(PLC)에 서울 생활인구(내국인) 250m 격자 값을 그대로 붙인다(속성 — 칸 번호가 열쇠 · 등급 A).
        wd/we = 평일·주말 하루 평균 0~23시(명) · ad/an = 평일 낮(11~14시)·밤(0~4시) 연령 8칸 % — data/r/<서울 구>/live250.json(tools/region/live250-bake.py)"""
@@ -339,6 +365,7 @@ def main():
     srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
+           'asof': {s: asof_of(s) for s in srcs} | {'src/tbook-law.json': 'T-Book ' + str(tl.get('ver')) + ' 범칙금 DB·원문 대조 판례'},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',
            'count': dict(collections.Counter(v['t'] for v in O.values())), 'edges_count': dict(collections.Counter(e[1] for e in E)),
            'objects': sorted(O.values(), key=lambda v: v['id']), 'edges': E}

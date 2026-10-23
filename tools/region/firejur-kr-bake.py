@@ -3,7 +3,7 @@
 #   받기: py -3.12 -X utf8 tools/region/firejur-kr-bake.py fetch   → 국가법령정보 DRF target=ordin 로 시·도마다 「안전센터」 별표를 찾아 hwp/hwpx 를 07_API키/out/fire_jur/<시도>_0.* 로
 #   굽기: py -3.12 -X utf8 tools/region/firejur-kr-bake.py         → data/fire-jur/<시도 2자리>.json + index.json
 #   관할 글은 원문 그대로(c 넷째 칸) · 행정동(읍·면·동)으로 읽은 것(d)은 따로 — 글 안의 시·군·구 이름을 따라가며 그 안의 읍·면·동 이름을 맞대고,
-#   괄호 안에 번지·리(里)가 적힌 곳은 「일부」 · 법정동으로만 적힌 곳은 data/b2a.json(서울·경기)으로 · 못 읽은 이름은 miss
+#   괄호 안에 번지·리(里)가 적힌 곳은 「일부」 · 법정동으로만 적힌 곳은 data/b2a.json(2026-10-23 전국)으로 · 못 읽은 이름은 miss
 import json, os, re, sys, glob, time, zipfile, datetime, urllib.request, urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

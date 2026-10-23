@@ -364,7 +364,7 @@ def anchors(strong=False):
 
 
 def split_write(doc):
-    """지도(폰)가 읽는 꼴 — data/sigdir/index.json(기록 its 를 뺀 나머지 + fl 교차로마다 표시 · cell 칸 크기) + data/sigdir/c/<칸>.json(그 칸 교차로들의 its).
+    """지도(폰)가 읽는 꼴 — data/sigdir/index.json(기록 its 를 뺀 나머지 + fl 교차로마다 표시 · cell 칸 크기) + data/sigdir/c/<칸>.json(그 칸 교차로들의 its · pl — pl 은 2026-10-23 부터 칸에도).
     칸 = floor(위도 / 0.03)_floor(경도 / 0.04) (약 3.3 × 3.5km) · 자리 없는 교차로는 'x'. fl 값: 1 = 다시 받아 맞은 기록(v)이 있다 · 2 = 닻(a)이 있다(더한 값).
     한 장짜리 data/sigdir-seoul.json 은 그대로 둔다. 조각은 내용이 바뀐 것만 다시 쓴다."""
     import math
@@ -378,9 +378,16 @@ def split_write(doc):
         key = '%d_%d' % (math.floor(q[0] / CELL[0]), math.floor(q[1] / CELL[1])) if q else 'x'
         cells.setdefault(key, {})[k] = L
         fl[k] = (1 if any(o.get('v') for o in L) else 0) + (2 if any(o.get('a') for o in L) else 0)
+    # 2026-10-23 계획표(pl)도 칸으로 — 색인이 2.3MB(대부분 pl)로 커져 지도·가르고가 바뀔 때마다 통째로 다시 받았다. 지금은 칸에 「더하기」만(색인 pl 도 그대로 · 읽는 쪽이 칸 pl 을 먼저 읽게 바뀐 뒤 색인에서 뺀다)
+    pls = {}
+    for k, L in (doc.get('pl') or {}).items():
+        q = pts.get(k)
+        key = '%d_%d' % (math.floor(q[0] / CELL[0]), math.floor(q[1] / CELL[1])) if q else 'x'
+        pls.setdefault(key, {})[k] = L
     nw = 0
-    for key, part in cells.items():
-        t = json.dumps({'schema': 'tg-sigdir-cell/1', 'cell': key, 'its': part}, ensure_ascii=False, separators=(',', ':'))
+    for key in sorted(set(cells) | set(pls)):
+        part = cells.get(key, {})
+        t = json.dumps({'schema': 'tg-sigdir-cell/1', 'cell': key, 'its': part, 'pl': pls.get(key, {})}, ensure_ascii=False, separators=(',', ':'))
         fp = os.path.join(d, 'c', key + '.json')
         try:
             old = open(fp, encoding='utf-8').read()
@@ -393,7 +400,7 @@ def split_write(doc):
     idx['cell'] = CELL
     idx['cells'] = {k: len(v) for k, v in sorted(cells.items())}
     idx['fl'] = fl
-    idx['fields'] = 'fl{교차로 번호: 표시(1 다시 받아 맞은 기록이 있다 + 2 닻이 있다)} · cell[위도 칸, 경도 칸] · cells{칸: 교차로 수} · 기록(its)은 c/<칸>.json 의 its{교차로 번호: [기록…]} — 칸 = floor(위도/cell[0])_floor(경도/cell[1]) · 자리 없는 교차로는 x · ' + doc.get('fields', '')
+    idx['fields'] = 'fl{교차로 번호: 표시(1 다시 받아 맞은 기록이 있다 + 2 닻이 있다)} · cell[위도 칸, 경도 칸] · cells{칸: 교차로 수} · 기록(its)은 c/<칸>.json 의 its{교차로 번호: [기록…]} · 계획표 pl 도 c/<칸>.json 의 pl{교차로 번호: […]}(2026-10-23 · 색인 pl 은 읽는 쪽이 바뀐 뒤 뺀다) — 칸 = floor(위도/cell[0])_floor(경도/cell[1]) · 자리 없는 교차로는 x · ' + doc.get('fields', '')
     ip = os.path.join(d, 'index.json')
     json.dump(idx, open(ip, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print('나눠 쓰기: 색인', os.path.getsize(ip), 'B · 칸', len(cells), '· 바뀐 칸', nw)

@@ -6,12 +6,13 @@
 #   마디(교차로)마다 「가장 가까운 관서에서 오는 시간」을 평소 / 통제 때로 구해 늘어난 초를 싣는다(제한속도 · 막힘 없음 · 신호 없음 · 회전 제한 무시 — **견주는 값이지 실제 출동 시간이 아니다**)
 #   통제된 길 위의 마디는 「닿지 못함」으로 따로 센다(물에 잠긴 자리 자체)
 #   py -3.12 -X utf8 tools/signal/flooddelay-bake.py
-import json, os, math, heapq, datetime, collections
+import json, os, sys, math, heapq, datetime, collections
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+AREA = sys.argv[1] if len(sys.argv) > 1 else 'seocho'   # seocho(종전) · six(여섯 구 · nav-six · flood-link-six · 지구대·파출소 = police.json pbox · 2026-10-23)
 def dist(a, b): return math.hypot((a[0] - b[0]) * 88800.0, (a[1] - b[1]) * 111000.0)
 def main():
-    nav = json.load(open(os.path.join(ROOT, 'data', 'nav-seocho.json'), encoding='utf-8')); N = nav['nodes']; L = nav['links']
-    FL = json.load(open(os.path.join(ROOT, 'data', 'flood-link-seocho.json'), encoding='utf-8'))['items']
+    nav = json.load(open(os.path.join(ROOT, 'data', 'nav-%s.json' % AREA), encoding='utf-8')); N = nav['nodes']; L = nav['links']
+    FL = json.load(open(os.path.join(ROOT, 'data', 'flood-link-%s.json' % AREA), encoding='utf-8'))['items']
     out = collections.defaultdict(list); lid = {}
     for i, x in enumerate(L):
         if x[5] <= 6: out[x[1]].append(i)
@@ -30,6 +31,9 @@ def main():
     box = (min(v[0] for v in N.values()), min(v[1] for v in N.values()), max(v[0] for v in N.values()), max(v[1] for v in N.values()))
     def inb(lon, lat): return lon and lat and box[0] <= lon <= box[2] and box[1] <= lat <= box[3]
     pol = [(b['name'], (b['lon'], b['lat'])) for b in P['boxes'] if inb(b.get('lon'), b.get('lat'))]
+    if AREA != 'seocho':
+        PJ = json.load(open(os.path.join(ROOT, 'data', 'police.json'), encoding='utf-8'))
+        pol = [(b[0] + ('파출소' if b[1] else '지구대'), (b[4], b[3])) for b in PJ['pbox'] if inb(b[4], b[3])]
     fire = []
     for f in A:
         if inb(f.get('lon'), f.get('lat')): fire.append((f['n'], (f['lon'], f['lat'])))
@@ -65,8 +69,8 @@ def main():
             rows.sort(key=lambda r: -((r[3] - r[2]) if r[3] >= 0 else 99999)); res[who + sc] = rows
             tot = sum(1 for k, v in N.items() if v[4] == 1 and k in D0 and str(v[2]) == '101')
             stat[who + sc] = {'교차로': tot, '닿지 못함': cut, '30~60초 늦음': late[0], '1~3분 늦음': late[1], '3분 넘게 늦음': late[2]}
-    doc = {'schema': 'tg-flood-delay/1', 'made': datetime.date.today().isoformat(), 'area': '서초구(길은 경계 밖 2km 까지)',
-           'chain': '폭우(자연) → 침수 이력 길(만든 조건) → 통제 → 돌아가는 길 → **출동 지연** — ONTOLOGY.md §0 겹을 잇는 화살표의 끝 고리 · 앞 고리는 data/flood-link-seocho.json',
+    doc = {'schema': 'tg-flood-delay/1', 'made': datetime.date.today().isoformat(), 'area': '서초구(길은 경계 밖 2km 까지)' if AREA == 'seocho' else (nav.get('area') or AREA),
+           'chain': '폭우(자연) → 침수 이력 길(만든 조건) → 통제 → 돌아가는 길 → **출동 지연** — ONTOLOGY.md §0 겹을 잇는 화살표의 끝 고리 · 앞 고리는 data/flood-link-' + AREA + '.json',
            'source': 'data/nav-seocho.json(국가교통정보센터 표준노드링크 2026-09-14판) × data/flood-link-seocho.json(서울시 침수흔적도 2010~2025) × data/police-seocho.json(지구대·파출소 %d곳) × data/agency-pts.json(소방서·119안전센터 %d곳 — 좌표가 있는 곳만)' % (len(pol), len(fire)),
            'scenarios': {'A': '침수 흔적이 두 해 이상 찍힌 구간이 모두 막힌다(되풀이 잠기는 곳) — 길 조각 %d' % len(banA), 'B': '2022년 흔적이 마지막인 구간이 모두 막힌다(2022년 8월 큰비 모양) — 길 조각 %d' % len(banB)},
            'note': ['**견주는 값이다 — 실제 출동 시간이 아니다.** 제한속도로 달리고 · 막히지 않고 · 신호가 없고 · 회전 제한을 보지 않는다고 셌다. 통제 때는 돌아가는 길도 막혀 실제로는 더 늦다',
@@ -77,7 +81,7 @@ def main():
            'fields': '{polA·polB·fireA·fireB: [[경도, 위도, 평소 초, 통제 때 초(-1 = 닿지 못함), 평소 가장 빨리 오는 관서, 통제 때 바뀐 관서(같으면 빈 글), 교차로 이름, 통제된 길에 붙어 있음 1]…]} — 30초 이상 늦어지는 교차로만 · 많이 늦는 차례',
            'stat': stat}
     doc.update(res)
-    p = os.path.join(ROOT, 'data', 'flood-delay-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    p = os.path.join(ROOT, 'data', 'flood-delay-%s.json' % AREA); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('바이트', os.path.getsize(p), '· 지구대·파출소', len(pol), '· 소방', len(fire), '· 막는 조각 A', len(banA), 'B', len(banB)); print(json.dumps(stat, ensure_ascii=False))
     for key in ('polA', 'fireA'):
         print(key, [(r[6] or '(이름 없음)', r[2], r[3], r[4], r[5]) for r in res[key] if r[6]][:10])

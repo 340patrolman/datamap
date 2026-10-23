@@ -92,6 +92,8 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var f6 = TGMap2D.orcHtml('flood', { i: 0, a: 'x' }) || { ch: [] }, f6j = f6.ch.map(function (c) { return c[0] + '=' + c[1]; }).join(' / ');
+        ck('🌧 큰비 출동 여섯 구 판 — 첫 줄 사슬(출동 늦어짐 · 평소 초 → 통제 때) · 서초·강남·송파·동작·관악·용산 (v2.286.0)', /^출동 늦어짐\(경찰 · 시나리오 A\)=.+ — 평소 \d+초 → 통제 때 /.test(f6j) && /서초·강남·송파·동작·관악·용산/.test(f6.html || ''), f6j.slice(0, 160)); } catch (e) { ck('큰비 출동 여섯 구 검사', false, e.message); }
       try { var sg9 = TGMap2D.orcHtml('school', { sd: '41', name: '수원선일초등학교' }) || { ch: [] }, sj9 = sg9.ch.map(function (c) { return c[0] + '=' + c[1]; }).join(' / ');
         ck('🎒 경기 학교 사슬 — 수원선일초 학사 일정이 경기 학교 달력(다음 큰 날)에서 · 둘레 어린이보호 CCTV 줄 · 📁 school-cal-gg.json (v2.285.0)', /학사 일정=(다음 큰 날 20|앞으로 큰 날이)/.test(sj9) && /둘레 어린이보호 CCTV\(300m\)=/.test(sj9) && /school-cal-gg\.json/.test(sg9.html || ''), sj9.slice(-160)); } catch (e) { ck('경기 학교 사슬 검사', false, e.message); }
       try { var lg0 = localStorage.getItem('tg_map2d_orclog'); localStorage.setItem('tg_map2d_orclog', JSON.stringify({ 'school|X1': [{ d: '2026-10-23', w: '하교길 서행 지도', r: '민원 "줄어듦", 확인' }] })); var hb9 = TGMap2D.orcHub() || '', cv9 = TGMap2D.orcCsv(); if (lg0 == null) localStorage.removeItem('tg_map2d_orclog'); else localStorage.setItem('tg_map2d_orclog', lg0);

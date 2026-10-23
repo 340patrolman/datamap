@@ -7,11 +7,42 @@
 #   「어디를 먼저 통제·대비하나」의 **재료**다: 잠긴 해 수(일어날 법함) × 돌아가는 부담(끊겼을 때의 아픔) × 차로(다니는 차의 양의 어림) — 한 점수로 뭉치지 않고 셋을 따로 싣는다(무게를 지어내지 않는다)
 #   범위 = 서초구 + 2km(nav-seocho.json) · 침수 흔적 자료가 든 서초 둘레
 #   py -3.12 -X utf8 tools/signal/floodlink-bake.py
-import json, os, math, heapq, datetime, collections
+import json, os, sys, math, heapq, datetime, collections
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+AREA = sys.argv[1] if len(sys.argv) > 1 else 'seocho'   # seocho(종전) · six(서초·강남·송파·동작·관악·용산 + 2km · data/nav-six.json · 2026-10-23)
+
+def raw_traces(box):   # 2026-10-23 여섯 구 판 — 서울시 침수흔적도 원자료(07_API키/out/flood/x_f*/*.shp · OA-15636)를 tools/region/season-bake.py 와 같은 법으로 읽어 20m 칸·같은 해로 묶는다 → [x, z, 해, 흔적 수, 최대 침수심]
+    import glob, re, shapefile
+    from pyproj import CRS, Transformer
+    out = {}
+    def yr_of(rec, path):
+        for k in ('F_YR', 'INV_YR'):
+            v = rec.get(k)
+            if v and re.match(r'^\d{4}', str(v)): return int(str(v)[:4])
+        m = re.search(r'(20\d\d)', os.path.basename(path)) or re.search(r'(20\d\d)', str(rec.get('F_DISA_NM') or ''))
+        return int(m.group(1)) if m else 0
+    def fx(v):
+        if not isinstance(v, str): return v
+        b = v.encode('latin1')
+        try: return b.decode('utf-8')
+        except UnicodeDecodeError: return b.decode('cp949', 'replace')
+    for shp in sorted(glob.glob(os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'flood', 'x_f*', '*.shp'))):
+        tr = Transformer.from_crs(CRS.from_wkt(open(shp[:-4] + '.prj', encoding='latin1').read()), 4326, always_xy=True)
+        r = shapefile.Reader(shp, encoding='latin1'); flds = [fx(f[0]) for f in r.fields[1:]]
+        for sr in r.iterShapeRecords():
+            if not sr.shape.points: continue
+            rec = dict(zip(flds, [fx(v) for v in sr.record])); xs = [p[0] for p in sr.shape.points]; ys = [p[1] for p in sr.shape.points]
+            lon, lat = tr.transform(sum(xs) / len(xs), sum(ys) / len(ys))
+            if not (box[0] <= lon <= box[2] and box[1] <= lat <= box[3]): continue
+            x, z = (lon - 127.01) * 88800, -(lat - 37.49) * 111000; dep = rec.get('F_SHIM'); dep = float(dep) if isinstance(dep, (int, float)) else 0; yr = yr_of(rec, shp)
+            g = out.setdefault((int(x // 20), int(z // 20), yr), [0.0, 0.0, 0, 0.0]); g[0] += x; g[1] += z; g[2] += 1; g[3] = max(g[3], dep)
+    return [[round(g[0] / g[2]), round(g[1] / g[2]), k[2], g[2], round(g[3], 2), 0, 0] for k, g in out.items()]
 def main():
-    nav = json.load(open(os.path.join(ROOT, 'data', 'nav-seocho.json'), encoding='utf-8')); N = nav['nodes']; L = nav['links']
-    se = json.load(open(os.path.join(ROOT, 'data', 'season-seocho.json'), encoding='utf-8')); TR = se['traces']
+    nav = json.load(open(os.path.join(ROOT, 'data', 'nav-%s.json' % AREA), encoding='utf-8')); N = nav['nodes']; L = nav['links']
+    if AREA == 'seocho':
+        se = json.load(open(os.path.join(ROOT, 'data', 'season-seocho.json'), encoding='utf-8')); TR = se['traces']
+    else:
+        TR = raw_traces((min(v[0] for v in N.values()) - 0.002, min(v[1] for v in N.values()) - 0.002, max(v[0] for v in N.values()) + 0.002, max(v[1] for v in N.values()) + 0.002)); print('침수 흔적(20m 칸·해)', len(TR))
     grid = collections.defaultdict(list)   # 침수 흔적을 평면 m 30m 칸에
     for x, z, yr, n, dep, cz, zn in TR: grid[(x // 30, z // 30)].append((x, z, yr, dep))
     def xz(lon, lat): return (lon - 127.01) * 88800.0, -(lat - 37.49) * 111000.0
@@ -80,9 +111,9 @@ def main():
         dt = DT[sid]; slen = round(sum(L[q][3] for q in SEC[sid])) if sid is not None else x[3]
         items.append([x[0], x[7], x[5], x[6], x[3], ny, last, dmax, cnt, -1 if dt is None else round(dt), x[12] if len(x) > 12 else '000', x[9], sid, slen, e[0]])
     items.sort(key=lambda r: (-r[5], -(r[9] if r[9] >= 0 else 9999), -r[3]))
-    doc = {'schema': 'tg-flood-link/1', 'made': datetime.date.today().isoformat(), 'area': '서초구 + 경계 밖 2km',
+    doc = {'schema': 'tg-flood-link/1', 'made': datetime.date.today().isoformat(), 'area': '서초구 + 경계 밖 2km' if AREA == 'seocho' else (nav.get('area') or AREA),
            'chain': '폭우(자연) → 침수 이력이 있는 길(만든 조건) → 통제 → 돌아가는 길(구성원의 움직임) → 출동 지연 — ONTOLOGY.md §0 의 겹을 잇는 첫 화살표',
-           'source': '서울시 침수흔적도(OA-15636 · 서울특별시 물순환안전국 치수안전과 · 2010~2025 · 2015·2021 자료 없음 · 공공누리 1유형 — data/season-seocho.json) × 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판(data/nav-seocho.json)',
+           'source': '서울시 침수흔적도(OA-15636 · 서울특별시 물순환안전국 치수안전과 · 2010~2025 · 2015·2021 자료 없음 · 공공누리 1유형 — data/season-seocho.json' + ('' if AREA == 'seocho' else ' · 여섯 구 판은 원자료 shp 를 같은 법으로') + ') × 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판(data/nav-seocho.json)',
            'note': ['침수 흔적은 **잠긴 건물·필지 범위의 가운데 점**이다 — 「그 길이 잠겼다」는 기록이 아니라 「그 길 30m 안에서 잠긴 적이 있다」다. 길 자체의 통제 기록은 공개 자료가 없다',
                     '돌아가는 부담 = 그 조각이 든 **길 한 구간(갈림길에서 갈림길까지 · 한 방향)** 이 통째로 막혔을 때 구간의 처음과 끝을 잇는 가장 빠른 다른 길이 더 걸리는 초(제한속도 · 막힘 없음 · 회전 제한을 보지 않음 — 실제보다 작게 나온다) · -1 = 15분 안에 돌아갈 길을 못 찾았거나(외길·자료의 가장자리) 구간이 40m 안 되는 교차로 안 이음이라 세지 않았다',
                     '같은 구간의 조각들은 돌아가는 부담이 같다(끝의 세 칸 — 구간 번호 · 구간 길이 · 구간의 잠긴 해 수)',
@@ -91,7 +122,7 @@ def main():
                     '도로 유형 002 = 지하차도 · 003 = 교량 · 004 = 터널(원자료 코드) — 지하차도는 얕은 침수에도 통제된다'],
            'fields': 'items[[ITS 링크 ID, 길 이름, 등급, 차로, 길이 m, 침수 흔적이 찍힌 해 수, 마지막 해, 가장 깊었던 침수심 m, 흔적 수, 돌아가는 부담 초(-1 = 돌아갈 길 없음), 도로 유형, 선 = 경도·위도×1e5 첫 점 + 차이, 구간 번호, 구간 길이 m, 구간의 잠긴 해 수(조각들 가운데 가장 큰 값)]] — 잠긴 해 수가 많은 차례',
            'items': items}
-    p = os.path.join(ROOT, 'data', 'flood-link-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    p = os.path.join(ROOT, 'data', 'flood-link-%s.json' % AREA); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('침수 흔적 30m 안 길 조각', len(rows), '· 실은 것', len(items), '· 바이트', os.path.getsize(p))
     by = collections.defaultdict(lambda: [0, 0, 0, 0.0, 0])
     for r in items:

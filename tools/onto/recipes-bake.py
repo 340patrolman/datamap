@@ -2,6 +2,7 @@
 # 엮어서 답 찾기 — 질문 레시피 (2026-10-23 소유자 「잘 모르는 사람도 데이터들을 연결해 결과를 만들어낼 수 있게 · 널려 있는 데이터를 다시 잘 엮어 · 티북과 데이터 압축지도에 녹여서」)
 #   팔란티어 방식을 네 걸음으로: ① 무엇이 있나(대상) ② 무엇과 무엇이 이어지나(같은 자리·같은 때·같은 코드) ③ 그래서 무엇을 하나(판단·할 일) ④ 해 보고 다시 적는다(조치 기록)
 #   사람은 온톨로지를 짜지 않는다 — 질문을 고르면 레시피가 이미 있는 공개 자료 파일을 차례로 엮어 「자료 → 연결 → 판단 → 할 일」 사슬을 보여 준다.
+#   (2026-10-23 큰비 출동 지연 레시피는 뺐다 — 소유자 결정 「출동 지연(관할 도달 공백)은 비공개」)
 #   정본 = 이 파일의 RECIPES · 예시 값은 굽는 순간 원자료에서 다시 센다(지어낸 값 없음) · 한 점수로 더하지 않는다(갈래마다 따로) · 「위반·위험」으로 단정하지 않는다
 # 쓰기: py -3.12 -X utf8 tools/onto/recipes-bake.py   →  data/onto-recipes.json   (걸음마다 쓴 파일·칸이 없으면 끝 코드 1)
 import json, os, sys, math, datetime
@@ -61,12 +62,6 @@ RECIPES = [
          {'n': '관할', 'file': 'dui-ref-seoul.json', 'key': '같은 줄(police.json 동 → 관서)', 'take': '관할 경찰서', 'grade': 'B'}],
      'judge': '백분위를 갈래마다 따로 보인다(합친 점수 없음). 결제한 사람이 운전한다는 뜻이 아니다 — 술자리가 몰리는 시간과 자리를 아는 바탕이다.',
      'act': ['0~6시 결제가 많은 동의 큰길 출구에서 23~02시 음주 단속 자리 검토', '밤 사고 많은 동은 순찰 경로에 넣기', '올빼미버스 하차 정류장 둘레 보행자 사고 주의']},
-    {'id': 'flood', 'q': '큰비로 길이 막히면 — 출동이 어디서 얼마나 늦나', 'who': ['지역경찰', '소방', '교통'], 'start': '교차로',
-     'steps': [
-         {'n': '늦어지는 교차로', 'file': 'flood-delay-<seocho|six>.json', 'key': '침수 통제 가정(시나리오) → 교차로마다 평소·통제 때 걸리는 초', 'take': '평소 초 · 통제 때 초 · 가장 빨리 오는 관서가 바뀌나', 'grade': 'B'},
-         {'n': '그 자리 119 센터', 'file': 'fire-jur-seoul.json', 'key': '교차로가 든 행정동 → 조례 관할 센터', 'take': '119안전센터(조례 관할 · 기계로 읽음)', 'grade': 'B'}],
-     'judge': '시나리오(통제 가정)에서 계산한 값이다 — 실제 비 때는 막히는 길이 다르다. 30초 넘게 늦어지는 교차로만 자료에 있다.',
-     'act': ['큰비 예보 때 늦어지는 교차로 둘레는 다른 관서에서 먼저 출동할 수 있게 상황실과 공유', '통제 때 닿지 못하는 교차로는 우회로를 미리 정하기']},
     {'id': 'foreign', 'q': '이 동 외국인 주민 — 어떤 외사 업무가 생길까', 'who': ['외사', '여청', '지역경찰'], 'start': '행정동',
      'steps': [
          {'n': '외국인 주민 갈래', 'file': 'foreign-dong.json', 'key': '행정동 8자리', 'take': '외국인주민 합계 · 근로자 · 결혼이민자 · 유학생 · 외국국적동포 · 자녀', 'grade': 'A'},
@@ -187,30 +182,6 @@ def run_night():
         ch.append(['올빼미버스 내리는 곳(700m)', ' · '.join('%s(한 달 하차 %s)' % (s[1], s[4 + len(nb['months']) - 1][1]) for s in stops) or '둘레에 없음', 'C'])
         ch.append(['관할', ' · '.join(x[17]) if isinstance(x[17], list) else str(x[17]), 'B'])
         out.append({'obj': x[1], 'where': [la, lo], 'chain': ch})
-    return out
-
-
-def run_flood():
-    fd = D('flood-delay-seocho.json'); fj = D('fire-jur-seoul.json')
-    out = []
-    import importlib
-    try:
-        from shapely.geometry import shape, Point
-        G = [f for f in json.load(open(os.path.join(os.path.dirname(ROOT), '13_관할경계', '원자료', 'hjd20260701.geojson'), encoding='utf-8'))['features'] if f['properties']['sgg'] == '11650']
-        polys = [(shape(f['geometry']), f['properties']) for f in G]
-    except Exception:
-        polys = []
-    rows = fd.get('polA') or []
-    need(rows, 'flood-delay polA')
-    for r in rows[:3]:
-        lo, la = r[0], r[1]
-        ch = [['출동 늦어짐(경찰 · 시나리오 A)', '%s — 평소 %s초 → 통제 때 %s · 가장 빨리 오는 곳 %s%s' % (r[6] or '이름 없는 교차로', r[2], ('닿지 못함' if r[3] == -1 else '%s초' % r[3]), r[4], (' → ' + r[5]) if r[5] else ''), 'B']]
-        hit = [p for g, p in polys if g.covers(Point(lo, la))]
-        if hit:
-            d8 = hit[0]['adm_cd2'][:8]
-            cs = fj['d'].get(d8, [])
-            ch.append(['그 자리 119(조례 관할)', '%s — %s' % (hit[0]['adm_nm'].split(' ')[-1], ' · '.join(fj['c'][c[0]][1] + (' 일부' if c[2] else '') for c in cs) or '못 읽음'), 'B'])
-        out.append({'obj': r[6] or '교차로', 'where': [la, lo], 'chain': ch})
     return out
 
 
@@ -368,7 +339,7 @@ def run_elder():
 
 
 def main():
-    ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'flood': run_flood(), 'foreign': run_foreign(), 'march': run_march(), 'biz': run_biz(), 'chase': run_chase(), 'crowd': run_crowd(), 'elder': run_elder()}
+    ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'foreign': run_foreign(), 'march': run_march(), 'biz': run_biz(), 'chase': run_chase(), 'crowd': run_crowd(), 'elder': run_elder()}
     need(all('n' in h for h in HOW), 'HOW 에 레시피가 섞임')
     ids = [r['id'] for r in RECIPES]
     need(all(k in ids for k in ex), '예시 키가 레시피에 없음 %s' % [k for k in ex if k not in ids])

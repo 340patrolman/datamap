@@ -6,6 +6,7 @@
   · 집회(data/rally-seoul.json · 신고 인원 300명 이상 · 시작·끝 시각이 있는 것) — 신고 인원은 신고한 값이지 실제 모인 수가 아니다
 를 오늘부터 60일(집회는 받아 둔 날까지) 묶는다. 사람 수를 역 혼잡 몫으로 바꾸는 식은 쓰는 쪽(가르고)에 가정값으로 둔다.
   py -3.12 -X utf8 tools/region/stnevent-bake.py        (rally-seoul·kopis 를 다시 구우면 같이 다시 — data-check 1일)
+  2026-10-23 수도권 밖도 — 역 자리에 data/stations-kr.json(서울 자료와 겹치지 않는 전국 312역)을 더하고, 공연에 data/venue-events-kopis/<시도>.json(수도권 11·41·28 밖 시도)을 더한다 · 꼴은 그대로(역 이름 열쇠가 늘 뿐)
 """
 import os, json, math, datetime
 
@@ -27,9 +28,18 @@ def main():
         if s[3]:
             b = s[1].split('(')[0]
             spots.setdefault(b, (s[3], s[4]))
+    for s in J('stations-kr.json')['items']:
+        b = str(s[0]).split('(')[0]
+        if b not in spots and s[3] is not None:
+            spots[b] = (s[3], s[2])
+    KV = list(K['venues'])
+    kdir = os.path.join(ROOT, 'data', 'venue-events-kopis')
+    for fn in (sorted(os.listdir(kdir)) if os.path.isdir(kdir) else []):
+        if fn.endswith('.json') and fn[:2].isdigit() and fn[:2] not in ('11', '41', '28'):
+            KV += json.load(open(os.path.join(kdir, fn), encoding='utf-8')).get('venues', [])
     near = lambda la, lo, r=R0: sorted([b for b, q in spots.items() if abs(q[0] - la) < 0.012 and abs(q[1] - lo) < 0.015 and dist(q[0], q[1], la, lo) < r], key=lambda b: dist(spots[b][0], spots[b][1], la, lo))
     ev, nk, nr = {}, 0, 0
-    for v in K['venues']:
+    for v in KV:
         if v.get('lat') is None:
             continue
         big = max([h[1] or 0 for h in v.get('halls', [])] + [0]) >= 1500
@@ -55,7 +65,7 @@ def main():
     for b in ev:
         ev[b].sort()
     doc = {'schema': 'tg-station-events/1', 'made': datetime.date.today().isoformat(),
-           'source': '공연 = (재)예술경영지원센터 KOPIS OpenAPI(data/venue-events-kopis.json) · 집회 = 서울특별시경찰청 「오늘의 주요집회」(data/rally-seoul.json) · 역 자리 = data/train-run-seoul.json — 굽는 도구 tools/region/stnevent-bake.py',
+           'source': '공연 = (재)예술경영지원센터 KOPIS OpenAPI(data/venue-events-kopis.json · 수도권 밖은 venue-events-kopis/<시도>.json) · 집회 = 서울특별시경찰청 「오늘의 주요집회」(data/rally-seoul.json) · 역 자리 = data/train-run-seoul.json + data/stations-kr.json(전국) — 굽는 도구 tools/region/stnevent-bake.py',
            'fields': 'ev{역 이름(괄호 앞): [[날짜, p 공연|r 집회, 시작 HH:MM, 끝 HH:MM, 사람(공연 = 그 홀 객석 · 집회 = 신고 인원), 이름]]} — 역 500m 안(1,500석 넘는 홀이 있는 공연장은 1km) · 공연은 객석 %d석 이상 · 집회는 신고 %d명 이상' % (SEATS, PEOPLE),
            'note': ['객석은 다 찬다고 본 위쪽 끝이다 · 신고 인원은 실제 모인 수가 아니다 — 쓰는 쪽에서 가정값으로 줄여 쓴다', '집회는 경찰청이 올린 「주요 집회」만 · 받아 둔 날(rally-seoul collected)까지만', '공연 끝 시각은 시작 + 공연 시간(KOPIS 칸)으로 셈한 값'],
            'range': [t0, last], 'ev': ev}

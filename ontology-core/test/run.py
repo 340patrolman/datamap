@@ -242,7 +242,7 @@ for tg in (521, 548, 1026, 324):
         if e_ != (x['s0'], x['s8'], x['s18']): ok = False; got.append((x['nm'], e_, (x['s0'], x['s8'], x['s18'])))
     ck('질문14 %s — 지구대 세 곳의 제한속도·8시·18시 초가 길에서 따로 찾은 값과 같다 · 시각마다 짧은 차례' % Q_['a']['nm'], ok and all([y[k] for y in Q_[c]['list']] == sorted(y[k] for y in Q_[c]['list']) for c, k in (('a', 's0'), ('b', 's8'), ('c', 's18'))), got[:2] or [(Q_['c']['fastest']['nm'], Q_['c']['fastest']['s18'], Q_['c']['nearestOwn'])])
 RCH = {k_: v_ for k_, v_ in J(os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'onto', 'onto-reach-seocho.json'))['items'].items() if v_}
-ck('도착 — 공개 코어에는 「도착」 링크가 없고 비공개 전체 판에만 있다 · datamap/data 에 onto-reach 파일이 없다', R['priv']['has'] and R['priv']['pubArrive'] == 0 and not glob.glob(os.path.join(D, 'onto-reach-*.json')), R['priv'])
+ck('비공개 — 공개 코어에 「도착」 없음(비공개 전체 판에만) · datamap/data 에 onto-reach·flood-delay 파일 없음 · 결정 큰비에 교차로별 지연 값 없음', R['priv']['has'] and R['priv']['pubArrive'] == 0 and not glob.glob(os.path.join(D, 'onto-reach-*.json')) and not glob.glob(os.path.join(D, 'flood-delay-*.json')) and 'top' not in json.dumps(J(os.path.join(D, 'decide-seocho.json'))['d4']['delay']), R['priv'])
 ck('질문14 — 도착은 교차로마다 다섯 이하 · 도착 자료가 있는 교차로 수가 onto-reach 와 같다(%d곳 · 길 노드에 못 붙은 작은 길 교차로·닿는 관서가 없는 곳은 빠짐)' % len(RCH), R['nArrInt'] == len(RCH) and R['nArrive'] == sum(len(v_) for v_ in RCH.values()), (R['nArrInt'], R['nArrive']))
 ck('질문15 반포지구대 — 가장 빨리 닿는 교차로 수·자기 몫인데 다른 곳이 빠른 곳이 질문14 를 모은 것과 같다', R['q15']['nFirst'] == len(R['q15']['first']) and R['q15']['under3min'] <= R['q15']['nFirst'], (R['q15']['nFirst'], R['q15']['under3min'], len(R['q15']['slowerOwn'])))
 ck('질문14·15 — 다른 것을 물으면 null', R['q14bad'] is None and R['q15bad'] is None)

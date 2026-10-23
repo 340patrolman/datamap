@@ -81,7 +81,8 @@ def main():
            'fields': '{polA·polB·fireA·fireB: [[경도, 위도, 평소 초, 통제 때 초(-1 = 닿지 못함), 평소 가장 빨리 오는 관서, 통제 때 바뀐 관서(같으면 빈 글), 교차로 이름, 통제된 길에 붙어 있음 1]…]} — 30초 이상 늦어지는 교차로만 · 많이 늦는 차례',
            'stat': stat}
     doc.update(res)
-    p = os.path.join(ROOT, 'data', 'flood-delay-%s.json' % AREA); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    od = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'onto'); os.makedirs(od, exist_ok=True)   # 비공개 — 소유자 2026-10-23 「flood-delay 도 비공개로」(관할 도달 공백이 드러나는 자료 · 공개 저장소에 두지 않는다)
+    p = os.path.join(od, 'flood-delay-%s.json' % AREA); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('바이트', os.path.getsize(p), '· 지구대·파출소', len(pol), '· 소방', len(fire), '· 막는 조각 A', len(banA), 'B', len(banB)); print(json.dumps(stat, ensure_ascii=False))
     for key in ('polA', 'fireA'):
         print(key, [(r[6] or '(이름 없음)', r[2], r[3], r[4], r[5]) for r in res[key] if r[6]][:10])

@@ -69,7 +69,7 @@ def main():
     for sc in ('polA', 'polB'):
         dly[sc[-1]] = {'what': Dl['scenarios'][sc[-1]], 'stat': Dl['stat'][sc], 'trapN': sum(1 for x in Dl[sc] if x[3] < 0 and not x[7])}   # 교차로별 값(top·trap)은 관할 도달 공백이 드러나 공개하지 않는다
     doc = {'schema': 'tg-decide/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
-           'source': 'ontology-core/data/core-seocho.json(TAAS 2016~2025 · 경찰 단속 카메라 · 어린이보호구역 · 다음 신호 · T-Book 범칙금 DB·판례) · data/hot10-seocho.json(TAAS 다발지) · dui-catch-st.json(경찰청 음주운전 적발 2020~2024) · dui-ref-seoul.json · rally-seoul.json(서울경찰청 오늘의 주요집회) · venue-events-kopis.json(KOPIS) · flood-link-seocho.json(서울시 침수흔적도 × ITS) · flood-delay-seocho.json',
+           'source': 'ontology-core/data/core-seocho.json(TAAS 2016~2025 · 경찰 단속 카메라 · 어린이보호구역 · 다음 신호 · T-Book 범칙금 DB·판례) · data/hot10-seocho.json(TAAS 다발지) · dui-catch-st.json(경찰청 음주운전 적발 2020~2024) · dui-ref-seoul.json · rally-seoul.json(서울경찰청 오늘의 주요집회) · venue-events-kopis.json(KOPIS) · flood-link-seocho.json(서울시 침수흔적도 × ITS) · 출동 지연 모은 수(비공개 07_API키/out/onto/flood-delay-seocho.json)',
            'note': ['결정 넷(D1 어디 설까 · D2 음주 단속 · D3 집회·행사 · D4 큰비)이 읽는 값 — 원자료 값 그대로 · 순위는 지도가 결정마다 잣대 하나로',
                     '사고 = 교차로 70m 안 100m 칸 합(근사 · 가까운 교차로끼리 겹침) · 시간대 넷 = 0~6 · 6~12 · 12~18 · 18~24',
                     '음주 적발 = 단속한 만큼 나온다(일어난 수가 아님) · 요일 0 = 일요일',

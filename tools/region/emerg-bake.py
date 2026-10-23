@@ -54,7 +54,7 @@ def main():
         except Exception: pass
     items = [[k[0], k[1], k[2], sum(d['h']), d['h'], d['g'], d['t'], (round(statistics.median(d['m']), 1) if len(d['m']) >= 20 else None)] for k, d in sorted(D.items()) if k[2]]
     B = json.load(open(os.path.join(ROOT, 'data', 'b2a.json'), encoding='utf-8'))['b2a']; GN = {g['gu']: g['name'].replace(' ', '') for g in json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))['gus']}; BK = {}
-    for c, v in B.items(): BK[(c[:2], GN.get(v['gu'], ''), v['n'])] = [c, [[a[0], a[2]] for a in v['a'][:3]]]
+    for c, v in B.items(): BK[(c[:2], GN.get(v['gu'], ''), v['n'])] = [c, [[a[0], a[2]] for a in v['a']]]
     hit = 0
     for it in items:
         m = BK.get(({'서울': '11', '경기': '41', '인천': '28'}[it[0]], it[1].replace(' ', ''), it[2])); it.append(m[0] if m else None); it.append(m[1] if m else None); hit += 1 if m else 0
@@ -66,7 +66,7 @@ def main():
                     '「화재」 갈래는 화재 현장에 구조대가 같이 나간 건(화재확인 포함)이라 화재 발생 건수가 아니다',
                     '신고 → 출동 시간(분)은 그 동의 가운데값이고 20건이 안 되는 동은 null — 「도착」 시간이 아니다(출동 지령까지)',
                     '시각 칸이 깨진 %d줄은 뺐다' % bad],
-           'fields': {'groups': '갈래 여섯(이 차례)', 'sido': '{시도: {h [시 0~23 건수], g [갈래 6][시 0~23]}}', 'items': '[[시도, 시군구, 법정동, 한 해 건수, 시간대별 건수[24], 갈래별 건수[6], 교통 갈래의 시간대별 건수[24], 신고→출동 가운데값(분) 또는 null, 법정동 8자리 코드 또는 null, [[이 법정동이 걸친 행정동 8자리, 넓이 %]…넓은 셋] 또는 null(b2a.json · 서울·경기만 — 인천과 이름이 안 맞은 동은 null)]]'},
+           'fields': {'groups': '갈래 여섯(이 차례)', 'sido': '{시도: {h [시 0~23 건수], g [갈래 6][시 0~23]}}', 'items': '[[시도, 시군구, 법정동, 한 해 건수, 시간대별 건수[24], 갈래별 건수[6], 교통 갈래의 시간대별 건수[24], 신고→출동 가운데값(분) 또는 null, 법정동 8자리 코드 또는 null, [[이 법정동이 걸친 행정동 8자리, 넓이 %]…넓은 차례 · 2% 밑은 b2a 가 버림] 또는 null(b2a.json · 서울·경기만 — 인천과 이름이 안 맞은 동은 null)]]'},
            'groups': GRP, 'sido': {k: {'h': ALLH[k], 'g': ALLG[k]} for k in ALLH}, 'items': items}
     # 전국(2026-10-13 소유자 「기회될 때 전국으로」) — 시도마다 한 장 data/rescue119/<지도의 시도 코드>.json · 꼴은 한 장과 같다(법정동 코드·행정동 겹침은 b2a 가 서울·경기뿐이라 그 밖은 null). 옛 한 장은 서울·경기·인천 그대로
     NAT = {'서울특별시': '11', '부산광역시': '26', '대구광역시': '27', '인천광역시': '28', '광주광역시': '12', '대전광역시': '30', '울산광역시': '31', '세종특별자치시': '36', '경기도': '41', '강원특별자치도': '51', '충청북도': '43', '충청남도': '44', '전북특별자치도': '52', '전라남도': '12', '전남광주통합특별시': '12', '경상북도': '47', '경상남도': '48', '제주특별자치도': '50'}

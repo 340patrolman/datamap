@@ -5,3 +5,6 @@ data/r/index.json
 data/r/manifest-*.json
 data/base/t/
 __pycache__/
+
+# 비공개 — 온톨로지 전체 판(도착 시간 포함 · 소유자 2026-10-23 「공개 저장소에서 빼고 비공개 쪽에만」)
+ontology-core/data/private/

@@ -28,7 +28,7 @@
         여섯 구에서도 인접(sig-net)·조치(교통과 출력물)는 서초에만 있다
 """
 import json, os, re, math, hashlib, datetime, collections, sys
-CORE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(CORE); D = os.path.join(ROOT, 'data')
+CORE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(CORE); D = os.path.join(ROOT, 'data'); PRIV = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'onto')
 def J(p): return json.load(open(p, encoding='utf-8'))
 def m(la1, lo1, la2, lo2): return math.hypot((lo1 - lo2) * 88400.0, (la1 - la2) * 111000.0)
 GU = '11650'
@@ -214,14 +214,15 @@ def sta_build(obj, edge, INTs):
             k, b = min(bs, key=lambda kb: (m(it['lat'], it['lon'], kb[1][3], kb[1][4]), kb[0]))
             edge(it['id'], '가까운지구대', 'PBX-%d' % k, 'C', '그 관할서의 지구대·파출소 가운데 가장 가까운 곳(관할 경계 비공개 — 근사)', d=round(m(it['lat'], it['lon'], b[3], b[4])))
     # 도착(2026-10-23 엮임 지도 일곱째) — data/onto-reach-<area>.json(tools/onto/reach-bake.py): 교차로마다 s0 가 짧은 지구대·파출소 다섯 곳 · 근사 C
-    RC = J(os.path.join(D, 'onto-reach-%s.json' % AREA))['items']
+    rp = os.path.join(PRIV, 'onto-reach-%s.json' % AREA)   # 비공개(소유자 2026-10-23 「도착 시간 자료는 공개 저장소에서 빼고 비공개 쪽에만」) — 없으면 도착 없이 굽는다
+    RC = J(rp)['items'] if os.path.exists(rp) else {}
     for it in INTs:
         for r, row in enumerate(RC.get(it['id'][4:], [])):
             k, s0, s8, s18, c8, c18 = row; b = P['pbox'][k]
             if b[6] not in seen:
                 seen.add(b[6]); s_ = sta(b[6])
                 for k2, b2 in boxes.get(b[6], []): edge(pbx(k2, b2), '소속', s_, 'A', '경찰청 전국 지구대·파출소 주소 현황(police.json pbox)')
-            edge(it['id'], '도착', 'PBX-%d' % k, 'C', 'onto-reach-%s.json(ITS 길 · 제한속도 / 평소 속도 + eta-cal 배율 · 견주는 값 — 실제 출동 시간 아님)' % AREA, r=r, s0=s0, s8=s8, s18=s18, c8=c8, c18=c18)
+            edge(it['id'], '도착', 'PBX-%d' % k, 'C', '07_API키/out/onto/onto-reach-%s.json(비공개 · ITS 길 · 제한속도 / 평소 속도 + eta-cal 배율 · 견주는 값 — 실제 출동 시간 아님)' % AREA, r=r, s0=s0, s8=s8, s18=s18, c8=c8, c18=c18)
 def O_STA_NM(n, P): return next(x[1] for x in P['stations'] if x[0] == n)
 def dng_build(O, obj, rows):
     hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
@@ -335,12 +336,18 @@ def main():
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
     pplf = plc_people(O)
-    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'onto-reach-%s.json' % AREA]
+    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',
            'count': dict(collections.Counter(v['t'] for v in O.values())), 'edges_count': dict(collections.Counter(e[1] for e in E)),
            'objects': sorted(O.values(), key=lambda v: v['id']), 'edges': E}
+    # 비공개 전체 판(도착 포함) → ontology-core/data/private/(git 밖 · .gitignore) · 공개 판은 「도착」 링크를 뺀다(소유자 2026-10-23)
+    PRIV_REL = {'도착'}; os.makedirs(os.path.join(CORE, 'data', 'private'), exist_ok=True)
+    rp = os.path.join(PRIV, 'onto-reach-%s.json' % AREA)
+    full = dict(doc, private='비공개 전체 판 — 공개 판에 없는 링크 ' + ','.join(sorted(PRIV_REL)), sources=dict(doc['sources'], **({'07_API키/out/onto/onto-reach-%s.json' % AREA: hashlib.sha256(open(rp, 'rb').read()).hexdigest()[:16]} if os.path.exists(rp) else {})))
+    json.dump(full, open(os.path.join(CORE, 'data', 'private', OUTF[:-5] + '-full.json'), 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    E = [e for e in E if e[1] not in PRIV_REL]; doc = dict(doc, edges=E, edges_count=dict(collections.Counter(e[1] for e in E)))
     os.makedirs(os.path.join(CORE, 'data'), exist_ok=True); p = os.path.join(CORE, 'data', OUTF)
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print(doc['count'], doc['edges_count'], os.path.getsize(p), 'B')

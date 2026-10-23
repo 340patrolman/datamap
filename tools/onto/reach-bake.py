@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 데이터 압축지도 — 온톨로지 「지구대·파출소 → 교차로 도착 시간」 한 장 → data/onto-reach-<area>.json (tg-onto-reach/1)
+# 데이터 압축지도 — 온톨로지 「지구대·파출소 → 교차로 도착 시간」 한 장 → 07_API키/out/onto/onto-reach-<area>.json (tg-onto-reach/1 · **비공개** — 소유자 2026-10-23 「공개 저장소에서 빼고 비공개 쪽에만」 · 관할 도달 공백이 드러나는 자료)
 #   소유자 2026-10-23 「권고대로 지구대에서 교차로까지 도착 가능 시간을 잇는 것 진행」(엮임 지도 일곱째)
 #   길 = data/nav-<area>.json(ITS 표준노드링크 · 방향 지킴) · 출발 = data/police.json pbox(경찰청 지구대·파출소 주소 현황) · 도착 = data/onto-int.json 교차로(그 자리에서 가장 가까운 들어오는 링크가 있는 노드)
 #   시간 셋(링크마다 따로 셈 · 길도 따로 찾음):
@@ -87,7 +87,8 @@ def main():
                     '출발 = 관서 청사 자리(순찰 중인 차는 세지 않음) · 평소 속도는 2026-10-11 부터 쌓은 것이라 요일 갈래마다 날 수가 적으면 잠정(spd-normal provisional)',
                     '관할이 아니라 「가장 빨리 닿는 곳」 차례다 — 법정 관할·출동 배정과 다를 수 있다'],
            'count': {'관서': len(boxes), '교차로': len(ints)}, 'snap': snapd, 'items': items}
-    p = os.path.join(D, 'onto-reach-%s.json' % AREA); json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
+    od = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'onto'); os.makedirs(od, exist_ok=True)   # 비공개 — 공개 저장소에 두지 않는다(소유자 2026-10-23)
+    p = os.path.join(od, 'onto-reach-%s.json' % AREA); json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
     print('onto-reach-%s.json' % AREA, doc['count'], os.path.getsize(p) // 1024, 'KB')
 
 

@@ -23,7 +23,7 @@ SETS = [
     ['data/cctv-utic-seoul.json', 7, 'auto', '교차로 CCTV 목록(UTIC · 서울 TOPIS) — `py -3.12 -X utf8 tools/region/utic-cctv-bake.py fetch` → `build --publish`(이 PC IP 에서만 · **하루 1번 넘게 부르지 않는다** — 1초 5회면 IP 차단) → 커밋 · 출처 「경찰청 도시교통정보센터(UTIC)」 표기 유지'],
     ['data/eta-cal.json', 7, 'auto', '막힘 배율(ITS 실측 · 2026-10-15 첫 판 5일치 · 토요일 칸 빔) — `py -3.12 -X utf8 tools/signal/etacal-its.py --bake`(07_API키/out/livespd 가 쌓인 만큼 · 1분) → ai-guide-bake → 커밋 · 배율이 크게 바뀌면 MAP2D 에 한 줄'],
     ['data/station-events.json', 1, 'auto', '역 둘레 큰 행사(공연 끝·집회 · 가르고 「열차 안 신고」 혼잡 가산) — rally-seoul 다음에 `py -3.12 -X utf8 tools/region/stnevent-bake.py`(1초) → ai-guide-bake → 커밋'],
-    ['data/rally-seoul.json', 1, 'auto', '서울경찰청 「오늘의 주요집회」 날마다(전날 올라옴) — `py -3.12 -X utf8 tools/region/rally-bake.py`(새 글만 받음 · 지난 90일 · 자리 = 지하철 출입구·브이월드 장소 검색·동 가운데) → ai-guide-bake → 커밋'],
+    ['data/rally-seoul.json', 1, 'auto', '서울경찰청 「오늘의 주요집회」 날마다(전날 올라옴) — `py -3.12 -X utf8 tools/region/rally-bake.py`(새 글만 받음 · 지난 90일 · 자리 = 지하철 출입구·브이월드 장소 검색·동 가운데 · 끝에서 data/rally-seocho.ics 도 굽는다) → ai-guide-bake → 커밋'],
     ['data/r/41111/lamp.json', 183, 'hand', '경기데이터드림 시트 다시 받기(regionwork/ggsheet.py) → `tools/region/gg-life-bake.py`(AED·화장실·주차장·충전소·응급·축제·보안등)'],
     ['data/r/11680/fac.json', 365, 'auto', 'KOSIS 서울 동별 사업체(해마다 새 해) — `tools/region/biz10-bake.py fetch` → `build`(fac-bake 다음)'],
     ['data/r/11650/itscctv.json', 30, 'auto', 'ITS CCTV 목록(영상 주소) — `tools/region/itscctv-bake.py fetch` → `build`(ITS 2건) · 지도에서 영상이 안 열리면 더 자주'],

@@ -1,0 +1,165 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//340patrolman//datamap rally-seocho//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:서초·방배 주요집회(경찰청 공개)
+X-WR-TIMEZONE:Asia/Seoul
+X-WR-CALDESC:서울경찰청 「오늘의 주요집회」 게시판 글 중
+  관할서에 서초·방배가 든 것 · 받은 날 2026-10-23 · 주요
+  집회만(모든 집회 아님) · 인원은 신고값 · 바뀌거나 
+ 안 열릴 수 있음
+REFRESH-INTERVAL;VALUE=DURATION:PT6H
+X-PUBLISHED-TTL:PT6H
+BEGIN:VEVENT
+UID:rally-2026-09-24-6517affef4@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20260924T040000Z
+DTEND:20260924T060000Z
+SUMMARY:집회 행진 강남역 11출->정곡빌딩 남관(100명)
+LOCATION:강남역 11출->정곡빌딩 남관 <서초대로 등>
+DESCRIPTION:장소(원문): 강남역 11출->정곡빌딩 남관 <서초대
+ 로 등>\n신고 인원: 100명\n관할(원문): 강남\, 서초\n시각(
+ 원문): 13:00~15:00\n행진(장소 글에 「->」)\n출처: 서울경찰
+ 청 「오늘의 주요집회」 www.smpa.go.kr/user/nd54882.do\n주요 
+ 집회만 · 신고값 · 바뀌거나 안 열릴 수 있음
+TRANSP:TRANSPARENT
+GEO:37.497745;127.027769
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-09-28-0686ac4707@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20260928T060000Z
+DTEND:20260928T090000Z
+SUMMARY:집회 교대역 7출 앞(1\,000명)
+LOCATION:교대역 7출 앞 <서초동>
+DESCRIPTION:장소(원문): 교대역 7출 앞 <서초동>\n신고 인원: 
+ 1\,000명\n관할(원문): 서초\n시각(원문): 15:00~18:00\n출처: 
+ 서울경찰청 「오늘의 주요집회」 www.smpa.go.kr/user/nd54882.d
+ o\n주요 집회만 · 신고값 · 바뀌거나 안 열릴 수 있음
+TRANSP:TRANSPARENT
+GEO:37.492975;127.013814
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-09-29-c889082828@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20260929T060000Z
+DTEND:20260929T090000Z
+SUMMARY:집회 교대역 7出 앞 이면도로(1\,000명)
+LOCATION:교대역 7出 앞 이면도로 <서초동>
+DESCRIPTION:장소(원문): 교대역 7出 앞 이면도로 <서초동>\n
+ 신고 인원: 1\,000명\n관할(원문): 서초\n시각(원문): 15:00~18
+ :00\n출처: 서울경찰청 「오늘의 주요집회」 www.smpa.go.kr/u
+ ser/nd54882.do\n주요 집회만 · 신고값 · 바뀌거나 안 열릴 
+ 수 있음
+TRANSP:TRANSPARENT
+GEO:37.494002;127.014313
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-10-10-817c72a2bb@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20261010T050000Z
+DTEND:20261010T060000Z
+SUMMARY:집회 신논현역 7出 교대역 7出(100명)
+LOCATION:신논현역 7出 교대역 7出 <강남대로 등>
+DESCRIPTION:장소(원문): 신논현역 7出 교대역 7出 <강남대로 
+ 등>\n신고 인원: 100명\n관할(원문): 강남·서초\n시각(원문
+ ): 14:00~15:00\n출처: 서울경찰청 「오늘의 주요집회」 www.s
+ mpa.go.kr/user/nd54882.do\n주요 집회만 · 신고값 · 바뀌거나 
+ 안 열릴 수 있음
+TRANSP:TRANSPARENT
+GEO:37.502952;127.025015
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-10-10-f49d1f0a10@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20261010T050000Z
+DTEND:20261010T070000Z
+SUMMARY:집회 파고다타워 신논현역(200명)
+LOCATION:파고다타워 신논현역 <강남대로 등>
+DESCRIPTION:장소(원문): 파고다타워 신논현역 <강남대로 등>
+ \n신고 인원: 200명\n관할(원문): 강남·서초·수서\n시각(
+ 원문): 14:00~16:00\n출처: 서울경찰청 「오늘의 주요집회」
+  www.smpa.go.kr/user/nd54882.do\n주요 집회만 · 신고값 · 바뀌
+ 거나 안 열릴 수 있음
+TRANSP:TRANSPARENT
+GEO:37.499813;127.026240
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-10-10-4e178e202e@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20261010T080000Z
+DTEND:20261010T103000Z
+SUMMARY:집회 서초역 8出 CGV 강남(500명)
+LOCATION:서초역 8出 CGV 강남 <강남대로 등>
+DESCRIPTION:장소(원문): 서초역 8出 CGV 강남 <강남대로 등>\n
+ 신고 인원: 500명\n관할(원문): 강남·서초\n시각(원문): 17:
+ 00~19:30\n출처: 서울경찰청 「오늘의 주요집회」 www.smpa.go
+ .kr/user/nd54882.do\n주요 집회만 · 신고값 · 바뀌거나 안 열
+ 릴 수 있음
+TRANSP:TRANSPARENT
+GEO:37.492114;127.008038
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-10-16-3bf1a2df2f@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20261016T013000Z
+DTEND:20261016T040000Z
+SUMMARY:집회 정곡빌딩 남관 앞 1개 차로(300명)
+LOCATION:정곡빌딩 남관 앞 1개 차로 <서초동>
+DESCRIPTION:장소(원문): 정곡빌딩 남관 앞 1개 차로 <서초동>
+ \n신고 인원: 300명\n관할(원문): 서초\n시각(원문): 10:30~13:
+ 00\n출처: 서울경찰청 「오늘의 주요집회」 www.smpa.go.kr/us
+ er/nd54882.do\n주요 집회만 · 신고값 · 바뀌거나 안 열릴 
+ 수 있음
+TRANSP:TRANSPARENT
+GEO:37.493895;127.011022
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-10-17-96caeeeec7@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20261017T050000Z
+DTEND:20261017T080000Z
+SUMMARY:집회 행진 파고다타워 -> 교대역 7出(1\,000명)
+LOCATION:파고다타워 -> 교대역 7出 <강남대로 등>
+DESCRIPTION:장소(원문): 파고다타워 -> 교대역 7出 <강남대로
+  등>\n신고 인원: 1\,000명\n관할(원문): 강남\, 서초\n시각(
+ 원문): 14:00~17:00\n행진(장소 글에 「->」)\n출처: 서울경찰
+ 청 「오늘의 주요집회」 www.smpa.go.kr/user/nd54882.do\n주요 
+ 집회만 · 신고값 · 바뀌거나 안 열릴 수 있음
+TRANSP:TRANSPARENT
+GEO:37.499813;127.026240
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-10-19-d1ac6a71e1@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20261019T050000Z
+DTEND:20261019T063000Z
+SUMMARY:집회 행진 더베이스 서초빌딩 앞 -> 신논현역 5出(10
+ 0명)
+LOCATION:더베이스 서초빌딩 앞 -> 신논현역 5出 <서초대로 
+ 등>
+DESCRIPTION:장소(원문): 더베이스 서초빌딩 앞 -> 신논현역 5
+ 出 <서초대로 등>\n신고 인원: 100명\n관할(원문): 강남\, 
+ 서초\n시각(원문): 14:00~15:30\n행진(장소 글에 「->」)\n출
+ 처: 서울경찰청 「오늘의 주요집회」 www.smpa.go.kr/user/nd54
+ 882.do\n주요 집회만 · 신고값 · 바뀌거나 안 열릴 수 있
+ 음
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:rally-2026-10-20-cda1d4be42@340patrolman.datamap
+DTSTAMP:20261023T034527Z
+DTSTART:20261020T064000Z
+DTEND:20261020T080000Z
+SUMMARY:집회 행진 교대역 5出 -> 신논현역 5出(100명)
+LOCATION:교대역 5出 -> 신논현역 5出 <서초대로 등>
+DESCRIPTION:장소(원문): 교대역 5出 -> 신논현역 5出 <서초대
+ 로 등>\n신고 인원: 100명\n관할(원문): 강남\, 서초\n시각(
+ 원문): 15:40~17:00\n행진(장소 글에 「->」)\n출처: 서울경찰
+ 청 「오늘의 주요집회」 www.smpa.go.kr/user/nd54882.do\n주요 
+ 집회만 · 신고값 · 바뀌거나 안 열릴 수 있음
+TRANSP:TRANSPARENT
+GEO:37.493705;127.014356
+END:VEVENT
+END:VCALENDAR

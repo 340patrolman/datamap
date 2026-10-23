@@ -140,6 +140,7 @@ def main(days):
     print('집회', len(items), '건 ·', doc['range'], '· 날', len(ds), '· 자리 찾음', got, '(정확', sum(1 for i in items if i.get('approx') == 0), '· 근사', sum(1 for i in items if i.get('approx') == 1), ') · 못 찾음', len(items) - got, '·', os.path.getsize(p) // 1024, 'KB', '· 브이월드 한도' if VW_OFF[0] else '')
 if __name__ == '__main__':
     main(int(sys.argv[1]) if len(sys.argv) > 1 else 90)
+    import runpy; runpy.run_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rally-ics.py'), run_name='__main__')   # 서초·방배 집회 캘린더 구독 파일(data/rally-seocho.ics · 2026-10-23)
     # (2026-10-15 게임 세션 부탁) 가르고 「열차 안 신고」가 읽는 역 둘레 큰 행사(data/station-events.json)를 이어서 다시 굽는다 — 집회가 바뀌면 같이
     import subprocess
     r = subprocess.run([sys.executable, '-X', 'utf8', os.path.join(ROOT, 'tools', 'region', 'stnevent-bake.py')], cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='ignore')

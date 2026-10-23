@@ -193,7 +193,12 @@ def main():
     rj = json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))['gus']
     spec = dict(size=site_sizes(), gus=len(rj), sidos=len(set(g['sido'] for g in rj)), dongs=sum(g.get('n', 0) for g in rj), platform=PLATFORM,
                 update='공공기관이 새 자료를 올리면(날마다·달마다·분기·해마다 — 자료마다 다름) 받아서 다시 굽고 지도에 올린다 · 실시간 층은 켤 때마다 그 자리에서 묻는다 · 자료마다 기준일은 카드와 자료 목록에 적혀 있다')
-    out = {'schema': 'tg-guide/1', 'made': datetime.date.today().isoformat(), 'ver': ver, 'about': ABOUT, 'police': POLICE, 'howto': HOWTO, 'infer': INFER, 'spec': spec, 'tasks': TASKS, 'tools': tools, 'cats': cats, 'layers': layers, 'help': helps, 'where': where, 'files': files,
+    try:
+        orc = json.load(open(os.path.join(ROOT, 'data', 'onto-recipes.json'), encoding='utf-8'))
+        orc = {'how': orc['how'], 'grade': orc['grade'], 'note': orc.get('note', []), 'recipes': [{k: r[k] for k in ('id', 'q', 'who', 'start', 'steps', 'judge', 'act')} for r in orc['recipes']], 'ex': {k: v[:1] for k, v in orc.get('examples', {}).items()}}
+    except Exception:
+        orc = None   # v2.278.0 🧩 엮어서 답 찾기 — 레시피 파일 그대로(다른 세션 tools/onto/recipes-bake.py)
+    out = {'schema': 'tg-guide/1', 'made': datetime.date.today().isoformat(), 'ver': ver, 'about': ABOUT, 'police': POLICE, 'onto': orc, 'howto': HOWTO, 'infer': INFER, 'spec': spec, 'tasks': TASKS, 'tools': tools, 'cats': cats, 'layers': layers, 'help': helps, 'where': where, 'files': files,
            'n': {'layers': len(layers), 'help': sum(1 for k2 in layers if k2 in helps), 'files': len(files)}}
     json.dump(out, open(os.path.join(ROOT, 'data', 'guide.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     miss = [k2 for k2 in layers if k2 not in helps]

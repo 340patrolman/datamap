@@ -46,7 +46,7 @@
 <header>
   <div class="hd"><h1>📖 데이터 압축지도 사용설명서</h1><a href="./">← 지도로</a></div>
   <div class="sr"><input id="q" type="search" placeholder="찾기 — 예: 신호, 사고, 관할, 반려동물, 침수, 매출" autocomplete="off"></div>
-  <nav><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#police">👮 경찰 통계</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
+  <nav><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#police">👮 경찰 통계</a><a href="#onto">🧩 엮어서 답 찾기</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
 </header>
 <main id="main"><p class="empty">설명서를 읽는 중…</p></main>
 <script>
@@ -81,6 +81,14 @@
       if (pd.length) ph += '<h3>견줄 것(분모) — 무엇으로 나누나</h3><table class="spec"><tbody>' + pd.map(function (t) { return '<tr><th>' + esc(t[0]) + '</th><td>' + esc(t[1]) + '</td></tr>'; }).join('') + '</tbody></table>';
       if (!w) ph += '<h3>읽을 때 주의</h3><ul>' + PO.limits.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
       if (ph) h += '<section id="police"><h2>👮 경찰 통계·기능별 분석</h2>' + ph + '</section>'; }
+    /* 0-3 🧩 엮어서 답 찾기 — 네 걸음 (2026-10-23 · data/onto-recipes.json) */
+    if (G.onto) { var O = G.onto, oh = '', orr = O.recipes.filter(function (r) { return hit(r.q + ' ' + r.steps.map(function (s) { return s.n + ' ' + s.file; }).join(' ') + ' ' + r.act.join(' '), w); });
+      if (!w) oh += '<p class="lead"><b>온톨로지(팔란티어 방식)를 몰라도 된다.</b> 지도 오른쪽 🧰 도구 → 「🧩 엮어서 답 찾기」에서 질문을 고르고 대상(학교·역·동·교차로)을 누르면, 흩어진 공개 자료를 같은 열쇠로 엮은 사슬이 차례로 나온다. 학교·역·동 카드 맨 위 🧩 단추로도 연다.</p><h3>네 걸음</h3><div class="grid">' + O.how.map(function (q) { return '<div class="card"><h3>' + esc(q.n) + '</h3><p>' + esc(q.t) + '</p></div>'; }).join('') + '</div>'
+        + '<h3>등급 — 값을 얼마나 믿나</h3><table class="spec"><tbody>' + Object.keys(O.grade).map(function (g) { return '<tr><th>' + esc(g) + '</th><td>' + esc(O.grade[g]) + '</td></tr>'; }).join('') + '</tbody></table>';
+      if (orr.length) oh += '<h3>질문 레시피</h3>' + orr.map(function (r) { var ex = (O.ex[r.id] || [])[0]; return '<div class="card"><h3>🧩 ' + esc(r.q) + '</h3><p class="lg-n">쓰는 사람 ' + esc(r.who.join('·')) + ' · 출발 = ' + esc(r.start) + '</p><ol>' + r.steps.map(function (s) { return '<li><b>' + esc(s.n) + '</b> <small>[' + esc(s.grade) + ']</small> — ' + esc(s.take) + '<br><small>🔗 ' + esc(s.key) + ' · 📁 ' + esc(s.file) + '</small></li>'; }).join('') + '</ol><p><b>판단할 때</b> — ' + esc(r.judge) + '</p><p><b>할 일 후보</b> — ' + esc(r.act.join(' · ')) + '</p>'
+        + (ex ? '<p class="lg-n"><b>예: ' + esc(ex.obj) + '</b> — ' + ex.chain.map(function (c) { return esc(c[0]) + ' ' + esc(c[1]); }).join(' / ') + '</p>' : '') + '</div>'; }).join('');
+      if (!w) oh += '<h3>④ 해 보고 적기</h3><p>사슬 카드 맨 아래에 날짜·한 일·결과를 적으면 <b>이 기기에만</b> 남는다(서버로 안 감). 사람이 아니라 상황을 적는다 — 이름·차량번호·전화·주민번호 꼴이 있으면 적지 않는다. 다음에 같은 대상을 열면 지난 기록이 같이 나온다.</p><ul>' + O.note.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+      if (oh) h += '<section id="onto"><h2>🧩 엮어서 답 찾기 — 네 걸음</h2>' + oh + '</section>'; }
     if (G.infer) { var I = G.infer.filter(function (t) { return hit(t.join(' '), w); }); if (I.length) h += '<section id="infer"><h2>🔎 이 지도로 알아낼 수 있는 것</h2><p class="lead">자료를 겹쳐 보면 숫자 하나로는 안 보이는 것을 어림할 수 있다 — 근거는 카드에 함께 나오고, 판단은 사람이 한다.</p><div class="grid">' + I.map(function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div></section>'; }
     /* 1 할 수 있는 일 */
     var T = G.tasks.filter(function (t) { return hit(t.join(' '), w); });

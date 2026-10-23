@@ -58,6 +58,19 @@
   .prddir button { font-size: 13.5px; } .prddir button.on { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
   details.jp { margin: 8px 0; border: 1.5px solid #1e3a8a; border-radius: 12px; padding: 4px 9px 6px; } details.jp > summary { cursor: pointer; font-weight: 800; font-size: 14px; padding: 4px 0; } details.jp > summary small { font-weight: 400; color: var(--ink2); } .jpu { font-size: 12.5px; margin: 2px 0 4px; color: var(--ink2); line-height: 1.6; } .jpu b { color: var(--ink); } .jpu .lk, .jpg .lk { font-size: 12.5px; }
   .jpst { font-weight: 700; font-size: 13px; margin: 6px 0 2px; } .jpg { margin: 4px 0 6px; } .jpg > b { font-size: 13px; } .jps { display: inline-block; font-size: 12.5px; margin: 2px 6px 2px 0; } .jps i { font-style: normal; font-size: 11px; font-weight: 800; color: #fff; background: #7c3aed; border-radius: 4px; padding: 0 4px; margin-right: 3px; } .jps u { text-decoration: none; font-size: 10.5px; color: #b45309; margin-left: 3px; }
+  .orcb { display: inline-block; margin: 3px 4px 3px 0; padding: 6px 10px; border: 1px solid #7c3aed; border-radius: 999px; background: #f5f3ff; color: #4c1d95; font: 600 12.5px/1.3 inherit; cursor: pointer; text-align: left; }
+  .orcb.orc1 { display: block; width: 100%; margin: 2px 0 8px; background: linear-gradient(90deg, #ede9fe, #f5f3ff); }
+  body.dark .orcb { background: #2e1065; color: #ede9fe; border-color: #a78bfa; }
+  .orcs { margin: 6px 0; }
+  .orcr { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px dashed var(--line, #ddd); }
+  .orcr > i { font-style: normal; font-weight: 800; color: #7c3aed; min-width: 16px; }
+  .orcr b { font-size: 13px; } .orcr span { display: block; font-size: 13px; margin-top: 2px; } .orcr small { display: block; font-size: 11px; color: var(--ink2); margin-top: 2px; }
+  .orcg { text-decoration: none; display: inline-block; min-width: 16px; padding: 0 4px; border-radius: 4px; font: 700 11px/16px inherit; text-align: center; color: #fff; }
+  .orcg.gA { background: #15803d; } .orcg.gB { background: #1d4ed8; } .orcg.gC { background: #b45309; }
+  .orcq { margin: 8px 0; padding: 8px; border: 1px solid var(--line, #ddd); border-radius: 10px; } .orcq > b { display: block; font-size: 13.5px; } .orcq > small { display: block; font-size: 11px; color: var(--ink2); margin: 2px 0 4px; }
+  .orcf { display: flex; flex-wrap: wrap; gap: 4px; } .orcf input, .orcf select { flex: 1 1 140px; min-width: 0; padding: 5px; font: inherit; font-size: 12.5px; } .orcf button { padding: 5px 12px; }
+  .orcl { margin: 6px 0; padding-left: 18px; font-size: 12.5px; } .orcl button { border: 0; background: none; color: var(--ink2); cursor: pointer; }
+  details.orch summary { cursor: pointer; font-weight: 700; font-size: 13px; }
   .jpsr { font-size: 11px; color: var(--ink2); margin: -3px 0 4px; text-align: right; line-height: 1.35; }
   .dh { margin: 12px 0 4px; padding-top: 8px; border-top: 1px solid var(--line); font-weight: 800; font-size: 14px; }
   .pyr { font-size: 11px; margin: 4px 0 6px; }
@@ -1083,7 +1096,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.277.0"></script>
+<script src="js/map2d.js?v=2.278.0"></script>
 <script src="js/decide.js?v=1"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다

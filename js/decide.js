@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   var URL_DATA = 'data/decide-seocho.json', TB = 'https://340patrolman.github.io/traffic-app/#laws', LOGK = 'tg_map2d_dec_log';
-  var DATA = null, LOADING = null, ST = { tab: 'd1', date: '', slot: '18-24', goal: '사고', slot2: '22-24', form: null };
+  var DATA = null, LOADING = null, ST = { tab: 'd1', date: '', slot: '18-24', goal: '사고', slot2: '22-24', form: null, focus: null };
   var WD = '일월화수목금토', SLOTS = ['00-06', '06-12', '12-18', '18-24'], SLOTN = { '00-06': '새벽 0~6시', '06-12': '오전 6~12시', '12-18': '낮 12~18시', '18-24': '저녁 18~24시' };
   var GOALS = { '사고': '그 시간대 둘레 사고 10년 합', '공백': '그 시간대 사고 — 100m 안 경찰 카메라 없는 곳만', '보행자': '보행자 피해 10년 합(하루 전체)' };
   var PII = [/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/, /\d{6}[-\s]?[1-4]\d{6}/, /\d{2,3}\s?[가-힣]\s?\d{4}/];
@@ -70,7 +70,7 @@
     var chosen = [], same = {}; Object.keys(I).sort(function (a, b) { return key(b) - key(a) || (a < b ? -1 : 1); }).some(function (i) { if (key(i) < 0) return true;
       var near = chosen.filter(function (c) { return m(I[i][1], I[i][2], I[c][1], I[c][2]) <= 150; })[0]; if (near) { (same[near] = same[near] || []).push(i); return false; } chosen.push(i); return chosen.length >= 5; });
     var ev = dayEvents(ST.date), h = '<div class="ctl"><select data-k="slot">' + SLOTS.map(function (x) { return '<option value="' + x + '"' + (x === s ? ' selected' : '') + '>' + SLOTN[x] + '</option>'; }).join('') + '</select><select data-k="goal">' + Object.keys(GOALS).map(function (x) { return '<option' + (x === g ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>';
-    h += '<div class="rule">잣대: <b>' + GOALS[g] + '</b> · 150m 안 이웃은 한 자리로 · 사고 = TAAS 2016~2025 교차로 70m 안 100m 칸 합(근사)</div>';
+    h += '<div class="rule">잣대: <b>' + GOALS[g] + '</b> · 150m 안 이웃은 한 자리로 · 사고 = TAAS 2016~2025 교차로 70m 안 100m 칸 합(근사)</div>' + focusBox();
     chosen.forEach(function (i, k) { var r = I[i], sv = ''; h += '<div class="cd"><div class="t"><span>' + (k + 1) + '</span><b>' + esc(r[0]) + '</b><span class="s">' + esc(r[3]) + '</span><span class="k">' + fmt(key(i)) + '</span></div>';
       h += '<div class="s">' + (g === '보행자' ? '보행자 피해' : SLOTN[s] + ' 사고') + ' · 10년 ' + fmt(r[4]) + ' · 밤 ' + fmt(r[6]) + ' · 보행자 ' + fmt(r[7]) + ' · 사망 ' + r[8] + ' · 중상 ' + r[9] + '</div><ul class="ev">';
       if (same[i]) h += '<li>같은 자리: ' + esc(same[i].map(nm).join(', ')) + '</li>';
@@ -81,6 +81,14 @@
       if (r[14].length) sv += '<li>➡ 길 따라 다음 신호: ' + r[14].map(function (x) { return esc(nm(x[0])) + ' ' + x[1] + 'm(' + slotAcc(x[0], s) + ')'; }).join(' · ') + '</li>';
       h += sv + '</ul>' + btns(i, k + 1, 'd1:' + s + ':' + g) + '</div>'; });
     return h; }
+  /* 대상 하나에서 결정으로(2026-10-23 게임 세션 「🧩 엮어서 답 찾기」 사슬 카드가 부른다) — tgDecide.open('d1', { int: 'INT-…' }) · #dec=1&int=INT-…
+     이 교차로가 시간대 넷 × 목적 셋에서 몇 위인지(이웃 묶음 없이 그 잣대 그대로 · 같은 값은 같은 순위) */
+  function focusBox() { var f = ST.focus, I = DATA.int; if (!f) return ''; if (!I[f]) return '<div class="warn">📌 ' + esc(nm(f)) + ' — 둘레 사고 기록이 없는 교차로라 이 결정의 후보가 아니다</div>';
+    var rows = SLOTS.map(function (s) { var si = slotIdx(s); return '<tr><td>' + SLOTN[s] + '</td>' + ['사고', '공백'].map(function (g) {
+        if (g === '공백' && I[f][11]) return '<td>카메라 있음</td>'; var v = I[f][5][si], n = 1 + Object.keys(I).filter(function (i) { return (g === '사고' || !I[i][11]) && I[i][5][si] > v; }).length; return '<td><b>' + n + '위</b> · ' + v + '</td>'; }).join('') + '</tr>'; }).join('');
+    var pn = 1 + Object.keys(I).filter(function (i) { return I[i][7] > I[f][7]; }).length;
+    return '<div class="cd" style="border-color:var(--acc)"><div class="t"><span>📌</span><b>' + esc(I[f][0]) + '</b><span class="s">' + esc(I[f][3]) + ' · 사고 있는 교차로 ' + Object.keys(I).length + '곳 중</span><button data-unfocus="1" style="margin-left:auto;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--ink)">✕</button></div>' +
+      '<table style="width:100%;font-size:12.5px;border-collapse:collapse"><tr><th></th><th>사고</th><th>카메라 공백</th></tr>' + rows + '</table><div class="s">보행자 피해 ' + I[f][7] + ' — ' + pn + '위 · 같은 값은 같은 순위</div>' + btns(f, '대상에서', 'd1:' + ST.slot + ':' + ST.goal) + '</div>'; }
   function btns(i, rank, ctx) { var p = ll(i); return '<div class="btns"><button data-go="' + p[0] + ',' + p[1] + '">🗺 지도에서</button><button data-did="' + i + '|' + rank + '|' + ctx + '">✋ 여기 섰다</button>' + (ctx.indexOf('d1') === 0 && DATA.int[i] && DATA.int[i][10][0] && DATA.vio[DATA.int[i][10][0][0]] && DATA.vio[DATA.int[i][10][0][0]][1].length ? '<a href="' + TB + '" target="_blank" rel="noopener">⚖ T-Book</a>' : '') + '</div>' + (ST.form === i + '|' + ctx ? form(i, rank, ctx) : ''); }
   function form(i, rank, ctx) { return '<div class="fm"><b>기록 — ' + esc(nm(i)) + '</b><select id="m2dDecDid"><option>정체</option><option>위반</option><option>보행자</option><option>순찰</option><option>음주</option><option>통제</option></select>' +
       '<input id="m2dDecWhy" maxlength="80" placeholder="고른 까닭 한 줄 — 사람·차량번호는 쓰지 않음"><div class="btns"><button data-save="' + i + '|' + rank + '|' + ctx + '">저장(이 기기에만)</button><button data-cancel="1">취소</button></div></div>'; }
@@ -152,6 +160,7 @@
   function onChange(e) { var k = e.target.getAttribute('data-k'); if (!k) return; ST[k] = e.target.value; if (k === 'date' && !ST.date) ST.date = today(); ST.form = null; paint(); }
   function onClick(e) { e.stopPropagation(); var b = e.target.closest('button,a'); if (!b) return; var a;
     if (b.hasAttribute('data-close')) return close();
+    if (b.hasAttribute('data-unfocus')) { ST.focus = null; paint(); return; }
     if ((a = b.getAttribute('data-tab'))) { ST.tab = a; ST.form = null; paint(); $('m2dDec').scrollTop = 0; return; }
     if ((a = b.getAttribute('data-go'))) { var p = a.split(','); if (window.innerWidth < 760) close(); location.hash = 'v=' + p[0] + ',' + p[1] + ',250&t=' + p[0] + ',' + p[1]; return; }   /* 「PC로 보내기」 꼴 — 보고 자리 표시 없이 그 자리 카드 */
     if ((a = b.getAttribute('data-did'))) { var q = a.split('|'); ST.form = q[0] + '|' + q[2]; paint(); return; }
@@ -165,11 +174,14 @@
       if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { b.textContent = '✔ 복사됨'; }, function () { prompt('복사', t); }); else prompt('복사', t); return; }
     if (b.hasAttribute('data-clear')) { if (confirm('이 기기의 결정 기록을 모두 지울까요? 되돌릴 수 없습니다.')) { logSet([]); paint(); } return; } }
 
-  function open(tab) { css(); var el = box(); if (!ST.date) { ST.date = today(); ST.slot = slotOfHour(new Date().getHours()); }
-    if (tab) ST.tab = tab; el.classList.add('on'); paint(); load().then(paint, function (e) { el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정</h3><div class="warn">자료를 읽지 못했습니다(' + esc(e && e.message) + ') — 통신이 되는 곳에서 한 번 열면 다음부터 됩니다.</div>'; }); }
+  function open(tab, opt) { css(); var el = box(); if (!ST.date) { ST.date = today(); ST.slot = slotOfHour(new Date().getHours()); }
+    if (tab && /^d[1-5]$/.test(tab)) ST.tab = tab; if (opt && opt.int) { ST.focus = String(opt.int); ST.tab = 'd1'; } el.classList.add('on'); paint(); load().then(paint, function (e) { el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정</h3><div class="warn">자료를 읽지 못했습니다(' + esc(e && e.message) + ') — 통신이 되는 곳에서 한 번 열면 다음부터 됩니다.</div>'; }); }
   function close() { var el = $('m2dDec'); if (el) el.classList.remove('on'); }
   window.tgDecide = { open: open, close: close };
-  function fromHash() { var h = location.hash || ''; if (/(^|[#&])dec=1(&|$)/.test(h)) { open(); try { history.replaceState(null, '', location.pathname + location.search + h.replace(/(^#|&)dec=1/, '$1').replace(/^#&/, '#').replace(/&&/, '&').replace(/[#&]$/, '')); } catch (e) {} } }
+  function fromHash() { var h = location.hash || '', dm = /(^|[#&])dec=(1|d[1-5])(?=&|$)/.exec(h); if (!dm) return; var im = /(^|[#&])int=(INT-\d+)(?=&|$)/.exec(h);
+    open(dm[2] === '1' ? null : dm[2], im ? { int: im[2] } : null);
+    var rest = h.replace(/^#/, '').split('&').filter(function (x) { return x && !/^(dec|int)=/.test(x); }).join('&');
+    try { history.replaceState(null, '', location.pathname + location.search + (rest ? '#' + rest : '')); } catch (e) {} }
   window.addEventListener('hashchange', fromHash);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fromHash); else fromHash();
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });

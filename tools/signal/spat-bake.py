@@ -395,7 +395,9 @@ def split_write(doc):
             old = None
         if old != t:
             open(fp, 'w', encoding='utf-8').write(t); nw += 1
-    idx = {k: v for k, v in doc.items() if k != 'its'}
+    # 2026-10-24 06:00 부터 색인에서 pl 을 뺀다(지도 v2.290.2 · 가르고 v0.36.3 이 칸 pl 을 읽는다 · 폰에 남은 옛 판이 새 판을 받을 하룻밤 여유를 둠 — 게임 세션과 맞춘 때)
+    DROP_PL = datetime.datetime.now() >= datetime.datetime(2026, 10, 24, 6, 0)
+    idx = {k: v for k, v in doc.items() if k != 'its' and not (DROP_PL and k == 'pl')}
     idx['schema'] = 'tg-sigdir-idx/1'
     idx['cell'] = CELL
     idx['cells'] = {k: len(v) for k, v in sorted(cells.items())}

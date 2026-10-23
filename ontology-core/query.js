@@ -125,6 +125,28 @@
     return { id: pbxId, nm: B.nm, kind: B.kind, station: S ? { id: S.o.id, nm: S.o.nm, tel: S.o.tel || null } : null, nInt: ints.length, ints: ints.slice(0, k || 10),
       notes: ['가장 가까운 지구대로 묶은 근사 — 공식 담당 구역이 아니다', '교차로 사고는 70m 안 칸 묶음이라 이웃 교차로끼리 겹친다 — 더하지 않았다'] };
   };
+  /* 질문 14 — 이 교차로에 누가 가장 빨리 닿나(2026-10-23 도착 · 엮임 지도 일곱째): 지구대·파출소 다섯의 제한속도·평일 8시·18시 초 · 관할(가까운 지구대)과 견줌
+     견주는 값이다 — 실측 평소 속도가 없는 길은 eta-cal 배율이라 짧게 나오고, 회전 제한·순찰 중인 차·긴급 주행은 보지 않는다 */
+  P.q14 = function (intId, hour) {
+    var it = this.O[intId]; if (!it || it.t !== 'INT') return null; var self = this, key = hour === 8 ? 's8' : hour === 18 ? 's18' : 's0';
+    var nb = this.follow(intId, '가까운지구대')[0], st = this.follow(intId, '관할').map(function (x) { return x.o.id; });
+    var L = this.follow(intId, '도착').map(function (x) { var S = self.follow(x.o.id, '소속')[0]; return { id: x.o.id, nm: x.o.nm, station: S ? S.o.nm : null, ownStation: S ? st.indexOf(S.o.id) >= 0 : false, s0: x.p.s0, s8: x.p.s8, s18: x.p.s18, c8: x.p.c8, c18: x.p.c18 }; })
+      .filter(function (x) { return x[key] >= 0; }).sort(function (a, b) { return a[key] - b[key] || (a.id < b.id ? -1 : 1); });
+    var mine = nb ? L.filter(function (x) { return x.id === nb.o.id; })[0] || null : null;
+    return { id: intId, nm: it.nm, by: key, fastest: L[0] || null, list: L, nearestOwn: nb ? { id: nb.o.id, nm: nb.o.nm, t: mine ? mine[key] : null } : null,
+      otherFaster: !!(L[0] && nb && L[0].id !== nb.o.id), gap: L[0] && mine ? mine[key] - L[0][key] : null,
+      notes: ['견주는 값 — 실제 출동 시간이 아니다(신호·회전 제한·순찰 중인 차·긴급 주행 없음 · 실측 없는 길은 짧게 나옴)', 's8·s18 = 평일 8·18시 평소 속도(ITS 2026-10-11~ 쌓음 · 잠정일 수 있음) · c = 그 길 가운데 실측 속도로 센 몫 %', '가까운 지구대(관할 근사)보다 다른 곳이 빨리 닿으면 otherFaster — 관할·배정을 바꾸자는 뜻이 아니라 지원 요청 차례를 볼 때 쓴다'] };
+  };
+  /* 질문 15 — 이 지구대·파출소가 가장 빨리 닿는 교차로(평일 18시 기준 · 근사) · 자기 몫인데 다른 곳이 더 빠른 교차로 */
+  P.q15 = function (pbxId, hour) {
+    var B = this.O[pbxId]; if (!B || B.t !== 'PBX') return null; var self = this, first = [], slower = [];
+    Object.keys(this.O).forEach(function (i) { if (self.O[i].t !== 'INT') return; var q = self.q14(i, hour == null ? 18 : hour); if (!q || !q.fastest) return;
+      if (q.fastest.id === pbxId) first.push({ id: i, nm: q.nm, t: q.fastest[q.by] });
+      if (q.nearestOwn && q.nearestOwn.id === pbxId && q.otherFaster) slower.push({ id: i, nm: q.nm, fastest: q.fastest.nm, gap: q.gap }); });
+    first.sort(function (a, b) { return a.t - b.t || (a.id < b.id ? -1 : 1); }); slower.sort(function (a, b) { return (b.gap || 0) - (a.gap || 0) || (a.id < b.id ? -1 : 1); });
+    return { id: pbxId, nm: B.nm, hour: hour == null ? 18 : hour, nFirst: first.length, under3min: first.filter(function (x) { return x.t <= 180; }).length, first: first, slowerOwn: slower,
+      notes: ['가장 빨리 닿는 곳 = 도착 다섯 가운데 그 시각 초가 가장 짧은 곳(견주는 값)', 'slowerOwn = 이 지구대가 가장 가까운(관할 근사) 교차로인데 다른 지구대·파출소가 더 빨리 닿는 곳'] };
+  };
   /* 질문 2 — 왜 바꿨고 바꾼 뒤 어떻게 됐나(해 단위 · 앞 2해 vs 뒤 2해 · 바꾼 해는 뺀다) */
   P.q2 = function (intId) {
     var self = this, it = this.O[intId]; if (!it) return null; var acc = this.follow(intId, '발생')[0], A = acc ? acc.o : null;

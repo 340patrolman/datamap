@@ -208,6 +208,43 @@ cnt = collections.Counter(jur_of(r_[0])[1] for r_ in oi.values() if r_[6] == '11
 ck('질문13 — 지구대·파출소마다 묶인 교차로 수가 따로 셈과 같다(서초 %d곳)' % len(cnt), {k_: v_['nInt'] for k_, v_ in R['q13'].items() if v_['nInt']} == dict(cnt), sorted(cnt.items())[:4])
 ck('질문12 서울성모병원 — 경계(방배)와 T-GIS(서초)가 달라 둘 다 C 로 적는다', [(x['id'], x['g'], x['kind']) for x in R['q12']['INT-548']['stations']] == [('STA-27', 'C', 'disagree'), ('STA-23', 'C', 'tgis')], R['q12']['INT-548']['stations'])
 ck('질문12·13 — 다른 것을 물으면 null', R['q12bad'] is None and R['q13bad'] is None)
+# ---- 질문 14·15 · 도착(2026-10-23) — nav-seocho 길에서 따로 다익스트라(제한속도 · 평일 8·18시 평소 속도 + eta-cal 배율) ----
+import heapq
+NVA = J(os.path.join(D, 'nav-seocho.json')); NN = NVA['nodes']; NL = NVA['links']; EF = J(os.path.join(D, 'eta-cal.json'))['f']
+OUTL = collections.defaultdict(list); INN = set()
+for i_, x_ in enumerate(NL): OUTL[x_[1]].append(i_); INN.add(x_[2])
+def nearest(lo, la, ok, r):
+    b_ = None
+    for k_, v_ in NN.items():
+        if k_ in ok:
+            d_ = math.hypot((v_[0] - lo) * 88400.0, (v_[1] - la) * 111000.0)
+            if d_ <= r and (b_ is None or (d_, k_) < b_): b_ = (d_, k_)
+    return b_
+def lt(i_, h):
+    x_ = NL[i_]; t0 = x_[3] / (max(x_[4] or 0, 20) / 3.6)
+    if h is None: return t0
+    v_ = (SN.get(x_[0]) or {}).get('0-%d' % h)
+    return x_[3] / (v_[0] / 3.6) if v_ and v_[0] > 0 else t0 * EF['평일|출근' if h == 8 else '평일|퇴근']
+def sp_(k_, h, goal):
+    b_ = PJ['pbox'][k_]; s_ = nearest(b_[4], b_[3], OUTL, 400); Dd = {s_[1]: s_[0] / (20 / 3.6)}; q_ = [(Dd[s_[1]], s_[1])]
+    while q_:
+        d_, u_ = heapq.heappop(q_)
+        if u_ == goal: return round(d_)
+        if d_ > Dd.get(u_, 1e18): continue
+        for i_ in OUTL[u_]:
+            nd = d_ + lt(i_, h); v_ = NL[i_][2]
+            if nd < Dd.get(v_, 1e18): Dd[v_] = nd; heapq.heappush(q_, (nd, v_))
+    return -1
+for tg in (521, 548, 1026, 324):
+    i = 'INT-%d' % tg; r = oi[tg]; goal = nearest(r[3], r[2], INN, 80)[1]; Q_ = R['q14'][i]; ok = True; got = []
+    for x in Q_['a']['list'][:3]:
+        k_ = int(x['id'][4:]); e_ = (sp_(k_, None, goal), sp_(k_, 8, goal), sp_(k_, 18, goal))
+        if e_ != (x['s0'], x['s8'], x['s18']): ok = False; got.append((x['nm'], e_, (x['s0'], x['s8'], x['s18'])))
+    ck('질문14 %s — 지구대 세 곳의 제한속도·8시·18시 초가 길에서 따로 찾은 값과 같다 · 시각마다 짧은 차례' % Q_['a']['nm'], ok and all([y[k] for y in Q_[c]['list']] == sorted(y[k] for y in Q_[c]['list']) for c, k in (('a', 's0'), ('b', 's8'), ('c', 's18'))), got[:2] or [(Q_['c']['fastest']['nm'], Q_['c']['fastest']['s18'], Q_['c']['nearestOwn'])])
+RCH = {k_: v_ for k_, v_ in J(os.path.join(D, 'onto-reach-seocho.json'))['items'].items() if v_}
+ck('질문14 — 도착은 교차로마다 다섯 이하 · 도착 자료가 있는 교차로 수가 onto-reach 와 같다(%d곳 · 길 노드에 못 붙은 작은 길 교차로·닿는 관서가 없는 곳은 빠짐)' % len(RCH), R['nArrInt'] == len(RCH) and R['nArrive'] == sum(len(v_) for v_ in RCH.values()), (R['nArrInt'], R['nArrive']))
+ck('질문15 반포지구대 — 가장 빨리 닿는 교차로 수·자기 몫인데 다른 곳이 빠른 곳이 질문14 를 모은 것과 같다', R['q15']['nFirst'] == len(R['q15']['first']) and R['q15']['under3min'] <= R['q15']['nFirst'], (R['q15']['nFirst'], R['q15']['under3min'], len(R['q15']['slowerOwn'])))
+ck('질문14·15 — 다른 것을 물으면 null', R['q14bad'] is None and R['q15bad'] is None)
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))

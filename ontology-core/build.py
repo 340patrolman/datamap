@@ -10,6 +10,7 @@
                도로 구간 값 = nav-seocho(길 이름·길이·제한속도·등급·차로) · spd-normal-seocho(월~목 8·18·3시 평소 속도 · 잠정 표시) · flood-link-seocho(침수 흔적 해 수·마지막 해·침수심·돌아가는 부담 초)
                도로 구간 → TAAS 100m 사고 칸 「사고칸」(ACL · 칸 가운데가 구간 선 50m 안 · 가장 가까운 구간 하나에만 · 칸은 방향이 없어 맞은편 차로 사고도 섞임 · 근사 C · 2026-10-23)
                도로 구간 → 250m 칸 「지남」(rd-cell-seocho) · 범위는 서초구 + 경계 밖 2km 뿐(여섯 구 코어에서도 그 밖 교차로는 접근로가 없다)
+    도착     = 교차로 「도착」 지구대·파출소(data/onto-reach-<area>.json · tools/onto/reach-bake.py · s0 제한속도 · s8·s18 평일 8·18시 평소 속도 + eta-cal 배율 · 다섯 곳 · 견주는 값 C)
     STA·PBX  = 관할 경찰서·지구대·파출소(2026-10-23) — 교차로 「관할」 경찰서(jur-seocho 현장 기준 경계 → 밖이면 police.json 별표2 × 행정동 · 나눠 맡는 동은 둘 다 C · T-GIS 관할 코드와 맞는지 tg)
                지구대·파출소 「소속」 경찰서(경찰청 주소 현황 · A) · 교차로 「가까운지구대」(그 서의 지구대·파출소 가운데 가장 가까운 곳 · 관할 경계 비공개 — 근사 C · d m)
     DNG      = 교차로가 든 행정동(onto-int 행정동 코드 · 2026-10-23 엮임 지도 첫째) — 값은 그 동을 열쇠로 가진 파일에서 그대로:
@@ -212,6 +213,15 @@ def sta_build(obj, edge, INTs):
         if bs:
             k, b = min(bs, key=lambda kb: (m(it['lat'], it['lon'], kb[1][3], kb[1][4]), kb[0]))
             edge(it['id'], '가까운지구대', 'PBX-%d' % k, 'C', '그 관할서의 지구대·파출소 가운데 가장 가까운 곳(관할 경계 비공개 — 근사)', d=round(m(it['lat'], it['lon'], b[3], b[4])))
+    # 도착(2026-10-23 엮임 지도 일곱째) — data/onto-reach-<area>.json(tools/onto/reach-bake.py): 교차로마다 s0 가 짧은 지구대·파출소 다섯 곳 · 근사 C
+    RC = J(os.path.join(D, 'onto-reach-%s.json' % AREA))['items']
+    for it in INTs:
+        for r, row in enumerate(RC.get(it['id'][4:], [])):
+            k, s0, s8, s18, c8, c18 = row; b = P['pbox'][k]
+            if b[6] not in seen:
+                seen.add(b[6]); s_ = sta(b[6])
+                for k2, b2 in boxes.get(b[6], []): edge(pbx(k2, b2), '소속', s_, 'A', '경찰청 전국 지구대·파출소 주소 현황(police.json pbox)')
+            edge(it['id'], '도착', 'PBX-%d' % k, 'C', 'onto-reach-%s.json(ITS 길 · 제한속도 / 평소 속도 + eta-cal 배율 · 견주는 값 — 실제 출동 시간 아님)' % AREA, r=r, s0=s0, s8=s8, s18=s18, c8=c8, c18=c18)
 def O_STA_NM(n, P): return next(x[1] for x in P['stations'] if x[0] == n)
 def dng_build(O, obj, rows):
     hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
@@ -325,7 +335,7 @@ def main():
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
     pplf = plc_people(O)
-    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json']
+    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'onto-reach-%s.json' % AREA]
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',

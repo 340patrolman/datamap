@@ -5504,6 +5504,8 @@
     h += '<p class="lg-n">등급 ' + ['A', 'B', 'C'].map(function (g) { return orcBadge(g, R0) + ' ' + esc((R0.grade || {})[g] || ''); }).join(' · ') + '</p>';
     h += '<div class="dh">⚖ 판단할 때 지킬 것</div><p class="desc">' + esc(R.judge || '') + '</p>';
     h += '<div class="dh">✅ 할 일 후보</div><ul class="lg-n">' + (R.act || []).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>';
+    var DEC9 = { night: ['d2', '음주 — 오늘 밤 어디서'], event: ['d3', '집회·행사 — 오늘 어디가 붐비나'], flood: ['d4', '큰비 — 출동이 늦어지는 곳'] }[it.r];   /* v2.278.2 대상 → 오늘의 결정(다른 세션 v2.278.1 · tgDecide.open('d2'~'d4')) */
+    if (DEC9 && window.tgDecide) h += '<button class="orcb" data-orcdec="' + DEC9[0] + '">🧭 오늘의 결정에서 보기 — ' + esc(DEC9[1]) + '</button>';
     var K = orcKey(it.r, it.o), L = orcLogs()[K] || [];
     h += '<div class="dh">④ 해 보고 적기 <small style="font-weight:400">이 기기에만 · 사람이 아니라 상황을</small></div><div class="orcf"><input type="date" id="orcD" value="' + orcToday() + '"><select id="orcW"><option value="">한 일 고르기</option>' + (R.act || []).map(function (a) { return '<option>' + esc(a) + '</option>'; }).join('') + '<option value="*">직접 적기</option></select><input id="orcW2" placeholder="한 일(직접)" maxlength="80"><input id="orcR" placeholder="결과 — 예: 하교길 서행 지도 · 민원 줄어듦" maxlength="120"><button data-orcsave="' + esc(K) + '">적기</button></div><p class="lg-n" id="orcMsg">이름·차량번호·전화번호·주민번호 꼴이 있으면 적지 않는다.</p>';
     if (L.length) h += '<ul class="orcl">' + L.map(function (e, i) { return '<li><b>' + esc(e.d) + '</b> ' + esc(e.w) + (e.r ? ' → ' + esc(e.r) : '') + ' <button data-orcdel="' + esc(K) + '|' + i + '" aria-label="지우기">✕</button></li>'; }).join('') + '</ul>';
@@ -5525,7 +5527,7 @@
   function orcBtn(id, arg, t) { return '<button class="orcb orc1" data-orc="' + esc(id + '|' + arg) + '">🧩 ' + esc(t) + '</button>'; }
   function orcIns(h, b) { if (!b) return h; var i = h.indexOf('</h3>'); return i < 0 ? b + h : h.slice(0, i + 5) + b + h.slice(i + 5); }
   function orcStn(n) { return String(n || '').replace(/\(.*$/, '').replace(/역$/, '').trim(); }
-  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-orc],[data-orcsave],[data-orcdel],[data-orcdec]'); if (!b) return; e.preventDefault(); e.stopPropagation(); var it; if (b.hasAttribute('data-orcdec')) { if (window.tgDecide) window.tgDecide.open(); return; }
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-orc],[data-orcsave],[data-orcdel],[data-orcdec]'); if (!b) return; e.preventDefault(); e.stopPropagation(); var it; if (b.hasAttribute('data-orcdec')) { var dv9 = b.getAttribute('data-orcdec'); if (window.tgDecide) { if (/^d\d$/.test(dv9)) window.tgDecide.open(dv9); else window.tgDecide.open(); } return; }
     if (b.hasAttribute('data-orcsave')) { var K = b.getAttribute('data-orcsave'), w = ($('orcW') || {}).value || '', w2 = ($('orcW2') || {}).value || '', r = ($('orcR') || {}).value || '', dd = ($('orcD') || {}).value || orcToday(), msg = $('orcMsg'); if (w === '*' || !w) w = w2.trim();
       if (!w) { if (msg) msg.textContent = '한 일을 고르거나 적는다.'; return; } var bad = orcPii(w + ' ' + r); if (bad) { if (msg) msg.textContent = '⚠ ' + bad + ' 꼴로 보이는 글이 있어 적지 않았다 — 사람이 아니라 상황을 적는다.'; return; }
       var Lg = orcLogs(); (Lg[K] = Lg[K] || []).unshift({ d: dd, w: w, r: r.trim() }); Lg[K] = Lg[K].slice(0, 30); try { localStorage.setItem(ORCLK, JSON.stringify(Lg)); } catch (e2) {} agReshow(); return; }

@@ -61,7 +61,10 @@ def main():
         if mm: BK2.setdefault((c[:2], mm.group(1), v['n']), [c, [[a[0], a[2]] for a in v['a']]])
     hit = 0
     for it in items:
-        kk = ({'서울': '11', '경기': '41', '인천': '28'}[it[0]], it[1].replace(' ', ''), it[2]); m = BK.get(kk) or BK2.get(kk); it.append(m[0] if m else None); it.append(m[1] if m else None); hit += 1 if m else 0
+        kk = ({'서울': '11', '경기': '41', '인천': '28'}[it[0]], it[1].replace(' ', ''), it[2]); m = BK.get(kk) or BK2.get(kk)
+        if not m and kk[2].endswith('면'):   # 2024~ 읍 승격(용인 양지·남사·모현 등) — 원자료가 옛 이름 「…면」
+            k2 = (kk[0], kk[1], kk[2][:-1] + '읍'); m = BK.get(k2) or BK2.get(k2)
+        it.append(m[0] if m else None); it.append(m[1] if m else None); hit += 1 if m else 0
     print('법정동 코드 붙음', hit, '/', len(items), {sd: sum(1 for i in items if i[0] == sd and i[8]) for sd in ('서울', '경기', '인천')}, '안 붙은 서울', [(i[1], i[2]) for i in items if i[0] == '서울' and not i[8]][:15], '안 붙은 경기', [(i[1], i[2]) for i in items if i[0] == '경기' and not i[8]][:15])
     doc = {'schema': 'tg-rescue119/1', 'made': td, 'year': 2025, 'source': '공공데이터포털 「소방청_구조활동현황」(15062386 · 2025-01-01 ~ 12-31 · 전국 613,150건 가운데 서울·경기·인천 %d건)' % n,
            'note': ['**119 구조대 출동**이다(화재 확인·교통사고 구조·승강기 갇힘·수난·산악·위치 확인 등) — **구급차 출동(환자 이송)은 여기에 없다**. 구급의 동 × 시간대 공개 자료는 찾지 못했다(서울은 2019년 동 × 해뿐 · more-sources.json)',

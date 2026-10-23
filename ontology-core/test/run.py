@@ -81,6 +81,18 @@ for rid, r in RR.items():
 ck('질문6 — 규칙마다 정의·출처·등급·주인 자리·시험값과 기댄 현장 말이 장부 글자 그대로', not bad6, bad6[:3])
 ck('질문6 — 반포 관할 규칙(RULE-JUR-2)에 형님 말 「반포본동·반포2동은…」이 붙어 있다', any(f['id'] == 'FK-BANPO-1' and f['said'].startswith('반포본동·반포2동은') for f in R['why']['RULE-JUR-2']['field']), [f['id'] for f in R['why']['RULE-JUR-2']['field']])
 ck('질문6 — 규칙이 아닌 것을 물으면 null', R['whyBad'] is None, R['whyBad'])
+# ---- 질문 7 · 행정동(2026-10-23) — 원자료(house-dong · mig-dong · foreign-dong · econ-dong · dui-ref-seoul · police.json · onto-int)에서 따로 ----
+hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
+ec = J(os.path.join(D, 'econ-dong.json'))['dong']; drs = {x[0]: x for x in J(os.path.join(D, 'dui-ref-seoul.json'))['items']}; pol = J(os.path.join(D, 'police.json'))
+stn = {str(s[0]): s[1] for s in pol['stations']}
+for code, want_jur in (('11650530', ['서울서초경찰서']), ('11650590', ['서울방배경찰서', '서울서초경찰서(일부 번지)']), ('11650581', ['서울서초경찰서', '서울방배경찰서'])):
+    q = R['q7']['DNG-' + code]; mine = [r for r in oi.values() if r[6] == '11650' and (r[7] or '')[:8] == code]
+    ck('질문7 %s — 세대·1인·주민·외국인·사업장·가입자·주점·호프 0~6시가 원자료 그대로' % q['nm'], (q['people']['hh'], q['people']['one'], q['people']['res'], q['people']['fgn'], q['work']['biz'], q['work']['wk'], q['night']['bars'], q['night']['hof06']) ==
+       (hd[code]['hh'][0], hd[code]['hh'][1], mg[code][2], (fg.get(code) or {}).get('t'), ec[code][0], ec[code][1], drs[code][4] if code in drs else None, drs[code][10] if code in drs else None), (q['people'], q['work'], q['night']))
+    ck('질문7 %s — 관할 %s(police.json 별표2 꼴 그대로 읽음)' % (q['nm'], want_jur), q['jur'] == want_jur, q['jur'])
+    ck('질문7 %s — 그 동 안 교차로 수 = onto-int 서초 행정동 코드로 센 수 · 사고 많은 순' % q['nm'], q['nInt'] == len(mine) and [x['total'] for x in q['ints']] == sorted([x['total'] for x in q['ints']], reverse=True), (q['nInt'], len(mine)))
+ck('질문1 서초역사거리 — 속한 동 = 서초3동(onto-int 행정동 코드) · 등급 B', R['q1']['INT-521']['dng'] and R['q1']['INT-521']['dng']['nm'] == '서초3동' and R['q1']['INT-521']['dng']['grade'] == 'B', R['q1']['INT-521']['dng'])
+ck('질문7 — 행정동이 아닌 것을 물으면 null', R['q7bad'] is None, R['q7bad'])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))
 n = sum(1 for x in C if x[1])
 for name, ok, got in C: print(('  ✅ ' if ok else '  ❌ ') + name + (' — ' + got if got else ''))

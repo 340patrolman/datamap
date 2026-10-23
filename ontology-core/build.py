@@ -3,6 +3,8 @@
   모든 값은 이미 있는 공개 자료 파일에서 다시 센다(지어낸 값 없음). 링크마다 출처 파일과 등급(A~E).
   원천:
     INT·PLC  = data/onto-int.json(T-GIS 교차로 · C-ITS 번호 · 250m 칸 · 행정동 10자리 → 앞 8자리)
+    DNG      = 교차로가 든 행정동(onto-int 행정동 코드 · 2026-10-23 엮임 지도 첫째) — 값은 그 동을 열쇠로 가진 파일에서 그대로:
+               house-dong(세대·1인 세대) · mig-dong(주민) · foreign-dong(외국인주민) · econ-dong(국민연금 가입 사업장·가입자) · dui-ref-seoul(주점 점포·호프 0~6시 결제) · police.json(별표2 관할서)
     인접      = data/sig-net-seocho.json(신호 교차로 사이 길 · C-ITS 번호로 INT 에 이음)
     ACC·VIO  = data/taas10-seocho.json(TAAS 2016~2025 · 100m 칸 · 주 법규위반 코드 dic.v) — 교차로에서 70m 안 칸을 묶음(jct-bake 와 같은 반지름 · 근사 C)
     CAM·ATT  = data/gargo-alerts-seoul.json(경찰 관리 · 제한속도 있는 카메라 100m 안 · 어린이보호구역 시설 300m 안 · 근사 C)
@@ -49,6 +51,23 @@ def ym_of(t):
         g = re.search(rx, t)
         if g: return '%s-%02d' % (g.group(1), int(g.group(2))) if g.lastindex >= 2 else g.group(1)
     return None
+def dng_build(O, obj, rows):
+    hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
+    ec = J(os.path.join(D, 'econ-dong.json'))['dong']; dr = {x[0]: x for x in J(os.path.join(D, 'dui-ref-seoul.json'))['items']}
+    pl = J(os.path.join(D, 'police.json')); stn = {str(s[0]): s[1] for s in pl['stations']}
+    for r in rows:
+        c = (r[7] or '')[:8]
+        if not c or ('DNG-' + c) in O: continue
+        h = hd.get(c) or {}; d = dr.get(c); lab = pl['dong'].get(c)
+        obj('DNG-' + c, 'DNG', code=c, nm=r[8], gu=r[6],
+            hh=(h.get('hh') or [None])[0], one=(h.get('hh') or [None, None])[1], res=(mg.get(c) or [None, None, None])[2],
+            fgn=(fg.get(c) or {}).get('t'), biz=(ec.get(c) or [None])[0], wk=(ec.get(c) or [None, None])[1],
+            bars=d[4] if d else None, hof06=d[10] if d else None,
+            jur=jur_names(pl['labels'][lab], stn) if lab is not None else None)
+def jur_names(lab, stn):   # police.json 관서 묶음 — 「23,27」 = 두 서가 나눠 맡음 · 「27~23」 = 앞이 주 관서 · 뒤는 일부 번지만
+    if '~' in lab:
+        a, b = lab.split('~', 1); return [stn.get(a)] + [stn.get(x) + '(일부 번지)' for x in b.split(',') if stn.get(x)]
+    return [stn.get(x) for x in lab.split(',')]
 def main():
     O = {}; E = []
     def obj(i, t, **p): O[i] = dict(id=i, t=t, **{k: v for k, v in p.items() if v is not None}); return i
@@ -59,6 +78,8 @@ def main():
         i = obj('INT-%s' % r[0], 'INT', nm=r[1], lat=r[2], lon=r[3], cits=r[4] or 0, st=r[5], dong=(r[7] or '')[:8], dongnm=r[8], has=r[11])
         if r[4]: by_cits[str(r[4])] = i
         if r[9]: edge(i, '들어감', obj('PLC-%s' % r[9], 'PLC'), 'A', 'onto-int.json')
+        if r[7]: edge(i, '속함', 'DNG-%s' % r[7][:8], 'B', 'onto-int.json(행정동 코드 · 교차로 자리가 든 행정동 경계)')
+    dng_build(O, obj, rows)
     net = J(os.path.join(D, 'sig-net-seocho.json'))
     for l in net['links']:
         a, b = by_cits.get(str(l[0])), by_cits.get(str(l[1]))
@@ -137,7 +158,7 @@ def main():
             edge(f['id'], '뒷받침', u, 'B', 'onto-rules.json(소유자 현장 판단)')
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
-    srcs = ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json']
+    srcs = ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',

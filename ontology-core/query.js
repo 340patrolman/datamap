@@ -25,11 +25,23 @@
     var zones = this.follow(intId, '가까움').map(function (x) { return { kind: x.o.kind, nm: x.o.nm || '', d: x.p.d }; }).sort(function (a, b) { return a.d - b.d; });
     var acts = this.back(intId, '대상').map(function (x) { return { id: x.o.id, what: x.o.what, ym: x.o.ym || null }; });
     var tot = A ? sum(A.years) : 0;
+    var dg = this.follow(intId, '속함')[0], G = dg ? dg.o : null;
     return { id: intId, nm: it.nm, cits: it.cits || null, dong: it.dongnm || '',
+      dng: G ? { id: G.id, nm: G.nm, hh: G.hh, res: G.res, fgn: G.fgn, biz: G.biz, bars: G.bars, jur: G.jur || [], grade: dg.p.g } : null,
       acc: A ? { y0: A.y0, years: A.years, total: tot, dead: A.dead, serious: A.serious, ped: A.ped, night: A.night, nightShare: tot ? A.night / tot : null, tod: A.tod, cells: A.cells, r: A.r, grade: acc.p.g } : null,
       noAcc: A ? null : '둘레 ' + 70 + 'm 안에 사고 칸이 없다(TAAS 2016~2025)',
       mainViolations: vio, cams: cams, zones: zones, actions: acts,
       notes: ['사고는 교차로에서 70m 안 100m 칸을 묶은 근사(등급 C) · 칸마다 주 위반 하나만 있어 위반 건수는 「주 위반인 칸들의 건수」', '과거 조치는 교통과 출력물이 있는 5곳만'] };
+  };
+  /* 질문 7 — 이 동 한눈에(2026-10-23 행정동을 그래프에 · 엮임 지도 첫째): 동의 사람·일터·술자리·관할 + 그 동 안 교차로(10년 사고 많은 순)
+     교차로마다 사고는 70m 안 칸을 묶은 근사라 이웃 교차로끼리 겹친다 — 동 합계로 더하지 않는다 */
+  P.q7 = function (dngId, k) {
+    var G = this.O[dngId]; if (!G || G.t !== 'DNG') return null; var self = this;
+    var ints = this.back(dngId, '속함').map(function (x) { var q = self.q1(x.o.id); return { id: q.id, nm: q.nm, total: q.acc ? q.acc.total : 0, night: q.acc ? q.acc.night : 0, ped: q.acc ? q.acc.ped : 0, cams: q.cams.length, main: q.mainViolations[0] ? q.mainViolations[0].nm : null }; })
+      .sort(function (a, b) { return b.total - a.total || (a.id < b.id ? -1 : 1); });
+    return { id: dngId, nm: G.nm, code: G.code, people: { hh: G.hh, one: G.one, res: G.res, fgn: G.fgn }, work: { biz: G.biz, wk: G.wk }, night: { bars: G.bars, hof06: G.hof06 }, jur: G.jur || [],
+      nInt: ints.length, ints: ints.slice(0, k || 5), noCam: ints.filter(function (x) { return !x.cams && x.total > 0; }).length,
+      notes: ['교차로 사고는 70m 안 칸 묶음이라 겹친다 — 동 합계로 더하지 않았다', '값은 그 동을 열쇠로 가진 파일 그대로(세대·주민 = 행정안전부 · 외국인주민 = 2024.11.1 · 사업장 = 국민연금 2026-08 · 주점·결제 = 서울만)'] };
   };
   /* 질문 2 — 왜 바꿨고 바꾼 뒤 어떻게 됐나(해 단위 · 앞 2해 vs 뒤 2해 · 바꾼 해는 뺀다) */
   P.q2 = function (intId) {

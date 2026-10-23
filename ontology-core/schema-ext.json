@@ -178,6 +178,29 @@
     "conf": "확인 정도"
    },
    "src": "data/onto-rules.json field"
+  },
+  "DNG": {
+   "name": "행정동(교차로가 든 동)",
+   "id": "DNG-<행정동 8자리>",
+   "from": "onto-schema(DNG)",
+   "required": [
+    "code",
+    "nm"
+   ],
+   "props": {
+    "code": "행정동 8자리(행정안전부 adm_cd2 앞 8자리 · RULE-ADM-1)",
+    "nm": "이름",
+    "gu": "구 코드",
+    "hh": "주민등록 세대 수(house-dong · 행정안전부 2026-08-31)",
+    "one": "1인 세대 수(같음)",
+    "res": "주민 수(mig-dong · 행정안전부 인구이동 2026-10-09 받음)",
+    "fgn": "외국인주민 합계(foreign-dong · 행정안전부 2024.11.1)",
+    "biz": "국민연금 가입 사업장 수(econ-dong · 2026-08 · 사업장 소재지)",
+    "wk": "그 사업장 가입자 수(같음)",
+    "bars": "주점 점포 수(dui-ref-seoul · 소상공인 상가정보 · 서울만)",
+    "hof06": "호프·간이주점 0~6시 결제 건수(dui-ref-seoul · 서울 상권분석 추정매출)",
+    "jur": "관할 경찰서(police.json · 직제 시행규칙 별표2 × 행정동 경계 — 반포동은 현장 기준이 따로 있다 RULE-JUR-2)"
+   }
   }
  },
  "linkTypes": {
@@ -234,6 +257,12 @@
   "뒷받침": {
    "from": "FK",
    "to": "RULE"
+  },
+  "속함": {
+   "from": "INT",
+   "to": "DNG",
+   "name": "교차로 → 그 자리가 든 행정동",
+   "grade": "B"
   }
  },
  "functions": {

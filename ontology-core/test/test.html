@@ -19,6 +19,8 @@ Promise.all([fetch('../data/core-seocho.json').then(function (r) { return r.json
   R.rules = o.rules(); R.rulesSig = o.rules('신호'); R.why = {}; o.rules().forEach(function (r) { R.why[r.id] = o.why(r.id); }); R.whyBad = o.why('INT-521');
   /* 질문 5 「주 위반이 같다」 목록의 실제 주 위반 */
   R.q5mv = {}; S.forEach(function (i) { R.q5mv[i] = (R.q5[i].dims.mainv.list || []).map(function (x) { var q = o.q1(x.id); return q.mainViolations[0] ? q.mainViolations[0].id : null; }); R.q5mv[i + '_me'] = R.q1[i].mainViolations[0] ? R.q1[i].mainViolations[0].id : null; });
+  /* 질문 7 — 행정동(2026-10-23) · 서초3동 · 방배본동(일부 번지 관할) · 반포4동(두 서) */
+  R.q7 = {}; ['DNG-11650530', 'DNG-11650590', 'DNG-11650581'].forEach(function (d) { R.q7[d] = o.q7(d, 100); }); R.q7bad = o.q7('INT-521');
   window.__R = R; document.getElementById('out').textContent = JSON.stringify(R, null, 1).slice(0, 4000);
 }).catch(function (e) { window.__R = { error: String(e) }; });
 </script>

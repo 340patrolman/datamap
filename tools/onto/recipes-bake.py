@@ -17,6 +17,9 @@ def dist(lat1, lon1, lat2, lon2):
     return math.hypot((lon2 - lon1) * math.cos(math.radians((lat1 + lat2) / 2)) * 111320, (lat2 - lat1) * 110540)
 
 
+DIRK = {'I': '내선', 'O': '외선', 'U': '상행', 'D': '하행'}   # 지하철 혼잡도 방향 코드
+
+
 def need(cond, msg):
     if not cond:
         ERR.append(msg)
@@ -36,6 +39,20 @@ HOW = [
          {'n': '그 자리 관할', 'file': 'police.json', 'key': '닿는 자리가 든 행정동 → 별표2 관할 경찰서(동 경계 = SGIS)', 'take': '관할 경찰서', 'grade': 'B'}],
      'judge': '길 자료로 「빠질 수 있는 곳」을 차례로 늘어놓은 것이지 「이리로 갔다」가 아니다. 끝 차로였다면 바로 다음 진출로, 1차로였다면 본선을 먼저 본다(데이터 압축지도 「🚨 신고 차량 예측」이 차로·신호를 넣어 갈 가능성을 어림한다). 관할서 이름은 닿는 자리 하나의 관할이다.',
      'act': ['가장 가까운 진출로 두 곳의 닿는 길 관할서에 먼저 공조 요청', '본선 다음 큰 나들목 둘레 관서에 이어서', '진출로 끝 신호 교차로는 데이터 압축지도에서 적색 대기 시각을 확인', '차종·색만 공유하고 개인정보는 무전·공조 시스템으로']},
+    {'id': 'crowd', 'q': '지금 사람이 몰리는 곳 — 몇 시까지 붐비나', 'who': ['경비', '지역경찰', '교통'], 'start': '서울 실시간 장소(121곳)',
+     'steps': [
+         {'n': '지금 붐빔', 'file': 'live-seocho.json', 'key': '장소 코드(서울 실시간 도시데이터)', 'take': '붐빔 단계 · 추정 인원 범위 · 받은 시각', 'grade': 'A'},
+         {'n': '앞으로 12시간', 'file': 'live-seocho.json', 'key': '같은 장소의 예측(fcst)', 'take': '가장 붐빌 때 · 「여유」로 풀리는 첫 시각', 'grade': 'A'},
+         {'n': '가까운 역 평소 혼잡', 'file': 'subway-crowd.json', 'key': '장소 이름에 든 역 이름', 'take': '방향별 퇴근 18~20시 가장 높은 혼잡 %', 'grade': 'B'}],
+     'judge': '실시간 값이라 열 때마다 바뀐다(받은 시각을 같이 본다). 인원은 통신사 기지국으로 어림한 범위다. 「약간 붐빔」 이상이면 보는 자리로 둔다 — 단계 낱말은 서울시 원문 그대로.',
+     'act': ['「붐빔」 단계인 곳은 출구·횡단보도 배치를 앞당긴다', '예측에서 붐빔이 풀리는 시각까지 인원을 남긴다', '역 혼잡이 높은 방향은 역무실과 공유']},
+    {'id': 'elder', 'q': '이 동 어르신 — 실종·보행 사고를 어디서 볼까', 'who': ['지역경찰', '여청', '교통'], 'start': '행정동',
+     'steps': [
+         {'n': '어르신 인구', 'file': 'police-func/<시도>.json', 'key': '행정동 8자리', 'take': '70세 이상 주민 · 주민 대비 %', 'grade': 'A'},
+         {'n': '보행 사고', 'file': 'police-func/<시도>.json', 'key': '같은 줄', 'take': '보행자 피해(10년)', 'grade': 'A'},
+         {'n': '119 신변·위치 확인 출동', 'file': 'rescue119/<시도>.json', 'key': '법정동 → 걸친 행정동(넓이 %)', 'take': '한 해 신변·위치 확인 출동 · 신고→출동 가운데값', 'grade': 'B'}],
+     'judge': '갈래마다 따로 본다. 119 신변·위치 확인에는 어르신만이 아니라 모든 연령의 위치 확인이 들어 있다(자살 추정도 이 갈래로 묶여 있다 — 원자료 그대로). 법정동 값은 그 법정동 전체다.',
+     'act': ['어르신이 많은 동은 실종 신고 때 처음 30분 수색 동선(공원·하천·역)을 미리 정한다', '보행 사고가 많은 동의 무단횡단 잦은 곳에 낮 시간 계도', '배회감지기·지문 사전등록을 주민센터와 같이 안내']},
 ]
 GRADE = {'A': '원자료에 그대로 있는 값', 'B': '원자료끼리 코드·이름으로 맞댄 값', 'C': '자리 거리로 붙인 어림(몇 m 안)'}
 
@@ -142,7 +159,7 @@ def run_event():
             continue
         ch = [['다가오는 행사', ' / '.join('%s %s~%s %s명 · %s' % (e[0][5:], e[2], e[3], e[4], e[5][:24]) for e in evs) or '앞으로 자료에 없음', 'C']]
         cr = [x for x in sc['stn'] if x[0] == stn]
-        ch.append(['평소 퇴근 혼잡', ' · '.join('%s %s방향 %s%%' % (x[1], x[2], x[7]) for x in cr) if cr else '혼잡도 자료 없는 역', 'A'])
+        ch.append(['평소 퇴근 혼잡', ' · '.join('%s %s %s%%' % (x[1], DIRK.get(x[2], x[2] + '방향'), x[7]) for x in cr) if cr else '혼잡도 자료 없는 역', 'A'])
         out.append({'obj': stn + '역', 'chain': ch})
     return out
 
@@ -307,8 +324,47 @@ def run_chase():
     return out
 
 
+def run_crowd():
+    lv = D('live-seocho.json'); sc = D('subway-crowd.json')
+    ORD = {'여유': 0, '보통': 1, '약간 붐빔': 2, '붐빔': 3}
+    pl = [x for x in lv['places'] if x.get('pop')]
+    need(pl, 'live-seocho 장소')
+    pl.sort(key=lambda x: (-ORD.get(x['pop'].get('lvl'), -1), -(x['pop'].get('max') or 0)))
+    out = []
+    for x in pl[:2]:
+        po = x['pop']
+        ch = [['지금 붐빔', '%s · %s~%s명 (%s 받음)' % (po.get('lvl'), int(po.get('min') or 0), int(po.get('max') or 0), po.get('time')), 'A']]
+        fc = po.get('fcst') or []
+        if fc:
+            top = max(fc, key=lambda f: (ORD.get(f[1], -1), f[3] or 0))
+            free = [f for f in fc if f[1] == '여유']
+            ch.append(['앞으로 12시간', '가장 붐빌 때 %s %s · 「여유」로 풀리는 첫 시각 %s' % (top[0][11:], top[1], free[0][0][11:] if free else '12시간 안 없음'), 'A'])
+        else:
+            ch.append(['앞으로 12시간', '예측 자료 없음', 'A'])
+        st = [r for r in sc['stn'] if r[0] and r[0] in x['name']]
+        ch.append(['가까운 역 평소 혼잡', ' · '.join('%s %s %s %s%%' % (r[0], r[1], DIRK.get(r[2], r[2] + '방향'), r[7]) for r in st[:3]) or '이름으로 이은 역 없음', 'B'])
+        out.append({'obj': x['name'], 'chain': ch})
+    return out
+
+
+def run_elder():
+    pf = D('police-func/11.json'); K = pf['keys']; rs = D('rescue119/11.json')
+    seo = sorted([(k, v) for k, v in pf['dong'].items() if k.startswith('11650')], key=lambda kv: -kv[1][2][K.index('old70')])
+    need(seo, 'police-func 서초')
+    gi = rs['groups'].index('신변·위치 확인')
+    out = []
+    for k, v in seo[:2]:
+        va = v[2]; pop = va[K.index('pop')]
+        ch = [['어르신 인구', '70세 이상 %s명 · 주민의 %.1f%%' % (va[K.index('old70')], 100.0 * va[K.index('old70')] / pop if pop else 0), 'A'],
+              ['보행 사고', '보행자 피해 10년 %s명' % va[K.index('ped10')], 'A']]
+        hits = [it for it in rs['items'] if it[9] and any(a[0] == k for a in it[9])]
+        ch.append(['119 신변·위치 확인 출동', ' · '.join('%s 한 해 %s건(신고→출동 가운데값 %s분)' % (it[2], it[5][gi], it[7]) for it in hits) or '이 동에 걸친 법정동 자료 없음', 'B'])
+        out.append({'obj': v[0], 'chain': ch})
+    return out
+
+
 def main():
-    ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'flood': run_flood(), 'foreign': run_foreign(), 'march': run_march(), 'biz': run_biz(), 'chase': run_chase()}
+    ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'flood': run_flood(), 'foreign': run_foreign(), 'march': run_march(), 'biz': run_biz(), 'chase': run_chase(), 'crowd': run_crowd(), 'elder': run_elder()}
     for r in RECIPES:
         for s in r['steps']:
             f = s['file'].replace('<시도>', '11')

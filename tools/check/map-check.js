@@ -92,6 +92,8 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var oh0 = location.hash; location.hash = 'zz=1&orc=night:11650531'; TGMap2D.orcFromHash(); var ohc = (document.getElementById('m2dCard') || {}).innerHTML || '', oh1 = location.hash; location.hash = 'orc=1'; TGMap2D.orcFromHash(); var ohh = (document.getElementById('m2dCard') || {}).innerHTML || ''; history.replaceState(null, '', location.pathname + oh0);
+        ck('🧩 주소 입구 #orc=night:<동 코드> → 서초4동 사슬 카드 · orc 만 지움(다른 키 남음) · #orc=1 → 질문 고르기 (v2.279.0)', /오늘 밤 술자리/.test(ohc) && /주점 53곳/.test(ohc) && oh1 === '#zz=1' && /class="orcq"/.test(ohh), oh1); } catch (e) { ck('엮어서 답 찾기 주소 입구 검사', false, e.message); }
       try { var EX = TGMap2D.orcEx() || {}, bad9 = [], n9 = 0, SKIP = { '학사 일정': 1, '다가오는 행사': 1 };
         (EX.school || []).forEach(function (x) { var r = TGMap2D.orcHtml('school', { name: x.obj }); x.chain.forEach(function (c) { if (SKIP[c[0]]) return; n9++; var g = r && r.ch.filter(function (q) { return q[0] === c[0]; })[0]; if (!g || g[1] !== c[1] || g[2] !== c[2]) bad9.push(x.obj + '/' + c[0] + ' = ' + (g ? g[1] : '없음') + ' ≠ ' + c[1]); }); });
         (EX.event || []).forEach(function (x) { var r = TGMap2D.orcHtml('event', { stn: x.obj.replace(/역$/, '') }); x.chain.forEach(function (c) { if (SKIP[c[0]]) return; n9++; var g = r && r.ch.filter(function (q) { return q[0] === c[0]; })[0]; if (!g || g[1] !== c[1]) bad9.push(x.obj + '/' + c[0] + ' = ' + (g ? g[1] : '없음') + ' ≠ ' + c[1]); }); });

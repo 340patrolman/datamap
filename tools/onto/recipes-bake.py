@@ -63,6 +63,27 @@ RECIPES = [
          {'n': '그 자리 119 센터', 'file': 'fire-jur-seoul.json', 'key': '교차로가 든 행정동 → 조례 관할 센터', 'take': '119안전센터(조례 관할 · 기계로 읽음)', 'grade': 'B'}],
      'judge': '시나리오(통제 가정)에서 계산한 값이다 — 실제 비 때는 막히는 길이 다르다. 30초 넘게 늦어지는 교차로만 자료에 있다.',
      'act': ['큰비 예보 때 늦어지는 교차로 둘레는 다른 관서에서 먼저 출동할 수 있게 상황실과 공유', '통제 때 닿지 못하는 교차로는 우회로를 미리 정하기']},
+    {'id': 'foreign', 'q': '이 동 외국인 주민 — 어떤 외사 업무가 생길까', 'who': ['외사', '여청', '지역경찰'], 'start': '행정동',
+     'steps': [
+         {'n': '외국인 주민 갈래', 'file': 'foreign-dong.json', 'key': '행정동 8자리', 'take': '외국인주민 합계 · 근로자 · 결혼이민자 · 유학생 · 외국국적동포 · 자녀', 'grade': 'A'},
+         {'n': '주민 대비', 'file': 'police-func/<시도>.json', 'key': '행정동 8자리', 'take': '주민 수 → 외국인 주민 몫 %', 'grade': 'A'},
+         {'n': '구 안에서 어디쯤', 'file': 'foreign-dong.json', 'key': '같은 구 행정동끼리', 'take': '외국인 주민 수 차례(구 안)', 'grade': 'A'}],
+     'judge': '갈래마다 따로 본다. 외국인 주민이 많다고 범죄가 많은 것이 아니다 — 언어·제도 안내와 피해 신고가 어려운 사람이 많은 자리라는 뜻이다. 행안부 외국인주민 현황(2024.11)은 1년에 한 번 나온다.',
+     'act': ['결혼이민자가 많은 동은 가정폭력 피해 신고 길(다국어 1366 · 외국인 도움 1345)을 지구대에 비치', '근로자·동포가 많은 동은 임금 체불·사기 피해 안내', '유학생이 많은 동은 학기 초 전동킥보드·자전거 교통 안내', '다국어 통역이 필요한 신고에 대비해 통역 연락 길을 확인']},
+    {'id': 'march', 'q': '집회 행진이 끝나는 곳 — 어느 교차로를 볼까', 'who': ['경비', '교통'], 'start': '집회',
+     'steps': [
+         {'n': '행진 경로', 'file': 'rally-seoul.json', 'key': '날짜 · 장소 글(「->」 = 행진)', 'take': '시작·끝 자리 · 시각 · 신고 인원 · 관할서', 'grade': 'C'},
+         {'n': '끝 자리 둘레 교차로', 'file': 'onto-int.json', 'key': '행진 끝 좌표 300m 안', 'take': '교차로 이름 · 관할 · 연동 부모(종속 신호)', 'grade': 'C'},
+         {'n': '그 교차로 신호 자료', 'file': 'onto-int.json', 'key': '같은 줄 has 비트', 'take': '방향별 초 · 경찰청 계획 · 교통과 출력물이 있는지', 'grade': 'A'}],
+     'judge': '행진 끝 자리는 게시판 장소 글을 장소 검색으로 잡은 것이라 어림이다. 연동 부모가 있는 교차로는 부모 교차로 신호를 같이 봐야 한다.',
+     'act': ['행진 끝 시각 30분 전 끝 자리 교차로에 신호 수동 대기', '연동 부모 교차로 신호를 같은 시각에 확인', '신호 자료가 없는 교차로는 현장 수신호 인원 배치']},
+    {'id': 'biz', 'q': '이 동 가게가 늘고 줄고 — 무엇이 달라지고 있나', 'who': ['정보', '생활안전', '지역경찰'], 'start': '행정동',
+     'steps': [
+         {'n': '업종 조기 신호', 'file': 'esig/<시도>.json', 'key': '행정동 8자리 → 업종(인허가 30갈래)', 'take': '개업 늘어남·줄어듦 · 폐업이 개업보다 많은 해 · 드나듦 잦음(비트마다 따로)', 'grade': 'A'},
+         {'n': '서울 상권분석과 맞대기', 'file': 'esig/<시도>.json', 'key': '같은 줄(업종 사전 ind-dict 로 이름 맞댐)', 'take': '최근 4분기 개업·폐업 점포', 'grade': 'B'},
+         {'n': '입주 예정 단지', 'file': 'esig/<시도>.json', 'key': '같은 동 redev', 'take': '입주 예정 달 · 세대', 'grade': 'A'}],
+     'judge': '점수로 합치지 않는다. 「유망·추천」이 아니다 — 동네가 바뀌는 흐름을 아는 바탕이다. 작은 수(앞 3해 개업 9곳 미만 · 지금 10곳 미만)는 말하지 않는다.',
+     'act': ['주점·노래방 개업이 늘어나는 동은 밤 순찰 시간대 다시 보기', '폐업이 이어지는 거리는 빈 점포 둘레 방범 순찰', '입주 예정 단지 둘레는 입주 달 앞뒤 교통·주차 민원 대비']},
 ]
 
 
@@ -164,8 +185,55 @@ def run_flood():
     return out
 
 
+def run_foreign():
+    fd = D('foreign-dong.json')['dong']; pf = D('police-func/11.json'); K = pf['keys']
+    seo = sorted([(k, v) for k, v in fd.items() if k.startswith('11650')], key=lambda kv: -(kv[1].get('t') or 0))
+    need(seo, 'foreign-dong 서초')
+    out = []
+    for i, (k, v) in enumerate(seo[:2]):
+        dv = pf['dong'].get(k); pop = dv[2][K.index('pop')] if dv else None
+        ch = [['외국인 주민 갈래', '합계 %s명 — 근로자 %s · 결혼이민자 %s · 유학생 %s · 외국국적동포 %s · 자녀 %s' % tuple('자료 없음' if v.get(f) is None else v.get(f) for f in ('t', 'w', 'm', 's', 'k', 'c')), 'A'],
+              ['주민 대비', ('주민 %s명 가운데 %.1f%%' % (pop, 100.0 * v['t'] / pop)) if pop else '주민 수 자료 없음', 'A'],
+              ['구 안에서 어디쯤', '서초구 %d개 동 가운데 %d번째로 많음' % (len(seo), i + 1), 'A']]
+        out.append({'obj': dv[0] if dv else k, 'chain': ch})
+    return out
+
+
+def run_march():
+    rs = D('rally-seoul.json'); oi = D('onto-int.json'); P = D('police.json')
+    it = [x for x in rs['items'] if x.get('march') and x.get('dest')]
+    need(it, 'rally-seoul 행진')
+    it.sort(key=lambda x: (x['d'], x.get('n') or 0), reverse=True)
+    HAS = [(1, '방향별 초'), (2, '경찰청 계획'), (4, '교통과 출력물')]
+    out = []
+    for x in it[:2]:
+        la, lo = x['dest']
+        near = sorted([r for r in oi['items'] if dist(la, lo, r[2], r[3]) < 300], key=lambda r: dist(la, lo, r[2], r[3]))[:3]
+        ch = [['행진 경로', '%s %s~%s · 신고 %s명 · 관할 %s — %s' % (x['d'], x.get('from') or '?', x.get('to') or '?', x.get('n') or '?', x.get('st'), x['p'][:40]), 'C']]
+        ch.append(['끝 자리 둘레 교차로(300m)', ' · '.join('%s(%dm%s)' % (r[1], dist(la, lo, r[2], r[3]), ' · 연동 부모 있음' if r[10] else '') for r in near) or '300m 안 교차로 없음', 'C'])
+        ch.append(['그 교차로 신호 자료', ' · '.join('%s: %s' % (r[1], '·'.join(n for b, n in HAS if r[11] & b) or '없음') for r in near) or '—', 'A'])
+        out.append({'obj': x['p'][:30], 'where': [la, lo], 'chain': ch})
+    return out
+
+
+def run_biz():
+    es = D('esig/11.json'); cats = es['cats']; fl = es['flags']
+    dd = es['gu'].get('11650', {}).get('dong', {})
+    need(dd, 'esig 서초')
+    pick = sorted(dd.items(), key=lambda kv: -sum(1 for r in kv[1]['rows'] if r[8]))[:2]
+    out = []
+    for k, v in pick:
+        sig = [r for r in v['rows'] if r[8]][:5]
+        ch = [['업종 조기 신호', ' / '.join('%s %s곳: %s' % (cats[r[0]], r[1], ' · '.join(t for b, t in fl.items() if r[8] & int(b))) for r in sig) or '눈에 띄는 신호 없음', 'A']]
+        sv = [r for r in v['rows'] if r[9] and r[8]][:3]
+        ch.append(['서울 상권분석과 맞대기', ' / '.join('%s(%s) 최근 4분기 개업 %s · 폐업 %s' % (cats[r[0]], r[9][3], r[9][1], r[9][2]) for r in sv) or '맞댄 업종 없음', 'B'])
+        ch.append(['입주 예정 단지', ' · '.join('%s %s %s세대' % tuple(x) for x in (v.get('redev') or [])) or '없음', 'A'])
+        out.append({'obj': v['n'], 'chain': ch})
+    return out
+
+
 def main():
-    ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'flood': run_flood()}
+    ex = {'school': run_school(), 'event': run_event(), 'night': run_night(), 'flood': run_flood(), 'foreign': run_foreign(), 'march': run_march(), 'biz': run_biz()}
     for r in RECIPES:
         for s in r['steps']:
             f = s['file'].replace('<시도>', '11')

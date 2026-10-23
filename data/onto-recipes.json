@@ -197,7 +197,7 @@
    "steps": [
     {
      "n": "늦어지는 교차로",
-     "file": "flood-delay-seocho.json",
+     "file": "flood-delay-<seocho|six>.json",
      "key": "침수 통제 가정(시나리오) → 교차로마다 평소·통제 때 걸리는 초",
      "take": "평소 초 · 통제 때 초 · 가장 빨리 오는 관서가 바뀌나",
      "grade": "B"

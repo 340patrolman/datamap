@@ -63,7 +63,7 @@ RECIPES = [
      'act': ['0~6시 결제가 많은 동의 큰길 출구에서 23~02시 음주 단속 자리 검토', '밤 사고 많은 동은 순찰 경로에 넣기', '올빼미버스 하차 정류장 둘레 보행자 사고 주의']},
     {'id': 'flood', 'q': '큰비로 길이 막히면 — 출동이 어디서 얼마나 늦나', 'who': ['지역경찰', '소방', '교통'], 'start': '교차로',
      'steps': [
-         {'n': '늦어지는 교차로', 'file': 'flood-delay-seocho.json', 'key': '침수 통제 가정(시나리오) → 교차로마다 평소·통제 때 걸리는 초', 'take': '평소 초 · 통제 때 초 · 가장 빨리 오는 관서가 바뀌나', 'grade': 'B'},
+         {'n': '늦어지는 교차로', 'file': 'flood-delay-<seocho|six>.json', 'key': '침수 통제 가정(시나리오) → 교차로마다 평소·통제 때 걸리는 초', 'take': '평소 초 · 통제 때 초 · 가장 빨리 오는 관서가 바뀌나', 'grade': 'B'},
          {'n': '그 자리 119 센터', 'file': 'fire-jur-seoul.json', 'key': '교차로가 든 행정동 → 조례 관할 센터', 'take': '119안전센터(조례 관할 · 기계로 읽음)', 'grade': 'B'}],
      'judge': '시나리오(통제 가정)에서 계산한 값이다 — 실제 비 때는 막히는 길이 다르다. 30초 넘게 늦어지는 교차로만 자료에 있다.',
      'act': ['큰비 예보 때 늦어지는 교차로 둘레는 다른 관서에서 먼저 출동할 수 있게 상황실과 공유', '통제 때 닿지 못하는 교차로는 우회로를 미리 정하기']},
@@ -374,7 +374,7 @@ def main():
     need(all(k in ids for k in ex), '예시 키가 레시피에 없음 %s' % [k for k in ex if k not in ids])
     for r in RECIPES:
         for s in r['steps']:
-            f = s['file'].replace('<시도>', '11').replace('<seoul|gg|incheon>', 'seoul')
+            f = s['file'].replace('<시도>', '11').replace('<seoul|gg|incheon>', 'seoul').replace('<seocho|six>', 'seocho')
             need(os.path.exists(os.path.join(ROOT, 'data', f)), '파일 없음 ' + f)
         need(ex.get(r['id']), '예시 없음 ' + r['id'])
     doc = {'schema': 'tg-onto-recipes/1', 'made': TODAY.isoformat(),

@@ -87,7 +87,7 @@
     },
     {
      "n": "학사 일정",
-     "file": "school-cal-seoul.json",
+     "file": "school-cal-<seoul|gg|incheon>.json",
      "key": "날짜",
      "take": "오늘 뒤 가장 가까운 방학·재량휴업·졸업식 날",
      "grade": "A"

@@ -43,7 +43,7 @@ RECIPES = [
          {'n': '학교 둘레 업소', 'file': 'edu-zone-biz/<시도>.json', 'key': '학교 점 200m 안(교육환경보호구역 상대구역 반경의 어림)', 'take': '갈래별 곳 수 — 유흥·단란·노래연습장·PC방·숙박', 'grade': 'C'},
          {'n': '그 동 교통사고', 'file': 'police-func/<시도>.json', 'key': '행정동 8자리', 'take': '한 해 평균 사고 · 보행자 피해(10년)', 'grade': 'A'},
          {'n': '학령 인구', 'file': 'dong-kidage/<시도>.json', 'key': '행정동 8자리', 'take': '만 6~11 · 12~14 · 15~17세', 'grade': 'A'},
-         {'n': '학사 일정', 'file': 'school-cal-seoul.json', 'key': '날짜', 'take': '오늘 뒤 가장 가까운 방학·재량휴업·졸업식 날', 'grade': 'A'}],
+         {'n': '학사 일정', 'file': 'school-cal-<seoul|gg|incheon>.json', 'key': '날짜', 'take': '오늘 뒤 가장 가까운 방학·재량휴업·졸업식 날', 'grade': 'A'}],
      'judge': '값을 갈래마다 따로 보인다. 업소가 반경 안에 있다고 위반이 아니다(상대구역은 심의로 허용된 곳·학교보다 먼저 있던 곳이 섞인다). 보호구역 CCTV 0대는 「자료에 0」이지 「없다」가 아닐 수 있다.',
      'act': ['등교 07:50~08:40 · 하교 13:00~15:30 횡단보도·보호구역 진입로에서 서행 지도', 'CCTV 가 적은 보호구역은 순찰 차례 앞으로', '업소 밀집 쪽 하교길은 학교전담경찰관과 공유', '방학·재량휴업 날은 등하교 배치를 줄인다']},
     {'id': 'event', 'q': '공연·집회가 끝나는 시각 — 어느 역 출구가 붐비나', 'who': ['경비', '교통', '지역경찰'], 'start': '역',
@@ -374,7 +374,7 @@ def main():
     need(all(k in ids for k in ex), '예시 키가 레시피에 없음 %s' % [k for k in ex if k not in ids])
     for r in RECIPES:
         for s in r['steps']:
-            f = s['file'].replace('<시도>', '11')
+            f = s['file'].replace('<시도>', '11').replace('<seoul|gg|incheon>', 'seoul')
             need(os.path.exists(os.path.join(ROOT, 'data', f)), '파일 없음 ' + f)
         need(ex.get(r['id']), '예시 없음 ' + r['id'])
     doc = {'schema': 'tg-onto-recipes/1', 'made': TODAY.isoformat(),

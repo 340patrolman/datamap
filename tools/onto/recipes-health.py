@@ -38,7 +38,7 @@ print('  (시도 전체 보호구역 %d곳 중 CCTV 값 %d · 도로 폭 값 %d)
 
 dongs = [k for k in pf['dong'] if k.startswith(GU)]
 fd = D('foreign-dong.json')['dong']; es = D('esig/%s.json' % SD)['gu'].get(GU, {}).get('dong', {})
-rs = D('rescue119/%s.json' % SD); dr = {x[0]: x for x in D('dui-ref-seoul.json')['items']} if SD == '11' else {}
+rs = D('rescue119/%s.json' % SD); dr = {x[0]: x for x in D({'11': 'dui-ref-seoul.json', '41': 'dui-ref-gg.json', '28': 'dui-ref-incheon.json'}[SD])['items']} if SD in ('11', '41', '28') else {}
 c2 = {'동': len(dongs), '외국인 값': 0, '가게 신호 1개 이상': 0, '119 위치 확인 값': 0, '밤 술자리 값': 0}
 for d8 in dongs:
     c2['외국인 값'] += d8 in fd

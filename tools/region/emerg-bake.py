@@ -6,7 +6,7 @@
 #   119(소방): **구조** 출동은 소방청이 1건 단위로 올린다(15062386 「소방청_구조활동현황」 2025 — 신고·출동 시각 · 시·구·동(법정동) · 사고 원인). 구급은 서울 2019년 동 × 해(15073858)뿐이고 시간대가 없다
 #   ⚠ 1건 단위 원자료(접수번호·분 단위 시각)는 저장소에 올리지 않는다 — 동 × 시 × 갈래로 묶은 수만. 「자살추정」은 「위치확인」과 한 갈래(신변·위치 확인)로 묶어 싣는다(동 단위로 따로 드러내지 않는다)
 #   받기: py -3.12 -X utf8 tools/region/dgfile.py <번호> → 07_API키/out/dg/<번호>/x.csv   ·   굽기: py -3.12 -X utf8 tools/region/emerg-bake.py
-import json, os, csv, io, datetime, collections, statistics
+import json, os, csv, io, re, datetime, collections, statistics
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); DG = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'dg')
 def rd(pk):
     b = open(os.path.join(DG, pk, 'x.csv'), 'rb').read()
@@ -55,9 +55,13 @@ def main():
     items = [[k[0], k[1], k[2], sum(d['h']), d['h'], d['g'], d['t'], (round(statistics.median(d['m']), 1) if len(d['m']) >= 20 else None)] for k, d in sorted(D.items()) if k[2]]
     B = json.load(open(os.path.join(ROOT, 'data', 'b2a.json'), encoding='utf-8'))['b2a']; GN = {g['gu']: g['name'].replace(' ', '') for g in json.load(open(os.path.join(ROOT, 'data', 'r', 'index.json'), encoding='utf-8'))['gus']}; BK = {}
     for c, v in B.items(): BK[(c[:2], GN.get(v['gu'], ''), v['n'])] = [c, [[a[0], a[2]] for a in v['a']]]
+    BK2 = {}   # 원자료 시군구가 「화성시」인데 지도 시군구가 「화성시만세구」처럼 나뉜 곳(2026 화성 4구) — 시 이름 + 법정동 이름으로 한 번 더
+    for c, v in B.items():
+        g = GN.get(v['gu'], ''); mm = re.match(r'^(.+?시)(.+구)$', g)
+        if mm: BK2.setdefault((c[:2], mm.group(1), v['n']), [c, [[a[0], a[2]] for a in v['a']]])
     hit = 0
     for it in items:
-        m = BK.get(({'서울': '11', '경기': '41', '인천': '28'}[it[0]], it[1].replace(' ', ''), it[2])); it.append(m[0] if m else None); it.append(m[1] if m else None); hit += 1 if m else 0
+        kk = ({'서울': '11', '경기': '41', '인천': '28'}[it[0]], it[1].replace(' ', ''), it[2]); m = BK.get(kk) or BK2.get(kk); it.append(m[0] if m else None); it.append(m[1] if m else None); hit += 1 if m else 0
     print('법정동 코드 붙음', hit, '/', len(items), {sd: sum(1 for i in items if i[0] == sd and i[8]) for sd in ('서울', '경기', '인천')}, '안 붙은 서울', [(i[1], i[2]) for i in items if i[0] == '서울' and not i[8]][:15], '안 붙은 경기', [(i[1], i[2]) for i in items if i[0] == '경기' and not i[8]][:15])
     doc = {'schema': 'tg-rescue119/1', 'made': td, 'year': 2025, 'source': '공공데이터포털 「소방청_구조활동현황」(15062386 · 2025-01-01 ~ 12-31 · 전국 613,150건 가운데 서울·경기·인천 %d건)' % n,
            'note': ['**119 구조대 출동**이다(화재 확인·교통사고 구조·승강기 갇힘·수난·산악·위치 확인 등) — **구급차 출동(환자 이송)은 여기에 없다**. 구급의 동 × 시간대 공개 자료는 찾지 못했다(서울은 2019년 동 × 해뿐 · more-sources.json)',

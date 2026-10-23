@@ -153,7 +153,7 @@
     var odd = L.filter(function (x) { return String(x.rank) !== '1'; });
     if (odd.length) h += '<b>1순위가 아닌 곳을 고른 까닭 — 형님 현장 판단(규칙 후보)</b><ul class="ev">' + odd.map(function (x) { return '<li>' + esc(x.date) + ' ' + esc(x.ctx) + ' → ' + esc(x.nm) + ' [' + esc(x.rank) + '위] ' + esc(x.why) + '</li>'; }).join('') + '</ul>';
     h += '<ul class="ev">' + L.slice().reverse().slice(0, 30).map(function (x) { return '<li>' + esc(x.date) + ' · ' + esc(x.nm) + ' · ' + esc(x.did) + ' · ' + esc(x.ctx) + (x.why ? ' · ' + esc(x.why) : '') + '</li>'; }).join('') + '</ul>';
-    return h + '<div class="btns"><button data-csv="1">📋 CSV 복사</button><button data-clear="1">🗑 모두 지우기</button></div>'; }
+    return h + '<div class="btns"><button data-csv="1">📋 CSV 복사</button><button data-clear="1">🗑 모두 지우기</button></div><div class="s">복사한 CSV 를 Claude 에게 붙여 주면 「현장 판단 후보」로 정리해, 형님이 맞다고 한 줄만 규칙 장부에 올린다 · 사람 이름·차량번호는 적지 않는다</div>'; }
 
   function paint() { var el = box(); if (!DATA) { el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정</h3><div class="s">자료를 읽는 중…</div>'; return; }
     var T = [['d1', '어디 설까'], ['d2', '🍺 음주'], ['d3', '📢 집회·행사'], ['d4', '🌧 큰비'], ['d5', '📒 기록']], body = { d1: d1, d2: d2, d3: d3, d4: d4, d5: d5 }[ST.tab]();

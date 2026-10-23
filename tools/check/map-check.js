@@ -92,6 +92,7 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var sn9 = TGMap2D.snapTest(); ck('🖐 끄는 동안 그림 한 장 옮기기 — 떠 둔 한 장으로 옮김·1.5배 키움은 되고 15배는 다시 그리기로 (v2.290.0)', sn9[0] === true && sn9[1] === false && sn9[2] === true, JSON.stringify(sn9)); } catch (e) { ck('끄는 동안 한 장 검사', false, e.message); }
       try { var fr0 = { a: 100, ci: 200, cyc: 200, mv: [['nt', 'St', 74, 5, 121, 10, 3], ['et', 'Lt', 20, 4, 176, 157, 3]] }, fb0 = { a: 50, ci: 200, cyc: 200, mv: [['nt', 'St', 74, 5, 121, 0, 9], ['nt', 'Lt', 23, 4, 173, 172, 9], ['et', 'St', 46, 4, 150, 88, 9], ['et', 'Lt', 20, 4, 176, 147, 9], ['wt', 'St', 55, 4, 141, 88, 9]] }, ff0 = TGMap2D.sdFill(fr0, [fr0, fb0]), nl0 = (ff0.mv || []).filter(function (m) { return m[0] === 'nt' && m[1] === 'Lt'; })[0];
         ck('🚦 신호 카드 — 지금 기록이 이동류 몇 개만 읽혔으면 같은 주기 기록에서 채움(자리 맞춤 · 채움 표시) · 원본은 안 바뀜 (v2.288.1)', ff0.mv.length === 5 && !!nl0 && nl0[5] === 182 && nl0[7] === 3 && fr0.mv.length === 2, (ff0.mv || []).length + '줄 · nt Lt 시작 ' + (nl0 && nl0[5])); } catch (e) { ck('신호 채움 검사', false, e.message); }
       try { var sg9 = TGMap2D.orcHtml('school', { sd: '41', name: '수원선일초등학교' }) || { ch: [] }, sj9 = sg9.ch.map(function (c) { return c[0] + '=' + c[1]; }).join(' / ');

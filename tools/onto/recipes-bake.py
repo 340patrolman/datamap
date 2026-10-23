@@ -39,6 +39,7 @@ RECIPES = [
      'steps': [
          {'n': '관할', 'file': 'school-police/<시도>.json', 'key': '학교 ID → 행정동·경찰서·지구대', 'take': '관할 경찰서 · 지구대(근사) · 행정동', 'grade': 'B'},
          {'n': '어린이보호구역', 'file': 'child-zone/<시도>.json', 'key': '학교 이름 맞대기 → 없으면 학교 300m 안 초등학교 구역', 'take': 'CCTV 대수 · 보호구역 도로 폭', 'grade': 'B'},
+         {'n': '둘레 어린이보호 CCTV', 'file': 'cctv-std/<시도>.json', 'key': '학교 점 300m 안 · 설치목적 「어린이보호」', 'take': '설치 자리 수 · 카메라 대수(전국 CCTV 표준데이터)', 'grade': 'C'},
          {'n': '학교 둘레 업소', 'file': 'edu-zone-biz/<시도>.json', 'key': '학교 점 200m 안(교육환경보호구역 상대구역 반경의 어림)', 'take': '갈래별 곳 수 — 유흥·단란·노래연습장·PC방·숙박', 'grade': 'C'},
          {'n': '그 동 교통사고', 'file': 'police-func/<시도>.json', 'key': '행정동 8자리', 'take': '한 해 평균 사고 · 보행자 피해(10년)', 'grade': 'A'},
          {'n': '학령 인구', 'file': 'dong-kidage/<시도>.json', 'key': '행정동 8자리', 'take': '만 6~11 · 12~14 · 15~17세', 'grade': 'A'},
@@ -114,7 +115,7 @@ RECIPES = [
 
 def run_school():
     sp = D('school-police/11.json'); P = D('police.json'); ST = {s[0]: s[1] for s in P['stations']}
-    cz = D('child-zone/11.json'); ez = D('edu-zone-biz/11.json'); pf = D('police-func/11.json'); kid = D('dong-kidage/11.json'); cal = D('school-cal-seoul.json')
+    cz = D('child-zone/11.json'); ez = D('edu-zone-biz/11.json'); cc = D('cctv-std/11.json'); pf = D('police-func/11.json'); kid = D('dong-kidage/11.json'); cal = D('school-cal-seoul.json')
     K = pf['keys']
     need('acc' in K and 'ped10' in K, 'police-func 칸 acc·ped10')
     out = []
@@ -128,6 +129,9 @@ def run_school():
         if not z:
             z = sorted([x for x in cz['items'] if x[2] == '초등학교' and dist(la, lo, x[1], x[0]) < 300], key=lambda x: dist(la, lo, x[1], x[0]))[:1]
         ch.append(['어린이보호구역', ('있음(%s) · CCTV %s · 도로 폭 %s' % (z[0][3], ('%s대' % z[0][5]) if z[0][5] is not None else '대수 자료 없음', ('%sm' % z[0][6]) if z[0][6] is not None else '자료 없음')) if z else '이 학교 이름으로 잡힌 구역 없음', 'B'])
+        kp = cc['purposes'].index('어린이보호') if '어린이보호' in cc['purposes'] else -1
+        cv = [x for x in cc['items'] if x[2] == kp and dist(la, lo, x[1], x[0]) < 300]
+        ch.append(['둘레 어린이보호 CCTV(300m)', ('%d곳 · 카메라 %d대' % (len(cv), sum(x[3] or 0 for x in cv))) if cv else '300m 안 「어린이보호」 목적 CCTV 없음(표준데이터 기준)', 'C'])
         near = [x for x in ez['items'] if dist(la, lo, x[1], x[0]) < 200]
         cnt = {}
         for x in near:

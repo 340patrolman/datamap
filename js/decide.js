@@ -141,8 +141,7 @@
     h += '<b>🚇 지하차도</b>' + (under.length ? under.slice(0, 4).map(function (s, n) { return segCard(s, n + 1); }).join('') : '<div class="cd">침수 흔적 30m 안 지하차도 없음</div>');
     h += '<b>그 밖의 길</b>' + rest.slice(0, 6).map(function (s, n) { return segCard(s, n + 1); }).join('');
     ['A', 'B'].forEach(function (k) { var X = D4.delay[k]; if (!X) return;
-      h += '<details><summary>🚓 출동이 늦어지는 곳 — 시나리오 ' + k + ' (견주는 값 · 실제 출동 시간 아님)</summary><div class="s">' + esc(X.what) + ' · 교차로 ' + fmt(X.stat['교차로']) + '곳 중 닿지 못함 ' + fmt(X.stat['닿지 못함']) + ' · 3분 넘게 늦음 ' + fmt(X.stat['3분 넘게 늦음']) + ' · 갇힘 ' + X.trapN + '</div><ul class="ev">' +
-        X.top.slice(0, 6).map(function (x) { return '<li>' + esc(x[0]) + ' — 평소 ' + x[3] + '초 → ' + x[4] + '초(+' + (x[4] - x[3]) + ') · ' + esc(x[5]) + (x[6] ? ' → ' + esc(x[6]) + ' 가 더 빠름' : '') + '</li>'; }).join('') + '</ul></details>'; });
+      h += '<details><summary>🚓 출동이 늦어지는 곳 — 시나리오 ' + k + ' (견주는 값 · 실제 출동 시간 아님)</summary><div class="s">' + esc(X.what) + ' · 교차로 ' + fmt(X.stat['교차로']) + '곳 중 닿지 못함 ' + fmt(X.stat['닿지 못함']) + ' · 3분 넘게 늦음 ' + fmt(X.stat['3분 넘게 늦음']) + ' · 갇힘 ' + X.trapN + '</div><div class="s">교차로별 값은 비공개 — 관할 도달 공백이 드러나는 자료라 공개 지도에 싣지 않는다</div></details>'; });
     return h + '<div class="src">서울시 침수흔적도(2010~2025 · 2022·2011·2010 큰비 흔적이 대부분 · 배수 공사 뒤 덜 잠길 수 있음) × ITS 표준노드링크 · 출동 지연 = 막힘·신호 없이 센 견줌값</div>'; }
 
   /* ---------- 📒 되돌아보기 ---------- */

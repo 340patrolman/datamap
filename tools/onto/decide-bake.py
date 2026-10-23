@@ -65,16 +65,9 @@ def main():
         if any(q[1] == s['n'] and q[3] == s['y'] and m(q[9], q[10], *s['p']) <= 150 for q in seg): continue   # 맞은편 방향 같은 구간
         seg.append([sid, s['n'], s['ty'], s['y'], s['last'], s['dep'], s['ln'], s['det'], s['len'], R5(s['p'][0]), R5(s['p'][1])])
         if len(seg) >= 60: break
-    Dl = J('data/flood-delay-seocho.json'); dly = {}
+    Dl = json.load(open(os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'onto', 'flood-delay-seocho.json'), encoding='utf-8')); dly = {}   # 비공개(소유자 2026-10-23 「flood-delay 도 비공개로」) — 공개 판에는 모은 수만
     for sc in ('polA', 'polB'):
-        seen, top = set(), []
-        for x in sorted([x for x in Dl[sc] if x[3] >= 0], key=lambda x: -(x[3] - x[2])):
-            k = x[6]
-            if k in seen: continue
-            seen.add(k); top.append([x[6], R5(x[1]), R5(x[0]), x[2], x[3], x[4], x[5]])
-            if len(top) >= 12: break
-        dly[sc[-1]] = {'what': Dl['scenarios'][sc[-1]], 'stat': Dl['stat'][sc], 'top': top,
-                       'trap': [[x[6], R5(x[1]), R5(x[0])] for x in Dl[sc] if x[3] < 0 and not x[7]][:12], 'trapN': sum(1 for x in Dl[sc] if x[3] < 0 and not x[7])}
+        dly[sc[-1]] = {'what': Dl['scenarios'][sc[-1]], 'stat': Dl['stat'][sc], 'trapN': sum(1 for x in Dl[sc] if x[3] < 0 and not x[7])}   # 교차로별 값(top·trap)은 관할 도달 공백이 드러나 공개하지 않는다
     doc = {'schema': 'tg-decide/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
            'source': 'ontology-core/data/core-seocho.json(TAAS 2016~2025 · 경찰 단속 카메라 · 어린이보호구역 · 다음 신호 · T-Book 범칙금 DB·판례) · data/hot10-seocho.json(TAAS 다발지) · dui-catch-st.json(경찰청 음주운전 적발 2020~2024) · dui-ref-seoul.json · rally-seoul.json(서울경찰청 오늘의 주요집회) · venue-events-kopis.json(KOPIS) · flood-link-seocho.json(서울시 침수흔적도 × ITS) · flood-delay-seocho.json',
            'note': ['결정 넷(D1 어디 설까 · D2 음주 단속 · D3 집회·행사 · D4 큰비)이 읽는 값 — 원자료 값 그대로 · 순위는 지도가 결정마다 잣대 하나로',
@@ -82,7 +75,7 @@ def main():
                     '음주 적발 = 단속한 만큼 나온다(일어난 수가 아님) · 요일 0 = 일요일',
                     '집회 = 주요 집회만 · 신고값 · 받은 날까지 · 공연은 1,000석 이상 공연장 · 끝 시각 = 시작 + 공연시간',
                     '침수 흔적 = 그 길 30m 안 건물·필지가 잠긴 해(길 통제 기록 아님) · 출동 지연 = 막힘·신호 없이 센 견줌값'],
-           'fields': 'int{INT: [이름, 위도, 경도, 행정동, 10년 사고, 시간대 넷, 밤 20~6, 보행자, 사망, 중상, 주 위반[[VIO, 건]], 100m 안 경찰 카메라 수, 300m 안 보호구역 시설 수, 가장 가까운 시설 m, 다음 신호[[INT, m]], 해마다 2016~]} · nb{사고 없는 이웃 INT: [이름, 위도, 경도]} · vio{VIO: [이름, [LAW]]} · law{LAW: [항목, 범칙금·벌점 글, 조문 글, [판례 번호]]}(T-Book 글 그대로) · hot[[다발지 이름, 위도, 경도, 갈래, 해]] · d2{years, grid{서: [요일 0=일][2시간 12]}, dong[[코드, 이름, [관할서], 밤 사고, 0~6시 사고, 주점, 호프 0~6시 결제, 호프 결제 중 21~06시 %, 백분위[주점, 호프 매출, 0~6 결제, 밤 사고, 0~6 사고]]]} · d3{collected, rally[[날, 부터, 까지, 장소 글, 신고 인원, 행진, 위도, 경도, 끝[위도, 경도], 근사, 관할]], shows[[공연장, 위도, 경도, 제목, 시작일, 끝일, 시각 글, 공연시간 분, 관, 좌석]]} · d4{seg[[구간, 길 이름, 도로 유형(002 지하차도), 잠긴 해 수, 마지막 해, 가장 깊은 m, 차로, 돌아가는 부담 초(-1 없음), 구간 m, 위도, 경도]], delay{A|B: {what, stat, top[[자리, 위도, 경도, 평소 초, 통제 때 초, 평소 관서, 바뀐 관서]], trap[[자리, 위도, 경도]], trapN}}}',
+           'fields': 'int{INT: [이름, 위도, 경도, 행정동, 10년 사고, 시간대 넷, 밤 20~6, 보행자, 사망, 중상, 주 위반[[VIO, 건]], 100m 안 경찰 카메라 수, 300m 안 보호구역 시설 수, 가장 가까운 시설 m, 다음 신호[[INT, m]], 해마다 2016~]} · nb{사고 없는 이웃 INT: [이름, 위도, 경도]} · vio{VIO: [이름, [LAW]]} · law{LAW: [항목, 범칙금·벌점 글, 조문 글, [판례 번호]]}(T-Book 글 그대로) · hot[[다발지 이름, 위도, 경도, 갈래, 해]] · d2{years, grid{서: [요일 0=일][2시간 12]}, dong[[코드, 이름, [관할서], 밤 사고, 0~6시 사고, 주점, 호프 0~6시 결제, 호프 결제 중 21~06시 %, 백분위[주점, 호프 매출, 0~6 결제, 밤 사고, 0~6 사고]]]} · d3{collected, rally[[날, 부터, 까지, 장소 글, 신고 인원, 행진, 위도, 경도, 끝[위도, 경도], 근사, 관할]], shows[[공연장, 위도, 경도, 제목, 시작일, 끝일, 시각 글, 공연시간 분, 관, 좌석]]} · d4{seg[[구간, 길 이름, 도로 유형(002 지하차도), 잠긴 해 수, 마지막 해, 가장 깊은 m, 차로, 돌아가는 부담 초(-1 없음), 구간 m, 위도, 경도]], delay{A|B: {what, stat, trapN}}}(교차로별 값은 비공개 — 07_API키/out/onto/flood-delay-seocho.json)',
            'int': ints, 'nb': nb, 'vio': vio, 'law': law, 'hot': hot,
            'd2': {'years': [yrs[0], yrs[-1]], 'grid': grid, 'dong': dong},
            'd3': {'collected': RS['collected'], 'kopis': K['made'], 'rally': rally, 'shows': shows},

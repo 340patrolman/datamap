@@ -141,6 +141,7 @@ def main(days):
 if __name__ == '__main__':
     main(int(sys.argv[1]) if len(sys.argv) > 1 else 90)
     import runpy; runpy.run_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rally-ics.py'), run_name='__main__')   # 서초·방배 집회 캘린더 구독 파일(data/rally-seocho.ics · 2026-10-23)
+    runpy.run_path(os.path.join(ROOT, 'tools', 'onto', 'decide-bake.py'), run_name='__main__')   # 🧭 오늘의 결정 한 장(data/decide-seocho.json · 집회·공연 날짜가 날마다 바뀜 · 2026-10-23)
     # (2026-10-15 게임 세션 부탁) 가르고 「열차 안 신고」가 읽는 역 둘레 큰 행사(data/station-events.json)를 이어서 다시 굽는다 — 집회가 바뀌면 같이
     import subprocess
     r = subprocess.run([sys.executable, '-X', 'utf8', os.path.join(ROOT, 'tools', 'region', 'stnevent-bake.py')], cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='ignore')

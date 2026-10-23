@@ -21,6 +21,8 @@ Promise.all([fetch('../data/core-seocho.json').then(function (r) { return r.json
   R.q5mv = {}; S.forEach(function (i) { R.q5mv[i] = (R.q5[i].dims.mainv.list || []).map(function (x) { var q = o.q1(x.id); return q.mainViolations[0] ? q.mainViolations[0].id : null; }); R.q5mv[i + '_me'] = R.q1[i].mainViolations[0] ? R.q1[i].mainViolations[0].id : null; });
   /* 질문 7 — 행정동(2026-10-23) · 서초3동 · 방배본동(일부 번지 관할) · 반포4동(두 서) */
   R.q7 = {}; ['DNG-11650530', 'DNG-11650590', 'DNG-11650581'].forEach(function (d) { R.q7[d] = o.q7(d, 100); }); R.q7bad = o.q7('INT-521');
+  /* 질문 8 — 사건(2026-10-23) */
+  R.q8 = {}; ['INT-521', 'INT-324', 'INT-1159', 'INT-4612'].forEach(function (i) { R.q8[i] = o.q8(i, '', 5000); }); R.q8since = o.q8('INT-521', '2026-10-01', 5000); R.q8bad = o.q8('DNG-11650530');
   window.__R = R; document.getElementById('out').textContent = JSON.stringify(R, null, 1).slice(0, 4000);
 }).catch(function (e) { window.__R = { error: String(e) }; });
 </script>

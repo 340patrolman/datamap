@@ -43,6 +43,17 @@
       nInt: ints.length, ints: ints.slice(0, k || 5), noCam: ints.filter(function (x) { return !x.cams && x.total > 0; }).length,
       notes: ['교차로 사고는 70m 안 칸 묶음이라 겹친다 — 동 합계로 더하지 않았다', '값은 그 동을 열쇠로 가진 파일 그대로(세대·주민 = 행정안전부 · 외국인주민 = 2024.11.1 · 사업장 = 국민연금 2026-08 · 주점·결제 = 서울만)'] };
   };
+  /* 질문 8 — 이 교차로에 무슨 일이 있었나(2026-10-23 사건을 그래프에 · 엮임 지도 둘째): since(YYYY-MM-DD) 뒤에 시작한 집회·공연·돌발(최근 먼저) + 침수 흔적이 있던 해
+     「근처」 = 집회 300m · 공연 500m · 돌발 150m 안(근사 C) · 돌발은 이 PC 가 10분마다 받은 기록(2026-10-15~)이라 받지 못한 때의 일은 없다 */
+  P.q8 = function (intId, since, k) {
+    var it = this.O[intId]; if (!it || it.t !== 'INT') return null; since = since || '';
+    var ev = this.back(intId, '근처').filter(function (x) { return String(x.o.d0) >= since; }).map(function (x) { return { id: x.o.id, kind: x.o.kind, sub: x.o.sub || null, d0: x.o.d0, d1: x.o.d1 || null, nm: x.o.nm, n: x.o.n == null ? null : x.o.n, d: x.p.d, src: x.o.src }; })
+      .sort(function (a, b) { return a.d0 < b.d0 ? 1 : a.d0 > b.d0 ? -1 : (a.id < b.id ? -1 : 1); });
+    var cnt = {}; ev.forEach(function (e) { var key = e.kind + (e.sub ? '·' + e.sub : ''); cnt[key] = (cnt[key] || 0) + 1; });
+    var fl = this.back(intId, '흔적').map(function (x) { return { year: +x.o.d0, n: x.p.n, dep: x.p.dep }; }).sort(function (a, b) { return a.year - b.year; });
+    return { id: intId, nm: it.nm, since: since, n: ev.length, counts: cnt, events: ev.slice(0, k || 20), flood: fl,
+      notes: ['둘레 반지름 안 사건(근사 C) — 그 교차로에서 일어났다는 뜻이 아니다', '집회 = 경찰청 주요 집회만(신고값) · 공연 = 1,000석 이상 · 돌발 = 2026-10-15 부터 이 PC 가 받은 기록', '침수 = 서울시 침수흔적도(건물·필지 가운데 점 · 100m 안) — 길이 잠겼다는 기록이 아니다'] };
+  };
   /* 질문 2 — 왜 바꿨고 바꾼 뒤 어떻게 됐나(해 단위 · 앞 2해 vs 뒤 2해 · 바꾼 해는 뺀다) */
   P.q2 = function (intId) {
     var self = this, it = this.O[intId]; if (!it) return null; var acc = this.follow(intId, '발생')[0], A = acc ? acc.o : null;

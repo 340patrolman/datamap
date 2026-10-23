@@ -3,6 +3,8 @@
   모든 값은 이미 있는 공개 자료 파일에서 다시 센다(지어낸 값 없음). 링크마다 출처 파일과 등급(A~E).
   원천:
     INT·PLC  = data/onto-int.json(T-GIS 교차로 · C-ITS 번호 · 250m 칸 · 행정동 10자리 → 앞 8자리)
+    EVT      = 사건(2026-10-23 엮임 지도 둘째) = data/onto-events.json(tools/onto/evt-bake.py — 집회·공연·돌발 · 침수는 해마다) → 교차로 「근처」(집회 300m·공연 500m·돌발 150m · 근사 C)
+               침수는 data/season-seocho.json 흔적 점이 교차로 100m 안이면 「흔적」(그 해 흔적 수·가장 깊은 침수심) · 교차로에 안 닿는 사건은 싣지 않는다
     DNG      = 교차로가 든 행정동(onto-int 행정동 코드 · 2026-10-23 엮임 지도 첫째) — 값은 그 동을 열쇠로 가진 파일에서 그대로:
                house-dong(세대·1인 세대) · mig-dong(주민) · foreign-dong(외국인주민) · econ-dong(국민연금 가입 사업장·가입자) · dui-ref-seoul(주점 점포·호프 0~6시 결제) · police.json(별표2 관할서)
     인접      = data/sig-net-seocho.json(신호 교차로 사이 길 · C-ITS 번호로 INT 에 이음)
@@ -51,6 +53,37 @@ def ym_of(t):
         g = re.search(rx, t)
         if g: return '%s-%02d' % (g.group(1), int(g.group(2))) if g.lastindex >= 2 else g.group(1)
     return None
+EVT_R = {'집회': 300, '공연': 500, '돌발': 150}   # 사건 → 교차로 「근처」 반지름 m(근사 C) · 침수는 흔적 점 100m 안
+def evt_build(O, obj, edge, INTs):
+    ev = J(os.path.join(D, 'onto-events.json'))['items']
+    G = collections.defaultdict(list)
+    for it in INTs: G[(int(it['lat'] * 200), int(it['lon'] * 200))].append(it)   # 0.005° 칸(약 550×440m) — 둘레만 빨리 찾기
+    def near(la, lo, r):
+        a, b = int(la * 200), int(lo * 200); out = []
+        for i in (-1, 0, 1):
+            for j in (-1, 0, 1):
+                for it in G.get((a + i, b + j), ()):
+                    d = m(la, lo, it['lat'], it['lon'])
+                    if d <= r: out.append((it['id'], round(d)))
+        return out
+    keep = ('kind', 'sub', 'src', 'd0', 'd1', 'nm', 'lat', 'lon', 'n', 'march', 'approx', 'st', 'hall', 'times', 'dur', 'road', 'first', 'last', 'dep')
+    for e in ev:
+        if e['kind'] == '침수': continue
+        hit = dict(near(e['lat'], e['lon'], EVT_R[e['kind']]))
+        if e.get('dest'):
+            for i, d in near(e['dest'][0], e['dest'][1], EVT_R['집회']): hit.setdefault(i, d)
+        if not hit: continue
+        obj(e['id'], 'EVT', **{k: e.get(k) for k in keep})
+        for i, d in sorted(hit.items()): edge(e['id'], '근처', i, 'C', 'onto-events.json(%s · %dm 안%s)' % (e['src'], EVT_R[e['kind']], ' · 행진 끝 포함' if e.get('dest') else ''), d=d)
+    S = J(os.path.join(D, 'season-seocho.json')); fl = {e['id']: e for e in ev if e['kind'] == '침수'}; acc = collections.defaultdict(lambda: [0, 0.0])
+    for t in S['traces']:
+        lo = 127.01 + t[0] / 88800.0; la = 37.49 - t[1] / 111000.0
+        for i, d in near(la, lo, 100):
+            a = acc[('EVT-FLD-%d' % t[2], i)]; a[0] += t[3]; a[1] = max(a[1], t[4] or 0)
+    for (fid, i), (n, dep) in sorted(acc.items()):
+        if fid not in fl: continue
+        if fid not in O: obj(fid, 'EVT', **{k: fl[fid].get(k) for k in keep})
+        edge(fid, '흔적', i, 'C', 'season-seocho.json(서울시 침수흔적도 · 교차로 100m 안 흔적 점)', n=n, dep=round(dep, 2))
 def dng_build(O, obj, rows):
     hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
     ec = J(os.path.join(D, 'econ-dong.json'))['dong']; dr = {x[0]: x for x in J(os.path.join(D, 'dui-ref-seoul.json'))['items']}
@@ -114,6 +147,7 @@ def main():
         for z in al['sz']:
             d = m(z[1], z[0], it['lat'], it['lon'])
             if d <= 300: edge(it['id'], '가까움', obj('ATT-SZ-%.5f,%.5f' % (z[0], z[1]), 'ATT', kind=z[2], nm=z[3] or None), 'C', 'gargo-alerts-seoul.json(300m 안)', d=round(d))
+    evt_build(O, obj, edge, INTs)
     ks = J(os.path.join(D, 'sig-ksc-seocho.json'))
     for it in ks['items']:
         tgt = by_cits.get(str(it['no']))
@@ -158,7 +192,7 @@ def main():
             edge(f['id'], '뒷받침', u, 'B', 'onto-rules.json(소유자 현장 판단)')
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
-    srcs = ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json']
+    srcs = ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'unverified_precedents': unver, 'unverified_note': 'T-Book 판례 목록에 있으나 원문 조회에 실패한 사건번호 — 잇지 않았다(확인된 번호만)',

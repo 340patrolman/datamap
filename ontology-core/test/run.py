@@ -93,6 +93,34 @@ for code, want_jur in (('11650530', ['서울서초경찰서']), ('11650590', ['�
     ck('질문7 %s — 그 동 안 교차로 수 = onto-int 서초 행정동 코드로 센 수 · 사고 많은 순' % q['nm'], q['nInt'] == len(mine) and [x['total'] for x in q['ints']] == sorted([x['total'] for x in q['ints']], reverse=True), (q['nInt'], len(mine)))
 ck('질문1 서초역사거리 — 속한 동 = 서초3동(onto-int 행정동 코드) · 등급 B', R['q1']['INT-521']['dng'] and R['q1']['INT-521']['dng']['nm'] == '서초3동' and R['q1']['INT-521']['dng']['grade'] == 'B', R['q1']['INT-521']['dng'])
 ck('질문7 — 행정동이 아닌 것을 물으면 null', R['q7bad'] is None, R['q7bad'])
+# ---- 질문 8 · 사건(2026-10-23) — 원자료(rally-seoul · venue-events-kopis · season-seocho · 07_API키/out 돌발 기록)에서 따로 ----
+import gzip, glob, datetime as _dt
+OUTX = os.path.join(os.path.dirname(ROOT), '07_API키', 'out'); td = _dt.date.today()
+rl = J(os.path.join(D, 'rally-seoul.json'))['items']; kp = J(os.path.join(D, 'venue-events-kopis.json'))['venues']; ss = J(os.path.join(D, 'season-seocho.json'))['traces']
+inc = {}
+for sub, fs, I in (('T', 'liveacc', (0, 5, 6, 2)), ('U', 'utic/ims', (0, 4, 5, 1))):
+    for f in sorted(glob.glob(os.path.join(OUTX, fs, '*.jsonl.gz'))):
+        for L in gzip.open(f, 'rt', encoding='utf-8'):
+            for it in json.loads(L)['items']: inc.setdefault(sub + str(it[I[0]]), (it[I[1]], it[I[2]], it[I[3]]))
+lo_d = (td - _dt.timedelta(days=90)).isoformat(); hi_d = (td + _dt.timedelta(days=21)).isoformat()
+for tg in (521, 324, 1159, 4612):
+    i = 'INT-%d' % tg; r = oi[tg]; la, lo = r[2], r[3]; q = R['q8'][i]; c = collections.Counter()
+    for x in rl:
+        if 'lat' in x and (m(x['lat'], x['lon'], la, lo) <= 300 or (x.get('dest') and m(x['dest'][0], x['dest'][1], la, lo) <= 300)): c['집회'] += 1
+    for v in kp:
+        if v.get('lat') and m(v['lat'], v['lon'], la, lo) <= 500:
+            for s_ in v.get('shows') or []:
+                if (s_[7] or 0) >= 1000 and s_[3] >= lo_d and s_[2] <= hi_d: c['공연'] += 1
+    for k_, (a, b, sub) in inc.items():
+        if m(a, b, la, lo) <= 150: c['돌발·' + sub] += 1
+    fl = collections.defaultdict(int)
+    for t in ss:
+        tlo = 127.01 + t[0] / 88800.0; tla = 37.49 - t[1] / 111000.0
+        if m(tla, tlo, la, lo) <= 100: fl[t[2]] += t[3]
+    ck('질문8 %s — 집회·공연·돌발 갈래별 수가 원자료 따로 셈과 같다' % q['nm'], dict(c) == q['counts'] and q['n'] == sum(c.values()), (dict(c), q['counts']))
+    ck('질문8 %s — 침수 흔적 해·흔적 수가 침수흔적도 따로 셈과 같다' % q['nm'], [(f['year'], f['n']) for f in q['flood']] == sorted(fl.items()), ([(f['year'], f['n']) for f in q['flood']], sorted(fl.items())))
+ck('질문8 서초역사거리 — 최근 먼저 · since(2026-10-01) 거르기', [e['d0'] for e in R['q8']['INT-521']['events']] == sorted([e['d0'] for e in R['q8']['INT-521']['events']], reverse=True) and all(e['d0'] >= '2026-10-01' for e in R['q8since']['events']) and R['q8since']['n'] == sum(1 for e in R['q8']['INT-521']['events'] if e['d0'] >= '2026-10-01'), R['q8since']['counts'])
+ck('질문8 — 교차로가 아닌 것을 물으면 null', R['q8bad'] is None, R['q8bad'])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))
 n = sum(1 for x in C if x[1])
 for name, ok, got in C: print(('  ✅ ' if ok else '  ❌ ') + name + (' — ' + got if got else ''))

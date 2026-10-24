@@ -2332,7 +2332,7 @@
       return '<tr' + (isBar(r[0]) ? ' class="bar"' : '') + '><td>' + esc(r[0]) + '</td><td>' + won(r[1]) + '</td>' + (yy ? '<td>' + (q && q[0] > 0 ? (r[1] >= q[0] ? '+' : '') + Math.round((r[1] - q[0]) / q[0] * 100) + '%' : '-') + '</td>' : '') + '<td>' + (r[2] ? Math.round(r[1] * 1e4 / r[2]).toLocaleString() : '-') + '</td><td>' + TBL[pkI] + '</td><td>' + (s2 ? s2[1] + (s2[3] || s2[4] ? ' <small>+' + s2[3] + '/−' + s2[4] + '</small>' : '') : '-') + '</td></tr>'; }).join('') + '</table>';
   }
   /* v2.298.0 동·리·시군구 카드 — 맨 위 「📌 한눈에」(어떤 곳인지 세 줄) + 네 칸(사람 · 가게 · 사고 많은 곳 · 관할) + 「🔁 둘레에서 잦은 일」 + 접는 묶음
-     (👥 사람 · 🏪 가게·돈 · 🚦 안전 · 👮 관할·시설 · 🏠 집·땅 · 🗂 그 밖 — 처음엔 접힘 · 펼친 묶음은 SDXO 가 기억) · 소유자 승인 시안(게임 세션 전달)
+     (👥 사람 · 🏪 가게·돈 · 🚦 안전 · 👮 관할·시설 · 🏠 집·땅 · 🗂 그 밖 — v2.300.7 처음엔 모두 펼침(소유자 지시) · 닫은 묶음은 SDXO 가 기억) · 소유자 승인 시안(게임 세션 전달)
      · 줄은 옮기기만 하고 빼지 않는다 · 값은 이미 있는 자료만(SGIS 집계구 종사자 · 서울 상권분석 점포 · 교차로 사고 10년 jct) — 숫자를 지어내지 않는다 · 도착·출동 시간 값은 없다 */
   var DGK = [['ppl', '👥 사람'], ['biz', '🏪 가게·돈'], ['safe', '🚦 안전'], ['jur', '👮 관할·시설'], ['home', '🏠 집·땅'], ['etc', '🗂 그 밖']];
   function dgTag(r) { return r == null || !isFinite(r) ? '' : r >= 2 ? '일터 동네' : r >= 1.2 ? '일터 쪽 동네' : r >= 0.8 ? '섞인 동네' : '주거 동네'; }
@@ -2351,9 +2351,9 @@
     var h = '<div class="dgg"><div class="dgh">📌 한눈에</div>' + (o.say && o.say.length ? '<ul class="dgs">' + o.say.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' : '') + (o.note ? '<p class="sdnt dgn">' + o.note + '</p>' : '') +
       '<div class="dgt">' + o.tiles.map(function (t) { return '<div class="dgc"><span>' + t[0] + ' ' + esc(t[1]) + '</span><b>' + t[2] + '</b><small>' + (t[3] || '') + '</small></div>'; }).join('') + '</div>' +
       (o.often ? '<p class="dgo">🔁 <b>둘레에서 잦은 일</b> — ' + o.often + '</p>' : '') + '</div><!--dgx-->';
-    DGK.forEach(function (g) { var x = o.G[g[0]]; if (!x) return; h += '<details class="sdx sdxm dgrp" data-k="dg_' + g[0] + '"' + (SDXO['dg_' + g[0]] ? ' open' : '') + '><summary>' + g[1] + '</summary><div class="dgi">' + (g[0] === 'jur' ? '<!--dgjur-->' : '') + x + '</div></details>'; });
+    DGK.forEach(function (g) { var x = o.G[g[0]]; if (!x) return; h += '<details class="sdx sdxm dgrp" data-k="dg_' + g[0] + '"' + (SDXO['dg_' + g[0]] !== 0 ? ' open' : '') + '><summary>' + g[1] + '</summary><div class="dgi">' + (g[0] === 'jur' ? '<!--dgjur-->' : '') + x + '</div></details>'; });
     return h; }
-  function dgHint() { return '<p class="lg-n dghint">▸ 묶음 제목을 누르면 펼쳐진다 — 펼친 묶음은 다른 동을 볼 때도 펼친 채로 둔다.</p>'; }
+  function dgHint() { return '<p class="lg-n dghint">▸ 묶음 제목을 누르면 접힌다 — 접은 묶음은 다른 동을 볼 때도 접힌 채로 둔다.</p>'; }
   function dgDong(d, gu, jurName, G) {   // 동 카드의 한눈에 · 네 칸 · 잦은 일 + 안전 묶음 맨 앞에 「사고 많은 교차로」
     var p = d.pop, wk = dgWrk(d, gu), st = dgSti(d, gu), jc = dgJct(d, gu), lv = liveNow(d), say = [], ag = gu === '11650' && D.st && D.st.agg ? D.st.agg[d.name] : null, top = jc && jc.L[0];
     if (wk) say.push('일하는 사람(종사자)이 주민의 <b>' + dgF1(wk.r) + '배</b> — <b>' + dgTag(wk.r) + '</b>' + (wk.r >= 1.2 ? '. 낮에 일하러 들어오는 사람이 많다' : wk.r < 0.8 ? '. 낮에는 비고 저녁·주말에 사람이 찬다' : '. 점심(직장인)·저녁(주민)이 섞인다') + ' <small>(통계청 SGIS 집계구 2023 · 2배·1.2배·0.8배 = 앱 기준)</small>');

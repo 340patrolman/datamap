@@ -92,6 +92,8 @@
         setTimeout(function () { ck('🔒 업무 카드가 열린 동안 바깥 서비스 요청은 막는다(브이월드 시험 요청 → 거부)', blocked === true, String(blocked)); }, 0);
         V0.cp = []; V0.res = null; V0.fast = null; P0.set = 'n'; P0.sig = 1; P0.k = 1; P0.p = null; P0.res = null;
       } catch (e) { ck('신고 차량 예측 v2.223.0 검사', false, e.message); }
+      try { var pc1 = m.pidxSet({ u: 'st', sdc: '서울특별시경찰청', num: 'acc', den: 'pop' }) || '', pc2 = m.pidxSet({ u: 'dong', sd2: '11', num: 'f_acc', den: 'lngt' }) || '', n2 = (pc2.match(/<tr>/g) || []).length;
+        ck('🌗 경찰 지표 — 주민으로 나눈 표에 도심 표시(남대문서 🌗) · 행정동 단위도 새벽 인구로 나눌 수 있다 (v2.294.0)', /남대문[^<]*<\/td>|남대문/.test(pc1) && /🌗/.test(pc1) && n2 > 100 && /서울 합/.test(pc2), '🌗 ' + (pc1.match(/🌗/g) || []).length + ' · 동 줄 ' + n2); m.pidxSet({ u: 'st', sdc: '', num: 'acc', den: 'pop' }); } catch (e) { ck('경찰 지표 도심 표시 검사', false, e.message); }
       try { var dn1 = m.l2DN({ wd: [100, 90, 80, 80, 90, 120, 200, 300, 400, 450, 480, 500, 520, 500, 480, 400, 350, 300, 250, 200, 160, 140, 120, 110] }), dn2 = m.l2DN({ wd: Array(24).fill(1) }), px = m.pixd();
         ck('🌗 낮 ÷ 새벽 — 11~14시 평균 ÷ 0~4시 평균(500 ÷ 88 = 5.7배) · 사람이 거의 없는 칸은 null · 경찰 지표 나누기에 낮·새벽 인구 (v2.293.0)', dn1 && Math.abs(dn1.r - 500 / 88) < 0.01 && dn2 === null && !!px.lday && !!px.lngt, dn1 ? dn1.r.toFixed(2) : 'null'); } catch (e) { ck('낮 ÷ 새벽 검사', false, e.message); }
       try { var jr = [[127.024487, 37.504472, '서울강남경찰서'], [127.003437, 37.502124, '서울서초경찰서'], [127.02925, 37.4947, '서울수서경찰서'], [127.034011, 37.484549, '서울수서경찰서'], [127.007008, 37.477614, '서울서초경찰서'], [127.0076, 37.4919, null]], jg = jr.map(function (q) { return m.jurRoad(q[0], q[1]); });

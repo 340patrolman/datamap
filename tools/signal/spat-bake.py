@@ -903,11 +903,16 @@ def dir_bad(mvrows, cyc):
     # 방위 표기 점검 — 네 방향 직진이 다 있을 때, 직각 방향 직진끼리 녹색이 겹치는 초가 마주 보는 방향끼리보다 많으면 True
     # (2026-10-10 교대역 4045: 동·남이 함께, 북·서가 함께 녹색 — 실제로는 있을 수 없다 → 원자료 방위 이름이 틀림)
     S = {m[0]: m for m in mvrows if m[1] == 'St' and m[2] is not None and m[5] is not None}
-    if not all(d in S for d in ('nt', 'et', 'st', 'wt')) or not cyc:
+    if not cyc:
         return False
     c = int(round(cyc))
     def ov(a, b):
         return sum(1 for t in range(c) if ((t - a[5]) % c) < a[2] and ((t - b[5]) % c) < b[2])
+    # (2026-10-24) 네 방향이 다 없어도 — 직각 방향 직진 둘이 3초 넘게 함께 녹색이면 방위 의심(교차로 42곳에서 이런 기록 · 대부분 열두 번 중 한두 번)
+    if any(ov(S[x], S[y]) > 3 for x in ('nt', 'st') for y in ('et', 'wt') if x in S and y in S):
+        return True
+    if not all(d in S for d in ('nt', 'et', 'st', 'wt')):
+        return False
     opp = ov(S['nt'], S['st']) + ov(S['et'], S['wt'])
     per = ov(S['nt'], S['et']) + ov(S['nt'], S['wt']) + ov(S['st'], S['et']) + ov(S['st'], S['wt'])
     return per > opp

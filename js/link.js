@@ -10,6 +10,10 @@
   'use strict';
   var CORE = 'ontology-core/data/core-seocho.json', QJS = 'ontology-core/query.js?v=3', SCH = 'ontology-core/schema-ext.json';
   var Q = null, SC = null, LOAD = null, ST = { id: null, back: [], more: {}, q: '' };
+  var LOGK = 'tg_map2d_lnk_log', PII = [/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/, /\d{6}[-\s]?[1-4]\d{6}/, /\d{2,3}\s?[가-힣]\s?\d{4}/];   /* 가설 현장 판정 — 이 기기에만 · 사람·차량 안 씀 */
+  function logGet() { try { return JSON.parse(localStorage.getItem(LOGK) || '[]'); } catch (e) { return []; } }
+  function logSet(a) { try { localStorage.setItem(LOGK, JSON.stringify(a)); return true; } catch (e) { return false; } }
+  function hkey(id, t) { return id + '|' + String(t).split(' — ')[0]; }
   var LIVE = null, LIVEAT = 0, NORM = null, NORMING = false;   /* 실시간 세 장(돌발 둘 · 통행속도) — 3분마다 다시(sw 가 네트워크 먼저 · 주소에 시각을 안 붙여 보관함이 쌓이지 않게) · 평소 속도(4MB)는 누를 때만 */
   var NAV = { INT: 1, DNG: 1, STN: 1, TRD: 1, PBX: 1, STA: 1, EVT: 1 };
   var TN = { INT: '교차로', DNG: '행정동', STN: '지하철역', TRD: '상권', PBX: '지구대·파출소', STA: '경찰서', EVT: '사건', ACC: '사고(10년)', ACL: '사고 칸', CAM: '단속 카메라', ATT: '시설', PLC: '250m 칸', APR: '들어오는 길', RD: '도로 구간', ACT: '교통과 조치', REC: '조치 기록', VIO: '위반 유형', LAW: '법규', PREC: '판례', RULE: '규칙', FK: '현장 판단' };
@@ -39,7 +43,7 @@
       '#m2dLnk .lg{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-bottom:6px}#m2dLnk .lg i{display:inline-block;width:20px;border-top:3px solid #16a34a;vertical-align:middle;margin-right:4px}#m2dLnk .lg i.c{border-top:2px dashed #d97706}#m2dLnk .lg i.d{border-top:2px dotted #94a3b8}' +
       '#m2dLnk h4{margin:12px 0 4px;font-size:14px}#m2dLnk .note{font-size:11.5px;color:var(--ink2);margin:2px 0 6px}' +
       '#m2dLnk .now{border:1px solid #0ea5e9;border-radius:12px;padding:8px 10px;background:rgba(14,165,233,.07)}#m2dLnk .now li{margin:2px 0}#m2dLnk .now ul,#m2dLnk .hy ul{margin:2px 0;padding-left:18px}' +
-      '#m2dLnk .live{border:1px solid #dc2626;border-radius:12px;padding:8px 10px;background:rgba(220,38,38,.06)}#m2dLnk .live>div{margin:3px 0}#m2dLnk .live ul{margin:2px 0;padding-left:18px}#m2dLnk .live li{margin:2px 0}#m2dLnk .live .sb{min-height:28px;font-size:12px;margin-left:4px}#m2dLnk .hy{border:1px dashed #d97706;border-radius:12px;padding:8px 10px;margin:6px 0;background:rgba(217,119,6,.06)}#m2dLnk .hy b.t{font-size:14px}' +
+      '#m2dLnk .live{border:1px solid #dc2626;border-radius:12px;padding:8px 10px;background:rgba(220,38,38,.06)}#m2dLnk .live>div{margin:3px 0}#m2dLnk .live ul{margin:2px 0;padding-left:18px}#m2dLnk .live li{margin:2px 0}#m2dLnk .live .sb{min-height:28px;font-size:12px;margin-left:4px}#m2dLnk .hv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}#m2dLnk .hv .sb{min-height:32px}#m2dLnk .hq{font-size:12px;color:var(--ink2)}#m2dLnk .hb{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip)}#m2dLnk .hb.ok{background:rgba(22,163,74,.15);color:#15803d}#m2dLnk .hb.no{background:rgba(220,38,38,.12);color:#b91c1c}#m2dLnk .lg2{margin:2px 0;padding-left:18px;font-size:12.5px}#m2dLnk .hy{border:1px dashed #d97706;border-radius:12px;padding:8px 10px;margin:6px 0;background:rgba(217,119,6,.06)}#m2dLnk .hy b.t{font-size:14px}' +
       '#m2dLnk .k4{display:grid;grid-template-columns:62px minmax(0,1fr);gap:1px 8px;font-size:12.5px;margin-top:4px}#m2dLnk .k4 span{color:var(--ink2)}#m2dLnk .k4 div{min-width:0;overflow-wrap:anywhere}' +
       '#m2dLnk details.rel{border:1px solid var(--line);border-radius:12px;margin:6px 0;padding:0 10px}#m2dLnk details.rel>summary{cursor:pointer;padding:8px 0;font-weight:700;list-style:none}#m2dLnk details.rel>summary::-webkit-details-marker{display:none}#m2dLnk details.rel>summary small{font-weight:400;color:var(--ink2)}' +
       '#m2dLnk .lk{border-top:1px solid var(--line);padding:6px 0}#m2dLnk .lk .t{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}#m2dLnk .lk .t b{font-size:13.5px}#m2dLnk .lk button.go{margin-left:auto;min-height:30px;border:1px solid var(--acc);color:var(--acc);background:none;border-radius:999px;padding:0 10px;font-size:12px;cursor:pointer}' +
@@ -227,12 +231,17 @@
     var o = O(ST.id); if (!o) return pick();
     var GS = groups(o.id), H = liveHyps(o).concat(hyps(o)), h = '<button class="lx" data-close="1">닫기</button>' + head(o) + graph(o, GS) + liveBox(o) + nowBox(o);
     if (H.length) h += '<h4>💡 엮으면 보이는 것 — 가설 ' + H.length + '</h4><div class="note">이은 것들을 겹쳐 본 짐작이다(등급 C·D) · 처음 해 보는 연결이라 틀릴 수 있다 — 현장에서 맞는지 보고 알려 주시면 고친다</div>' +
-      H.map(function (x) { return '<div class="hy"><b class="t">' + esc(x.t) + '</b><div class="k4"><span>근거</span><div><ul>' + x.ev.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div><span>연결 이유</span><div>' + esc(x.wy) + '</div><span>결과</span><div><b>' + esc(x.res) + '</b></div><span>가능성</span><div>' + poss(x.g) + '</div></div></div>'; }).join('');
+      H.map(function (x) { var k = hkey(o.id, x.t), L0 = logGet().filter(function (r) { return r.k === k; }), last = L0[L0.length - 1];
+        var vb = '<div class="hv">' + (last ? '<span class="hb ' + (last.v === '맞다' ? 'ok' : last.v === '틀리다' ? 'no' : '') + '">' + esc(last.v) + ' · ' + esc(last.d) + (last.why ? ' · ' + esc(last.why) : '') + (L0.length > 1 ? ' (' + L0.length + '번)' : '') + '</span>' : '<span class="hq">현장에서 보니</span>') +
+          ['맞다', '틀리다', '모르겠다'].map(function (v) { return '<button class="sb" data-hv="' + esc(k) + '" data-v="' + v + '" data-g="' + x.g + '">' + v + '</button>'; }).join('') + '</div>';
+        return '<div class="hy"><b class="t">' + esc(x.t) + '</b><div class="k4"><span>근거</span><div><ul>' + x.ev.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div><span>연결 이유</span><div>' + esc(x.wy) + '</div><span>결과</span><div><b>' + esc(x.res) + '</b></div><span>가능성</span><div>' + poss(x.g) + '</div></div>' + vb + '</div>'; }).join('');
     h += '<h4>🔗 이어진 것 ' + GS.length + '갈래</h4>';
     GS.forEach(function (g) { var lim = ST.more[g.key] ? 200 : 6, it = g.items.slice(0, lim);
       h += '<details class="rel" id="lnk-' + esc(g.key) + '"' + (GS.length <= 4 ? ' open' : '') + '><summary>' + gdots(g.best) + esc(gname(g)) + ' <small>' + g.items.length + '개 · ' + esc(KEY[g.rel] ? KEY[g.rel].split(' — ')[0] : '') + '</small></summary>' +
         it.map(function (x) { return '<div class="lk"><div class="t"><b>' + esc(nm(x.o)) + '</b>' + (NAV[x.o.t] && x.o.id !== o.id ? '<button class="go" data-go="' + esc(x.o.id) + '">여기서 엮임 ›</button>' : '') + '</div>' + k4(g.rel, x.p, x.o, g.dir) + '</div>'; }).join('') +
         (g.items.length > lim ? '<button class="sb" data-more="' + esc(g.key) + '">' + (g.items.length - lim) + '개 더 보기</button>' : '') + '</details>'; });
+    var LG = logGet(); if (LG.length) h += '<h4>📒 내가 매긴 가설 ' + LG.length + '건</h4><div class="note">이 기기에만 있다 · CSV 를 복사해 07_API키/out/onto_logs/in/ 에 넣으면 log-ingest 가 「현장 판단 후보」로 정리한다 — 형님이 맞다고 한 것만 규칙 장부에</div><ul class="lg2">' +
+      LG.slice(-8).reverse().map(function (r) { return '<li>' + esc(r.d) + ' · ' + esc(r.nm) + ' — ' + esc(r.h) + ' → <b>' + esc(r.v) + '</b>' + (r.why ? ' · ' + esc(r.why) : '') + '</li>'; }).join('') + '</ul><div class="bar"><button data-lcsv="1">📋 CSV 복사</button><button data-lclr="1">지우기</button></div>';
     h += '<div class="src">자료 = 서초 온톨로지 코어(' + esc(Q.core.made || '') + ' 구움 · 원자료 값 그대로) · 가능성 A 확실 · B 높음 · C 근사 · D 추정 · E 가설 · 판단은 사람이 한다 — 이 화면은 이어 보일 뿐</div>';
     el.innerHTML = h;
   }
@@ -254,6 +263,15 @@
     if (b.hasAttribute('data-back')) { ST.id = ST.back.pop(); ST.more = {}; paint(); return; }
     if (b.hasAttribute('data-pick')) { if (ST.id) ST.back.push(ST.id); ST.id = null; ST.q = ''; pick(); return; }
     if (b.hasAttribute('data-norm')) { normLoad(); return; }
+    if ((a = b.getAttribute('data-hv'))) { var v = b.getAttribute('data-v'), why = '';
+      if (v !== '맞다') { why = (prompt(v === '틀리다' ? '어디가 틀렸나요? (한 줄 · 사람·차량번호는 적지 않습니다)' : '덧붙일 말(비워도 됨)', '') || '').trim().slice(0, 120); }
+      if (PII.some(function (r) { return r.test(why); })) { alert('전화번호·주민번호·차량번호 꼴이 있어 저장하지 않았습니다.'); return; }
+      var o = O(ST.id), L = logGet(), dd = new Date(); L.push({ k: a, id: ST.id, nm: nm(o), h: a.split('|').slice(1).join('|'), v: v, why: why, g: b.getAttribute('data-g') || '', d: today() + ' ' + ('0' + dd.getHours()).slice(-2) + ':' + ('0' + dd.getMinutes()).slice(-2) });
+      if (!logSet(L)) alert('이 기기에 저장하지 못했습니다'); var sc = $('m2dLnk').scrollTop; paint(); $('m2dLnk').scrollTop = sc; return; }
+    if (b.hasAttribute('data-lcsv')) { var rows = [['날짜', '대상', '이름', '가설', '판정', '까닭', '가능성']].concat(logGet().map(function (r) { return [r.d, r.id, r.nm, r.h, r.v, r.why, r.g]; }));
+      var t = rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n');
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { b.textContent = '✔ 복사됨'; }, function () { prompt('복사', t); }); else prompt('복사', t); return; }
+    if (b.hasAttribute('data-lclr')) { if (confirm('이 기기의 가설 판정 기록을 모두 지울까요? 되돌릴 수 없습니다.')) { logSet([]); paint(); } return; }
     if ((a = b.getAttribute('data-more'))) { ST.more[a] = 1; paint(); var d = $('lnk-' + a); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } return; }
     if ((a = b.getAttribute('data-jump'))) { var d2 = $('lnk-' + a); if (d2) { d2.open = true; d2.scrollIntoView({ block: 'start', behavior: 'smooth' }); } return; }
     if ((a = b.getAttribute('data-map'))) { var p = a.split(','); if (window.innerWidth < 760) close(); location.hash = 'v=' + p[0] + ',' + p[1] + ',250&t=' + p[0] + ',' + p[1]; return; } }

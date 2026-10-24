@@ -3,6 +3,7 @@
 #   지도의 두 기록(이 기기에만 있는 것)을 형님이 CSV 로 복사해 주면 → 한 장으로 정리하고 「현장 판단 후보」를 뽑는다
 #     ① 🧩 엮어서 답 찾기 「📒 내가 적은 기록」 CSV  = 날짜,질문,대상,한 일,결과
 #     ② 🧭 오늘의 결정 「📒 되돌아보기」 CSV       = 날짜,적은때,교차로,이름,브리핑순위,결정,한일,까닭
+#     ③ 🧩 엮임 보기 「📒 내가 매긴 가설」 CSV     = 날짜,대상,이름,가설,판정,까닭,가능성 (2026-10-25 · js/link.js tg_map2d_lnk_log)
 #   후보는 저장소에 올리지 않는다(07_API키/out/onto_logs/) — 형님이 「이것 맞다」고 한 줄만 tools/onto/rules-bake.py FIELD 에 말 그대로 옮긴다
 #   개인정보 꼴(차량번호·전화·주민번호·이름+계급)이 보이면 그 줄은 ○○ 로 가리고 「가림」 표시
 # 쓰기: CSV 를 07_API키/out/onto_logs/in/ 에 아무 이름(.csv/.txt)으로 넣고   py -3.12 -X utf8 tools/onto/log-ingest.py
@@ -31,24 +32,25 @@ def read_rows(path):
     if not rd:
         return None, []
     h = [c.strip() for c in rd[0]]
-    kind = 'orc' if h[:2] == ['날짜', '질문'] else 'dec' if '브리핑순위' in h else None
+    kind = 'orc' if h[:2] == ['날짜', '질문'] else 'dec' if '브리핑순위' in h else 'lnk' if '가설' in h and '판정' in h else None
     return kind, [dict(zip(h, r)) for r in rd[1:] if any(x.strip() for x in r)]
 
 
 def main():
     os.makedirs(os.path.join(BASE, 'in'), exist_ok=True)
-    O, Dd, masked = [], [], 0
+    O, Dd, Lk, masked = [], [], [], 0
     for f in sorted(glob.glob(os.path.join(BASE, 'in', '*.csv')) + glob.glob(os.path.join(BASE, 'in', '*.txt'))):
         k, rows = read_rows(f)
         for r in rows:
             for c in list(r):
                 r[c], h = mask(r[c]); masked += h
-        (O if k == 'orc' else Dd if k == 'dec' else []).extend(rows)
+        (O if k == 'orc' else Dd if k == 'dec' else Lk if k == 'lnk' else []).extend(rows)
     # 같은 줄이 두 번(기기 둘에서 복사) 들어오면 한 번만
     O = [dict(t) for t in {tuple(sorted(r.items())) for r in O}]
     Dd = [dict(t) for t in {tuple(sorted(r.items())) for r in Dd}]
+    Lk = [dict(t) for t in {tuple(sorted(r.items())) for r in Lk}]
     L = ['# 현장 기록 정리 — %s' % datetime.date.today().isoformat(), '',
-         '엮어서 답 찾기 기록 %d건 · 오늘의 결정 기록 %d건 · 개인정보 꼴을 가린 칸 %d' % (len(O), len(Dd), masked), '']
+         '엮어서 답 찾기 기록 %d건 · 오늘의 결정 기록 %d건 · 엮임 보기 가설 판정 %d건 · 개인정보 꼴을 가린 칸 %d' % (len(O), len(Dd), len(Lk), masked), '']
     if O:
         L += ['## 🧩 엮어서 답 찾기 — 질문별', '']
         by = collections.defaultdict(list)
@@ -58,6 +60,18 @@ def main():
             L.append('### %s — %d건' % (q, len(rs)))
             for r in sorted(rs, key=lambda r: r.get('날짜', ''), reverse=True)[:30]:
                 L.append('- %s · %s — %s%s' % (r.get('날짜', ''), r.get('대상', ''), r.get('한 일', ''), (' → ' + r['결과']) if r.get('결과') else ''))
+            L.append('')
+    # 🧩 엮임 보기 — 가설 갈래마다 맞다·틀리다 · 같은 대상은 마지막 판정만 센다
+    lk_by = collections.defaultdict(dict)
+    for r in sorted(Lk, key=lambda r: r.get('날짜', '')):
+        lk_by[r.get('가설', '?')][r.get('대상', '')] = r
+    if Lk:
+        L += ['## 🧩 엮임 보기 — 가설을 현장에서 매긴 것(같은 대상은 마지막 판정)', '']
+        for hname, per in sorted(lk_by.items(), key=lambda kv: -len(kv[1])):
+            c = collections.Counter(r.get('판정', '') for r in per.values())
+            L.append('### %s — 맞다 %d · 틀리다 %d · 모르겠다 %d' % (hname, c['맞다'], c['틀리다'], c['모르겠다']))
+            for r in sorted(per.values(), key=lambda r: r.get('날짜', ''), reverse=True)[:20]:
+                L.append('- %s · %s — **%s**%s' % (r.get('날짜', ''), r.get('이름', ''), r.get('판정', ''), (' · ' + r['까닭']) if r.get('까닭') else ''))
             L.append('')
     why = collections.Counter()
     if Dd:
@@ -78,11 +92,18 @@ def main():
         for w, c in why.most_common(10):
             if c >= 2:
                 cand.append('오늘의 결정에서 1순위가 아닌 곳을 고른 까닭 「%s」(%d번)' % (w, c))
+    for hname, per in lk_by.items():
+        c = collections.Counter(r.get('판정', '') for r in per.values())
+        if c['맞다'] >= 2 and c['맞다'] > c['틀리다']:
+            cand.append('엮임 보기 가설 「%s」 — 현장에서 맞다 %d곳 · 틀리다 %d곳(가설 등급을 올릴 후보)' % (hname, c['맞다'], c['틀리다']))
+        for r in per.values():
+            if r.get('판정') == '틀리다' and r.get('까닭'):
+                cand.append('「%s」에서 가설 「%s」은 틀림 — %s (%s)' % (r.get('이름', ''), hname, r['까닭'], r.get('날짜', '')))
     L += ['## ✍ 현장 판단 후보 — 형님이 「맞다」고 한 줄만 규칙 장부(onto-rules FIELD)에 말 그대로 옮긴다', '']
     L += ['- [ ] ' + c for c in cand[:40]] or ['- 아직 후보 없음(결과 칸이 적힌 기록이 없다)']
     out = os.path.join(BASE, '%s_정리.md' % datetime.date.today().strftime('%Y%m%d'))
     open(out, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
-    print('엮기 %d · 결정 %d · 가림 %d · 후보 %d → %s' % (len(O), len(Dd), masked, len(cand), out))
+    print('엮기 %d · 결정 %d · 가설 %d · 가림 %d · 후보 %d → %s' % (len(O), len(Dd), len(Lk), masked, len(cand), out))
 
 
 if __name__ == '__main__':

@@ -879,6 +879,26 @@ def reduce_phase(itst, J):
             'cyc': cyc, 'mv': mv, 'ped': [{'d': q['d'], 'seg': [], 'n': q['n']} for q in pd], 'pd': pd, 'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy, 'src': 'p'}
 
 
+# 방위 바로잡기(소유자 현장 판단) — 원자료 방위 이름이 실제와 다른 교차로 · {교차로 번호: {원자료 방위: 실제 방위}} · build 끝에서 its(mv·ped·pd)·pl 기준 이동류에 같이 적용 · 기록에 fix='dir'
+#   4045 법원검찰청(교대역) 2026-10-24 — 모든 기록에서 동·남 직진이 함께, 북·서 직진이 함께 녹색(있을 수 없음 · 10-10 부터 알려진 것) → 남↔서 바꾸면 동서 직진 → 동서 좌회전 → 남북 직진 → 남북 좌회전 네 현시로 맞는다(동↔북 바꿔도 맞아 소유자에게 물음)
+#   소유자 「가장 긴 직진(약 47초)은 서초대로(동서 방향)」 → 남↔서
+DIRFIX = {'4045': {'st': 'wt', 'wt': 'st'}}
+
+
+def dirfix_apply(its, pl):
+    for no, sw in DIRFIX.items():
+        f = lambda d: sw.get(d, d)
+        for o in its.get(no, []):
+            o['mv'] = [[f(m[0])] + list(m[1:]) for m in o.get('mv', [])]
+            for k in ('ped', 'pd'):
+                if o.get(k):
+                    o[k] = [[f(q[0])] + list(q[1:]) for q in o[k]]
+            o.pop('dq', None)
+            o['fix'] = 'dir'
+        if no in pl:
+            pl[no] = [list(r[:5]) + [':'.join([f(r[5].split(':')[0])] + r[5].split(':')[1:])] + list(r[6:]) if len(r) > 5 and isinstance(r[5], str) and ':' in r[5] else r for r in pl[no]]
+
+
 def dir_bad(mvrows, cyc):
     # 방위 표기 점검 — 네 방향 직진이 다 있을 때, 직각 방향 직진끼리 녹색이 겹치는 초가 마주 보는 방향끼리보다 많으면 True
     # (2026-10-10 교대역 4045: 동·남이 함께, 북·서가 함께 녹색 — 실제로는 있을 수 없다 → 원자료 방위 이름이 틀림)
@@ -1482,6 +1502,7 @@ def build():
                 pts[str(x['no'])] = [x['lat'], x['lon'], x['name']]
     except Exception:
         pass
+    dirfix_apply(its, pl)
     doc = {'schema': 'tg-sigdir/1',
            'source': '서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간',
            'how': '잔여시간이 새 값으로 뛰는 자리 사이를 한 구간으로 보고, 차량 신호는 3~6초 구간을 황색으로 보아 그 앞을 녹색·뒤를 적색으로 읽었다(추정). 받은 시간대의 실제 운영값이며 다른 시간대·요일은 다르다. 보행 신호는 색을 가릴 수 없어 구간 길이만 싣는다.',

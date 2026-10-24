@@ -192,6 +192,14 @@
   #m2dCard .sdg .c0 { color: var(--ink2); text-align: center; align-self: center; }
   #m2dCard.sigc #m2dLad { margin-top: 10px; }
   #m2dCard .cap.sdcap { font-size: 13.5px; font-weight: 800; color: var(--ink); margin-top: 2px; line-height: 1.35; }
+  /* v2.298.0 동·리·시군구 카드 — 한눈에 · 네 칸 · 접는 묶음 */
+  #m2dCard h3 .dgtag { display: block; width: max-content; margin: 4px 0 0; }   /* 제목 오른쪽 위 글씨 크기·닫기 단추에 가리지 않게 다음 줄 왼쪽 */
+  #m2dCard .dgtag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 800; background: #0f766e; color: #fff; vertical-align: 2px; white-space: nowrap; } #m2dCard .dgbc { font-weight: 500; color: var(--ink2); font-size: .78em; }
+  #m2dCard .dgg { margin: 6px 0 4px; padding: 8px 10px; border-radius: 12px; background: var(--chip); border: 1px solid var(--line); } #m2dCard .dgh { font-weight: 800; font-size: 13.5px; margin-bottom: 4px; }
+  #m2dCard .dgs { margin: 0 0 6px; padding-left: 18px; font-size: 13px; line-height: 1.5; } #m2dCard .dgs small, #m2dCard .dgo small { color: var(--ink2); font-size: 11px; } #m2dCard .dgn { margin: 0 0 6px; }
+  #m2dCard .dgt { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; } #m2dCard .dgc { min-width: 0; padding: 6px 8px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; }
+  #m2dCard .dgc span { font-size: 11.5px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #m2dCard .dgc b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #m2dCard .dgc small { font-size: 11px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 13px; }
+  #m2dCard .dgo { margin: 6px 0 0; font-size: 12.5px; line-height: 1.45; } #m2dCard details.dgrp > summary { font-size: 14px; font-weight: 800; } #m2dCard .dgi { padding-top: 2px; } #m2dCard .dghint { margin-top: 8px; }
   #m2dCard details.sdx.sdxm { margin-top: 10px; border-top: 1px solid var(--line); } #m2dCard details.sdx.sdxm > summary { font-size: 13.5px; min-height: 42px; color: var(--ink); }
   #m2dCard details.sdx { margin-top: 6px; } #m2dCard details.sdx > summary { font-size: 12.5px; font-weight: 700; color: var(--ink2); min-height: 34px; display: flex; align-items: center; cursor: pointer; list-style: none; } #m2dCard details.sdx > summary::-webkit-details-marker { display: none; } #m2dCard details.sdx > summary::after { content: '▼'; margin-left: 6px; font-size: 11px; } #m2dCard details.sdx[open] > summary::after { content: '▲'; }
   #m2dCard .sdnt { margin: 7px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink2); }
@@ -1108,7 +1116,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.297.1"></script>
+<script src="js/map2d.js?v=2.298.0"></script>
 <script src="js/decide.js?v=5"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다

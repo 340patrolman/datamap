@@ -16,7 +16,7 @@
  "grades": "A 원문·공식 · B 받은 값 · C 근사 · D 추정 · E 가설(앱 기준 포함)",
  "n": {
   "rules": 26,
-  "field": 20,
+  "field": 21,
   "fieldUsed": 11
  },
  "rules": [
@@ -72,7 +72,7 @@
    "s": [
     [
      "own",
-     "FK-JUR-BORDER-1 · FK-JUR-BORDER-2 · FK-JUR-BORDER-3",
+     "FK-JUR-BORDER-1 · FK-JUR-BORDER-2 · FK-JUR-BORDER-3 · FK-JUR-BORDER-4",
      "2026-10-24"
     ],
     [
@@ -682,6 +682,15 @@
     "RULE-JUR-3"
    ],
    "conf": "소유자 확인 — 원칙대로 계산한 경계 도로 목록에 답함(11 = 사평대로 동작·방배 사이 · 12 = 명달로) · 동작대로·과천대로·논현로는 답 없음(확인 전)"
+  },
+  {
+   "id": "FK-JUR-BORDER-4",
+   "date": "2026-10-24",
+   "said": "래미안아트힐 교차로도 서초경찰서로 해.",
+   "use": [
+    "RULE-JUR-3"
+   ],
+   "conf": "소유자 결정 — FK-JUR-BORDER-2 의 래미안아트힐 = 방배를 바꿈(명달로 앞쪽 서초와 맞춤)"
   },
   {
    "id": "FK-COL-999",

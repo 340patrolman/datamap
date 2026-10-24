@@ -14,6 +14,7 @@
     STA·PBX  = 관할 경찰서·지구대·파출소(2026-10-23) — 교차로 「관할」 경찰서(jur-seocho 현장 기준 경계 → 밖이면 police.json 별표2 × 행정동 · 나눠 맡는 동은 둘 다 C · T-GIS 관할 코드와 맞는지 tg)
                지구대·파출소 「소속」 경찰서(경찰청 주소 현황 · A) · 교차로 「가까운지구대」(그 서의 지구대·파출소 가운데 가장 가까운 곳 · 관할 경계 비공개 — 근사 C · d m)
     STN      = 지하철역(2026-10-23 · data/r/stations.json 자리 · subway-hour-seoul 교통카드 승하차 2026-07~09 · 시간대 몫) → 「가까운교차로」(300m · C) · 사건(집회·공연) 「근처역」(500m · 1,500석 넘는 공연장 1km · C)
+    TRD      = 서울 상권(2026-10-24 · data/r/<구>/trdar.json 상권분석서비스 · 한 달 평균 만원) → 「들어감동」 DNG(A) · 「품음」 교차로(경계 안 · B) · DNG 에 점포(storind)·매출(dongx) 덧붙임
     DNG      = 교차로가 든 행정동(onto-int 행정동 코드 · 2026-10-23 엮임 지도 첫째) — 값은 그 동을 열쇠로 가진 파일에서 그대로:
                house-dong(세대·1인 세대) · mig-dong(주민) · foreign-dong(외국인주민) · econ-dong(국민연금 가입 사업장·가입자) · dui-ref-seoul(주점 점포·호프 0~6시 결제) · police.json(별표2 관할서)
     인접      = data/sig-net-seocho.json(신호 교차로 사이 길 · C-ITS 번호로 INT 에 이음)
@@ -179,7 +180,10 @@ ASOF = {
     'r/stations.json': '서울 역사마스터(역 대표 점)',
     'subway-hour-seoul.json': '교통카드 지하철 시간대 승하차 2026-07~09 합계',
 }
-def asof_of(s): return ASOF.get(s) or (ASOF['live250'] if s.endswith('/live250.json') else ASOF['taas10-seocho.json'].replace('(2026-10-04 받음)', '(권역 저장소 판)') if s.endswith('/taas10.json') else None)
+TRDF = []
+def asof_of(s):
+    if s.endswith('/trdar.json') or s.endswith('/dongx.json') or s.endswith('/storind.json'): return '서울 상권분석서비스 분기(상권 2026 2분기 · 한 달 평균 = 분기 ÷ 3)'
+    return ASOF.get(s) or (ASOF['live250'] if s.endswith('/live250.json') else ASOF['taas10-seocho.json'].replace('(2026-10-04 받음)', '(권역 저장소 판)') if s.endswith('/taas10.json') else None)
 def plc_people(O):
     """250m 칸(PLC)에 서울 생활인구(내국인) 250m 격자 값을 그대로 붙인다(속성 — 칸 번호가 열쇠 · 등급 A).
        wd/we = 평일·주말 하루 평균 0~23시(명) · ad/an = 평일 낮(11~14시)·밤(0~4시) 연령 8칸 % — data/r/<서울 구>/live250.json(tools/region/live250-bake.py)"""
@@ -278,6 +282,43 @@ def stn_build(O, obj, edge, INTs):
         for e in [v for v in O.values() if v['t'] == 'EVT' and v.get('lat') and v.get('kind') in ('집회', '공연')]:
             r_ = 1000 if e['kind'] == '공연' and (e.get('n') or 0) > 1500 else 500; d = m(la, lo, e['lat'], e['lon'])
             if d <= r_: edge(e['id'], '근처역', sid, 'C', 'onto-events.json × r/stations.json(역 %dm 안 — station-events 와 같은 셈)' % r_, d=round(d))
+def trd_build(O, obj, edge, INTs):
+    """서울 상권분석서비스 상권(TRD — 골목·발달·전통시장·관광특구) · data/r/<구>/trdar.json(매출·점포·유동·직장·상주 · 분기 ÷ 3 = 한 달 평균 만원)
+       상권 → 행정동 「들어감동」(상권 파일의 동 이름 = 같은 구 DNG 이름 · A) · 상권 → 교차로 「품음」(교차로가 상권 경계 안 · B)
+       행정동(DNG)에 점포·매출을 덧붙인다(storind 점포-행정동 · dongx 추정매출-행정동 · 같은 분기 판) — 값은 그대로 더하기만"""
+    used = []; gus = sorted({i['id'] and O[i['id']].get('dong', '')[:5] for i in INTs} - {''})
+    dn = {(v['gu'], v['nm']): v['id'] for v in O.values() if v['t'] == 'DNG'}
+    for g in gus:
+        f = 'r/%s/trdar.json' % g
+        if not os.path.exists(os.path.join(D, f)): continue
+        T = J(os.path.join(D, f)); used.append(f)
+        for t in T['trdar']:
+            ind = t.get('ind') or []; sal = sum(x[1] for x in ind); prev = sum(v[0] for v in (t.get('indp') or {}).values())
+            tq = sorted((t.get('tr') or {}).items()); last = tq[-1][1] if tq else None; st = t.get('stor') or []
+            tid = obj('TRD-' + t['cd'], 'TRD', cd=t['cd'], nm=t['name'], se=t['se'], gu=t['gu'], dongnm=t['dong'], area=int(t['area']) if t.get('area') else None, q=T['quarter'],
+                      sales=sal or None, salesPrev=prev or None, bar=last[1] if last else None, night=last[2] if last else None,
+                      top=[[x[0], x[1]] for x in sorted(ind, key=lambda x: -x[1])[:3]] or None,
+                      stores=sum(x[1] for x in st) or None, opened=sum(x[3] for x in st) or None, closed=sum(x[4] for x in st) or None,
+                      flow=(t.get('flp') or [None])[0], workers=(t.get('wrc') or [None])[0], residents=(t.get('rep') or [None])[0], ix=(t.get('ix') or [None])[0])
+            d = dn.get((t['gu'], t['dong']))
+            if d: edge(tid, '들어감동', d, 'A', f + '(상권 파일의 행정동 이름)')
+            for i in INTs:
+                if any(pip(i['lon'], i['lat'], r) for r in t['rings']): edge(tid, '품음', i['id'], 'B', f + '(서울시 상권 경계 안 교차로)')
+        si = os.path.join(D, 'r', g, 'storind.json'); dx = os.path.join(D, 'r', g, 'dongx.json')
+        SI = J(si)['dong'] if os.path.exists(si) else {}; DX = J(dx) if os.path.exists(dx) else {'dong': {}, 'quarters': []}
+        if SI: used.append('r/%s/storind.json' % g)
+        if DX['dong']: used.append('r/%s/dongx.json' % g)
+        for c, rows in SI.items():
+            o = O.get('DNG-' + c)
+            if o is None: continue
+            o.update(stN=sum(r[1] for r in rows), stOpen4=sum(r[2] for r in rows), stClose4=sum(r[3] for r in rows), stFrn=sum(r[7] for r in rows), stQ=J(si)['qL'])
+        for c, v in DX['dong'].items():
+            o = O.get('DNG-' + c)
+            if o is None: continue
+            tr = v.get('tr') or []; qs = DX.get('quarters') or []; k = max([i for i, x in enumerate(tr) if x] or [-1])   # tr = 분기마다 [매출, 0~6·6~11·11~14·14~17·17~21·21~24 시간대 매출, …] 만원(한 달 평균)
+            if k < 0: continue
+            o.update(sales=tr[k][0], salesQ=qs[k] if k < len(qs) else None, salesNight=tr[k][1] + tr[k][6])
+    return used
 def dng_build(O, obj, rows):
     hd = J(os.path.join(D, 'house-dong.json'))['dong']; mg = J(os.path.join(D, 'mig-dong.json'))['dong']; fg = J(os.path.join(D, 'foreign-dong.json'))['dong']
     ec = J(os.path.join(D, 'econ-dong.json'))['dong']; dr = {x[0]: x for x in J(os.path.join(D, 'dui-ref-seoul.json'))['items']}
@@ -345,6 +386,7 @@ def main():
     rd_build(obj, edge, by_cits)
     sta_build(obj, edge, INTs)
     stn_build(O, obj, edge, INTs)
+    TRDF[:] = trd_build(O, obj, edge, INTs)
     acl_build(obj, edge, sorted(O_RD), {l[0]: l for l in J(os.path.join(D, 'nav-seocho.json'))['links']}, ta)
     ks = J(os.path.join(D, 'sig-ksc-seocho.json'))
     for it in ks['items']:
@@ -391,7 +433,7 @@ def main():
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
     pplf = plc_people(O)
-    srcs = pplf + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
+    srcs = pplf + TRDF + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'asof': {s: asof_of(s) for s in srcs} | {'src/tbook-law.json': 'T-Book ' + str(tl.get('ver')) + ' 범칙금 DB·원문 대조 판례'},
@@ -408,7 +450,7 @@ def main():
     json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print(doc['count'], doc['edges_count'], os.path.getsize(p), 'B')
     # 지도용 가벼운 판(2026-10-23 게임 세션 부탁 — 지도는 q1·q2·q3·q5 만 쓴다): 사건·접근로·도로 구간·250m 칸과 그 링크를 뺀 같은 꼴 · 값은 그대로
-    LITE = {'EVT', 'APR', 'RD', 'PLC', 'ACL', 'STA', 'PBX', 'STN'}; keep = {o['id'] for o in doc['objects'] if o['t'] not in LITE}
+    LITE = {'EVT', 'APR', 'RD', 'PLC', 'ACL', 'STA', 'PBX', 'STN', 'TRD'}; keep = {o['id'] for o in doc['objects'] if o['t'] not in LITE}
     lite = dict(doc, lite='지도용 — 뺀 객체 ' + ','.join(sorted(LITE)) + ' · 전체는 ' + OUTF, objects=[o for o in doc['objects'] if o['id'] in keep], edges=[e for e in E if e[0] in keep and e[2] in keep])
     lite['count'] = dict(collections.Counter(v['t'] for v in lite['objects'])); lite['edges_count'] = dict(collections.Counter(e[1] for e in lite['edges']))
     pl = p[:-5] + '-map.json'; json.dump(lite, open(pl, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))

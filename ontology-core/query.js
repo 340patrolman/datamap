@@ -160,6 +160,26 @@
       nEvents: ev.length, events: ev.slice(0, k || 20), ints: ints,
       notes: ['승하차 = 교통카드 2026-07~09 하루 평균(노선 합 · 갈아타는 사람은 안 잡힘) · 몫 1 = 그 역 5~24시 한 시간 평균', '행사 = 경찰청 주요 집회·KOPIS 1,000석 이상 공연(근사 C) · 끝나는 시각 몫은 평소 모양이지 행사 날 인원이 아니다', '교차로 사고는 70m 안 칸 묶음이라 이웃끼리 겹친다 — 더하지 않았다'] };
   };
+  /* 질문 17 — 이 상권 한눈에(2026-10-24 상권 ↔ 동·교차로): 매출(1년 전 견줌)·밤·주점 몫·점포 개업·폐업·유동·직장·상주 · 경계 안 교차로(10년 사고 많은 순) · 행정동
+     매출은 카드 결제 추정(현금 제외 · 분기 ÷ 3) · 사고는 교차로 70m 묶음이라 더하지 않는다 */
+  P.q17 = function (trdId) {
+    var T = this.O[trdId]; if (!T || T.t !== 'TRD') return null; var self = this;
+    var dg = this.follow(trdId, '들어감동')[0];
+    var ints = this.follow(trdId, '품음').map(function (x) { var q = self.q1(x.o.id); return { id: q.id, nm: q.nm, total: q.acc ? q.acc.total : 0, night: q.acc ? q.acc.night : 0, ped: q.acc ? q.acc.ped : 0 }; }).sort(function (a, b) { return b.total - a.total || (a.id < b.id ? -1 : 1); });
+    return { id: trdId, nm: T.nm, se: T.se, q: T.q, dong: dg ? { id: dg.o.id, nm: dg.o.nm } : { id: null, nm: T.dongnm },
+      sales: T.sales || null, salesPrev: T.salesPrev || null, growth: T.sales && T.salesPrev ? Math.round((T.sales / T.salesPrev - 1) * 1000) / 10 : null,
+      nightShare: T.sales && T.night != null ? Math.round(T.night / T.sales * 1000) / 10 : null, barShare: T.sales && T.bar != null ? Math.round(T.bar / T.sales * 1000) / 10 : null,
+      top: T.top || [], stores: T.stores || null, opened: T.opened || null, closed: T.closed || null, flow: T.flow || null, workers: T.workers || null, residents: T.residents || null, ix: T.ix || null, ints: ints,
+      notes: ['서울시 상권분석서비스(카드 결제 추정 · 현금 제외 · 한 달 평균 = 분기 ÷ 3)', '밤 = 21~24시 + 0~6시 매출 · 주점 = 주점·유흥 매출', '교차로 사고는 70m 안 칸 묶음이라 이웃끼리 겹친다 — 더하지 않았다'] };
+  };
+  /* 질문 18 — 이 동 가게(2026-10-24): 점포·개업·폐업·프랜차이즈(storind) · 한 달 매출·밤·주점 몫(dongx) · 그 동 상권(매출 많은 순) */
+  P.q18 = function (dngId) {
+    var G = this.O[dngId]; if (!G || G.t !== 'DNG') return null; var self = this;
+    var trs = this.back(dngId, '들어감동').map(function (x) { return { id: x.o.id, nm: x.o.nm, se: x.o.se, sales: x.o.sales || 0, stores: x.o.stores || 0 }; }).sort(function (a, b) { return b.sales - a.sales || (a.id < b.id ? -1 : 1); });
+    return { id: dngId, nm: G.nm, stores: G.stN == null ? null : { n: G.stN, open4: G.stOpen4, close4: G.stClose4, frn: G.stFrn, q: G.stQ }, sales: G.sales || null, salesQ: G.salesQ || null,
+      nightShare: G.sales && G.salesNight != null ? Math.round(G.salesNight / G.sales * 1000) / 10 : null,
+      nTrd: trs.length, trd: trs, notes: ['점포 = 서울시 상권분석서비스 점포-행정동(서비스 업종 100개 · 분기) · 개업·폐업 = 최근 4분기', '매출 = 추정매출-행정동(카드 결제 · 한 달 평균) · 서울만'] };
+  };
   /* 질문 2 — 왜 바꿨고 바꾼 뒤 어떻게 됐나(해 단위 · 앞 2해 vs 뒤 2해 · 바꾼 해는 뺀다) */
   P.q2 = function (intId) {
     var self = this, it = this.O[intId]; if (!it) return null; var acc = this.follow(intId, '발생')[0], A = acc ? acc.o : null;

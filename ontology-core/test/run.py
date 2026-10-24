@@ -260,6 +260,17 @@ for nm_ in ('남부터미널', '교대', '서초', '고속터미널'):
 E16 = [e_ for e_ in R['q16']['STN-남부터미널']['events'] if e_['kind'] == '공연' and e_['endHour'] is not None]
 ck('질문16 남부터미널 — 공연 끝나는 시각(시작 하나 + 공연시간)과 그 시각 역 몫이 채워진다', E16 and all(0 <= e_['endHour'] < 24 and e_['stnShareAtEnd'] is not None for e_ in E16), (len(E16), E16[:1]))
 ck('질문16 — 역이 아닌 것을 물으면 null', R['q16bad'] is None)
+# ---- 질문 17·18 · 상권 ↔ 동·교차로(2026-10-24) — r/11650/trdar·storind·dongx · onto-int 에서 따로 ----
+TRA = {t['cd']: t for t in J(os.path.join(D, 'r', '11650', 'trdar.json'))['trdar']}
+for tid, q in R['q17'].items():
+    t = TRA[tid[4:]]; sal = sum(x[1] for x in t.get('ind') or []); prv = sum(v[0] for v in (t.get('indp') or {}).values())
+    inn = sorted(k_ for k_, r_ in oi.items() if r_[6] == '11650' and any(inside(r_[3], r_[2], [tuple(p_) for p_ in rg]) for rg in t['rings']))
+    ck('질문17 %s — 한 달 매출·1년 전·점포·경계 안 교차로가 상권 파일 따로 셈과 같다' % q['nm'], q['sales'] == (sal or None) and q['salesPrev'] == (prv or None) and q['stores'] == (sum(x[1] for x in t.get('stor') or []) or None) and sorted(int(x['id'][4:]) for x in q['ints']) == inn, (q['sales'], sal, q['stores'], len(q['ints']), len(inn)))
+SIX = J(os.path.join(D, 'r', '11650', 'storind.json'))['dong']; DXX = J(os.path.join(D, 'r', '11650', 'dongx.json'))
+for did, q in R['q18'].items():
+    c_ = did[4:]; tr_ = DXX['dong'][c_]['tr'][-1]
+    ck('질문18 %s — 점포·개업·폐업·한 달 매출·밤 매출 몫·상권 수가 원자료 따로 셈과 같다' % q['nm'], q['stores']['n'] == sum(r_[1] for r_ in SIX[c_]) and q['stores']['open4'] == sum(r_[2] for r_ in SIX[c_]) and q['stores']['close4'] == sum(r_[3] for r_ in SIX[c_]) and q['sales'] == tr_[0] and q['nightShare'] == round((tr_[1] + tr_[6]) / tr_[0] * 1000) / 10 and q['nTrd'] == sum(1 for t in TRA.values() if t['dong'] == q['nm']), (q['stores'], q['sales'], q['nightShare'], q['nTrd']))
+ck('질문17·18 — 다른 것을 물으면 null', R['q17bad'] is None and R['q18bad'] is None)
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])
 CS = J(os.path.join(CORE, 'data', 'core-seocho.json')); ck('출처마다 기준일 — 코어 sources 의 모든 파일에 asof 글이 있다(%d)' % len(CS['sources']), set(CS['asof']) == set(CS['sources']) and all(CS['asof'].values()), [k for k, v in CS['asof'].items() if not v])

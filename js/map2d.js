@@ -2380,7 +2380,12 @@
   /* v2.300.0 🧩 엮임 보기(js/link.js — 게임 세션 · 서초 전체 코어를 누를 때 한 번 받는다) — 지금 고른 것을 넘긴다: T-GIS 교차로 {id:'INT-코드'} · 동 {dong:8자리|이름} · 그 밖 자리 {lat, lon}(600m 안 가장 가까운 교차로) · 없으면 {}(고르기) */
   function lnkArg() { var it = sel && sel.it, c = $('m2dCard'); if (!it || !c || !c.classList.contains('on')) return {}; var ll = function (p) { return p ? { lat: LAT0 - p[1] / KY, lon: p[0] / KX + LON0 } : {}; };
     if (it.kind === 'tgis' && it.t && it.t.c != null) return { id: 'INT-' + it.t.c }; if (it.kind === 'dong' && it.d) return { dong: it.d.k ? String(it.d.k).slice(0, 8) : it.d.name };
-    if (it.kind === 'sgd' && it.q) return { lat: +it.q[0], lon: +it.q[1] }; if (it.kind === 'jct' && it.o && it.o.p) return ll(it.o.p); if (it.kind === 'node' && it.n && it.n.p) return ll(it.n.p); return sel.w ? ll(sel.w) : {}; }
+    if (it.kind === 'sgd' && it.q) return { lat: +it.q[0], lon: +it.q[1] }; if (it.kind === 'jct' && it.o && it.o.p) return ll(it.o.p); if (it.kind === 'node' && it.n && it.n.p) return ll(it.n.p);
+    /* v2.300.6 그 밖 카드(방향별 신호·KSC·신호 점 등)는 카드가 가리키는 점 — 객체의 p · lat/lon · 고른 화면 점 · 카드가 있는데 {} 를 넘기지 않는다 */
+    var pt = null; [it, it.s, it.x, it.t, it.o, it.n, it.c, it.e].forEach(function (o) { if (pt || !o || typeof o !== 'object') return; if (o.p && o.p.length === 2 && isFinite(o.p[0])) pt = { p: o.p }; else if (isFinite(+o.lat) && isFinite(+o.lon) && +o.lat > 30) pt = { lat: +o.lat, lon: +o.lon }; });
+    if (pt) return pt.p ? ll(pt.p) : pt; if (sel.w) return ll(sel.w);
+    if (sel.x != null && isFinite(sel.x)) return ll([(sel.x - cv.clientWidth / 2) / view.s + view.cx, (sel.y - cv.clientHeight / 2) / view.s + view.cy]);
+    return ll([view.cx, view.cy]); }
   function lnkOpen() { if (!window.tgLink || !window.tgLink.open) { toast('엮임 보기를 아직 못 읽었다 — 잠시 뒤 다시'); return; } window.tgLink.open(lnkArg()); }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-lnk]'); if (!b) return; e.preventDefault(); lnkOpen(); });
   function dgPb(d) { if (!POL2) { polLoad(); return ''; } if (!d || !d.k) return ''; if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); var q9 = d._pb != null ? POL2.pbox[d._pb] : null; return q9 ? esc(q9[0] + (q9[1] ? '파출소' : '지구대')) + ' <small>(근사)</small>' : ''; }

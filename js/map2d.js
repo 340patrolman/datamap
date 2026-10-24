@@ -3073,14 +3073,39 @@
     return res.sort(function (a, b) { return a.o - b.o || SDA[a.d] - SDA[b.d]; }); }
   function sdName(x) { var ms = x.ms.map(function (m) { return m === 'Lt' && !x.pair ? '좌회전(→' + SDN[SDL[x.d]] + ')' : SDM[m] || m; });
     return SDN[x.d] + (x.pair ? '↔' : '→') + SDN[SDO[x.d]] + ' ' + ms.join('·'); }
-  function sdRose(o, G) {   // 작은 방위 그림 — 신호가 있는 쪽 길과 그 쪽 직진(없으면 첫 이동류) 녹색 초
+  function sdRose(o, G) {   /* v2.296.0 소유자 「교차로 모양과 신호값이 입체적으로」 — 맨 위 그림 = 교차로 한 장(살짝 눕힌 3D) · 길(차로·가운데 점선·정지선·건널목) · 들어오는 쪽마다 오른편에 신호등(적·황·녹 세 칸 + 남은 초) · 이동류 화살표 전부(지금 가는 것만 굵은 녹색 · sdRosePaint 가 1초마다) · 지금 몇 초를 못 세면 신호등은 꺼진 채 녹색 길이만 · 길 색 = 방향별 막힘(aprRose · data-apr) */
     var has = {}, sec = {}; o.mv.forEach(function (m) { has[m[0]] = 1; if (m[2] != null && (m[1] === 'St' || sec[m[0]] == null)) sec[m[0]] = m[2]; }); (o.ped || []).forEach(function (q) { has[q[0]] = has[q[0]] || 2; });
-    var s2 = '<svg class="sdrose" viewBox="0 0 150 150" role="img" aria-label="신호가 있는 방위"><rect x="61" y="61" width="28" height="28" rx="3" fill="var(--line)"/>';
-    Object.keys(has).forEach(function (d) { var a = SDA[d] * Math.PI / 180, c = Math.cos(a), n = Math.sin(a), x1 = 75 + c * 14, y1 = 75 + n * 14, x2 = 75 + c * 50, y2 = 75 + n * 50, tx = 75 + c * 63, ty = 75 + n * 63;
-      s2 += '<line data-apr="' + d + '" x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="var(--line)" stroke-width="16" stroke-linecap="round"/>';
-      if (has[d] === 1) s2 += '<line x1="' + (75 + c * 46).toFixed(1) + '" y1="' + (75 + n * 46).toFixed(1) + '" x2="' + (75 + c * 20).toFixed(1) + '" y2="' + (75 + n * 20).toFixed(1) + '" stroke="#16a34a" stroke-width="3" marker-end="url(#sdAr)"/>';
-      s2 += '<text x="' + tx.toFixed(1) + '" y="' + (ty + (sec[d] != null ? -1 : 4)).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">' + SDN[d] + '</text>' + (sec[d] != null ? '<text x="' + tx.toFixed(1) + '" y="' + (ty + 11).toFixed(1) + '" text-anchor="middle" font-size="10" fill="#15803d">' + Math.round(sec[d]) + '초</text>' : ''); });
-    return s2 + '<defs><marker id="sdAr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="#16a34a"/></marker></defs></svg>'; }
+    var C = 100, RW = 19, f = function (v) { return v.toFixed(1); }, U = function (d) { var a = SDA[d] * Math.PI / 180; return [Math.cos(a), Math.sin(a)]; }, P2 = function (u, r, k, j) { return [C + u[0] * k + r[0] * j, C + u[1] * k + r[1] * j]; };
+    var s2 = '<svg class="sdrose" viewBox="0 0 200 200" role="img" aria-label="교차로 신호 — 들어오는 쪽마다 신호등과 남은 초"><defs><filter id="sdSh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="3" stdDeviation="2.2" flood-opacity=".28"/></filter></defs><g filter="url(#sdSh)">';
+    var D9 = Object.keys(has);
+    D9.forEach(function (d) { var u = U(d), e = P2(u, [0, 0], 99, 0); s2 += '<line x1="' + C + '" y1="' + C + '" x2="' + f(e[0]) + '" y2="' + f(e[1]) + '" stroke="#6b7686" stroke-width="' + RW * 2 + '"/><line data-apr="' + d + '" x1="' + C + '" y1="' + C + '" x2="' + f(e[0]) + '" y2="' + f(e[1]) + '" stroke="transparent" stroke-width="' + RW * 2 + '"/>'; });
+    s2 += '<rect x="' + (C - RW) + '" y="' + (C - RW) + '" width="' + RW * 2 + '" height="' + RW * 2 + '" fill="#6b7686"/></g>';
+    D9.forEach(function (d) { var u = U(d), r = [u[1], -u[0]], a1 = P2(u, r, RW + 14, 0), a2 = P2(u, r, 99, 0), s1 = P2(u, r, RW + 9, 0.5), s3 = P2(u, r, RW + 9, RW - 1);
+      s2 += '<line x1="' + f(a1[0]) + '" y1="' + f(a1[1]) + '" x2="' + f(a2[0]) + '" y2="' + f(a2[1]) + '" stroke="#fff" stroke-width="1.4" stroke-dasharray="5 4" opacity=".85"/>';
+      s2 += '<line x1="' + f(s1[0]) + '" y1="' + f(s1[1]) + '" x2="' + f(s3[0]) + '" y2="' + f(s3[1]) + '" stroke="#fff" stroke-width="2.2"/>';
+      var z1 = P2(u, r, RW + 4, -RW + 1), z2 = P2(u, r, RW + 4, RW - 1);
+      s2 += '<line x1="' + f(z1[0]) + '" y1="' + f(z1[1]) + '" x2="' + f(z2[0]) + '" y2="' + f(z2[1]) + '" stroke="#fff" stroke-width="6" stroke-dasharray="2.4 2" opacity="' + (has[d] ? '.9' : '.4') + '"/>'; });
+    D9.forEach(function (d) { if (has[d] !== 1) return; var u = U(d), r = [u[1], -u[0]], o4 = RW / 2;
+      o.mv.filter(function (m) { return m[0] === d && m[2] != null; }).forEach(function (m) { var sp = P2(u, r, 70, o4), ep, qp = null;
+        if (m[1] === 'Lt') { var v = U(SDL[d]), rv = [-v[1], v[0]]; ep = P2(v, rv, RW + 18, o4 * 0.6); qp = P2(u, r, 0, o4 * 0.2); qp = [qp[0] + rv[0] * o4 * 0.6 + v[0] * 2, qp[1] + rv[1] * o4 * 0.6 + v[1] * 2]; }
+        else if (m[1] === 'Ut') { ep = P2(u, r, RW + 18, -o4 * 0.7); qp = P2(u, r, RW - 6, 0); }
+        else ep = P2(u, r, -(RW + 18), o4);
+        var w = qp ? [ep[0] - qp[0], ep[1] - qp[1]] : [ep[0] - sp[0], ep[1] - sp[1]], L9 = Math.hypot(w[0], w[1]) || 1; w = [w[0] / L9, w[1] / L9]; var n = [-w[1], w[0]], bx = ep[0] - w[0] * 7, by = ep[1] - w[1] * 7;
+        s2 += '<g data-mv="' + d + '|' + m[1] + '" fill="#16a34a" stroke="#16a34a" opacity=".85"><path d="M' + f(sp[0]) + ' ' + f(sp[1]) + (qp ? ' Q' + f(qp[0]) + ' ' + f(qp[1]) + ' ' : ' L') + f(bx) + ' ' + f(by) + '" fill="none" stroke-width="3.2" stroke-linecap="round"/><path d="M' + f(ep[0]) + ' ' + f(ep[1]) + 'L' + f(bx + n[0] * 4.6) + ' ' + f(by + n[1] * 4.6) + 'L' + f(bx - n[0] * 4.6) + ' ' + f(by - n[1] * 4.6) + 'z" stroke="none"/></g>'; }); });
+    D9.forEach(function (d) { var u = U(d), r = [u[1], -u[0]], q = P2(u, r, 74, RW + 15), hz = Math.abs(u[1]) > 0.5, sx = hz ? 1 : 0;
+      s2 += '<g data-lamp="' + d + '" transform="translate(' + f(q[0]) + ' ' + f(q[1]) + ')"><rect x="' + (hz ? -17 : -7) + '" y="' + (hz ? -7 : -17) + '" width="' + (hz ? 34 : 14) + '" height="' + (hz ? 14 : 34) + '" rx="4" fill="#1e293b"/>' + ['r', 'y', 'g'].map(function (c, k) { var t = (k - 1) * 11; return '<circle data-c="' + c + '" cx="' + (hz ? t : 0) + '" cy="' + (hz ? 0 : t) + '" r="4.3" fill="' + ({ r: '#7f1d1d', y: '#713f12', g: '#14532d' })[c] + '"/>'; }).join('') + '</g>';
+      var lb = P2(u, r, 92, RW + 15), tq = P2(u, r, 74, RW + 15 + (hz ? 0 : 0));
+      s2 += '<text x="' + f(lb[0]) + '" y="' + f(lb[1] + 4) + '" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor">' + SDN[d] + '</text>';
+      s2 += '<text data-rsec="' + d + '" x="' + f(tq[0] + (hz ? 0 : -u[0] * 33)) + '" y="' + f(tq[1] + (hz ? (u[1] < 0 ? 21 : -12) : 4.5)) + '" text-anchor="middle" font-size="13" font-weight="800" fill="#15803d">' + (sec[d] != null ? '녹 ' + Math.round(sec[d]) : '') + '</text>'; });
+    return s2 + '</svg>'; }
+  function sdRosePaint(o, ok, now) {   /* v2.296.0 소유자 「동서남북 화살표를 진행색이 녹색일 때 녹색으로 · 남은 초도」 — 지금 몇 초(sdLive)가 될 때만 · 화살표 = 그 이동류의 지금 색(녹 굵게 · 황 · 적은 흐리게) · 신호등 = 그 쪽에서 들어오는 이동류 가운데 녹색이 하나라도 있으면 녹색(직진 먼저 · 좌회전만이면 「좌」) · 황색 · 아니면 적색 + 녹색까지 남은 초 */
+    var sv = document.querySelector('#m2dCard .sd:not(.ksd) svg.sdrose'); if (!sv || !ok) return;
+    [].forEach.call(sv.querySelectorAll('g[data-mv]'), function (g) { var k = g.getAttribute('data-mv').split('|'), m = o.mv.filter(function (q) { return q[0] === k[0] && q[1] === k[1] && q[2] != null; })[0]; if (!m) return; var st = sdState(m, o, now)[0], col = st === 'g' ? '#16a34a' : st === 'y' ? '#ca8a04' : '#94a3b8';
+      g.setAttribute('fill', col); g.setAttribute('stroke', col); g.setAttribute('opacity', st === 'r' ? '.35' : '1'); var pth = g.querySelector('path'); if (pth) pth.setAttribute('stroke-width', st === 'r' ? '2.4' : '4.4'); });
+    [].forEach.call(sv.querySelectorAll('g[data-lamp]'), function (lp) { var d = lp.getAttribute('data-lamp'), tx = sv.querySelector('text[data-rsec="' + d + '"]'), ms = o.mv.filter(function (m) { return m[0] === d && m[2] != null; }); if (!ms.length) return;
+      var b = null; ms.forEach(function (m) { var st = sdState(m, o, now), rk = st[0] === 'g' ? 0 : st[0] === 'y' ? 1 : 2; if (!b || rk < b.rk || (rk === b.rk && (rk === 2 ? st[1] < b.t : m[1] === 'St' && b.m[1] !== 'St'))) b = { rk: rk, t: st[1], m: m }; });
+      var on9 = ['g', 'y', 'r'][b.rk]; [].forEach.call(lp.querySelectorAll('circle'), function (c9) { var c = c9.getAttribute('data-c'); c9.setAttribute('fill', c === on9 ? ({ r: '#ef4444', y: '#facc15', g: '#22c55e' })[c] : ({ r: '#7f1d1d', y: '#713f12', g: '#14532d' })[c]); });
+      if (tx) { tx.textContent = (b.rk < 2 && b.m[1] === 'Lt' ? '좌 ' : '') + Math.ceil(b.t) + '초'; tx.setAttribute('fill', ['#15803d', '#a16207', '#b91c1c'][b.rk]); } }); }
   function sdPict(o, x, ped) {   /* v2.295.0 소유자 「동서남북 화살표를 현시 줄과 같이 — 교차로에 가서 이것만 보고 신호 체계를 알 수 있게」 — 현시 줄마다 작은 교차로 그림 · 길 = 신호(차·보행)가 있는 방위 · 초록 화살표 = 이 현시에 가는 이동류(방위 = 들어오는 쪽) · 파란 줄무늬 = 이 보행 신호로 건너는 건널목 */
     var has = {}; o.mv.forEach(function (m) { has[m[0]] = 1; }); (o.ped || []).forEach(function (q) { has[q[0]] = 1; });
     var C = 26, R9 = 24, U = function (d) { var a = SDA[d] * Math.PI / 180; return [Math.cos(a), Math.sin(a)]; }, f = function (v) { return v.toFixed(1); };
@@ -3204,7 +3229,7 @@
   function sdNowPaint() { try { sgProgPaint(); } catch (eG) {} var el = $('sdNow'); if (!el) return; var no = el.getAttribute('data-no'), lv = sdLive(no), o = lv.ok ? lv.rec : sdObs(no), ch = $('sdCh'), nw = $('sdNw'); if (!o || !ch || !nw) return;
     if (Date.now() - SDAT > 5 * 60000 && !document.hidden) { SDAT = Date.now(); sigdRefresh(); }
     var PD = o.pd || [], dirs = SDORD.filter(function (d) { return o.mv.some(function (m) { return m[0] === d && m[2] != null; }) || PD.some(function (q) { return q[0] === d; }); }); if (!dirs.length) { ch.innerHTML = ''; nw.innerHTML = ''; return; }
-    var now = Date.now() / 1000, CN = { g: '녹색', y: '황색', r: '적색' }; if (ch.innerHTML) ch.innerHTML = '';
+    var now = Date.now() / 1000, CN = { g: '녹색', y: '황색', r: '적색' }; if (ch.innerHTML) ch.innerHTML = ''; try { sdRosePaint(o, lv.ok, now); } catch (eR) {}
     var h = clkWarn() + (o.dq === 'dir' ? '<p class="sdnt" style="margin:0 0 7px;color:#b45309"><b>⚠ 이 교차로는 받은 자료의 방위 이름이 실제와 다르다</b> — 직각 방향 직진이 함께 녹색으로 적혀 있다(실제로는 있을 수 없다). 초 길이는 쓸 수 있어도 <b>어느 쪽 신호인지는 현장에서 확인</b>한다.</p>' : '') + '<div class="sdls">';
     var GP = o.pdn ? [] : sdGaps(o), UQ = sdUnread(o);
     if (lv.ok && GP.length) { var gin = null; GP.forEach(function (g9) { var st9 = sdState([0, 0, g9[1], 0, 0, g9[0]], o, now); if (st9[0] === 'g') gin = st9[1]; }); if (gin != null) h = h.replace(/<div class="sdls">$/, '<p class="sdnt" style="margin:0 0 7px;color:#b45309">' + (GP.un ? '<b>지금은 못 읽은 신호(' + esc(UQ.map(function (m) { return SDN[m[0]] + '쪽 ' + (SDM[m[1]] || m[1]); }).join(' · ')) + ' 가운데)가 켜진 때로 보인다</b> — 올레드가 아니다' : '<b>지금은 이 자료에 값이 없는 구간</b>이다(색을 못 읽은 보행 신호이거나 자료에 없는 방향 — 올레드라고 단정할 수 없다)') + ' · 이 자리는 ' + Math.ceil(gin) + '초 뒤 끝난다.</p><div class="sdls">'); }
@@ -4899,7 +4924,7 @@
   function aprNote(no, dirs) { if (!SAPR || !SAPR.spots || !SAPR.spots[String(no)]) return ''; var Q = dirs.map(function (d) { return aprSpd(no, d); }).filter(Boolean); if (!Q.length) return '';
     if (Q.every(function (q) { return q.off; })) return '<div class="lg-btns" style="margin:6px 0 0"><button data-aprlive="1">🚗 방향별 막힘 보기' + (LK.its ? '(실시간 소통 켜기)' : tryOn() ? '(받는 중…)' : TRY.url && tryLeftMs() >= 15000 ? '(맛보기 ' + Math.ceil(tryLeftMs() / 60000) + '분 — 열쇠 없이)' : '(오늘 맛보기 30분을 다 썼다 — ITS 키를 넣으면 계속)') + '</button></div>';
     return '<p class="sdnt">줄 이름 아래 색 글 = 그 방향으로 <b>들어오는 길의 지금 통행속도</b>(교차로 앞 300m 안 · ' + (function () { var M9 = spdMap(); return M9 && M9.snap ? '국가교통정보센터 소통정보를 <b>10분마다 받아 올린 한 장</b> · ' + hhmm(M9.at) + ' 받음 — 실시간이 아니다' : '국가교통정보센터 실시간 소통 · ' + hhmm(M9 ? M9.at : Date.now()) + ' 받음'; })() + ') — <b>막힘이지 교통량(몇 대)이 아니다</b>. 원활·서행·정체는 실시간 소통 층과 같은 기준(15·30km/h · 제한 80 이상은 40·70). 「값 없음」은 그 길에 실시간 값이 없는 것(원활이 아니다). 늘고 있는지(증가)는 지금 값만으로는 못 낸다.</p>'; }
-  function aprRose(sel, no) { [].forEach.call(document.querySelectorAll(sel + ' line[data-apr]'), function (ln) { var q = aprSpd(no, ln.getAttribute('data-apr')); ln.setAttribute('stroke', q && q.c ? q.c : 'var(--line)'); ln.setAttribute('stroke-opacity', q && q.c ? '0.62' : '1'); }); }
+  function aprRose(sel, no) { [].forEach.call(document.querySelectorAll(sel + ' line[data-apr]'), function (ln) { var q = aprSpd(no, ln.getAttribute('data-apr')); ln.setAttribute('stroke', q && q.c ? q.c : 'transparent'); ln.setAttribute('stroke-opacity', q && q.c ? '0.55' : '1'); }); }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-aprlive]'); if (!b) return; e.preventDefault();
     if (!LK.its) { if (!tryOn()) { if (!TRY.url || tryLeftMs() < 15000) { toast('오늘 맛보기 30분을 다 썼다 — ITS 키를 넣으면 계속 본다'); return; } tryStart(); } TSNPAT = 0; tsnpGet(); b.textContent = '받는 중… 잠시 뒤 줄마다 뜬다'; return; }
     on.lspd = true; try { saveOn(); paintLayers(); } catch (e2) {} if (!itsK()) { toast('실시간 소통은 ITS 키(또는 맛보기)가 있어야 받는다'); return; } if (!spdSpan()) { toast('더 확대하면 받는다'); } try { liveGo('sp'); } catch (e3) {} draw(); b.textContent = '받는 중… 잠시 뒤 줄마다 뜬다'; });

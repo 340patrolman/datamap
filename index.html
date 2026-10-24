@@ -196,7 +196,7 @@
   #m2dCard details.sdx { margin-top: 6px; } #m2dCard details.sdx > summary { font-size: 12.5px; font-weight: 700; color: var(--ink2); min-height: 34px; display: flex; align-items: center; cursor: pointer; list-style: none; } #m2dCard details.sdx > summary::-webkit-details-marker { display: none; } #m2dCard details.sdx > summary::after { content: '▼'; margin-left: 6px; font-size: 11px; } #m2dCard details.sdx[open] > summary::after { content: '▲'; }
   #m2dCard .sdnt { margin: 7px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink2); }
   #m2dCard .sd .tl u { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); display: none; }
-  #m2dCard .sd .sdrose { flex: 0 0 122px; width: 122px; height: 122px; color: var(--ink); }
+  #m2dCard .sd .sdrose { flex: 0 0 220px; width: 220px; height: 220px; color: var(--ink); transform: perspective(620px) rotateX(22deg); transform-origin: 50% 60%; margin: -6px 0 -10px; }
   #m2dCard .sd .sdb { flex: 1; min-width: 0; }
   #m2dCard .sd .rw { margin: 5px 0; font-size: 12.5px; }
   #m2dCard .sd .rw b { display: block; font-weight: 700; word-break: keep-all; line-height: 1.3; }
@@ -1104,7 +1104,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.295.0"></script>
+<script src="js/map2d.js?v=2.296.0"></script>
 <script src="js/decide.js?v=5"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다

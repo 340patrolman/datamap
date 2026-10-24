@@ -461,6 +461,7 @@ def pick_todo(tiers, order, need1, need2, need3, ok=lambda i: True):
 
 
 # (2026-10-14 소유자) 수집 단계 — ① 여섯 구 ② 한강 이남 나머지 여섯 구 ③ 서울 전체. 앞 단계가 다 차면 다음 단계를 바구니에 더한다(「한강 이남이 완성되면 서울 전체로」)
+PRIO_IDS = ['65']   # (2026-10-24 소유자 「사당역사거리 신호값 시간이 안 맞음 · 지금 좌회전」) 소유자가 짚은 교차로 — 단계와 상관없이 역사 훑기·Fusion 맨 앞(현시 길이가 옛 기록(토 14시 10-17)과 7초까지 달랐다 · 주기 시작은 2초 안)
 STAGE_GU = [['서초구'], ['강남구', '동작구', '관악구', '용산구', '송파구'], ['영등포구', '구로구', '금천구', '강서구', '양천구', '강동구']]   # (2026-10-14 소유자 「우선 서초구부터 완성」) 서초 → 나머지 다섯 구 → 한강 이남 → 서울
 TIER_NAMES = []   # read_list 가 채운다 — 묶음(## 줄)의 구 이름
 
@@ -528,6 +529,7 @@ def sweep(prefer=None, api='t', cap=None):
         gus = [g for G in STAGE_GU[:k] for g in G]
         allopen = k > len(STAGE_GU)
         b = [T for n, T in tn if allopen or n in gus] if any(tnames) else tiers[:6]
+        if PRIO_IDS: b = [list(PRIO_IDS)] + [[x for x in T if x not in PRIO_IDS] for T in b]   # 소유자가 짚은 교차로 먼저
         r = [T for n, T in tn if not (allopen or n in gus)] if any(tnames) else tiers[6:]
         if k != stage['n']:
             print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[단계] %d단계까지 엶 — 바구니 %s' % (k, '서울 전체' if allopen else ' · '.join(gus)), flush=True)
@@ -1655,6 +1657,7 @@ def fusion(sample=False, ids=None):
                                      0 if not any(x[0] == ck[0] and x[1] == ck[1] for x in pl.get(k, [])) else 1,   # 지금 요일 갈래·시각대 칸이 빈 곳 먼저(96칸 채우기)
                                      0 if onaxis(k) else 1,
                                      max([r.get('a') or 0 for r in its.get(k, [])] or [0])))
+        if not ids: L = [k for k in PRIO_IDS if NONE.get(k) != tday] + [k for k in L if k not in PRIO_IDS]   # 소유자가 짚은 교차로 먼저
         nok = nanc = 0
         for itst in L:
             P.refresh(); kl, w = P.pick()

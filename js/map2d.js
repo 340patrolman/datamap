@@ -1287,7 +1287,7 @@
       G.ppl += facRows('11650', d.name, null); G.jur += ncBlock(d, '11650'); G.ppl += cctRows(d);
       G.jur += polRows(d.k, d.c) + jrsRows(d.k) + agRows(d) + acRows(d) + mdRows(d); G.ppl += fdRows(d.k); G.biz += econRows(d.k); G.home += houseRows(d); G.ppl += popProjRows(d); G.biz += indShiftRows(d) + bzsRows(d); G.home += dealRows(d) + hpRows(d) + ptRows(d) + roneRows(d) + unsoldRows(d); G.etc += petRows(d) + pbzRows(d);
       var X = dgDong(d, '11650', jz ? String(jz).replace(/<[^>]*>/g, '').split(/[(·—]/)[0].trim() : '', G);
-      h = dgHead('🏘', '서울 서초구', d.name, X.tag) + orcDongBtns(d) + dgBody({ say: X.say, tiles: X.tiles, often: X.often, G: G });
+      h = dgHead('🏘', '서울 서초구', d.name, X.tag) + dgBody({ say: X.say, tiles: X.tiles, often: X.often, G: G }).replace('<!--dgx-->', '<!--dgx-->' + orcDongBtns(d));   /* v2.298.1 엮어서 답 찾기 단추는 한눈에 아래 */
       if (d.k) h += '<div class="lg-btns"><button data-ai="11650|' + esc(d.k || '') + '">🤖 AI용 복사 — 이 동 기본 자료</button></div>';
       if (FRN && FRN.gu['11650']) h += row('외국인 주민(구)', (FRN.gu['11650']['2024'].tot || 0).toLocaleString() + '명 <em>(서초구 · 2024)</em>') + '<div class="lg-btns"><button data-frn="11650">🌏 외국인 자세히(국적·영주·나이·성별)</button></div>';
       h += dgHint() + src('경계: 통계청 SGIS 행정동(2026.7 · 공공누리 1유형) · 인구: 행정안전부 주민등록(2026.8)' + (lv ? ' · 생활인구: 서울시(2026.7 · KT 통신 자료 추정)' : ''));
@@ -1445,7 +1445,7 @@
     if (it.kind === 'dong' && it.d && it.d.c) { var dll = (it.d.c[0] / KX + LON0).toFixed(5) + ',' + (LAT0 - it.d.c[1] / KY).toFixed(5), dA = 0;   // v2.61.0 소유자 「읍면동 오른쪽 옆에 상권분석 · 그 옆에 이 동 풀어 읽기 · 손익 계산은 그대로」
       (it.d.polys || []).forEach(function (pg) { var r = pg[0] || [], a = 0; for (var i = 0, k = r.length - 1; i < r.length; k = i++) a += (r[k][0] + r[i][0]) * (r[k][1] - r[i][1]); dA += Math.abs(a / 2); });
       var dR = Math.sqrt(dA / Math.PI), dRR = dR < 400 ? 300 : dR < 750 ? 500 : 1000;
-      h = h.replace('</h3>', '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span></h3>'); var dgSb = '<div id="storyBox"></div>' + jmyRows(it.d), dgJp = it.d.k ? jpBlock('dong', it.d.k, it) : '';   /* v2.298.0 설명 자리·지명은 「한눈에」 바로 아래 · 관내 파악은 👮 묶음 맨 앞 */
+      var dhb9 = '<span class="dhb"><button data-trdhere="' + dll + '|' + dRR + '" title="이 동 가운데에서 반경 ' + dRR + 'm 상권 분석(매출·업종·점포·임대료) — 동 넓이와 같은 원의 반지름 약 ' + Math.round(dR) + 'm">🏪 상권분석</button><button data-story="1" title="이 동의 사람·돈·상권·생활을 그림과 글로 한 번에">📝 이 지역 설명</button><button data-pnlhere="' + dll + '" title="이 동 가운데 자리로 음식점·카페 등 업종별 개업 손익 — 매출·비용·손익분기·생존율">💰 업종별 개업 예상</button>' + (it.d.k ? '<button data-acsim="' + it.d.k + '" title="보습·영어·수학·미술·음악 학원·교습소 개업 손익">🎒 학원·교습소 개업</button>' : '') + '</span>'; h = h.indexOf('<!--dgx-->') >= 0 ? h.replace('<!--dgx-->', '<!--dgx--><div class="dhb2">' + dhb9 + '</div>') : h.replace('</h3>', dhb9 + '</h3>');   /* v2.298.1 한눈에가 첫 화면에 — 상권분석 등 단추는 그 아래 */ var dgSb = '<div id="storyBox"></div>' + jmyRows(it.d), dgJp = it.d.k ? jpBlock('dong', it.d.k, it) : '';   /* v2.298.0 설명 자리·지명은 「한눈에」 바로 아래 · 관내 파악은 👮 묶음 맨 앞 */
       if (h.indexOf('<!--dgx-->') >= 0) { if (h.indexOf('<!--dgjur-->') >= 0) h = h.replace('<!--dgjur-->', dgJp); else dgSb += dgJp; h = h.replace('<!--dgx-->', dgSb); } else h = h.replace('</h3>', '</h3>' + dgSb + dgJp);   // v2.76.1 소유자 「이야기 목록이 첫 화면을 잡아먹는다 — 이 지역 설명에 넣어라」 → 📝 이 지역 설명을 누르면 맨 아래에
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
     if (sel && sel.it === it && !sel.w) sel.w = [(sel.x - cv.clientWidth / 2) / view.s + view.cx, (sel.y - cv.clientHeight / 2) / view.s + view.cy];
@@ -2363,20 +2363,25 @@
     var tiles = [['👥', '사람', p ? p.tot.toLocaleString() + '명' : '—', lv ? '지금 ' + lv.n.toLocaleString() + '명 머묾' : p ? '70세 이상 ' + Math.round((p.age[7] + p.age[8] + p.age[9]) / p.tot * 100) + '%' : ''],
       ['🏪', '가게', st ? st.now.toLocaleString() + '곳' : ag ? (ag.all || 0).toLocaleString() + '곳' : '—', st ? '1년 개업 ' + st.op.toLocaleString() + ' · 폐업 ' + st.cl.toLocaleString() : ''],
       ['🚦', '사고 많은 곳', top ? esc(top.r[0]) : '—', top ? '10년 ' + top.t.toLocaleString() + '건' : jc ? '교차로 사고 자료 없음' : '받는 중…'],
-      ['👮', '관할', jurName ? esc(jurName) : '—', '']];
+      ['👮', '관할', jurName ? esc(jurName) : '—', dgPb(d)]];
     var often = jc && jc.v.length ? '교차로 사고 주 원인 ' + jc.v.slice(0, 2).map(function (x) { return '<b>' + esc(x[0]) + '</b>'; }).join(' · ') + ' <small>(이 동 교차로 ' + jc.L.length + '곳 · 2016~2025 · 근사)</small>' : '';
     return { tag: wk ? dgTag(wk.r) : '', say: say, tiles: tiles, often: often }; }
+  function dgPb(d) { if (!POL2) { polLoad(); return ''; } if (!d || !d.k) return ''; if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); return d._pb != null ? esc(POL2.pbox[d._pb][0]) + ' <small>(근사)</small>' : ''; }
+  function dgRiJur(r) { if (!r.p) return ''; var re = function () { var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.r === r) show(sel.it); };
+    if (!POL2) { polLoad().then(re); return ''; } var d = dongAtM(r.p); if (!d) { if (r.gu && !RLOAD[r.gu]) rLoadGu(r.gu).then(re); return ''; } if (!d.k) return ''; var st = polOf(d.k); return st && st.length ? st.map(function (q) { return q[1]; }).join(' · ') : ''; }
   function dgRi(r, J) { return dgBody({ say: ['가게 <b>' + r.st.toLocaleString() + '곳</b>', '교통사고 10년 <b>' + r.acc.toLocaleString() + '건</b> · 사망자 ' + r.dead], note: '이 리는 주민·매출 자료가 없습니다 — 리 단위로 나온 공개 자료는 가게·사고뿐이다.',
-      tiles: [['👥', '사람', '—', '리 단위 자료 없음'], ['🏪', '가게', r.st.toLocaleString() + '곳', ''], ['🚦', '교통사고 10년', r.acc.toLocaleString() + '건', '사망자 ' + r.dead], ['👮', '관할', J ? esc(J.z.name) : '—', '']],
+      tiles: [['👥', '사람', '—', '리 단위 자료 없음'], ['🏪', '가게', r.st.toLocaleString() + '곳', ''], ['🚦', '교통사고 10년', r.acc.toLocaleString() + '건', '사망자 ' + r.dead], ['👮', '관할', J ? esc(J.z.name) : (dgRiJur(r) ? esc(dgRiJur(r)) : '—'), J ? '' : (dgRiJur(r) ? '읍·면 법정 관할(별표2)' : '')]],
       G: { biz: row('가게(상가업소)', r.st.toLocaleString() + '곳' + (r.st ? ' — ' + Object.keys(r.stb).map(function (q) { return esc(q) + ' ' + r.stb[q]; }).join(' · ') : '')),
         safe: row('교통사고 10년', r.acc.toLocaleString() + '건 · 사망자 ' + r.dead + ' · 중상자 ' + r.ser + ' <em>(2016~2025 · 100m 칸 가운데가 든 리 — 근사)</em>') + row('사망사고', r.fat + '건'), etc: '<p class="desc">' + esc(r.m.note) + '</p>' } }); }
   function dgSgg(u, A, ds, G) { var r = A.hp && A.emp ? A.emp / A.hp : null, say = [], sts = {};
     if (POL2) ds.forEach(function (q) { (polOf(q['코드']) || []).forEach(function (x) { sts[x[1]] = 1; }); }); var sn = Object.keys(sts);
     if (r != null) say.push('일하는 사람(종사자)이 주민의 <b>' + dgF1(r) + '배</b> — <b>' + dgTag(r) + '</b> <small>(SGIS 2023 · 앱 기준)</small>');
     if (A.st) say.push('가게 <b>' + A.st.toLocaleString() + '곳</b>' + (A.pop ? ' — 주민 1천 명당 ' + dgF1(A.st / A.pop * 1000) + '곳' : '') + ' <small>(소진공 상가업소)</small>');
-    if (A.acc) say.push('교통사고 10년 <b>' + A.acc.toLocaleString() + '건</b> · 사망자 ' + A.dead + ' <small>(TAAS 2016~2025)</small>');
+    var tA = null; ds.forEach(function (q) { var t = q['교통사고(TAAS 2016~2025)'], n = t ? t['계'] || 0 : 0; if (n && (!tA || n > tA[1])) tA = [q['이름'], n]; });
+    if (tA) say.push('사고가 가장 많은 동은 <b>' + esc(tA[0]) + '</b>(10년 ' + tA[1].toLocaleString() + '건) <small>(TAAS 2016~2025 · 100m 칸 가운데가 든 동)</small>');
+    else if (A.acc) say.push('교통사고 10년 <b>' + A.acc.toLocaleString() + '건</b> · 사망자 ' + A.dead + ' <small>(TAAS 2016~2025)</small>');
     return { tag: dgTag(r), html: dgBody({ say: say, G: G, tiles: [['👥', '사람', A.pop ? A.pop.toLocaleString() + '명' : '—', r != null ? '종사자 ÷ 주민 ' + dgF1(r) + '배' : ''], ['🏪', '가게', A.st ? A.st.toLocaleString() + '곳' : '—', ''],
-      ['🚦', '교통사고 10년', A.acc ? A.acc.toLocaleString() + '건' : '—', A.acc ? '사망자 ' + A.dead : ''], ['👮', '관할 경찰서', sn.length ? sn.length + '곳' : '—', sn.slice(0, 3).map(function (x) { return esc(x); }).join(' · ')]] }) }; }
+      tA ? ['🚦', '사고 많은 동', esc(tA[0]), '10년 ' + tA[1].toLocaleString() + '건 · 구 전체 ' + A.acc.toLocaleString() + '건'] : ['🚦', '교통사고 10년', A.acc ? A.acc.toLocaleString() + '건' : '—', A.acc ? '사망자 ' + A.dead : ''], ['👮', '관할 경찰서', sn.length ? sn.length + '곳' : '—', sn.slice(0, 3).map(function (x) { return esc(x); }).join(' · ')]] }) }; }
   function rDongCard(d) {   // 서울 다른 구의 동 — 지역 자료 하나로(서초 동 카드와 같은 줄 차례) · v2.298.0 한눈에 + 묶음
     rExt(d); var p = d.pop, R = d.rg, J = jurAtM(d.c), G = { ppl: '', biz: '', safe: '', jur: '', home: '', etc: '' }, note = '';
     if (J) G.jur += row('경찰서 관할', esc(J.z.name) + ' <em>(이 지도가 그린 관할 안)</em>');
@@ -5983,7 +5988,8 @@
     var sdn9 = null; steps.forEach(function (q) { if (!sdn9 && q[2] && q[2].kind === 'unit' && q[2].u.t === 'ps' && POL2 && POL2.byI[q[2].u.id]) sdn9 = POL2.byI[q[2].u.id][5]; }); if (sdn9) steps.push(['sdc', '🏙 ' + jbSdcS(sdn9), { kind: 'jpsdc', k: sdn9 }]);   /* v2.272.0 시도청 칸 */
     if (!POL2) polLoad();
     if (steps.length < 3) return; LADS = steps;
-    top.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;margin:0 0 6px">⬆ ' + steps.map(function (q, i) { return q[2] ? '<button data-lad="' + i + '" style="font-size:12px;padding:3px 7px;border-radius:999px;border:1px solid #94a3b8;background:' + (q[0] === lv ? '#1e3a8a;color:#fff' : 'transparent') + '">' + esc(q[1]) + '</button>' : '<span style="padding:3px 4px;' + (lv === 'pt' ? 'font-weight:800' : 'opacity:.7') + '">' + esc(q[1]) + '</span>'; }).join('<span style="opacity:.5">›</span>') + '<button class="ladx" data-cardx="1" aria-label="카드 닫기">닫기</button></div>'; var cdx = $('m2dCard'); if (cdx) cdx.classList.add('haslad');
+    var one9 = it.kind === 'dong' || it.kind === 'ri' || (it.kind === 'unit' && it.u && it.u.t === 'sgg');   /* v2.298.1 한눈에가 첫 화면에 들게 — 한 줄 가로 밀기 */
+    top.innerHTML = '<div class="' + (one9 ? 'lad1' : '') + '" style="display:flex;flex-wrap:' + (one9 ? 'nowrap;overflow-x:auto;white-space:nowrap' : 'wrap') + ';gap:4px;align-items:center;font-size:12px;margin:0 0 6px">⬆ ' + steps.map(function (q, i) { return q[2] ? '<button data-lad="' + i + '" style="font-size:12px;padding:3px 7px;border-radius:999px;border:1px solid #94a3b8;background:' + (q[0] === lv ? '#1e3a8a;color:#fff' : 'transparent') + '">' + esc(q[1]) + '</button>' : '<span style="padding:3px 4px;' + (lv === 'pt' ? 'font-weight:800' : 'opacity:.7') + '">' + esc(q[1]) + '</span>'; }).join('<span style="opacity:.5">›</span>') + '<button class="ladx" data-cardx="1" aria-label="카드 닫기">닫기</button></div>'; var cdx = $('m2dCard'); if (cdx) cdx.classList.add('haslad');
     relFill(steps, m, it);
     if (!bot) return;
     // 윗단위 비교 · 아래 단위 순위 — profile.json 을 받은 뒤
@@ -9837,7 +9843,7 @@
       '<p class="relh">위 단추를 누르면 그 대상의 카드로 넘어간다(넓혀 가기 · <b>가장 가까운 ○○ ›</b> 는 옆으로 건너가기 — 화면 밖이면 그리로 옮긴다). 아래는 그 대상과 윗단위 비교 · 아래 단위 순위(좁혀 가기). 근거 표시 — <i class="o">원자료</i> 공식 자료에 적힌 관계 · <i class="c">계산</i> 이 지도가 거리로 만든 관계 · <i class="a">근사</i> 공식 경계가 없어 가까운 쪽으로 정한 관계.</p></details>';
     h = h.replace(/<\/details>$/, ontoSlot(m, it) + ledgRel(m) + '</details>');
     h += '<div class="lg-btns trbtn"><button data-trhere="' + ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + '" title="이 지점 가까운 정류장 버스 도착·위치 · 지하철 다음 열차 · 기차 · 국내선">🚏 여기 대중교통(실시간)</button><button data-dayhere="' + ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + '" title="이 자리 반경 안의 지하철·버스 하차 · 생활인구 · 시간대 매출 · 사고를 같은 24시간 축에 겹쳐 본다(반경 분석 창)">🕐 이 자리의 하루</button></div>';
-    if ($('m2dCard') && ((it && (it.kind === 'sgd' || it.kind === 'sig' || it.kind === 'ksc')) || $('m2dCard').querySelector('#sdNow, #kscNow, #sigTick'))) $('m2dCard').insertAdjacentHTML('beforeend', '<div class="relb">' + h + '</div>');   /* v2.105.0 신호 교차로 카드는 신호가 먼저 — 관계·대중교통 단추는 카드 끝으로 */
+    if ($('m2dCard') && ((it && (it.kind === 'sgd' || it.kind === 'sig' || it.kind === 'ksc')) || $('m2dCard').querySelector('#sdNow, #kscNow, #sigTick, details.dgrp'))) $('m2dCard').insertAdjacentHTML('beforeend', '<div class="relb">' + h + '</div>');   /* v2.105.0 신호 교차로 카드는 신호가 먼저 — 관계·대중교통 단추는 카드 끝으로 */
     else box.insertAdjacentHTML('beforeend', h);
 
   }

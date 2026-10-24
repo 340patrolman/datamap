@@ -225,6 +225,8 @@
   #gBot .eta .here { flex: 1 1 auto; min-width: 0; padding-left: 10px; border-left: 1px solid var(--line); } #gBot .eta .here b { font-size: calc(15px * var(--fz, 1)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); } #gBot .eta .here span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* v0.33.0 위 상자들은 화면 왼쪽 절반 안(가운데 경로선을 넘지 않게) — 글은 3·4줄로 접힌다(소유자 「2줄을 3줄 4줄로 늘려서라도 길을 가리지 않게」) */
   body.guiding #gTop { max-width: max(178px, calc(50vw - 22px)); } body.guiding #gTop .tx span, body.guiding #gTop .tx small.ln2, body.guiding #gTop .tx small.ic, body.guiding #gTop .tx small.em { white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
+  /* v0.37.1 「그다음 ➡ 1.9km」가 한 줄로 버텨 화살표 칸이 넓어지면 글 칸이 70px 로 좁아져 길 이름이 두세 글자씩 꺾이고 차로 칸이 세로로 쌓였다(폰 390 실측 위 상자 52%) — 화살표 폭 안에서 두 줄로 접는다(38%) */
+  body.guiding #gTop .arwc { max-width: calc(54px * var(--fz, 1)); } body.guiding #gTop .nx2 { white-space: normal; text-align: center; line-height: 1.15; word-break: keep-all; }
   body.guiding #gTop .tx small.ln3 { flex-wrap: wrap; } body.guiding #gTop .lanes { flex-wrap: wrap; } body.guiding #gTop .tx small.ln2 { font-size: calc(13px * var(--fz, 1)); }
   body.guiding #gSig { max-width: max(178px, calc(50vw - 22px)); } body.guiding #gSig.cp .c1 { flex-wrap: wrap; row-gap: 0; } body.guiding #gSig.cp .nm { margin-left: 0; text-align: left; flex: 1 1 100%; order: 3; } body.guiding #gSig.cp .nm b, body.guiding #gSig.cp .nm span { display: inline; max-width: none; white-space: normal; } body.guiding #gSig.cp .nm span::before { content: ' · '; }
   body.guiding #gSig.cp .tx1 { white-space: normal; } body.guiding #gSig .ln.eco, body.guiding #gSig.cp .ln { white-space: normal; word-break: keep-all; }
@@ -272,7 +274,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.37.0"></script>
+<script src="gargo.js?v=0.37.1"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

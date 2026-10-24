@@ -2366,7 +2366,7 @@
       ['👮', '관할', jurName ? esc(jurName) : '—', dgPb(d)]];
     var often = jc && jc.v.length ? '교차로 사고 주 원인 ' + jc.v.slice(0, 2).map(function (x) { return '<b>' + esc(x[0]) + '</b>'; }).join(' · ') + ' <small>(이 동 교차로 ' + jc.L.length + '곳 · 2016~2025 · 근사)</small>' : '';
     return { tag: wk ? dgTag(wk.r) : '', say: say, tiles: tiles, often: often }; }
-  function dgPb(d) { if (!POL2) { polLoad(); return ''; } if (!d || !d.k) return ''; if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); return d._pb != null ? esc(POL2.pbox[d._pb][0]) + ' <small>(근사)</small>' : ''; }
+  function dgPb(d) { if (!POL2) { polLoad(); return ''; } if (!d || !d.k) return ''; if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); var q9 = d._pb != null ? POL2.pbox[d._pb] : null; return q9 ? esc(q9[0] + (q9[1] ? '파출소' : '지구대')) + ' <small>(근사)</small>' : ''; }
   function dgRiJur(r) { if (!r.p) return ''; var re = function () { var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.r === r) show(sel.it); };
     if (!POL2) { polLoad().then(re); return ''; } var d = dongAtM(r.p); if (!d) { if (r.gu && !RLOAD[r.gu]) rLoadGu(r.gu).then(re); return ''; } if (!d.k) return ''; var st = polOf(d.k); return st && st.length ? st.map(function (q) { return q[1]; }).join(' · ') : ''; }
   function dgRi(r, J) { return dgBody({ say: ['가게 <b>' + r.st.toLocaleString() + '곳</b>', '교통사고 10년 <b>' + r.acc.toLocaleString() + '건</b> · 사망자 ' + r.dead], note: '이 리는 주민·매출 자료가 없습니다 — 리 단위로 나온 공개 자료는 가게·사고뿐이다.',

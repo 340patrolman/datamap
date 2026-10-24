@@ -219,6 +219,7 @@
   #m2dCard .sdrt .sdrtl small { display: block; color: var(--ink2); font-size: 12px; }
   #m2dCard h3 .hx { float: right; height: 32px; min-width: 40px; margin: -4px 0 0 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 16px; font-weight: 700; cursor: pointer; }
   #m2dCard:not(.haslad) h3 .hx { display: none; }
+  #m2dCard:has(.dgg) h3 .hx { display: none; }   /* v2.298.2 동·리·구 카드는 사다리 줄 「닫기」가 늘 보인다 — 제목 ✕ 가 한눈에 상자 위에 겹쳐 떴다 */
   #m2dCard .sd .ln { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
   #m2dCard .sd .tl { flex: 1; min-width: 40px; height: 14px; border-radius: 3px; background: rgba(239, 68, 68, .45); position: relative; overflow: hidden; }
   #m2dCard .sd .tl i { position: absolute; top: 0; bottom: 0; }
@@ -1119,7 +1120,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.298.1"></script>
+<script src="js/map2d.js?v=2.298.2"></script>
 <script src="js/decide.js?v=5"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다

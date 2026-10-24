@@ -22,7 +22,7 @@ FN = [
     ['shop', '정보', '가게', '곳', '상가업소'], ['biz_i', '정보', '사업체(정보도 같은 값)', '곳', '노동·경제 현장 — 공개 지표가 적다'],
     ['frn', '외사', '외국인주민', '명', '행안부 2024.11'], ['frn_w', '외사', '외국인근로자', '명', '같은 표'], ['frn_m', '외사', '결혼이민자', '명', '같은 표'], ['frn_s', '외사', '유학생', '명', '같은 표'], ['frn_k', '외사', '외국국적동포', '명', '같은 표'], ['minbak', '외사', '외국인관광 도시민박', '곳', '지방행정 인허가'],
 ]
-DEN = [['pop', '주민', '명'], ['km2', '넓이', '㎢'], ['emp', '종사자', '명'], ['live', '생활인구(평일 24시간 평균 · 서울)', '명'], ['day', '주간인구 어림(2020 주간인구지수 × 지금 주민)', '명']]
+DEN = [['pop', '주민', '명'], ['km2', '넓이', '㎢'], ['emp', '종사자', '명'], ['live', '생활인구(평일 24시간 평균 · 서울)', '명'], ['day', '주간인구 어림(2020 주간인구지수 × 지금 주민)', '명'], ['lday', '생활인구 평일 낮(11~14시 평균 · 서울)', '명'], ['lngt', '생활인구 평일 새벽(0~4시 평균 · 서울)', '명']]   # 2026-10-24 소유자 「도심은 낮에만 많고 밤에는 썰물처럼」 — 낮·새벽을 따로(서울 생활인구 · 250m 층의 낮·밤 연령 칸과 같은 시각)
 CLS = {'bar': [108, 109, 110, 111], 'yu': [108, 109], 'sing': [219], 'gosi': [68], 'pc': [216, 218], 'motel': [65], 'massage': [239]}
 SIDO = {'11': '서울', '26': '부산', '27': '대구', '28': '인천', '29': '광주', '30': '대전', '31': '울산', '36': '세종', '41': '경기', '42': '강원', '51': '강원', '43': '충북', '44': '충남', '45': '전북', '52': '전북', '46': '전남', '12': '광주·전남', '47': '경북', '48': '경남', '50': '제주'}
 
@@ -50,6 +50,8 @@ def main():
                  'old70': sum(ag.get(k, 0) or 0 for k in ('70~79', '80~89', '90~99', '100~')) if ag else None, 'under10': ag.get('0~9') if ag else None, 'kid': KID.get(code[:8]),
                  'acc': round(ac['계'] / 10, 1) if ac.get('계') is not None else None, 'dead10': ac.get('사망자'), 'ped10': ac.get('보행자 피해'), 'moto10': ac.get('이륜·원동기 가해'),
                  'sub': tr.get('역 하루 승차'), 'bus': tr.get('버스 하루 승차'), 'live': (lambda a: round(sum(a) / len(a)) if a else None)((d.get('머무는 사람(생활인구)') or {}).get('평일 시간대(0~23시)')),
+                 'lday': (lambda a: round(sum(a[11:15]) / 4) if a and len(a) == 24 else None)((d.get('머무는 사람(생활인구)') or {}).get('평일 시간대(0~23시)')),
+                 'lngt': (lambda a: round(sum(a[0:5]) / 5) if a and len(a) == 24 else None)((d.get('머무는 사람(생활인구)') or {}).get('평일 시간대(0~23시)')),
                  'frn': fr.get('합계'), 'frn_w': fr.get('외국인근로자'), 'frn_m': fr.get('결혼이민자'), 'frn_s': fr.get('유학생'), 'frn_k': fr.get('외국국적동포'),
                  'minbak': d.get('외국인관광 도시민박(업소 수 · 영업+휴업)') if isinstance(d.get('외국인관광 도시민박(업소 수 · 영업+휴업)'), (int, float)) else None}
             for k in CLS: v[k] = sc.get(k) if sc else None
@@ -82,7 +84,7 @@ def main():
         d['v']['day'] = round(p0 * ix) if ix and p0 else None
         if ix is None: miss_d += 1
     print('주간인구 지수 못 붙인 동', miss_d)
-    keys = [f[0] for f in FN] + ['pop', 'km2', 'live', 'day']
+    keys = [f[0] for f in FN] + ['pop', 'km2', 'live', 'day', 'lday', 'lngt']   # 뒤에 덧붙이기만(지도는 keys 이름으로 읽는다)
     CK = {'c_viol', 'c_theft', 'c_strong', 'c_fraud', 'c_drug', 'c_traffic'}
     # 시군구 묶음(KOSIS 범죄 발생지와 같은 열쇠)
     SG = {}

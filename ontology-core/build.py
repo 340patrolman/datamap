@@ -208,6 +208,13 @@ def pip(lo, la, ring):   # 점이 고리(경도·위도) 안인가 — 짝홀 �
         x1, y1 = ring[i][0], ring[i][1]; x2, y2 = ring[i - 1][0], ring[i - 1][1]
         if (y1 > la) != (y2 > la) and lo < (x2 - x1) * (la - y1) / (y2 - y1) + x1: c = not c
     return c
+# 관할 현장 기준(소유자 2026-10-24 · RULE-JUR-3 · FK-JUR-BORDER-1·2) — 경계와 T-GIS 가 엇갈린 서초 16곳 · T-GIS 교차로코드: (관서 번호, 이름 확인)
+JUR_FIELD = {352: (23, '강남터미널고가밑'), 8893: (23, '반포대교남단(연등)2'), 548: (23, '서울성모병원'),
+             547: (17, '교보타워사거리'), 8861: (17, '남서울빌딩앞'), 1780: (17, '전기공제회관'), 7819: (17, '전기공제회관(연등)'),
+             163: (29, '양재역'), 188: (29, '양재전화국'), 8511: (23, '양재초교후문'),
+             8121: (27, '다이치빌딩'), 8047: (27, '뒷벌어린이공원(연등)2'), 489: (27, '래미안아트힐'), 8120: (27, '코끼리마트앞'),
+             8288: (23, '삼성R&D캠퍼스'), 8159: (23, '한남대교램프')}
+JUR_FIELD_FK = {k: ('FK-JUR-BORDER-2' if v[0] == 27 or k in (8288, 8159) else 'FK-JUR-BORDER-1') for k, v in JUR_FIELD.items()}
 def sta_build(obj, edge, INTs):
     """관할 경찰서(STA)·지구대·파출소(PBX). 교차로 → 관할서 = jur-seocho 현장 기준 경계(서초·방배와 이웃 서 · 반포4동은 반포대로) 안이면 그 서,
        밖이면 police.json 별표2 × 행정동(두 서가 나눠 맡는 동은 둘 다 · 「~」 뒤는 일부 번지). 지구대·파출소 관할 경계는 공개 자료가 없어
@@ -234,10 +241,17 @@ def sta_build(obj, edge, INTs):
                 ns = [int(x) for x in t.split(',')]
                 js = [(n, 'B' if len(ns) == 1 else 'C', '별표2 × 행정동' + ('' if len(ns) == 1 else '(두 서가 나눠 맡는 동 — 어느 쪽인지 번지로만 갈림)'), None if len(ns) == 1 else 'shared') for n in ns]
         pe = PE.get(str(it.get('st'))); tgn = pe[0] if pe and pe[4] else None
+        fc = int(it['id'][4:])
+        if fc in JUR_FIELD:   # 소유자 현장 기준이 경계·T-GIS 보다 먼저
+            no, nm = JUR_FIELD[fc]
+            if it['nm'] != nm: raise SystemExit('관할 현장 기준 표의 교차로 이름이 다르다: %s %s ≠ %s' % (it['id'], it['nm'], nm))
+            js = [(no, 'B', '소유자 현장 판단 ' + JUR_FIELD_FK[fc] + ' · RULE-JUR-3(경계 도로는 북쪽·동쪽 서)', 'field')]
+            tgn_keep = tgn; tgn = None
+        else: tgn_keep = None
         if tgn and len(js) == 1 and js[0][3] is None and tgn != O_STA_NM(js[0][0], P) and tgn in byname:   # 경계와 T-GIS 관할 코드가 다른 서 — 둘 다 적고 C(소유자 확인 대기)
             js = [(js[0][0], 'C', js[0][2] + ' — T-GIS 관할 코드와 다름', 'disagree'), (byname[tgn][0], 'C', 'T-GIS 교차로 관할 코드(tgis-pe 이름 맞춤) — 경계와 다름', 'tgis')]
         for n, g, how, kind in js:
-            s = sta(n); tg = None if tgn is None else (1 if tgn == O_STA_NM(n, P) else 0)
+            s = sta(n); tg = None if tgn is None and tgn_keep is None else (1 if (tgn or tgn_keep) == O_STA_NM(n, P) else 0)
             edge(it['id'], '관할', s, g, 'police.json·jur-seocho.json·tgis-pe.json(' + how + ')', kind=kind, tg=tg)
             if n not in seen:
                 seen.add(n)

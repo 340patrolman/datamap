@@ -197,8 +197,9 @@ def inside(lo, la, ring):
     return n_ % 2 == 1
 SNO = {s_[1]: s_[0] for s_ in PJ['stations']}; PBN = collections.defaultdict(list)
 for k_, b_ in enumerate(PJ['pbox']): PBN[b_[6]].append((k_, b_))
+FIELD_OWNER = {'강남터미널고가밑': '서울서초경찰서', '반포대교남단(연등)2': '서울서초경찰서', '서울성모병원': '서울서초경찰서', '교보타워사거리': '서울강남경찰서', '남서울빌딩앞': '서울강남경찰서', '전기공제회관': '서울강남경찰서', '전기공제회관(연등)': '서울강남경찰서', '양재역': '서울수서경찰서', '양재전화국': '서울수서경찰서', '양재초교후문': '서울서초경찰서', '다이치빌딩': '서울방배경찰서', '뒷벌어린이공원(연등)2': '서울방배경찰서', '래미안아트힐': '서울방배경찰서', '코끼리마트앞': '서울방배경찰서', '삼성R&D캠퍼스': '서울서초경찰서', '한남대교램프': '서울서초경찰서'}   # 소유자 2026-10-24 말씀을 시험이 따로 적어 둔 것
 def jur_of(tg):
-    r = oi[tg]; z = [z_['name'] for z_ in JZ if any(inside(r[3], r[2], [tuple(p_) for p_ in rg]) for rg in z_['rings'])]
+    r = oi[tg]; z = [FIELD_OWNER[r[1]]] if r[1] in FIELD_OWNER else [z_['name'] for z_ in JZ if any(inside(r[3], r[2], [tuple(p_) for p_ in rg]) for rg in z_['rings'])]
     no = SNO[z[0]]; kb = min(PBN[no], key=lambda x: (m(r[2], r[3], x[1][3], x[1][4]), x[0]))
     return no, 'PBX-%d' % kb[0], round(m(r[2], r[3], kb[1][3], kb[1][4]))
 for tg in (521, 548, 1026, 324, 5928):
@@ -206,7 +207,7 @@ for tg in (521, 548, 1026, 324, 5928):
     ck('질문12 %s — 관할서(앞)·가장 가까운 지구대·거리가 경계·주소 현황 따로 셈과 같다' % q['nm'], q['stations'][0]['id'] == 'STA-%d' % no and q['pbox']['id'] == pb and q['pbox']['d'] == d, (q['stations'], q['pbox'], no, pb, d))
 cnt = collections.Counter(jur_of(r_[0])[1] for r_ in oi.values() if r_[6] == '11650')
 ck('질문13 — 지구대·파출소마다 묶인 교차로 수가 따로 셈과 같다(서초 %d곳)' % len(cnt), {k_: v_['nInt'] for k_, v_ in R['q13'].items() if v_['nInt']} == dict(cnt), sorted(cnt.items())[:4])
-ck('질문12 서울성모병원 — 경계(방배)와 T-GIS(서초)가 달라 둘 다 C 로 적는다', [(x['id'], x['g'], x['kind']) for x in R['q12']['INT-548']['stations']] == [('STA-27', 'C', 'disagree'), ('STA-23', 'C', 'tgis')], R['q12']['INT-548']['stations'])
+ck('질문12 관할 현장 기준(2026-10-24) — 엇갈린 16곳이 모두 소유자 말씀대로 한 서(B · field) · 서울성모병원 = 서초서 · 교보타워사거리 = 강남서 · 양재역 = 수서서', R['fieldOK'] == 16 and [(x['id'], x['g'], x['kind']) for x in R['q12']['INT-548']['stations']] == [('STA-23', 'B', 'field')], (R['fieldOK'], R['q12']['INT-548']['stations']))
 ck('질문12·13 — 다른 것을 물으면 null', R['q12bad'] is None and R['q13bad'] is None)
 # ---- 질문 14·15 · 도착(2026-10-23) — nav-seocho 길에서 따로 다익스트라(제한속도 · 평일 8·18시 평소 속도 + eta-cal 배율) ----
 import heapq

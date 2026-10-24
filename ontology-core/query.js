@@ -115,7 +115,7 @@
     var nb = this.follow(intId, '가까운지구대')[0];
     var others = st.length ? this.back(st[0].id, '소속').map(function (x) { return { id: x.o.id, nm: x.o.nm, kind: x.o.kind, d: Math.round(Math.hypot((x.o.lon - it.lon) * 88400, (x.o.lat - it.lat) * 111000)) }; }).sort(function (a, b) { return a.d - b.d || (a.id < b.id ? -1 : 1); }) : [];
     return { id: intId, nm: it.nm, stations: st, pbox: nb ? { id: nb.o.id, nm: nb.o.nm, kind: nb.o.kind, addr: nb.o.addr || null, d: nb.p.d, g: nb.p.g } : null, others: others.slice(0, 4),
-      notes: ['관할서 = 현장 기준 경계(서초·방배 · 반포4동은 반포대로) 또는 별표2 × 행정동 — 번지로 나뉜 동은 두 서를 다 적는다', '지구대·파출소 = 관할 경계가 공개되지 않아 그 서의 가장 가까운 곳(근사) — 실제 담당 구역과 다를 수 있다', 'tgis = 서울시 T-GIS 교차로 관할 코드와 맞는지(1 맞음 · 0 다름 · null 코드 이름을 모름)', 'kind disagree·tgis = 경계와 T-GIS 관할 코드가 다른 서를 가리킨다(서로 맞닿은 길 위 교차로가 대부분) — 둘 다 적고 앞이 경계 쪽 · 형님 확인 대기'] };
+      notes: ['관할서 = 현장 기준 경계(서초·방배 · 반포4동은 반포대로) 또는 별표2 × 행정동 — 번지로 나뉜 동은 두 서를 다 적는다', '지구대·파출소 = 관할 경계가 공개되지 않아 그 서의 가장 가까운 곳(근사) — 실제 담당 구역과 다를 수 있다', 'tgis = 서울시 T-GIS 교차로 관할 코드와 맞는지(1 맞음 · 0 다름 · null 코드 이름을 모름)', 'kind field = 소유자 현장 판단(2026-10-24 · 경계 도로는 북쪽·동쪽 서 · RULE-JUR-3) — 경계·T-GIS 보다 먼저'] };
   };
   /* 질문 13 — 이 지구대·파출소 몫(가장 가까운 지구대로 묶은 근사) 교차로: 10년 사고 많은 순 */
   P.q13 = function (pbxId, k) {

@@ -10,6 +10,7 @@
   'use strict';
   var CORE = 'ontology-core/data/core-seocho.json', QJS = 'ontology-core/query.js?v=3', SCH = 'ontology-core/schema-ext.json';
   var Q = null, SC = null, LOAD = null, ST = { id: null, back: [], more: {}, q: '' };
+  var LIVE = null, LIVEAT = 0, NORM = null, NORMING = false;   /* 실시간 세 장(돌발 둘 · 통행속도) — 3분마다 다시 · 평소 속도(4MB)는 누를 때만 */
   var NAV = { INT: 1, DNG: 1, STN: 1, TRD: 1, PBX: 1, STA: 1, EVT: 1 };
   var TN = { INT: '교차로', DNG: '행정동', STN: '지하철역', TRD: '상권', PBX: '지구대·파출소', STA: '경찰서', EVT: '사건', ACC: '사고(10년)', ACL: '사고 칸', CAM: '단속 카메라', ATT: '시설', PLC: '250m 칸', APR: '들어오는 길', RD: '도로 구간', ACT: '교통과 조치', REC: '조치 기록', VIO: '위반 유형', LAW: '법규', PREC: '판례', RULE: '규칙', FK: '현장 판단' };
   var KEY = { 속함: '자리 — 교차로가 그 동 경계 안', 근처: '자리 + 때 — 둘레 반지름 안에서 그날 일어난 일', 흔적: '자리 + 때 — 그 해 침수 흔적 100m 안', 가까움: '자리 — 300m 안', 보유: '자리 — 100m 안', 들어감: '자리 — 교차로가 든 250m 칸', 지남: '자리 — 길이 지나는 250m 칸', 사고칸: '자리 — 길 가운데 50m 안 사고 칸', 품음: '자리 — 상권 경계 안', 가까운교차로: '자리 — 역에서 300m 안', 근처역: '자리 + 때 — 행사 자리에서 500m(큰 공연장 1km) 안 역', 가까운지구대: '자리 + 코드 — 관할서 지구대 중 가장 가까운 곳', 인접: '코드 — 신호망에서 이웃한 교차로', 관할: '코드 — 별표2 관할 × 행정동 + 현장 기준', 소속: '코드 — 소속 경찰서', 발생: '자리 — 교차로 70m 안 사고 칸 묶음', 주요원인: '코드 — 사고 칸의 주 위반', 근거: '코드 — 위반 → 법 조문', 해석: '코드 — 조문 → 판례', 들어오는길: '코드 — 표준노드링크 방향', 이룸: '코드 — ITS 링크 번호', 들어감동: '코드 — 원자료의 행정동 이름', 대상: '코드 — 교통과 조치의 교차로 번호', 근거기록: '코드 — 조치의 기록', 뒷받침: '코드 — 규칙을 받친 현장 판단' };
@@ -38,7 +39,7 @@
       '#m2dLnk .lg{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-bottom:6px}#m2dLnk .lg i{display:inline-block;width:20px;border-top:3px solid #16a34a;vertical-align:middle;margin-right:4px}#m2dLnk .lg i.c{border-top:2px dashed #d97706}#m2dLnk .lg i.d{border-top:2px dotted #94a3b8}' +
       '#m2dLnk h4{margin:12px 0 4px;font-size:14px}#m2dLnk .note{font-size:11.5px;color:var(--ink2);margin:2px 0 6px}' +
       '#m2dLnk .now{border:1px solid #0ea5e9;border-radius:12px;padding:8px 10px;background:rgba(14,165,233,.07)}#m2dLnk .now li{margin:2px 0}#m2dLnk .now ul,#m2dLnk .hy ul{margin:2px 0;padding-left:18px}' +
-      '#m2dLnk .hy{border:1px dashed #d97706;border-radius:12px;padding:8px 10px;margin:6px 0;background:rgba(217,119,6,.06)}#m2dLnk .hy b.t{font-size:14px}' +
+      '#m2dLnk .live{border:1px solid #dc2626;border-radius:12px;padding:8px 10px;background:rgba(220,38,38,.06)}#m2dLnk .live>div{margin:3px 0}#m2dLnk .live ul{margin:2px 0;padding-left:18px}#m2dLnk .live li{margin:2px 0}#m2dLnk .live .sb{min-height:28px;font-size:12px;margin-left:4px}#m2dLnk .hy{border:1px dashed #d97706;border-radius:12px;padding:8px 10px;margin:6px 0;background:rgba(217,119,6,.06)}#m2dLnk .hy b.t{font-size:14px}' +
       '#m2dLnk .k4{display:grid;grid-template-columns:62px minmax(0,1fr);gap:1px 8px;font-size:12.5px;margin-top:4px}#m2dLnk .k4 span{color:var(--ink2)}#m2dLnk .k4 div{min-width:0;overflow-wrap:anywhere}' +
       '#m2dLnk details.rel{border:1px solid var(--line);border-radius:12px;margin:6px 0;padding:0 10px}#m2dLnk details.rel>summary{cursor:pointer;padding:8px 0;font-weight:700;list-style:none}#m2dLnk details.rel>summary::-webkit-details-marker{display:none}#m2dLnk details.rel>summary small{font-weight:400;color:var(--ink2)}' +
       '#m2dLnk .lk{border-top:1px solid var(--line);padding:6px 0}#m2dLnk .lk .t{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}#m2dLnk .lk .t b{font-size:13.5px}#m2dLnk .lk button.go{margin-left:auto;min-height:30px;border:1px solid var(--acc);color:var(--acc);background:none;border-radius:999px;padding:0 10px;font-size:12px;cursor:pointer}' +
@@ -135,6 +136,56 @@
     return '<h4>⏱ 지금 이 시각 — ' + ['일', '월', '화', '수', '목', '금', '토'][d.getDay()] + ' ' + h + '시</h4><div class="now"><ul>' + L.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul><div class="note">평소 모양(지난 기록의 평균)을 지금 시각에 맞춘 것 — 실시간 값이 아니다 · 오늘 일은 받아 둔 일정·기록</div></div>';
   }
 
+
+  /* ---------- 🔴 지금 실제로 — 받아 올린 실시간 값(돌발 · 통행속도)을 이 대상에 잇는다 ---------- */
+  function liveLoad(force) {
+    if (!force && LIVE && Date.now() - LIVEAT < 180000) return Promise.resolve(LIVE);
+    var t = '?t=' + Math.floor(Date.now() / 60000);
+    function J(u) { return fetch(u + t, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+    return Promise.all([J('data/live-acc-seoul.json'), J('data/live-ims-seoul.json'), J('data/live-spd-seocho.json')]).then(function (a) { LIVE = { acc: a[0], ims: a[1], spd: a[2] }; LIVEAT = Date.now(); return LIVE; });
+  }
+  function normLoad() { if (NORM || NORMING) return; NORMING = true; paint();
+    fetch('data/spd-normal-seocho.json').then(function (r) { return r.json(); }).then(function (j) { NORM = j; NORMING = false; paint(); }, function () { NORMING = false; paint(); }); }
+  function dcls(d) { var w = d.getDay(); return w === 0 ? 3 : w === 6 ? 2 : w === 5 ? 1 : 0; }
+  function ymd(x) { x = String(x || ''); var mm = /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(\d{1,2})시\s*(\d{1,2})분/.exec(x); if (mm) return (+mm[2]) + '/' + (+mm[3]) + ' ' + ('0' + mm[4]).slice(-2) + ':' + ('0' + mm[5]).slice(-2);
+    return x.length >= 12 ? (+x.slice(4, 6)) + '/' + (+x.slice(6, 8)) + ' ' + x.slice(8, 10) + ':' + x.slice(10, 12) : x; }
+  function scopeInts(o) { return o.t === 'INT' ? [o] : (o.t === 'DNG' ? Q.back(o.id, '속함') : o.t === 'STN' ? Q.follow(o.id, '가까운교차로') : o.t === 'TRD' ? Q.follow(o.id, '품음') : o.t === 'PBX' ? Q.back(o.id, '가까운지구대') : []).map(function (x) { return x.o || x; }); }
+  function liveInc(o) {
+    var ints = scopeInts(o).filter(function (i) { return i.lat; }), R = [], seen = {};
+    function near(la, lo) { var b = null; ints.forEach(function (i) { var d = m(la, lo, +i.lat, +i.lon); if (!b || d < b.d) b = { d: d, i: i }; }); return b; }
+    ((LIVE.acc && LIVE.acc.items) || []).forEach(function (x) { var n = near(x[5], x[6]); if (n && n.d <= 400 && !seen[x[0]]) { seen[x[0]] = 1; R.push({ src: '서울시 실시간 돌발(TOPIS)', kind: x[2], road: '', txt: String(x[9] || '').split(/\r|\n/)[0], s: ymd(x[7]), e: ymd(x[8]), link: x[4], d: n.d, at: n.i }); } });
+    ((LIVE.ims && LIVE.ims.items) || []).forEach(function (x) { var n = near(x[4], x[5]); if (n && n.d <= 400 && !seen[x[0]]) { seen[x[0]] = 1; R.push({ src: '경찰청 UTIC 돌발', kind: x[1], road: x[7] || '', txt: String(x[11] || '').replace(/^\[[^\]]*\]\s*/, '').slice(0, 70), s: ymd(x[9]), e: ymd(x[10]), link: x[12], d: n.d, at: n.i }); } });
+    return R.sort(function (a, b) { return a.d - b.d; });
+  }
+  function liveApr(o) {
+    if (o.t !== 'INT' || !LIVE.spd || !LIVE.spd.m) return [];
+    var d = new Date(), key = dcls(d) + '-' + d.getHours(), M = LIVE.spd.m;
+    return Q.follow(o.id, '들어오는길').map(function (a) {
+      var rd = Q.follow(a.o.id, '이룸').sort(function (x, y) { return (x.p.k || 0) - (y.p.k || 0); }).map(function (x) { return x.o; }).filter(function (r) { return M[r.link] != null; }).slice(0, 2);
+      if (!rd.length) return null;
+      var v = Math.round(sum(rd.map(function (r) { return M[r.link]; })) / rd.length), lim = Math.max.apply(null, rd.map(function (r) { return +r.lim || 0; })) || null, nv = null, prov = 0;
+      if (NORM && NORM.links) { var ns = rd.map(function (r) { var c = (NORM.links[r.link] || {})[key]; if (c && c[4]) prov = 1; return c ? c[0] : null; }).filter(function (x) { return x != null; }); if (ns.length) nv = Math.round(sum(ns) / ns.length); }
+      var ratio = nv ? v / nv : null, st = ratio != null ? (ratio < 0.6 ? 'slow' : ratio < 0.85 ? 'mid' : 'ok') : (v < 15 ? 'slow' : v < 25 ? 'mid' : 'ok');
+      return { frm: a.o.frm, nm: rd[0].nm || a.o.nm, v: v, lim: lim, nv: nv, prov: prov, ratio: ratio, st: st, links: rd.map(function (r) { return r.link; }) };
+    }).filter(Boolean);
+  }
+  function liveBox(o) {
+    if (!LIVE) return '<h4>🔴 지금 실제로</h4><div class="live"><div class="note">실시간 값을 받는 중…</div></div>';
+    var S = LIVE.spd, age = S && S.at ? Math.round((Date.now() / 1000 - (+S.at)) / 60) : null, stale = age == null || age > 20, L = [], inc = liveInc(o), apr = stale ? [] : liveApr(o);
+    if (apr.length) { L.push('<b>들어오는 길 지금 속도</b>' + (NORM ? '' : ' <button class="sb" data-norm="1">' + (NORMING ? '평소 값 받는 중…' : '평소와 견주기(약 4MB)') + '</button>') + '<ul>' + apr.map(function (a) { var c = a.st === 'slow' ? '#dc2626' : a.st === 'mid' ? '#d97706' : '#16a34a';
+      return '<li><b style="color:' + c + '">' + a.v + 'km/h</b> ' + esc(a.frm) + ' ' + esc(a.nm) + ' <small>(' + (a.nv ? '평소 이 시각 ' + a.nv + (a.prov ? ' 잠정' : '') + ' · ' + Math.round(a.ratio * 100) + '%' : '제한 ' + (a.lim || '—')) + ')</small></li>'; }).join('') + '</ul>'); }
+    if (inc.length) L.push('<b>둘레 400m 돌발 ' + inc.length + '건</b><ul>' + inc.slice(0, 6).map(function (x) { return '<li><b>' + esc(x.kind) + '</b> ' + esc(x.road ? x.road + ' · ' : '') + esc(x.txt) + ' <small>(' + esc(x.s) + '~' + esc(x.e) + ' · ' + esc(nm(x.at)) + '에서 ' + fmt(x.d) + 'm · ' + esc(x.src) + ')</small></li>'; }).join('') + '</ul>');
+    else L.push('둘레 400m 에 지금 걸린 돌발(공사·사고·통제)은 없음(받은 자료 기준)');
+    return '<h4>🔴 지금 실제로' + (S && S.made ? ' — ' + esc(S.made) + ' 받은 값' : '') + '</h4><div class="live">' + L.map(function (x) { return '<div>' + x + '</div>'; }).join('') +
+      '<div class="note">' + (stale ? '⚠ 통행속도가 ' + (age == null ? '없음' : age + '분 전 값') + '이라 쓰지 않았다(20분 넘으면 버림) · ' : '통행속도 = ITS(약 11분마다 받아 올림 · ' + age + '분 전) · ') + '돌발 = 서울시 TOPIS·경찰청 UTIC(10분마다) · 막힘 색 = ' + (NORM ? '평소 이 요일·시각 가운데값의 60%↓ 빨강 · 85%↓ 주황' : '15km/h↓ 빨강 · 25km/h↓ 주황(평소와 견주면 더 정확)') + ' · 가능성 B(측정값 · 몇 분 늦음)</div></div>';
+  }
+  function liveHyps(o) {
+    if (!LIVE) return []; var H = [], inc = liveInc(o), apr = liveApr(o).filter(function (a) { return a.st === 'slow'; });
+    apr.forEach(function (a) { var hit = inc.filter(function (x) { return a.links.indexOf(String(x.link)) >= 0 || (x.road && a.nm && (x.road.indexOf(a.nm) >= 0 || a.nm.indexOf(x.road) >= 0)); })[0];
+      H.push(hy('지금 ' + a.frm + '이 막혔다' + (hit ? ' — 돌발 때문일 수 있다' : ''), [a.nm + ' 지금 ' + a.v + 'km/h' + (a.nv ? '(평소 이 시각 ' + a.nv + ' · ' + Math.round(a.ratio * 100) + '%)' : '(제한 ' + (a.lim || '—') + ')'), hit ? hit.kind + ' ' + (hit.road || '') + ' ' + hit.txt + '(' + hit.s + '~' + hit.e + ')' : '둘레 400m 에 잡힌 돌발 없음 — 신호·사고·행사 등 다른 까닭'], '교차로 → 들어오는 길 → ITS 링크의 지금 속도 · 같은 링크·같은 길 이름의 지금 돌발을 겹쳤다', hit ? '돌발 자리 앞에서 미리 차로를 바꾸게 안내 · 끝나는 ' + hit.e + ' 까지 이어질 수 있다' : '현장 확인 — 지도 신호 카드·실시간 CCTV 로 까닭을 본다', hit ? 'C' : 'D')); });
+    return H;
+  }
+
   /* ---------- 💡 엮으면 보이는 것(가설) ---------- */
   function hy(t, ev, wy, res, g) { return { t: t, ev: ev, wy: wy, res: res, g: g || 'D' }; }
   function hyps(o) {
@@ -174,8 +225,8 @@
   function paint() {
     var el = box(); if (!Q) { el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">서초 온톨로지 코어를 받는 중…</div>'; return; }
     var o = O(ST.id); if (!o) return pick();
-    var GS = groups(o.id), H = hyps(o), h = '<button class="lx" data-close="1">닫기</button>' + head(o) + graph(o, GS) + nowBox(o);
-    if (H.length) h += '<h4>💡 엮으면 보이는 것 — 가설 ' + H.length + '</h4><div class="note">이은 것들을 겹쳐 본 짐작이다(등급 D) · 처음 해 보는 연결이라 틀릴 수 있다 — 현장에서 맞는지 보고 알려 주시면 고친다</div>' +
+    var GS = groups(o.id), H = liveHyps(o).concat(hyps(o)), h = '<button class="lx" data-close="1">닫기</button>' + head(o) + graph(o, GS) + liveBox(o) + nowBox(o);
+    if (H.length) h += '<h4>💡 엮으면 보이는 것 — 가설 ' + H.length + '</h4><div class="note">이은 것들을 겹쳐 본 짐작이다(등급 C·D) · 처음 해 보는 연결이라 틀릴 수 있다 — 현장에서 맞는지 보고 알려 주시면 고친다</div>' +
       H.map(function (x) { return '<div class="hy"><b class="t">' + esc(x.t) + '</b><div class="k4"><span>근거</span><div><ul>' + x.ev.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div><span>연결 이유</span><div>' + esc(x.wy) + '</div><span>결과</span><div><b>' + esc(x.res) + '</b></div><span>가능성</span><div>' + poss(x.g) + '</div></div></div>'; }).join('');
     h += '<h4>🔗 이어진 것 ' + GS.length + '갈래</h4>';
     GS.forEach(function (g) { var lim = ST.more[g.key] ? 200 : 6, it = g.items.slice(0, lim);
@@ -202,6 +253,7 @@
     if ((a = b.getAttribute('data-go'))) return go(a, true);
     if (b.hasAttribute('data-back')) { ST.id = ST.back.pop(); ST.more = {}; paint(); return; }
     if (b.hasAttribute('data-pick')) { if (ST.id) ST.back.push(ST.id); ST.id = null; ST.q = ''; pick(); return; }
+    if (b.hasAttribute('data-norm')) { normLoad(); return; }
     if ((a = b.getAttribute('data-more'))) { ST.more[a] = 1; paint(); var d = $('lnk-' + a); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } return; }
     if ((a = b.getAttribute('data-jump'))) { var d2 = $('lnk-' + a); if (d2) { d2.open = true; d2.scrollIntoView({ block: 'start', behavior: 'smooth' }); } return; }
     if ((a = b.getAttribute('data-map'))) { var p = a.split(','); if (window.innerWidth < 760) close(); location.hash = 'v=' + p[0] + ',' + p[1] + ',250&t=' + p[0] + ',' + p[1]; return; } }
@@ -215,6 +267,7 @@
       else if (opt && opt.dong) { var d = Q.core.objects.filter(function (o) { return o.t === 'DNG' && (o.code === String(opt.dong) || o.nm === opt.dong); })[0]; if (d) id = d.id; }
       if (!id && opt && isFinite(+opt.lat) && isFinite(+opt.lon)) { var n = nearInt(+opt.lat, +opt.lon); if (n) id = n.id; }
       ST.id = id; if (id) paint(); else pick();
+      liveLoad(true).then(function () { if (ST.id && $('m2dLnk') && $('m2dLnk').classList.contains('on')) { var sc = $('m2dLnk').scrollTop; paint(); $('m2dLnk').scrollTop = sc; } });
     }, function () { el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">온톨로지 코어를 받지 못했습니다 — 통신을 확인해 주세요.</div>'; });
   }
   function close() { var el = $('m2dLnk'); if (el) el.classList.remove('on'); }

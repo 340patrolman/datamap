@@ -1,8 +1,8 @@
 // 데이터 압축지도(datamap) 서비스워커 — 앱 파일을 미리 저장(설치형·오프라인)하고 새 판은 다음 실행 때 바꿔 끼운다.
 // 바탕 조각(data/base/t/)과 「📥 지역 받기」로 받은 구 자료는 판과 상관없는 보관함 tg-tiles 에서 먼저 꺼낸다.
-var CACHE = 'dm-v2.300.2-d5';
+var CACHE = 'dm-v2.300.3-d5';
 var TILES = 'tg-tiles';
-var FILES = ['./', './index.html', './manifest.json', './js/map2d.js?v=2.300.2', './js/decide.js?v=5', './js/link.js?v=3', './js/travel-time.js?v=5', './data/regions.json', './data/base/index.json', './data/base/ov.json', './data/base/sgg.json', './icon-192.png', './icon-512.png'];
+var FILES = ['./', './index.html', './manifest.json', './js/map2d.js?v=2.300.3', './js/decide.js?v=5', './js/link.js?v=4', './js/travel-time.js?v=5', './data/regions.json', './data/base/index.json', './data/base/ov.json', './data/base/sgg.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
 });
@@ -18,6 +18,7 @@ self.addEventListener('fetch', function (e) {
     return;
   }
   e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(function (res) {
-    var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(e.request, copy); }); return res;
+    var copy = res.clone(), u9 = e.request.url, k9 = u9.indexOf('/data/live-') >= 0 ? u9.split('?')[0] : e.request;   /* v2.300.3 실시간 파일은 ?t= 를 떼고 한 줄로만 보관(주소마다 쌓이지 않게) */
+    if (res.ok) caches.open(CACHE).then(function (c) { c.put(k9, copy); }); return res;
   }).catch(function () { return caches.match(e.request, { ignoreSearch: true }).then(function (hit) { return hit || caches.open(TILES).then(function (c) { return c.match(e.request, { ignoreSearch: true }); }); }); }));
 });

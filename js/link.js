@@ -28,7 +28,7 @@
 
   function css() {
     if ($('m2dLnkCss')) return; var s = document.createElement('style'); s.id = 'm2dLnkCss';
-    s.textContent = '#m2dLnk{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:6;max-height:70vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:12px 14px 10px;box-shadow:0 8px 28px rgba(0,0,0,.25);display:none;font-size:13.5px;line-height:1.5}' +
+    s.textContent = '#m2dLnk{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:40;max-height:78vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:12px 14px 10px;box-shadow:0 8px 28px rgba(0,0,0,.25);display:none;font-size:13.5px;line-height:1.5}' +
       '#m2dLnk.on{display:block}@media (min-width:760px){#m2dLnk{right:auto;width:460px;max-height:80vh}}' +
       '#m2dLnk h3{margin:0 76px 2px 0;font-size:16px}#m2dLnk .lx{position:absolute;right:10px;top:8px;height:34px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}' +
       '#m2dLnk .sub{font-size:12px;color:var(--ink2);margin:0 0 6px}#m2dLnk .bar{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}#m2dLnk .bar button,#m2dLnk .sb{min-height:34px;border:1px solid var(--line);border-radius:10px;background:var(--chip);color:var(--ink);font-size:12.5px;padding:0 10px;cursor:pointer}' +

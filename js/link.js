@@ -179,7 +179,8 @@
       '<div class="note">' + (stale ? '⚠ 통행속도가 ' + (age == null ? '없음' : age + '분 전 값') + '이라 쓰지 않았다(20분 넘으면 버림) · ' : '통행속도 = ITS(약 11분마다 받아 올림 · ' + age + '분 전) · ') + '돌발 = 서울시 TOPIS·경찰청 UTIC(10분마다) · 막힘 색 = ' + (NORM ? '평소 이 요일·시각 가운데값의 60%↓ 빨강 · 85%↓ 주황' : '15km/h↓ 빨강 · 25km/h↓ 주황(평소와 견주면 더 정확)') + ' · 가능성 B(측정값 · 몇 분 늦음)</div></div>';
   }
   function liveHyps(o) {
-    if (!LIVE) return []; var H = [], inc = liveInc(o), apr = liveApr(o).filter(function (a) { return a.st === 'slow'; });
+    if (!LIVE) return []; var S = LIVE.spd, age = S && S.at ? (Date.now() / 1000 - (+S.at)) / 60 : 1e9; if (age > 20) return [];   /* 통행속도가 20분 넘으면 「지금」 가설을 내지 않는다(칸 글과 같은 잣대) */
+    var H = [], inc = liveInc(o), apr = liveApr(o).filter(function (a) { return a.st === 'slow'; });
     apr.forEach(function (a) { var hit = inc.filter(function (x) { return a.links.indexOf(String(x.link)) >= 0 || (x.road && a.nm && (x.road.indexOf(a.nm) >= 0 || a.nm.indexOf(x.road) >= 0)); })[0];
       H.push(hy('지금 ' + a.frm + '이 막혔다' + (hit ? ' — 돌발 때문일 수 있다' : ''), [a.nm + ' 지금 ' + a.v + 'km/h' + (a.nv ? '(평소 이 시각 ' + a.nv + ' · ' + Math.round(a.ratio * 100) + '%)' : '(제한 ' + (a.lim || '—') + ')'), hit ? hit.kind + ' ' + (hit.road || '') + ' ' + hit.txt + '(' + hit.s + '~' + hit.e + ')' : '둘레 400m 에 잡힌 돌발 없음 — 신호·사고·행사 등 다른 까닭'], '교차로 → 들어오는 길 → ITS 링크의 지금 속도 · 같은 링크·같은 길 이름의 지금 돌발을 겹쳤다', hit ? '돌발 자리 앞에서 미리 차로를 바꾸게 안내 · 끝나는 ' + hit.e + ' 까지 이어질 수 있다' : '현장 확인 — 지도 신호 카드·실시간 CCTV 로 까닭을 본다', hit ? 'C' : 'D')); });
     return H;

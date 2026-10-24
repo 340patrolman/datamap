@@ -11,9 +11,12 @@ KB = os.path.dirname(ROOT)
 SRC = os.path.join(KB, '07_API키', 'out', 'fire_jur')
 HJD = os.path.join(KB, '13_관할경계', '원자료', 'hjd20260701.geojson')
 OUT = os.path.join(ROOT, 'data', 'fire-jur')
-SIDO = {'부산광역시': '26', '대구광역시': '27', '인천광역시': '28', '광주광역시': '29', '대전광역시': '30', '울산광역시': '31', '세종특별자치시': '36', '경기도': '41',
-        '강원특별자치도': '51', '충청북도': '43', '충청남도': '44', '전북특별자치도': '52', '전라남도': '46', '경상북도': '47', '경상남도': '48', '제주특별자치도': '50'}
+SIDO = {'부산광역시': '26', '대구광역시': '27', '인천광역시': '28', '대전광역시': '30', '울산광역시': '31', '세종특별자치시': '36', '경기도': '41',
+        '강원특별자치도': '51', '충청북도': '43', '충청남도': '44', '전북특별자치도': '52', '전남광주통합특별시': '12', '경상북도': '47', '경상남도': '48', '제주특별자치도': '50'}
 DOT = 'ㆍ·・∙․‧'
+# 이름으로 못 찾는 시·도의 별표(2026-10-24) — (자치법규일련번호, 별표 제목 앞머리) · 차례대로 <시도>_0, _1 … 로 받는다
+#   전남광주 = 시행규칙 (별표 1) 전남권역 · (별표 2) 광주권역(2026-07 통합) · 대전 = 「행정기구 및 정원 조례 시행규칙」 제29조② 「별표 1」 · 제주 = 「119센터」라 부른다
+FIXED = {'전남광주통합특별시': [('2176789', '(별표 1)'), ('2176789', '(별표 2)')], '대전광역시': [('2165863', '별표1')], '제주특별자치도': [('2164657', '[별표 2]')]}
 
 
 def norm(s):
@@ -67,7 +70,29 @@ def hwpx_paras(path):
 def fetch():
     oc = json.load(open(os.path.join(KB, '07_API키', 'keys.json'), encoding='utf-8'))['law_oc']
     got = {}
+    for sd, L in FIXED.items():
+        for n, (mst, head) in enumerate(L):
+            u = 'http://www.law.go.kr/DRF/lawService.do?' + urllib.parse.urlencode({'OC': oc, 'target': 'ordin', 'MST': mst, 'type': 'XML'})
+            x = urllib.request.urlopen(u, timeout=60).read().decode('utf-8')
+            nm = (re.search(r'<자치법규명><!\[CDATA\[(.*?)\]\]>', x) or [None, ''])[1]; ef = (re.search(r'<시행일자>(\d+)<', x) or [None, ''])[1]
+            for b in re.findall(r'<별표단위.*?</별표단위>', x, re.S):
+                t = re.search(r'<별표제목><!\[CDATA\[(.*?)\]\]>', b); f = re.search(r'<별표첨부파일명><!\[CDATA\[(.*?)\]\]>', b)
+                if t and f and t.group(1).replace(' ', '').startswith(head.replace(' ', '')):
+                    bb = urllib.request.urlopen(f.group(1), timeout=60).read()
+                    ext = 'hwp' if bb[:4] == b'\xd0\xcf\x11\xe0' else 'hwpx' if bb[:2] == b'PK' else 'pdf' if bb[:4] == b'%PDF' else 'bin'
+                    fn = '%s_%d.%s' % (sd, n, ext)
+                    open(os.path.join(SRC, fn), 'wb').write(bb)
+                    g = got.setdefault(sd, {'mst': mst, 'law': nm, 'ef': ef, 'title': '', 'file': ''})
+                    g['title'] = (g['title'] + ' · ' if g['title'] else '') + t.group(1); g['file'] = (g['file'] + ' · ' if g['file'] else '') + fn
+                    break
+            time.sleep(0.3)
+        print(sd, got.get(sd, {}).get('title', '못 찾음'))
+    old = json.load(open(os.path.join(SRC, 'sido_got.json'), encoding='utf-8')) if os.path.exists(os.path.join(SRC, 'sido_got.json')) else {}
     for sd in SIDO:
+        if sd in FIXED: continue
+        if 'fixed' in sys.argv[1:]:   # 고정 목록만 받을 때는 다른 시·도는 받아 둔 그대로
+            if sd in old: got[sd] = old[sd]
+            continue
         cand = []
         for q in [sd + ' 행정기구 설치 조례 시행규칙', sd + ' 행정기구 설치 조례', sd + ' 행정기구 및 정원 조례 시행규칙']:
             u = 'http://www.law.go.kr/DRF/lawSearch.do?' + urllib.parse.urlencode({'OC': oc, 'target': 'ordin', 'type': 'XML', 'query': q, 'display': 50})
@@ -124,23 +149,24 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     idx = {}
     for sd, code in SIDO.items():
-        fs = glob.glob(os.path.join(SRC, sd + '_0.hwp')) + glob.glob(os.path.join(SRC, sd + '_0.hwpx'))
+        fs = sorted(glob.glob(os.path.join(SRC, sd + '_[0-9].hwp')) + glob.glob(os.path.join(SRC, sd + '_[0-9].hwpx')))
         if not fs:
             idx[code] = {'n': sd, '없음': '별표를 못 찾음(조례에 「안전센터」 별표가 없거나 이름이 다름)'}
             continue
-        P = hwp_paras(fs[0]) if fs[0].endswith('.hwp') else hwpx_paras(fs[0])
-        P = [p.strip() for p in P]
+        P = []
+        for f in fs:   # 별표가 둘인 곳(전남광주 전남권역·광주권역)은 이어 읽는다
+            P += [p.strip() for p in (hwp_paras(f) if f.endswith('.hwp') else hwpx_paras(f))]
         names = SGN.get(code, {})
         starts = []
         for i, p in enumerate(P):
             q = norm(p)
-            if ('안전센터' in q or '지역대' in q) and not re.search(r'명칭|관할구역|위치|직급|비고|통할|운영한다', q) and len(q) <= 24:
+            if ('안전센터' in q or '지역대' in q or re.search(r'119센터$', q)) and not re.search(r'명칭|관할구역|위치|직급|비고|통할|운영한다', q) and len(q) <= 24:
                 starts.append(i)
         recs = []
         for k, s in enumerate(starts):
             q = norm(P[s])
             nm = q
-            if re.match(r'^(119)?(안전센터|지역대)$', q) and s > 0:
+            if re.match(r'^(119)?(안전센터|지역대|센터)$', q) and s > 0:
                 nm = norm(P[s - 1]) + q
             e = starts[k + 1] if k + 1 < len(starts) else len(P)
             body = P[s + 1:e]
@@ -165,6 +191,12 @@ def main():
             ctx = set(am[:1]) if am else set()
             text = norm(r['t'])
             text = re.sub(r'[^,]*?(?:로|길)\d+(?:-\d+)?(?:번길\d+(?:-\d+)?)?(?:\([^)]*\))?', '', text)   # 관할 글에 섞인 센터 주소(○○로 12(○○동))는 빼고 읽는다
+            # (2026-10-24) 대전 「∙동구 가양동…」 줄머리 점 · 제주 「제주시 중 이도1·이도2」(시 뒤 「중」 · 숫자로 끝나 「동」이 빠짐 · 「삼도2·용담1·용담2동」)
+            text = re.sub(r'(^|,)·+', r'\1', text)
+            if sd == '제주특별자치도':   # 「중구중앙동」 같은 이름을 다치지 않게 제주에만
+                text = re.sub(r'(시)중(?=[가-힣])', r'\1', text)
+            text = re.sub(r'([가-힣]+\d)(?=,|$|·[가-힣])', r'\1동', text)   # 「권선1·2동」(숫자 줄임)은 그대로 — expand 가 맡는다
+            text = re.sub(r'(\d동)·(?=[가-힣])', r'\1,', text)
             # 「상대·하대·상평동」「금곡·진성면」 → 상대동,하대동,상평동 (숫자 줄임 「조원1·2동」은 expand 가 맡는다)
             text = re.sub(r'((?:[가-힣]+·)+[가-힣]+?)(동|읍|면)', lambda m: ','.join(x if x.endswith(m.group(2)) else x + m.group(2) for x in m.group(1).split('·')[:-1] + [m.group(1).split('·')[-1]]), text)
             pos = 0

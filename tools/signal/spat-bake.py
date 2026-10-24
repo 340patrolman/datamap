@@ -1190,7 +1190,15 @@ def prune():
 def build():
     out = {}
     for f in sorted(glob.glob(os.path.join(RAW, 'red', '*.json'))):
-        r = json.load(open(f, encoding='utf-8'))
+        try:
+            r = json.load(open(f, encoding='utf-8'))
+        except Exception as e:   # (2026-10-25) PC 가 쓰는 도중 꺼지면 잘린 파일이 남는다(10-24 14:23:56 세 개) — 굽기 전체가 멈추지 않게 red_bad/ 로 옮기고 넘어간다
+            try:
+                os.makedirs(os.path.join(RAW, 'red_bad'), exist_ok=True); os.replace(f, os.path.join(RAW, 'red_bad', os.path.basename(f)))
+            except Exception:
+                pass
+            print('[굽기] 못 읽은 기록 옮김', os.path.basename(f), str(e)[:60], flush=True)
+            continue
         if not r.get('cyc'):
             continue
         out.setdefault(r['id'], []).append(r)

@@ -2359,13 +2359,23 @@
     if (st) say.push('가게 <b>' + st.now.toLocaleString() + '곳</b> — 최근 1년 문 연 곳 ' + st.op.toLocaleString() + ' · 닫은 곳 ' + st.cl.toLocaleString() + (st.op > st.cl * 1.1 ? ' <b>(느는 쪽)</b>' : st.cl > st.op * 1.1 ? ' <b>(주는 쪽)</b>' : ' (비슷)') + ' <small>(서울 상권분석 100업종)</small>');
     else if (ag) say.push('등록 상가 <b>' + (ag.all || 0).toLocaleString() + '곳</b> — 음식 ' + (ag.food || 0) + ' · 주점 ' + (ag.bar || 0) + ' <small>(소상공인시장진흥공단)</small>');
     if (top) say.push('사고가 가장 많은 교차로 — <b>' + esc(top.r[0]) + '</b> 10년 ' + top.t.toLocaleString() + '건 <small>(TAAS 2016~2025 · 교차로 70m 안 근사)</small>');
-    if (jc && jc.L.length) G.safe = '<div class="cap">🚦 이 동 안 사고 많은 교차로(10년 · 건 · TAAS · 교차로 70m 안 100m 칸 근사)</div>' + vzH(jc.L.slice(0, 6).map(function (o) { return [o.r[0], o.t, '#ea580c']; }), { unit: '건' }) + G.safe;
+    if (jc && jc.L.length) G.safe = '<div class="cap">🚦 이 동 안 사고 많은 교차로(10년 · 건 · TAAS · 교차로 70m 안 100m 칸 근사)</div>' + vzH(jc.L.slice(0, 6).map(function (o) { return [o.r[0], o.t, '#ea580c']; }), { unit: '건' }) + (jc.v.length ? '<p class="sdnt">교차로 사고 주 원인 ' + jc.v.slice(0, 3).map(function (x) { return '<b>' + esc(x[0]) + '</b> ' + x[1].toLocaleString(); }).join(' · ') + ' <small>(이 동 교차로 ' + jc.L.length + '곳 · 2016~2025 · 근사)</small></p>' : '') + G.safe;
     var tiles = [['👥', '사람', p ? p.tot.toLocaleString() + '명' : '—', lv ? '지금 ' + lv.n.toLocaleString() + '명 머묾' : p ? '70세 이상 ' + Math.round((p.age[7] + p.age[8] + p.age[9]) / p.tot * 100) + '%' : ''],
       ['🏪', '가게', st ? st.now.toLocaleString() + '곳' : ag ? (ag.all || 0).toLocaleString() + '곳' : '—', st ? '1년 개업 ' + st.op.toLocaleString() + ' · 폐업 ' + st.cl.toLocaleString() : ''],
       ['🚦', '사고 많은 곳', top ? esc(top.r[0]) : '—', top ? '10년 ' + top.t.toLocaleString() + '건' : jc ? '교차로 사고 자료 없음' : '받는 중…'],
       ['👮', '관할', jurName ? esc(jurName) : '—', dgPb(d)]];
-    var often = jc && jc.v.length ? '교차로 사고 주 원인 ' + jc.v.slice(0, 2).map(function (x) { return '<b>' + esc(x[0]) + '</b>'; }).join(' · ') + ' <small>(이 동 교차로 ' + jc.L.length + '곳 · 2016~2025 · 근사)</small>' : '';
+    var ev9 = dgEvt(d), often = ev9 ? ev9 : jc && jc.v.length ? '교차로 사고 주 원인 ' + jc.v.slice(0, 2).map(function (x) { return '<b>' + esc(x[0]) + '</b>'; }).join(' · ') + ' <small>(이 동 교차로 ' + jc.L.length + '곳 · 2016~2025 · 근사)</small>' : '';
     return { tag: wk ? dgTag(wk.r) : '', say: say, tiles: tiles, often: often }; }
+  /* v2.298.3 「🔁 둘레에서 잦은 일」 = 이 동 경계 안의 집회·공연·돌발 건수(data/onto-events.json — 온톨로지 코어 사건 객체와 같은 파일 · 범위 = 서초·강남·송파·동작·관악·용산 상자 · 기간이 갈래마다 다르다) · 범위 밖이면 null(사고 원인으로 물러섬) */
+  var DGEV = 'data/onto-events.json';
+  function dgEvt(d) { var J = JPD[DGEV]; if (!J) { if (!JPDP[DGEV]) jpGet(DGEV).then(dgRe(d)); return null; } if (!J.items || !J.box || !d.c) return null;
+    var a = P(J.box[2], J.box[1]), b = P(J.box[3], J.box[0]); if (d.c[0] < Math.min(a[0], b[0]) || d.c[0] > Math.max(a[0], b[0]) || d.c[1] < Math.min(a[1], b[1]) || d.c[1] > Math.max(a[1], b[1])) return null;
+    if (d._ev && d._ev.J === J) return d._ev.r; var C = { 집회: 0, 공연: 0, 돌발: 0 }, D = { 집회: [], 공연: [], 돌발: [] };
+    J.items.forEach(function (e) { if (C[e.kind] == null || e.lat == null) return; if (!e._p) e._p = P(e.lon, e.lat); if (!inPoly(d, e._p)) return; C[e.kind]++; if (e.d0) D[e.kind].push(e.d0.slice(0, 10)); });
+    var span = function (L) { if (!L.length) return ''; L.sort(); return L[0].slice(5).replace('-', '/') + '~' + L[L.length - 1].slice(5).replace('-', '/'); };
+    var r = ['집회', '공연', '돌발'].filter(function (k) { return C[k]; }).map(function (k) { return k + ' <b>' + C[k].toLocaleString() + '</b>' + (span(D[k]) ? ' <small>(' + span(D[k]) + ')</small>' : ''); }).join(' · ');
+    r = r ? r + ' <small>— 이 동 경계 안 · 집회 = 서울경찰청 주요 집회(신고) · 공연 = KOPIS 1,000석 이상 공연장 회차 · 돌발 = TOPIS 실시간 돌발을 10분마다 받은 것(10일)</small>' : '이 동 경계 안에는 받은 기간 동안 집회·공연·돌발 기록이 없다 <small>(주요 집회·1,000석 이상 공연·10일 돌발만)</small>';
+    d._ev = { J: J, r: r }; return r; }
   function dgPb(d) { if (!POL2) { polLoad(); return ''; } if (!d || !d.k) return ''; if (d._pb === undefined) d._pb = pbOfP(d.k, d.c); var q9 = d._pb != null ? POL2.pbox[d._pb] : null; return q9 ? esc(q9[0] + (q9[1] ? '파출소' : '지구대')) + ' <small>(근사)</small>' : ''; }
   function dgRiJur(r) { if (!r.p) return ''; var re = function () { var c = $('m2dCard'); if (c && c.classList.contains('on') && sel && sel.it && sel.it.r === r) show(sel.it); };
     if (!POL2) { polLoad().then(re); return ''; } var d = dongAtM(r.p); if (!d) { if (r.gu && !RLOAD[r.gu]) rLoadGu(r.gu).then(re); return ''; } if (!d.k) return ''; var st = polOf(d.k); return st && st.length ? st.map(function (q) { return q[1]; }).join(' · ') : ''; }

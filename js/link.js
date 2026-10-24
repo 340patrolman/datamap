@@ -8,7 +8,8 @@
    열기: 도구 모음 「🧩 엮임 보기」 · 주소 #lnk=1(&id=INT-번호 | &ll=위도,경도) · window.tgLink.open({id}|{lat,lon}) */
 (function () {
   'use strict';
-  var CORE = 'ontology-core/data/core-seocho.json', QJS = 'ontology-core/query.js?v=3', SCH = 'ontology-core/schema-ext.json';
+  var CORE = 'ontology-core/data/core-seocho.json', QJS = 'ontology-core/query.js?v=3', SCH = 'ontology-core/schema-ext.json', IDXF = 'ontology-core/data/core-six/index.json';
+  var GUN = { '11650': '서초구', '11680': '강남구', '11710': '송파구', '11590': '동작구', '11620': '관악구', '11170': '용산구' }, QS = {}, AREA = null, IDX = null, IDXL = null, IGU = {};   /* 여섯 구 — 서초는 전체 코어 · 다른 다섯은 core-six 를 구로 나눈 것(split-gu.py) */
   var Q = null, SC = null, LOAD = null, ST = { id: null, back: [], more: {}, q: '' };
   var LOGK = 'tg_map2d_lnk_log', PII = [/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/, /\d{6}[-\s]?[1-4]\d{6}/, /\d{2,3}\s?[가-힣]\s?\d{4}/];   /* 가설 현장 판정 — 이 기기에만 · 사람·차량 안 씀 */
   function logGet() { try { return JSON.parse(localStorage.getItem(LOGK) || '[]'); } catch (e) { return []; } }
@@ -53,13 +54,19 @@
   }
   function box() { var el = $('m2dLnk'); if (el) return el; el = document.createElement('div'); el.id = 'm2dLnk'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', '엮임 보기'); document.body.appendChild(el); el.addEventListener('click', onClick); el.addEventListener('input', onInput); return el; }
 
-  function load() {
-    if (LOAD) return LOAD;
+  function loadIdx() {
+    if (IDXL) return IDXL;
+    IDXL = fetch(IDXF).then(function (r) { return r.json(); }).then(function (j) { IDX = j; j.items.forEach(function (it) { IGU[it[0]] = it[4]; }); return j; }).catch(function (e) { IDXL = null; throw e; });
+    return IDXL;
+  }
+  function load(gu) {
+    gu = gu || '11650';
     function js() { return window.OntoCore ? Promise.resolve() : new Promise(function (ok, no) { var s = document.createElement('script'); s.src = QJS; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); }
-    LOAD = js().then(function () { return Promise.all([fetch(CORE).then(function (r) { return r.json(); }), fetch(SCH).then(function (r) { return r.json(); }).catch(function () { return null; })]); })
-      .then(function (a) { Q = new window.OntoCore(a[0]); SC = a[1]; return Q; })
-      .catch(function (e) { LOAD = null; throw e; });
-    return LOAD;
+    if (QS[gu] && QS[gu].then) return QS[gu].then(function (q) { if (AREA !== gu) NORM = null; Q = q; AREA = gu; return q; });
+    QS[gu] = js().then(function () { return Promise.all([fetch(gu === '11650' ? CORE : 'ontology-core/data/core-six/' + gu + '.json').then(function (r) { return r.json(); }), SC ? SC : fetch(SCH).then(function (r) { return r.json(); }).catch(function () { return null; })]); })
+      .then(function (a) { var q = new window.OntoCore(a[0]); SC = a[1]; return q; })
+      .catch(function (e) { QS[gu] = null; throw e; });
+    return QS[gu].then(function (q) { if (AREA !== gu) NORM = null; Q = q; AREA = gu; return q; });
   }
 
   /* ---------- 대상 한 줄 요약 = 「결과」 칸 ---------- */
@@ -145,10 +152,10 @@
   function liveLoad(force) {
     if (!force && LIVE && Date.now() - LIVEAT < 180000) return Promise.resolve(LIVE);
     function J(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
-    return Promise.all([J('data/live-acc-seoul.json'), J('data/live-ims-seoul.json'), J('data/live-spd-seocho.json')]).then(function (a) { LIVE = { acc: a[0], ims: a[1], spd: a[2] }; LIVEAT = Date.now(); return LIVE; });
+    return Promise.all([J('data/live-acc-seoul.json'), J('data/live-ims-seoul.json'), J('data/live-spd-six.json')]).then(function (a) { LIVE = { acc: a[0], ims: a[1], spd: a[2] }; LIVEAT = Date.now(); return LIVE; });
   }
   function normLoad() { if (NORM || NORMING) return; NORMING = true; paint();
-    fetch('data/spd-normal-seocho.json').then(function (r) { return r.json(); }).then(function (j) { NORM = j; NORMING = false; paint(); }, function () { NORMING = false; paint(); }); }
+    fetch(AREA && AREA !== '11650' ? 'data/spd-normal-six/' + AREA + '.json' : 'data/spd-normal-seocho.json').then(function (r) { return r.json(); }).then(function (j) { NORM = j; NORMING = false; paint(); }, function () { NORMING = false; paint(); }); }
   function dcls(d) { var w = d.getDay(); return w === 0 ? 3 : w === 6 ? 2 : w === 5 ? 1 : 0; }
   function ymd(x) { x = String(x || ''); var mm = /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(\d{1,2})시\s*(\d{1,2})분/.exec(x); if (mm) return (+mm[2]) + '/' + (+mm[3]) + ' ' + ('0' + mm[4]).slice(-2) + ':' + ('0' + mm[5]).slice(-2);
     return x.length >= 12 ? (+x.slice(4, 6)) + '/' + (+x.slice(6, 8)) + ' ' + x.slice(8, 10) + ':' + x.slice(10, 12) : x; }
@@ -224,7 +231,7 @@
   function head(o) {
     var t = TN[o.t] || o.t;
     return '<h3>🧩 ' + esc(nm(o)) + '</h3><p class="sub">' + esc(t) + ' · ' + esc(o.id) + ' — 이어진 것을 「연결 이유 · 근거 · 결과 · 가능성」으로 본다</p>' +
-      '<div class="bar">' + (ST.back.length ? '<button data-back="1">← ' + esc(nm(O(ST.back[ST.back.length - 1]))) + '</button>' : '') + (o.lat && o.lon ? '<button data-map="' + o.lat + ',' + o.lon + '">📍 지도에서</button>' : '') + '<button data-pick="1">🔎 다른 대상</button></div>';
+      '<div class="bar">' + (ST.back.length ? '<button data-back="1">← ' + esc(O(ST.back[ST.back.length - 1]) ? nm(O(ST.back[ST.back.length - 1])) : '앞 대상') + '</button>' : '') + (o.lat && o.lon ? '<button data-map="' + o.lat + ',' + o.lon + '">📍 지도에서</button>' : '') + '<button data-pick="1">🔎 다른 대상</button></div>';
   }
   function paint() {
     var el = box(); if (!Q) { el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">서초 온톨로지 코어를 받는 중…</div>'; return; }
@@ -242,25 +249,30 @@
         (g.items.length > lim ? '<button class="sb" data-more="' + esc(g.key) + '">' + (g.items.length - lim) + '개 더 보기</button>' : '') + '</details>'; });
     var LG = logGet(); if (LG.length) h += '<h4>📒 내가 매긴 가설 ' + LG.length + '건</h4><div class="note">이 기기에만 있다 · CSV 를 복사해 07_API키/out/onto_logs/in/ 에 넣으면 log-ingest 가 「현장 판단 후보」로 정리한다 — 형님이 맞다고 한 것만 규칙 장부에</div><ul class="lg2">' +
       LG.slice(-8).reverse().map(function (r) { return '<li>' + esc(r.d) + ' · ' + esc(r.nm) + ' — ' + esc(r.h) + ' → <b>' + esc(r.v) + '</b>' + (r.why ? ' · ' + esc(r.why) : '') + '</li>'; }).join('') + '</ul><div class="bar"><button data-lcsv="1">📋 CSV 복사</button><button data-lclr="1">지우기</button></div>';
-    h += '<div class="src">자료 = 서초 온톨로지 코어(' + esc(Q.core.made || '') + ' 구움 · 원자료 값 그대로) · 가능성 A 확실 · B 높음 · C 근사 · D 추정 · E 가설 · 판단은 사람이 한다 — 이 화면은 이어 보일 뿐</div>';
+    h += '<div class="src">자료 = ' + esc(GUN[AREA] || '') + ' 온톨로지 코어(' + esc(Q.core.made || '') + ' 구움' + (AREA !== '11650' ? ' · 여섯 구 코어를 구로 나눈 것' : '') + ' · 원자료 값 그대로) · 가능성 A 확실 · B 높음 · C 근사 · D 추정 · E 가설 · 판단은 사람이 한다 — 이 화면은 이어 보일 뿐</div>';
     el.innerHTML = h;
   }
   function pick() {
     var el = box(), q = ST.q.trim(), L = [];
-    if (Q) { var T = ['INT', 'DNG', 'STN', 'TRD', 'PBX', 'STA']; Q.core.objects.forEach(function (o) { if (T.indexOf(o.t) < 0) return; if (o.t === 'STA' && !Q.back(o.id, '관할').length) return; var n = String(nm(o)); if (!q || n.indexOf(q) >= 0) L.push(o); });
-      L.sort(function (a, b) { return T.indexOf(a.t) - T.indexOf(b.t) || (String(nm(a)) < String(nm(b)) ? -1 : 1); }); }
+    var T = ['INT', 'DNG', 'STN', 'TRD', 'PBX'];
+    if (IDX) { IDX.items.forEach(function (it) { var t = it[0].split('-')[0]; if (T.indexOf(t) < 0) return; if (!q || String(it[1]).indexOf(q) >= 0) L.push({ id: it[0], t: t, nm: it[1], gu: it[4] }); });
+      L.sort(function (a, b) { return (a.gu === AREA ? 0 : 1) - (b.gu === AREA ? 0 : 1) || T.indexOf(a.t) - T.indexOf(b.t) || (String(a.nm) < String(b.nm) ? -1 : 1); }); }
     var keep = $('m2dLnkQ') && document.activeElement === $('m2dLnkQ');
-    el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><p class="sub">대상 하나를 고르면 이어진 것과 그 까닭·근거·결과·가능성을 보여 준다 · 지금은 서초구(여섯 구는 다음)</p>' +
+    el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><p class="sub">대상 하나를 고르면 이어진 것과 그 까닭·근거·결과·가능성을 보여 준다 · 서초·강남·송파·동작·관악·용산 여섯 구</p>' +
       '<input id="m2dLnkQ" type="search" placeholder="교차로·동·역·상권·지구대 이름" value="' + esc(ST.q) + '" aria-label="대상 찾기">' +
-      (Q ? '<ul class="pick">' + L.slice(0, 40).map(function (o) { return '<li><button data-go="' + esc(o.id) + '">' + esc(nm(o)) + ' <small>' + esc(TN[o.t]) + (o.t === 'INT' ? ' · ' + esc(o.dongnm || '') : '') + '</small></button></li>'; }).join('') + '</ul>' + (L.length > 40 ? '<p class="note">' + (L.length - 40) + '개 더 — 이름을 더 적어 주세요</p>' : '') : '<div class="wait">받는 중…</div>');
+      (IDX ? '<ul class="pick">' + L.slice(0, 40).map(function (o) { return '<li><button data-go="' + esc(o.id) + '">' + esc(o.nm) + ' <small>' + esc(TN[o.t]) + ' · ' + esc(GUN[o.gu] || '') + '</small></button></li>'; }).join('') + '</ul>' + (L.length > 40 ? '<p class="note">' + (L.length - 40) + '개 더 — 이름을 더 적어 주세요</p>' : '') : '<div class="wait">받는 중…</div>');
     if (keep) { var i = $('m2dLnkQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
   }
   function onInput(e) { if (e.target.id === 'm2dLnkQ') { ST.q = e.target.value; ST.id = null; pick(); } }
-  function go(id, push) { if (push && ST.id && ST.id !== id) ST.back.push(ST.id); ST.id = id; ST.more = {}; paint(); var el = $('m2dLnk'); if (el) el.scrollTop = 0; }
+  function go(id, push) { if (push && ST.id && ST.id !== id) ST.back.push(ST.id); ST.more = {};
+    function done() { ST.id = id; paint(); var el = $('m2dLnk'); if (el) el.scrollTop = 0; }
+    var g = IGU[id]; if (Q && O(id) && (!g || g === AREA)) return done();   /* 이웃 구 교차로가 이 코어에 「이웃」으로만 들어 있으면 그 구 코어로 옮겨 펼친다 */
+    if (g && g !== AREA) { var el = box(); el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">' + esc(GUN[g] || g) + ' 코어를 받는 중…</div>'; load(g).then(done, function () { el.innerHTML = '<button class="lx" data-close="1">닫기</button><div class="wait">' + esc(GUN[g] || g) + ' 코어를 받지 못했습니다.</div>'; }); return; }
+    done(); }
   function onClick(e) { e.stopPropagation(); var b = e.target.closest('button,g.gn'), a; if (!b) return;
     if (b.hasAttribute('data-close')) return close();
     if ((a = b.getAttribute('data-go'))) return go(a, true);
-    if (b.hasAttribute('data-back')) { ST.id = ST.back.pop(); ST.more = {}; paint(); return; }
+    if (b.hasAttribute('data-back')) { go(ST.back.pop(), false); return; }
     if (b.hasAttribute('data-pick')) { if (ST.id) ST.back.push(ST.id); ST.id = null; ST.q = ''; pick(); return; }
     if (b.hasAttribute('data-norm')) { normLoad(); return; }
     if ((a = b.getAttribute('data-hv'))) { var v = b.getAttribute('data-v'), why = '';
@@ -278,18 +290,20 @@
 
   function nearInt(lat, lon) { var best = null, bd = 1e9; Q.core.objects.forEach(function (o) { if (o.t !== 'INT' || !o.lat) return; var d = m(lat, lon, +o.lat, +o.lon); if (d < bd) { bd = d; best = o; } }); return bd <= 600 ? best : null; }
   function open(opt) {
-    css(); var el = box(); el.classList.add('on'); ST.back = []; ST.more = {}; paint();
-    load().then(function () {
+    css(); var el = box(); el.classList.add('on'); ST.back = []; ST.more = {}; if (Q) paint(); else el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">온톨로지 코어를 받는 중…</div>';
+    loadIdx().then(function () {
       var id = null;
-      if (opt && opt.id && O(opt.id)) id = opt.id;
-      else if (opt && opt.dong) { var d = Q.core.objects.filter(function (o) { return o.t === 'DNG' && (o.code === String(opt.dong) || o.nm === opt.dong); })[0]; if (d) id = d.id; }
-      if (!id && opt && isFinite(+opt.lat) && isFinite(+opt.lon)) { var n = nearInt(+opt.lat, +opt.lon); if (n) id = n.id; }
+      if (opt && opt.id && IGU[opt.id]) id = opt.id;
+      else if (opt && opt.dong) { var d = IDX.items.filter(function (it) { return /^DNG-/.test(it[0]) && (it[0] === 'DNG-' + opt.dong || it[1] === opt.dong); })[0]; if (d) id = d[0]; }
+      if (!id && opt && isFinite(+opt.lat) && isFinite(+opt.lon)) { var bd = 1e9; IDX.items.forEach(function (it) { if (!/^INT-/.test(it[0]) || it[2] == null) return; var dd = m(+opt.lat, +opt.lon, it[2], it[3]); if (dd < bd) { bd = dd; id = dd <= 600 ? it[0] : id; } }); }
+      return load(id ? IGU[id] : (AREA || '11650')).then(function () { return id; });
+    }).then(function (id) {
       ST.id = id; if (id) paint(); else pick();
       liveLoad(true).then(function () { if (ST.id && $('m2dLnk') && $('m2dLnk').classList.contains('on')) { var sc = $('m2dLnk').scrollTop; paint(); $('m2dLnk').scrollTop = sc; } });
     }, function () { el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">온톨로지 코어를 받지 못했습니다 — 통신을 확인해 주세요.</div>'; });
   }
   function close() { var el = $('m2dLnk'); if (el) el.classList.remove('on'); }
-  window.tgLink = { open: open, close: close, _hyps: function (id) { return Q && O(id) ? hyps(O(id)) : null; }, _q: function () { return Q; } };
+  window.tgLink = { open: open, close: close, _hyps: function (id) { return Q && O(id) ? hyps(O(id)) : null; }, _q: function () { return Q; }, _area: function () { return AREA; }, _load: load };
   function fromHash() { var h = location.hash || ''; if (!/(^|[#&])lnk=1(?=&|$)/.test(h)) return; var im = /(^|[#&])id=([A-Z]+-[^&]+)(?=&|$)/.exec(h), lm = /(^|[#&])ll=(-?[\d.]+),(-?[\d.]+)(?=&|$)/.exec(h);
     open(im ? { id: decodeURIComponent(im[2]) } : lm ? { lat: +lm[2], lon: +lm[3] } : null);
     var rest = h.replace(/^#/, '').split('&').filter(function (x) { return x && !/^(lnk|id|ll)=/.test(x); }).join('&');

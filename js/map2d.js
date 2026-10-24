@@ -1447,7 +1447,7 @@
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
     if (sel && sel.it === it && !sel.w) sel.w = [(sel.x - cv.clientWidth / 2) / view.s + view.cx, (sel.y - cv.clientHeight / 2) / view.s + view.cy];
     NAVW = cardW(it);
-    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig|prd|gdr)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + (it && it.kind === 'prd' && PRD.set === 'v' ? '' : fbHtml()); card.classList.add('on');   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
+    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig|prd|gdr)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + (it && it.kind === 'prd' && PRD.set === 'v' ? '' : fbHtml()); card.classList.add('on'); var h3x = card.querySelector('h3'); if (h3x && !h3x.querySelector('.hx')) h3x.insertAdjacentHTML('beforeend', '<button class="hx" data-cardx aria-label="카드 닫기">✕</button>');   /* v2.295.0 소유자 「이수역 교차로라고 하면 우측에 닫기 버튼」 — 자리 사다리가 붙으면 위 「닫기」가 숨어(haslad) 제목 옆에 ✕ */   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
@@ -3081,6 +3081,23 @@
       if (has[d] === 1) s2 += '<line x1="' + (75 + c * 46).toFixed(1) + '" y1="' + (75 + n * 46).toFixed(1) + '" x2="' + (75 + c * 20).toFixed(1) + '" y2="' + (75 + n * 20).toFixed(1) + '" stroke="#16a34a" stroke-width="3" marker-end="url(#sdAr)"/>';
       s2 += '<text x="' + tx.toFixed(1) + '" y="' + (ty + (sec[d] != null ? -1 : 4)).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">' + SDN[d] + '</text>' + (sec[d] != null ? '<text x="' + tx.toFixed(1) + '" y="' + (ty + 11).toFixed(1) + '" text-anchor="middle" font-size="10" fill="#15803d">' + Math.round(sec[d]) + '초</text>' : ''); });
     return s2 + '<defs><marker id="sdAr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="#16a34a"/></marker></defs></svg>'; }
+  function sdPict(o, x, ped) {   /* v2.295.0 소유자 「동서남북 화살표를 현시 줄과 같이 — 교차로에 가서 이것만 보고 신호 체계를 알 수 있게」 — 현시 줄마다 작은 교차로 그림 · 길 = 신호(차·보행)가 있는 방위 · 초록 화살표 = 이 현시에 가는 이동류(방위 = 들어오는 쪽) · 파란 줄무늬 = 이 보행 신호로 건너는 건널목 */
+    var has = {}; o.mv.forEach(function (m) { has[m[0]] = 1; }); (o.ped || []).forEach(function (q) { has[q[0]] = 1; });
+    var C = 26, R9 = 24, U = function (d) { var a = SDA[d] * Math.PI / 180; return [Math.cos(a), Math.sin(a)]; }, f = function (v) { return v.toFixed(1); };
+    var s = '<svg class="sdpic" viewBox="0 0 52 52" aria-hidden="true"><rect x="19" y="19" width="14" height="14" rx="2" fill="var(--line)"/>';
+    Object.keys(has).forEach(function (d) { var u = U(d); s += '<line x1="' + f(C + u[0] * 6) + '" y1="' + f(C + u[1] * 6) + '" x2="' + f(C + u[0] * R9) + '" y2="' + f(C + u[1] * R9) + '" stroke="var(--line)" stroke-width="13"/>'; });
+    if (ped) { var legs = {}; (x.ds || []).forEach(function (d) { (d === 'nt' || d === 'st' ? ['et', 'wt'] : d === 'et' || d === 'wt' ? ['nt', 'st'] : []).forEach(function (l) { legs[l] = 1; }); });
+      Object.keys(legs).forEach(function (l) { if (!has[l]) return; var u = U(l), q = [-u[1], u[0]], cx = C + u[0] * 15, cy = C + u[1] * 15; s += '<line x1="' + f(cx + q[0] * 7.5) + '" y1="' + f(cy + q[1] * 7.5) + '" x2="' + f(cx - q[0] * 7.5) + '" y2="' + f(cy - q[1] * 7.5) + '" stroke="#0ea5e9" stroke-width="5" stroke-dasharray="1.8 1.4"/>'; });
+      return s + '</svg>'; }
+    var o4 = 3.4, E9 = R9 - 1;
+    [x.d].concat(x.pair ? [SDO[x.d]] : []).forEach(function (d) { var u = U(d), r = [u[1], -u[0]], sx = C + u[0] * R9 + r[0] * o4, sy = C + u[1] * R9 + r[1] * o4;
+      x.ms.forEach(function (m) { var ex, ey, qx = null, qy = null, w;
+        if (m === 'Lt') { var v = U(SDL[d]), rv = [-v[1], v[0]]; ex = C + v[0] * E9 + rv[0] * o4; ey = C + v[1] * E9 + rv[1] * o4; qx = C + r[0] * o4 + rv[0] * o4; qy = C + r[1] * o4 + rv[1] * o4; }
+        else if (m === 'Ut') { ex = C + u[0] * E9 - r[0] * o4; ey = C + u[1] * E9 - r[1] * o4; qx = C - u[0] * 2; qy = C - u[1] * 2; }
+        else { ex = C - u[0] * E9 + r[0] * o4; ey = C - u[1] * E9 + r[1] * o4; }
+        w = qx == null ? [ex - sx, ey - sy] : [ex - qx, ey - qy]; var L9 = Math.hypot(w[0], w[1]) || 1; w = [w[0] / L9, w[1] / L9]; var n = [-w[1], w[0]], col = m === 'Bs' ? '#2563eb' : '#16a34a', bx = ex - w[0] * 5, by = ey - w[1] * 5;
+        s += '<path d="M' + f(sx) + ' ' + f(sy) + (qx == null ? ' L' : ' Q' + f(qx) + ' ' + f(qy) + ' ') + f(bx) + ' ' + f(by) + '" fill="none" stroke="' + col + '" stroke-width="2.6" stroke-linecap="round"/><path d="M' + f(ex) + ' ' + f(ey) + 'L' + f(bx + n[0] * 3.2) + ' ' + f(by + n[1] * 3.2) + 'L' + f(bx - n[0] * 3.2) + ' ' + f(by - n[1] * 3.2) + 'z" fill="' + col + '"/>'; }); });
+    return s + '</svg>'; }
   // v2.105.0 「지금 몇 초」 — 소유자 「방향을 설정하면 몇 초 남았다 · 그 방향 신호가 실시간으로 어떻게 된다」
   //   T-Data 는 키마다 5분에 한 번이라 누를 때마다 새로 받지 못한다 → 수집 때 녹색이 켜진 실제 시각(닻 a · epoch 초)에서 주기(ci)로 이어 센다
   //   띄우는 조건(sdLive): 닻을 받은 지 12분 안 · 또는 40분 넘게 띄워 두 번 받은 닻이 ±3초로 맞물렸고(v) 2시간 안 — 그 밖에는 길이만 보이고 잔여초는 안 띄운다(틀린 초를 내지 않는다)
@@ -3303,7 +3320,7 @@
     G.forEach(function (x, i) { var a = x.o / cyc * 100, w = x.g / cyc * 100, yw = (x.y || 0) / cyc * 100, seg = '';
       var put = function (l, wd, c) { l = ((l % 100) + 100) % 100; if (l + wd > 100) { seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + (100 - l).toFixed(2) + '%"></i><i class="' + c + '" style="left:0;width:' + (l + wd - 100).toFixed(2) + '%"></i>'; } else seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + wd.toFixed(2) + '%"></i>'; };
       put(a, w, 'g'); if (yw) put(a + w, yw, 'y');
-      h += '<div class="rw"><b>' + num.charAt(i) + ' ' + esc(sdName(x)) + '</b><div class="ln"><span class="tl">' + seg + '<u></u></span><em>녹색 ' + Math.round(x.g) + '초</em></div></div>'; });
+      h += '<div class="rw sdph"><span class="pic">' + sdPict(o, x) + '<i>' + num.charAt(i) + '</i></span><div class="bd"><b>' + esc(sdName(x)) + '</b><div class="ln"><span class="tl">' + seg + '<u></u></span><em>녹색 ' + Math.round(x.g) + '초</em></div></div></div>'; });
     return h + '<div class="ax"><span>0</span><span>' + Math.round(cyc / 2) + '</span><span>' + Math.round(cyc) + '초</span></div></div></div>'; }
   function kscCardHtml(x) { var Pn = kscPlan(x), N = Pn ? Pn.N : kscNow(x), f = function (t) { return t.slice(0, 2) + ':' + t.slice(2); }, h = '';
     if (!Pn) return '<div class="dh">🚦 교통과 운영 계획</div>' + row('지금 도는 계획', '<em>이 요일 계획을 찾지 못했다</em>');
@@ -4934,11 +4951,11 @@
     G.forEach(function (x, i) { var a = x.o / cyc * 100, w = x.g / cyc * 100, yw = (x.y || 0) / cyc * 100, seg = '';
       var put = function (l, wd, c) { l = ((l % 100) + 100) % 100; if (l + wd > 100) { seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + (100 - l).toFixed(2) + '%"></i><i class="' + c + '" style="left:0;width:' + (l + wd - 100).toFixed(2) + '%"></i>'; } else seg += '<i class="' + c + '" style="left:' + l.toFixed(2) + '%;width:' + wd.toFixed(2) + '%"></i>'; };
       put(a, w, 'g'); if (yw) put(a + w, yw, 'y');
-      h += '<div class="rw"><b>' + num.charAt(i) + ' ' + esc(sdName(x)) + '</b><div class="ln"><span class="tl">' + seg + '<u></u></span><em>녹색 ' + Math.round(x.g) + '초</em></div></div>'; });
+      h += '<div class="rw sdph"><span class="pic">' + sdPict(o, x) + '<i>' + num.charAt(i) + '</i></span><div class="bd"><b>' + esc(sdName(x)) + '</b><div class="ln"><span class="tl">' + seg + '<u></u></span><em>녹색 ' + Math.round(x.g) + '초</em></div></div></div>'; });
     (function () { var PG = {}, ord = []; (o.pd || []).forEach(function (q) { if (q[1] == null || q[4] == null) return; var k9 = Math.round(q[1]) + '|' + Math.round(q[2] || 0) + '|' + Math.round(q[4]); if (!PG[k9]) { PG[k9] = { g: q[1], b: q[2] || 0, o: q[4], ds: [], t: q[6] }; ord.push(k9); } PG[k9].ds.push(q[0]); });
       ord.sort(function (a, b) { return PG[a].o - PG[b].o; }).forEach(function (k9) { var x = PG[k9], seg = '', put = function (l, wd, st9) { l = ((l % 100) + 100) % 100; var one = function (l2, w2) { seg += '<i style="left:' + l2.toFixed(2) + '%;width:' + w2.toFixed(2) + '%;' + st9 + '"></i>'; }; if (l + wd > 100) { one(l, 100 - l); one(0, l + wd - 100); } else one(l, wd); };
         put(x.o / cyc * 100, x.g / cyc * 100, 'background:#0ea5e9'); if (x.b) put((x.o + x.g) / cyc * 100, x.b / cyc * 100, 'background:repeating-linear-gradient(90deg,#0ea5e9 0 3px,#bae6fd 3px 6px)');
-        h += '<div class="rw"><b>🚶 ' + esc(pdAxis(x.ds)) + ' <small style="font-weight:500;color:var(--ink2)">' + (x.t === 3 ? '녹색+점멸 · 자리 어림' : x.t === 2 ? '녹색+점멸' : x.b ? '녹색 ' + Math.round(x.g) + ' + 점멸 ' + Math.round(x.b) + '초' : '녹색') + '</small></b><div class="ln"><span class="tl">' + seg + '<u></u></span><em style="color:#0369a1">보행 ' + Math.round(x.g + x.b) + '초</em></div></div>'; }); })();
+        h += '<div class="rw sdph"><span class="pic">' + sdPict(o, x, 1) + '<i>🚶</i></span><div class="bd"><b>' + esc(pdAxis(x.ds)) + ' <small style="font-weight:500;color:var(--ink2)">' + (x.t === 3 ? '녹색+점멸 · 자리 어림' : x.t === 2 ? '녹색+점멸' : x.b ? '녹색 ' + Math.round(x.g) + ' + 점멸 ' + Math.round(x.b) + '초' : '녹색') + '</small></b><div class="ln"><span class="tl">' + seg + '<u></u></span><em style="color:#0369a1">보행 ' + Math.round(x.g + x.b) + '초</em></div></div></div>'; }); })();
     if (o.pdn && o.pdn[2] && o.pdn[2].length) { var FC9 = ['#16a34a', '#0d9488', '#2563eb', '#7c3aed', '#c026d3', '#ea580c', '#ca8a04', '#64748b'], acc9 = 0, sg8 = '';
       o.pdn[2].forEach(function (v, i) { if (!(v > 0)) return; sg8 += '<i style="left:' + (acc9 / cyc * 100).toFixed(2) + '%;width:' + (v / cyc * 100).toFixed(2) + '%;background:' + FC9[i % 8] + ';border-right:1.5px solid var(--bg,#fff);color:#fff;font-style:normal;font-size:9.5px;font-weight:800;line-height:14px;text-align:center;overflow:hidden;white-space:nowrap">' + (i + 1) + '·' + v + '</i>'; acc9 += v; });
       h += '<div class="rw"><b>📋 계획 현시(초)</b><div class="ln"><span class="tl" style="background:transparent">' + sg8 + '<u></u></span><em>' + o.pdn[1] + '현시</em></div></div>'; }

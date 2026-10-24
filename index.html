@@ -200,6 +200,13 @@
   #m2dCard .sd .sdb { flex: 1; min-width: 0; }
   #m2dCard .sd .rw { margin: 5px 0; font-size: 12.5px; }
   #m2dCard .sd .rw b { display: block; font-weight: 700; word-break: keep-all; line-height: 1.3; }
+  #m2dCard .sd .sdph { display: flex; gap: 8px; align-items: center; }
+  #m2dCard .sd .sdph .pic { flex: 0 0 52px; width: 52px; height: 52px; position: relative; }
+  #m2dCard .sd .sdph .pic svg { width: 52px; height: 52px; display: block; }
+  #m2dCard .sd .sdph .pic i { position: absolute; left: -3px; top: -3px; font-style: normal; font-size: 13px; font-weight: 800; line-height: 16px; padding: 0 2px; border-radius: 8px; background: var(--card, #fff); color: var(--ink); }
+  #m2dCard .sd .sdph .bd { flex: 1 1 auto; min-width: 0; }
+  #m2dCard h3 .hx { float: right; height: 32px; min-width: 40px; margin: -4px 0 0 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-size: 16px; font-weight: 700; cursor: pointer; }
+  #m2dCard:not(.haslad) h3 .hx { display: none; }
   #m2dCard .sd .ln { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
   #m2dCard .sd .tl { flex: 1; min-width: 40px; height: 14px; border-radius: 3px; background: rgba(239, 68, 68, .45); position: relative; overflow: hidden; }
   #m2dCard .sd .tl i { position: absolute; top: 0; bottom: 0; }
@@ -1097,7 +1104,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.294.0"></script>
+<script src="js/map2d.js?v=2.295.0"></script>
 <script src="js/decide.js?v=5"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다

@@ -204,7 +204,9 @@
   }
 
   /* ---------- 🔁 막힘 고리 — 교차로 넷이 한 방향으로 서로의 출구를 막는 자리(소유자 지정) ---------- */
+  var LHIST = null;   /* 지난 막힘 실측(data/onto-loop-hist.json · tools/onto/loop-hist.py) */
   function loopsLoad() { if (LOOPS) return Promise.resolve(LOOPS);
+    fetch('data/onto-loop-hist.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (j) { LHIST = j; }).catch(function () { LHIST = { loops: {} }; });
     return fetch('data/onto-loops.json').then(function (r) { return r.json(); }).then(function (j) { LOOPS = j.loops || []; return LOOPS; }).catch(function () { LOOPS = []; return LOOPS; }); }
   function simLoad(a) { if (SIMD && SIMD.a === a) return Promise.resolve(SIMD.d);
     return fetch('data/sim-' + a + '.json').then(function (r) { return r.json(); }).then(function (d) { SIMD = { a: a, d: d }; return d; }).catch(function () { return null; }); }
@@ -232,10 +234,30 @@
       if (acts.length) h += '<details><summary>교통과가 이 넷에 해 온 조치 ' + acts.length + '건(교통과 출력물 · 근거기록)</summary><ul class="lg2">' + acts.slice(0, 30).map(function (a) { return '<li>' + esc(nm(O(a.int))) + ' — ' + esc(a.what) + '</li>'; }).join('') + '</ul></details>';
       var sd = SIMD && SIMD.a === L.sim ? SIMD.d : null;
       if (sd && sd.actions) h += '<details><summary>🧪 시뮬로 견줘 볼 수 있는 조치 ' + sd.actions.length + '가지</summary><ul class="lg2">' + sd.actions.map(function (a) { return '<li>' + esc(a.nm) + (a.src ? ' <small>— ' + esc(a.src) + '</small>' : '') + '</li>'; }).join('') + '</ul></details>';
-      h += actBox(L) + '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div></div>';
+      h += histBox(L) + actBox(L) + '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div></div>';
       return h; }).join('');
   }
 
+
+  /* 지난 막힘 실측 — 네 변 중 셋 이상이 문턱 이하로 이어진 토막 · 먼저 막힌 변 차례 · 저녁 기록이 빈 날은 「모름」 */
+  function histBox(L) {
+    var H = LHIST && LHIST.loops && LHIST.loops[L.id]; if (!H) return '';
+    var R = LHIST.rule || {}, ep = H.ep || [], gone = (H.days || []).filter(function (d) { return d.eve < 6; });
+    var h = '<details class="acts"' + (ep.length ? ' open' : '') + '><summary>📜 지난 고리 막힘 — 실측 ' + ep.length + '토막</summary>';
+    h += '<div class="note">쌓인 ITS 통행속도 ' + esc((LHIST.from || '').slice(5)) + ' ~ ' + esc((LHIST.to || '').slice(5)) + ' · 네 변 중 ' + (R.legs || 3) + '변 이상이 ' + (R.th || 10) + 'km/h 이하로 이어진 때(앱 문턱 · 어림 · 약 11분 간격이라 시각은 그만큼 어긋남)</div>';
+    if (ep.length) h += '<ul class="lg2">' + ep.slice().reverse().map(function (e) {
+      var fr = (e.first || []).map(function (k) { var lg = L.legs[k]; return lg ? esc(lg.nm.split(' — ')[0]) : '?'; });
+      return '<li><b>' + esc(e.d.slice(5).replace('-', '/')) + '(' + esc(e.w) + ') ' + esc(e.b) + '~' + esc(e.e) + '</b> <small>· 받은 때 ' + e.n + '번</small>' +
+        (fr.length ? '<br><small>먼저 막힌 차례: ' + fr.join(' → ') + '</small>' : '') +
+        '<br><small>가장 느릴 때 ' + (e.min || []).map(function (v) { return v == null ? '—' : Math.round(v); }).join(' · ') + ' km/h(위 네 변 차례)</small></li>'; }).join('') + '</ul>';
+    else h += '<div>쌓인 기간에는 문턱을 넘은 막힘이 없다</div>';
+    if (gone.length) h += '<div class="note">⚠ 저녁(15~22시) 기록이 비거나 거의 없는 날: ' + gone.map(function (d) { return esc(d.d.slice(5).replace('-', '/')) + '(' + esc(d.w) + ')'; }).join(' · ') + ' — 이 PC 가 꺼져 못 받은 날이라 막힘이 없었다는 뜻이 아니다</div>';
+    var fs = ep.map(function (e) { return (e.first || [])[0]; }).filter(function (x) { return x != null; }), cnt = {};
+    fs.forEach(function (k) { cnt[k] = (cnt[k] || 0) + 1; });
+    var top = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0];
+    if (top != null && L.legs[top]) h += '<div class="note">💡 가설(D): 막힘이 「' + esc(L.legs[top].nm.split(' — ')[0]) + '」 변에서 먼저 시작한 토막이 ' + cnt[top] + '/' + fs.length + ' — 그 변으로 들어오는 수요를 먼저 끊으면 고리로 번지는 것을 늦출 수 있다(토막 수가 적어 확인 전 · 현장 판단이 이긴다)</div>';
+    return h + '</details>';
+  }
   /* 조치 앞뒤 — 적을 때의 네 변 속도(전) ↔ 지금 받은 값(뒤 · 받은 때가 조치보다 15분 넘게 뒤일 때만) · 같은 요일·시각의 다른 날과 견준 것이 아니다 — 정밀한 앞뒤는 PC 의 쌓인 기록으로(tools/onto/act-effect.py) */
   function legsSnap(L) { var st = loopState(L); if (st.stale) return null; return { at: +LIVE.spd.at, v: st.legs.map(function (x) { return x.n ? x.n.v : null; }) }; }
   function actBox(L) {

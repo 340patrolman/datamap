@@ -19,7 +19,7 @@
   function actGet() { try { return JSON.parse(localStorage.getItem(ACTK) || '[]'); } catch (e) { return []; } }
   function actSet(a) { try { localStorage.setItem(ACTK, JSON.stringify(a)); return true; } catch (e) { return false; } }   /* 막힘 고리(data/onto-loops.json · 소유자가 짚은 교착 자리) · 시뮬 구역 자료(data/sim-<구역>.json — 조치 목록) */
   var LIVE = null, LIVEAT = 0, NORM = null, NORMING = false;   /* 실시간 세 장(돌발 둘 · 통행속도) — 3분마다 다시(sw 가 네트워크 먼저 · 주소에 시각을 안 붙여 보관함이 쌓이지 않게) · 평소 속도(4MB)는 누를 때만 */
-  var NAV = { INT: 1, DNG: 1, STN: 1, TRD: 1, PBX: 1, STA: 1, EVT: 1 };
+  var NAV = { INT: 1, DNG: 1, STN: 1, TRD: 1, PBX: 1, STA: 1, EVT: 1, ACC: 1, VIO: 1, LAW: 1, PREC: 1, ACT: 1 };   /* 사고 → 위반 → 법규 → 판례(T-Book) 까지 걸어갈 수 있게 */
   var TN = { INT: '교차로', DNG: '행정동', STN: '지하철역', TRD: '상권', PBX: '지구대·파출소', STA: '경찰서', EVT: '사건', ACC: '사고(10년)', ACL: '사고 칸', CAM: '단속 카메라', ATT: '시설', PLC: '250m 칸', APR: '들어오는 길', RD: '도로 구간', ACT: '교통과 조치', REC: '조치 기록', VIO: '위반 유형', LAW: '법규', PREC: '판례', RULE: '규칙', FK: '현장 판단' };
   var KEY = { 속함: '자리 — 교차로가 그 동 경계 안', 근처: '자리 + 때 — 둘레 반지름 안에서 그날 일어난 일', 흔적: '자리 + 때 — 그 해 침수 흔적 100m 안', 가까움: '자리 — 300m 안', 보유: '자리 — 100m 안', 들어감: '자리 — 교차로가 든 250m 칸', 지남: '자리 — 길이 지나는 250m 칸', 사고칸: '자리 — 길 가운데 50m 안 사고 칸', 품음: '자리 — 상권 경계 안', 가까운교차로: '자리 — 역에서 300m 안', 근처역: '자리 + 때 — 행사 자리에서 500m(큰 공연장 1km) 안 역', 가까운지구대: '자리 + 코드 — 관할서 지구대 중 가장 가까운 곳', 인접: '코드 — 신호망에서 이웃한 교차로', 관할: '코드 — 별표2 관할 × 행정동 + 현장 기준', 소속: '코드 — 소속 경찰서', 발생: '자리 — 교차로 70m 안 사고 칸 묶음', 주요원인: '코드 — 사고 칸의 주 위반', 근거: '코드 — 위반 → 법 조문', 해석: '코드 — 조문 → 판례', 들어오는길: '코드 — 표준노드링크 방향', 이룸: '코드 — ITS 링크 번호', 들어감동: '코드 — 원자료의 행정동 이름', 대상: '코드 — 교통과 조치의 교차로 번호', 근거기록: '코드 — 조치의 기록', 뒷받침: '코드 — 규칙을 받친 현장 판단' };
   var GR = { A: ['확실', '원자료 코드·번호가 같다', 5], B: ['높음', '자리·경계를 맞춰 이었다', 4], C: ['근사', '거리 반지름으로 어림해 이었다', 3], D: ['추정', '이은 것들을 겹쳐 본 짐작', 2], E: ['가설', '아직 확인하지 않은 생각', 1] };
@@ -32,7 +32,7 @@
   function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function ago(days) { var d = new Date(Date.now() - days * 864e5); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function O(id) { return Q && Q.O[id]; }
-  function nm(o) { if (!o) return '—'; return o.nm || o.title || o.what || o.text || o.no || o.id; }
+  function nm(o) { if (!o) return '—'; if (o.t === 'ACC' && Q) { var i0 = Q.back(o.id, '발생')[0]; return '사고 10년 — ' + (i0 ? (i0.o.nm || i0.o.id) : o.id); } return o.nm || o.title || o.what || o.text || o.no || o.id; }
   function won(v) { v = +v; if (!v) return '—'; return v >= 10000 ? (Math.round(v / 1000) / 10) + '억' : fmt(v) + '만'; }
 
   function css() {
@@ -47,7 +47,7 @@
       '#m2dLnk .lg{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-bottom:6px}#m2dLnk .lg i{display:inline-block;width:20px;border-top:3px solid #16a34a;vertical-align:middle;margin-right:4px}#m2dLnk .lg i.c{border-top:2px dashed #d97706}#m2dLnk .lg i.d{border-top:2px dotted #94a3b8}' +
       '#m2dLnk h4{margin:12px 0 4px;font-size:14px}#m2dLnk .note{font-size:11.5px;color:var(--ink2);margin:2px 0 6px}' +
       '#m2dLnk .now{border:1px solid #0ea5e9;border-radius:12px;padding:8px 10px;background:rgba(14,165,233,.07)}#m2dLnk .now li{margin:2px 0}#m2dLnk .now ul,#m2dLnk .hy ul{margin:2px 0;padding-left:18px}' +
-      '#m2dLnk details.acts{border-top:1px dashed var(--line);margin-top:6px;padding-top:4px}#m2dLnk details.acts>summary{cursor:pointer;font-weight:700;font-size:13px}#m2dLnk details.acts select{min-height:34px;border:1px solid var(--line);border-radius:10px;background:var(--chip);color:var(--ink);font-size:12.5px;max-width:100%}#m2dLnk .loop{border:1px solid #7c3aed;border-radius:12px;padding:8px 10px;background:rgba(124,58,237,.06)}#m2dLnk .loop>div{margin:3px 0}#m2dLnk .loop button.go{min-height:26px;border:1px solid var(--acc);color:var(--acc);background:none;border-radius:999px;padding:0 8px;font-size:11.5px;margin-left:4px}#m2dLnk .live{border:1px solid #dc2626;border-radius:12px;padding:8px 10px;background:rgba(220,38,38,.06)}#m2dLnk .live>div{margin:3px 0}#m2dLnk .live ul{margin:2px 0;padding-left:18px}#m2dLnk .live li{margin:2px 0}#m2dLnk .live .sb{min-height:28px;font-size:12px;margin-left:4px}#m2dLnk a.wi{display:inline-block;margin-top:6px;padding:6px 10px;border:1px solid #7c3aed;border-radius:999px;color:#7c3aed;font-size:12.5px;text-decoration:none}#m2dLnk .hv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}#m2dLnk .hv .sb{min-height:32px}#m2dLnk .hq{font-size:12px;color:var(--ink2)}#m2dLnk .hb{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip)}#m2dLnk .hb.ok{background:rgba(22,163,74,.15);color:#15803d}#m2dLnk .hb.no{background:rgba(220,38,38,.12);color:#b91c1c}#m2dLnk .lg2{margin:2px 0;padding-left:18px;font-size:12.5px}#m2dLnk .hy{border:1px dashed #d97706;border-radius:12px;padding:8px 10px;margin:6px 0;background:rgba(217,119,6,.06)}#m2dLnk .hy b.t{font-size:14px}' +
+      '#m2dLnk details.acts{border-top:1px dashed var(--line);margin-top:6px;padding-top:4px}#m2dLnk details.acts>summary{cursor:pointer;font-weight:700;font-size:13px}#m2dLnk details.acts select{min-height:34px;border:1px solid var(--line);border-radius:10px;background:var(--chip);color:var(--ink);font-size:12.5px;max-width:100%}#m2dLnk .loop{border:1px solid #7c3aed;border-radius:12px;padding:8px 10px;background:rgba(124,58,237,.06)}#m2dLnk .loop>div{margin:3px 0}#m2dLnk .loop button.go{min-height:26px;border:1px solid var(--acc);color:var(--acc);background:none;border-radius:999px;padding:0 8px;font-size:11.5px;margin-left:4px}#m2dLnk .live{border:1px solid #dc2626;border-radius:12px;padding:8px 10px;background:rgba(220,38,38,.06)}#m2dLnk .live>div{margin:3px 0}#m2dLnk .live ul{margin:2px 0;padding-left:18px}#m2dLnk .live li{margin:2px 0}#m2dLnk .live .sb{min-height:28px;font-size:12px;margin-left:4px}#m2dLnk a.tb{font-size:12px;color:#1d4ed8;white-space:nowrap}#m2dLnk a.wi{display:inline-block;margin-top:6px;padding:6px 10px;border:1px solid #7c3aed;border-radius:999px;color:#7c3aed;font-size:12.5px;text-decoration:none}#m2dLnk .hv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}#m2dLnk .hv .sb{min-height:32px}#m2dLnk .hq{font-size:12px;color:var(--ink2)}#m2dLnk .hb{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip)}#m2dLnk .hb.ok{background:rgba(22,163,74,.15);color:#15803d}#m2dLnk .hb.no{background:rgba(220,38,38,.12);color:#b91c1c}#m2dLnk .lg2{margin:2px 0;padding-left:18px;font-size:12.5px}#m2dLnk .hy{border:1px dashed #d97706;border-radius:12px;padding:8px 10px;margin:6px 0;background:rgba(217,119,6,.06)}#m2dLnk .hy b.t{font-size:14px}' +
       '#m2dLnk .k4{display:grid;grid-template-columns:62px minmax(0,1fr);gap:1px 8px;font-size:12.5px;margin-top:4px}#m2dLnk .k4 span{color:var(--ink2)}#m2dLnk .k4 div{min-width:0;overflow-wrap:anywhere}' +
       '#m2dLnk details.rel{border:1px solid var(--line);border-radius:12px;margin:6px 0;padding:0 10px}#m2dLnk details.rel>summary{cursor:pointer;padding:8px 0;font-weight:700;list-style:none}#m2dLnk details.rel>summary::-webkit-details-marker{display:none}#m2dLnk details.rel>summary small{font-weight:400;color:var(--ink2)}' +
       '#m2dLnk .lk{border-top:1px solid var(--line);padding:6px 0}#m2dLnk .lk .t{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}#m2dLnk .lk .t b{font-size:13.5px}#m2dLnk .lk button.go{margin-left:auto;min-height:30px;border:1px solid var(--acc);color:var(--acc);background:none;border-radius:999px;padding:0 10px;font-size:12px;cursor:pointer}' +
@@ -100,13 +100,16 @@
       default: return '';
     }
   }
+  /* T-Book 이 출발점(소유자 2026-10-25 「다 하나로 · 다 파생」) — 법령·범칙금·판례 정본은 T-Book: 위반·법규·판례에서 T-Book 그 화면으로 */
+  var TBK = 'https://340patrolman.github.io/traffic-app/#';
+  function tbLink(o) { var pg = o && (o.t === 'LAW' || o.t === 'VIO') ? 'laws' : o && o.t === 'PREC' ? 'precedent' : null; return pg ? ' <a class="tb" target="_blank" rel="noopener" href="' + TBK + pg + '">📘 T-Book ' + (pg === 'laws' ? '법령자료' : '판례') + ' ›</a>' : ''; }
   function asofOf(src) { var A = Q.core.asof || {}, k = Object.keys(A).filter(function (f) { return String(src || '').indexOf(f) >= 0; })[0]; return k ? A[k] : null; }
   function gdots(g) { var x = GR[g] || null, n = x ? x[2] : 0, c = g === 'C' ? ' c' : g === 'D' || g === 'E' ? ' d' : ''; var s = '<span class="gd' + c + '" aria-hidden="true">'; for (var i = 0; i < 5; i++) s += '<i class="' + (i < n ? 'f' : '') + '"></i>'; return s + '</span>'; }
   function poss(g) { var x = GR[g]; return x ? gdots(g) + '<b>' + g + ' ' + x[0] + '</b> — ' + x[1] : '— (등급 없음)'; }
   function why(rel, p) { var k = KEY[rel] || (SC && SC.linkTypes && SC.linkTypes[rel] ? SC.linkTypes[rel].name : rel); var d = p && p.d != null ? ' · ' + fmt(p.d) + 'm' : ''; return esc(k) + d; }
   function k4(rel, p, o, dir) {
     var src = p && p.src ? p.src : (SC && SC.linkTypes && SC.linkTypes[rel] ? (SC.linkTypes[rel].from || '') + '→' + (SC.linkTypes[rel].to || '') : ''), af = asofOf(src);
-    return '<div class="k4"><span>연결 이유</span><div>' + why(rel, p) + '</div><span>근거</span><div>' + esc(src || '—') + (af ? ' · <i>' + esc(af) + '</i>' : '') + '</div><span>결과</span><div>' + (summ(o) || '—') + '</div><span>가능성</span><div>' + poss(p && p.g) + '</div></div>';
+    return '<div class="k4"><span>연결 이유</span><div>' + why(rel, p) + '</div><span>근거</span><div>' + esc(src || '—') + (af ? ' · <i>' + esc(af) + '</i>' : '') + '</div><span>결과</span><div>' + (summ(o) || '—') + tbLink(o) + '</div><span>가능성</span><div>' + poss(p && p.g) + '</div></div>';
   }
 
   /* ---------- 관계 묶음 ---------- */
@@ -308,7 +311,7 @@
         (g.items.length > lim ? '<button class="sb" data-more="' + esc(g.key) + '">' + (g.items.length - lim) + '개 더 보기</button>' : '') + '</details>'; });
     var LG = logGet(); if (LG.length) h += '<h4>📒 내가 매긴 가설 ' + LG.length + '건</h4><div class="note">이 기기에만 있다 · CSV 를 복사해 07_API키/out/onto_logs/in/ 에 넣으면 log-ingest 가 「현장 판단 후보」로 정리한다 — 형님이 맞다고 한 것만 규칙 장부에</div><ul class="lg2">' +
       LG.slice(-8).reverse().map(function (r) { return '<li>' + esc(r.d) + ' · ' + esc(r.nm) + ' — ' + esc(r.h) + ' → <b>' + esc(r.v) + '</b>' + (r.why ? ' · ' + esc(r.why) : '') + '</li>'; }).join('') + '</ul><div class="bar"><button data-lcsv="1">📋 CSV 복사</button><button data-lclr="1">지우기</button></div>';
-    h += '<div class="src">자료 = ' + esc(GUN[AREA] || '') + ' 온톨로지 코어(' + esc(Q.core.made || '') + ' 구움' + (AREA !== '11650' ? ' · 여섯 구 코어를 구로 나눈 것' : '') + ' · 원자료 값 그대로) · 가능성 A 확실 · B 높음 · C 근사 · D 추정 · E 가설 · 판단은 사람이 한다 — 이 화면은 이어 보일 뿐</div>';
+    h += '<div class="src">자료 = ' + esc(GUN[AREA] || '') + ' 온톨로지 코어(' + esc(Q.core.made || '') + ' 구움' + (AREA !== '11650' ? ' · 여섯 구 코어를 구로 나눈 것' : '') + ' · 원자료 값 그대로) · 가능성 A 확실 · B 높음 · C 근사 · D 추정 · E 가설 · 판단은 사람이 한다 — 이 화면은 이어 보일 뿐 · 법령·범칙금·판례 정본 = T-Book(출발점) · 게임 「만약에」·현장 기록·규칙 장부와 이어져 있다</div>';
     el.innerHTML = h;
   }
   function pick() {
@@ -366,7 +369,7 @@
       if (opt && opt.id && IGU[opt.id]) id = opt.id;
       else if (opt && opt.dong) { var d = IDX.items.filter(function (it) { return /^DNG-/.test(it[0]) && (it[0] === 'DNG-' + opt.dong || it[1] === opt.dong); })[0]; if (d) id = d[0]; }
       if (!id && opt && isFinite(+opt.lat) && isFinite(+opt.lon)) { var bd = 1e9; IDX.items.forEach(function (it) { if (!/^INT-/.test(it[0]) || it[2] == null) return; var dd = m(+opt.lat, +opt.lon, it[2], it[3]); if (dd < bd) { bd = dd; id = dd <= 600 ? it[0] : id; } }); }
-      return load(id ? IGU[id] : (AREA || '11650')).then(function () { return id; });
+      return load(id ? IGU[id] : (AREA || '11650')).then(function () { if (!id && opt && opt.id && O(opt.id)) id = opt.id; return id; });   /* 사고·위반·법규처럼 고르기 목록에 없는 대상도 그 코어에 있으면 연다 */
     }).then(function (id) {
       ST.id = id; if (id) paint(); else pick();
       loopsLoad().then(function (Ls) { var a = (Ls[0] || {}).sim; return a ? simLoad(a) : null; }).then(function () { if (ST.id && $('m2dLnk') && $('m2dLnk').classList.contains('on')) { var sc = $('m2dLnk').scrollTop; paint(); $('m2dLnk').scrollTop = sc; } });

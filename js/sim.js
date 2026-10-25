@@ -46,6 +46,7 @@
       if (!best.full) { var have = {}, W = best.win.slice(); best.win.forEach(function (r) { have[r[0]] = 1; });
         p.recs.forEach(function (r) { r.win.forEach(function (w) { if (have[w[0]]) return; var dn = null, dv = 1e9; p.recs.forEach(function (q) { if (!q.win.some(function (x) { return x[0] === w[0]; })) return; var dd = (q.cyc === best.cyc ? 0 : 1e5) + Math.abs(q.t - best.t); if (dd < dv) { dv = dd; dn = q; } });
           var x = dn.win.filter(function (z) { return z[0] === w[0]; })[0], k = best.cyc / dn.cyc; W.push([x[0], Math.round(x[1] * k), x[2], Math.round(x[3] * k) % best.cyc, 'fill']); have[w[0]] = 1; }); });
+        if (M.auto) gapFill(n, W, best.cyc);
         best.win = W.sort(function (a9, b9) { return a9[3] - b9[3]; }); best.full = 1; }
       return { c: best.cyc, off: best.off || 0, win: best.win, src: p.src, day: best.day, ph: winToPhases(best.win, best.cyc) };
     }
@@ -56,6 +57,19 @@
     // 시차제(현시도 tw — 그 요일 계획·시간대에는 그 이동류 녹색만 짧게 · 녹색 시작은 그대로) · 4034 평일 16~20시 서→동 직진 23초(형님 「삼호가든 방향 차가 너무 많아 직진 시간을 줄였다」 = 게임 ms.stMaryMetering)
     if (!noTw && p.tw) p.tw.forEach(function (x) { if (x.tod.indexOf(String(TODK[dow])) < 0 || t < hm(x.from) || t >= hm(x.to)) return; var k = x.dir + '.' + x.mv; W = W.map(function (r) { return r[0] === k ? [r[0], x.g, x.y, r[3], 'tw'] : r; }); });
     return { c: pa.c, off: pa.off, win: W, pat: pt, src: p.src, ph: p.ph.map(function (mv, i) { return { d: pa.a[i], y: p.Y[i], ar: p.AR[i], mv: mv }; }) };
+  }
+  /* 빈 시간 채움(자동 구역만 · 2026-10-25) — T-Data 기록이 큰길 직진만 읽고 옆길 방향을 하나도 못 읽은 교차로는 그 옆길이 시뮬에서 늘 적색이 된다(서초3동우체국 서쪽 · 이수역(연등) 등).
+     주기 안에서 읽힌 녹색(+황색 · 전적색 1초)이 하나도 없는 가장 긴 빈 시간을 그 옆길의 녹색으로 준다(직진·좌회전 · 황색 4초 · 설계값 — 실제 신호는 보행 현시가 끼어 더 짧을 수 있다) · 서로 직각인 두 갈래가 비면 반씩 나눈다 · 표시 'gap' */
+  function gapFill(n, W, C) {
+    var cov = {}; W.forEach(function (r) { cov[String(r[0]).split('.')[0]] = 1; });
+    var miss = Object.keys(n.legs).filter(function (lg) { return n.legs[lg].in && !cov[lg]; }); if (!miss.length) return;
+    var iv = []; W.forEach(function (r) { var a = ((r[3] % C) + C) % C, b = a + r[1] + (r[2] || 4) + 1; if (b > C) { iv.push([a, C]); iv.push([0, b - C]); } else iv.push([a, b]); });
+    iv.sort(function (x, y) { return x[0] - y[0]; }); var mg = []; iv.forEach(function (x) { var l = mg[mg.length - 1]; if (l && x[0] <= l[1]) l[1] = Math.max(l[1], x[1]); else mg.push([x[0], x[1]]); });
+    if (!mg.length) return; var bs = 0, bl = 0; for (var i = 0; i < mg.length; i++) { var e = mg[i][1], nx = i + 1 < mg.length ? mg[i + 1][0] : mg[0][0] + C, L = nx - e; if (L > bl) { bl = L; bs = e; } }
+    var g = bl - 5; if (g < 5) return;
+    var ax = { ns: miss.filter(function (lg) { return lg === 'nt' || lg === 'st'; }), ew: miss.filter(function (lg) { return lg === 'et' || lg === 'wt'; }) }, grp = [ax.ns, ax.ew].filter(function (x) { return x.length; });
+    var gl = grp.length > 1 ? Math.floor((bl - 10) / 2) : g, st = bs;
+    grp.forEach(function (G) { if (gl >= 5) G.forEach(function (lg) { ['St', 'Lt'].forEach(function (tu) { W.push([lg + '.' + tu, gl, 4, Math.round(st) % C, 'gap']); }); }); st += gl + 5; });
   }
   function allWin(p) { return p.recs ? [].concat.apply([], p.recs.map(function (r) { return r.win; })) : p.win || [].concat.apply([], Object.keys(p.dir).map(function (k) { return p.dir[k]; })); }
 

@@ -66,9 +66,9 @@
       }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); });
     };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=8'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=9'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
-  function defState() { return { day: 'mt', win: 'pm', k: 100, shut: {}, edit: {}, sel: Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig'; })[0] }; }
+  function defState() { var d = new Date(), h = d.getHours(); return { day: ['su', 'mt', 'mt', 'mt', 'mt', 'fr', 'sa'][d.getDay()], win: h >= 7 && h < 11 ? 'am' : h >= 11 && h < 16 ? 'md' : 'pm', k: 100, shut: {}, edit: {}, sel: Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig'; })[0] }; }
   function wOf() { return WINS.filter(function (w) { return w[0] === ST.win; })[0]; }
   function dOf() { return DAYS.filter(function (d) { return d[0] === ST.day; })[0]; }
   function scen(withAct) {
@@ -79,8 +79,8 @@
   /* 신호를 바꾼 교차로는 두 판 모두 그 시간대 가운데 계획 하나로 고정한다(현행 = 고친 것 없이 · 바꾼 안 = 고친 것) — 시간대 안 계획 바뀜이 차이에 섞이지 않게 */
   function alt(edited) { var o = null; Object.keys(ST.edit).forEach(function (id) { var d = ST.edit[id], P = basePlan(id); if (!d.some(function (x) { return x; })) return; o = o || {}; o[id] = { off: P.off, ph: P.ph.map(function (p, i) { return { d: Math.max(5, p.d + (edited ? d[i] || 0 : 0)), y: p.y, ar: p.ar, mv: p.mv }; }) }; }); return o; }
   /* 신호 기록에 녹색이 한 번도 없는 접근로 — T-Data 가 그 방향을 못 읽은 기록이면 그 길은 시뮬에서 늘 적색이라 줄이 길게 나온다(실제와 다름) · 화면에 밝힌다 */
-  function noGreen() { var L = []; Object.keys(M.nodes).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; var P = basePlan(id), G = {}; (P.win || []).forEach(function (w) { G[String(w[0]).split('.')[0]] = 1; });
-    Object.keys(n.legs).forEach(function (lg) { if (n.legs[lg].in && !G[lg]) L.push(n.nm + ' ' + (LEGK[lg] || lg) + '쪽에서'); }); }); return L; }
+  function noGreen(gap) { var L = []; Object.keys(M.nodes).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; var P = basePlan(id), G = {}, F = {}; (P.win || []).forEach(function (w) { var lg = String(w[0]).split('.')[0]; if (w[4] === 'gap') F[lg] = 1; else G[lg] = 1; });
+    Object.keys(n.legs).forEach(function (lg) { if (n.legs[lg].in && !G[lg] && (gap ? F[lg] : !F[lg])) L.push(n.nm + ' ' + (LEGK[lg] || lg) + '쪽에서'); }); }); return L; }
   function changed() { return Object.keys(ST.shut).length > 0 || !!alt(1); }
   // ---- 구역 그림(두 판 같은 꼴) — 길 색 = 점유(대수 ÷ 길이×차로÷간격) ----
   var GEO = null;
@@ -128,7 +128,8 @@
       '<tr><td>한꺼번에 막힌 접근로(가장 많을 때)</td><td>' + a.jamMax + '</td><td>' + b.jamMax + '</td></tr>' +
       '<tr><td>꼬리물기(교차로 안에 선 차)</td><td>' + a.box + '</td><td>' + b.box + '</td></tr></table>' +
       '<div class="sg">접근로별 가장 긴 줄(m)</div><table><tr><th>접근로</th><th>현행</th><th>바꾼 안</th></tr>' + ks.map(function (k) { return '<tr><td>' + esc(apNm(k)) + '</td><td>' + (a.maxQm[k] || 0) + '</td><td>' + (b.maxQm[k] || 0) + dv(a.maxQm[k] || 0, b.maxQm[k] || 0) + '</td></tr>'; }).join('') + '</table>' +
-      (function () { var g = noGreen(); return g.length ? '<div class="warn">⚠ 신호 기록에 녹색이 없는 접근로 — ' + esc(g.join(' · ')) + ' · 서울시 T-Data 가 그 방향을 못 읽은 기록이라 시뮬에서는 늘 적색(우회전만 빠짐) → 그 줄은 실제보다 길게 나온다</div>' : ''; })() +
+      (function () { var g = noGreen(), f = noGreen(1); return (f.length ? '<div class="warn">✎ 신호 기록에 녹색이 없어 <b>빈 시간으로 채운</b> 접근로 — ' + esc(f.join(' · ')) + ' · 서울시 T-Data 가 그 방향을 못 읽어, 주기 안에서 읽힌 녹색이 없는 가장 긴 시간을 그 길 녹색으로 줌(설계값 — 실제는 보행 현시 등으로 더 짧을 수 있다)</div>' : '') +
+        (g.length ? '<div class="warn">⚠ 신호 기록에 녹색이 없는 접근로 — ' + esc(g.join(' · ')) + ' · 시뮬에서는 늘 적색(우회전만 빠짐) → 그 줄은 실제보다 길게 나온다</div>' : ''); })() +
       '<div class="sn">같은 날·같은 수요·같은 차(같은 씨앗)라 두 판의 차이는 바꾼 것에서만 온다 · 줄 길이 = 기다리는 차 × 차 간격 ÷ 차로 · 개념 시연(예측 아님)</div>';
   }
   function paintCtl() {
@@ -153,15 +154,30 @@
     (M.log || []).slice(0, 12).forEach(function (x) { L.push('<li>' + esc(typeof x === 'string' ? x : JSON.stringify(x)) + '</li>'); });
     return '<details><summary>값의 출처 · 한계</summary><ul style="margin:4px 0;padding-left:18px;font-size:11.5px;line-height:1.5">' + L.join('') + '</ul></details>';
   }
+  // ---- 📡 지금 실측(ITS) — data/live-spd-six.json(이 PC 가 약 11분마다 받아 올림 · 20분 넘으면 판정 안 함) · 평소 = 그 링크의 평소 속도(nsp · 요일 갈래-시) ----
+  var LIVE = null;
+  function liveGet() { fetch('data/live-spd-six.json?t=' + Math.floor(Date.now() / 300000)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { LIVE = j; paintLive(); }).catch(function () {}); }
+  function paintLive() {
+    var el = $('simALive'); if (!el) return; if (!LIVE || !LIVE.m) { el.innerHTML = ''; return; }
+    var age = (Date.now() / 1000 - LIVE.at) / 60, now = new Date(), dk = [3, 0, 0, 0, 0, 1, 2][now.getDay()], hk = dk + '-' + now.getHours(), t9 = now.getHours() * 3600 + now.getMinutes() * 60;
+    var sm = null, today = A && [3, 0, 0, 0, 0, 1, 2][window.tgSim.dowOf(dOf()[2])] === dk; if (A && today) A.samp.forEach(function (x) { if (Math.abs(x.t - t9) < 60) sm = x; });
+    var hit = 0, nn = 0, cells = Object.keys(M.links).filter(function (k) { var l = M.links[k]; return l.its && !l.sink && LIVE.m[l.its] != null; }).map(function (k) {
+      var l = M.links[k], v = LIVE.m[l.its], nv = l.nsp && l.nsp[hk], mk = '';
+      if (sm && age <= 20) { var sj = (sm.occ[k] || 0) >= 0.8 * A.L[k].cap, rj = v <= 6; nn++; if (sj === rj) hit++; mk = sj === rj ? ' ✓' : ' ✗'; }
+      return '<span style="white-space:nowrap">' + esc((l.nm || k).replace(' — 들어옴', '')) + ' <b style="color:' + (v <= 6 ? '#dc2626' : v <= 12 ? '#ca8a04' : '#16a34a') + '">' + v + '</b>' + (nv != null ? '<small>(평소 ' + nv + ')</small>' : '') + mk + '</span>'; });
+    if (!cells.length) { el.innerHTML = ''; return; }
+    var at = new Date(LIVE.at * 1000), cmp = !A ? '' : age > 20 ? '' : !today ? '<br><small>오늘 요일을 고르면 시뮬 현행 판과 지금 시각으로 맞대 본다</small>' : sm ? '<br>지금 시각(' + hh(t9) + ') 시뮬 현행 판과 맞대 봄 — <b>' + hit + '/' + nn + '</b> 맞음(막힘 = 실측 6km/h 이하 · 시뮬 80% 넘게 참 · ✓ 맞음 ✗ 틀림)' : '<br><small>시뮬 시계가 지금 시각(' + hh(t9) + ')을 지나면 맞대 본다 — 지금 시각이 든 시간대를 고를 것</small>';
+    el.innerHTML = '<div class="sn" style="color:inherit;background:rgba(14,165,233,.08);border-radius:10px;padding:6px 8px">📡 <b>지금 실측</b>(ITS 통행속도 km/h · ' + hh(at.getHours() * 3600 + at.getMinutes() * 60) + (age > 20 ? ' · <b style="color:#dc2626">' + Math.round(age) + '분 지남 — 판정 안 함</b>' : '') + '): ' + cells.join(' · ') + cmp + '</div>';
+  }
   // ---- 돌리기 ----
   function start() { stop(); A = window.tgSim.create(M, scen(false), alt(0)); B = window.tgSim.create(M, scen(true), alt(1)); A.runTo(A.from - 1); B.runTo(B.from - 1); paintRun(); paintRes(); RUN = 1; LAST = 0; requestAnimationFrame(tick); }
   function stop() { RUN = 0; }
   function tick(ts) {
     if (!RUN || !A) return; if (!LAST) LAST = ts; var dt = Math.min(0.25, (ts - LAST) / 1000); LAST = ts;
     var n = Math.min(1200, Math.round(dt * SPD)); for (var i = 0; i < n && A.t < A.end; i++) { A.step(); B.step(); }
-    paintRun(); if (A.t >= A.end) { RUN = 0; paintRes(); return; } requestAnimationFrame(tick);
+    paintRun(); if (A.t % 600 < n + 1) paintLive(); if (A.t >= A.end) { RUN = 0; paintRes(); paintLive(); return; } requestAnimationFrame(tick);
   }
-  function toEnd() { if (!A) start(); stop(); A.runTo(A.end); B.runTo(B.end); paintRun(); paintRes(); }
+  function toEnd() { if (!A) start(); stop(); A.runTo(A.end); B.runTo(B.end); paintRun(); paintRes(); paintLive(); }
   function reset() { stop(); A = B = null; $('simARun').innerHTML = '<div class="sn">고른 뒤 ▶ 시연 또는 ⏩ 끝까지</div>'; paintRes(); paintCtl(); }
   function onClick(e) {
     var t = e.target.closest('[data-sa],[data-simx]'); if (!t) return;
@@ -182,9 +198,9 @@
       var nm = Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig' && !/\(연등\)/.test(M.nodes[k].nm || ''); }).map(function (k) { return M.nodes[k].nm; });
       PANEL.innerHTML = '<h3>🧪 시뮬 — ' + esc(AR.nm) + '<button data-simx="1" aria-label="닫기">✕ 닫기</button></h3>' +
         '<div class="sn">신호 교차로 ' + nm.length + '곳(' + esc(nm.join(' · ')) + ')과 그 사이 길 · 자동으로 엮은 구역 · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
-        '<div class="warn">평소 속도(ITS 실측 · 평일 16~21시)와 맞대 본 맞음 <b>' + AR.mh + '/' + AR.mn + '</b>칸 · 실제로 막히는 칸 가운데 시뮬도 막힌 것 <b>' + AR.jh + '/' + AR.jn + '</b>' + (AR.jn && AR.jh / AR.jn < 0.5 ? ' — <b>막힘을 잘 못 낸다</b>(실제보다 덜 막히게 나온다)' : '') + ' · 반포 블록(손으로 짠 구역)보다 거칠다 · 신호 없는 교차로는 그냥 지나가고 회전 금지는 아직 안 넣었다 · 🏁 현장 결과가 이김(현장에서 본 것과 다르면 시뮬이 틀린 것)</div>' +
-        '<div id="simARun"></div><div id="simARes"></div><div id="simACtl"></div>' + srcList();
-      PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; paintCtl(); start();
+        '<div class="warn">평소 속도(ITS 실측 · 평일 16~21시)와 맞대 본 맞음 <b>' + AR.mh + '/' + AR.mn + '</b>칸 · 실제로 막히는 칸 가운데 시뮬도 막힌 것 <b>' + AR.jh + '/' + AR.jn + '</b>' + (AR.jn && AR.jh / AR.jn < 0.5 ? ' — <b>막힘을 잘 못 낸다</b>(실제보다 덜 막히게 나온다)' : '') + ' · 반포 블록(손으로 짠 구역)보다 거칠다 · 신호 없는 교차로는 그냥 지나가고 회전 금지는 아직 안 넣었다 · 구역 밖에서 밀려 들어오는 막힘은 못 낸다(나가는 길은 늘 비어 있다고 봄) · 🏁 현장 결과가 이김(현장에서 본 것과 다르면 시뮬이 틀린 것)</div>' +
+        '<div id="simALive"></div><div id="simARun"></div><div id="simARes"></div><div id="simACtl"></div>' + srcList();
+      PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; paintCtl(); start(); liveGet();
     });
   }
   function close() { stop(); if (PANEL) PANEL.classList.remove('on'); }

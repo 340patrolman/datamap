@@ -37,7 +37,7 @@
      현시도(tod·pat·dir) · T-Data 기록(recs — 요일 갈래·시각마다 한 기록 · 맞는 갈래가 없으면 가장 가까운 시각) · 재편안(alt — 현시 목록) */
   function planAt(M, id, t, dow, alt, noTw) {
     var n = M.nodes[id], P = alt && alt[id];
-    if (P) { var w0 = phasesToWin(P.ph); return { c: w0.c, off: P.off || 0, win: w0.win, src: '재편안', ph: P.ph }; }
+    if (P && (P.t0 == null || (t >= P.t0 && t < P.t1))) { var w0 = phasesToWin(P.ph); return { c: w0.c, off: P.off || 0, win: w0.win, src: '재편안', ph: P.ph }; }
     var p = n.plan;
     if (p.recs) {
       var best = null, bs = 1e9;
@@ -154,6 +154,7 @@
     function makeV(k, e, t, att) {
       var p, a = att && S.A[att].a;
       if (k === 'bg') p = wander(e, R);
+      else if (k === 'fo') p = wander(e, RO);
       else if (k === 'ai') {   // 가장 가까운 문(이동류가 가장 적은 길)으로
         var best = null; a.doors.forEach(function (d) { d.ins.forEach(function (L) { var q = cached(e, L); if (q && (!best || q.length < best.length)) best = q; }); });
         p = best ? best.concat(['att:' + att]) : wander(e, R);
@@ -192,7 +193,7 @@
       Object.keys(S.A).forEach(function (id) { var X = S.A[id], n9 = X.ex[t]; if (!n9) return; delete X.ex[t]; for (var q = 0; q < n9; q++) { if (X.occ != null) X.occ--; var vo = makeV('ao', null, t, id); vo.door.q9.push(vo); } });   // 머문 시간이 다 된 차가 나가는 줄로
       Object.keys(S.A).forEach(function (id) {   // 머무는 곳(공원 등): 나가는 때가 되면 들어온 차만큼 내보냄
         var X = S.A[id], a = X.a, h = t / 3600; if (a.mode !== 'hold' || !X.held || a.off || h < a.outT0 || h >= a.outT1 + 1) return;
-        X.acc += a.outRate / 3600; while (X.acc >= 1 && X.held > 0) { X.acc--; X.held--; var v = makeV('bg', a.outLink, t); (S.back[a.outLink] = S.back[a.outLink] || []).push(v); }
+        X.acc += a.outRate / 3600; while (X.acc >= 1 && X.held > 0) { X.acc--; X.held--; var v = makeV('fo', a.outLink, t); (S.back[a.outLink] = S.back[a.outLink] || []).push(v); }
       });
       Object.keys(S.back).forEach(function (e) { var B = S.back[e]; while (B.length && room(e)) enter(B.shift(), e, t); });
       // 2 신호 교차로 — 녹색 이동류에서 빠짐
@@ -213,6 +214,7 @@
         if (!on || !q.length) { m.acc = 0; return; }
         m.gs++; m.acc = Math.min(m.acc + rate, Math.max(1, rate * 2));
         while (m.acc >= 1 && q.length && q[0].rd <= t) {
+          if (m.att9 && m.att9.occ != null && m.att9.occ >= m.att9.a.capacity) break;
           var v = q[0];
           if (!room(m.to)) {
             if (m.kind === 'rt') S.rtBlk[m.fr] = t;
@@ -227,18 +229,19 @@
       if (t % 60 === 0 && t >= FROM) S.samp.push(sample());
       S.t++;
     };
+    function waiting(q) { var lo = 0, hi = q.length; while (lo < hi) { var md = (lo + hi) >> 1; if (q[md].rd <= S.t) lo = md + 1; else hi = md; } return lo; }   // 닿는 때(rd)가 차례대로라 반으로 갈라 센다
     function sample() {
       var ap = {}, tot = 0;
-      Object.keys(S.mv).forEach(function (k) { var m = S.mv[k]; if ((M.nodes[m.node] || {}).ty !== 'sig') return; var a = m.node + '.' + m.key.split('.')[0]; ap[a] = (ap[a] || 0) + m.q.length; tot += m.q.length; });
+      Object.keys(S.mv).forEach(function (k) { var m = S.mv[k]; if ((M.nodes[m.node] || {}).ty !== 'sig') return; var a = m.node + '.' + m.key.split('.')[0], w = waiting(m.q); ap[a] = (ap[a] || 0) + w; tot += w; });
       var back = 0; Object.keys(S.back).forEach(function (e) { back += S.back[e].length; });
       var occ = {}; Object.keys(S.L).forEach(function (k) { var L = S.L[k]; if (!L.l.sink && !L.sinkA) occ[k] = Math.round(L.n); });
       var jam = []; Object.keys(S.N).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; Object.keys(n.legs).forEach(function (lg) { var I = n.legs[lg].in; if (I && S.L[I].n >= JAM * S.L[I].cap) jam.push(id + '.' + lg); }); });
-      var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (!X.a.doors) return; var dq = 0, oq = 0, by = {}; X.a.doors.forEach(function (d) { var a9 = d.mv.reduce(function (s9, m) { return s9 + m.q.length; }, 0); dq += a9; oq += d.q9.length; by[d.id] = [a9, d.q9.length]; }); att[id] = { door: dq, out: oq, held: X.held, by: by, occ: X.occ, cap: X.a.capacity }; });
+      var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (!X.a.doors) return; var dq = 0, oq = 0, by = {}; X.a.doors.forEach(function (d) { var a9 = d.mv.reduce(function (s9, m) { return s9 + waiting(m.q); }, 0); dq += a9; oq += d.q9.length; by[d.id] = [a9, d.q9.length]; }); att[id] = { door: dq, out: oq, held: X.held, by: by, occ: X.occ, cap: X.a.capacity }; });
       return { t: S.t, jam: jam, ap: ap, q: tot, back: back, att: att, box: S.boxN, occ: occ };
     }
     // 수동 조작(넘기기 · 현시 지정) — 지금 계획의 현시를 이어받는다 · 실제 신호를 바꾸는 기능이 아니다
     S.manual = function (id, on) { var N = S.N[id]; if (!on) { N.manual = null; return; } var P = planAt(M, id, S.t, dow, alt); var G = greenSet(id, S.t), best = 0, sc = -1; P.ph.forEach(function (p, i) { var s = p.mv.filter(function (m) { return G[m]; }).length; if (s > sc) { sc = s; best = i; } }); N.manual = { ph: P.ph, i: best, clr: 0, keep: [] }; };
-    S.go = function (id, k) { var ma = S.N[id].manual; if (!ma) return; var j = k == null ? (ma.i + 1) % ma.ph.length : k; if (j === ma.i) return; var nx = ma.ph[j].mv, cu = ma.ph[ma.i]; ma.keep = cu.mv.filter(function (m) { return nx.indexOf(m) >= 0; }); ma.clr = cu.y + cu.ar; ma.next = j; };
+    S.go = function (id, k) { var ma = S.N[id].manual; if (!ma) return; var j = k == null ? (ma.i + 1) % ma.ph.length : k; if (j === ma.i) return; var nx = ma.ph[j].mv, cu = ma.ph[ma.i]; ma.keep = cu.mv.filter(function (m) { return nx.indexOf(m) >= 0; }); ma.clr = cu.y + cu.ar + 1; ma.next = j; };
     S.runTo = function (t1) { while (S.t < Math.min(t1, S.end)) S.step(); return S; };
     S.result = function () {
       // 막힘 = 신호 교차로 접근로 가운데 점유 80% 넘는 곳이 3곳 이상(실측 ≤5km/h 와 맞대 보는 기준과 같다) · 해소 = 그 뒤 마지막으로 3곳 아래로 내려간 때

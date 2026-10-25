@@ -8,13 +8,15 @@
 #   ⑤ 재현 — 10/18 설정은 블록 둘레가 막혔다가 21~22시대에 풀리고, 10/11 설정은 막히지 않는다(실측 속도와 맞대 본 표는 diag)
 # 쓰기: py -3.12 -X utf8 tools/sim/sim-check.py   (끝 코드 1 이면 실패)
 #       py -3.12 -X utf8 tools/sim/sim-check.py diag   → 실측 속도와 맞대 본 표만
+#       py -3.12 -X utf8 tools/sim/sim-check.py sweep  → 날 6 × 조치 × 개선안 섞어 돌림(오류·차 보존·주차장 자리)
 import os, sys, json, subprocess, tempfile, re, glob
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 CHROME = [r'C:\Program Files\Google\Chrome\Application\chrome.exe', r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe']
 DIAG = 'diag' in sys.argv[1:]
-TEST = open(os.path.join(HERE, 'sim-diag.js'), encoding='utf-8').read() + ('' if DIAG else open(os.path.join(HERE, 'sim-test.js'), encoding='utf-8').read())
+SWEEP = 'sweep' in sys.argv[1:]
+TEST = open(os.path.join(HERE, 'sim-diag.js'), encoding='utf-8').read() + ('' if DIAG else open(os.path.join(HERE, 'sim-sweep.js' if SWEEP else 'sim-test.js'), encoding='utf-8').read())
 
 
 def main():

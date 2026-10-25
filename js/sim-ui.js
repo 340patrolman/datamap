@@ -76,9 +76,9 @@
   // ---- 받기 ----
   function need(cb) {
     if (M && window.tgSim) return cb();
-    var go = function () { window.tgSim.load(AREA.id, '4').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
+    var go = function () { window.tgSim.load(AREA.id, '5').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=4'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=5'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   // ---- 판 ----
   var DAYS = [['1018', '10/18(일) 재현', '2026-10-18'], ['1011', '10/11(일) 평소', '2026-10-11'], ['mt', '평일(월~목)', '2026-10-21'], ['fr', '금요일', '2026-10-23'], ['sa', '토요일', '2026-10-24'], ['su', '일요일', '2026-10-25']];   // 소유자 「평일·금·토·일도 변수로」 — 신호 계획·고속버스 시간표·평소 속도 모두 이 네 갈래
@@ -151,7 +151,7 @@
     var cu = curPh(), ph = p.ph || cu, G0 = grn(cu), G1 = grn(ph), H = HOW[p.id] || { what: p.why, steps: [], warn: [] };
     var rows = Object.keys(MVK).filter(function (k) { return G0.g[k] != null || G1.g[k] != null; }).map(function (k) { var a = Math.round((G0.g[k] || 0) / G0.c * 3600), b = Math.round((G1.g[k] || 0) / G1.c * 3600), d0 = Math.round(G0.g[k] || 0), d1 = Math.round(G1.g[k] || 0), dd = d1 - d0;
       return '<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:' + MVC[k] + ';margin-right:4px"></span>' + MVK[k][0] + (MVK[k][1] ? ' <small style="color:' + (MVK[k][1] === '블록으로 들어감' ? '#dc2626' : '#16a34a') + '">' + MVK[k][1] + '</small>' : '') + '</td><td>' + d0 + '초</td><td>' + d1 + '초</td><td style="color:' + (dd < 0 ? '#dc2626' : dd > 0 ? '#16a34a' : 'inherit') + '">' + (dd > 0 ? '+' : '') + dd + '</td><td><small>' + (a ? Math.round((b - a) / a * 100) + '%' : '-') + '</small></td></tr>'; }).join('');
-    var eff = res ? '<div class="sg">시뮬 결과(같은 날·같은 차)</div><div class="row" style="gap:10px;font-size:12.5px"><span>총 지체 <b>' + res.delayVh.toLocaleString() + '</b> 대·시' + (curRes && p.id !== 'cur' ? ' (' + (res.delayVh >= curRes.delayVh ? '+' : '') + Math.round((res.delayVh - curRes.delayVh) / curRes.delayVh * 100) + '%)' : '') + '</span><span>블록 갇힘 최대 <b>' + res.trappedMax + '</b>대' + (curRes && p.id !== 'cur' && curRes.trappedMax ? ' (' + (res.trappedMax >= curRes.trappedMax ? '+' : '') + Math.round((res.trappedMax - curRes.trappedMax) / curRes.trappedMax * 100) + '%)' : '') + '</span><span>막힘 ' + (res.jamStart != null ? hh(res.jamStart) + ' → ' + (res.clearT != null ? hh(res.clearT) : '23시↑') : '없음') + '</span></div>' : '';
+    var eff = res ? '<div class="sg">시뮬 결과(같은 날·같은 차)</div><div class="row" style="gap:10px;font-size:12.5px"><span>총 지체 <b>' + res.delayVh.toLocaleString() + '</b> 대·시' + (curRes && p.id !== 'cur' && curRes.delayVh ? ' (' + (res.delayVh >= curRes.delayVh ? '+' : '') + Math.round((res.delayVh - curRes.delayVh) / curRes.delayVh * 100) + '%)' : '') + '</span><span>블록 갇힘 최대 <b>' + res.trappedMax + '</b>대' + (curRes && p.id !== 'cur' && curRes.trappedMax ? ' (' + (res.trappedMax >= curRes.trappedMax ? '+' : '') + Math.round((res.trappedMax - curRes.trappedMax) / curRes.trappedMax * 100) + '%)' : '') + '</span><span>막힘 ' + (res.jamStart != null ? hh(res.jamStart) + ' → ' + (res.clearT != null ? hh(res.clearT) : '23시↑') : '없음') + '</span></div>' : '';
     return '<div style="border:1px solid rgba(124,58,237,.4);border-radius:12px;padding:8px;margin:6px 0;background:rgba(124,58,237,.04)">' +
       '<div style="font-weight:800;font-size:14px">📖 ' + esc(p.nm) + ' — 조치 방법</div><div class="sn" style="font-size:12.5px;color:inherit">' + esc(H.what) + '</div>' +
       (p.id !== 'cur' ? bar(cu, 300, '현행') : '') + bar(ph, 300, p.id === 'cur' ? '현행' : p.nm) +
@@ -163,13 +163,13 @@
       (p.id !== 'cur' ? '<div class="row" style="margin-top:4px"><button data-sk="show:' + p.id + '" class="on">▶ 이 안으로 시연</button></div>' : '') + '</div>';
   }
   function planOf(id) { return plans().filter(function (p) { return p.id === id; })[0] || plans()[0]; }
-  function altOf(ph) { if (!ph) return null; var P = window.tgSim.planAt(M, '4031', 17 * 3600, window.tgSim.dowOf(ST.date)); return { '4031': { ph: ph, off: P.off || 0 } }; }
+  function altOf(ph) { if (!ph) return null; var P = window.tgSim.planAt(M, '4031', 17 * 3600, window.tgSim.dowOf(ST.date)); return { '4031': { ph: ph, off: P.off || 0, t0: 16 * 3600, t1: 21 * 3600 } }; }   // 안은 16~21시(현행 17시 계획이 도는 때)에만 · 21시부터는 두 판 모두 현행 밤 계획
   function alt() { var p = ST.ph || planOf(ST.plan).ph; return altOf(p); }
   // 개선안 모두 돌려 보기(같은 날·같은 수요·같은 차) — 결과 표에서 고르면 그 안으로 시연
   var CMP = null;
   function compare() {
-    var L = plans(), i = 0, Rw = []; CMP = { busy: 1, rows: Rw }; paintCmp();
-    (function next() { if (i >= L.length) { CMP.busy = 0; paintCmp(); return; } var p = L[i++], S = window.tgSim.create(M, scen(), altOf(p.ph)); S.runTo(S.end); var r = S.result(); r.id = p.id; r.nm = p.nm; r.why = p.why; Rw.push(r); paintCmp(); setTimeout(next, 30); })();
+    var L = plans(), i = 0, Rw = [], sc = scen(), me = { busy: 1, rows: Rw }; CMP = me; paintCmp();
+    (function next() { if (CMP !== me) return; if (i >= L.length) { me.busy = 0; paintCmp(); return; } var p = L[i++], S = window.tgSim.create(M, sc, altOf(p.ph)); S.runTo(S.end); var r = S.result(); r.id = p.id; r.nm = p.nm; r.why = p.why; Rw.push(r); paintCmp(); setTimeout(next, 30); })();
   }
   function paintCmp() {
     var el = $('simCmp'); if (!el) return; if (!CMP) { el.innerHTML = '<div class="row" style="margin-top:6px"><button data-sk="cmp" class="on">📊 개선안 모두 돌려 견주기</button><span class="sn" style="margin:0">현행·A~E 를 같은 날·같은 차로 16~23시 — 몇 초 걸림</span></div>'; return; }
@@ -265,7 +265,7 @@
       '<label class="sl"><b>🚌 고속버스(실측 × 배율)</b><input type="range" min="0" max="2" step="0.1" value="' + ST.bus + '" data-sv="bus"><em>× ' + ST.bus + '</em></label><div class="sn" style="margin:-2px 0 4px">TAGO 시간표 그날 갈래 그대로(×1) · 경부·영동 = 동 잠원로 출입구 · 호남 = 서 반포대로 출입구 · 0 = 끔</div>' +
       '<div class="row">' + chipB('box', '꼬리물기 있음', ST.box) + '</div>' +
       '<div class="sg">조치</div><div class="row">' + acts + '</div>' +
-      '<div class="sg">개선안 — 4031 고속터미널사거리(오른쪽 판)</div><div class="row">' + plans().map(function (p) { return chipB('plan:' + p.id, p.nm, ST.plan === p.id); }).join('') + '</div><div class="sn">' + esc(planOf(ST.plan).why) + ' · 주기 ' + cyc + '초' + (ST.ph ? ' · 초를 고침' : '') + '</div>';
+      '<div class="sg">개선안 — 4031 고속터미널사거리(오른쪽 판)</div><div class="row">' + plans().map(function (p) { return chipB('plan:' + p.id, p.nm, ST.plan === p.id); }).join('') + '</div><div class="sn">' + esc(planOf(ST.plan).why) + ' · 주기 ' + cyc + '초' + (ST.ph ? ' · 초를 고침' : '') + ' · 안은 16~21시(현행 17시 계획이 도는 때)에만 쓰고 21시부터는 두 판 모두 현행 밤 계획</div>';
     if (ST.plan !== 'cur') h += ph.map(function (p, i) { return '<div class="ph"><b>' + (i + 1) + '</b><span>' + esc(p.nm || p.mv.join('+')) + '</span><button data-pd="' + i + ':-5">−5</button><b style="min-width:34px;text-align:center">' + p.d + '초</b><button data-pd="' + i + ':5">+5</button></div>'; }).join('');
     h += '<div class="sg">돌리기</div><div class="row">' + '<button data-sk="run" class="on">' + (RUN ? '⏸ 멈춤' : A ? '▶ 이어서' : '▶ 시작') + '</button>' + [300, 600, 1200].map(function (v) { return chipB('spd:' + v, '×' + v, SPD === v); }).join('') + '<button data-sk="end">⏩ 끝까지</button><button data-sk="re">↺ 처음부터</button></div>' +
       '<div class="sg">수동 조작 — 오른쪽 판 4031(실제 신호를 바꾸는 기능이 아니다)</div><div class="row">' + chipB('man', '🖐 수동', ST.manual) + '<button data-sk="next">다음 현시 ▶</button><button data-sk="cut">⛔ 들어오는 차만 끊기</button></div>' +
@@ -275,14 +275,14 @@
   function onClick(e) {
     var b = e.target.closest('[data-sk],[data-pd],[data-simx]'); if (!b) return;
     if (b.hasAttribute('data-simx')) { close(); return; }
-    if (b.hasAttribute('data-pd')) { var q = b.getAttribute('data-pd').split(':'), ph = ST.ph || JSON.parse(JSON.stringify(planOf(ST.plan).ph || curPh())); ph[+q[0]].d = Math.max(8, ph[+q[0]].d + +q[1]); ST.ph = ph; A = null; stop(); paintCtl(); return; }
+    if (b.hasAttribute('data-pd')) { var q = b.getAttribute('data-pd').split(':'), ph = ST.ph || JSON.parse(JSON.stringify(planOf(ST.plan).ph || curPh())); ph[+q[0]].d = Math.max(8, ph[+q[0]].d + +q[1]); ST.ph = ph; A = null; B = null; stop(); CMP = null; paintCmp(); paintCtl(); start(); paintHow(); return; }
     var k = b.getAttribute('data-sk'), restart = false;
-    if (k.indexOf('day:') === 0) { ST.day = k.slice(4); var d = DAYS.filter(function (x) { return x[0] === ST.day; })[0]; ST.date = d[2]; var p = presetOf(ST.day); if (p && p.att) { if (p.att.shin) ST.shin = p.att.shin.inPeak; if (p.att.fount) ST.fount = p.att.fount.inPeak; } restart = true; }
+    if (k.indexOf('day:') === 0) { ST.day = k.slice(4); var d = DAYS.filter(function (x) { return x[0] === ST.day; })[0]; ST.date = d[2]; var p = presetOf(ST.day); ST.shin = p && p.att && p.att.shin ? p.att.shin.inPeak : att0('shin').inPeak; ST.fount = p && p.att && p.att.fount ? p.att.fount.inPeak : att0('fount').inPeak; restart = true; toastS(p ? '「' + d[1] + '」 재현 설정 — 신세계 ' + ST.shin + ' · 분수 ' + ST.fount + '대/시(설계값)' : '「' + d[1] + '」 — 수요는 기본 설계값(신세계 ' + ST.shin + ' · 분수 ' + ST.fount + '대/시) · 신호·고속버스·평소 속도는 그 날 갈래'); }
     else if (k.indexOf('act:') === 0) { var id = k.slice(4); ST.act[id] = !ST.act[id]; restart = true; }
     else if (k.indexOf('plan:') === 0) { ST.plan = k.slice(5); ST.ph = null; restart = true; }
     else if (k.indexOf('show:') === 0) { ST.plan = k.slice(5); ST.ph = null; restart = true; var rn = $('simRun'); if (rn) rn.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
     else if (k === 'cmp') { compare(); return; }
-    else if (k.indexOf('how:') === 0) { var hid = k.slice(4); if (CMP) { CMP.open = CMP.open === hid ? null : hid; paintCmp(); } else { HOWO = HOWO === hid ? null : hid; paintHow(); } return; }
+    else if (k.indexOf('how:') === 0) { var hid = k.slice(4); if (CMP && b.closest('#simCmp')) { CMP.open = CMP.open === hid ? null : hid; paintCmp(); } else { HOWO = HOWO === hid ? null : hid; paintHow(); } return; }
     else if (k.indexOf('spd:') === 0) { SPD = +k.slice(4); }
     else if (k === 'box') { ST[k] = !ST[k]; restart = true; }
     else if (k === 'run') { if (RUN) stop(); else if (!A || A.t >= A.end) start(); else { RUN = 1; LAST = 0; requestAnimationFrame(tick); } }

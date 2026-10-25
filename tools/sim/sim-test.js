@@ -37,8 +37,13 @@
     ck('실측과 맞대 봄(접근로 11 × 16~22시) — 10/18 맞음 60% 넘게 · 10/11 맞음 90% 넘게', c18.hit / c18.n > 0.6 && c11.hit / c11.n > 0.9, '10/18 ' + c18.hit + '/' + c18.n + ' (둘 다 막힘 ' + c18.tp + ' · 시뮬만 ' + c18.fp + ' · 실측만 ' + c18.fn + ') · 10/11 ' + c11.hit + '/' + c11.n);
     // ④ 같은 씨앗이면 같은 차
     var C1 = S.run(M, { date: '2026-10-18', seed: 9, to: 17 * 3600 }), C2 = S.run(M, { date: '2026-10-18', seed: 9, to: 17 * 3600 }, { '4031': { ph: P.ph } });
-    var nA = function (X) { return X.V.filter(function (v) { return v.k !== 'ao'; }); }, c1 = nA(C1), c2 = nA(C2);
+    var nA = function (X) { return X.V.filter(function (v) { return v.k !== 'ao' && v.k !== 'fo'; }); }, c1 = nA(C1), c2 = nA(C2);
     ck('두 판이 같은 차를 쓴다(들어오는 차 수·첫 100대 길 · 주차장에서 나오는 차는 판마다 달라도 됨 — 들어간 때가 다르니까)', c1.length === c2.length && c1.slice(0, 100).every(function (v, i) { return v.p.join() === c2[i].p.join(); }), c1.length + ' / ' + c2.length);
+    // 23시까지 끝까지 돌려도 배경 차가 같다(공원에서 나오는 차가 판마다 다른 때 나와도 배경 차 길이 흔들리지 않는다 — 독립 검수 지적)
+    var F1 = S.run(M, { date: '2026-10-18', seed: 11, to: 23 * 3600 }), F2 = S.run(M, { date: '2026-10-18', seed: 11, to: 23 * 3600 }, { '4031': { ph: P.ph.map(function (q, i) { return { d: q.d + (i === 1 ? -15 : i === 3 ? 15 : 0), y: q.y, ar: q.ar, mv: q.mv }; }), off: 170, t0: 16 * 3600, t1: 21 * 3600 } }), bgA = F1.V.filter(function (v) { return v.k === 'bg'; }), bgB = F2.V.filter(function (v) { return v.k === 'bg'; });
+    ck('끝까지(23시) 두 판의 배경 차 수·마지막 100대 길이 같다', bgA.length === bgB.length && bgA.slice(-100).every(function (v, i) { return v.p.join() === bgB[bgB.length - 100 + i].p.join(); }), bgA.length + ' / ' + bgB.length);
+    var occMax = 0; [F1, F2].forEach(function (X) { X.samp.forEach(function (s9) { var a9 = s9.att.shin; if (a9 && a9.occ > occMax) occMax = a9.occ; }); });
+    ck('주차장 자리를 넘지 않는다(2,435면 · 문 넷이 한 초에 함께 받아도)', occMax <= 2435, occMax);
     // 수동 조작 — 넘기기·지정
     var D = S.create(M, { date: '2026-10-18', from: 17 * 3600, to: 17 * 3600 + 600 }); D.runTo(17 * 3600 + 30); D.manual('4031', true); var i0 = D.N['4031'].manual.i; D.go('4031'); D.runTo(17 * 3600 + 60); var i1 = D.N['4031'].manual.i; D.go('4031', 2); D.runTo(17 * 3600 + 90);
     ck('수동 — 넘기기 뒤 다음 현시 · 지정하면 그 현시(황색·전적색 지난 뒤)', i1 === (i0 + 1) % 4 && D.N['4031'].manual.i === 2, [i0, i1, D.N['4031'].manual.i]);

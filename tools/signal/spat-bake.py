@@ -416,11 +416,16 @@ def publish():
         if not run('git', 'status', '--porcelain', '--', 'data/sigdir-seoul.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json').stdout.strip():
             return
         run(sys.executable, '-X', 'utf8', os.path.join('tools', 'signal', 'sig-audit.py'))   # 맞대 본 결과(data/sig-audit.json)도 같이 다시 만든다
-        run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
+        try:   # (2026-10-25) 지난 고리 막힘 실측(data/onto-loop-hist.json · 엮임 보기 고리 칸) — 한 시간에 한 번 다시 굽는다(2초 · 쌓인 livespd 를 읽기만)
+            hp = os.path.join(ROOT, 'data', 'onto-loop-hist.json')
+            if not os.path.exists(hp) or time.time() - os.path.getmtime(hp) > 3600: run(sys.executable, '-X', 'utf8', os.path.join('tools', 'onto', 'loop-hist.py'))
+        except Exception:
+            pass
+        run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json', 'data/onto-loop-hist.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
         if run(sys.executable, '-X', 'utf8', os.path.join('tools', 'keycheck.py')).returncode != 0:
             print('열쇠 검사에 걸려 올리지 않았다', flush=True); return
         run('git', 'pull', '-q', '--ff-only', 'origin', 'main')
-        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json')
+        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json', 'data/onto-loop-hist.json')
         p2 = run('git', 'push', '-q', 'origin', 'main')
         print(datetime.datetime.now().strftime('%H:%M:%S'), '올림' if c.returncode == 0 and p2.returncode == 0 else '올리기 실패 ' + (c.stderr or p2.stderr)[:120], flush=True)
     except Exception as e:

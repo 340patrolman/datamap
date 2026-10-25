@@ -11,6 +11,8 @@
   var TURN = { nt: { St: 'st', Lt: 'et', Rt: 'wt' }, et: { St: 'wt', Lt: 'st', Rt: 'nt' }, st: { St: 'nt', Lt: 'wt', Rt: 'et' }, wt: { St: 'et', Lt: 'nt', Rt: 'st' } };
   var TODK = [4, 1, 1, 1, 1, 2, 3];   // 요일 → 현시도 요일 계획(1 월~목 · 2 금 · 3 토 · 4 일·공휴일)
   var VOLK = ['su', 'wd', 'wd', 'wd', 'wd', 'wd', 'sa'];
+  var DAYK = ['su', 'mt', 'mt', 'mt', 'mt', 'fr', 'sa'];   // 요일 갈래(소유자 2026-10-25 「평일·금·토·일도 변수로」) — 월~목 · 금 · 토 · 일(신호 계획 TOD 1·2·3·4 · 평소 속도 갈래 0·1·2·3 과 같다)
+  var NOBOX = { box: [] };
   function rng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   function hm(s) { return +s.slice(0, 2) * 3600 + +s.slice(2) * 60; }
   function dowOf(d) { var p = String(d).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).getDay(); }
@@ -91,8 +93,9 @@
     (M.att || []).forEach(function (a0) {
       var a = Object.assign({}, a0, (scen.att || {})[a0.id] || {}); a.off = ACT.attOff[a.id] || (scen.att && scen.att[a.id] && scen.att[a.id].off); a.inStop = ACT.attInStop[a.id]; a.outFirst = ACT.attOutFirst[a.id];
       S.L['att:' + a.id] = { id: 'att:' + a.id, l: { nm: a.nm, att: a.id }, n: 0, cap: 1e9, tt: 0, sinkA: 1 };
-      if (a.mode !== 'flow') a.mv = addMv(a.node, 'att', a.inFrom9, 'att:' + a.id, 1, 'cap', a.inStop ? 0 : a.inCap);
-      S.A[a.id] = { a: a, held: 0, out: [], acc: 0 };
+      // 문(doors) — 문마다 들어가는 길(ins · 그 길에서 오른쪽으로 들어감)·받는 속도(cap)·나오는 길(out)·나오는 몫(share) · 문이 없던 옛 자료는 문 하나로
+      if (a.mode !== 'flow') { a.doors = (a.doors || [{ id: 'd', nm: a.nm, node: a.node, ins: [a.inFrom9], cap: a.inCap, out: a.outLink, share: 1 }]).map(function (d0) { var d = Object.assign({}, d0); d.mv = (d.ins || []).map(function (L) { return addMv(d.node || 'door', 'att', L, 'att:' + a.id, 1, 'cap', a.inStop ? 0 : (d.cap != null ? d.cap : a.inCap)); }); d.q9 = []; d.mAcc = 0; return d; }); a.outLink = a.doors[0].out; }
+      S.A[a.id] = { a: a, held: 0, acc: 0 };
     });
     // 길 찾기(차를 만들 때 한 번) — 들어온 길에서 이동류를 차례로 고른다
     var outOf = {}; Object.keys(S.mv).forEach(function (k) { var m = S.mv[k]; (outOf[m.fr] = outOf[m.fr] || []).push(m); });
@@ -135,6 +138,11 @@
       var a = S.A[id].a; if (a.off || (a.days && a.days.indexOf(dow) < 0) || (a.months && a.months.indexOf(+String(scen.date || M.date0 || '2026-10-18').split('-')[1]) < 0)) return;
       if (ACT.attInCap[id] != null) a.inPeak = Math.min(a.inPeak, ACT.attInCap[id]);   // 라바콘 원거리 차로 축소 — 받을 수 있는 만큼만 들여보낸다(나머지는 이 구역에 안 들어옴)
       if (a.mode === 'flow') { Object.keys(a.from).forEach(function (e) { dem.push({ k: 'bg', e: e, f: function (t) { var pm = a.pulse && a.pulse[String(Math.floor(t % 3600 / 60 / 10) * 10)] || 1; return win(t, a.inT0, a.inT1, a.inPeak) * a.from[e] * pm; }, acc: 0 }); }); return; }
+      if (a.mode === 'table') {   // 시간표(고속버스 — 요일 갈래 월~목·금·토·일 × 시각 · 도착 = 들어감 · 출발 = 나옴) × 승용차 환산(pcu)
+        var TB = (M.tbl || {})[a.table], tk = DAYK[dow], rowOf = function (t, w) { var r = TB && TB.t[tk] && TB.t[tk][a.term]; return r ? r[w][Math.min(23, Math.floor(t / 3600))] * (a.pcu || 1) * (a.scale != null ? a.scale : 1) : 0; };
+        if (!a.inStop) Object.keys(a.from).forEach(function (e) { dem.push({ k: 'ai', e: e, att: id, f: function (t) { return rowOf(t, 'in') * a.from[e]; }, acc: 0 }); });
+        dem.push({ k: 'ao', e: null, att: id, f: function (t) { return rowOf(t, 'out'); }, acc: 0 }); return;
+      }
       if (!a.inStop) Object.keys(a.from).forEach(function (e) { dem.push({ k: 'ai', e: e, att: id, f: function (t) { return win(t, a.inT0, a.inT1, a.inPeak) * a.from[e]; }, acc: 0 }); });
       if (a.mode === 'store') dem.push({ k: 'ao', e: null, att: id, f: function (t) { return win(t, a.outT0, a.outT1, a.outPeak); }, acc: 0 });
     });
@@ -142,8 +150,12 @@
     function makeV(k, e, t, att) {
       var p, a = att && S.A[att].a;
       if (k === 'bg') p = wander(e, R);
-      else if (k === 'ai') { p = cached(e, a.inFrom9); p = p ? p.concat(['att:' + att]) : wander(e, R); }
-      else if (k === 'ao') p = ['att:' + att, a.outLink].concat(wander(a.outLink, R).slice(1));
+      else if (k === 'ai') {   // 가장 가까운 문(이동류가 가장 적은 길)으로
+        var best = null; a.doors.forEach(function (d) { d.ins.forEach(function (L) { var q = cached(e, L); if (q && (!best || q.length < best.length)) best = q; }); });
+        p = best ? best.concat(['att:' + att]) : wander(e, R);
+      }
+      else if (k === 'ao') { var tot = 0, x = R(), dd = a.doors[a.doors.length - 1]; a.doors.forEach(function (d) { tot += d.share != null ? d.share : 1; }); x *= tot; for (var j = 0; j < a.doors.length; j++) { x -= a.doors[j].share != null ? a.doors[j].share : 1; if (x < 0) { dd = a.doors[j]; break; } }
+        p = ['att:' + att, dd.out].concat(wander(dd.out, R).slice(1)); var v0 = { k: k, att: att, p: p, i: 0, t0: t, ff: 0, rd: 0, door: dd }; S.V.push(v0); return v0; }
       var v = { k: k, att: att, p: p, i: 0, t0: t, ff: 0, rd: 0 }; S.V.push(v); return v;
     }
     function enter(v, lk, t) {   // 길에 올림
@@ -171,7 +183,7 @@
       // 1 차 만들기 → 들어오는 길(자리가 없으면 망 밖에서 기다림)
       dem.forEach(function (d) {
         d.acc += d.f(t) / 3600;
-        while (d.acc >= 1) { d.acc -= 1; if (d.k === 'ao') { S.A[d.att].out.push(makeV('ao', null, t, d.att)); continue; } (S.back[d.e] = S.back[d.e] || []).push(makeV(d.k, d.e, t, d.att)); }
+        while (d.acc >= 1) { d.acc -= 1; if (d.k === 'ao') { var vo = makeV('ao', null, t, d.att); vo.door.q9.push(vo); continue; } (S.back[d.e] = S.back[d.e] || []).push(makeV(d.k, d.e, t, d.att)); }
       });
       Object.keys(S.A).forEach(function (id) {   // 머무는 곳(공원 등): 나가는 때가 되면 들어온 차만큼 내보냄
         var X = S.A[id], a = X.a, h = t / 3600; if (a.mode !== 'hold' || !X.held || a.off || h < a.outT0 || h >= a.outT1 + 1) return;
@@ -183,12 +195,13 @@
       // 꼬리물기로 교차로 안에 선 차 — 하류에 자리가 나면 먼저 빠진다
       Object.keys(S.N).forEach(function (id) { var N = S.N[id]; N.box = N.box.filter(function (b) { if (room(b.to)) { S.L[b.fr].n--; enter(b.v, b.to, t); return false; } return true; }); });
       // 끌어들이는 곳에서 나오는 차 — 나오는 길(합류)에 자리와 틈이 있을 때 · 출차 우선이면 본선보다 먼저
-      function attExit(X, lim) { var k = 0, a = X.a; while (X.out.length && k < lim && room(a.outLink)) { var v = X.out.shift(); v.i = 1; enter(v, a.outLink, t); k++; } return k; }
-      Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (X.a.mode !== 'store') return; X.mAcc = Math.min((X.mAcc || 0) + M.links[X.a.outLink].lanes * satS, 2 * M.links[X.a.outLink].lanes * satS + 1); if (X.a.outFirst) X.mAcc -= attExit(X, Math.floor(X.mAcc)); });
+      function attExit(d, lim) { var k = 0; while (d.q9.length && k < lim && room(d.out)) { var v = d.q9.shift(); v.i = 1; enter(v, d.out, t); k++; } return k; }
+      function eachDoor(f) { Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (X.a.mode !== 'store' && X.a.mode !== 'table') return; X.a.doors.forEach(function (d) { f(X, d); }); }); }
+      eachDoor(function (X, d) { var c9 = M.links[d.out].lanes * satS; d.mAcc = Math.min(d.mAcc + c9, 2 * c9 + 1); if (X.a.outFirst) d.mAcc -= attExit(d, Math.floor(d.mAcc)); });
       Object.keys(S.mv).forEach(function (k) {
         var m = S.mv[k], q = m.q, on;
         if (m.kind === 'sig') on = GS[m.node] && GS[m.node][m.key]; else on = true;
-        var box = S.N[m.node].box; if (box.length && box.some(function (b) { return b.to !== m.to; })) on = false;
+        var box = (S.N[m.node] || NOBOX).box; if (box.length && box.some(function (b) { return b.to !== m.to; })) on = false;
         var la = m.la - (m.key.slice(-2) === 'St' && S.rtBlk[m.fr] >= t - 1 ? 0.5 : 0);   // 우회전 차가 막혀 서 있으면 나눠 쓰는 바깥 차로가 직진에도 막힌다
         var rate = m.kind === 'cap' ? m.cap / 3600 : la * satS * (m.kind === 'rt' && !(GS[m.node] && GS[m.node][m.key]) ? rtRed : 1);
         if (!on || !q.length) { m.acc = 0; return; }
@@ -197,24 +210,24 @@
           var v = q[0];
           if (!room(m.to)) {
             if (m.kind === 'rt') S.rtBlk[m.fr] = t;
-            if (M.nodes[m.node].ty === 'sig' && box.length < 2 && RB() < boxP) { q.shift(); m.acc -= 1; box.push({ v: v, fr: m.fr, to: m.to }); S.boxN++; }
+            if ((M.nodes[m.node] || {}).ty === 'sig' && box.length < 2 && RB() < boxP) { q.shift(); m.acc -= 1; box.push({ v: v, fr: m.fr, to: m.to }); S.boxN++; }
             break;
           }
           q.shift(); m.acc -= 1; S.L[m.fr].n--; m.served++;
           enter(v, m.to, t);
         }
       });
-      Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (X.a.mode !== 'store' || X.a.outFirst) return; X.mAcc -= S.inn[X.a.outLink] ? S.inn[X.a.outLink] : 0; if (X.mAcc >= 1) X.mAcc -= attExit(X, Math.floor(X.mAcc)); if (X.mAcc < 0) X.mAcc = 0; });
+      eachDoor(function (X, d) { if (X.a.outFirst) return; d.mAcc -= S.inn[d.out] || 0; if (d.mAcc >= 1) d.mAcc -= attExit(d, Math.floor(d.mAcc)); if (d.mAcc < 0) d.mAcc = 0; });   // 본선이 먼저 쓰고 남은 틈으로
       if (t % 60 === 0 && t >= FROM) S.samp.push(sample());
       S.t++;
     };
     function sample() {
       var ap = {}, tot = 0;
-      Object.keys(S.mv).forEach(function (k) { var m = S.mv[k]; if (M.nodes[m.node].ty !== 'sig') return; var a = m.node + '.' + m.key.split('.')[0]; ap[a] = (ap[a] || 0) + m.q.length; tot += m.q.length; });
+      Object.keys(S.mv).forEach(function (k) { var m = S.mv[k]; if ((M.nodes[m.node] || {}).ty !== 'sig') return; var a = m.node + '.' + m.key.split('.')[0]; ap[a] = (ap[a] || 0) + m.q.length; tot += m.q.length; });
       var back = 0; Object.keys(S.back).forEach(function (e) { back += S.back[e].length; });
       var occ = {}; Object.keys(S.L).forEach(function (k) { var L = S.L[k]; if (!L.l.sink && !L.sinkA) occ[k] = Math.round(L.n); });
       var jam = []; Object.keys(S.N).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; Object.keys(n.legs).forEach(function (lg) { var I = n.legs[lg].in; if (I && S.L[I].n >= JAM * S.L[I].cap) jam.push(id + '.' + lg); }); });
-      var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (X.a.mv) att[id] = { door: X.a.mv.q.length, out: X.out.length, held: X.held }; });
+      var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (!X.a.doors) return; var dq = 0, oq = 0, by = {}; X.a.doors.forEach(function (d) { var a9 = d.mv.reduce(function (s9, m) { return s9 + m.q.length; }, 0); dq += a9; oq += d.q9.length; by[d.id] = [a9, d.q9.length]; }); att[id] = { door: dq, out: oq, held: X.held, by: by }; });
       return { t: S.t, jam: jam, ap: ap, q: tot, back: back, att: att, box: S.boxN, occ: occ };
     }
     // 수동 조작(넘기기 · 현시 지정) — 지금 계획의 현시를 이어받는다 · 실제 신호를 바꾸는 기능이 아니다
@@ -230,7 +243,7 @@
       var maxQ = {}; A.forEach(function (s) { Object.keys(s.ap).forEach(function (a) { var nd = a.split('.')[0], lg = a.split('.')[1], I = M.nodes[nd].legs[lg].in, m = s.ap[a] * M.spacing.v / M.links[I].lanes; if (!maxQ[a] || m > maxQ[a]) maxQ[a] = Math.round(m); }); });
       return { delayVh: Math.round(dl / 3600), maxQm: maxQ, trappedMax: Math.max.apply(null, A.map(attW).concat([0])), jamStart: st, clearT: clr, jamMax: Math.max.apply(null, A.map(function (s) { return s.jam.length; }).concat([0])), peak: peak, peakT: pkT, box: S.boxN, made: S.V.length, done: S.done };
     };
-    S.inNet = function () { var n = 0; Object.keys(S.L).forEach(function (k) { n += S.L[k].n; }); Object.keys(S.A).forEach(function (k) { n += S.A[k].out.length; }); Object.keys(S.back).forEach(function (e) { n += S.back[e].length; }); return n; };
+    S.inNet = function () { var n = 0; Object.keys(S.L).forEach(function (k) { n += S.L[k].n; }); Object.keys(S.A).forEach(function (k) { (S.A[k].a.doors || []).forEach(function (d) { n += d.q9.length; }); }); Object.keys(S.back).forEach(function (e) { n += S.back[e].length; }); return n; };
     return S;
   }
   function run(M, scen, alt) { var S = create(M, scen, alt); S.runTo(S.end); return S; }
@@ -255,6 +268,6 @@
     Object.keys(sc).forEach(function (e) { sc[e] = Math.round(sc[e] * 100) / 100; });
     return { date: date, dk: dk, scale: sc, all: Math.round(all * 100) / 100, hist: hist, src: '평소 속도(ITS 가운데값 · spd-normal-six · 요일 갈래 ' + dk + ' · ' + H0 + '~' + H1 + '시)로 맞춘 설계값 배율 — 대수 자료가 아니다' };
   }
-  function load(area) { return fetch('data/sim-' + (area || 'banpo') + '.json').then(function (r) { return r.json(); }); }
+  function load(area, v) { return fetch('data/sim-' + (area || 'banpo') + '.json' + (v ? '?v=' + v : '')).then(function (r) { return r.json(); }); }
   window.tgSim = { load: load, create: create, run: run, calibrate: calibrate, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
 })();

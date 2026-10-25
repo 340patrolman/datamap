@@ -46,18 +46,27 @@ def main():
                     'Y': k['Y'], 'AR': k['AR'], 'ph': [[MVNO[m][0] + '.' + MVNO[m][1] for m in p['mv'] if m in MVNO] for p in k['ph']],
                     'dir': {p: [[r[0] + '.' + r[1], r[3], r[4], r[6]] for r in L if r[3] is not None] for p, L in k['dir'].items()}, 'tw': k.get('tw') or []}, 'legs': {}}
     # 4019 고속터미널 — 현시도 없음 → T-Data 방향별 실측 · 일요일 저녁(2026-10-18 21:00 기록 · 주기 175초) · 비어 있는 이동류는 다른 날 같은 꼴로 채움(fill)
-    rec = None
+    rec, L19 = None, []
     for f in glob.glob(os.path.join(D, 'sigdir', 'c', '*.json')):
         its = json.load(open(f, encoding='utf-8'))['its']
-        if '4019' in its:
-            rec = [r for r in its['4019'] if r['day'] == '2026-10-18' and r.get('from') == '21:00'][0]
-    W = {m[0] + '.' + m[1]: [m[2], m[3], m[5]] for m in rec['mv'] if m[1] in ('St', 'Lt') and m[2] is not None}
-    fill = []
-    if 'et.St' not in W: W['et.St'] = list(W['wt.St']); fill.append('et.St = wt.St(10-21·10-25 기록에서 둘이 같다)')
-    if 'st.Lt' not in W:   # 10-21·10-25 기록: 남→서 좌회전은 북쪽 녹색이 끝난 뒤 남→북 직진 끝까지
-        s0 = round(W['nt.St'][0] + 3 + 1); W['st.Lt'] = [round(W['st.St'][0] - s0, 1), 3.0, s0]; fill.append('st.Lt = 북 녹색 끝(+황색 3·전적색 1) ~ 남→북 직진 끝(10-21·10-25 기록의 꼴)')
-    nodes['4019'] = {'id': '4019', 'nm': '고속터미널', 'ty': 'sig', 'll': list(XY['4019']), 'plan': {'src': 'T-Data', 'day': '2026-10-18 21:00(일)', 'cyc': rec['cyc'],
-                     'win': [[k, round(v[0], 1), v[1], v[2]] for k, v in sorted(W.items(), key=lambda kv: kv[1][2])], 'fill': fill}, 'legs': {}}
+        if '4019' in its: L19 = [r for r in its['4019'] if r.get('mv') and r.get('cyc')]
+    # 10-18 21:00 기록이 있으면 그것 · 없으면(기록은 열두 개만 남아 밀려난다) 일요일 16시 넘는 기록 → 아무 일요일 → 지금 구역 자료에 있던 값
+    for pick in (lambda r: r['day'] == '2026-10-18' and r.get('from') == '21:00', lambda r: r.get('dow') == 0 and (r.get('from') or '') >= '16:00', lambda r: r.get('dow') == 0):
+        c9 = [r for r in L19 if pick(r) and len([m for m in r['mv'] if m[1] in ('St', 'Lt') and m[2] is not None]) >= 5]
+        if c9: rec = c9[-1]; break
+    old = os.path.join(D, 'sim-banpo.json')
+    if rec is None and os.path.exists(old):
+        rec = 'old'
+    if rec == 'old':
+        nodes['4019'] = json.load(open(old, encoding='utf-8'))['nodes']['4019']; nodes['4019']['legs'] = {}; fill = ['지금 구역 자료의 4019 값을 그대로(새 T-Data 일요일 기록 없음)']
+    else:
+        W = {m[0] + '.' + m[1]: [m[2], m[3], m[5]] for m in rec['mv'] if m[1] in ('St', 'Lt') and m[2] is not None}
+        fill = []
+        if 'et.St' not in W: W['et.St'] = list(W['wt.St']); fill.append('et.St = wt.St(10-21·10-25 기록에서 둘이 같다)')
+        if 'st.Lt' not in W:   # 10-21·10-25 기록: 남→서 좌회전은 북쪽 녹색이 끝난 뒤 남→북 직진 끝까지
+            s0 = round(W['nt.St'][0] + 3 + 1); W['st.Lt'] = [round(W['st.St'][0] - s0, 1), 3.0, s0]; fill.append('st.Lt = 북 녹색 끝(+황색 3·전적색 1) ~ 남→북 직진 끝(10-21·10-25 기록의 꼴)')
+        nodes['4019'] = {'id': '4019', 'nm': '고속터미널', 'ty': 'sig', 'll': list(XY['4019']), 'plan': {'src': 'T-Data', 'day': rec['day'] + ' ' + (rec.get('from') or ''), 'cyc': rec['cyc'],
+                         'win': [[k, round(v[0], 1), v[1], v[2]] for k, v in sorted(W.items(), key=lambda kv: kv[1][2])], 'fill': fill}, 'legs': {}}
     # ---- 블록 둘레 안쪽 길(양방향) ----
     # 신반포로 4031↔4019 는 신세계 쪽 문(진입 G · 진출 X)에서 둘로 나눈다 — 문 자리는 미결 질문(형님 현장 확인) · 지금은 4031 에서 200m(설계값)
     d3119 = dist(XY['4031'], XY['4019'])
@@ -126,10 +135,15 @@ def main():
            {'node': 'H', 'key': 'up', 'fr': '4034>H', 'to': 'H>up', 'la': 2, 'p': 0.6, 'src': '설계값 — 4034 에서 북쪽으로 가는 차 가운데 반포대교 고가로 오르는 몫 0.6'},
            {'node': '4032', 'key': 'bridge', 'fr': '4031>4032', 'to': 'bridge', 'la': 3}]
     # 끌어들이는 곳 — 대수 자료 없음 · 전부 설계값(막대)
-    att = [{'id': 'shin', 'nm': '신세계(블록 안 주차장)', 'mode': 'store', 'node': 'G', 'inFrom9': '4031>G', 'inCap': 1200, 'outLink': 'X>4031',
+    # 블록 출입구 4곳(소유자 현장 지식 2026-10-25 · 사면에 한 곳씩 · 블록 쪽 차로에서 오른쪽으로 드나듦 → 사각형을 시계 방향으로 빙 돈다) — 자리는 변 가운데 근사
+    DOORS = [{'id': 'N', 'nm': '북 — 신반포로(백화점)', 'node': 'doorN', 'ins': ['4031>G'], 'cap': 600, 'out': 'G>4019', 'share': 0.3},
+             {'id': 'E', 'nm': '동 — 잠원로(경부·영동선 고속버스 출입구 포함)', 'node': 'doorE', 'ins': ['4019>4028'], 'cap': 600, 'out': '4019>4028', 'share': 0.25},
+             {'id': 'S', 'nm': '남 — 사평대로(메리어트 호텔과 공유)', 'node': 'doorS', 'ins': ['4028>4034'], 'cap': 400, 'out': '4028>4034', 'share': 0.15},
+             {'id': 'W', 'nm': '서 — 반포대로(호남선 고속버스·백화점)', 'node': 'doorW', 'ins': ['H>4031'], 'cap': 600, 'out': 'H>4031', 'share': 0.3}]
+    att = [{'id': 'shin', 'nm': '신세계(블록 안 주차장)', 'mode': 'store', 'doors': DOORS, 'inCap': 600,
             'inPeak': 900, 'inT0': 15, 'inT1': 19, 'outPeak': 900, 'outT0': 17, 'outT1': 21,
             'from': {'in.4031.wt': 0.3, '4032>4031': 0.25, 'in.4034.st': 0.25, 'in.4019.et': 0.2},
-            'src': '설계값 — 신세계 입차·출차 대수 자료 없음(대/시 · 막대) · 문 자리 = 신반포로 4031 에서 200m(미결 질문) · 현장 사례 = 게임 ontology cs.shinsegaeEvening(17시~ 인근 주민 차량 · 주말은 확인 필요)'},
+            'src': '설계값 — 신세계 입차·출차 대수 자료 없음(대/시 · 막대) · 출입구 4곳 = 소유자 현장 지식(2026-10-25 · 자리는 변 가운데 근사 · 문마다 받는 속도·나오는 몫은 설계값) · 주차면 = 건축물대장(센트럴시티 신반포로 176 옥내 자주식 2,435면 · 서울고속버스터미날 신반포로 194 옥외 646면 · 2026-10-25 건축HUB) · 현장 사례 = 게임 ontology cs.shinsegaeEvening(17시~ 인근 주민 차량 · 주말은 확인 필요)', 'parking': 3081},
            {'id': 'fount', 'nm': '반포한강공원 분수', 'mode': 'hold', 'node': '4032', 'inFrom9': '4031>4032', 'inCap': 500, 'outLink': '4032>4031',
             'inPeak': 700, 'inT0': 18.5, 'inT1': 19.75, 'outT0': 21.0, 'outT1': 21.75, 'outRate': 500,
             'from': {'in.4034.st': 0.4, 'in.4031.wt': 0.3, 'in.4019.et': 0.3},
@@ -137,9 +151,14 @@ def main():
            {'id': 'academy', 'nm': '삼호가든·궁전 학원가(평일 16시 수업)', 'mode': 'flow', 'days': [1, 2, 3, 4, 5], 'inPeak': 400, 'inT0': 15.5, 'inT1': 19,
             'from': {'in.4034.wt': 0.7, 'in.4034.st': 0.3},
             'src': '현장 지식 — 게임 ontology cs.stMaryWeekday(소유자 설계서 ver.1 · 평일 15:30~19:00 학원차·학부모 차량이 사평지하차도 대신 상부로 몰려 꼬리물기) · 대수는 설계값(학원 수업 시각·규모는 공공자료에 없음)'},
-           {'id': 'bus', 'nm': '고속버스 출발(센트럴시티)', 'mode': 'flow', 'inPeak': 100, 'inT0': 6, 'inT1': 24,
-            'from': {'4019>4028': 1.0}, 'pulse': {'0': 1.30, '30': 1.16},
-            'src': '실측 + 설계값 — 시간당 출발 45~50대·정각 1.30배·30분 1.16배는 TAGO 고속버스정보(게임 ontology cf.expressTerminal · 2026-10-02) · 버스 한 대 = 승용차 2대로 셈·나가는 길(잠원로 남쪽 → 삼호가든)은 설계값 · 이 교차로 정체와의 연결은 아직 확인 못 함(cs.samhoHalfHour)'}]
+           {'id': 'busGB', 'nm': '고속버스 — 서울경부(경부·영동선)', 'mode': 'table', 'table': 'bus', 'term': 'gb', 'pcu': 1,
+            'doors': [{'id': 'E', 'nm': '동 — 잠원로', 'node': 'doorE', 'ins': ['4019>4028'], 'cap': 500, 'out': '4019>4028', 'share': 1}],
+            'from': {'in.4028.et': 0.6, '4032>4031': 0.2, 'in.4034.st': 0.2},
+            'src': '실측 — TAGO 고속버스 시간표(요일 갈래 월~목·금·토·일 × 시각 · 출발·도착) · 버스 한 대 = 승용차 1대로 셈(설계값 — 2대로 세면 평소 일요일 10/11 도 막혀 실측과 어긋난다 · 버스는 터미널 전용 진출입 차로를 일부 쓴다고 봄) · 들어오는 방향 몫(반포IC 쪽 사평대로 0.6)은 설계값 · 출입구 = 동 잠원로(소유자 현장 지식)'},
+           {'id': 'busCT', 'nm': '고속버스 — 센트럴시티(호남선)', 'mode': 'table', 'table': 'bus', 'term': 'ct', 'pcu': 1,
+            'doors': [{'id': 'W', 'nm': '서 — 반포대로', 'node': 'doorW', 'ins': ['H>4031'], 'cap': 400, 'out': 'H>4031', 'share': 1}],
+            'from': {'in.4034.st': 0.4, 'in.4028.et': 0.4, '4032>4031': 0.2},
+            'src': '실측 — TAGO 고속버스 시간표 · 버스 = 승용차 1대로 셈(설계값) · 출입구 = 서 반포대로(소유자 현장 지식)'}]
     actions = [{'id': 'cone4032', 'nm': '라바콘 — 반포대교남단 갈림(내려오는 차를 고가로)', 'closeEntry': ['4032>4031'], 'src': '앱 가정 — 라바콘 자리·효과는 형님 확인 필요'},
                {'id': 'coneLaneDrop', 'nm': '라바콘 원거리 차로 축소(한강공원 방향 — 공원이 받을 만큼만)', 'attInCap': {'fount': 500}, 'src': '현장 지식 — 게임 ontology ms.coneLaneDrop(원거리에서 차로를 줄여 하류가 소화 가능한 양으로 미리 감축 · 시작 지점·우회로 확인 필요) · 효과 = 분수 차를 공원 주차장 받는 속도(설계값 500대/시)만큼만 들임'},
                {'id': 'noTw4034', 'nm': '서울성모병원 시차제 끄고 보기(옛 직좌 그대로)', 'noTw': ['4034'], 'src': '현시도 tw — 평일·금 16~20시 서→동 직진 23초 뒤 적색(2025.11 · 형님이 바꾼 것 · 게임 ms.stMaryMetering 「많이 개선」) · 끄면 바꾸기 전과 견줌'},
@@ -147,15 +166,15 @@ def main():
                {'id': 'rain', 'nm': '비(분수 정지)', 'attOff': ['fount']},
                {'id': 'shinStop', 'nm': '백화점 입차 중단', 'attInStop': ['shin']},
                {'id': 'shinOutFirst', 'nm': '백화점 출차 우선', 'attOutFirst': ['shin']}]
-    preset = {'1018': {'date': '2026-10-18', 'att': {'shin': {'inPeak': 1500, 'outPeak': 1500}, 'fount': {'inPeak': 700}}, 'nm': '10/18(일) 재현 — 신세계 입·출 1,500대/시 · 분수 700대/시'},
-              '1011': {'date': '2026-10-11', 'att': {'shin': {'inPeak': 600, 'outPeak': 600}, 'fount': {'inPeak': 600}}, 'nm': '10/11(일) 평소 — 신세계 입·출 600대/시 · 분수 600대/시'},
+    preset = {'1018': {'date': '2026-10-18', 'att': {'shin': {'inPeak': 1200, 'outPeak': 1200}, 'fount': {'inPeak': 600}}, 'nm': '10/18(일) 재현 — 신세계 입·출 1,200대/시 · 분수 600대/시(고속버스는 시간표 실측)'},
+              '1011': {'date': '2026-10-11', 'att': {'shin': {'inPeak': 600, 'outPeak': 600}, 'fount': {'inPeak': 600}}, 'nm': '10/11(일) 평소 — 신세계 입·출 600대/시 · 분수 600대/시(고속버스는 시간표 실측)'},
               'src': '설계값 — 신세계·분수 막대만 움직여 실측 속도(ITS · 07_API키/out/livespd)의 막힘 모양에 맞춘 값 · 대수 자료가 아니다(tools/sim/sim-check.py diag 가 맞대 본다)'}
     sat = {'v': 2200, 'unit': '대/녹색 1시간/차로', 'src': '2차 자료', 'quote': '신호교차로 기본 조건에서 포화교통류율 2,200pcphgpl — 도로용량편람(2013) p.427',
            'note': '편람 원문 직접 대조 못 함 — 게임 queueModel 과 같은 값 · 기본 조건이라 실제는 더 적게 빠진다'}
     spacing = {'v': 7.5, 'unit': 'm/대', 'src': '설계값', 'note': '정지 차량 한 대가 차지하는 길이 — 실측 아님(게임 queueModel 과 같은 값)'}
     doc = {'schema': 'tg-sim/2', 'area': 'banpo', 'nm': '반포 터미널 블록', 'date0': '2026-10-18', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
            'about': '반포 터미널 블록 신호·수요 시뮬레이터(개념 시연 — 예측·보증 아님) · intent/20261025-banpo-block-sim.md',
-           'nodes': nodes, 'links': links, 'vol': vol, 'volNote': volsrc, 'entry': entry, 'design': design, 'mvx': mvx, 'att': att, 'actions': actions, 'preset': preset, 'sat': sat, 'spacing': spacing,
+           'nodes': nodes, 'links': links, 'vol': vol, 'volNote': volsrc, 'entry': entry, 'design': design, 'mvx': mvx, 'att': att, 'actions': actions, 'preset': preset, 'tbl': {'bus': json.load(open(os.path.join(ROOT, 'tools', 'sim', 'bus-tago.json'), encoding='utf-8'))}, 'sat': sat, 'spacing': spacing,
            'mv': '이동류 키 = 들어오는 쪽.회전(nt 북 · et 동 · st 남 · wt 서 / St 직진 · Lt 좌회전 · Rt 우회전) · dir 줄 = [이동류, 녹색 초, 황색 초, 녹색 시작(1현시 시작 = 0)]',
            'off': '옵셋 = 자정부터 센 1현시 시작(가설 A — tbook-signal 현장 측정 4036 에서 맞음) · 패턴 바뀜은 시각이 지난 뒤 다음 1현시부터'}
     out = os.path.join(D, 'sim-banpo.json')

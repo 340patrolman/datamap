@@ -48,6 +48,11 @@
     ck('평일 — 학원 수요를 켜면 4034 서쪽 대기가 길다 · 시차제 끄고 보기도 돈다', (Wa.maxQm['4034.wt'] || 0) >= (Wb.maxQm['4034.wt'] || 0), { 학원켬_4034서쪽최대m: Wa.maxQm['4034.wt'], 학원끔: Wb.maxQm['4034.wt'], 시차제켬_지체: Wa.delayVh, 시차제끔_지체: Wc.delayVh, 시차제끔_4028서쪽m: Wc.maxQm['4028.wt'], 시차제켬_4028서쪽m: Wa.maxQm['4028.wt'] });
     var sat = { date: '2026-10-24', seed: 4, att: { fount: { inPeak: 1200 } } }, Fa = S.run(M, sat).result(), Fb = S.run(M, Object.assign({ act: ['coneLaneDrop'] }, sat)).result();
     ck('토 분수 1,200대/시 — 라바콘 원거리 차로 축소를 하면 4031 북쪽(반포대교남단 쪽) 대기·지체가 줄거나 같다', Fb.delayVh <= Fa.delayVh, { 축소전_지체: Fa.delayVh, 축소후: Fb.delayVh, 축소전_4031북쪽m: Fa.maxQm['4031.nt'], 축소후_4031북쪽m: Fb.maxQm['4031.nt'] });
+    // ⑧ 출입구 4곳 · 고속버스 시간표(요일 갈래 월~목·금·토·일)
+    var sh = M.att.filter(function (a9) { return a9.id === 'shin'; })[0], tb = M.tbl && M.tbl.bus && M.tbl.bus.t;
+    ck('신세계 출입구 4곳(북 신반포로·동 잠원로·남 사평대로·서 반포대로) · 고속버스 시간표 네 갈래(금 17시 경부·영동 출발 ' + (tb ? tb.fr.gb.out[17] : '-') + '대)', sh && sh.doors.length === 4 && tb && tb.mt && tb.fr && tb.sa && tb.su && tb.fr.gb.out[17] > 0, sh ? sh.doors.map(function (d) { return d.id; }).join('') : null);
+    var Fr = S.run(M, { date: '2026-10-23', seed: 5, to: 19 * 3600 }), Mo = S.run(M, { date: '2026-10-21', seed: 5, to: 19 * 3600 }), nb = function (X) { return X.V.filter(function (v) { return v.att === 'busGB' || v.att === 'busCT'; }).length; };
+    ck('요일 갈래가 수요에 들어간다 — 금요일 고속버스가 월~목보다 많다(TAGO 금 17시 출발 195 · 목 158)', nb(Fr) > nb(Mo), { 금: nb(Fr), 월목: nb(Mo) });
     // ⑥ 자동으로 엮은 구역들
     Object.keys(window.__AREAS || {}).forEach(function (nm) {
       var AM = __AREAS[nm], t1 = performance.now(), X = S.run(AM, { date: '2026-10-18', seed: 3 }), rx = X.result(), ns = Object.keys(AM.nodes), np = ns.filter(function (id) { var p = AM.nodes[id].plan; return p && (p.tod || (p.recs && p.recs.length) || (p.win && p.win.length)); }).length;

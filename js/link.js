@@ -205,7 +205,8 @@
     return fetch('data/sim-' + a + '.json').then(function (r) { return r.json(); }).then(function (d) { SIMD = { a: a, d: d }; return d; }).catch(function () { return null; }); }
   function loopsOf(o) { if (!LOOPS) return []; var ids = scopeInts(o).map(function (i) { return i.id; }); return LOOPS.filter(function (L) { return L.members.some(function (m) { return ids.indexOf(m) >= 0; }); }); }
   function legNow(lg) { var a = O(lg.apr); if (!a || !LIVE || !LIVE.spd || !LIVE.spd.m) return null; var M = LIVE.spd.m, d = new Date(), key = dcls(d) + '-' + d.getHours();
-    var rd = Q.follow(a.id, '이룸').sort(function (x, y) { return (x.p.k || 0) - (y.p.k || 0); }).map(function (x) { return x.o; }).filter(function (r) { return M[r.link] != null; }).slice(0, 2); if (!rd.length) return null;
+    var rd = lg.links ? lg.links.map(function (l) { return { link: l }; }).filter(function (r) { return M[r.link] != null; }) : [];   /* 고리 자료가 링크를 정해 주면 그것 먼저(ITS 원자료에 안 오는 조각이 있다) */
+    if (!rd.length) rd = Q.follow(a.id, '이룸').sort(function (x, y) { return (x.p.k || 0) - (y.p.k || 0); }).map(function (x) { return x.o; }).filter(function (r) { return M[r.link] != null; }).slice(0, 2); if (!rd.length) return null;
     var v = Math.round(sum(rd.map(function (r) { return M[r.link]; })) / rd.length), nv = null;
     if (NORM && NORM.links) { var ns = rd.map(function (r) { var c = (NORM.links[r.link] || {})[key]; return c ? c[0] : null; }).filter(function (x) { return x != null; }); if (ns.length) nv = Math.round(sum(ns) / ns.length); }
     var ratio = nv ? v / nv : null, slow = ratio != null ? ratio < 0.6 : v < 15; return { v: v, nv: nv, ratio: ratio, slow: slow, mid: !slow && (ratio != null ? ratio < 0.85 : v < 25) }; }

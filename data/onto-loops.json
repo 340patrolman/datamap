@@ -2,7 +2,7 @@
  "schema": "tg-onto-loops/1",
  "made": "2026-10-25",
  "source": "소유자 지정(intent/20261025-banpo-block-sim.md · 2026-10-25 「고속버스터미널 부근 4곳의 교차로가 시계방향으로 막히는 걸 막기 위해서」) · 교차로·들어오는 길 = ontology-core(T-GIS 교차로코드 · ITS 표준노드링크 접근로) · 시뮬 = data/sim-banpo.json",
- "fields": "loops[{id, nm, dir 막히는 도는 방향, members[INT id], legs[{fr, to 교차로 id, apr 「to 로 들어오는 길」 APR id(그 길의 ITS 링크로 지금 속도를 본다), nm 길 이름·방향}], sim 시뮬 구역(data/sim-<구역>.json), why 소유자 말 그대로, causes[막는 원인 — 끌어들이는 곳], note}]",
+ "fields": "loops[{id, nm, dir 막히는 도는 방향, members[INT id], legs[{fr, to 교차로 id, links 이 변 속도로 볼 ITS 링크(있으면 먼저 · 없으면 apr 의 앞 조각), apr 「to 로 들어오는 길」 APR id(그 길의 ITS 링크로 지금 속도를 본다), nm 길 이름·방향}], sim 시뮬 구역(data/sim-<구역>.json), why 소유자 말 그대로, causes[막는 원인 — 끌어들이는 곳], note}]",
  "note": [
   "고리(loop) = 교차로 넷이 한 방향으로 서로의 출구를 막아 도는 교착(gridlock) 자리 — 한 변이 막히면 다음 교차로 출구가 막혀 고리 전체로 번진다",
   "변마다 「다음 교차로로 들어오는 길」의 지금 속도를 본다 — 넷이 함께 느리면 고리 막힘 징후(실시간 ITS · 몇 분 늦음)",
@@ -15,7 +15,7 @@
    "dir": "시계방향",
    "members": ["INT-352", "INT-451", "INT-598", "INT-548"],
    "legs": [
-    {"fr": "INT-352", "to": "INT-451", "apr": "APR-4019-wt", "nm": "신반포로 — 강남터미널고가밑 → 고속터미널(동쪽으로)"},
+    {"fr": "INT-352", "to": "INT-451", "apr": "APR-4019-wt", "links": ["1210026104", "1210026102"], "nm": "신반포로 — 강남터미널고가밑 → 고속터미널(동쪽으로)", "linkNote": "1210026104(470m)는 ITS 원자료에 안 온다(10-18·10-25 받은 줄 전부 · 수집 세션 확인) — 같은 변 앞 조각 1210026102(224m)로 본다"},
     {"fr": "INT-451", "to": "INT-598", "apr": "APR-4028-nt", "nm": "잠원로 — 고속터미널 → 삼호가든(남쪽으로)"},
     {"fr": "INT-598", "to": "INT-548", "apr": "APR-4034-ne", "nm": "사평대로 — 삼호가든 → 서울성모병원(서쪽으로)"},
     {"fr": "INT-548", "to": "INT-352", "apr": "APR-4031-se", "nm": "반포대로 — 서울성모병원 → 강남터미널고가밑(북쪽으로 · 고가 아래)"}

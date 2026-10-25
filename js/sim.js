@@ -141,7 +141,7 @@
     Object.keys(S.A).forEach(function (id) {
       var a = S.A[id].a; if (a.off || (a.days && a.days.indexOf(dow) < 0) || (a.months && a.months.indexOf(+String(scen.date || M.date0 || '2026-10-18').split('-')[1]) < 0)) return;
       if (ACT.attInCap[id] != null) a.inPeak = Math.min(a.inPeak, ACT.attInCap[id]);   // 라바콘 원거리 차로 축소 — 받을 수 있는 만큼만 들여보낸다(나머지는 이 구역에 안 들어옴)
-      if (a.mode === 'flow') { Object.keys(a.from).forEach(function (e) { dem.push({ k: 'bg', e: e, f: function (t) { var pm = a.pulse && a.pulse[String(Math.floor(t % 3600 / 60 / 10) * 10)] || 1; return win(t, a.inT0, a.inT1, a.inPeak) * a.from[e] * pm; }, acc: 0 }); }); return; }
+      if (a.mode === 'flow') { Object.keys(a.from).forEach(function (e) { dem.push({ k: a.to ? 'fl' : 'bg', att: a.to ? id : null, e: e, f: function (t) { var pm = a.pulse && a.pulse[String(Math.floor(t % 3600 / 60 / 10) * 10)] || 1; return win(t, a.inT0, a.inT1, a.inPeak) * a.from[e] * pm; }, acc: 0 }); }); return; }
       if (a.mode === 'table') {   // 시간표(고속버스 — 요일 갈래 월~목·금·토·일 × 시각 · 도착 = 들어감 · 출발 = 나옴) × 승용차 환산(pcu)
         var TB = (M.tbl || {})[a.table], tk = DAYK[dow], rowOf = function (t, w) { var r = TB && TB.t[tk] && TB.t[tk][a.term]; return r ? r[w][Math.min(23, Math.floor(t / 3600))] * (a.pcu || 1) * (a.scale != null ? a.scale : 1) : 0; };
         if (!a.inStop) Object.keys(a.from).forEach(function (e) { dem.push({ k: 'ai', e: e, att: id, f: function (t) { return rowOf(t, 'in') * a.from[e]; }, acc: 0 }); });
@@ -154,6 +154,7 @@
     function makeV(k, e, t, att) {
       var p, a = att && S.A[att].a;
       if (k === 'bg') p = wander(e, R);
+      else if (k === 'fl') { p = cached(e, a.to) || wander(e, R); }   // 가는 곳이 정해진 지나가는 수요(학원 → 궁전·삼호가든 학원가 등)
       else if (k === 'fo') p = wander(e, RO);
       else if (k === 'ai') {   // 가장 가까운 문(이동류가 가장 적은 길)으로
         var best = null; a.doors.forEach(function (d) { d.ins.forEach(function (L) { var q = cached(e, L); if (q && (!best || q.length < best.length)) best = q; }); });

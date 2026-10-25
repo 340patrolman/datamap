@@ -33,7 +33,7 @@
   }
   /* 그 시각(자정부터 초)의 신호 계획 { c 주기, off 옵셋, win 녹색 창, pat 패턴 번호, src, ph 현시 }
      현시도(tod·pat·dir) · T-Data 기록(recs — 요일 갈래·시각마다 한 기록 · 맞는 갈래가 없으면 가장 가까운 시각) · 재편안(alt — 현시 목록) */
-  function planAt(M, id, t, dow, alt) {
+  function planAt(M, id, t, dow, alt, noTw) {
     var n = M.nodes[id], P = alt && alt[id];
     if (P) { var w0 = phasesToWin(P.ph); return { c: w0.c, off: P.off || 0, win: w0.win, src: '재편안', ph: P.ph }; }
     var p = n.plan;
@@ -50,8 +50,10 @@
     if (p.win) return { c: p.cyc, off: 0, win: p.win, src: p.src, ph: winToPhases(p.win, p.cyc) };
     var L = p.tod[String(TODK[dow])], cur = L[L.length - 1];
     L.forEach(function (r) { if (hm(r[0]) <= t) cur = r; });
-    var pt = String(cur[2]), pa = p.pat[pt];
-    return { c: pa.c, off: pa.off, win: p.dir[pt], pat: pt, src: p.src, ph: p.ph.map(function (mv, i) { return { d: pa.a[i], y: p.Y[i], ar: p.AR[i], mv: mv }; }) };
+    var pt = String(cur[2]), pa = p.pat[pt], W = p.dir[pt];
+    // 시차제(현시도 tw — 그 요일 계획·시간대에는 그 이동류 녹색만 짧게 · 녹색 시작은 그대로) · 4034 평일 16~20시 서→동 직진 23초(형님 「삼호가든 방향 차가 너무 많아 직진 시간을 줄였다」 = 게임 ms.stMaryMetering)
+    if (!noTw && p.tw) p.tw.forEach(function (x) { if (x.tod.indexOf(String(TODK[dow])) < 0 || t < hm(x.from) || t >= hm(x.to)) return; var k = x.dir + '.' + x.mv; W = W.map(function (r) { return r[0] === k ? [r[0], x.g, x.y, r[3], 'tw'] : r; }); });
+    return { c: pa.c, off: pa.off, win: W, pat: pt, src: p.src, ph: p.ph.map(function (mv, i) { return { d: pa.a[i], y: p.Y[i], ar: p.AR[i], mv: mv }; }) };
   }
   function allWin(p) { return p.recs ? [].concat.apply([], p.recs.map(function (r) { return r.win; })) : p.win || [].concat.apply([], Object.keys(p.dir).map(function (k) { return p.dir[k]; })); }
 
@@ -61,10 +63,10 @@
     var boxP = scen.box != null ? scen.box : DS.box.v, R = rng(scen.seed || 7), RB = rng((scen.seed || 7) + 101);
     var FROM = scen.from != null ? scen.from : 16 * 3600, WARM = scen.warm != null ? scen.warm : 7200;   // 몸풀기 2시간 — 빈 길에서 시작하면 16시에 이미 쌓여 있던 차가 없다
     // 조치(라바콘·입차 중단 …) 모으기
-    var ACT = { closeEntry: {}, mvp: {}, attOff: {}, attInStop: {}, attOutFirst: {} };
+    var ACT = { closeEntry: {}, mvp: {}, attOff: {}, attInStop: {}, attOutFirst: {}, noTw: {}, attInCap: {} };
     (scen.act || []).forEach(function (aid) { var a = (M.actions || []).filter(function (x) { return x.id === aid; })[0]; if (!a) return;
       (a.closeEntry || []).forEach(function (e) { ACT.closeEntry[e] = 1; }); Object.keys(a.mvp || {}).forEach(function (k) { ACT.mvp[k] = a.mvp[k]; });
-      ['attOff', 'attInStop', 'attOutFirst'].forEach(function (f) { (a[f] || []).forEach(function (x) { ACT[f][x] = 1; }); }); });
+      ['attOff', 'attInStop', 'attOutFirst', 'noTw'].forEach(function (f) { (a[f] || []).forEach(function (x) { ACT[f][x] = 1; }); }); Object.keys(a.attInCap || {}).forEach(function (k) { ACT.attInCap[k] = a.attInCap[k]; }); });
     var S = { M: M, from: FROM, t: FROM - WARM, end: scen.to != null ? scen.to : 22 * 3600, L: {}, mv: {}, N: {}, V: [], done: 0, delay: 0, boxN: 0, back: {}, samp: [], log: [], rtBlk: {}, A: {} };
     Object.keys(M.links).forEach(function (k) { var l = M.links[k]; S.L[k] = { id: k, l: l, n: 0, cap: l.sink ? 1e9 : Math.max(2, l.len * l.lanes / sp), tt: l.sink ? 0 : l.len / vf }; });
     function addMv(node, key, fr, to, la, kind, cap, p) { var id = fr + '>' + to; S.mv[id] = { id: id, node: node, key: key, fr: fr, to: to, la: la, kind: kind, cap: cap, p: p == null ? 1 : p, q: [], acc: 0, served: 0, gs: 0 }; return S.mv[id]; }
@@ -89,7 +91,7 @@
     (M.att || []).forEach(function (a0) {
       var a = Object.assign({}, a0, (scen.att || {})[a0.id] || {}); a.off = ACT.attOff[a.id] || (scen.att && scen.att[a.id] && scen.att[a.id].off); a.inStop = ACT.attInStop[a.id]; a.outFirst = ACT.attOutFirst[a.id];
       S.L['att:' + a.id] = { id: 'att:' + a.id, l: { nm: a.nm, att: a.id }, n: 0, cap: 1e9, tt: 0, sinkA: 1 };
-      a.mv = addMv(a.node, 'att', a.inFrom9, 'att:' + a.id, 1, 'cap', a.inStop ? 0 : a.inCap);
+      if (a.mode !== 'flow') a.mv = addMv(a.node, 'att', a.inFrom9, 'att:' + a.id, 1, 'cap', a.inStop ? 0 : a.inCap);
       S.A[a.id] = { a: a, held: 0, out: [], acc: 0 };
     });
     // 길 찾기(차를 만들 때 한 번) — 들어온 길에서 이동류를 차례로 고른다
@@ -130,7 +132,9 @@
     var dem = [];
     Object.keys(M.entry).forEach(function (e) { dem.push({ k: 'bg', e: e, f: function (t) { return bgRate(e, t); }, acc: 0 }); });
     Object.keys(S.A).forEach(function (id) {
-      var a = S.A[id].a; if (a.off) return;
+      var a = S.A[id].a; if (a.off || (a.days && a.days.indexOf(dow) < 0) || (a.months && a.months.indexOf(+String(scen.date || M.date0 || '2026-10-18').split('-')[1]) < 0)) return;
+      if (ACT.attInCap[id] != null) a.inPeak = Math.min(a.inPeak, ACT.attInCap[id]);   // 라바콘 원거리 차로 축소 — 받을 수 있는 만큼만 들여보낸다(나머지는 이 구역에 안 들어옴)
+      if (a.mode === 'flow') { Object.keys(a.from).forEach(function (e) { dem.push({ k: 'bg', e: e, f: function (t) { var pm = a.pulse && a.pulse[String(Math.floor(t % 3600 / 60 / 10) * 10)] || 1; return win(t, a.inT0, a.inT1, a.inPeak) * a.from[e] * pm; }, acc: 0 }); }); return; }
       if (!a.inStop) Object.keys(a.from).forEach(function (e) { dem.push({ k: 'ai', e: e, att: id, f: function (t) { return win(t, a.inT0, a.inT1, a.inPeak) * a.from[e]; }, acc: 0 }); });
       if (a.mode === 'store') dem.push({ k: 'ao', e: null, att: id, f: function (t) { return win(t, a.outT0, a.outT1, a.outPeak); }, acc: 0 });
     });
@@ -156,7 +160,7 @@
     function greenSet(id, t) {
       var N = S.N[id], G = {};
       if (N.manual) { var ma = N.manual; (ma.clr > 0 ? ma.keep : ma.ph[ma.i].mv).forEach(function (m) { G[m] = 1; }); return G; }
-      var P = planAt(M, id, t, dow, alt), c = P.c, x = ((t - P.off) % c + c) % c;
+      var P = planAt(M, id, t, dow, alt, ACT.noTw[id]), c = P.c, x = ((t - P.off) % c + c) % c;
       P.win.forEach(function (r) { var a = (x - r[3] + c) % c; if (a >= lost && a < r[1] + r[2] - 1) G[r[0]] = 1; });
       N.cur = P; return G;
     }
@@ -210,7 +214,7 @@
       var back = 0; Object.keys(S.back).forEach(function (e) { back += S.back[e].length; });
       var occ = {}; Object.keys(S.L).forEach(function (k) { var L = S.L[k]; if (!L.l.sink && !L.sinkA) occ[k] = Math.round(L.n); });
       var jam = []; Object.keys(S.N).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; Object.keys(n.legs).forEach(function (lg) { var I = n.legs[lg].in; if (I && S.L[I].n >= JAM * S.L[I].cap) jam.push(id + '.' + lg); }); });
-      var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; att[id] = { door: X.a.mv.q.length, out: X.out.length, held: X.held }; });
+      var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (X.a.mv) att[id] = { door: X.a.mv.q.length, out: X.out.length, held: X.held }; });
       return { t: S.t, jam: jam, ap: ap, q: tot, back: back, att: att, box: S.boxN, occ: occ };
     }
     // 수동 조작(넘기기 · 현시 지정) — 지금 계획의 현시를 이어받는다 · 실제 신호를 바꾸는 기능이 아니다

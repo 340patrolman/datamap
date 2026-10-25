@@ -44,7 +44,7 @@ def main():
         k = ksc[n]
         nodes[n] = {'id': n, 'nm': k['nm'], 'ty': 'sig', 'll': list(XY[n]), 'plan': {'src': '현시도', 'day': k['day'], 'tod': k['tod'], 'pat': k['pat'],
                     'Y': k['Y'], 'AR': k['AR'], 'ph': [[MVNO[m][0] + '.' + MVNO[m][1] for m in p['mv'] if m in MVNO] for p in k['ph']],
-                    'dir': {p: [[r[0] + '.' + r[1], r[3], r[4], r[6]] for r in L if r[3] is not None] for p, L in k['dir'].items()}}, 'legs': {}}
+                    'dir': {p: [[r[0] + '.' + r[1], r[3], r[4], r[6]] for r in L if r[3] is not None] for p, L in k['dir'].items()}, 'tw': k.get('tw') or []}, 'legs': {}}
     # 4019 고속터미널 — 현시도 없음 → T-Data 방향별 실측 · 일요일 저녁(2026-10-18 21:00 기록 · 주기 175초) · 비어 있는 이동류는 다른 날 같은 꼴로 채움(fill)
     rec = None
     for f in glob.glob(os.path.join(D, 'sigdir', 'c', '*.json')):
@@ -129,12 +129,20 @@ def main():
     att = [{'id': 'shin', 'nm': '신세계(블록 안 주차장)', 'mode': 'store', 'node': 'G', 'inFrom9': '4031>G', 'inCap': 1200, 'outLink': 'X>4031',
             'inPeak': 900, 'inT0': 15, 'inT1': 19, 'outPeak': 900, 'outT0': 17, 'outT1': 21,
             'from': {'in.4031.wt': 0.3, '4032>4031': 0.25, 'in.4034.st': 0.25, 'in.4019.et': 0.2},
-            'src': '설계값 — 신세계 입차·출차 대수 자료 없음(대/시 · 막대) · 문 자리 = 신반포로 4031 에서 200m(미결 질문)'},
+            'src': '설계값 — 신세계 입차·출차 대수 자료 없음(대/시 · 막대) · 문 자리 = 신반포로 4031 에서 200m(미결 질문) · 현장 사례 = 게임 ontology cs.shinsegaeEvening(17시~ 인근 주민 차량 · 주말은 확인 필요)'},
            {'id': 'fount', 'nm': '반포한강공원 분수', 'mode': 'hold', 'node': '4032', 'inFrom9': '4031>4032', 'inCap': 500, 'outLink': '4032>4031',
             'inPeak': 700, 'inT0': 18.5, 'inT1': 19.75, 'outT0': 21.0, 'outT1': 21.75, 'outRate': 500,
             'from': {'in.4034.st': 0.4, 'in.4031.wt': 0.3, 'in.4019.et': 0.3},
-            'src': '설계값 — 분수(10월 19:30~21:00) 보러 오는 차 대수 자료 없음 · 공원 주차장 받는 속도 500대/시'}]
+            'src': '설계값 — 분수(10월 19:30~21:00) 보러 오는 차 대수 자료 없음 · 공원 주차장 받는 속도 500대/시 · 현장 사례 = 게임 ontology cs.fountainSat(토 19~21시 반포대교남단→서울성모병원 쪽 대기열 역류 · 21시경 정상화) · 공식 시간표 cf.fountain(미래한강본부 2026-10-02 · 10월 19:30~21:20)'},
+           {'id': 'academy', 'nm': '삼호가든·궁전 학원가(평일 16시 수업)', 'mode': 'flow', 'days': [1, 2, 3, 4, 5], 'inPeak': 400, 'inT0': 15.5, 'inT1': 19,
+            'from': {'in.4034.wt': 0.7, 'in.4034.st': 0.3},
+            'src': '현장 지식 — 게임 ontology cs.stMaryWeekday(소유자 설계서 ver.1 · 평일 15:30~19:00 학원차·학부모 차량이 사평지하차도 대신 상부로 몰려 꼬리물기) · 대수는 설계값(학원 수업 시각·규모는 공공자료에 없음)'},
+           {'id': 'bus', 'nm': '고속버스 출발(센트럴시티)', 'mode': 'flow', 'inPeak': 100, 'inT0': 6, 'inT1': 24,
+            'from': {'4019>4028': 1.0}, 'pulse': {'0': 1.30, '30': 1.16},
+            'src': '실측 + 설계값 — 시간당 출발 45~50대·정각 1.30배·30분 1.16배는 TAGO 고속버스정보(게임 ontology cf.expressTerminal · 2026-10-02) · 버스 한 대 = 승용차 2대로 셈·나가는 길(잠원로 남쪽 → 삼호가든)은 설계값 · 이 교차로 정체와의 연결은 아직 확인 못 함(cs.samhoHalfHour)'}]
     actions = [{'id': 'cone4032', 'nm': '라바콘 — 반포대교남단 갈림(내려오는 차를 고가로)', 'closeEntry': ['4032>4031'], 'src': '앱 가정 — 라바콘 자리·효과는 형님 확인 필요'},
+               {'id': 'coneLaneDrop', 'nm': '라바콘 원거리 차로 축소(한강공원 방향 — 공원이 받을 만큼만)', 'attInCap': {'fount': 500}, 'src': '현장 지식 — 게임 ontology ms.coneLaneDrop(원거리에서 차로를 줄여 하류가 소화 가능한 양으로 미리 감축 · 시작 지점·우회로 확인 필요) · 효과 = 분수 차를 공원 주차장 받는 속도(설계값 500대/시)만큼만 들임'},
+               {'id': 'noTw4034', 'nm': '서울성모병원 시차제 끄고 보기(옛 직좌 그대로)', 'noTw': ['4034'], 'src': '현시도 tw — 평일·금 16~20시 서→동 직진 23초 뒤 적색(2025.11 · 형님이 바꾼 것 · 게임 ms.stMaryMetering 「많이 개선」) · 끄면 바꾸기 전과 견줌'},
                {'id': 'coneH', 'nm': '라바콘 — 고가 진입 전 갈림(남쪽에서 북쪽으로 가는 차를 고가로)', 'mvp': {'4034>H>H>up': 1, '4034>H>H>4031': 0}, 'src': '앱 가정 — 형님 확인 필요'},
                {'id': 'rain', 'nm': '비(분수 정지)', 'attOff': ['fount']},
                {'id': 'shinStop', 'nm': '백화점 입차 중단', 'attInStop': ['shin']},

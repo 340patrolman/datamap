@@ -41,6 +41,13 @@
     // 수동 조작 — 넘기기·지정
     var D = S.create(M, { date: '2026-10-18', from: 17 * 3600, to: 17 * 3600 + 600 }); D.runTo(17 * 3600 + 30); D.manual('4031', true); var i0 = D.N['4031'].manual.i; D.go('4031'); D.runTo(17 * 3600 + 60); var i1 = D.N['4031'].manual.i; D.go('4031', 2); D.runTo(17 * 3600 + 90);
     ck('수동 — 넘기기 뒤 다음 현시 · 지정하면 그 현시(황색·전적색 지난 뒤)', i1 === (i0 + 1) % 4 && D.N['4031'].manual.i === 2, [i0, i1, D.N['4031'].manual.i]);
+    // ⑦ 게임 현장 사례 — 4034 시차제(현시도 tw) · 학원·고속버스 수요 · 라바콘 원거리 차로 축소
+    var Pw = S.planAt(M, '4034', 17 * 3600, 3), Pn = S.planAt(M, '4034', 17 * 3600, 3, null, true), wS = Pw.win.filter(function (r) { return r[0] === 'wt.St'; })[0], nS = Pn.win.filter(function (r) { return r[0] === 'wt.St'; })[0], Pu = S.planAt(M, '4034', 17 * 3600, 0);
+    ck('4034 시차제 — 평일 17시 서→동 직진 녹색 19초(황색 포함 23초 · 현시도 tw) · 끄면 원래 값 · 일요일은 안 걸림', wS[1] === 19 && nS[1] !== 19 && Pu.win.filter(function (r) { return r[0] === 'wt.St'; })[0][4] !== 'tw', { 평일: wS[1], 끄면: nS[1] });
+    var wd = { date: '2026-10-21', seed: 4, from: 15 * 3600, to: 20 * 3600 }, Wa = S.run(M, Object.assign({}, wd)).result(), Wb = S.run(M, Object.assign({ att: { academy: { off: 1 } } }, wd)).result(), Wc = S.run(M, Object.assign({ act: ['noTw4034'] }, wd)).result();
+    ck('평일 — 학원 수요를 켜면 4034 서쪽 대기가 길다 · 시차제 끄고 보기도 돈다', (Wa.maxQm['4034.wt'] || 0) >= (Wb.maxQm['4034.wt'] || 0), { 학원켬_4034서쪽최대m: Wa.maxQm['4034.wt'], 학원끔: Wb.maxQm['4034.wt'], 시차제켬_지체: Wa.delayVh, 시차제끔_지체: Wc.delayVh, 시차제끔_4028서쪽m: Wc.maxQm['4028.wt'], 시차제켬_4028서쪽m: Wa.maxQm['4028.wt'] });
+    var sat = { date: '2026-10-24', seed: 4, att: { fount: { inPeak: 1200 } } }, Fa = S.run(M, sat).result(), Fb = S.run(M, Object.assign({ act: ['coneLaneDrop'] }, sat)).result();
+    ck('토 분수 1,200대/시 — 라바콘 원거리 차로 축소를 하면 4031 북쪽(반포대교남단 쪽) 대기·지체가 줄거나 같다', Fb.delayVh <= Fa.delayVh, { 축소전_지체: Fa.delayVh, 축소후: Fb.delayVh, 축소전_4031북쪽m: Fa.maxQm['4031.nt'], 축소후_4031북쪽m: Fb.maxQm['4031.nt'] });
     // ⑥ 자동으로 엮은 구역들
     Object.keys(window.__AREAS || {}).forEach(function (nm) {
       var AM = __AREAS[nm], t1 = performance.now(), X = S.run(AM, { date: '2026-10-18', seed: 3 }), rx = X.result(), ns = Object.keys(AM.nodes), np = ns.filter(function (id) { var p = AM.nodes[id].plan; return p && (p.tod || (p.recs && p.recs.length) || (p.win && p.win.length)); }).length;

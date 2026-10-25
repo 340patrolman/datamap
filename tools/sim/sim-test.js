@@ -41,6 +41,12 @@
     // 수동 조작 — 넘기기·지정
     var D = S.create(M, { date: '2026-10-18', from: 17 * 3600, to: 17 * 3600 + 600 }); D.runTo(17 * 3600 + 30); D.manual('4031', true); var i0 = D.N['4031'].manual.i; D.go('4031'); D.runTo(17 * 3600 + 60); var i1 = D.N['4031'].manual.i; D.go('4031', 2); D.runTo(17 * 3600 + 90);
     ck('수동 — 넘기기 뒤 다음 현시 · 지정하면 그 현시(황색·전적색 지난 뒤)', i1 === (i0 + 1) % 4 && D.N['4031'].manual.i === 2, [i0, i1, D.N['4031'].manual.i]);
+    // ⑥ 자동으로 엮은 구역들
+    Object.keys(window.__AREAS || {}).forEach(function (nm) {
+      var AM = __AREAS[nm], t1 = performance.now(), X = S.run(AM, { date: '2026-10-18', seed: 3 }), rx = X.result(), ns = Object.keys(AM.nodes), np = ns.filter(function (id) { var p = AM.nodes[id].plan; return p && (p.tod || (p.recs && p.recs.length) || (p.win && p.win.length)); }).length;
+      ck('자동 구역 ' + nm + ' — 신호 ' + ns.length + '곳(계획 있음 ' + np + ') · 차 보존 · 길 못 찾은 차 0', X.V.length === X.done + X.inNet() && X.log.length === 0 && np >= 1, { 만든차: X.V.length, 지체_대시: rx.delayVh, 막힌접근로최대: rx.jamMax, ms: Math.round(performance.now() - t1), log: X.log.slice(0, 2) });
+    });
+    if ((window.__AREAS || {})['banpo-auto']) { var BA = __AREAS['banpo-auto'], same = ['4031', '4019', '4028', '4034'].every(function (id) { return BA.nodes[id] && Object.keys(BA.nodes[id].legs).length === 4; }); ck('반포 자동 구역 = 손으로 짠 구역의 네 교차로(다리 넷씩)를 찾는다', same, Object.keys(BA.nodes)); }
     function hh(t) { if (t == null) return '-'; var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60); return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
   } catch (e) { ck('예외', false, String(e && e.stack || e)); }
   out.push(bad ? '❌ 실패 ' + bad : 'ALL_OK');

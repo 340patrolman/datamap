@@ -40,6 +40,11 @@
     if (p.recs) {
       var best = null, bs = 1e9;
       p.recs.forEach(function (r) { var dsc = r.dk.indexOf(dow) >= 0 ? 0 : 1e6, h = Math.abs(r.t - t); if (dsc + h < bs) { bs = dsc + h; best = r; } });
+      // 그 기록에 빠진 이동류(T-Data 가 몇 개만 읽힌 기록)는 그 이동류가 있는 가장 가까운 기록에서 채운다(주기 비율로 늘이거나 줄임 · 지도 신호 카드의 「채움」과 같은 생각)
+      if (!best.full) { var have = {}, W = best.win.slice(); best.win.forEach(function (r) { have[r[0]] = 1; });
+        p.recs.forEach(function (r) { r.win.forEach(function (w) { if (have[w[0]]) return; var dn = null, dv = 1e9; p.recs.forEach(function (q) { if (!q.win.some(function (x) { return x[0] === w[0]; })) return; var dd = (q.cyc === best.cyc ? 0 : 1e5) + Math.abs(q.t - best.t); if (dd < dv) { dv = dd; dn = q; } });
+          var x = dn.win.filter(function (z) { return z[0] === w[0]; })[0], k = best.cyc / dn.cyc; W.push([x[0], Math.round(x[1] * k), x[2], Math.round(x[3] * k) % best.cyc, 'fill']); have[w[0]] = 1; }); });
+        best.win = W.sort(function (a9, b9) { return a9[3] - b9[3]; }); best.full = 1; }
       return { c: best.cyc, off: best.off || 0, win: best.win, src: p.src, day: best.day, ph: winToPhases(best.win, best.cyc) };
     }
     if (p.win) return { c: p.cyc, off: 0, win: p.win, src: p.src, ph: winToPhases(p.win, p.cyc) };
@@ -116,7 +121,7 @@
     }
     // 수요(대/시) — 들어오는 길마다 그 시각 값
     function bgRate(e, t) {
-      var E = M.entry[e], h = Math.min(23, Math.floor(t / 3600)), sc = (scen.bg && scen.bg[e] != null ? scen.bg[e] : 1) * (scen.bgAll || 1);
+      var E = M.entry[e], h = Math.min(23, Math.floor(t / 3600)), CL = !scen.noCal && M.cal, sc = (scen.bg && scen.bg[e] != null ? scen.bg[e] : CL && CL.scale[e] != null ? CL.scale[e] : 1) * (scen.bgAll || (CL ? CL.all : 1));
       if (ACT.closeEntry[e]) return 0;
       if (E.spot) { var v = M.vol[E.spot][VK][h]; return (v[0] + v[1]) / 2 * (scen.share && scen.share[e] != null ? scen.share[e] : E.share) * sc; }
       return (E.perLane * M.links[e].lanes) * sc;
@@ -225,6 +230,27 @@
     return S;
   }
   function run(M, scen, alt) { var S = create(M, scen, alt); S.runTo(S.end); return S; }
+  /* 평소 속도로 맞추기(자동 구역) — 접근로 정지선 링크의 평소 속도(ITS 가운데값 · links[].nsp 「요일 갈래-시」)가 6km/h 넘는데 시뮬이 막히면(점유 80%↑) 그 들어오는 길 수요를 줄이고,
+     평소에도 막히는데(6 이하 두 시간↑) 시뮬이 안 막히면 늘린다 · 안쪽 길이 어긋나면 전체를 조금씩 · 6번 되풀이 · 결과는 대수가 아니라 「설계값 배율」(tools/sim/sim-cal.py 가 구역 자료 cal 칸에) */
+  var DKC = [3, 0, 0, 0, 0, 1, 2];
+  function calibrate(M, opt) {
+    opt = opt || {}; var date = opt.date || '2026-10-21', dk = DKC[dowOf(date)], H0 = opt.h0 || 16, H1 = opt.h1 || 21, sc = {}, all = 1, hist = [];
+    Object.keys(M.entry).forEach(function (e) { sc[e] = 1; });
+    function score(S) { var r = { hit: 0, n: 0, fp: {}, fn: {}, inner: 0 };
+      Object.keys(M.links).forEach(function (k) { var l = M.links[k]; if (!l.nsp || l.sink) return; for (var h = H0; h <= H1; h++) { var v = l.nsp[dk + '-' + h]; if (v == null) continue;
+        var L = S.samp.filter(function (s9) { return s9.t >= h * 3600 && s9.t < (h + 1) * 3600; }), o = L.length ? L.reduce(function (a, s9) { return a + (s9.occ[k] || 0); }, 0) / L.length / S.L[k].cap : 0, sj = o >= 0.8, rj = v <= 6;
+        r.n++; if (sj === rj) r.hit++; else if (sj) r.fp[k] = (r.fp[k] || 0) + 1; else r.fn[k] = (r.fn[k] || 0) + 1; } }); return r; }
+    for (var it = 0; it <= (opt.iter || 6); it++) {
+      var S = run(M, { date: date, seed: 5, from: H0 * 3600, to: (H1 + 1) * 3600, bg: sc, bgAll: all, noCal: 1 }), r = score(S); hist.push({ it: it, hit: r.hit, n: r.n, all: Math.round(all * 100) / 100 });
+      if (it === (opt.iter || 6)) break;
+      var innerFp = 0, innerFn = 0;
+      Object.keys(r.fp).forEach(function (k) { if (M.entry[k]) sc[k] *= 0.75; else innerFp++; });
+      Object.keys(r.fn).forEach(function (k) { if (r.fn[k] < 2) return; if (M.entry[k]) sc[k] = Math.min(sc[k] * 1.15, 3); else innerFn++; });
+      if (innerFp > innerFn) all *= 0.9; else if (innerFn > innerFp) all = Math.min(all * 1.05, 2);
+    }
+    Object.keys(sc).forEach(function (e) { sc[e] = Math.round(sc[e] * 100) / 100; });
+    return { date: date, dk: dk, scale: sc, all: Math.round(all * 100) / 100, hist: hist, src: '평소 속도(ITS 가운데값 · spd-normal-six · 요일 갈래 ' + dk + ' · ' + H0 + '~' + H1 + '시)로 맞춘 설계값 배율 — 대수 자료가 아니다' };
+  }
   function load(area) { return fetch('data/sim-' + (area || 'banpo') + '.json').then(function (r) { return r.json(); }); }
-  window.tgSim = { load: load, create: create, run: run, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
+  window.tgSim = { load: load, create: create, run: run, calibrate: calibrate, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
 })();

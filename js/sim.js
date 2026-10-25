@@ -99,7 +99,7 @@
       S.A[a.id] = { a: a, held: 0, acc: 0, occ: a.capacity != null ? Math.round(a.capacity * (a.occ0 != null ? a.occ0 : 0.5)) : null, ex: {} };
       // 머무는 시간(dwell 분 · 설계값)이 있으면 들어간 차가 그만큼 머문 뒤 나간다(나가는 차 = 들어온 차의 뒤따름) · 시작 때 있던 차는 그 시간 안에 고르게 나간다
       if (a.dwell && S.A[a.id].occ) { var X0 = S.A[a.id], t00 = FROM - WARM; for (var q0 = 0; q0 < X0.occ; q0++) { var te0 = t00 + Math.floor((q0 + 0.5) / X0.occ * a.dwell * 60 * 1.2); X0.ex[te0] = (X0.ex[te0] || 0) + 1; } }
-      (a.doors || []).forEach(function (d) { d.mv.forEach(function (m) { m.att9 = S.A[a.id]; }); });
+      (a.doors || []).forEach(function (d, i) { d.i = i; d.mv.forEach(function (m) { m.att9 = S.A[a.id]; m.door9 = d; }); });
     });
     // 길 찾기(차를 만들 때 한 번) — 들어온 길에서 이동류를 차례로 고른다
     var outOf = {}; Object.keys(S.mv).forEach(function (k) { var m = S.mv[k]; (outOf[m.fr] = outOf[m.fr] || []).push(m); });
@@ -202,16 +202,28 @@
       // 꼬리물기로 교차로 안에 선 차 — 하류에 자리가 나면 먼저 빠진다
       Object.keys(S.N).forEach(function (id) { var N = S.N[id]; N.box = N.box.filter(function (b) { if (room(b.to)) { S.L[b.fr].n--; enter(b.v, b.to, t); return false; } return true; }); });
       // 끌어들이는 곳에서 나오는 차 — 나오는 길(합류)에 자리와 틈이 있을 때 · 출차 우선이면 본선보다 먼저
+      /* 빙 도는 차(소유자 2026-10-25 「들어가려는 차와 나오는 차가 엉켜 · 고속버스터미널을 크게 한 바퀴 도는 차」) — 만차라 문 앞에 닿은 차는 서지 않고 지나가 블록을 돌아 다음 문(시계 방향)에서 다시 · 두 바퀴 돌고도 못 들어가면 포기하고 떠난다(설계값) */
+      function circleOut(m, t) {
+        var X = m.att9, D9 = X.a.doors, q = m.q;
+        while (q.length && q[0].rd <= t) {
+          var v = q.shift(), nd = D9[(m.door9.i + 1) % D9.length], tail = (v.circ || 0) < (X.a.circleMax || 2) ? cached(m.fr, nd.ins[0]) : null;
+          tail = tail ? tail.concat(['att:' + X.a.id]) : wander(m.fr, RO);
+          v.p = v.p.slice(0, v.i).concat(tail); v.circ = (v.circ || 0) + 1; if (v.circ === 1) X.circ = (X.circ || 0) + 1; X.circNow = (X.circNow || 0) + 1;
+          var m2 = S.mv[m.fr + '>' + v.p[v.i + 1]]; if (!m2) { S.L[m.fr].n--; finish(v, t); continue; }
+          var lo = 0, hi = m2.q.length; while (lo < hi) { var md = (lo + hi) >> 1; if (m2.q[md].rd <= v.rd) lo = md + 1; else hi = md; } m2.q.splice(lo, 0, v);   // 닿는 때 차례 지킴
+        }
+      }
       function attExit(d, lim) { var k = 0; while (d.q9.length && k < lim && room(d.out)) { var v = d.q9.shift(); v.i = 1; enter(v, d.out, t); k++; } return k; }
       function eachDoor(f) { Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (X.a.mode !== 'store' && X.a.mode !== 'table') return; X.a.doors.forEach(function (d) { f(X, d); }); }); }
-      eachDoor(function (X, d) { var c9 = M.links[d.out].lanes * satS; d.mAcc = Math.min(d.mAcc + c9, 2 * c9 + 1); if (X.a.outFirst) d.mAcc -= attExit(d, Math.floor(d.mAcc)); });
+      eachDoor(function (X, d) { var c9 = M.links[d.out].lanes * satS * (X.a.weave && d.mv.some(function (m) { return m.q.length && m.q[0].rd <= t; }) ? 1 - X.a.weave : 1); d.mAcc = Math.min(d.mAcc + c9, 2 * c9 + 1); if (X.a.outFirst) d.mAcc -= attExit(d, Math.floor(d.mAcc)); });
       Object.keys(S.mv).forEach(function (k) {
         var m = S.mv[k], q = m.q, on;
         if (m.kind === 'sig') on = GS[m.node] && GS[m.node][m.key]; else on = true;
         var box = (S.N[m.node] || NOBOX).box; if (box.length && box.some(function (b) { return b.to !== m.to; })) on = false;
         var la = m.la - (m.key.slice(-2) === 'St' && S.rtBlk[m.fr] >= t - 1 ? 0.5 : 0);   // 우회전 차가 막혀 서 있으면 나눠 쓰는 바깥 차로가 직진에도 막힌다
-        if (m.att9 && m.att9.occ != null && m.att9.occ >= m.att9.a.capacity) on = false;   // 만차 — 문 닫힘
-        var rate = m.kind === 'cap' ? m.cap / 3600 : la * satS * (m.kind === 'rt' && !(GS[m.node] && GS[m.node][m.key]) ? rtRed : 1);
+        if (m.att9 && m.att9.occ != null && m.att9.occ >= m.att9.a.capacity) { on = false; if (m.att9.a.circle) circleOut(m, t); }   // 만차 — 문 닫힘 · 빙 도는 곳이면 다음 문으로
+        if (m.door9 && m.door9.q9.length && m.att9.a.weave) la *= 1 - m.att9.a.weave;   // 같은 문에서 나오는 차와 엉킴(들어가는 쪽이 그만큼 느림)
+        var rate = m.kind === 'cap' ? m.cap / 3600 * (m.door9 && m.door9.q9.length && m.att9.a.weave ? 1 - m.att9.a.weave : 1) : la * satS * (m.kind === 'rt' && !(GS[m.node] && GS[m.node][m.key]) ? rtRed : 1);
         if (!on || !q.length) { m.acc = 0; return; }
         m.gs++; m.acc = Math.min(m.acc + rate, Math.max(1, rate * 2));
         while (m.acc >= 1 && q.length && q[0].rd <= t) {
@@ -237,7 +249,7 @@
       var back = 0; Object.keys(S.back).forEach(function (e) { back += S.back[e].length; });
       var occ = {}; Object.keys(S.L).forEach(function (k) { var L = S.L[k]; if (!L.l.sink && !L.sinkA) occ[k] = Math.round(L.n); });
       var jam = []; Object.keys(S.N).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; Object.keys(n.legs).forEach(function (lg) { var I = n.legs[lg].in; if (I && S.L[I].n >= JAM * S.L[I].cap) jam.push(id + '.' + lg); }); });
-      var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (!X.a.doors) return; var dq = 0, oq = 0, by = {}; X.a.doors.forEach(function (d) { var a9 = d.mv.reduce(function (s9, m) { return s9 + waiting(m.q); }, 0); dq += a9; oq += d.q9.length; by[d.id] = [a9, d.q9.length]; }); att[id] = { door: dq, out: oq, held: X.held, by: by, occ: X.occ, cap: X.a.capacity }; });
+      var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (!X.a.doors) return; var dq = 0, oq = 0, by = {}; X.a.doors.forEach(function (d) { var a9 = d.mv.reduce(function (s9, m) { return s9 + waiting(m.q); }, 0); dq += a9; oq += d.q9.length; by[d.id] = [a9, d.q9.length]; }); att[id] = { door: dq, out: oq, held: X.held, by: by, occ: X.occ, cap: X.a.capacity, circ: X.circ || 0 }; });
       return { t: S.t, jam: jam, ap: ap, q: tot, back: back, att: att, box: S.boxN, occ: occ };
     }
     // 수동 조작(넘기기 · 현시 지정) — 지금 계획의 현시를 이어받는다 · 실제 신호를 바꾸는 기능이 아니다

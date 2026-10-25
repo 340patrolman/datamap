@@ -15,20 +15,20 @@
     ['14', '7', '8', '3'].forEach(function (pt) { var pa = n.plan.pat[pt], w = S.phasesToWin(n.plan.ph.map(function (mv, i) { return { d: pa.a[i], y: n.plan.Y[i], ar: n.plan.AR[i], mv: mv }; })), ok = n.plan.dir[pt].every(function (r) { var x = w.win.filter(function (q) { return q[0] === r[0]; })[0]; return x && x[1] === r[1] && x[3] === r[3]; }); ck('4031 패턴 ' + pt + ' 녹색 창 = dir 줄', ok); });
     ['4028', '4034'].forEach(function (id) { var nd = M.nodes[id], P2 = S.planAt(M, id, 17 * 3600, 0); ck(id + ' 일 17시 계획 패턴 ' + P2.pat + ' 주기 ' + P2.c, P2.c > 0 && P2.win.length >= 4); });
     // 1초 단위 녹색 — 시뮬 안에서 4031 서→동 직진 녹색 초를 한 주기 센다(출발 손실 2초 · 황색 마지막 1초 뺀 유효 녹색)
-    var Z = S.create(M, { date: '2026-10-24', from: 14 * 3600, to: 14 * 3600 + 400, shinOn: false, fountOn: false });
+    var Z = S.create(M, { date: '2026-10-24', from: 14 * 3600, to: 14 * 3600 + 400, att: { shin: { off: 1 }, fount: { off: 1 } } });
     // ② 일요일 10/18 16~22시 — 차 보존 · 걸린 시간
     var t0 = performance.now(), A = S.run(M, { date: '2026-10-18', seed: 7 }), ms = Math.round(performance.now() - t0);
-    var inNet = 0; Object.keys(A.L).forEach(function (k) { inNet += A.L[k].n; }); Object.keys(A.N).forEach(function (k) { inNet += 0; });
-    var back = 0; Object.keys(A.back).forEach(function (e) { back += A.back[e].length; });
+    var inNet = A.inNet();
     var R = A.result();
     ck('길을 못 찾은 차 0', A.log.length === 0, A.log.slice(0, 3));
-    ck('차 보존 — 만든 차 = 끝난 차 + 망 안 + 망 밖 대기 + 블록 출차 대기', A.V.length === A.done + inNet + back + A.blockOut.length, { made: A.V.length, done: A.done, inNet: inNet, back: back, blockOut: A.blockOut.length });
+    var heldF = A.A.fount.held, mkF = A.V.filter(function (v) { return v.k === 'bg' && v.p[0] === '4032>4031' && v.t0 >= 21 * 3600; }).length;
+    ck('차 보존 — 만든 차 = 끝난 차 + 망 안·망 밖·출차 대기', A.V.length === A.done + inNet, { made: A.V.length, done: A.done, inNet: inNet, 공원에남음: heldF });
     ck('16~22시 한 판 계산 시간(PC)', ms < 8000, ms + 'ms');
     ck('결과 지표 — 총 지체·최대 대기·블록 갇힘·막힘 시작·해소', R.delayVh >= 0 && R.peak > 0 && R.maxQm['4031.wt'] >= 0, { 지체_대시: R.delayVh, 막힘시작: hh(R.jamStart), 해소: hh(R.clearT), 막힌접근로최대: R.jamMax, 블록갇힘최대: R.trappedMax, 꼬리물기: R.box });
     out.push('   시간별(1시간마다) 대기 합 · 망 밖 · 신세계 문 앞 · 블록 출차 대기 · 공원 앞:');
-    A.samp.filter(function (s) { return s.t % 1800 === 0; }).forEach(function (s) { out.push('   ' + hh(s.t) + '  대기 ' + s.q + ' · 망밖 ' + s.back + ' · 문앞 ' + s.gateQ + ' · 출차대기 ' + s.blockOut + ' · 공원앞 ' + s.parkQ + ' · 4031[' + ['wt', 'nt', 'st', 'et'].map(function (l) { return l + ' ' + (s.ap['4031.' + l] || 0); }).join(' ') + ']'); });
+    A.samp.filter(function (s) { return s.t % 1800 === 0; }).forEach(function (s) { out.push('   ' + hh(s.t) + '  대기 ' + s.q + ' · 망밖 ' + s.back + ' · 문앞 ' + s.att.shin.door + ' · 출차대기 ' + s.att.shin.out + ' · 공원앞 ' + s.att.fount.door + ' · 4031[' + ['wt', 'nt', 'st', 'et'].map(function (l) { return l + ' ' + (s.ap['4031.' + l] || 0); }).join(' ') + ']'); });
     // ③ 평시(신세계·분수 끔) 대비 — 수요를 넣으면 대기가 커져야 한다
-    var B = S.run(M, { date: '2026-10-18', seed: 7, shinOn: false, fountOn: false }).result();
+    var B = S.run(M, { date: '2026-10-18', seed: 7, att: { shin: { off: 1 }, fount: { off: 1 } } }).result();
     ck('신세계·분수를 끄면 정점 대기가 작다(넘침이 수요에서 온다)', B.peak < R.peak, { 평시정점: B.peak, 둘다정점: R.peak });
     // ⑤ 재현 — 설계값 막대(신세계·분수)만 맞춘 설정 · 실측 속도와 맞대 본 결과
     var c18 = __cmp('1018'), c11 = __cmp('1011');

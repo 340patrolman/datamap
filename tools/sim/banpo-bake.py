@@ -114,25 +114,40 @@ def main():
     # ---- 설계값(화면 막대 · 바꿀 수 있다) ----
     design = {
         'turn': {'Lt': 0.15, 'Rt': 0.15, 'src': '설계값 — 회전 비율 조사 없음(좌·우 각 15% · 나머지 직진)'},
-        'upShare': {'v': 0.6, 'src': '설계값 — 4034 에서 북쪽으로 곧장 가는 차 가운데 반포대교 고가로 오르는 몫'},
         'rtRed': {'v': 0.5, 'src': '설계값 — 우회전은 적색에도 이 몫만큼 빠진다(보행자·일시정지)'},
         'lostStart': {'v': 2, 'src': '설계값 — 녹색 처음 2초는 출발 손실'},
         'freeV': {'v': 30, 'src': '설계값 — 막히지 않을 때 블록 둘레 주행 속도(km/h)'},
         'box': {'v': 0.3, 'src': '설계값 — 하류가 찼는데도 교차로 안으로 들어가는(꼬리물기) 차 비율'},
-        'shin': {'inPeak': 900, 'outPeak': 900, 'inFrom': 15, 'inTo': 19, 'outFrom': 17, 'outTo': 21, 'gateIn': 1200, 'src': '설계값 — 신세계 입차·출차 대수 자료 없음(대/시 · 막대)'},
-        'fount': {'in': 700, 'inFrom': 18.5, 'inTo': 19.75, 'outFrom': 21.0, 'outTo': 21.75, 'park': 500, 'src': '설계값 — 분수(10월 19:30~21:00) 보러 오는 차 대수 자료 없음 · 공원 주차장 받는 속도'},
-        'preset': {'1018': {'date': '2026-10-18', 'shin': {'inPeak': 1500, 'outPeak': 1500}, 'fount': {'in': 700}, 'nm': '10/18(일) 재현 — 신세계 입·출 1,500대/시 · 분수 700대/시'},
-                   '1011': {'date': '2026-10-11', 'shin': {'inPeak': 600, 'outPeak': 600}, 'fount': {'in': 600}, 'nm': '10/11(일) 평소 — 신세계 입·출 600대/시 · 분수 600대/시'},
-                   'src': '설계값 — 신세계·분수 막대만 움직여 실측 속도(ITS · 07_API키/out/livespd)의 막힘 모양에 맞춘 값 · 대수 자료가 아니다(tools/sim/sim-check.py diag 가 맞대 본다)'},
-        'from': {'shin': {'in.4031.wt': 0.3, '4032>4031': 0.25, 'in.4034.st': 0.25, 'in.4019.et': 0.2}, 'fount': {'in.4034.st': 0.4, 'in.4031.wt': 0.3, 'in.4019.et': 0.3},
-                 'src': '설계값 — 신세계·분수 차가 들어오는 방향 몫'},
     }
+    # 신호 없는 갈림·합류 — p = 갈림에서 그쪽으로 가는 몫(설계값)
+    mvx = [{'node': 'G', 'key': 'thru', 'fr': '4031>G', 'to': 'G>4019', 'la': links['G>4019']['lanes']},
+           {'node': 'X', 'key': 'thru', 'fr': '4019>X', 'to': 'X>4031', 'la': links['X>4031']['lanes']},
+           {'node': 'H', 'key': 'thru', 'fr': '4034>H', 'to': 'H>4031', 'la': links['H>4031']['lanes'], 'p': 0.4},
+           {'node': 'H', 'key': 'up', 'fr': '4034>H', 'to': 'H>up', 'la': 2, 'p': 0.6, 'src': '설계값 — 4034 에서 북쪽으로 가는 차 가운데 반포대교 고가로 오르는 몫 0.6'},
+           {'node': '4032', 'key': 'bridge', 'fr': '4031>4032', 'to': 'bridge', 'la': 3}]
+    # 끌어들이는 곳 — 대수 자료 없음 · 전부 설계값(막대)
+    att = [{'id': 'shin', 'nm': '신세계(블록 안 주차장)', 'mode': 'store', 'node': 'G', 'inFrom9': '4031>G', 'inCap': 1200, 'outLink': 'X>4031',
+            'inPeak': 900, 'inT0': 15, 'inT1': 19, 'outPeak': 900, 'outT0': 17, 'outT1': 21,
+            'from': {'in.4031.wt': 0.3, '4032>4031': 0.25, 'in.4034.st': 0.25, 'in.4019.et': 0.2},
+            'src': '설계값 — 신세계 입차·출차 대수 자료 없음(대/시 · 막대) · 문 자리 = 신반포로 4031 에서 200m(미결 질문)'},
+           {'id': 'fount', 'nm': '반포한강공원 분수', 'mode': 'hold', 'node': '4032', 'inFrom9': '4031>4032', 'inCap': 500, 'outLink': '4032>4031',
+            'inPeak': 700, 'inT0': 18.5, 'inT1': 19.75, 'outT0': 21.0, 'outT1': 21.75, 'outRate': 500,
+            'from': {'in.4034.st': 0.4, 'in.4031.wt': 0.3, 'in.4019.et': 0.3},
+            'src': '설계값 — 분수(10월 19:30~21:00) 보러 오는 차 대수 자료 없음 · 공원 주차장 받는 속도 500대/시'}]
+    actions = [{'id': 'cone4032', 'nm': '라바콘 — 반포대교남단 갈림(내려오는 차를 고가로)', 'closeEntry': ['4032>4031'], 'src': '앱 가정 — 라바콘 자리·효과는 형님 확인 필요'},
+               {'id': 'coneH', 'nm': '라바콘 — 고가 진입 전 갈림(남쪽에서 북쪽으로 가는 차를 고가로)', 'mvp': {'4034>H>H>up': 1, '4034>H>H>4031': 0}, 'src': '앱 가정 — 형님 확인 필요'},
+               {'id': 'rain', 'nm': '비(분수 정지)', 'attOff': ['fount']},
+               {'id': 'shinStop', 'nm': '백화점 입차 중단', 'attInStop': ['shin']},
+               {'id': 'shinOutFirst', 'nm': '백화점 출차 우선', 'attOutFirst': ['shin']}]
+    preset = {'1018': {'date': '2026-10-18', 'att': {'shin': {'inPeak': 1500, 'outPeak': 1500}, 'fount': {'inPeak': 700}}, 'nm': '10/18(일) 재현 — 신세계 입·출 1,500대/시 · 분수 700대/시'},
+              '1011': {'date': '2026-10-11', 'att': {'shin': {'inPeak': 600, 'outPeak': 600}, 'fount': {'inPeak': 600}}, 'nm': '10/11(일) 평소 — 신세계 입·출 600대/시 · 분수 600대/시'},
+              'src': '설계값 — 신세계·분수 막대만 움직여 실측 속도(ITS · 07_API키/out/livespd)의 막힘 모양에 맞춘 값 · 대수 자료가 아니다(tools/sim/sim-check.py diag 가 맞대 본다)'}
     sat = {'v': 2200, 'unit': '대/녹색 1시간/차로', 'src': '2차 자료', 'quote': '신호교차로 기본 조건에서 포화교통류율 2,200pcphgpl — 도로용량편람(2013) p.427',
            'note': '편람 원문 직접 대조 못 함 — 게임 queueModel 과 같은 값 · 기본 조건이라 실제는 더 적게 빠진다'}
     spacing = {'v': 7.5, 'unit': 'm/대', 'src': '설계값', 'note': '정지 차량 한 대가 차지하는 길이 — 실측 아님(게임 queueModel 과 같은 값)'}
-    doc = {'schema': 'tg-sim-banpo/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
+    doc = {'schema': 'tg-sim/2', 'area': 'banpo', 'nm': '반포 터미널 블록', 'date0': '2026-10-18', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
            'about': '반포 터미널 블록 신호·수요 시뮬레이터(개념 시연 — 예측·보증 아님) · intent/20261025-banpo-block-sim.md',
-           'nodes': nodes, 'links': links, 'vol': vol, 'volNote': volsrc, 'entry': entry, 'design': design, 'sat': sat, 'spacing': spacing,
+           'nodes': nodes, 'links': links, 'vol': vol, 'volNote': volsrc, 'entry': entry, 'design': design, 'mvx': mvx, 'att': att, 'actions': actions, 'preset': preset, 'sat': sat, 'spacing': spacing,
            'mv': '이동류 키 = 들어오는 쪽.회전(nt 북 · et 동 · st 남 · wt 서 / St 직진 · Lt 좌회전 · Rt 우회전) · dir 줄 = [이동류, 녹색 초, 황색 초, 녹색 시작(1현시 시작 = 0)]',
            'off': '옵셋 = 자정부터 센 1현시 시작(가설 A — tbook-signal 현장 측정 4036 에서 맞음) · 패턴 바뀜은 시각이 지난 뒤 다음 1현시부터'}
     out = os.path.join(D, 'sim-banpo.json')

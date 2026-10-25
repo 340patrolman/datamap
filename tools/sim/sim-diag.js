@@ -9,7 +9,7 @@
   function occH(A, a, h) { var nd = a.split('.')[0], lg = a.split('.')[1], I = M.nodes[nd].legs[lg].in, L = A.samp.filter(function (s) { return s.t >= h * 3600 && s.t < (h + 1) * 3600; }); return L.length ? L.reduce(function (x, s) { return x + s.occ[I]; }, 0) / L.length / A.L[I].cap : 0; }
   function hh(t) { if (t == null) return '-'; var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60); return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
   window.__cmp = function (pk) {
-    var P = M.design.preset[pk], A = S.run(M, { date: P.date, seed: 7, shin: P.shin, fount: P.fount }), R = A.result(), RL = REAL[P.date], c = { hit: 0, n: 0, tp: 0, fp: 0, fn: 0, rows: [] };
+    var P = M.preset[pk], A = S.run(M, { date: P.date, seed: 7, att: P.att, to: 23 * 3600 }), R = A.result(), RL = REAL[P.date], c = { hit: 0, n: 0, tp: 0, fp: 0, fn: 0, rows: [] };
     K.forEach(function (a) { var row = a + ' '; for (var h = 16; h <= 22; h++) { var sj = occH(A, a, h) >= 0.8, rj = RL[a][h - 16] <= 5; c.n++; if (sj === rj) c.hit++; if (sj && rj) c.tp++; if (sj && !rj) c.fp++; if (!sj && rj) c.fn++; row += (rj ? '■' : '·') + (sj ? '■' : '·') + ' '; } c.rows.push(row); });
     c.R = R; c.nm = P.nm; return c;
   };

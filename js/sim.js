@@ -282,14 +282,15 @@
       var L = S.L[AC.link], r = L ? L.n / L.cap : 0, N = S.N[AC.node]; if (!N) return;
       if (S.ac.on) S.ac.sec += AC.every || 5;
       if (!S.ac.on && r >= (AC.hi || 0.85)) {
-        if (!N.manual) S.manual(AC.node, true); var ma = N.manual, cut = AC.cut || ['wt.St', 'nt.Lt'], keep = AC.keep || 'et.St', j = -1;
+        if (!N.manual) S.manual(AC.node, true, AC.ph); var ma = N.manual, cut = AC.cut || ['wt.St', 'nt.Lt'], keep = AC.keep || 'et.St', j = -1;
         ma.ph.forEach(function (p, i) { if (j < 0 && !cut.some(function (c) { return p.mv.indexOf(c) >= 0; }) && p.mv.indexOf(keep) >= 0) j = i; });
         if (j < 0) ma.ph.forEach(function (p, i) { if (j < 0 && !cut.some(function (c) { return p.mv.indexOf(c) >= 0; })) j = i; });
         if (j < 0) { S.manual(AC.node, false); return; }
         S.go(AC.node, j); S.ac.on = true; S.ac.n++;
       } else if (S.ac.on && r <= (AC.lo || 0.6)) { S.manual(AC.node, false); S.ac.on = false; }
     }
-    S.manual = function (id, on) { var N = S.N[id]; if (!on) { N.manual = null; return; } var P = planAt(M, id, S.t, dow, alt); var G = greenSet(id, S.t), best = 0, sc = -1; P.ph.forEach(function (p, i) { var s = p.mv.filter(function (m) { return G[m]; }).length; if (s > sc) { sc = s; best = i; } }); N.manual = { ph: P.ph, i: best, clr: 0, keep: [] }; };
+    /* 수동 조작 — 지금 계획의 현시를 이어받는다 · ph 를 주면 수동일 때만 그 현시 목록(세분화)으로 고른다(자동 운영은 그대로 · 형님 건의 「수동 조작 때 고를 수 있는 현시 세분화」 · 2026-10-25) */
+    S.manual = function (id, on, ph) { var N = S.N[id]; if (!on) { N.manual = null; return; } var P = ph ? { ph: ph } : planAt(M, id, S.t, dow, alt); var G = greenSet(id, S.t), best = 0, sc = -1; P.ph.forEach(function (p, i) { var s = p.mv.filter(function (m) { return G[m]; }).length; if (s > sc) { sc = s; best = i; } }); N.manual = { ph: P.ph, i: best, clr: 0, keep: [] }; };
     S.go = function (id, k) { var ma = S.N[id].manual; if (!ma) return; var j = k == null ? (ma.i + 1) % ma.ph.length : k; if (j === ma.i) return; var nx = ma.ph[j].mv, cu = ma.ph[ma.i]; ma.keep = cu.mv.filter(function (m) { return nx.indexOf(m) >= 0; }); ma.clr = cu.y + cu.ar + 1; ma.next = j; };
     S.runTo = function (t1) { while (S.t < Math.min(t1, S.end)) S.step(); return S; };
     S.result = function () {

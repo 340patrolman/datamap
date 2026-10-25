@@ -9,7 +9,9 @@
     q4: [[37.504998, 127.001109], [37.507432, 127.009026], [37.504767, 127.010387], [37.502112, 127.003441]],   // 4031 → 4019 → 4028 → 4034(시계 방향)
     // 출입구 4곳 — 소유자 현장 지식(2026-10-25) · 자리는 변 가운데 근사 · 블록 쪽 차로에서 오른쪽으로 드나든다 → 사각형을 시계 방향으로 빙 돈다
     doors: [{ id: 'N', ic: '🅿', nm: '신반포로 — 백화점', ll: [37.506215, 127.005068] }, { id: 'E', ic: '🚌', nm: '잠원로 — 경부·영동선 고속버스·백화점', ll: [37.5061, 127.009707] },
-      { id: 'S', ic: '🏨', nm: '사평대로 — 메리어트 공유', ll: [37.50344, 127.006914] }, { id: 'W', ic: '🚌', nm: '반포대로 — 호남선 고속버스·백화점', ll: [37.503555, 127.002275] }] };
+      { id: 'S', ic: '🏨', nm: '사평대로 — 메리어트 공유', ll: [37.50344, 127.006914] }, { id: 'W', ic: '🚌', nm: '반포대로 — 호남선 고속버스·백화점', ll: [37.503555, 127.002275] }],
+    // 막힘 고리 네 변(data/onto-loops.json LOOP-banpo-terminal 과 같은 차례) — 지금 ITS 속도를 받는 링크 · 시뮬 길 · 신반포로는 4031→4019 470m 링크(1210026104)가 ITS 에 안 와서 앞 224m 조각
+    legs: [{ nm: '신반포로 →고속터미널', its: '1210026102', sim: '4031>G' }, { nm: '잠원로 →삼호가든', its: '1210026203', sim: '4019>4028' }, { nm: '사평대로 →서울성모병원', its: '1210024802', sim: '4028>4034' }, { nm: '반포대로 →고속터미널사거리', its: '1210025103', sim: 'H>4031' }] };
   var SHORT = { '4031': '고속터미널사거리', '4019': '고속터미널', '4028': '삼호가든', '4034': '서울성모병원', '4032': '반포대교남단' };
   var M = null, A = null, B = null, RUN = 0, SPD = 600, LAST = 0, PANEL = null, CH = null, ST = null;
   function $(id) { return document.getElementById(id); }
@@ -72,6 +74,34 @@
     CH = document.createElement('button'); CH.id = 'm2dSimChip'; CH.textContent = '🧪 시뮬 — ' + AREA.nm; CH.title = '신호·수요·라바콘을 바꿔 두 판으로 견준다(개념 시연)';
     CH.onclick = function () { open(); }; document.body.appendChild(CH);
     setInterval(function () { var cd = $('m2dCard'), v = near() && !(PANEL && PANEL.classList.contains('on')) && !(cd && cd.classList.contains('on') && cd.querySelector('[data-simblk]'));   /* 카드에 이미 단추가 있으면 떠 있는 단추는 숨김 */ CH.style.display = v ? 'block' : 'none'; }, 800);
+  }
+  // ---- 지금 ITS 실측(네 변) — data/live-spd-six.json(약 10분마다 · 20분 넘으면 판정 안 함) · 평소 = spd-normal-six 같은 요일 갈래·시각 가운데값 ----
+  var LIVE = null, NORM = null, LOOP = null, APRS = null;
+  // 네 변의 링크는 지도 엮임 보기와 같은 곳에서 — data/onto-loops.json legs(links 가 있으면 그것) → 없으면 apr(「APR-교차로-들어오는 쪽」)를 data/sig-approach-seocho.json 에서 풀어 그 길의 ITS 링크들(길이 가중) · 둘 다 못 읽으면 AREA.legs 의 링크 하나
+  function legLinks(i) {
+    var g = LOOP && LOOP.legs && LOOP.legs[i];
+    if (g && g.links && g.links.length) return g.links.map(function (x) { return [x, 1]; });
+    if (g && g.apr && APRS) { var q = g.apr.split('-'), sp = APRS.spots && APRS.spots[q[1]], r = sp && sp.in && sp.in[q[2]] && sp.in[q[2]][0]; if (r && r[4]) return r[4]; }
+    return [[AREA.legs[i].its, 1]];
+  }
+  function legSpd(i, M9) { var L = legLinks(i), w = 0, sm = 0, first = null; L.forEach(function (x) { var v = M9[x[0]]; if (v == null) return; if (first == null) first = v; sm += v * x[1]; w += x[1]; }); return LOOP && LOOP.legs && LOOP.legs[i] && LOOP.legs[i].links ? first : w ? Math.round(sm / w) : null; }   // links 는 「있으면 먼저」 차례 · apr 길은 길이 가중
+  function liveGet() {
+    fetch('data/onto-loops.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { LOOP = j && (j.loops || []).filter(function (x) { return x.sim === AREA.id; })[0] || null; paintLive(); }).catch(function () {});
+    fetch('data/sig-approach-seocho.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { APRS = j; paintLive(); }).catch(function () {});
+    fetch('data/live-spd-six.json?t=' + Math.floor(Date.now() / 300000)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { LIVE = j; paintLive(); }).catch(function () {});
+    fetch('data/spd-normal-six/11650.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { NORM = j; paintLive(); }).catch(function () {});
+  }
+  function paintLive() {
+    var el = $('simLive'); if (!el) return; if (!LIVE || !LIVE.m) { el.innerHTML = ''; return; }
+    var age = (Date.now() / 1000 - LIVE.at) / 60, now = new Date(), dk = [3, 0, 0, 0, 0, 1, 2][now.getDay()], hk = dk + '-' + now.getHours(), jamR = 0, nR = 0;
+    var cells = AREA.legs.map(function (g, i) { var v = legSpd(i, LIVE.m), NM = {}; if (NORM && NORM.links) legLinks(i).forEach(function (x) { var q = NORM.links[x[0]] && NORM.links[x[0]][hk]; if (q) NM[x[0]] = q[0]; }); var nv0 = legSpd(i, NM), nv = nv0 != null ? [nv0] : null; if (v != null) { nR++; if (v <= 5) jamR++; }
+      return '<span style="white-space:nowrap">' + esc(g.nm) + ' <b style="color:' + (v == null ? 'inherit' : v <= 5 ? '#dc2626' : v <= 12 ? '#ca8a04' : '#16a34a') + '">' + (v == null ? '값 없음' : v + 'km/h') + '</b>' + (nv ? ' <small>(평소 ' + nv[0] + ')</small>' : '') + '</span>'; }).join(' · ');
+    var cmp = '';
+    if (A && age <= 20) { var t9 = now.getHours() * 3600 + now.getMinutes() * 60, sm = null; A.samp.forEach(function (x) { if (Math.abs(x.t - t9) < 60) sm = x; });
+      var today = [3, 0, 0, 0, 0, 1, 2][window.tgSim.dowOf(ST.date)] === dk;
+      if (sm && today) { var hit = 0, nn = 0; AREA.legs.forEach(function (g, i) { var v = legSpd(i, LIVE.m); if (v == null) return; nn++; var sj = sm.occ[g.sim] >= 0.8 * A.L[g.sim].cap; if (sj === (v <= 5)) hit++; }); cmp = '<br>지금 시각(' + hh(t9) + ') 시뮬 현행 판과 맞대 봄 — 네 변 가운데 <b>' + hit + '/' + nn + '</b> 맞음(막힘 = 실측 5km/h 이하 · 시뮬 80% 넘게 참)'; }
+      else if (!today) cmp = '<br><small>지금 요일 갈래와 고른 날이 달라 시각별로 맞대 보지 않는다 — 오늘 요일을 고르면 맞대 본다</small>'; else cmp = '<br><small>시뮬 시계가 지금 시각(' + hh(t9) + ')에 닿으면 맞대 본다(16~23시)</small>'; }
+    el.innerHTML = '<div class="sn" style="color:inherit;background:rgba(14,165,233,.08);border-radius:10px;padding:6px 8px">📡 <b>지금 실측</b>(ITS · ' + hh(new Date(LIVE.at * 1000).getHours() * 3600 + new Date(LIVE.at * 1000).getMinutes() * 60) + (age > 20 ? ' · <b style="color:#dc2626">' + Math.round(age) + '분 지남 — 판정 안 함</b>' : '') + ') 막힘 고리 네 변: ' + cells + (nR ? ' — 막힌 변 ' + jamR + '/' + nR : '') + cmp + '</div>';
   }
   // ---- 받기 ----
   function need(cb) {
@@ -189,9 +219,9 @@
   function tick(ts) {
     if (!RUN || !A) return; if (!LAST) LAST = ts; var dt = Math.min(0.25, (ts - LAST) / 1000); LAST = ts;
     var n = Math.min(900, Math.round(dt * SPD)); for (var i = 0; i < n && A.t < A.end; i++) { A.step(); B.step(); }
-    paintRun(); if (A.t >= A.end) { RUN = 0; paintCtl(); paintRes(); paintHow(); return; } requestAnimationFrame(tick);
+    paintRun(); if (A.t % 600 < n + 1) paintLive(); if (A.t >= A.end) { RUN = 0; paintCtl(); paintRes(); paintHow(); paintLive(); return; } requestAnimationFrame(tick);
   }
-  function toEnd() { if (!A) start(); stop(); A.runTo(A.end); B.runTo(B.end); paintRun(); paintCtl(); paintRes(); paintHow(); }
+  function toEnd() { if (!A) start(); stop(); A.runTo(A.end); B.runTo(B.end); paintRun(); paintCtl(); paintRes(); paintHow(); paintLive(); }
   // 블록 그림(두 판 같은 꼴) — 길 = 점유(대수 ÷ 길이×차로÷7.5m) 색 · 숫자 = 문 앞·출차 대기·공원 앞
   var GEO = null;
   function geo() {
@@ -311,9 +341,9 @@
       if (!PANEL) { PANEL = document.createElement('div'); PANEL.id = 'm2dSim'; document.body.appendChild(PANEL); PANEL.addEventListener('click', onClick); PANEL.addEventListener('input', onInput); PANEL.addEventListener('change', onChange); }
       PANEL.innerHTML = '<h3>🧪 시뮬 — ' + esc(AREA.nm) + '<button data-simx="1" aria-label="닫기">✕ 닫기</button></h3>' +
         '<div class="sn">교차로 넷(고속터미널사거리·고속터미널·삼호가든·서울성모병원)과 블록 둘레 길 · 신호 = 교통과 현시도(4031·4028·4034) + T-Data(4019) · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
-        '<div class="warn">10/18 실측(ITS 속도)과 맞대 보면 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(맞음 52/77) · 서울성모병원 시차제 효과는 형님 현장 결과(많이 개선)와 반대로 나온다 — 고치는 중</div>' +
-        '<div id="simRun"></div><div id="simMsg" class="warn" style="display:none"></div><div id="simRes"></div><div id="simHow"></div><div id="simCmp"></div><div id="simCtl"></div>' + srcList();
-      PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; CMP = null; paintCmp(); paintCtl(); start(); paintHow();
+        '<div class="warn">10/18 실측(ITS 속도)과 맞대 보면 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(맞음 50/77) · <br>🏁 <b>현장 결과가 이김</b> — 서울성모병원 시차제(평일 16~20시 서→동 직진 23초 · 형님이 바꾼 것)는 현장에서 「많이 개선」(FK-4034-METER) · 이 시뮬은 반대로 나온다 → 시뮬이 틀린 것으로 본다(서쪽 접근로 수요가 설계값이라 늘 가득) · 다른 안도 현장 결과가 있으면 그것이 먼저</div>' +
+        '<div id="simLive"></div><div id="simRun"></div><div id="simMsg" class="warn" style="display:none"></div><div id="simRes"></div><div id="simHow"></div><div id="simCmp"></div><div id="simCtl"></div>' + srcList();
+      PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; CMP = null; paintCmp(); paintCtl(); start(); paintHow(); liveGet();
     });
   }
   function close() { stop(); if (PANEL) PANEL.classList.remove('on'); }

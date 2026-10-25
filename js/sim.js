@@ -36,7 +36,7 @@
   /* 그 시각(자정부터 초)의 신호 계획 { c 주기, off 옵셋, win 녹색 창, pat 패턴 번호, src, ph 현시 }
      현시도(tod·pat·dir) · T-Data 기록(recs — 요일 갈래·시각마다 한 기록 · 맞는 갈래가 없으면 가장 가까운 시각) · 재편안(alt — 현시 목록) */
   function planAt(M, id, t, dow, alt, noTw) {
-    var n = M.nodes[id], P = alt && alt[id];
+    var n = M.nodes[id], P = alt && alt[id]; if (P && P.length) P = P.filter(function (x) { return t >= x.t0 && t < x.t1; })[0];   /* 시간대마다 다른 안(배열) — 실제 돈 신호(T-Data 시간별) 재현 등 */
     if (P && (P.t0 == null || (t >= P.t0 && t < P.t1))) { var w0 = phasesToWin(P.ph); return { c: w0.c, off: P.off || 0, win: w0.win, src: '재편안', ph: P.ph }; }
     var p = n.plan;
     if (p.recs) {

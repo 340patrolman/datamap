@@ -231,17 +231,18 @@
         }
       }
       function attExit(d, lim) { var k = 0; while (d.q9.length && k < lim && room(d.out)) { var v = d.q9.shift(); v.i = 1; enter(v, d.out, t); k++; } return k; }
+      function wv(X, d) { return d.weave != null ? d.weave : (X.a.weave || 0); }   /* 문마다 엉킴 몫 — 들어가는 곳·나오는 곳이 떨어진 문(반포대로 호남선 45%·20%)은 0 */
       function eachDoor(f) { Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (X.a.mode !== 'store' && X.a.mode !== 'table') return; X.a.doors.forEach(function (d) { f(X, d); }); }); }
-      eachDoor(function (X, d) { var c9 = M.links[d.out].lanes * satS * (X.a.weave && d.mv.some(function (m) { return m.q.length && m.q[0].rd <= t; }) ? 1 - X.a.weave : 1); d.mAcc = Math.min(d.mAcc + c9, 2 * c9 + 1); if (X.a.outFirst) d.mAcc -= attExit(d, Math.floor(d.mAcc)); });
+      eachDoor(function (X, d) { var c9 = M.links[d.out].lanes * satS * (wv(X, d) && d.mv.some(function (m) { return m.q.length && m.q[0].rd <= t; }) ? 1 - wv(X, d) : 1); d.mAcc = Math.min(d.mAcc + c9, 2 * c9 + 1); if (X.a.outFirst) d.mAcc -= attExit(d, Math.floor(d.mAcc)); });
       Object.keys(S.mv).forEach(function (k) {
         var m = S.mv[k], q = m.q, on;
         if (m.kind === 'sig') on = GS[m.node] && GS[m.node][m.key]; else on = true;
         var box = (S.N[m.node] || NOBOX).box; if (box.length && box.some(function (b) { return b.to !== m.to; })) on = false;
         var la = m.la - (m.key.slice(-2) === 'St' && S.rtBlk[m.fr] >= t - 1 ? 0.5 : 0);   // 우회전 차가 막혀 서 있으면 나눠 쓰는 바깥 차로가 직진에도 막힌다
         if (m.att9 && m.att9.occ != null && m.att9.occ >= m.att9.a.capacity) { on = false; if (m.att9.a.circle) circleOut(m, t); }   // 만차 — 문 닫힘 · 빙 도는 곳이면 다음 문으로
-        if (m.door9 && m.door9.q9.length && m.att9.a.weave) la *= 1 - m.att9.a.weave;   // 같은 문에서 나오는 차와 엉킴(들어가는 쪽이 그만큼 느림)
+        if (m.door9 && m.door9.q9.length && wv(m.att9, m.door9)) la *= 1 - wv(m.att9, m.door9);   // 같은 문에서 나오는 차와 엉킴(들어가는 쪽이 그만큼 느림)
         if (OUTK[m.to]) la *= outFac(m.to, t);   /* 나가는 길 너머가 평소 막히는 시간 — 덜 빠진다(자동 구역 · onsp) */
-        var rate = m.kind === 'cap' ? m.cap / 3600 * (m.door9 && m.door9.q9.length && m.att9.a.weave ? 1 - m.att9.a.weave : 1) : la * satS * (m.kind === 'rt' && !(GS[m.node] && GS[m.node][m.key]) ? rtRed : 1);
+        var rate = m.kind === 'cap' ? m.cap / 3600 * (m.door9 && m.door9.q9.length && wv(m.att9, m.door9) ? 1 - wv(m.att9, m.door9) : 1) : la * satS * (m.kind === 'rt' && !(GS[m.node] && GS[m.node][m.key]) ? rtRed : 1);
         if (!on || !q.length) { m.acc = 0; return; }
         m.gs++; m.acc = Math.min(m.acc + rate, Math.max(1, rate * 2));
         while (m.acc >= 1 && q.length && q[0].rd <= t) {

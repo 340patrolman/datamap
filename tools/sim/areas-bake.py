@@ -8,7 +8,7 @@ import json, os, glob, datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 D = os.path.join(ROOT, 'data')
-NAMES = {'seochoyeok': '서초역 둘레', 'gangnam': '강남역 둘레', 'yangjae': '양재역 둘레', 'sadang': '사당역 둘레', 'isu': '이수역 둘레'}
+NAMES = {'seochoyeok': '서초역 둘레', 'gangnam': '강남역 둘레', 'yangjae': '양재역 둘레', 'sadang': '사당역 둘레', 'isu': '이수역 둘레', 'nambu': '남부터미널 둘레', 'naebang': '내방역 둘레'}
 SKIP = {'banpo-auto'}
 
 out = []

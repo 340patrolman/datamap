@@ -1,8 +1,8 @@
 // 데이터 압축지도(datamap) 서비스워커 — 앱 파일을 미리 저장(설치형·오프라인)하고 새 판은 다음 실행 때 바꿔 끼운다.
 // 바탕 조각(data/base/t/)과 「📥 지역 받기」로 받은 구 자료는 판과 상관없는 보관함 tg-tiles 에서 먼저 꺼낸다.
-var CACHE = 'dm-v2.301.25-d11';
+var CACHE = 'dm-v2.301.26-d11';
 var TILES = 'tg-tiles';
-var FILES = ['./', './index.html', './manifest.json', './js/map2d.js?v=2.301.25', './js/decide.js?v=5', './js/link.js?v=18', './js/travel-time.js?v=5', './data/regions.json', './data/place-keys-seocho.json', './data/base/index.json', './data/base/ov.json', './data/base/sgg.json', './icon-192.png', './icon-512.png'];
+var FILES = ['./', './index.html', './manifest.json', './js/map2d.js?v=2.301.26', './js/decide.js?v=5', './js/link.js?v=18', './js/travel-time.js?v=5', './data/regions.json', './data/place-keys-seocho.json', './data/base/index.json', './data/base/ov.json', './data/base/sgg.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
 });

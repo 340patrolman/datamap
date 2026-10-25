@@ -111,7 +111,7 @@ def main():
                 if l['t'] in g['ns'] or l['ty'] in ('001', '002') or l['ramp']: continue
                 lk, tot, to = chain(l, False)
                 far = lk[min(len(lk) - 1, 1)]['t']
-                outs.append({'l': l, 'len': tot, 'to': to, 'brg': bearing(g['c'], N[far][:2]), 'lanes': l['lanes'], 'nm': l['nm']})
+                outs.append({'l': l, 'len': tot, 'to': to, 'brg': bearing(g['c'], N[far][:2]), 'lanes': l['lanes'], 'nm': l['nm'], 'lk': lk})
         for kind, arr in (('in', apps), ('out', outs)):
             by = {}
             for a in arr:
@@ -145,6 +145,13 @@ def main():
             if o and not (o['to'] and o['to'] in sig and o['to'] != no):
                 lid = 'out.' + no + '.' + lg
                 links[lid] = {'id': lid, 'fr': no, 'to': None, 'len': 0, 'lanes': o['lanes'], 'nm': (o['nm'] or '이름 없는 길') + ' — 나감', 'src': '노드링크', 'ofr': lg, 'sink': 1}
+                # 나간 뒤 길(1.5km 안 · 다음 신호 교차로까지)의 평소 속도 가운데 가장 느린 값 — 구역 밖이 막히는 시간에는 나가는 차가 덜 빠진다(js/sim.js outFac · 설계값)
+                on = {}
+                for l2 in o['lk']:
+                    v2 = nsp_of(l2['id'])
+                    for k2, x2 in (v2 or {}).items():
+                        if k2 not in on or x2 < on[k2]: on[k2] = x2
+                if on: links[lid]['onsp'] = on; links[lid]['oits'] = [l2['id'] for l2 in o['lk']]
     # 안쪽 길의 나가는 쪽이 안 생긴 경우(위 교차로 다리 겹침으로 버려짐) — 그 길을 바깥 들어옴으로
     for no in sig:
         nodes[no] = {'id': no, 'nm': sig[no]['nm'], 'ty': 'sig', 'll': [sig[no]['c'][1], sig[no]['c'][0]], 'legs': {}}

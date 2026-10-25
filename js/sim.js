@@ -77,6 +77,9 @@
     scen = scen || {}; var DS = M.design, dow = dowOf(scen.date || M.date0 || '2026-10-18'), VK = VOLK[dow];
     var JAM = 0.8, sp = M.spacing.v, satS = M.sat.v / 3600, vf = (scen.freeV || DS.freeV.v) / 3.6, lost = DS.lostStart.v, rtRed = scen.rtRed != null ? scen.rtRed : DS.rtRed.v;
     var boxP = scen.box != null ? scen.box : DS.box.v, R = rng(scen.seed || 7), RB = rng((scen.seed || 7) + 101), RD = rng((scen.seed || 7) + 202), RO = rng((scen.seed || 7) + 303);   // 길(R) · 꼬리물기(RB) · 머무는 시간(RD) · 나가는 차의 길(RO) — 판마다 달라지는 것은 R 을 쓰지 않아 두 판이 같은 차를 쓴다
+    /* 구역 밖 막힘(자동 구역 · 2026-10-25) — 나가는 길(sink)에 그 너머 1.5km 평소 속도(onsp · 요일 갈래-시 · 가장 느린 링크)가 있으면 빠지는 속도를 줄인다: 18km/h↑ 그대로 · 6km/h 면 0.2배 · 아래로 0.15배(설계값) — 끄기 scen.noOut */
+    var DKO = [3, 0, 0, 0, 0, 1, 2][dow], OUTK = {}; if (!scen.noOut) Object.keys(M.links).forEach(function (k) { if (M.links[k].sink && M.links[k].onsp) OUTK[k] = M.links[k].onsp; });
+    function outFac(k, t) { var v = OUTK[k][DKO + '-' + Math.min(23, Math.floor(t / 3600))]; return v == null ? 1 : Math.max(0.15, Math.min(1, (v - 3) / 15)); }
     var FROM = scen.from != null ? scen.from : 16 * 3600, WARM = scen.warm != null ? scen.warm : 7200;   // 몸풀기 2시간 — 빈 길에서 시작하면 16시에 이미 쌓여 있던 차가 없다
     // 조치(라바콘·입차 중단 …) 모으기
     var ACT = { closeEntry: {}, mvp: {}, attOff: {}, attInStop: {}, attOutFirst: {}, noTw: {}, attInCap: {} };
@@ -237,6 +240,7 @@
         var la = m.la - (m.key.slice(-2) === 'St' && S.rtBlk[m.fr] >= t - 1 ? 0.5 : 0);   // 우회전 차가 막혀 서 있으면 나눠 쓰는 바깥 차로가 직진에도 막힌다
         if (m.att9 && m.att9.occ != null && m.att9.occ >= m.att9.a.capacity) { on = false; if (m.att9.a.circle) circleOut(m, t); }   // 만차 — 문 닫힘 · 빙 도는 곳이면 다음 문으로
         if (m.door9 && m.door9.q9.length && m.att9.a.weave) la *= 1 - m.att9.a.weave;   // 같은 문에서 나오는 차와 엉킴(들어가는 쪽이 그만큼 느림)
+        if (OUTK[m.to]) la *= outFac(m.to, t);   /* 나가는 길 너머가 평소 막히는 시간 — 덜 빠진다(자동 구역 · onsp) */
         var rate = m.kind === 'cap' ? m.cap / 3600 * (m.door9 && m.door9.q9.length && m.att9.a.weave ? 1 - m.att9.a.weave : 1) : la * satS * (m.kind === 'rt' && !(GS[m.node] && GS[m.node][m.key]) ? rtRed : 1);
         if (!on || !q.length) { m.acc = 0; return; }
         m.gs++; m.acc = Math.min(m.acc + rate, Math.max(1, rate * 2));
@@ -297,8 +301,10 @@
         if (v != null) { r.mn++; if (sj === rj) r.mh++; if (rj) { r.jn++; if (sj) r.jh++; } }   /* 실측이 있는 칸만 · 실측 막힘 칸 가운데 시뮬도 막힘 */
         r.n++; if (sj === rj) r.hit++; else if (sj) r.fp[k] = (r.fp[k] || 0) + 1; else r.fn[k] = (r.fn[k] || 0) + 1; } }); return r; }
     for (var it = 0; it <= (opt.iter || 10); it++) {
-      var S = run(M, { date: date, seed: 5, from: H0 * 3600, to: (H1 + 1) * 3600, bg: sc, bgAll: all, noCal: 1 }), r = score(S); hist.push({ it: it, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, all: Math.round(all * 100) / 100 });
-      if (!BEST || r.hit > BEST.hit) BEST = { hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, it: it, all: all, sc: JSON.parse(JSON.stringify(sc)) };   /* 가장 잘 맞은 판을 남긴다(마지막 판이 더 나쁠 수 있다) */
+      var S = run(M, { date: date, seed: 5, from: H0 * 3600, to: (H1 + 1) * 3600, bg: sc, bgAll: all, noCal: 1, noOut: opt.noOut }), r = score(S); hist.push({ it: it, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, all: Math.round(all * 100) / 100 });
+      r.bal = r.jn ? (r.jh / r.jn + (r.hit - r.jh) / Math.max(1, r.n - r.jn)) / 2 : r.hit / Math.max(1, r.n);   /* 막힘 칸 맞힘과 안 막힘 칸 맞힘의 평균 — 안 막힘 칸이 훨씬 많아 그냥 맞힌 수로 고르면 「아무 데도 안 막힘」 판이 뽑힌다 */
+      r.sel = (r.bal + r.hit / Math.max(1, r.n)) / 2;   /* 고르는 값 = 그 평균과 맞힌 몫의 평균(한쪽 끝 — 다 막힘·다 안 막힘 — 으로 쏠리지 않게) */
+      if (!BEST || r.sel > BEST.sel) BEST = { sel: r.sel, bal: r.bal, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, it: it, all: all, sc: JSON.parse(JSON.stringify(sc)) };   /* 가장 잘 맞은 판을 남긴다(마지막 판이 더 나쁠 수 있다) */
       if (it === (opt.iter || 10)) break;
       var innerFp = 0, innerFn = 0;
       Object.keys(r.fp).forEach(function (k) { if (M.entry[k]) sc[k] *= 0.75; else innerFp++; });

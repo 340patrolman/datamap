@@ -66,7 +66,7 @@
       }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); });
     };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=9'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=10'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   function defState() { var d = new Date(), h = d.getHours(); return { day: ['su', 'mt', 'mt', 'mt', 'mt', 'fr', 'sa'][d.getDay()], win: h >= 7 && h < 11 ? 'am' : h >= 11 && h < 16 ? 'md' : 'pm', k: 100, shut: {}, edit: {}, sel: Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig'; })[0] }; }
   function wOf() { return WINS.filter(function (w) { return w[0] === ST.win; })[0]; }
@@ -155,8 +155,27 @@
     return '<details><summary>값의 출처 · 한계</summary><ul style="margin:4px 0;padding-left:18px;font-size:11.5px;line-height:1.5">' + L.join('') + '</ul></details>';
   }
   // ---- 📡 지금 실측(ITS) — data/live-spd-six.json(이 PC 가 약 11분마다 받아 올림 · 20분 넘으면 판정 안 함) · 평소 = 그 링크의 평소 속도(nsp · 요일 갈래-시) ----
-  var LIVE = null;
-  function liveGet() { fetch('data/live-spd-six.json?t=' + Math.floor(Date.now() / 300000)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { LIVE = j; paintLive(); }).catch(function () {}); }
+  var LIVE = null, LOOP = null, APRS = null;
+  function liveGet() {
+    fetch('data/live-spd-six.json?t=' + Math.floor(Date.now() / 300000)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { LIVE = j; paintLive(); }).catch(function () {});
+    /* 막힘 고리(data/onto-loops.json · sim 칸이 이 구역인 고리) — 네 변 = 「APR-교차로-들어오는 쪽」 · ITS 링크는 data/sig-approach-seocho.json 에서(엮임 보기·반포 sim-ui 와 같은 곳) */
+    fetch('data/onto-loops.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { LOOP = j && (j.loops || []).filter(function (x) { return x.sim === AR.id; })[0] || null; paintLive(); }).catch(function () {});
+    fetch('data/sig-approach-seocho.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { APRS = j; paintLive(); }).catch(function () {});
+  }
+  function legLinks(g) {
+    if (g.links && g.links.length) return g.links.map(function (x) { return [x, 1]; });
+    if (g.apr && APRS) { var q = g.apr.split('-'), sp = APRS.spots && APRS.spots[q[1]], r = sp && sp.in && sp.in[q[2]] && sp.in[q[2]][0]; if (r && r[4]) return r[4]; }
+    return [];
+  }
+  function legSpd(g, M9) { var L = legLinks(g), w = 0, sm = 0, first = null; L.forEach(function (x) { var v = M9[x[0]]; if (v == null) return; if (first == null) first = v; sm += v * x[1]; w += x[1]; }); return g.links ? first : w ? Math.round(sm / w) : null; }
+  function legSim(g) { var q = (g.apr || '').split('-'); if (q.length < 3) return null; var hit = null; Object.keys(M.links).forEach(function (k) { var l = M.links[k]; if (l.to === q[1] && l.oto === q[2]) hit = k; }); return hit; }
+  function loopRow(sm, age) {
+    if (!LOOP || !LOOP.legs) return ''; var jr = 0, nr = 0, hit = 0, nn = 0;
+    var cells = LOOP.legs.map(function (g) { var v = legSpd(g, LIVE.m), k = legSim(g), mk = ''; if (v != null) { nr++; if (v <= 6) jr++; }
+      if (!k) mk = ' <small>(시뮬 구역 밖)</small>'; else if (sm && v != null && age <= 20) { var sj = (sm.occ[k] || 0) >= 0.8 * A.L[k].cap; nn++; if (sj === (v <= 6)) { hit++; mk = ' ✓'; } else mk = ' ✗'; }
+      return '<span style="white-space:nowrap">' + esc((g.nm || '').split(' — ')[0]) + ' <b style="color:' + (v == null ? 'inherit' : v <= 6 ? '#dc2626' : v <= 12 ? '#ca8a04' : '#16a34a') + '">' + (v == null ? '값 없음' : v) + '</b>' + mk + '</span>'; });
+    return '<br>🔁 <b>' + esc(LOOP.nm || LOOP.id) + '</b> 네 변: ' + cells.join(' · ') + (nr ? ' — 막힌 변 ' + jr + '/' + nr : '') + (nn ? ' · 시뮬과 ' + hit + '/' + nn + ' 맞음' : '');
+  }
   function paintLive() {
     var el = $('simALive'); if (!el) return; if (!LIVE || !LIVE.m) { el.innerHTML = ''; return; }
     var age = (Date.now() / 1000 - LIVE.at) / 60, now = new Date(), dk = [3, 0, 0, 0, 0, 1, 2][now.getDay()], hk = dk + '-' + now.getHours(), t9 = now.getHours() * 3600 + now.getMinutes() * 60;
@@ -165,9 +184,9 @@
       var l = M.links[k], v = LIVE.m[l.its], nv = l.nsp && l.nsp[hk], mk = '';
       if (sm && age <= 20) { var sj = (sm.occ[k] || 0) >= 0.8 * A.L[k].cap, rj = v <= 6; nn++; if (sj === rj) hit++; mk = sj === rj ? ' ✓' : ' ✗'; }
       return '<span style="white-space:nowrap">' + esc((l.nm || k).replace(' — 들어옴', '')) + ' <b style="color:' + (v <= 6 ? '#dc2626' : v <= 12 ? '#ca8a04' : '#16a34a') + '">' + v + '</b>' + (nv != null ? '<small>(평소 ' + nv + ')</small>' : '') + mk + '</span>'; });
-    if (!cells.length) { el.innerHTML = ''; return; }
+    if (!cells.length && !LOOP) { el.innerHTML = ''; return; }
     var at = new Date(LIVE.at * 1000), cmp = !A ? '' : age > 20 ? '' : !today ? '<br><small>오늘 요일을 고르면 시뮬 현행 판과 지금 시각으로 맞대 본다</small>' : sm ? '<br>지금 시각(' + hh(t9) + ') 시뮬 현행 판과 맞대 봄 — <b>' + hit + '/' + nn + '</b> 맞음(막힘 = 실측 6km/h 이하 · 시뮬 80% 넘게 참 · ✓ 맞음 ✗ 틀림)' : '<br><small>시뮬 시계가 지금 시각(' + hh(t9) + ')을 지나면 맞대 본다 — 지금 시각이 든 시간대를 고를 것</small>';
-    el.innerHTML = '<div class="sn" style="color:inherit;background:rgba(14,165,233,.08);border-radius:10px;padding:6px 8px">📡 <b>지금 실측</b>(ITS 통행속도 km/h · ' + hh(at.getHours() * 3600 + at.getMinutes() * 60) + (age > 20 ? ' · <b style="color:#dc2626">' + Math.round(age) + '분 지남 — 판정 안 함</b>' : '') + '): ' + cells.join(' · ') + cmp + '</div>';
+    el.innerHTML = '<div class="sn" style="color:inherit;background:rgba(14,165,233,.08);border-radius:10px;padding:6px 8px">📡 <b>지금 실측</b>(ITS 통행속도 km/h · ' + hh(at.getHours() * 3600 + at.getMinutes() * 60) + (age > 20 ? ' · <b style="color:#dc2626">' + Math.round(age) + '분 지남 — 판정 안 함</b>' : '') + '): ' + cells.join(' · ') + cmp + loopRow(sm, age) + '</div>';
   }
   // ---- 돌리기 ----
   function start() { stop(); A = window.tgSim.create(M, scen(false), alt(0)); B = window.tgSim.create(M, scen(true), alt(1)); A.runTo(A.from - 1); B.runTo(B.from - 1); paintRun(); paintRes(); RUN = 1; LAST = 0; requestAnimationFrame(tick); }

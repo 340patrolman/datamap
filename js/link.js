@@ -234,7 +234,7 @@
       if (acts.length) h += '<details><summary>교통과가 이 넷에 해 온 조치 ' + acts.length + '건(교통과 출력물 · 근거기록)</summary><ul class="lg2">' + acts.slice(0, 30).map(function (a) { return '<li>' + esc(nm(O(a.int))) + ' — ' + esc(a.what) + '</li>'; }).join('') + '</ul></details>';
       var sd = SIMD && SIMD.a === L.sim ? SIMD.d : null;
       if (sd && sd.actions) h += '<details><summary>🧪 시뮬로 견줘 볼 수 있는 조치 ' + sd.actions.length + '가지</summary><ul class="lg2">' + sd.actions.map(function (a) { return '<li>' + esc(a.nm) + (a.src ? ' <small>— ' + esc(a.src) + '</small>' : '') + '</li>'; }).join('') + '</ul></details>';
-      h += histBox(L) + actBox(L) + (L.sim === 'banpo' ? '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div>' : '<div class="note">이 블록 시뮬은 아직 없다</div>') + '</div>';
+      h += histBox(L) + actBox(L) + (L.sim === 'banpo' ? '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div>' : L.sim && window.tgSimArea ? '<div class="bar"><button data-sim="' + esc(L.sim) + '">🧪 이 둘레 시뮬 열기</button></div><div class="note">자동으로 엮은 구역 시뮬(' + esc(L.sim) + ') — 반포 블록(손으로 짠 구역)보다 거칠고 실제 막힘을 덜 낸다(시뮬 화면에 맞음 수) · 개념 시연 · 형님 현장 결과가 이긴다</div>' : '<div class="note">이 블록 시뮬은 아직 없다</div>') + '</div>';
       return h; }).join('');
   }
 
@@ -371,7 +371,7 @@
       var t = rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n');
       if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { b.textContent = '✔ 복사됨'; }, function () { prompt('복사', t); }); else prompt('복사', t); return; }
     if (b.hasAttribute('data-actclr')) { if (confirm('이 기기의 현장 조치 기록을 모두 지울까요?')) { actSet([]); paint(); } return; }
-    if (b.hasAttribute('data-sim')) { if (window.tgSimUI) { if (window.innerWidth < 760) close(); window.tgSimUI.open(); } return; }
+    if (b.hasAttribute('data-sim')) { var sv = b.getAttribute('data-sim'); if (sv !== '1' && window.tgSimArea) { if (window.innerWidth < 760) close(); window.tgSimArea.open(sv); } else if (window.tgSimUI) { if (window.innerWidth < 760) close(); window.tgSimUI.open(); } return; }
     if ((a = b.getAttribute('data-hv'))) { var v = b.getAttribute('data-v'), why = '';
       if (v !== '맞다') { why = (prompt(v === '틀리다' ? '어디가 틀렸나요? (한 줄 · 사람·차량번호는 적지 않습니다)' : '덧붙일 말(비워도 됨)', '') || '').trim().slice(0, 120); }
       if (PII.some(function (r) { return r.test(why); })) { alert('전화번호·주민번호·차량번호 꼴이 있어 저장하지 않았습니다.'); return; }

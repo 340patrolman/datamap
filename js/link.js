@@ -15,6 +15,7 @@
   function logGet() { try { return JSON.parse(localStorage.getItem(LOGK) || '[]'); } catch (e) { return []; } }
   function logSet(a) { try { localStorage.setItem(LOGK, JSON.stringify(a)); return true; } catch (e) { return false; } }
   function hkey(id, t) { return id + '|' + String(t).split(' — ')[0]; }
+  var LOOPS = null, SIMD = null;   /* 막힘 고리(data/onto-loops.json · 소유자가 짚은 교착 자리) · 시뮬 구역 자료(data/sim-<구역>.json — 조치 목록) */
   var LIVE = null, LIVEAT = 0, NORM = null, NORMING = false;   /* 실시간 세 장(돌발 둘 · 통행속도) — 3분마다 다시(sw 가 네트워크 먼저 · 주소에 시각을 안 붙여 보관함이 쌓이지 않게) · 평소 속도(4MB)는 누를 때만 */
   var NAV = { INT: 1, DNG: 1, STN: 1, TRD: 1, PBX: 1, STA: 1, EVT: 1 };
   var TN = { INT: '교차로', DNG: '행정동', STN: '지하철역', TRD: '상권', PBX: '지구대·파출소', STA: '경찰서', EVT: '사건', ACC: '사고(10년)', ACL: '사고 칸', CAM: '단속 카메라', ATT: '시설', PLC: '250m 칸', APR: '들어오는 길', RD: '도로 구간', ACT: '교통과 조치', REC: '조치 기록', VIO: '위반 유형', LAW: '법규', PREC: '판례', RULE: '규칙', FK: '현장 판단' };
@@ -44,7 +45,7 @@
       '#m2dLnk .lg{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-bottom:6px}#m2dLnk .lg i{display:inline-block;width:20px;border-top:3px solid #16a34a;vertical-align:middle;margin-right:4px}#m2dLnk .lg i.c{border-top:2px dashed #d97706}#m2dLnk .lg i.d{border-top:2px dotted #94a3b8}' +
       '#m2dLnk h4{margin:12px 0 4px;font-size:14px}#m2dLnk .note{font-size:11.5px;color:var(--ink2);margin:2px 0 6px}' +
       '#m2dLnk .now{border:1px solid #0ea5e9;border-radius:12px;padding:8px 10px;background:rgba(14,165,233,.07)}#m2dLnk .now li{margin:2px 0}#m2dLnk .now ul,#m2dLnk .hy ul{margin:2px 0;padding-left:18px}' +
-      '#m2dLnk .live{border:1px solid #dc2626;border-radius:12px;padding:8px 10px;background:rgba(220,38,38,.06)}#m2dLnk .live>div{margin:3px 0}#m2dLnk .live ul{margin:2px 0;padding-left:18px}#m2dLnk .live li{margin:2px 0}#m2dLnk .live .sb{min-height:28px;font-size:12px;margin-left:4px}#m2dLnk a.wi{display:inline-block;margin-top:6px;padding:6px 10px;border:1px solid #7c3aed;border-radius:999px;color:#7c3aed;font-size:12.5px;text-decoration:none}#m2dLnk .hv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}#m2dLnk .hv .sb{min-height:32px}#m2dLnk .hq{font-size:12px;color:var(--ink2)}#m2dLnk .hb{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip)}#m2dLnk .hb.ok{background:rgba(22,163,74,.15);color:#15803d}#m2dLnk .hb.no{background:rgba(220,38,38,.12);color:#b91c1c}#m2dLnk .lg2{margin:2px 0;padding-left:18px;font-size:12.5px}#m2dLnk .hy{border:1px dashed #d97706;border-radius:12px;padding:8px 10px;margin:6px 0;background:rgba(217,119,6,.06)}#m2dLnk .hy b.t{font-size:14px}' +
+      '#m2dLnk .loop{border:1px solid #7c3aed;border-radius:12px;padding:8px 10px;background:rgba(124,58,237,.06)}#m2dLnk .loop>div{margin:3px 0}#m2dLnk .loop button.go{min-height:26px;border:1px solid var(--acc);color:var(--acc);background:none;border-radius:999px;padding:0 8px;font-size:11.5px;margin-left:4px}#m2dLnk .live{border:1px solid #dc2626;border-radius:12px;padding:8px 10px;background:rgba(220,38,38,.06)}#m2dLnk .live>div{margin:3px 0}#m2dLnk .live ul{margin:2px 0;padding-left:18px}#m2dLnk .live li{margin:2px 0}#m2dLnk .live .sb{min-height:28px;font-size:12px;margin-left:4px}#m2dLnk a.wi{display:inline-block;margin-top:6px;padding:6px 10px;border:1px solid #7c3aed;border-radius:999px;color:#7c3aed;font-size:12.5px;text-decoration:none}#m2dLnk .hv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}#m2dLnk .hv .sb{min-height:32px}#m2dLnk .hq{font-size:12px;color:var(--ink2)}#m2dLnk .hb{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip)}#m2dLnk .hb.ok{background:rgba(22,163,74,.15);color:#15803d}#m2dLnk .hb.no{background:rgba(220,38,38,.12);color:#b91c1c}#m2dLnk .lg2{margin:2px 0;padding-left:18px;font-size:12.5px}#m2dLnk .hy{border:1px dashed #d97706;border-radius:12px;padding:8px 10px;margin:6px 0;background:rgba(217,119,6,.06)}#m2dLnk .hy b.t{font-size:14px}' +
       '#m2dLnk .k4{display:grid;grid-template-columns:62px minmax(0,1fr);gap:1px 8px;font-size:12.5px;margin-top:4px}#m2dLnk .k4 span{color:var(--ink2)}#m2dLnk .k4 div{min-width:0;overflow-wrap:anywhere}' +
       '#m2dLnk details.rel{border:1px solid var(--line);border-radius:12px;margin:6px 0;padding:0 10px}#m2dLnk details.rel>summary{cursor:pointer;padding:8px 0;font-weight:700;list-style:none}#m2dLnk details.rel>summary::-webkit-details-marker{display:none}#m2dLnk details.rel>summary small{font-weight:400;color:var(--ink2)}' +
       '#m2dLnk .lk{border-top:1px solid var(--line);padding:6px 0}#m2dLnk .lk .t{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}#m2dLnk .lk .t b{font-size:13.5px}#m2dLnk .lk button.go{margin-left:auto;min-height:30px;border:1px solid var(--acc);color:var(--acc);background:none;border-radius:999px;padding:0 10px;font-size:12px;cursor:pointer}' +
@@ -197,6 +198,40 @@
     return H;
   }
 
+  /* ---------- 🔁 막힘 고리 — 교차로 넷이 한 방향으로 서로의 출구를 막는 자리(소유자 지정) ---------- */
+  function loopsLoad() { if (LOOPS) return Promise.resolve(LOOPS);
+    return fetch('data/onto-loops.json').then(function (r) { return r.json(); }).then(function (j) { LOOPS = j.loops || []; return LOOPS; }).catch(function () { LOOPS = []; return LOOPS; }); }
+  function simLoad(a) { if (SIMD && SIMD.a === a) return Promise.resolve(SIMD.d);
+    return fetch('data/sim-' + a + '.json').then(function (r) { return r.json(); }).then(function (d) { SIMD = { a: a, d: d }; return d; }).catch(function () { return null; }); }
+  function loopsOf(o) { if (!LOOPS) return []; var ids = scopeInts(o).map(function (i) { return i.id; }); return LOOPS.filter(function (L) { return L.members.some(function (m) { return ids.indexOf(m) >= 0; }); }); }
+  function legNow(lg) { var a = O(lg.apr); if (!a || !LIVE || !LIVE.spd || !LIVE.spd.m) return null; var M = LIVE.spd.m, d = new Date(), key = dcls(d) + '-' + d.getHours();
+    var rd = Q.follow(a.id, '이룸').sort(function (x, y) { return (x.p.k || 0) - (y.p.k || 0); }).map(function (x) { return x.o; }).filter(function (r) { return M[r.link] != null; }).slice(0, 2); if (!rd.length) return null;
+    var v = Math.round(sum(rd.map(function (r) { return M[r.link]; })) / rd.length), nv = null;
+    if (NORM && NORM.links) { var ns = rd.map(function (r) { var c = (NORM.links[r.link] || {})[key]; return c ? c[0] : null; }).filter(function (x) { return x != null; }); if (ns.length) nv = Math.round(sum(ns) / ns.length); }
+    var ratio = nv ? v / nv : null, slow = ratio != null ? ratio < 0.6 : v < 15; return { v: v, nv: nv, ratio: ratio, slow: slow, mid: !slow && (ratio != null ? ratio < 0.85 : v < 25) }; }
+  function loopState(L) { var S = LIVE && LIVE.spd, age = S && S.at ? (Date.now() / 1000 - (+S.at)) / 60 : 1e9; if (age > 20) return { stale: true, age: Math.round(age) };
+    var legs = L.legs.map(function (lg) { return { lg: lg, n: legNow(lg) }; }), k = legs.filter(function (x) { return x.n && x.n.slow; }).length, seen = legs.filter(function (x) { return x.n; }).length;
+    return { legs: legs, k: k, seen: seen, lvl: seen < 3 ? 'unk' : k >= 4 || (k >= 3 && seen === 3) ? 'full' : k >= 2 ? 'part' : 'ok' }; }
+  function loopBox(o) {
+    var Ls = loopsOf(o); if (!Ls.length) return '';
+    return Ls.map(function (L) { var st = loopState(L), acts = [], h = '';
+      L.members.forEach(function (m) { Q.back(m, '대상').forEach(function (x) { acts.push({ int: m, what: x.o.what }); }); });
+      h += '<h4>🔁 막힘 고리 — ' + esc(L.nm) + ' (' + esc(L.dir) + ')</h4><div class="loop"><div class="note">' + esc(L.why) + ' — 소유자 지정 고리 · 한 변이 막히면 다음 교차로 출구가 막혀 고리 전체로 번진다</div>';
+      if (st.stale) h += '<div>⚠ 통행속도가 ' + st.age + '분 전 값이라 지금 고리 상태는 보이지 않는다</div>';
+      else { var lab = { full: ['고리 전체 막힘 — 교착 위험', '#dc2626'], part: ['고리 일부 막힘 — 번질 수 있다', '#d97706'], ok: ['고리 풀림', '#16a34a'], unk: ['속도 값이 모자라 판정 못 함', 'var(--ink2)'] }[st.lvl];
+        h += '<div><b style="color:' + lab[1] + '">' + lab[0] + '</b> <small>(네 변 중 막힘 ' + st.k + ' · 값 있는 변 ' + st.seen + ')</small>' + (NORM ? '' : ' <button class="sb" data-norm="1">' + (NORMING ? '평소 값 받는 중…' : '평소와 견주기') + '</button>') + '</div><ol class="lg2">' +
+          st.legs.map(function (x) { var n = x.n, c = !n ? 'var(--ink2)' : n.slow ? '#dc2626' : n.mid ? '#d97706' : '#16a34a';
+            return '<li>' + esc(x.lg.nm) + ' — <b style="color:' + c + '">' + (n ? n.v + 'km/h' : '값 없음') + '</b>' + (n && n.nv ? ' <small>(평소 ' + n.nv + ' · ' + Math.round(n.ratio * 100) + '%)</small>' : '') + (x.lg.to !== o.id && O(x.lg.to) ? ' <button class="go" data-go="' + esc(x.lg.to) + '">' + esc(nm(O(x.lg.to))) + ' ›</button>' : '') + '</li>'; }).join('') + '</ol>'; }
+      h += '<div class="note">원인(끌어들이는 곳): ' + esc(L.causes.join(' · ')) + '</div>';
+      if (acts.length) h += '<details><summary>교통과가 이 넷에 해 온 조치 ' + acts.length + '건(교통과 출력물 · 근거기록)</summary><ul class="lg2">' + acts.slice(0, 30).map(function (a) { return '<li>' + esc(nm(O(a.int))) + ' — ' + esc(a.what) + '</li>'; }).join('') + '</ul></details>';
+      var sd = SIMD && SIMD.a === L.sim ? SIMD.d : null;
+      if (sd && sd.actions) h += '<details><summary>🧪 시뮬로 견줘 볼 수 있는 조치 ' + sd.actions.length + '가지</summary><ul class="lg2">' + sd.actions.map(function (a) { return '<li>' + esc(a.nm) + (a.src ? ' <small>— ' + esc(a.src) + '</small>' : '') + '</li>'; }).join('') + '</ul></details>';
+      h += '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div></div>';
+      return h; }).join('');
+  }
+  function loopHyps(o) { var H = []; loopsOf(o).forEach(function (L) { var st = loopState(L); if (st.stale || (st.lvl !== 'full' && st.lvl !== 'part')) return;
+    H.push(hy(L.nm + ' 고리가 ' + L.dir + '으로 막히는 중' + (st.lvl === 'full' ? ' — 교착 위험' : ''), st.legs.filter(function (x) { return x.n; }).map(function (x) { return x.lg.nm + ' ' + x.n.v + 'km/h' + (x.n.nv ? '(평소 ' + Math.round(x.n.ratio * 100) + '%)' : ''); }), '고리(소유자 지정) 네 변 = 다음 교차로로 들어오는 길의 ITS 지금 속도를 한 묶음으로 봤다', st.lvl === 'full' ? '블록으로 들어오는 차를 먼저 끊는다(라바콘·입차 중단) — 시뮬로 어느 조치가 먼저 풀리는지 견줘 보기' : '막힌 변 다음 교차로의 출구를 먼저 살핀다 — 번지기 전에 들어오는 차 조절', 'C')); }); return H; }
+
   /* ---------- 💡 엮으면 보이는 것(가설) ---------- */
   function hy(t, ev, wy, res, g) { return { t: t, ev: ev, wy: wy, res: res, g: g || 'D' }; }
   /* 🧪 게임 「만약에」로 돌려 보기(게임 v0.10.121 · ?whatif=<조건>&at=<INT-코드|위도,경도>&nm=) — 가설 갈래에 어울리는 조건 하나 · 게임 설계값 위의 비교다 */
@@ -242,7 +277,7 @@
   function paint() {
     var el = box(); if (!Q) { el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">서초 온톨로지 코어를 받는 중…</div>'; return; }
     var o = O(ST.id); if (!o) return pick();
-    var GS = groups(o.id), H = liveHyps(o).concat(hyps(o)), h = '<button class="lx" data-close="1">닫기</button>' + head(o) + graph(o, GS) + liveBox(o) + nowBox(o);
+    var GS = groups(o.id), H = loopHyps(o).concat(liveHyps(o), hyps(o)), h = '<button class="lx" data-close="1">닫기</button>' + head(o) + graph(o, GS) + liveBox(o) + loopBox(o) + nowBox(o);
     if (H.length) h += '<h4>💡 엮으면 보이는 것 — 가설 ' + H.length + '</h4><div class="note">이은 것들을 겹쳐 본 짐작이다(등급 C·D) · 처음 해 보는 연결이라 틀릴 수 있다 — 현장에서 맞는지 보고 알려 주시면 고친다</div>' +
       H.map(function (x) { var k = hkey(o.id, x.t), L0 = logGet().filter(function (r) { return r.k === k; }), last = L0[L0.length - 1];
         var vb = '<div class="hv">' + (last ? '<span class="hb ' + (last.v === '맞다' ? 'ok' : last.v === '틀리다' ? 'no' : '') + '">' + esc(last.v) + ' · ' + esc(last.d) + (last.why ? ' · ' + esc(last.why) : '') + (L0.length > 1 ? ' (' + L0.length + '번)' : '') + '</span>' : '<span class="hq">현장에서 보니</span>') +
@@ -281,6 +316,7 @@
     if (b.hasAttribute('data-back')) { go(ST.back.pop(), false); return; }
     if (b.hasAttribute('data-pick')) { if (ST.id) ST.back.push(ST.id); ST.id = null; ST.q = ''; pick(); return; }
     if (b.hasAttribute('data-norm')) { normLoad(); return; }
+    if (b.hasAttribute('data-sim')) { if (window.tgSimUI) { if (window.innerWidth < 760) close(); window.tgSimUI.open(); } return; }
     if ((a = b.getAttribute('data-hv'))) { var v = b.getAttribute('data-v'), why = '';
       if (v !== '맞다') { why = (prompt(v === '틀리다' ? '어디가 틀렸나요? (한 줄 · 사람·차량번호는 적지 않습니다)' : '덧붙일 말(비워도 됨)', '') || '').trim().slice(0, 120); }
       if (PII.some(function (r) { return r.test(why); })) { alert('전화번호·주민번호·차량번호 꼴이 있어 저장하지 않았습니다.'); return; }
@@ -305,6 +341,7 @@
       return load(id ? IGU[id] : (AREA || '11650')).then(function () { return id; });
     }).then(function (id) {
       ST.id = id; if (id) paint(); else pick();
+      loopsLoad().then(function (Ls) { var a = (Ls[0] || {}).sim; return a ? simLoad(a) : null; }).then(function () { if (ST.id && $('m2dLnk') && $('m2dLnk').classList.contains('on')) { var sc = $('m2dLnk').scrollTop; paint(); $('m2dLnk').scrollTop = sc; } });
       liveLoad(true).then(function () { if (ST.id && $('m2dLnk') && $('m2dLnk').classList.contains('on')) { var sc = $('m2dLnk').scrollTop; paint(); $('m2dLnk').scrollTop = sc; } });
     }, function () { el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">온톨로지 코어를 받지 못했습니다 — 통신을 확인해 주세요.</div>'; });
   }

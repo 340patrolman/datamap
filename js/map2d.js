@@ -7786,6 +7786,13 @@
     if (e.key !== 'Enter') return;
     var q = this.value.trim(); if (!q) return;
     if (rpFind(q, this)) return;
+    /* v2.301.5 「시뮬」을 찾으면(소유자 「검색을 시뮬로 했는데 이 지도에는 없다고 나온다」) — 시뮬은 장소가 아니라 교차로 카드 안의 단추다 → 반포 터미널 블록(4031 고속터미널 사거리) 카드를 열어 단추를 보여 준다 */
+    if (/^(🧪\s*)?(시뮬|시뮬레이션|시뮬레이터|만약에?)$/.test(q)) {
+      var sn = NODES.filter(function (n) { return n.sig && String(n.sig.no) === '4031'; })[0] || NODES.filter(function (n) { return /고속터미널/.test(n.name); })[0];
+      $('m2dFindMsg').textContent = '🧪 시뮬은 교차로 카드 안 단추다 — 아무 교차로나 누르면 「🧪 시뮬 — 한 교차로(게임)」 · 블록 전체 시뮬(신호·수요)은 반포 터미널 블록부터 준비 중';
+      if (sn) { view.cx = sn.p[0]; view.cy = sn.p[1]; view.s = Math.max(view.s, 0.35); var s0 = S(sn.p); sel = { x: s0[0], y: s0[1], r: 8, it: { kind: 'node', n: sn } }; show(sel.it); draw(); }
+      return;
+    }
     var c = [];
     DONG.forEach(function (d) { if (d.name.indexOf(q) >= 0) c.push({ p: d.c, it: { kind: 'dong', d: d } }); });
     var rseen = {}; RDONG.forEach(function (d) { if ((d.gu + ' ' + d.name).indexOf(q) >= 0) { rseen[d.gcd + d.name] = 1; c.push({ p: d.c, it: { kind: 'dong', d: d } }); } });

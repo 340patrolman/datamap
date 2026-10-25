@@ -1120,7 +1120,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.301.2"></script>
+<script src="js/map2d.js?v=2.301.3"></script>
 <script src="js/decide.js?v=5"></script>
 <script src="js/link.js?v=7"></script>
 <script>
@@ -1147,8 +1147,10 @@
     function setPan(f) { if (!pn) return; pn.classList.toggle("on", f); fb.setAttribute("aria-expanded", f ? "true" : "false"); if (f && window.TGMap2D && TGMap2D.preFit) TGMap2D.preFit(); }
     fb.onclick = function () { setPan(!(pn && pn.classList.contains("on"))); };
     if (pn && window.MutationObserver) new MutationObserver(function () { fb.setAttribute("aria-expanded", pn.classList.contains("on") ? "true" : "false"); }).observe(pn, { attributes: true, attributeFilter: ["class"] });
-    var cd = document.getElementById("m2dCard"); if (cd && window.MutationObserver) new MutationObserver(function () { if (cd.classList.contains("on") && small()) setPan(false); }).observe(cd, { attributes: true, attributeFilter: ["class"] });
-    document.getElementById("m2d").addEventListener("pointerdown", function () { if (small()) setPan(false); });
+    /* v2.301.3 소유자 「지도를 만지면 메뉴가 사라져 불편 — 설정에서 고정·유동을 고르게」 · tg_map2d_ui = { chips: 위 빠른 메뉴, pan: 레이어 판 } · 'fix' = 만져도 그대로 · 없으면 유동(폰 좁은 화면을 넓게 · 종전 그대로) · 🧰 도구 › ⚙ 화면 설정 */
+    function uiMode(k) { try { return (JSON.parse(localStorage.getItem("tg_map2d_ui") || "{}"))[k] === "fix" ? "fix" : "auto"; } catch (e) { return "auto"; } }
+    var cd = document.getElementById("m2dCard"); if (cd && window.MutationObserver) new MutationObserver(function () { if (cd.classList.contains("on") && small() && uiMode("pan") !== "fix") setPan(false); }).observe(cd, { attributes: true, attributeFilter: ["class"] });
+    document.getElementById("m2d").addEventListener("pointerdown", function () { if (small() && uiMode("pan") !== "fix") setPan(false); });
     var di = document.getElementById("m2dDate"); document.getElementById("m2dDateB").onclick = function () { try { di.showPicker(); } catch (e) { di.style.pointerEvents = "auto"; di.focus(); di.click(); } };
     function fitTop() { var t = document.getElementById('m2dTop'), c = document.getElementById('m2d'), mo = document.getElementById('m2dMore'); var h = t.offsetHeight - (mo ? mo.offsetHeight + (mo.offsetHeight ? 6 : 0) : 0), ch = document.getElementById('m2dChips'), fb = ch && ch.querySelector('button'); if (ch && fb && !document.body.classList.contains('top1')) h -= Math.max(0, ch.offsetHeight - fb.offsetHeight); document.documentElement.style.setProperty("--toph", h + "px"); c.style.top = h + "px"; c.style.height = (window.innerHeight - h) + 'px'; window.dispatchEvent(new Event('m2dresize')); }
     function topOne() { var b = document.body, c = document.getElementById('m2dChips'); if (!c) return; if (window.innerWidth < 900) { b.classList.remove('top1'); return; } b.classList.add('top1'); if (c.scrollWidth > c.clientWidth + 1) b.classList.remove('top1'); }
@@ -1156,7 +1158,8 @@
     var ct = document.getElementById('m2dChipT');
     function chipFold(f) { var b = document.body; if (b.classList.contains('chipfold') === f) return; b.classList.toggle('chipfold', f); if (ct) { ct.textContent = f ? '☰ 메뉴 ▾' : '접기 ▴'; ct.setAttribute('aria-expanded', f ? 'false' : 'true'); } }
     if (ct) ct.onclick = function () { chipFold(!document.body.classList.contains('chipfold')); };
-    document.addEventListener('pointerdown', function (e) { if (document.body.classList.contains('top1') || !e.target.closest || e.target.closest('#m2dChips') || e.target.closest('#m2dTime')) return; chipFold(true); }, true);
+    window.TGUi = { mode: uiMode, apply: function () { if (uiMode("chips") === "fix") chipFold(false); } };
+    document.addEventListener('pointerdown', function (e) { if (uiMode("chips") === "fix" || document.body.classList.contains('top1') || !e.target.closest || e.target.closest('#m2dChips') || e.target.closest('#m2dTime')) return; chipFold(true); }, true);
     window.addEventListener("resize", fitTop); fitTop();
     // v0.10.92 소유자 「스마트폰에서는 열면 자동으로 전체화면」 — 브라우저는 손가락이 닿아야 전체화면을 허락한다 → 첫 터치 때 한 번(아이폰 사파리는 이 기능이 없다 — 홈 화면에 추가하면 주소창 없이 열린다)
     var phone = window.matchMedia && matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820, de = document.documentElement;

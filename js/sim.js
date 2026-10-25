@@ -82,10 +82,11 @@
     function outFac(k, t) { var v = OUTK[k][DKO + '-' + Math.min(23, Math.floor(t / 3600))]; return v == null ? 1 : Math.max(0.15, Math.min(1, (v - 3) / 15)); }
     var FROM = scen.from != null ? scen.from : 16 * 3600, WARM = scen.warm != null ? scen.warm : 7200;   // 몸풀기 2시간 — 빈 길에서 시작하면 16시에 이미 쌓여 있던 차가 없다
     // 조치(라바콘·입차 중단 …) 모으기
-    var ACT = { closeEntry: {}, mvp: {}, attOff: {}, attInStop: {}, attOutFirst: {}, noTw: {}, attInCap: {} };
+    var ACT = { closeEntry: {}, mvp: {}, attOff: {}, attInStop: {}, attOutFirst: {}, noTw: {}, attInCap: {}, doorShare: {} };
     (scen.act || []).forEach(function (aid) { var a = (M.actions || []).filter(function (x) { return x.id === aid; })[0]; if (!a) return;
       (a.closeEntry || []).forEach(function (e) { ACT.closeEntry[e] = 1; }); Object.keys(a.mvp || {}).forEach(function (k) { ACT.mvp[k] = a.mvp[k]; });
-      ['attOff', 'attInStop', 'attOutFirst', 'noTw'].forEach(function (f) { (a[f] || []).forEach(function (x) { ACT[f][x] = 1; }); }); Object.keys(a.attInCap || {}).forEach(function (k) { ACT.attInCap[k] = a.attInCap[k]; }); });
+      ['attOff', 'attInStop', 'attOutFirst', 'noTw'].forEach(function (f) { (a[f] || []).forEach(function (x) { ACT[f][x] = 1; }); }); Object.keys(a.attInCap || {}).forEach(function (k) { ACT.attInCap[k] = a.attInCap[k]; });
+      Object.keys(a.doorShare || {}).forEach(function (k) { ACT.doorShare[k] = Object.assign(ACT.doorShare[k] || {}, a.doorShare[k]); }); });   /* 출차 우회 — 문마다 나오는 몫을 바꿈 */
     var S = { M: M, from: FROM, t: FROM - WARM, end: scen.to != null ? scen.to : 22 * 3600, L: {}, mv: {}, N: {}, V: [], done: 0, delay: 0, boxN: 0, back: {}, samp: [], log: [], rtBlk: {}, A: {} };
     Object.keys(M.links).forEach(function (k) { var l = M.links[k]; S.L[k] = { id: k, l: l, n: 0, cap: l.sink ? 1e9 : Math.max(2, l.len * l.lanes / sp), tt: l.sink ? 0 : l.len / vf }; });
     function addMv(node, key, fr, to, la, kind, cap, p) { var id = fr + '>' + to; S.mv[id] = { id: id, node: node, key: key, fr: fr, to: to, la: la, kind: kind, cap: cap, p: p == null ? 1 : p, q: [], acc: 0, served: 0, gs: 0 }; return S.mv[id]; }
@@ -111,7 +112,7 @@
       var a = Object.assign({}, a0, (scen.att || {})[a0.id] || {}); a.off = ACT.attOff[a.id] || (scen.att && scen.att[a.id] && scen.att[a.id].off); a.inStop = ACT.attInStop[a.id]; a.outFirst = ACT.attOutFirst[a.id];
       S.L['att:' + a.id] = { id: 'att:' + a.id, l: { nm: a.nm, att: a.id }, n: 0, cap: 1e9, tt: 0, sinkA: 1 };
       // 문(doors) — 문마다 들어가는 길(ins · 그 길에서 오른쪽으로 들어감)·받는 속도(cap)·나오는 길(out)·나오는 몫(share) · 문이 없던 옛 자료는 문 하나로
-      if (a.mode !== 'flow') { a.doors = (a.doors || [{ id: 'd', nm: a.nm, node: a.node, ins: [a.inFrom9], cap: a.inCap, out: a.outLink, share: 1 }]).map(function (d0) { var d = Object.assign({}, d0); d.mv = (d.ins || []).map(function (L) { return addMv(d.node || 'door', 'att', L, 'att:' + a.id, 1, 'cap', a.inStop ? 0 : (d.cap != null ? d.cap : a.inCap)); }); d.q9 = []; d.mAcc = 0; return d; }); a.outLink = a.doors[0].out; }
+      if (a.mode !== 'flow') { a.doors = (a.doors || [{ id: 'd', nm: a.nm, node: a.node, ins: [a.inFrom9], cap: a.inCap, out: a.outLink, share: 1 }]).map(function (d0) { var d = Object.assign({}, d0); if (ACT.doorShare[a.id] && ACT.doorShare[a.id][d.id] != null) d.share = ACT.doorShare[a.id][d.id]; d.mv = (d.ins || []).map(function (L) { return addMv(d.node || 'door', 'att', L, 'att:' + a.id, 1, 'cap', a.inStop ? 0 : (d.cap != null ? d.cap : a.inCap)); }); d.q9 = []; d.mAcc = 0; return d; }); a.outLink = a.doors[0].out; }
       // 주차장 자리(capacity) — 소유자 「신세계·메리어트 주차장은 하나 · 평일도 만차가 잦다 · 주차장 차가 나가야 정체가 풀린다」 → 가득 차면 문이 닫혀 들어가려는 차가 길에서 기다리고, 나가는 차만큼 자리가 난다 · 시작 때 차 있는 몫 occ0(설계값)
       S.A[a.id] = { a: a, held: 0, acc: 0, occ: a.capacity != null ? Math.round(a.capacity * (a.occ0 != null ? a.occ0 : 0.5)) : null, ex: {} };
       // 머무는 시간(dwell 분 · 설계값)이 있으면 들어간 차가 그만큼 머문 뒤 나간다(나가는 차 = 들어온 차의 뒤따름) · 시작 때 있던 차는 그 시간 안에 고르게 나간다

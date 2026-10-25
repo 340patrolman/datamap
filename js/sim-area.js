@@ -66,7 +66,7 @@
       }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); });
     };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=12'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=13'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   function defState() { var d = new Date(), h = d.getHours(); return { day: ['su', 'mt', 'mt', 'mt', 'mt', 'fr', 'sa'][d.getDay()], win: h >= 7 && h < 11 ? 'am' : h >= 11 && h < 16 ? 'md' : 'pm', k: 100, shut: {}, edit: {}, sel: Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig'; })[0] }; }
   function wOf() { return WINS.filter(function (w) { return w[0] === ST.win; })[0]; }

@@ -260,7 +260,7 @@
     ['사람보다 사고가', 'viol50', '위반 성향 절반(단속·계도 효과 가정)'], ['행사 끝 인파', 'ped2', '보행자 2배'], ['밤 장사와 밤 사고', 'viol50', '위반 성향 절반(단속·계도 효과 가정)'], ['사고는 많은데 단속 카메라', 'viol50', '위반 성향 절반(단속 효과 가정)'], ['행사 끝 시각에 역이', 'ped2', '보행자 2배']];
   function wiLink(o, x) { var w = WI.filter(function (r) { return x.t.indexOf(r[0]) === 0; })[0]; if (!w) return '';
     var at = o.t === 'INT' ? o.id : o.lat && o.lon ? (+o.lat).toFixed(5) + ',' + (+o.lon).toFixed(5) : null; if (!at) return '';
-    return '<a class="wi" target="_blank" rel="noopener" href="https://340patrolman.github.io/traffic-game/?whatif=' + w[1] + '&at=' + encodeURIComponent(at) + '&nm=' + encodeURIComponent(nm(o)) + '">🧪 게임에서 돌려 보기 — ' + esc(w[2]) + ' ›</a><div class="note">게임 「만약에」가 그대로·바꾼 것을 씨앗 셋으로 돌려 견준다 — 게임 설계값 위의 비교라 현실 숫자가 아니다 · 서초 간선 25곳(700m 안)이 아니면 조건만 고른 채 열린다</div>'; }
+    return '<a class="wi" target="_blank" rel="noopener" href="https://340patrolman.github.io/traffic-game/?whatif=' + w[1] + '&at=' + encodeURIComponent(at) + '&nm=' + encodeURIComponent(nm(o)) + '">🧪 게임에서 돌려 보기 — ' + esc(w[2]) + ' ›</a><div class="note">게임 「만약에」가 그대로·바꾼 것을 씨앗 셋으로 돌려 견준다 — 게임 설계값 위의 비교라 현실 숫자가 아니다 · 같은 판에서 「조건 하나를 바꾸면 어느 쪽으로 움직이나」를 보는 데만 쓴다 — 게임은 실제 교차로 사고 순위를 재현하지 못한다(게임 세션 10-25 측정 ρ −0.14) · 서초 간선 25곳(700m 안)이 아니면 조건만 고른 채 열린다</div>'; }
   function hyps(o) {
     var H = [], since = ago(90);
     if (o.t === 'INT') {

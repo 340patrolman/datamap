@@ -1,0 +1,48 @@
+// 반포 블록 시뮬레이터 엔진 검사 본문 — tools/sim/sim-check.py 가 머리 없는 크롬에서 돌린다
+(function () {
+  var M = window.__M, S = window.tgSim, out = [], bad = 0;
+  function ck(name, ok, v) { out.push((ok ? '✅ ' : '❌ ') + name + (v != null ? ' — ' + (typeof v === 'string' ? v : JSON.stringify(v)) : '')); if (!ok) bad++; }
+  try {
+    // ① 4031 토 패턴 15 — 현시 길이와 순서
+    var n = M.nodes['4031'], p15 = n.plan.pat['15'];
+    ck('4031 토 패턴 15 = 주기 180 · 현시 49·43·48·40', p15.c === 180 && p15.a.join(',') === '49,43,48,40', p15);
+    var P = S.planAt(M, '4031', 14 * 3600, 6);   // 토 14시 → 패턴 15
+    ck('토 14시 계획 = 패턴 15', P.pat === '15', P.pat);
+    var W = S.phasesToWin(P.ph), dir = n.plan.dir['15'], same = dir.every(function (r) { var w = W.win.filter(function (x) { return x[0] === r[0]; })[0]; return w && w[1] === r[1] && w[3] === r[3]; });
+    ck('현시(49·43·48·40 · 황색·전적색) → 이동류 녹색 창이 현시도 dir 줄과 1초 단위로 같다(패턴 15)', same && W.c === 180, W.win.map(function (x) { return x[0] + ' ' + x[1] + '초@' + x[3]; }).join(' | '));
+    ck('현시 순서 = 동서 양직진 → 서직좌 → 북직좌 → 남직좌', JSON.stringify(P.ph.map(function (q) { return q.mv.slice().sort(); })) === JSON.stringify([['et.St', 'wt.St'], ['wt.Lt', 'wt.St'], ['nt.Lt', 'nt.St'], ['st.Lt', 'st.St']]), P.ph.map(function (q) { return q.mv.join('+'); }).join(' → '));
+    ck('서→동 직진이 1·2현시 두 번(끊기지 않고 87초)', dir.filter(function (r) { return r[0] === 'wt.St'; })[0][1] === 87);
+    ['14', '7', '8', '3'].forEach(function (pt) { var pa = n.plan.pat[pt], w = S.phasesToWin(n.plan.ph.map(function (mv, i) { return { d: pa.a[i], y: n.plan.Y[i], ar: n.plan.AR[i], mv: mv }; })), ok = n.plan.dir[pt].every(function (r) { var x = w.win.filter(function (q) { return q[0] === r[0]; })[0]; return x && x[1] === r[1] && x[3] === r[3]; }); ck('4031 패턴 ' + pt + ' 녹색 창 = dir 줄', ok); });
+    ['4028', '4034'].forEach(function (id) { var nd = M.nodes[id], P2 = S.planAt(M, id, 17 * 3600, 0); ck(id + ' 일 17시 계획 패턴 ' + P2.pat + ' 주기 ' + P2.c, P2.c > 0 && P2.win.length >= 4); });
+    // 1초 단위 녹색 — 시뮬 안에서 4031 서→동 직진 녹색 초를 한 주기 센다(출발 손실 2초 · 황색 마지막 1초 뺀 유효 녹색)
+    var Z = S.create(M, { date: '2026-10-24', from: 14 * 3600, to: 14 * 3600 + 400, shinOn: false, fountOn: false });
+    // ② 일요일 10/18 16~22시 — 차 보존 · 걸린 시간
+    var t0 = performance.now(), A = S.run(M, { date: '2026-10-18', seed: 7 }), ms = Math.round(performance.now() - t0);
+    var inNet = 0; Object.keys(A.L).forEach(function (k) { inNet += A.L[k].n; }); Object.keys(A.N).forEach(function (k) { inNet += 0; });
+    var back = 0; Object.keys(A.back).forEach(function (e) { back += A.back[e].length; });
+    var R = A.result();
+    ck('길을 못 찾은 차 0', A.log.length === 0, A.log.slice(0, 3));
+    ck('차 보존 — 만든 차 = 끝난 차 + 망 안 + 망 밖 대기 + 블록 출차 대기', A.V.length === A.done + inNet + back + A.blockOut.length, { made: A.V.length, done: A.done, inNet: inNet, back: back, blockOut: A.blockOut.length });
+    ck('16~22시 한 판 계산 시간(PC)', ms < 8000, ms + 'ms');
+    ck('결과 지표 — 총 지체·최대 대기·블록 갇힘·막힘 시작·해소', R.delayVh >= 0 && R.peak > 0 && R.maxQm['4031.wt'] >= 0, { 지체_대시: R.delayVh, 막힘시작: hh(R.jamStart), 해소: hh(R.clearT), 막힌접근로최대: R.jamMax, 블록갇힘최대: R.trappedMax, 꼬리물기: R.box });
+    out.push('   시간별(1시간마다) 대기 합 · 망 밖 · 신세계 문 앞 · 블록 출차 대기 · 공원 앞:');
+    A.samp.filter(function (s) { return s.t % 1800 === 0; }).forEach(function (s) { out.push('   ' + hh(s.t) + '  대기 ' + s.q + ' · 망밖 ' + s.back + ' · 문앞 ' + s.gateQ + ' · 출차대기 ' + s.blockOut + ' · 공원앞 ' + s.parkQ + ' · 4031[' + ['wt', 'nt', 'st', 'et'].map(function (l) { return l + ' ' + (s.ap['4031.' + l] || 0); }).join(' ') + ']'); });
+    // ③ 평시(신세계·분수 끔) 대비 — 수요를 넣으면 대기가 커져야 한다
+    var B = S.run(M, { date: '2026-10-18', seed: 7, shinOn: false, fountOn: false }).result();
+    ck('신세계·분수를 끄면 정점 대기가 작다(넘침이 수요에서 온다)', B.peak < R.peak, { 평시정점: B.peak, 둘다정점: R.peak });
+    // ⑤ 재현 — 설계값 막대(신세계·분수)만 맞춘 설정 · 실측 속도와 맞대 본 결과
+    var c18 = __cmp('1018'), c11 = __cmp('1011');
+    ck('10/18 설정 — 블록 둘레 접근로가 막혔다가(3곳 넘게) 20:30~22:30 사이에 풀린다(실측 해소 21~22시대)', c18.R.jamStart != null && c18.R.clearT != null && c18.R.clearT >= 20.5 * 3600 && c18.R.clearT <= 22.5 * 3600, { 막힘시작: hh(c18.R.jamStart), 해소: hh(c18.R.clearT), 최대: c18.R.jamMax });
+    ck('10/11 설정(평소 일요일) — 막히지 않는다(3곳 넘게 막힌 때 없음)', c11.R.jamStart == null, { 최대: c11.R.jamMax });
+    ck('실측과 맞대 봄(접근로 11 × 16~22시) — 10/18 맞음 60% 넘게 · 10/11 맞음 90% 넘게', c18.hit / c18.n > 0.6 && c11.hit / c11.n > 0.9, '10/18 ' + c18.hit + '/' + c18.n + ' (둘 다 막힘 ' + c18.tp + ' · 시뮬만 ' + c18.fp + ' · 실측만 ' + c18.fn + ') · 10/11 ' + c11.hit + '/' + c11.n);
+    // ④ 같은 씨앗이면 같은 차
+    var C1 = S.run(M, { date: '2026-10-18', seed: 9, to: 17 * 3600 }), C2 = S.run(M, { date: '2026-10-18', seed: 9, to: 17 * 3600 }, { '4031': { ph: P.ph } });
+    ck('두 판이 같은 차를 쓴다(만든 차 수·첫 100대 길)', C1.V.length === C2.V.length && C1.V.slice(0, 100).every(function (v, i) { return v.p.join() === C2.V[i].p.join(); }), C1.V.length + ' / ' + C2.V.length);
+    // 수동 조작 — 넘기기·지정
+    var D = S.create(M, { date: '2026-10-18', from: 17 * 3600, to: 17 * 3600 + 600 }); D.runTo(17 * 3600 + 30); D.manual('4031', true); var i0 = D.N['4031'].manual.i; D.go('4031'); D.runTo(17 * 3600 + 60); var i1 = D.N['4031'].manual.i; D.go('4031', 2); D.runTo(17 * 3600 + 90);
+    ck('수동 — 넘기기 뒤 다음 현시 · 지정하면 그 현시(황색·전적색 지난 뒤)', i1 === (i0 + 1) % 4 && D.N['4031'].manual.i === 2, [i0, i1, D.N['4031'].manual.i]);
+    function hh(t) { if (t == null) return '-'; var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60); return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
+  } catch (e) { ck('예외', false, String(e && e.stack || e)); }
+  out.push(bad ? '❌ 실패 ' + bad : 'ALL_OK');
+  document.getElementById('out').textContent = out.join('\n');
+})();

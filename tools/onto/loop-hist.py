@@ -24,7 +24,7 @@ def main():
     S = ae.snaps(); LL = ae.leg_links()
     out = {'schema': 'tg-onto-loop-hist/1', 'made': datetime.date.today().isoformat(),
            'source': '국가교통정보센터(ITS) 실시간 소통정보를 이 PC 가 약 11분마다 받아 쌓은 것(07_API키/out/livespd) × data/onto-loops.json 네 변 — tools/onto/loop-hist.py',
-           'fields': 'rule{th km/h, legs 몇 변 이상, snaps 이어진 받은 때 수} · from·to 쌓인 기록 처음·끝 · loops{고리 id: {ep[{d 날짜, w 요일, b 시작, e 끝, n 받은 때 수, min[변마다 가장 느린 km/h], first[먼저 막힌 변 번호 차례 · 0부터 = onto-loops legs 차례]}], days[{d, w, eve 저녁 15~22시 받은 때 수, ep 그날 막힘 토막 수}]}}',
+           'fields': 'rule{th km/h, legs 몇 변 이상, snaps 이어진 받은 때 수} · from·to 쌓인 기록 처음·끝 · loops{고리 id: {ep[{d 날짜, w 요일, b 시작, e 끝, n 받은 때 수, min[변마다 가장 느린 km/h], first[먼저 막힌 변 번호 차례 · 0부터 = onto-loops legs 차례]}], days[{d, w, eve 저녁 15~22시 받은 때 수, ep 그날 막힘 토막 수}], med[변마다 쌓인 기록 가운데값 km/h], chronic[늘 느린 변 번호 — 문턱 이하가 평소라 「먼저 막힌 차례」에서 뺌]}}',
            'note': ['「고리 막힘」 = 네 변 중 셋 이상이 %d km/h 이하인 받은 때가 %d 번 넘게 이어짐 — 앱이 정한 문턱(어림)이지 공식 기준이 아니다' % (TH, MIN_SNAPS - 1),
                     '받은 때 사이는 약 11분 — 시작·끝은 그 간격만큼 어긋날 수 있다',
                     '저녁 받은 기록이 없는 날(eve 0)은 막힘이 없었다는 뜻이 아니다(PC 가 꺼져 못 받음)'],
@@ -34,6 +34,11 @@ def main():
     W = '월화수목금토일'
     for lid, (L, legs) in LL.items():
         rows = [(a, [legv(m, ls) for ls in legs]) for a, m in S]
+        med = []
+        for k in range(len(legs)):
+            xs = sorted(v[k] for a, v in rows if v[k] is not None)
+            med.append(xs[len(xs) // 2] if xs else None)
+        chronic = [k for k, x in enumerate(med) if x is not None and x <= TH]   # 늘 느린 변(받은 때 가운데값이 문턱 이하) — 「먼저 막힌 변」 차례에서 뺀다
         hit = [sum(1 for x in v if x is not None) >= 3 and sum(1 for x in v if x is not None and x <= TH) >= 3 for a, v in rows]
         eps, i = [], 0
         while i < len(rows):
@@ -47,7 +52,7 @@ def main():
                 for a, v in rows:
                     if a0 - 3600 <= a <= a0:
                         for k, x in enumerate(v):
-                            if x is not None and x <= TH and k not in fst: fst[k] = a
+                            if x is not None and x <= TH and k not in fst and k not in chronic: fst[k] = a
                 out_ep = {'d': t0.strftime('%Y-%m-%d'), 'w': W[t0.weekday()], 'b': t0.strftime('%H:%M'), 'e': datetime.datetime.fromtimestamp(a1).strftime('%H:%M'),
                           'n': j - i + 1, 'min': mins, 'first': [k for k, a in sorted(fst.items(), key=lambda x: (x[1], x[0]))]}
                 eps.append(out_ep)
@@ -58,7 +63,7 @@ def main():
             x = days.setdefault(d, {'d': d, 'w': W[t.weekday()], 'eve': 0, 'ep': 0})
             if EVE[0] <= t.hour < EVE[1]: x['eve'] += 1
         for e in eps: days[e['d']]['ep'] += 1
-        out['loops'][lid] = {'ep': eps, 'days': [days[k] for k in sorted(days)]}
+        out['loops'][lid] = {'med': med, 'chronic': chronic, 'ep': eps, 'days': [days[k] for k in sorted(days)]}
         print(lid, '토막', len(eps), '· 날', len(days), ' '.join('%s(%s) %s~%s' % (e['d'][5:], e['w'], e['b'], e['e']) for e in eps))
     p = os.path.join(ROOT, 'data', 'onto-loop-hist.json')
     json.dump(out, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))

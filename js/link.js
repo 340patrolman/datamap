@@ -230,11 +230,11 @@
         h += '<div><b style="color:' + lab[1] + '">' + lab[0] + '</b> <small>(네 변 중 막힘 ' + st.k + ' · 값 있는 변 ' + st.seen + ')</small>' + (NORM ? '' : ' <button class="sb" data-norm="1">' + (NORMING ? '평소 값 받는 중…' : '평소와 견주기') + '</button>') + '</div><ol class="lg2">' +
           st.legs.map(function (x) { var n = x.n, c = !n ? 'var(--ink2)' : n.slow ? '#dc2626' : n.mid ? '#d97706' : '#16a34a';
             return '<li>' + esc(x.lg.nm) + ' — <b style="color:' + c + '">' + (n ? n.v + 'km/h' : '값 없음') + '</b>' + (n && n.nv ? ' <small>(평소 ' + n.nv + ' · ' + Math.round(n.ratio * 100) + '%)</small>' : '') + (x.lg.to !== o.id && O(x.lg.to) ? ' <button class="go" data-go="' + esc(x.lg.to) + '">' + esc(nm(O(x.lg.to))) + ' ›</button>' : '') + '</li>'; }).join('') + '</ol>'; }
-      h += '<div class="note">원인(끌어들이는 곳): ' + esc(L.causes.join(' · ')) + '</div>';
+      h += '<div class="note">원인(끌어들이는 곳): ' + ((L.causes || []).length ? esc(L.causes.join(' · ')) : '아직 형님 말씀 없음 — 현장에서 짚으시면 더한다') + '</div>' + (L.found ? '<div class="note">찾은 길: ' + esc(L.found) + '</div>' : '');
       if (acts.length) h += '<details><summary>교통과가 이 넷에 해 온 조치 ' + acts.length + '건(교통과 출력물 · 근거기록)</summary><ul class="lg2">' + acts.slice(0, 30).map(function (a) { return '<li>' + esc(nm(O(a.int))) + ' — ' + esc(a.what) + '</li>'; }).join('') + '</ul></details>';
       var sd = SIMD && SIMD.a === L.sim ? SIMD.d : null;
       if (sd && sd.actions) h += '<details><summary>🧪 시뮬로 견줘 볼 수 있는 조치 ' + sd.actions.length + '가지</summary><ul class="lg2">' + sd.actions.map(function (a) { return '<li>' + esc(a.nm) + (a.src ? ' <small>— ' + esc(a.src) + '</small>' : '') + '</li>'; }).join('') + '</ul></details>';
-      h += histBox(L) + actBox(L) + '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div></div>';
+      h += histBox(L) + actBox(L) + (L.sim === 'banpo' ? '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div>' : '<div class="note">이 블록 시뮬은 아직 없다</div>') + '</div>';
       return h; }).join('');
   }
 
@@ -245,7 +245,8 @@
     var R = LHIST.rule || {}, ep = H.ep || [], gone = (H.days || []).filter(function (d) { return d.eve < 6; });
     var h = '<details class="acts"' + (ep.length ? ' open' : '') + '><summary>📜 지난 고리 막힘 — 실측 ' + ep.length + '토막</summary>';
     h += '<div class="note">쌓인 ITS 통행속도 ' + esc((LHIST.from || '').slice(5)) + ' ~ ' + esc((LHIST.to || '').slice(5)) + ' · 네 변 중 ' + (R.legs || 3) + '변 이상이 ' + (R.th || 10) + 'km/h 이하로 이어진 때(앱 문턱 · 어림 · 약 11분 간격이라 시각은 그만큼 어긋남)</div>';
-    if (ep.length) h += '<ul class="lg2">' + ep.slice().reverse().map(function (e) {
+    if (ep.length > 10) { var wd = {}; ep.forEach(function (e) { wd[e.w] = (wd[e.w] || 0) + 1; }); h += '<div>요일마다 토막 수: ' + '월화수목금토일'.split('').filter(function (w) { return wd[w]; }).map(function (w) { return esc(w) + ' ' + wd[w]; }).join(' · ') + ' — 아래는 최근 10토막</div>'; }
+    if (ep.length) h += '<ul class="lg2">' + ep.slice(-10).reverse().map(function (e) {
       var fr = (e.first || []).map(function (k) { var lg = L.legs[k]; return lg ? esc(lg.nm.split(' — ')[0]) : '?'; });
       return '<li><b>' + esc(e.d.slice(5).replace('-', '/')) + '(' + esc(e.w) + ') ' + esc(e.b) + '~' + esc(e.e) + '</b> <small>· 받은 때 ' + e.n + '번</small>' +
         (fr.length ? '<br><small>먼저 막힌 차례: ' + fr.join(' → ') + '</small>' : '') +
@@ -255,7 +256,8 @@
     var fs = ep.map(function (e) { return (e.first || [])[0]; }).filter(function (x) { return x != null; }), cnt = {};
     fs.forEach(function (k) { cnt[k] = (cnt[k] || 0) + 1; });
     var top = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0];
-    if (top != null && L.legs[top]) h += '<div class="note">💡 가설(D): 막힘이 「' + esc(L.legs[top].nm.split(' — ')[0]) + '」 변에서 먼저 시작한 토막이 ' + cnt[top] + '/' + fs.length + ' — 그 변으로 들어오는 수요를 먼저 끊으면 고리로 번지는 것을 늦출 수 있다(토막 수가 적어 확인 전 · 현장 판단이 이긴다)</div>';
+    (H.chronic || []).forEach(function (k) { if (L.legs[k]) h += '<div class="note">⚠ 「' + esc(L.legs[k].nm.split(' — ')[0]) + '」 변은 평소에도 ' + Math.round(H.med[k]) + 'km/h 안팎이라(쌓인 기록 가운데값) 막힘 판정·먼저 막힌 차례에서 힘이 약하다 — 이 변을 보는 길이 맞는지 현장 확인이 필요하다</div>'; });
+    if (top != null && L.legs[top]) h += '<div class="note">💡 가설(D): 막힘이 「' + esc(L.legs[top].nm.split(' — ')[0]) + '」 변에서 먼저 시작한 토막이 ' + cnt[top] + '/' + fs.length + ' — 그 변으로 들어오는 수요를 먼저 끊으면 고리로 번지는 것을 늦출 수 있다(' + (fs.length < 10 ? '토막 수가 적어 확인 전 · ' : '') + '현장 판단이 이긴다)</div>';
     return h + '</details>';
   }
   /* 조치 앞뒤 — 적을 때의 네 변 속도(전) ↔ 지금 받은 값(뒤 · 받은 때가 조치보다 15분 넘게 뒤일 때만) · 같은 요일·시각의 다른 날과 견준 것이 아니다 — 정밀한 앞뒤는 PC 의 쌓인 기록으로(tools/onto/act-effect.py) */

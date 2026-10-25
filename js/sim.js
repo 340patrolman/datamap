@@ -202,6 +202,7 @@
     S.inn = {};
     S.step = function () {
       var t = S.t; S.inn = {};
+      if (AC && t >= S.from - 600 && t % (AC.every || 5) === 0) autoCut(t);
       Object.keys(S.N).forEach(function (id) { var ma = S.N[id].manual; if (ma && ma.clr > 0) { ma.clr--; if (!ma.clr) { ma.i = ma.next; ma.keep = []; } } });
       // 1 차 만들기 → 들어오는 길(자리가 없으면 망 밖에서 기다림)
       dem.forEach(function (d) {
@@ -272,6 +273,21 @@
       return { t: S.t, jam: jam, ap: ap, q: tot, back: back, bk: bk, att: att, box: S.boxN, occ: occ };
     }
     // 수동 조작(넘기기 · 현시 지정) — 지금 계획의 현시를 이어받는다 · 실제 신호를 바꾸는 기능이 아니다
+    /* 자동 끊기(2026-10-25 · 게임 세션 「진행상황」 제안 · 소유자 현장 조작 「⛔ 들어오는 차만 끊기」를 규칙으로) — scen.autoCut = { node, link, hi, lo, every }:
+       every 초마다 link(블록 안 길) 점유가 hi 를 넘으면 그 교차로를 블록으로 들어가는 이동류(cut — 기본 서→동 직진·북→동 좌회전)가 없는 현시로 붙잡고(나오는 이동류 keep 이 있는 현시 먼저 · 황색·전적색 지나서),
+       lo 아래로 내려가면 원래 계획으로 돌려보낸다 · 실제 신호를 바꾸는 기능이 아니다 — 견주기용 · 값은 설계값 */
+    var AC = scen.autoCut || null; S.ac = { n: 0, sec: 0, on: false };
+    function autoCut(t) {
+      var L = S.L[AC.link], r = L ? L.n / L.cap : 0, N = S.N[AC.node]; if (!N) return;
+      if (S.ac.on) S.ac.sec += AC.every || 5;
+      if (!S.ac.on && r >= (AC.hi || 0.85)) {
+        if (!N.manual) S.manual(AC.node, true); var ma = N.manual, cut = AC.cut || ['wt.St', 'nt.Lt'], keep = AC.keep || 'et.St', j = -1;
+        ma.ph.forEach(function (p, i) { if (j < 0 && !cut.some(function (c) { return p.mv.indexOf(c) >= 0; }) && p.mv.indexOf(keep) >= 0) j = i; });
+        if (j < 0) ma.ph.forEach(function (p, i) { if (j < 0 && !cut.some(function (c) { return p.mv.indexOf(c) >= 0; })) j = i; });
+        if (j < 0) { S.manual(AC.node, false); return; }
+        S.go(AC.node, j); S.ac.on = true; S.ac.n++;
+      } else if (S.ac.on && r <= (AC.lo || 0.6)) { S.manual(AC.node, false); S.ac.on = false; }
+    }
     S.manual = function (id, on) { var N = S.N[id]; if (!on) { N.manual = null; return; } var P = planAt(M, id, S.t, dow, alt); var G = greenSet(id, S.t), best = 0, sc = -1; P.ph.forEach(function (p, i) { var s = p.mv.filter(function (m) { return G[m]; }).length; if (s > sc) { sc = s; best = i; } }); N.manual = { ph: P.ph, i: best, clr: 0, keep: [] }; };
     S.go = function (id, k) { var ma = S.N[id].manual; if (!ma) return; var j = k == null ? (ma.i + 1) % ma.ph.length : k; if (j === ma.i) return; var nx = ma.ph[j].mv, cu = ma.ph[ma.i]; ma.keep = cu.mv.filter(function (m) { return nx.indexOf(m) >= 0; }); ma.clr = cu.y + cu.ar + 1; ma.next = j; };
     S.runTo = function (t1) { while (S.t < Math.min(t1, S.end)) S.step(); return S; };
@@ -282,7 +298,7 @@
       if (st != null) { for (var i = A.length - 1; i >= 0; i--) { if (A[i].jam.length >= 3) { clr = A[i + 1] ? A[i + 1].t : null; break; } } }
       var inNet = S.V.filter(function (v) { return v.te == null && v.t0 >= FROM; }), dl = S.delay + inNet.reduce(function (a, v) { return a + Math.max(0, S.t - v.t0 - v.ff); }, 0);
       var maxQ = {}; A.forEach(function (s) { Object.keys(s.ap).forEach(function (a) { var nd = a.split('.')[0], lg = a.split('.')[1], I = M.nodes[nd].legs[lg].in, m = s.ap[a] * M.spacing.v / M.links[I].lanes; if (!maxQ[a] || m > maxQ[a]) maxQ[a] = Math.round(m); }); });
-      return { delayVh: Math.round(dl / 3600), maxQm: maxQ, trappedMax: Math.max.apply(null, A.map(attW).concat([0])), jamStart: st, clearT: clr, jamMax: Math.max.apply(null, A.map(function (s) { return s.jam.length; }).concat([0])), peak: peak, peakT: pkT, box: S.boxN, made: S.V.length, done: S.done };
+      return { delayVh: Math.round(dl / 3600), maxQm: maxQ, trappedMax: Math.max.apply(null, A.map(attW).concat([0])), jamStart: st, clearT: clr, jamMax: Math.max.apply(null, A.map(function (s) { return s.jam.length; }).concat([0])), acN: S.ac.n, acSec: S.ac.sec, peak: peak, peakT: pkT, box: S.boxN, made: S.V.length, done: S.done };
     };
     S.inNet = function () { var n = 0; Object.keys(S.L).forEach(function (k) { n += S.L[k].n; }); Object.keys(S.A).forEach(function (k) { (S.A[k].a.doors || []).forEach(function (d) { n += d.q9.length; }); }); Object.keys(S.back).forEach(function (e) { n += S.back[e].length; }); return n; };
     return S;

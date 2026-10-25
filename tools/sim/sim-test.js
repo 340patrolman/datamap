@@ -54,6 +54,9 @@
     ck('평일 — 학원 수요를 켜면 4034 서쪽 대기가 길다 · 시차제 끄고 보기도 돈다', (Wa.maxQm['4034.wt'] || 0) >= (Wb.maxQm['4034.wt'] || 0), { 학원켬_4034서쪽최대m: Wa.maxQm['4034.wt'], 학원끔: Wb.maxQm['4034.wt'], 시차제켬_지체: Wa.delayVh, 시차제끔_지체: Wc.delayVh, 시차제끔_4028서쪽m: Wc.maxQm['4028.wt'], 시차제켬_4028서쪽m: Wa.maxQm['4028.wt'] });
     var sat = { date: '2026-10-24', seed: 4, att: { fount: { inPeak: 1200 } } }, Fa = S.run(M, sat).result(), Fb = S.run(M, Object.assign({ act: ['coneLaneDrop'] }, sat)).result();
     ck('토 분수 1,200대/시 — 라바콘 원거리 차로 축소를 하면 4031 북쪽(반포대교남단 쪽) 대기·지체가 줄거나 같다', Fb.delayVh <= Fa.delayVh, { 축소전_지체: Fa.delayVh, 축소후: Fb.delayVh, 축소전_4031북쪽m: Fa.maxQm['4031.nt'], 축소후_4031북쪽m: Fb.maxQm['4031.nt'] });
+    // ⑦-2 🤖 4031 자동 끊기(게임 세션 제안) — 10/18 설정에서 꼬리물기·갇힌 차가 줄고 지체는 크게 늘지 않는다 · 끊은 때가 있다
+    var P18 = M.preset['1018'], q18 = { date: '2026-10-18', seed: 7, att: P18.att, from: 16 * 3600, to: 23 * 3600 }, ACa = S.run(M, q18).result(), ACb = S.run(M, Object.assign({ autoCut: { node: '4031', link: '4031>G', hi: 0.85, lo: 0.6, every: 5, cut: ['wt.St', 'nt.Lt'], keep: 'et.St' } }, q18)).result();
+    ck('🤖 4031 자동 끊기 — 10/18 꼬리물기·블록 갇힘이 줄고 총 지체는 10% 안에서', ACb.acN > 0 && ACb.box < ACa.box && ACb.trappedMax < ACa.trappedMax && ACb.delayVh <= ACa.delayVh * 1.1, { 끊은번: ACb.acN, 꼬리물기: [ACa.box, ACb.box], 갇힘: [ACa.trappedMax, ACb.trappedMax], 지체: [ACa.delayVh, ACb.delayVh] });
     // ⑧ 출입구 4곳 · 고속버스 시간표(요일 갈래 월~목·금·토·일)
     var sh = M.att.filter(function (a9) { return a9.id === 'shin'; })[0], tb = M.tbl && M.tbl.bus && M.tbl.bus.t;
     ck('신세계 출입구 4곳(북 신반포로·동 잠원로·남 사평대로·서 반포대로) · 고속버스 시간표 네 갈래(금 17시 경부·영동 출발 ' + (tb ? tb.fr.gb.out[17] : '-') + '대)', sh && sh.doors.length === 4 && tb && tb.mt && tb.fr && tb.sa && tb.su && tb.fr.gb.out[17] > 0, sh ? sh.doors.map(function (d) { return d.id; }).join('') : null);

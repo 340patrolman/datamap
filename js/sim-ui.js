@@ -109,7 +109,7 @@
     if (M && window.tgSim) return cb();
     var go = function () { window.tgSim.load(AREA.id, '7').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=11'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=12'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   // ---- 판 ----
   var DAYS = [['1018', '10/18(일) 재현', '2026-10-18'], ['1011', '10/11(일) 평소', '2026-10-11'], ['mt', '평일(월~목)', '2026-10-21'], ['fr', '금요일', '2026-10-23'], ['sa', '토요일', '2026-10-24'], ['su', '일요일', '2026-10-25']];   // 소유자 「평일·금·토·일도 변수로」 — 신호 계획·고속버스 시간표·평소 속도 모두 이 네 갈래
@@ -118,7 +118,7 @@
   function defState() {
     var p = presetOf('1018') || {};
     return { day: '1018', date: p.date || '2026-10-18', shin: (p.att && p.att.shin && p.att.shin.inPeak) || att0('shin').inPeak, fount: (p.att && p.att.fount && p.att.fount.inPeak) || att0('fount').inPeak,
-      academy: att0('academy').inPeak || 0, occ: Math.round((att0('shin').occ0 != null ? att0('shin').occ0 : 0.5) * 100), bus: 1, act: {}, box: true, plan: 'A', ph: null, manual: false };
+      academy: att0('academy').inPeak || 0, occ: Math.round((att0('shin').occ0 != null ? att0('shin').occ0 : 0.5) * 100), bus: 1, act: {}, box: true, plan: 'A', ph: null, manual: false, auto: false };
   }
   function exPhases() {   // 재편안 예시 — 의도 문서 「직진·좌회전 분리 · 측도 남북 양직진 · 출구 연장 현시」 · 주기는 현행(일 16~21시 패턴 14 · 180초)과 같게 · 초는 형님이 고친다
     return [{ d: 40, y: 4, ar: 1, mv: ['wt.St', 'et.St'], nm: '동서 양직진' }, { d: 30, y: 4, ar: 1, mv: ['et.St', 'wt.Lt'], nm: '출구 연장(동→서 직진 계속 · 서→북 좌회전) — 들어오는 차 끊김' },
@@ -212,10 +212,12 @@
       '<div class="sn">▶ 시연 = 왼쪽 현행 · 오른쪽 그 안으로 다시 돌림 · 같은 수요·같은 차라 차이는 신호에서만 온다 · 개념 시연(예측 아님)</div>';
   }
   function start() {
-    stop(); A = window.tgSim.create(M, scen(), null); B = window.tgSim.create(M, scen(), alt());
+    stop(); A = window.tgSim.create(M, scen(), null); var sb = scen(); if (ST.auto) sb.autoCut = AUTO; B = window.tgSim.create(M, sb, alt());
     A.runTo(A.from); B.runTo(B.from); if (ST.manual) { B.manual('4031', true); }
     paintRun(); RUN = 1; LAST = 0; requestAnimationFrame(tick); paintCtl();
   }
+  /* 🤖 4031 자동 끊기 — 5초마다 신반포로(4031→신세계 문 쪽) 점유 85% 넘으면 블록으로 들어가는 차(서→동 직진·북→동 좌회전)가 없는 현시로 · 60% 아래면 원래 계획(게임 세션 「진행상황」 10/18 재현: 꼬리물기 1,131→195 · 갇힘 338→143 · 지체 같음) */
+  var AUTO = { node: '4031', link: '4031>G', hi: 0.85, lo: 0.6, every: 5, cut: ['wt.St', 'nt.Lt'], keep: 'et.St' };
   function stop() { RUN = 0; }
   function tick(ts) {
     if (!RUN || !A) return; if (!LAST) LAST = ts; var dt = Math.min(0.25, (ts - LAST) / 1000); LAST = ts;
@@ -266,7 +268,7 @@
   function paintRun() {
     if (!A) return; var el = $('simRun'); if (!el) return;
     el.innerHTML = '<div class="row" style="justify-content:space-between"><span class="clock">' + hh(A.t) + '</span><span class="sn" style="margin:0">16:00 → 23:00 · 같은 차 · 같은 날</span></div><div class="two">' +
-      '<div class="pv"><div class="pt">현행 신호</div>' + svg(A) + info(A) + '</div><div class="pv"><div class="pt">' + esc(ST.ph ? planOf(ST.plan).nm + '(고침)' : planOf(ST.plan).nm) + (B.N['4031'].manual ? ' · 🖐 수동' : '') + '</div>' + svg(B) + info(B) + '</div></div>' +
+      '<div class="pv"><div class="pt">현행 신호</div>' + svg(A) + info(A) + '</div><div class="pv"><div class="pt">' + esc(ST.ph ? planOf(ST.plan).nm + '(고침)' : planOf(ST.plan).nm) + (ST.auto ? ' + 🤖 자동 끊기' + (B.ac && B.ac.on ? ' <b style="color:#dc2626">끊는 중</b>' : '') : B.N['4031'].manual ? ' · 🖐 수동' : '') + '</div>' + svg(B) + info(B) + '</div></div>' +
       '<div class="sn">길 색 = 그 길에 찬 정도(초록 40% 아래 · 노랑 · 빨강 80% 넘음 — 막힘) · 빨간 점 = 꼬리물기로 교차로가 막힘 · 보라 네모 = 출입구 4곳(숫자 = 문 앞·나가려고 기다리는 차) · 보라 화살표 = 블록 쪽 차로가 도는 방향(시계 방향)</div>';
   }
   var HOWO = null;
@@ -275,10 +277,12 @@
     var el = $('simRes'); if (!el || !A) return; var a = A.result(), b = B.result();
     var mq = function (r) { var m = 0, k = ''; Object.keys(r.maxQm).forEach(function (x) { if (r.maxQm[x] > m) { m = r.maxQm[x]; k = x; } }); return m + 'm' + (k ? ' <small>(' + esc((SHORT[k.split('.')[0]] || k.split('.')[0]) + ' ' + ({ nt: '북', et: '동', st: '남', wt: '서' }[k.split('.')[1]] || '')) + ')</small>' : ''); };
     var dv = function (x, y) { if (!x) return ''; var p = Math.round((y - x) / x * 100); return '<small style="color:' + (p < 0 ? '#16a34a' : p > 0 ? '#dc2626' : 'inherit') + '">' + (p > 0 ? '+' : '') + p + '%</small>'; };
-    el.innerHTML = '<div class="sg">결과(16~23시)</div><table><tr><th></th><th>현행</th><th>' + esc(planOf(ST.plan).nm) + '</th></tr>' +
+    el.innerHTML = '<div class="sg">결과(16~23시)</div><table><tr><th></th><th>현행</th><th>' + esc(planOf(ST.plan).nm) + (ST.auto ? ' + 🤖 자동 끊기' : '') + '</th></tr>' +
       '<tr><td>총 지체</td><td>' + a.delayVh.toLocaleString() + ' 대·시</td><td>' + b.delayVh.toLocaleString() + ' ' + dv(a.delayVh, b.delayVh) + '</td></tr>' +
       '<tr><td>최대 대기 길이</td><td>' + mq(a) + '</td><td>' + mq(b) + '</td></tr>' +
       '<tr><td>블록 안에 갇힌 차(최대)</td><td>' + a.trappedMax + '대</td><td>' + b.trappedMax + '대 ' + dv(a.trappedMax, b.trappedMax) + '</td></tr>' +
+      '<tr><td>꼬리물기(교차로 안에 선 차 · 누적)</td><td>' + a.box + '</td><td>' + b.box + ' ' + dv(a.box, b.box) + '</td></tr>' +
+      (ST.auto ? '<tr><td>🤖 자동 끊기</td><td>-</td><td>' + b.acN + '번 · ' + Math.round(b.acSec / 60) + '분 끊음</td></tr>' : '') +
       '<tr><td>막힘 시작 → 해소</td><td>' + (a.jamStart != null ? hh(a.jamStart) : '') + ' → ' + (a.jamStart != null ? (a.clearT != null ? hh(a.clearT) : '23시 넘김') : '막힘 없음') + '</td><td>' + (b.jamStart != null ? hh(b.jamStart) : '') + ' → ' + (b.jamStart != null ? (b.clearT != null ? hh(b.clearT) : '23시 넘김') : '막힘 없음') + '</td></tr></table>' +
       '<div class="sn">막힘 = 신호 교차로 접근로 가운데 80% 넘게 찬 곳이 3곳 이상 · 해소 = 그 뒤 3곳 아래로 내려간 때 · 지체 = 막히지 않았을 때보다 더 걸린 시간의 합</div>';
   }
@@ -299,7 +303,8 @@
       '<div class="sg">개선안 — 4031 고속터미널사거리(오른쪽 판)</div><div class="row">' + plans().map(function (p) { return chipB('plan:' + p.id, p.nm, ST.plan === p.id); }).join('') + '</div><div class="sn">' + esc(planOf(ST.plan).why) + ' · 주기 ' + cyc + '초' + (ST.ph ? ' · 초를 고침' : '') + ' · 안은 16~21시(현행 17시 계획이 도는 때)에만 쓰고 21시부터는 두 판 모두 현행 밤 계획</div>';
     if (ST.plan !== 'cur') h += ph.map(function (p, i) { return '<div class="ph"><b>' + (i + 1) + '</b><span>' + esc(p.nm || p.mv.join('+')) + '</span><button data-pd="' + i + ':-5">−5</button><b style="min-width:34px;text-align:center">' + p.d + '초</b><button data-pd="' + i + ':5">+5</button></div>'; }).join('');
     h += '<div class="sg">돌리기</div><div class="row">' + '<button data-sk="run" class="on">' + (RUN ? '⏸ 멈춤' : A ? '▶ 이어서' : '▶ 시작') + '</button>' + [300, 600, 1200].map(function (v) { return chipB('spd:' + v, '×' + v, SPD === v); }).join('') + '<button data-sk="end">⏩ 끝까지</button><button data-sk="re">↺ 처음부터</button></div>' +
-      '<div class="sg">수동 조작 — 오른쪽 판 4031(실제 신호를 바꾸는 기능이 아니다)</div><div class="row">' + chipB('man', '🖐 수동', ST.manual) + '<button data-sk="next">다음 현시 ▶</button><button data-sk="cut">⛔ 들어오는 차만 끊기</button></div>' +
+      '<div class="sg">수동 조작 — 오른쪽 판 4031(실제 신호를 바꾸는 기능이 아니다)</div><div class="row">' + chipB('man', '🖐 수동', ST.manual) + '<button data-sk="next">다음 현시 ▶</button><button data-sk="cut">⛔ 들어오는 차만 끊기</button>' + chipB('auto', '🤖 자동 끊기', ST.auto) + '</div>' +
+      '<div class="sn">🤖 자동 끊기 = 오른쪽 판 4031 에서 5초마다 신반포로(4031→신세계 문) 점유를 보고 85% 넘으면 「⛔ 들어오는 차만 끊기」 현시로 · 60% 아래면 원래 계획(설계값 · 끊은 횟수·시간은 결과에) — 네 교차로 모두에 걸면 고리 전체가 멈춘다(게임 세션 재현 · 지체 15.9만)</div>' +
       (B && B.N['4031'].manual ? '<div class="sn">지금 현시 ' + (B.N['4031'].manual.i + 1) + ' — ' + esc(B.N['4031'].manual.ph[B.N['4031'].manual.i].mv.join(' + ')) + '</div>' : '');
     el.innerHTML = h;
   }
@@ -320,6 +325,7 @@
     else if (k === 'end') toEnd();
     else if (k === 're') start();
     else if (k === 'man') { ST.manual = !ST.manual; if (B) B.manual('4031', ST.manual); }
+    else if (k === 'auto') { ST.auto = !ST.auto; if (ST.auto) { ST.manual = false; ST.plan = 'cur'; ST.ph = null; toastS('🤖 오른쪽 판 = 현행 신호 + 자동 끊기 — 왼쪽 현행과 견줌(다른 안과 함께 보려면 안을 다시 고르기)'); } restart = true; }
     else if (k === 'next') { if (!B) start(); if (!B.N['4031'].manual) { ST.manual = true; B.manual('4031', true); } B.go('4031'); }
     else if (k === 'cut') { if (!B) start(); if (!B.N['4031'].manual) { ST.manual = true; B.manual('4031', true); } var ma = B.N['4031'].manual, j = -1;
       ma.ph.forEach(function (p, i) { if (j < 0 && p.mv.indexOf('wt.St') < 0 && p.mv.indexOf('nt.Lt') < 0 && p.mv.indexOf('et.St') >= 0) j = i; });

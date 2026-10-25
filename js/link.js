@@ -250,7 +250,9 @@
       h += '<div class="sg2"><b>🧪 시뮬로 견줘 본 것</b> <small>' + esc(F.sim.day || '') + '</small></div><ul class="lg2">' + F.sim.rows.map(function (r, i) {
         var dv = i && r0[1] ? Math.round((r[1] - r0[1]) / r0[1] * 100) : null;
         return '<li><b>' + esc(r[0]) + '</b> — ' + esc(c[1] || '지체') + ' ' + r[1].toLocaleString() + (dv != null ? ' <small style="color:' + (dv < 0 ? '#16a34a' : dv > 0 ? '#dc2626' : 'inherit') + '">(' + (dv > 0 ? '+' : '') + dv + '%)</small>' : '') + ' · ' + esc(c[2] || '') + ' ' + r[2] + ' · ' + esc(c[3] || '') + ' ' + esc(r[3]) + ' · ' + esc(c[4] || '') + ' ' + r[4].toLocaleString() + '</li>'; }).join('') + '</ul>' +
-        '<div class="note">' + esc(F.sim.rule || '') + (F.sim.check ? ' · ' + esc(F.sim.check) : '') + '</div><div class="note">⚠ ' + esc(F.sim.warn || '') + '</div>'; }
+        (F.sim.more ? li(F.sim.more) : '') + '<div class="note">' + esc(F.sim.rule || '') + (F.sim.check ? ' · ' + esc(F.sim.check) : '') + '</div><div class="note">⚠ ' + esc(F.sim.warn || '') + '</div>'; }
+    var X = F.real;
+    if (X) h += '<div class="sg2"><b>📼 ' + esc(X.title) + '</b></div><div class="note">' + esc(X.said) + '</div>' + li(X.rows) + '<div class="note">💡 ' + esc(X.lesson) + '</div><div class="note">출처: ' + esc(X.src) + '</div>';
     var Q = F.propose;
     if (Q) h += '<div class="sg2"><b>📝 ' + esc(Q.title) + '</b></div><div class="note">' + esc(Q.said) + '</div><div class="sg2">왜</div>' + li(Q.why) + '<div class="sg2">건의 내용</div>' + li(Q.ask) + '<div class="sg2">시뮬로 본 근거</div>' + li(Q.sim) + '<div class="note">' + esc(Q.who) + '</div>';
     return h + '</details>';

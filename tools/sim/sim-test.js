@@ -56,6 +56,8 @@
     ck('토 분수 1,200대/시 — 라바콘 원거리 차로 축소를 하면 4031 북쪽(반포대교남단 쪽) 대기·지체가 줄거나 같다', Fb.delayVh <= Fa.delayVh, { 축소전_지체: Fa.delayVh, 축소후: Fb.delayVh, 축소전_4031북쪽m: Fa.maxQm['4031.nt'], 축소후_4031북쪽m: Fb.maxQm['4031.nt'] });
     // ⑦-2 🤖 4031 자동 끊기(게임 세션 제안) — 10/18 설정에서 꼬리물기·갇힌 차가 줄고 지체는 크게 늘지 않는다 · 끊은 때가 있다
     var P18 = M.preset['1018'], q18 = { date: '2026-10-18', seed: 7, att: P18.att, from: 16 * 3600, to: 23 * 3600 }, ACa = S.run(M, q18).result(), ACb = S.run(M, Object.assign({ autoCut: { node: '4031', link: '4031>G', hi: 0.85, lo: 0.6, every: 5, cut: ['wt.St', 'nt.Lt'], keep: 'et.St' } }, q18)).result();
+    var ACc = S.run(M, Object.assign({ autoCut: { node: '4031', link: '4031>G', hi: 0.85, lo: 0.6, every: 5, cut: ['nt.Lt'], mode: 'drop' } }, q18)).result();
+    ck('🤖 4031 좌회전 빼기(형님 — 북→동 좌회전만 막고 차례는 그대로) — 10/18 꼬리물기·갇힘이 줄고 풀림이 늦지 않다', ACc.acN > 0 && ACc.box < ACa.box && ACc.trappedMax < ACa.trappedMax && (ACc.clearT || 1e9) <= (ACa.clearT || 1e9), { 막은번: ACc.acN, 꼬리물기: [ACa.box, ACc.box], 갇힘: [ACa.trappedMax, ACc.trappedMax], 지체: [ACa.delayVh, ACc.delayVh], 풀림: [ACa.clearT, ACc.clearT] });
     ck('🤖 4031 자동 끊기 — 10/18 꼬리물기·블록 갇힘이 줄고 총 지체는 10% 안에서', ACb.acN > 0 && ACb.box < ACa.box && ACb.trappedMax < ACa.trappedMax && ACb.delayVh <= ACa.delayVh * 1.1, { 끊은번: ACb.acN, 꼬리물기: [ACa.box, ACb.box], 갇힘: [ACa.trappedMax, ACb.trappedMax], 지체: [ACa.delayVh, ACb.delayVh] });
     // ⑧ 출입구 4곳 · 고속버스 시간표(요일 갈래 월~목·금·토·일)
     var sh = M.att.filter(function (a9) { return a9.id === 'shin'; })[0], tb = M.tbl && M.tbl.bus && M.tbl.bus.t;

@@ -198,6 +198,8 @@
       if (N.manual) { var ma = N.manual; (ma.clr > 0 ? ma.keep : ma.ph[ma.i].mv).forEach(function (m) { G[m] = 1; }); return G; }
       var P = planAt(M, id, t, dow, alt, ACT.noTw[id]), c = P.c, x = ((t - P.off) % c + c) % c;
       P.win.forEach(function (r) { var a = (x - r[3] + c) % c; if (a >= lost && a < r[1] + r[2] - 1) G[r[0]] = 1; });
+      if (AC && AC.mode === 'drop' && S.ac.on && id === AC.node) (AC.cut || []).forEach(function (m) { delete G[m]; });
+      (S.drop[id] || []).forEach(function (m) { delete G[m]; });   /* 손으로 빼기(⛔) — 그 이동류만 적색 */   /* 자동 끊기 「빼기」 — 차례는 그대로 돌고 그 이동류만 적색 */
       N.cur = P; return G;
     }
     S.inn = {};
@@ -277,10 +279,11 @@
     /* 자동 끊기(2026-10-25 · 게임 세션 「진행상황」 제안 · 소유자 현장 조작 「⛔ 들어오는 차만 끊기」를 규칙으로) — scen.autoCut = { node, link, hi, lo, every }:
        every 초마다 link(블록 안 길) 점유가 hi 를 넘으면 그 교차로를 블록으로 들어가는 이동류(cut — 기본 서→동 직진·북→동 좌회전)가 없는 현시로 붙잡고(나오는 이동류 keep 이 있는 현시 먼저 · 황색·전적색 지나서),
        lo 아래로 내려가면 원래 계획으로 돌려보낸다 · 실제 신호를 바꾸는 기능이 아니다 — 견주기용 · 값은 설계값 */
-    var AC = scen.autoCut || null; S.ac = { n: 0, sec: 0, on: false };
+    var AC = scen.autoCut || null; S.ac = { n: 0, sec: 0, on: false }; S.drop = {};
     function autoCut(t) {
       var L = S.L[AC.link], r = L ? L.n / L.cap : 0, N = S.N[AC.node]; if (!N) return;
       if (S.ac.on) S.ac.sec += AC.every || 5;
+      if (AC.mode === 'drop') { if (!S.ac.on && r >= (AC.hi || 0.85)) { S.ac.on = true; S.ac.n++; } else if (S.ac.on && r <= (AC.lo || 0.6)) S.ac.on = false; return; }   /* 빼기 — 형님 「좌회전으로 신세계 들어가는 차들이 너무 많아져 그걸 줄여야 할 때」: 신반포로 양방향은 그대로 보내고 북→동 좌회전만 막는다 */
       if (!S.ac.on && r >= (AC.hi || 0.85)) {
         if (!N.manual) S.manual(AC.node, true, AC.ph); var ma = N.manual, cut = AC.cut || ['wt.St', 'nt.Lt'], keep = AC.keep || 'et.St', j = -1;
         ma.ph.forEach(function (p, i) { if (j < 0 && !cut.some(function (c) { return p.mv.indexOf(c) >= 0; }) && p.mv.indexOf(keep) >= 0) j = i; });

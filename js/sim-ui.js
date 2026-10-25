@@ -110,7 +110,7 @@
     if (M && window.tgSim) return cb();
     var go = function () { window.tgSim.load(AREA.id, '7').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=14'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=15'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   // ---- 판 ----
   var DAYS = [['1018', '10/18(일) 재현', '2026-10-18'], ['1011', '10/11(일) 평소', '2026-10-11'], ['mt', '평일(월~목)', '2026-10-21'], ['fr', '금요일', '2026-10-23'], ['sa', '토요일', '2026-10-24'], ['su', '일요일', '2026-10-25']];   // 소유자 「평일·금·토·일도 변수로」 — 신호 계획·고속버스 시간표·평소 속도 모두 이 네 갈래
@@ -224,7 +224,8 @@
     paintRun(); RUN = 1; LAST = 0; requestAnimationFrame(tick); paintCtl();
   }
   /* 🤖 4031 자동 끊기 — 5초마다 신반포로(4031→신세계 문 쪽) 점유 85% 넘으면 블록으로 들어가는 차(서→동 직진·북→동 좌회전)가 없는 현시로 · 60% 아래면 원래 계획(게임 세션 「진행상황」 10/18 재현: 꼬리물기 1,131→195 · 갇힘 338→143 · 지체 같음) */
-  var AUTO = { node: '4031', link: '4031>G', hi: 0.85, lo: 0.6, every: 5, cut: ['wt.St', 'nt.Lt'], keep: 'et.St' };
+  /* 형님(2026-10-25) 「보낼 수 있는 곳은 신반포로 하행(잠원IC 방향)·동→서 두 곳 · 외곽(반포대교) 쪽 직좌에서 좌회전으로 신세계 들어가는 차가 너무 많아져 그걸 줄여야 할 때가 있다」 → 끊는 것 = 북→동 좌회전만 · 차례는 그대로 돈다(빼기) */
+  var AUTO = { node: '4031', link: '4031>G', hi: 0.85, lo: 0.6, every: 5, cut: ['nt.Lt'], mode: 'drop' };
   /* 수동 현시 = 세분화(F 형님 안 여섯 현시) — 자동(계획)은 현행 그대로 두고 수동·자동 끊기 때만 이 현시 목록에서 고른다 */
   function manPh() { if (!ST.manF) return null; return planOf('F').ph.map(function (p) { return { d: p.d, y: p.y, ar: p.ar, mv: p.mv.slice() }; }); }
   function stop() { RUN = 0; }
@@ -312,9 +313,9 @@
       '<div class="sg">개선안 — 4031 고속터미널사거리(오른쪽 판)</div><div class="row">' + plans().map(function (p) { return chipB('plan:' + p.id, p.nm, ST.plan === p.id); }).join('') + '</div><div class="sn">' + esc(planOf(ST.plan).why) + ' · 주기 ' + cyc + '초' + (ST.ph ? ' · 초를 고침' : '') + ' · 안은 16~21시(현행 17시 계획이 도는 때)에만 쓰고 21시부터는 두 판 모두 현행 밤 계획</div>';
     if (ST.plan !== 'cur') h += ph.map(function (p, i) { return '<div class="ph"><b>' + (i + 1) + '</b><span>' + esc(p.nm || p.mv.join('+')) + '</span><button data-pd="' + i + ':-5">−5</button><b style="min-width:34px;text-align:center">' + p.d + '초</b><button data-pd="' + i + ':5">+5</button></div>'; }).join('');
     h += '<div class="sg">돌리기</div><div class="row">' + '<button data-sk="run" class="on">' + (RUN ? '⏸ 멈춤' : A ? '▶ 이어서' : '▶ 시작') + '</button>' + [300, 600, 1200].map(function (v) { return chipB('spd:' + v, '×' + v, SPD === v); }).join('') + '<button data-sk="end">⏩ 끝까지</button><button data-sk="re">↺ 처음부터</button></div>' +
-      '<div class="sg">수동 조작 — 오른쪽 판 4031(실제 신호를 바꾸는 기능이 아니다)</div><div class="row">' + chipB('man', '🖐 수동', ST.manual) + '<button data-sk="next">다음 현시 ▶</button><button data-sk="cut">⛔ 들어오는 차만 끊기</button>' + chipB('auto', '🤖 자동 끊기', ST.auto) + chipB('manF', '🔀 수동 현시 = 세분화', ST.manF) + '</div>' +
+      '<div class="sg">수동 조작 — 오른쪽 판 4031(실제 신호를 바꾸는 기능이 아니다)</div><div class="row">' + chipB('man', '🖐 수동', ST.manual) + '<button data-sk="next">다음 현시 ▶</button><button data-sk="cut"' + (B && B.drop && B.drop['4031'] ? ' class="on"' : '') + '>⛔ 좌회전(→신세계)만 막기</button>' + chipB('auto', '🤖 자동 끊기', ST.auto) + chipB('manF', '🔀 수동 현시 = 세분화', ST.manF) + '</div>' +
       '<div class="sn">🔀 수동 현시 = 세분화 — 평소(계획)는 현행 그대로 두고, 🖐 수동·⛔ 끊기·🤖 자동 끊기 때만 F 형님 안의 여섯 현시(동 직진만 · 서 좌회전만 · 남북 양직 …)에서 고른다(형님 건의 「수동 조작 때 고를 수 있는 현시 세분화」)</div>' +
-      '<div class="sn">🤖 자동 끊기 = 오른쪽 판 4031 에서 5초마다 신반포로(4031→신세계 문) 점유를 보고 85% 넘으면 「⛔ 들어오는 차만 끊기」 현시로 · 60% 아래면 원래 계획(설계값 · 끊은 횟수·시간은 결과에) — 네 교차로 모두에 걸면 고리 전체가 멈춘다(게임 세션 재현 · 지체 15.9만)</div>' +
+      '<div class="sn">⛔ = 오른쪽 판 4031 에서 북→동 좌회전(반포대교에서 신세계 쪽)만 적색 · 신반포로 하행(잠원IC 방향)·동→서는 그대로 보낸다(형님 「보낼 수 있는 곳은 그 두 곳 · 좌회전으로 신세계 들어가는 차를 줄여야 할 때」) · 🤖 자동 끊기 = 5초마다 신반포로(4031→신세계 문) 점유 85% 넘으면 같은 「좌회전만 막기」 · 60% 아래면 풀기(설계값 · 막은 횟수·시간은 결과에) · 10/18: 꼬리물기 1,175→141 · 블록 갇힘 610→480 · 풀림 21:52→21:24 · 대신 지체 +24%(좌회전 차가 반포대교 쪽에서 기다림)</div>' +
       (B && B.N['4031'].manual ? '<div class="sn">지금 현시 ' + (B.N['4031'].manual.i + 1) + ' — ' + esc(B.N['4031'].manual.ph[B.N['4031'].manual.i].mv.join(' + ')) + '</div>' : '');
     el.innerHTML = h;
   }
@@ -338,10 +339,7 @@
     else if (k === 'manF') { ST.manF = !ST.manF; restart = true; }
     else if (k === 'auto') { ST.auto = !ST.auto; if (ST.auto) { ST.manual = false; ST.plan = 'cur'; ST.ph = null; toastS('🤖 오른쪽 판 = 현행 신호 + 자동 끊기 — 왼쪽 현행과 견줌(다른 안과 함께 보려면 안을 다시 고르기)'); } restart = true; }
     else if (k === 'next') { if (!B) start(); if (!B.N['4031'].manual) { ST.manual = true; B.manual('4031', true, manPh()); } B.go('4031'); }
-    else if (k === 'cut') { if (!B) start(); if (!B.N['4031'].manual) { ST.manual = true; B.manual('4031', true, manPh()); } var ma = B.N['4031'].manual, j = -1;
-      ma.ph.forEach(function (p, i) { if (j < 0 && p.mv.indexOf('wt.St') < 0 && p.mv.indexOf('nt.Lt') < 0 && p.mv.indexOf('et.St') >= 0) j = i; });
-      if (j < 0) ma.ph.forEach(function (p, i) { if (j < 0 && p.mv.indexOf('wt.St') < 0 && p.mv.indexOf('nt.Lt') < 0) j = i; });
-      if (j >= 0) B.go('4031', j); toastS(j >= 0 ? '⛔ 블록으로 들어가는 차(서→동 직진 · 북→동 좌회전)를 끊는 현시 ' + (j + 1) + '로' + (ma.ph[j].mv.indexOf('et.St') >= 0 ? ' — 나오는 차(동→서 직진)는 계속 간다' : ' — ⚠ 이 신호 계획에는 나오는 차를 함께 보내는 현시가 없다') : '이 계획에는 들어오는 차만 끊는 현시가 없다'); }
+    else if (k === 'cut') { if (!B) start(); if (B.drop['4031']) { delete B.drop['4031']; toastS('⛔ 풀기 — 북→동 좌회전 다시 원래대로'); } else { B.drop['4031'] = ['nt.Lt']; toastS('⛔ 북→동 좌회전(반포대교에서 신세계 쪽)만 적색 — 신반포로 양방향(잠원IC 방향·동→서)과 다른 현시는 차례대로 간다 · 한 번 더 누르면 풀림'); } }
     if (restart) { A = null; B = null; stop(); setTimeout(paintHow, 0); if (k.indexOf('day:') === 0 || k.indexOf('act:') === 0 || k === 'box') { CMP = null; paintCmp(); } paintCtl(); start(); } else paintCtl();
   }
   function onInput(e) { var t = e.target; if (!t.hasAttribute || !t.hasAttribute('data-sv')) return; ST[t.getAttribute('data-sv')] = +t.value; var em = t.parentNode.querySelector('em'); if (em) em.textContent = t.getAttribute('data-sv') === 'bus' ? '× ' + t.value : t.getAttribute('data-sv') === 'occ' ? t.value + '%' : (+t.value).toLocaleString() + ' 대/시'; }

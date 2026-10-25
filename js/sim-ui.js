@@ -76,9 +76,9 @@
   // ---- 받기 ----
   function need(cb) {
     if (M && window.tgSim) return cb();
-    var go = function () { window.tgSim.load(AREA.id, '3').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
+    var go = function () { window.tgSim.load(AREA.id, '4').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=3'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=4'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   // ---- 판 ----
   var DAYS = [['1018', '10/18(일) 재현', '2026-10-18'], ['1011', '10/11(일) 평소', '2026-10-11'], ['mt', '평일(월~목)', '2026-10-21'], ['fr', '금요일', '2026-10-23'], ['sa', '토요일', '2026-10-24'], ['su', '일요일', '2026-10-25']];   // 소유자 「평일·금·토·일도 변수로」 — 신호 계획·고속버스 시간표·평소 속도 모두 이 네 갈래
@@ -87,7 +87,7 @@
   function defState() {
     var p = presetOf('1018') || {};
     return { day: '1018', date: p.date || '2026-10-18', shin: (p.att && p.att.shin && p.att.shin.inPeak) || att0('shin').inPeak, fount: (p.att && p.att.fount && p.att.fount.inPeak) || att0('fount').inPeak,
-      academy: att0('academy').inPeak || 0, bus: 1, act: {}, box: true, plan: 'A', ph: null, manual: false };
+      academy: att0('academy').inPeak || 0, occ: Math.round((att0('shin').occ0 != null ? att0('shin').occ0 : 0.5) * 100), bus: 1, act: {}, box: true, plan: 'A', ph: null, manual: false };
   }
   function exPhases() {   // 재편안 예시 — 의도 문서 「직진·좌회전 분리 · 측도 남북 양직진 · 출구 연장 현시」 · 주기는 현행(일 16~21시 패턴 14 · 180초)과 같게 · 초는 형님이 고친다
     return [{ d: 40, y: 4, ar: 1, mv: ['wt.St', 'et.St'], nm: '동서 양직진' }, { d: 30, y: 4, ar: 1, mv: ['et.St', 'wt.Lt'], nm: '출구 연장(동→서 직진 계속 · 서→북 좌회전) — 들어오는 차 끊김' },
@@ -95,7 +95,7 @@
   }
   function scen() {
     var act = Object.keys(ST.act).filter(function (k) { return ST.act[k]; });
-    var a = { shin: { inPeak: ST.shin, outPeak: ST.shin }, fount: { inPeak: ST.fount }, academy: { inPeak: ST.academy }, busGB: { scale: ST.bus, off: ST.bus ? 0 : 1 }, busCT: { scale: ST.bus, off: ST.bus ? 0 : 1 } };
+    var a = { shin: { inPeak: ST.shin, outPeak: ST.shin, occ0: ST.occ / 100 }, fount: { inPeak: ST.fount }, academy: { inPeak: ST.academy }, busGB: { scale: ST.bus, off: ST.bus ? 0 : 1 }, busCT: { scale: ST.bus, off: ST.bus ? 0 : 1 } };
     return { date: ST.date, seed: 7, att: a, act: act, box: ST.box ? undefined : 0, from: 16 * 3600, to: 23 * 3600 };
   }
   /* 개선안 목록(4031 고속터미널사거리 · 소유자 「신호값별로 어떤 변화가 생길 수 있는지 — 개선안별로 시연」) — 현행은 그날 17시 현시도 계획 · 나머지는 그것을 고친 예시(초는 형님이 정한다) */
@@ -108,6 +108,59 @@
       { id: 'C', nm: 'C 서직좌 줄이기', why: '현행 2현시(서직좌 — 블록으로 들어가는 서→동 직진) −15초 → 4현시 남직좌 +15초', ph: K(function (q) { if (q[1]) q[1].d -= 15; if (q[3]) q[3].d += 15; }) },
       { id: 'D', nm: 'D 북직좌 줄이기', why: '현행 3현시(북직좌 — 블록으로 들어가는 북→동 좌회전) −10초 → 1현시 동서 양직진 +10초', ph: K(function (q) { if (q[2]) q[2].d -= 10; if (q[0]) q[0].d += 10; }) },
       { id: 'E', nm: 'E 주기 늘리기', why: '현행 현시를 모두 1.2배(주기 늘려 한 번에 많이 보냄 — 대신 빨간불이 길다)', ph: K(function (q) { q.forEach(function (x) { x.d = Math.round(x.d * 1.2); }); }) }];
+  }
+  // 안마다 「무엇을 어떻게」 — 현장 차례·기대 효과·주의(초는 예시 · 바꾸는 권한은 교통과 시설 담당) — 자동 글(방향별 녹색 초 차이)은 아래 planCard 가 붙인다
+  var HOW = {
+    cur: { what: '지금 교통과 현시도 계획 그대로(비교 기준).', steps: ['손대지 않는다 — 다른 안의 효과를 재는 잣대.'], warn: [] },
+    A: { what: '현시를 다섯으로 나눠 직진과 좌회전을 떼고, 블록에서 나오는 동→서 직진만 따로 더 보내는 「출구 연장」을 둔다. 측도(고가 아래 반포대로)는 남북 양직진으로 묶는다.',
+      steps: ['① 동서 양직진 — 신반포로 양방향 직진', '② 출구 연장 — 동→서 직진(블록에서 나오는 차)은 계속, 서→동 직진(블록으로 들어가는 차)은 적색 · 서→북 좌회전 함께', '③ 남북 양직진 — 반포대로 측도', '④ 북 좌회전(→동, 블록으로 들어감)', '⑤ 남 좌회전(→서)',
+        '현장 수동 조작: 블록이 차면 ② 에서 머문다 → 「⛔ 들어오는 차만 끊기」 한 번으로 들어가는 차만 멈추고 나오는 차는 흘려보낸다'],
+      warn: ['측도 남북 양직진은 측도 좌회전 전용차로·고가 교각 때문에 되는지 현장 확인이 먼저(의도 문서 미결 질문)', '현시가 다섯이라 한 바퀴에 손실 시간이 늘어 바깥 지체가 커질 수 있다 — 시뮬에서도 그렇게 나온다', '현장 수동조작반이 「현시 지정」까지 되는지 확인 필요(넘기기만 되면 차례대로만 넘어간다)'] },
+    B: { what: 'A 와 같은 틀에서 출구 연장을 15초 늘리고 동서 양직진을 15초 줄인다 — 나오는 차를 더 빼고 들어오는 차를 덜 받는다.',
+      steps: ['A 의 ①을 15초 줄이고 ②(출구 연장)를 15초 늘린다', '나머지 현시·주기는 A 와 같다', '블록 안이 다 빠지면 A 로 되돌린다(출구만 길면 신반포로 서쪽에서 들어오는 차가 길게 선다)'],
+      warn: ['신반포로 서쪽(신반포역 쪽)에서 동쪽으로 가는 차가 더 기다린다 — 그 길 대기를 같이 본다', 'A 의 주의 그대로'] },
+    C: { what: '현행 네 현시 차례는 그대로 두고, 블록으로 들어가는 서→동 직진이 함께 켜지는 2현시(서직좌)를 15초 줄여 4현시(남직좌)에 준다.',
+      steps: ['16~21시 계획(패턴 14 · 요일 공통) 2현시 43초 → 28초', '4현시 40초 → 55초(남쪽 측도 차 · 남→서 좌회전 더)', '주기 180초 그대로 → 이웃 교차로(4034·4019)와 연동이 안 깨진다', '수동 조작이면: 블록이 찰 때 2현시를 일찍 넘긴다(「다음 현시 ▶」)'],
+      warn: ['서→북 좌회전(반포대교 쪽)도 15초 짧아진다 — 반포대교남단 쪽 대기를 같이 본다', '값 바꾸기는 교통과 시설 담당이 신호제어기 TOD 패턴을 고쳐야 한다 — 이 지도는 실제 신호를 바꾸지 않는다'] },
+    D: { what: '블록으로 들어가는 북→동 좌회전이 켜지는 3현시(북직좌)를 10초 줄여 1현시(동서 양직진)에 준다.',
+      steps: ['3현시 48초 → 38초', '1현시 49초 → 59초(동→서 직진 = 블록에서 나오는 차도 늘어남)', '주기 그대로'],
+      warn: ['북→남 직진(반포대교에서 내려오는 측도 차)도 10초 짧아져 반포대교남단 쪽으로 대기가 늘 수 있다 — 분수 날 특히', '시뮬에서는 막힘이 늦게 시작하지만 총 지체는 늘었다'] },
+    E: { what: '현시 비율은 그대로 두고 모두 1.2배(주기 180 → 216초) — 한 번에 많이 보내 출발 손실을 줄인다.',
+      steps: ['모든 현시 초 × 1.2', '이웃 교차로(4034·4019·4028)도 같은 주기로 맞춰야 연동이 산다'],
+      warn: ['주기가 길면 빨간불도 길어 보행·좌회전 대기가 늘어난다', '이웃 교차로와 주기가 다르면 연동이 깨진다 — 이 시뮬은 4031 만 바꿨다'] } };
+  var MVK = { 'wt.St': ['서→동 직진', '블록으로 들어감'], 'nt.Lt': ['북→동 좌회전', '블록으로 들어감'], 'et.St': ['동→서 직진', '블록에서 나옴'], 'wt.Lt': ['서→북 좌회전', ''], 'nt.St': ['북→남 직진', ''], 'st.St': ['남→북 직진', ''], 'st.Lt': ['남→서 좌회전', ''] };
+  var MVC = { 'wt.St': '#dc2626', 'nt.Lt': '#ea580c', 'et.St': '#16a34a', 'wt.Lt': '#2563eb', 'nt.St': '#0891b2', 'st.St': '#7c3aed', 'st.Lt': '#a21caf' };
+  function grn(ph) { var w = window.tgSim.phasesToWin(ph), g = {}; w.win.forEach(function (r) { g[r[0]] = (g[r[0]] || 0) + r[1]; }); return { g: g, c: w.c }; }
+  // 현시 하나 = 작은 교차로 그림(가는 방향 화살표)
+  function pic(mv, sz) {
+    var C = sz / 2, L = sz * 0.42, R9 = sz * 0.11, D = { nt: [0, -1], st: [0, 1], et: [1, 0], wt: [-1, 0] }, TO = { St: { nt: 'st', st: 'nt', et: 'wt', wt: 'et' }, Lt: { nt: 'et', et: 'st', st: 'wt', wt: 'nt' } };
+    var h = '<svg viewBox="0 0 ' + sz + ' ' + sz + '" width="' + sz + '" height="' + sz + '"><rect x="' + (C - R9).toFixed(1) + '" y="0" width="' + (2 * R9).toFixed(1) + '" height="' + sz + '" fill="#cbd5e1"/><rect x="0" y="' + (C - R9).toFixed(1) + '" width="' + sz + '" height="' + (2 * R9).toFixed(1) + '" fill="#cbd5e1"/>';
+    mv.forEach(function (k) { var a = k.split('.'), f = D[a[0]], to = TO[a[1]] && D[TO[a[1]][a[0]]]; if (!f || !to) return; var off = R9 * 0.5, rx = -f[1] * off, ry = f[0] * off;   // 들어오는 쪽 오른편 차로
+      var x1 = C + f[0] * L + rx, y1 = C + f[1] * L + ry, x2 = C + to[0] * L - to[1] * off, y2 = C + to[1] * L + to[0] * off, cx = C + rx * (a[1] === 'Lt' ? -0.3 : 1) + (a[1] === 'Lt' ? (f[0] + to[0]) * R9 * 0.2 : 0), cy = C + ry * (a[1] === 'Lt' ? -0.3 : 1) + (a[1] === 'Lt' ? (f[1] + to[1]) * R9 * 0.2 : 0);
+      h += '<path d="M' + x1.toFixed(1) + ',' + y1.toFixed(1) + ' Q' + cx.toFixed(1) + ',' + cy.toFixed(1) + ' ' + x2.toFixed(1) + ',' + y2.toFixed(1) + '" fill="none" stroke="' + (MVC[k] || '#334155') + '" stroke-width="2.6" marker-end="url(#pa' + sz + ')"/>'; });
+    return h.replace('<rect', '<defs><marker id="pa' + sz + '" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 z" fill="#334155"/></marker></defs><rect') + '</svg>';
+  }
+  // 현시 막대(한 주기) — 칸 = 현시 · 폭 = 초 · 칸 아래 작은 교차로 그림
+  function bar(ph, W, ttl) {
+    var c = ph.reduce(function (a, p) { return a + p.d; }, 0), x = 0, h = '<div style="margin:4px 0 2px;font-size:12px;font-weight:700">' + esc(ttl) + ' · 주기 ' + c + '초</div><div style="display:flex;width:100%;border-radius:8px;overflow:hidden;border:1px solid rgba(120,130,150,.4)">';
+    ph.forEach(function (p, i) { var hasIn = p.mv.indexOf('wt.St') >= 0 || p.mv.indexOf('nt.Lt') >= 0, hasOut = p.mv.indexOf('et.St') >= 0;
+      h += '<div style="flex:' + p.d + ' 1 0;min-width:0;padding:3px 2px;text-align:center;font-size:11px;background:' + (hasIn ? 'rgba(220,38,38,.13)' : hasOut ? 'rgba(22,163,74,.13)' : 'rgba(120,130,150,.08)') + ';border-right:1px solid rgba(120,130,150,.35)"><b>' + '①②③④⑤⑥⑦'.charAt(i) + ' ' + p.d + '초</b><div style="display:flex;justify-content:center">' + pic(p.mv, 44) + '</div></div>'; });
+    return h + '</div>';
+  }
+  function planCard(p, res, curRes) {
+    var cu = curPh(), ph = p.ph || cu, G0 = grn(cu), G1 = grn(ph), H = HOW[p.id] || { what: p.why, steps: [], warn: [] };
+    var rows = Object.keys(MVK).filter(function (k) { return G0.g[k] != null || G1.g[k] != null; }).map(function (k) { var a = Math.round((G0.g[k] || 0) / G0.c * 3600), b = Math.round((G1.g[k] || 0) / G1.c * 3600), d0 = Math.round(G0.g[k] || 0), d1 = Math.round(G1.g[k] || 0), dd = d1 - d0;
+      return '<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:' + MVC[k] + ';margin-right:4px"></span>' + MVK[k][0] + (MVK[k][1] ? ' <small style="color:' + (MVK[k][1] === '블록으로 들어감' ? '#dc2626' : '#16a34a') + '">' + MVK[k][1] + '</small>' : '') + '</td><td>' + d0 + '초</td><td>' + d1 + '초</td><td style="color:' + (dd < 0 ? '#dc2626' : dd > 0 ? '#16a34a' : 'inherit') + '">' + (dd > 0 ? '+' : '') + dd + '</td><td><small>' + (a ? Math.round((b - a) / a * 100) + '%' : '-') + '</small></td></tr>'; }).join('');
+    var eff = res ? '<div class="sg">시뮬 결과(같은 날·같은 차)</div><div class="row" style="gap:10px;font-size:12.5px"><span>총 지체 <b>' + res.delayVh.toLocaleString() + '</b> 대·시' + (curRes && p.id !== 'cur' ? ' (' + (res.delayVh >= curRes.delayVh ? '+' : '') + Math.round((res.delayVh - curRes.delayVh) / curRes.delayVh * 100) + '%)' : '') + '</span><span>블록 갇힘 최대 <b>' + res.trappedMax + '</b>대' + (curRes && p.id !== 'cur' && curRes.trappedMax ? ' (' + (res.trappedMax >= curRes.trappedMax ? '+' : '') + Math.round((res.trappedMax - curRes.trappedMax) / curRes.trappedMax * 100) + '%)' : '') + '</span><span>막힘 ' + (res.jamStart != null ? hh(res.jamStart) + ' → ' + (res.clearT != null ? hh(res.clearT) : '23시↑') : '없음') + '</span></div>' : '';
+    return '<div style="border:1px solid rgba(124,58,237,.4);border-radius:12px;padding:8px;margin:6px 0;background:rgba(124,58,237,.04)">' +
+      '<div style="font-weight:800;font-size:14px">📖 ' + esc(p.nm) + ' — 조치 방법</div><div class="sn" style="font-size:12.5px;color:inherit">' + esc(H.what) + '</div>' +
+      (p.id !== 'cur' ? bar(cu, 300, '현행') : '') + bar(ph, 300, p.id === 'cur' ? '현행' : p.nm) +
+      '<div class="sn">현시별 초 — 현행 ' + cu.map(function (q, i) { return '①②③④⑤⑥⑦'.charAt(i) + q.d; }).join(' ') + (p.id !== 'cur' ? ' → 이 안 ' + ph.map(function (q, i) { return '①②③④⑤⑥⑦'.charAt(i) + q.d; }).join(' ') : '') + ' (그날 17시 계획 기준)</div>' +
+      '<div class="sn">막대 칸 색 — 빨강 = 블록으로 들어가는 방향(서→동 직진·북→동 좌회전)이 켜지는 현시 · 초록 = 블록에서 나오는 동→서 직진만 · 회색 = 블록과 상관없는 현시 · 화살표 색은 아래 표 색과 같다</div>' +
+      '<div class="sg">방향별 녹색(한 주기 · 황색·전적색 뺀 값)</div><table><tr><th>방향</th><th>현행</th><th>이 안</th><th>차이</th><th>시간당</th></tr>' + rows + '</table>' +
+      '<div class="sg">현장 차례</div><ol style="margin:2px 0 4px;padding-left:20px;font-size:12.5px;line-height:1.55">' + H.steps.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' +
+      (H.warn.length ? '<div class="warn">⚠ ' + H.warn.map(esc).join('<br>⚠ ') + '</div>' : '') + eff +
+      (p.id !== 'cur' ? '<div class="row" style="margin-top:4px"><button data-sk="show:' + p.id + '" class="on">▶ 이 안으로 시연</button></div>' : '') + '</div>';
   }
   function planOf(id) { return plans().filter(function (p) { return p.id === id; })[0] || plans()[0]; }
   function altOf(ph) { if (!ph) return null; var P = window.tgSim.planAt(M, '4031', 17 * 3600, window.tgSim.dowOf(ST.date)); return { '4031': { ph: ph, off: P.off || 0 } }; }
@@ -124,7 +177,7 @@
     Rw.sort(function (a, b) { return a.delayVh - b.delayVh; });
     var dv = function (x, y) { if (!x || x === y) return ''; var p = Math.round((y - x) / x * 100); return ' <small style="color:' + (p < 0 ? '#16a34a' : '#dc2626') + '">' + (p > 0 ? '+' : '') + p + '%</small>'; };
     el.innerHTML = '<div class="sg">개선안별 결과(' + esc((DAYS.filter(function (d) { return d[0] === ST.day; })[0] || [])[1] || '') + ' · 16~23시 · 총 지체 적은 차례)' + (CMP.busy ? ' — 계산 중…' : '') + '</div><table><tr><th>안</th><th>총 지체</th><th>블록 갇힘</th><th>막힘→해소</th><th></th></tr>' +
-      Rw.map(function (r) { return '<tr><td><b>' + esc(r.nm) + '</b><br><small>' + esc(r.why) + '</small></td><td>' + r.delayVh.toLocaleString() + (cur ? dv(cur.delayVh, r.delayVh) : '') + '</td><td>' + r.trappedMax + (cur ? dv(cur.trappedMax, r.trappedMax) : '') + '</td><td>' + (r.jamStart != null ? hh(r.jamStart) + '→' + (r.clearT != null ? hh(r.clearT) : '23시↑') : '없음') + '</td><td>' + (r.id === 'cur' ? '' : '<button data-sk="show:' + r.id + '">▶ 시연</button>') + '</td></tr>'; }).join('') + '</table>' +
+      Rw.map(function (r) { return '<tr><td><b>' + esc(r.nm) + '</b><br><small>' + esc(r.why) + '</small></td><td>' + r.delayVh.toLocaleString() + (cur ? dv(cur.delayVh, r.delayVh) : '') + '</td><td>' + r.trappedMax + (cur ? dv(cur.trappedMax, r.trappedMax) : '') + '</td><td>' + (r.jamStart != null ? hh(r.jamStart) + '→' + (r.clearT != null ? hh(r.clearT) : '23시↑') : '없음') + '</td><td>' + (r.id === 'cur' ? '' : '<button data-sk="show:' + r.id + '">▶ 시연</button>') + ' <button data-sk="how:' + r.id + '">📖</button></td></tr>' + (CMP.open === r.id ? '<tr><td colspan="5" style="text-align:left">' + planCard(planOf(r.id), r, cur) + '</td></tr>' : ''); }).join('') + '</table>' +
       '<div class="sn">▶ 시연 = 왼쪽 현행 · 오른쪽 그 안으로 다시 돌림 · 같은 수요·같은 차라 차이는 신호에서만 온다 · 개념 시연(예측 아님)</div>';
   }
   function start() {
@@ -136,9 +189,9 @@
   function tick(ts) {
     if (!RUN || !A) return; if (!LAST) LAST = ts; var dt = Math.min(0.25, (ts - LAST) / 1000); LAST = ts;
     var n = Math.min(900, Math.round(dt * SPD)); for (var i = 0; i < n && A.t < A.end; i++) { A.step(); B.step(); }
-    paintRun(); if (A.t >= A.end) { RUN = 0; paintCtl(); paintRes(); return; } requestAnimationFrame(tick);
+    paintRun(); if (A.t >= A.end) { RUN = 0; paintCtl(); paintRes(); paintHow(); return; } requestAnimationFrame(tick);
   }
-  function toEnd() { if (!A) start(); stop(); A.runTo(A.end); B.runTo(B.end); paintRun(); paintCtl(); paintRes(); }
+  function toEnd() { if (!A) start(); stop(); A.runTo(A.end); B.runTo(B.end); paintRun(); paintCtl(); paintRes(); paintHow(); }
   // 블록 그림(두 판 같은 꼴) — 길 = 점유(대수 ÷ 길이×차로÷7.5m) 색 · 숫자 = 문 앞·출차 대기·공원 앞
   var GEO = null;
   function geo() {
@@ -176,8 +229,8 @@
   }
   function info(S) {
     var sm = S.samp[S.samp.length - 1], jam = sm ? sm.jam.length : 0, at = sm ? sm.att : {}, R = S.result();
-    var sh = at.shin || {}, fo = at.fount || {};
-    return '<div class="pi">막힌 접근로 <b>' + jam + '</b>곳 · 꼬리물기 ' + S.boxN + '번<br>신세계 문 앞 ' + (sh.door || 0) + '대 · 출차 대기 <b>' + (sh.out || 0) + '</b>대<br>공원 앞 ' + (fo.door || 0) + '대 · 지체 ' + R.delayVh.toLocaleString() + ' 대·시</div>';
+    var sh = at.shin || {}, fo = at.fount || {}, pk = sh.cap ? '<br>🅿 주차장 ' + (sh.occ || 0).toLocaleString() + '/' + sh.cap.toLocaleString() + '면' + (sh.occ >= sh.cap ? ' <b style="color:#dc2626">만차 — 문 닫힘</b>' : '') : '';
+    return '<div class="pi">막힌 접근로 <b>' + jam + '</b>곳 · 꼬리물기 ' + S.boxN + '번<br>신세계 문 앞 ' + (sh.door || 0) + '대 · 출차 대기 <b>' + (sh.out || 0) + '</b>대<br>공원 앞 ' + (fo.door || 0) + '대 · 지체 ' + R.delayVh.toLocaleString() + ' 대·시' + pk + '</div>';
   }
   function paintRun() {
     if (!A) return; var el = $('simRun'); if (!el) return;
@@ -185,6 +238,8 @@
       '<div class="pv"><div class="pt">현행 신호</div>' + svg(A) + info(A) + '</div><div class="pv"><div class="pt">' + esc(ST.ph ? planOf(ST.plan).nm + '(고침)' : planOf(ST.plan).nm) + (B.N['4031'].manual ? ' · 🖐 수동' : '') + '</div>' + svg(B) + info(B) + '</div></div>' +
       '<div class="sn">길 색 = 그 길에 찬 정도(초록 40% 아래 · 노랑 · 빨강 80% 넘음 — 막힘) · 빨간 점 = 꼬리물기로 교차로가 막힘 · 보라 네모 = 출입구 4곳(숫자 = 문 앞·나가려고 기다리는 차) · 보라 화살표 = 블록 쪽 차로가 도는 방향(시계 방향)</div>';
   }
+  var HOWO = null;
+  function paintHow() { var el = $('simHow'); if (!el || !M) return; var p = planOf(ST.plan); el.innerHTML = HOWO === 'x' ? '<div class="row"><button data-sk="how:' + p.id + '">📖 「' + esc(p.nm) + '」 조치 방법 펼치기</button></div>' : planCard(ST.ph ? { id: p.id, nm: p.nm + '(초를 고침)', why: p.why, ph: ST.ph } : p, B && B.t >= B.end ? B.result() : null, A && A.t >= A.end ? A.result() : null) + '<div class="row"><button data-sk="how:x">접기</button></div>'; }
   function paintRes() {
     var el = $('simRes'); if (!el || !A) return; var a = A.result(), b = B.result();
     var mq = function (r) { var m = 0, k = ''; Object.keys(r.maxQm).forEach(function (x) { if (r.maxQm[x] > m) { m = r.maxQm[x]; k = x; } }); return m + 'm' + (k ? ' <small>(' + esc((SHORT[k.split('.')[0]] || k.split('.')[0]) + ' ' + ({ nt: '북', et: '동', st: '남', wt: '서' }[k.split('.')[1]] || '')) + ')</small>' : ''); };
@@ -203,7 +258,8 @@
     var acts = (M.actions || []).map(function (a) { return chipB('act:' + a.id, a.nm, ST.act[a.id]); }).join('');
     var h = '<div class="sg">날</div><div class="row">' + DAYS.map(function (d) { return chipB('day:' + d[0], d[1], ST.day === d[0]); }).join('') + '</div>' +
       '<div class="sg">수요(설계값 — 대수 자료 없음 · 막대로 바꿈)</div>' +
-      slider('shin', '신세계 입·출', ST.shin, 2000, 50, att0('shin').inT0 + '~' + att0('shin').inT1 + '시 들어옴 · ' + att0('shin').outT0 + '~' + att0('shin').outT1 + '시 나감') +
+      slider('shin', '신세계 들어오는 차', ST.shin, 2000, 50, att0('shin').inT0 + '~' + att0('shin').inT1 + '시 · 나가는 차는 머문 시간이 다 된 차(주차장 자리가 나야 들어감)') +
+      '<label class="sl"><b>🅿 주차장 시작 때 차 있음</b><input type="range" min="0" max="100" step="5" value="' + ST.occ + '" data-sv="occ"><em>' + ST.occ + '%</em></label><div class="sn" style="margin:-2px 0 4px">신세계·메리어트 통합 주차장 ' + (att0('shin').capacity || 0).toLocaleString() + '면(건축물대장) · 가득 차면 문이 닫혀 들어가려는 차가 길에서 기다린다 · 머문 지 약 ' + (att0('shin').dwell || '-') + '분 뒤 나가야 자리가 난다(형님 현장 지식 · 머무는 시간은 설계값)</div>' +
       slider('fount', '한강공원 분수', ST.fount, 1500, 50, '10월 분수 19:30~21:00 · 공원 주차장 받는 속도 ' + att0('fount').inCap + '대/시') +
       (wd ? slider('academy', '학원가(평일)', ST.academy, 1000, 50, '평일 15:30~19:00 · 지하차도 대신 위로(형님 현장 지식)') : '') +
       '<label class="sl"><b>🚌 고속버스(실측 × 배율)</b><input type="range" min="0" max="2" step="0.1" value="' + ST.bus + '" data-sv="bus"><em>× ' + ST.bus + '</em></label><div class="sn" style="margin:-2px 0 4px">TAGO 시간표 그날 갈래 그대로(×1) · 경부·영동 = 동 잠원로 출입구 · 호남 = 서 반포대로 출입구 · 0 = 끔</div>' +
@@ -226,6 +282,7 @@
     else if (k.indexOf('plan:') === 0) { ST.plan = k.slice(5); ST.ph = null; restart = true; }
     else if (k.indexOf('show:') === 0) { ST.plan = k.slice(5); ST.ph = null; restart = true; var rn = $('simRun'); if (rn) rn.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
     else if (k === 'cmp') { compare(); return; }
+    else if (k.indexOf('how:') === 0) { var hid = k.slice(4); if (CMP) { CMP.open = CMP.open === hid ? null : hid; paintCmp(); } else { HOWO = HOWO === hid ? null : hid; paintHow(); } return; }
     else if (k.indexOf('spd:') === 0) { SPD = +k.slice(4); }
     else if (k === 'box') { ST[k] = !ST[k]; restart = true; }
     else if (k === 'run') { if (RUN) stop(); else if (!A || A.t >= A.end) start(); else { RUN = 1; LAST = 0; requestAnimationFrame(tick); } }
@@ -237,9 +294,9 @@
       ma.ph.forEach(function (p, i) { if (j < 0 && p.mv.indexOf('wt.St') < 0 && p.mv.indexOf('nt.Lt') < 0 && p.mv.indexOf('et.St') >= 0) j = i; });
       if (j < 0) ma.ph.forEach(function (p, i) { if (j < 0 && p.mv.indexOf('wt.St') < 0 && p.mv.indexOf('nt.Lt') < 0) j = i; });
       if (j >= 0) B.go('4031', j); toastS(j >= 0 ? '⛔ 블록으로 들어가는 차(서→동 직진 · 북→동 좌회전)를 끊는 현시 ' + (j + 1) + '로' + (ma.ph[j].mv.indexOf('et.St') >= 0 ? ' — 나오는 차(동→서 직진)는 계속 간다' : ' — ⚠ 이 신호 계획에는 나오는 차를 함께 보내는 현시가 없다') : '이 계획에는 들어오는 차만 끊는 현시가 없다'); }
-    if (restart) { A = null; B = null; stop(); if (k.indexOf('day:') === 0 || k.indexOf('act:') === 0 || k === 'box') { CMP = null; paintCmp(); } paintCtl(); start(); } else paintCtl();
+    if (restart) { A = null; B = null; stop(); setTimeout(paintHow, 0); if (k.indexOf('day:') === 0 || k.indexOf('act:') === 0 || k === 'box') { CMP = null; paintCmp(); } paintCtl(); start(); } else paintCtl();
   }
-  function onInput(e) { var t = e.target; if (!t.hasAttribute || !t.hasAttribute('data-sv')) return; ST[t.getAttribute('data-sv')] = +t.value; var em = t.parentNode.querySelector('em'); if (em) em.textContent = t.getAttribute('data-sv') === 'bus' ? '× ' + t.value : (+t.value).toLocaleString() + ' 대/시'; }
+  function onInput(e) { var t = e.target; if (!t.hasAttribute || !t.hasAttribute('data-sv')) return; ST[t.getAttribute('data-sv')] = +t.value; var em = t.parentNode.querySelector('em'); if (em) em.textContent = t.getAttribute('data-sv') === 'bus' ? '× ' + t.value : t.getAttribute('data-sv') === 'occ' ? t.value + '%' : (+t.value).toLocaleString() + ' 대/시'; }
   function onChange(e) { var t = e.target; if (t.hasAttribute && t.hasAttribute('data-sv')) { stop(); CMP = null; paintCmp(); start(); } }
   function toastS(m) { var el = $('simMsg'); if (el) { el.textContent = m; el.style.display = 'block'; } }
   function srcList() {
@@ -255,8 +312,8 @@
       PANEL.innerHTML = '<h3>🧪 시뮬 — ' + esc(AREA.nm) + '<button data-simx="1" aria-label="닫기">✕ 닫기</button></h3>' +
         '<div class="sn">교차로 넷(고속터미널사거리·고속터미널·삼호가든·서울성모병원)과 블록 둘레 길 · 신호 = 교통과 현시도(4031·4028·4034) + T-Data(4019) · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
         '<div class="warn">10/18 실측(ITS 속도)과 맞대 보면 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(맞음 52/77) · 서울성모병원 시차제 효과는 형님 현장 결과(많이 개선)와 반대로 나온다 — 고치는 중</div>' +
-        '<div id="simRun"></div><div id="simMsg" class="warn" style="display:none"></div><div id="simRes"></div><div id="simCmp"></div><div id="simCtl"></div>' + srcList();
-      PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; CMP = null; paintCmp(); paintCtl(); start();
+        '<div id="simRun"></div><div id="simMsg" class="warn" style="display:none"></div><div id="simRes"></div><div id="simHow"></div><div id="simCmp"></div><div id="simCtl"></div>' + srcList();
+      PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; CMP = null; paintCmp(); paintCtl(); start(); paintHow();
     });
   }
   function close() { stop(); if (PANEL) PANEL.classList.remove('on'); }

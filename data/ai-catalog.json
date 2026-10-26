@@ -1918,6 +1918,31 @@
    }
   },
   {
+   "file": "onto-game-cases.json",
+   "url": "https://340patrolman.github.io/datamap/data/onto-game-cases.json",
+   "bytes": 7503,
+   "schema": "tg-onto-game-cases/1",
+   "date": "2026-10-26T14:09:38",
+   "source": "traffic-game/data/ontology-seocho.json(2026-10-02d · 게임 세션 · 소유자 「SEOUL PATROL 온톨로지 설계서 ver.1」 2026-10-01)",
+   "fields": "{\"ix\": \"게임 교차로 id → 이름·C-ITS 번호(cits)·T-GIS 번호\", \"cases\": \"현장 사례(at 교차로 · when · cause 수요 시설 · measure 조치 · result 현장 결과 · quote 소유자 글 그대로)\", \"measures\": \"현장 조치(tool · how · at)\", \"gens\": \"수요를 만드는 시설(kind · schedule · near 교차로)\", \"demand\": \"시설 → 교차로 수요(when · 원본 relations generatesDemandAt)\"}",
+   "note": "값은 게임 원본 그대로 — 확인 필요(src 「확인 필요」)도 그대로 둔다",
+   "top": {
+    "fields": "{5}",
+    "ix": "{7}",
+    "cases": "[5]",
+    "measures": "[3]",
+    "gens": "[5]",
+    "demand": "[4]"
+   },
+   "about": {
+    "source_sha256": "33abfe8051406368"
+   },
+   "sample": {
+    "ix.ix.banpoBridgeS": "{\"nm\": \"반포대교남단\", \"cits\": \"4032\", \"tgis\": 1010}",
+    "fields.ix": "게임 교차로 id → 이름·C-ITS 번호(cits)·T-GIS 번호"
+   }
+  },
+  {
    "file": "onto-int.json",
    "url": "https://340patrolman.github.io/datamap/data/onto-int.json",
    "bytes": 940218,
@@ -3107,9 +3132,9 @@
   {
    "file": "sigdir-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/sigdir-seoul.json",
-   "bytes": 9949631,
+   "bytes": 9956600,
    "schema": "tg-sigdir/1",
-   "date": "2026-10-26 13:58",
+   "date": "2026-10-26 14:09",
    "source": "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간",
    "fields": "pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API · f = Fusion 지금 한 줄로 시각만 맞춘 닻(fb = 녹색 길이·자리를 빌린 기록 「YYYY-MM-DD HH:MM」), dq dir = 원자료의 방위 이름이 실제와 다름(직각 방향 직진이 함께 녹색 — 초는 쓸 수 있어도 어느 쪽인지는 현장 확인)} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]} · pl{교차로 번호: [[요일 갈래(0 월~목 · 1 금 · 2 토 · 3 일), 시, 주기, 자정 기준 옵셋(기준 이동류 녹색이 켜지는 하루 초 mod 주기), 받은 달-날, 그 옵셋의 기준 이동류 「방위:이동류」(기록마다 기준이 다를 수 있다 — 쓸 때 그 기록의 그 이 …(전문은 파일에)",
    "note": "받은 시간대에 실제로 돈 값이다(하루 계획표가 아니다) · 방위 = 그 신호를 받는 차가 들어오는 쪽 · 잔여시간 API 로 읽은 기록의 색은 황색 3~6초 앞뒤로 읽은 추정이고 src p 기록은 상태 값 그대로 · 이어 센 「지금 몇 초」는 a·ci 로 지도가 계산한 추정",
@@ -3254,7 +3279,7 @@
   {
    "file": "sim-banpo-auto.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-banpo-auto.json",
-   "bytes": 39138,
+   "bytes": 39219,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3285,7 +3310,7 @@
   {
    "file": "sim-banpo.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-banpo.json",
-   "bytes": 36081,
+   "bytes": 36145,
    "schema": "tg-sim/2",
    "date": "2026-10-25 22:10",
    "top": {
@@ -3312,12 +3337,12 @@
     "links.4031>G": "{\"id\": \"4031>G\", \"fr\": \"4031\", \"to\": \"G\", \"len\": 200, \"lanes\": 3, \"nm\": \"신반포로(4031→신세계 문)\", \"src\": \"좌표·노드링크 · 문 자리 설계값\", \"ofr\": \"et\"}",
     "nodes.4031": "{\"id\": \"4031\", \"nm\": \"강남터미널고가밑\", \"ty\": \"sig\", \"ll\": [37.504998, 127.001109], \"plan\": {\"src\": \"현시도\", \"day\": \"2024-12-11\", \"tod\": {\"1\": [[\"0700\", 170, 8], [\"1000\", 170, 9], [\"1300\", 170, 10], [\"1600\", 180, 14], [\"2100\", 160, 7], [\"2300\", 150, …(전문은 파일에)"
    },
-   "shape": "{nodes: {4031: {id: \"4031\", nm: \"강남터미널고가밑\", ty: \"sig\", ll: […2], plan: {…9}, legs: {…4}}, 4028: {id: \"4028\", nm: \"삼호가든사거리\", ty: \"sig\", ll: […2], plan: {…9}, legs: {…4}}, 4034: {id: \"4034\", nm: \"서울성모병원\", ty: \"sig\", ll: […2], plan: {…9}, legs: {…4}, free: […1]}, 4019: {id: \"4019\", nm: \"고속터미널\", ty: \"sig\", ll: […2], plan: {…5}, legs: {…4}}, G: {id: \"G\", nm: \"신세계 들어가는 문(설계값 자리)\", ty: \"gate\", ll: […2]}, X: {id: \"X\", nm: \"신세계 나오는 문(설계값 자리)\", ty: \"merge\", ll: […2]}, H: {id: \"H\", nm: \"반포대교 고가 오르는 갈림\", ty: \"div\", ll: […2]}, WI: {id: \"WI\", nm: \"호남선·백화점 들어가는 곳(4031 에서 45%)\", ty: \"gate\", ll: […2]}, WO: {id: \"WO\", nm: \"호남선·백화점 나오는 곳(4031 에서 20%)\", ty: \"merge\", ll: […2]}, SI: {id: \"SI\", nm: \"메리어트·백화점 들어가는 곳(지하철 3번 출구 쪽)\", ty: \"gate\", ll: […2]}, SO: {id: \"SO\", nm: \"메리어트·백화점 나오는 곳(동그라미 건물 옆길)\", ty: \"merge\", ll: […2]}, 4032: {id: \"4032\", nm: \"반포대교남단(한강공원 갈림)\", ty: \"split\", ll: […2]}}, links: {<열쇠 34개 · 예  …(전문은 파일에)"
+   "shape": "{nodes: {4031: {id: \"4031\", nm: \"강남터미널고가밑\", ty: \"sig\", ll: […2], plan: {…9}, legs: {…4}, int: \"INT-352\"}, 4028: {id: \"4028\", nm: \"삼호가든사거리\", ty: \"sig\", ll: […2], plan: {…9}, legs: {…4}, int: \"INT-598\"}, 4034: {id: \"4034\", nm: \"서울성모병원\", ty: \"sig\", ll: […2], plan: {…9}, legs: {…4}, free: […1], int: \"INT-548\"}, 4019: {id: \"4019\", nm: \"고속터미널\", ty: \"sig\", ll: […2], plan: {…5}, legs: {…4}, int: \"INT-451\"}, G: {id: \"G\", nm: \"신세계 들어가는 문(설계값 자리)\", ty: \"gate\", ll: […2]}, X: {id: \"X\", nm: \"신세계 나오는 문(설계값 자리)\", ty: \"merge\", ll: […2]}, H: {id: \"H\", nm: \"반포대교 고가 오르는 갈림\", ty: \"div\", ll: […2]}, WI: {id: \"WI\", nm: \"호남선·백화점 들어가는 곳(4031 에서 45%)\", ty: \"gate\", ll: […2]}, WO: {id: \"WO\", nm: \"호남선·백화점 나오는 곳(4031 에서 20%)\", ty: \"merge\", ll: […2]}, SI: {id: \"SI\", nm: \"메리어트·백화점 들어가는 곳(지하철 3번 출구 쪽)\", ty: \"gate\", ll: […2]}, SO: {id: \"SO\", nm: \"메리어트·백화점 나오는 곳(동그라미 건물 옆길)\", ty: \"merge\", ll: […2]}, 4032: {id: \"4032\", nm:  …(전문은 파일에)"
   },
   {
    "file": "sim-gangnam.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-gangnam.json",
-   "bytes": 30778,
+   "bytes": 30862,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3348,7 +3373,7 @@
   {
    "file": "sim-isu.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-isu.json",
-   "bytes": 27931,
+   "bytes": 27998,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3379,7 +3404,7 @@
   {
    "file": "sim-naebang.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-naebang.json",
-   "bytes": 16403,
+   "bytes": 16435,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3410,7 +3435,7 @@
   {
    "file": "sim-nambu.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-nambu.json",
-   "bytes": 31537,
+   "bytes": 31637,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3441,7 +3466,7 @@
   {
    "file": "sim-sadang.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-sadang.json",
-   "bytes": 22513,
+   "bytes": 22563,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3493,7 +3518,7 @@
   {
    "file": "sim-seochoyeok.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-seochoyeok.json",
-   "bytes": 56360,
+   "bytes": 56527,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:39",
    "top": {
@@ -3524,7 +3549,7 @@
   {
    "file": "sim-yangjae.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-yangjae.json",
-   "bytes": 25186,
+   "bytes": 25270,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {

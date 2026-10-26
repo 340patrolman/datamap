@@ -415,6 +415,50 @@
     "engine": "시뮬 엔진 판"
    },
    "src": "data/sim-scenarios.json(tools/sim/scenario-bake.py · js/sim.js)"
+  },
+  "CASE": {
+   "name": "현장 사례(소유자 현장 지식)",
+   "id": "CASE-<게임 cs id>",
+   "required": [],
+   "props": {
+    "story": "무슨 일",
+    "when": "요일·시각",
+    "result": "현장 결과(소유자 말)",
+    "src": "출처",
+    "observed": "적은 곳",
+    "quote": "소유자 글 그대로"
+   },
+   "src": "data/onto-game-cases.json(traffic-game ontology-seocho · 설계서 ver.1)"
+  },
+  "MSR": {
+   "name": "현장 조치(라바콘·신호 등)",
+   "id": "MSR-<게임 ms id>",
+   "required": [
+    "nm"
+   ],
+   "props": {
+    "nm": "이름",
+    "tool": "수단",
+    "how": "방법",
+    "src": "출처",
+    "open": "확인할 것",
+    "quote": "소유자 글 그대로"
+   },
+   "src": "data/onto-game-cases.json"
+  },
+  "GEN": {
+   "name": "수요를 만드는 시설(학원가·분수·터미널·백화점)",
+   "id": "GEN-<게임 cf id>",
+   "required": [
+    "nm"
+   ],
+   "props": {
+    "nm": "이름",
+    "kind": "종류",
+    "schedule": "때(현장 지식)",
+    "src": "출처"
+   },
+   "src": "data/onto-game-cases.json"
   }
  },
  "linkTypes": {
@@ -572,6 +616,30 @@
    "from": "SCN",
    "to": "FK",
    "name": "시나리오 → 그 대책이 기댄 소유자 현장 판단",
+   "grade": "B"
+  },
+  "일어남": {
+   "from": "CASE",
+   "to": "INT",
+   "name": "현장 사례 → 일어난 교차로",
+   "grade": "B"
+  },
+  "조치함": {
+   "from": "CASE",
+   "to": "MSR",
+   "name": "현장 사례 → 한 조치(result 결과)",
+   "grade": "B"
+  },
+  "원인": {
+   "from": "CASE",
+   "to": "GEN",
+   "name": "현장 사례 → 수요를 만든 시설",
+   "grade": "B"
+  },
+  "수요": {
+   "from": "GEN",
+   "to": "INT",
+   "name": "시설 → 수요가 몰리는 교차로(when)",
    "grade": "B"
   }
  },

@@ -182,6 +182,7 @@ ASOF = {
 }
 TRDF = []
 def asof_of(s):
+    if s == 'onto-game-cases.json': return '게임 현장 사례 — ' + J(os.path.join(D, s)).get('source', '')
     if s == 'sim-scenarios.json': return '시뮬 시나리오 — ' + J(os.path.join(D, s)).get('made', '')[:10] + ' 실행(' + J(os.path.join(D, s)).get('engine', '') + ' · 개념 시연)'
     if s.endswith('/trdar.json') or s.endswith('/dongx.json') or s.endswith('/storind.json'): return '서울 상권분석서비스 분기(상권 2026 2분기 · 한 달 평균 = 분기 ÷ 3)'
     return ASOF.get(s) or (ASOF['live250'] if s.endswith('/live250.json') else ASOF['taas10-seocho.json'].replace('(2026-10-04 받음)', '(권역 저장소 판)') if s.endswith('/taas10.json') else None)
@@ -456,10 +457,25 @@ def main():
             for i in hit: edge(sid, '시험함', i, 'D', 'sim-scenarios.json(시뮬 · 개념 시연)')
             for f in s.get('fk') or []:
                 if f in O and O[f]['t'] == 'FK': edge(sid, '바탕', f, 'B', 'sim-scenarios.json(그 대책이 기댄 소유자 현장 판단)')
+    # 게임 현장 사례(2026-10-26 · 소유자 「권하는 차례대로」 3번) — data/onto-game-cases.json(tools/onto/game-cases-bake.py ← traffic-game/data/ontology-seocho.json · 소유자 설계서 ver.1)
+    #   CASE 현장 사례 「일어남」 INT · 「조치함」 MSR · 「원인」 GEN / GEN 수요 시설 「수요」 INT — 교차로는 게임 ix 의 T-GIS 번호로 · 값은 원본 그대로 · 등급 B(현장 지식)
+    gp = os.path.join(D, 'onto-game-cases.json')
+    if os.path.exists(gp):
+        gc = J(gp); gix = {k: ('INT-%s' % v['tgis']) for k, v in gc['ix'].items() if v.get('tgis')}
+        gsrc = 'onto-game-cases.json(게임 · 소유자 설계서 ver.1)'
+        for m9 in gc['measures']: obj('MSR-' + m9['id'], 'MSR', nm=m9['name'], tool=m9.get('tool'), how=m9.get('how'), src=m9.get('src'), open=m9.get('open'), quote=m9.get('quote'))
+        for f9 in gc['gens']: obj('GEN-' + f9['id'], 'GEN', nm=f9['name'], kind=f9.get('kind'), schedule=f9.get('schedule'), src=f9.get('src'))
+        for c9 in gc['cases']:
+            cid = obj('CASE-' + c9['id'], 'CASE', story=c9.get('story'), when=c9.get('when'), result=c9.get('result'), src=c9.get('src'), observed=c9.get('observed'), quote=c9.get('quote'))
+            if gix.get(c9.get('at')) in O: edge(cid, '일어남', gix[c9['at']], 'B', gsrc)
+            if c9.get('measure') and 'MSR-' + c9['measure'] in O: edge(cid, '조치함', 'MSR-' + c9['measure'], 'B', gsrc, result=c9.get('result'))
+            if c9.get('cause') and 'GEN-' + c9['cause'] in O: edge(cid, '원인', 'GEN-' + c9['cause'], 'B', gsrc)
+        for dm in gc['demand']:
+            if 'GEN-' + dm[0] in O and gix.get(dm[1]) in O: edge('GEN-' + dm[0], '수요', gix[dm[1]], 'B', gsrc, when=dm[2])
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
     pplf = plc_people(O)
-    srcs = pplf + TRDF + (['sim-scenarios.json'] if os.path.exists(os.path.join(D, 'sim-scenarios.json')) else []) + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
+    srcs = pplf + TRDF + [f9 for f9 in ('sim-scenarios.json', 'onto-game-cases.json') if os.path.exists(os.path.join(D, f9))] + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'asof': {s: asof_of(s) for s in srcs} | {'src/tbook-law.json': 'T-Book ' + str(tl.get('ver')) + ' 범칙금 DB·원문 대조 판례'},

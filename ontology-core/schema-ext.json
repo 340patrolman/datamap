@@ -395,6 +395,26 @@
     "residents": "상주인구",
     "ix": "상권변화지표"
    }
+  },
+  "SCN": {
+   "name": "시뮬 시나리오(만약에 — 대책과 결과)",
+   "id": "SCN-<구역>-<날>-<대책>",
+   "required": [
+    "nm",
+    "area"
+   ],
+   "props": {
+    "nm": "이름",
+    "how": "무엇을 바꿨나",
+    "area": "시뮬 구역",
+    "date": "재현한 날",
+    "base": "같은 날 현행 결과(delayVh 총 지체 대·시 · trappedMax 블록 갇힘 · box 꼬리물기 · jamStart·clearT 막힘 시작·풀림 초)",
+    "res": "그 대책 결과(같은 칸)",
+    "match": "실측(ITS)과 맞대 본 맞음 {hit, n}",
+    "conflict": "현장 결과와 어긋나면 그 말(현장이 이긴다)",
+    "engine": "시뮬 엔진 판"
+   },
+   "src": "data/sim-scenarios.json(tools/sim/scenario-bake.py · js/sim.js)"
   }
  },
  "linkTypes": {
@@ -540,6 +560,18 @@
    "from": "TRD",
    "to": "INT",
    "name": "상권 → 경계 안 교차로",
+   "grade": "B"
+  },
+  "시험함": {
+   "from": "SCN",
+   "to": "INT",
+   "name": "시나리오 → 시뮬이 그 대책을 시험한 교차로",
+   "grade": "D"
+  },
+  "바탕": {
+   "from": "SCN",
+   "to": "FK",
+   "name": "시나리오 → 그 대책이 기댄 소유자 현장 판단",
    "grade": "B"
   }
  },

@@ -182,6 +182,7 @@ ASOF = {
 }
 TRDF = []
 def asof_of(s):
+    if s == 'sim-scenarios.json': return '시뮬 시나리오 — ' + J(os.path.join(D, s)).get('made', '')[:10] + ' 실행(' + J(os.path.join(D, s)).get('engine', '') + ' · 개념 시연)'
     if s.endswith('/trdar.json') or s.endswith('/dongx.json') or s.endswith('/storind.json'): return '서울 상권분석서비스 분기(상권 2026 2분기 · 한 달 평균 = 분기 ÷ 3)'
     return ASOF.get(s) or (ASOF['live250'] if s.endswith('/live250.json') else ASOF['taas10-seocho.json'].replace('(2026-10-04 받음)', '(권역 저장소 판)') if s.endswith('/taas10.json') else None)
 def plc_people(O):
@@ -444,10 +445,21 @@ def main():
         for u in f.get('use') or []:
             if u not in O or O[u]['t'] != 'RULE': raise SystemExit('onto-rules.json — 현장 판단 %s 가 없는 규칙 %s 에 기댄다' % (f['id'], u))
             edge(f['id'], '뒷받침', u, 'B', 'onto-rules.json(소유자 현장 판단)')
+    # 시뮬 시나리오(2026-10-26 · 소유자 「권하는 차례대로」 1번) — data/sim-scenarios.json(tools/sim/scenario-bake.py) → SCN 객체 · 「시험함」 교차로(C-ITS 번호) · 「바탕」 현장 판단 · 등급 D(추정 · 개념 시연 · 수요는 설계값)
+    sp = os.path.join(D, 'sim-scenarios.json')
+    if os.path.exists(sp):
+        sc = J(sp)
+        for s in sc['scenarios']:
+            hit = [by_cits[n] for n in s['nodes'] if n in by_cits]
+            if not hit: continue
+            sid = obj(s['id'], 'SCN', nm=s['nm'], how=s.get('how'), area=s['area'], date=s.get('date'), base=s.get('base'), res=s.get('res'), match=s.get('match'), conflict=s.get('conflict'), engine=sc.get('engine'))
+            for i in hit: edge(sid, '시험함', i, 'D', 'sim-scenarios.json(시뮬 · 개념 시연)')
+            for f in s.get('fk') or []:
+                if f in O and O[f]['t'] == 'FK': edge(sid, '바탕', f, 'B', 'sim-scenarios.json(그 대책이 기댄 소유자 현장 판단)')
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
     pplf = plc_people(O)
-    srcs = pplf + TRDF + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
+    srcs = pplf + TRDF + (['sim-scenarios.json'] if os.path.exists(os.path.join(D, 'sim-scenarios.json')) else []) + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'asof': {s: asof_of(s) for s in srcs} | {'src/tbook-law.json': 'T-Book ' + str(tl.get('ver')) + ' 범칙금 DB·원문 대조 판례'},

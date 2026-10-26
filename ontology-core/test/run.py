@@ -274,6 +274,12 @@ for did, q in R['q18'].items():
 ck('질문17·18 — 다른 것을 물으면 null', R['q17bad'] is None and R['q18bad'] is None)
 ck('질문9·10 — 다른 것을 물으면 null', R['q9bad'] is None and R['q10bad'] is None)
 ck('지도용 가벼운 판(core-seocho-map) — 모든 교차로 q1·q2 와 표본 q3·q5 가 전체 판과 같다 · 검증 오류 0', R['lite']['same'] and R['lite']['vbad'] == 0, R['lite'])
+# 시뮬 시나리오(SCN) — 원자료 data/sim-scenarios.json 과 값이 같고, 교차로 하나 이상에 「시험함」으로 이어진다
+SCF = os.path.join(os.path.dirname(CORE), 'data', 'sim-scenarios.json')
+if os.path.exists(SCF):
+    CS0 = J(os.path.join(CORE, 'data', 'core-seocho.json')); SR = {x['id']: x for x in J(SCF)['scenarios']}; SO = [o for o in CS0['objects'] if o['t'] == 'SCN']
+    tl = collections.Counter(e[0] for e in CS0['edges'] if e[1] == '시험함')
+    ck('시뮬 시나리오 SCN %d — 값이 sim-scenarios.json 과 같고 교차로에 이어짐' % len(SO), SO and all(o.get('res') == SR[o['id']].get('res') and o.get('base') == SR[o['id']].get('base') and tl[o['id']] > 0 for o in SO), [o['id'] for o in SO if tl[o['id']] == 0])
 CS = J(os.path.join(CORE, 'data', 'core-seocho.json')); ck('출처마다 기준일 — 코어 sources 의 모든 파일에 asof 글이 있다(%d)' % len(CS['sources']), set(CS['asof']) == set(CS['sources']) and all(CS['asof'].values()), [k for k, v in CS['asof'].items() if not v])
 NG = R['negative']; ck('validate 가 결함을 잡는다(망가뜨린 사본 — 고아·타입 위반·필수 속성·ID 중복 · 차량번호 꼴 경고)', NG['nErrors'] >= 4 and any('고아' in e for e in NG['errors']) and any('타입 위반' in e for e in NG['errors']) and any('필수' in e for e in NG['errors']) and any('중복' in e for e in NG['errors']) and any('차량번호' in w for w in NG['warnings']) and any('RULE-X-9.title' in e for e in NG['errors']) and any('뒷받침' in e and '타입 위반' in e for e in NG['errors']), '오류 %d · %s' % (NG['nErrors'], [e[:30] for e in NG['errors'][:4]]))
 n = sum(1 for x in C if x[1])

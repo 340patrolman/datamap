@@ -20,7 +20,7 @@
   function actSet(a) { try { localStorage.setItem(ACTK, JSON.stringify(a)); return true; } catch (e) { return false; } }   /* 막힘 고리(data/onto-loops.json · 소유자가 짚은 교착 자리) · 시뮬 구역 자료(data/sim-<구역>.json — 조치 목록) */
   var LIVE = null, LIVEAT = 0, NORM = null, NORMING = false;   /* 실시간 세 장(돌발 둘 · 통행속도) — 3분마다 다시(sw 가 네트워크 먼저 · 주소에 시각을 안 붙여 보관함이 쌓이지 않게) · 평소 속도(4MB)는 누를 때만 */
   var NAV = { INT: 1, DNG: 1, STN: 1, TRD: 1, PBX: 1, STA: 1, EVT: 1, ACC: 1, VIO: 1, LAW: 1, PREC: 1, ACT: 1 };   /* 사고 → 위반 → 법규 → 판례(T-Book) 까지 걸어갈 수 있게 */
-  var TN = { INT: '교차로', DNG: '행정동', STN: '지하철역', TRD: '상권', PBX: '지구대·파출소', STA: '경찰서', EVT: '사건', ACC: '사고(10년)', ACL: '사고 칸', CAM: '단속 카메라', ATT: '시설', PLC: '250m 칸', APR: '들어오는 길', RD: '도로 구간', ACT: '교통과 조치', REC: '조치 기록', VIO: '위반 유형', LAW: '법규', PREC: '판례', RULE: '규칙', FK: '현장 판단' };
+  var TN = { INT: '교차로', DNG: '행정동', STN: '지하철역', TRD: '상권', PBX: '지구대·파출소', STA: '경찰서', EVT: '사건', ACC: '사고(10년)', ACL: '사고 칸', CAM: '단속 카메라', ATT: '시설', PLC: '250m 칸', APR: '들어오는 길', RD: '도로 구간', ACT: '교통과 조치', REC: '조치 기록', VIO: '위반 유형', LAW: '법규', PREC: '판례', RULE: '규칙', FK: '현장 판단', SCN: '시뮬로 시험해 본 대책' };
   var KEY = { 속함: '자리 — 교차로가 그 동 경계 안', 근처: '자리 + 때 — 둘레 반지름 안에서 그날 일어난 일', 흔적: '자리 + 때 — 그 해 침수 흔적 100m 안', 가까움: '자리 — 300m 안', 보유: '자리 — 100m 안', 들어감: '자리 — 교차로가 든 250m 칸', 지남: '자리 — 길이 지나는 250m 칸', 사고칸: '자리 — 길 가운데 50m 안 사고 칸', 품음: '자리 — 상권 경계 안', 가까운교차로: '자리 — 역에서 300m 안', 근처역: '자리 + 때 — 행사 자리에서 500m(큰 공연장 1km) 안 역', 가까운지구대: '자리 + 코드 — 관할서 지구대 중 가장 가까운 곳', 인접: '코드 — 신호망에서 이웃한 교차로', 관할: '코드 — 별표2 관할 × 행정동 + 현장 기준', 소속: '코드 — 소속 경찰서', 발생: '자리 — 교차로 70m 안 사고 칸 묶음', 주요원인: '코드 — 사고 칸의 주 위반', 근거: '코드 — 위반 → 법 조문', 해석: '코드 — 조문 → 판례', 들어오는길: '코드 — 표준노드링크 방향', 이룸: '코드 — ITS 링크 번호', 들어감동: '코드 — 원자료의 행정동 이름', 대상: '코드 — 교통과 조치의 교차로 번호', 근거기록: '코드 — 조치의 기록', 뒷받침: '코드 — 규칙을 받친 현장 판단' };
   var GR = { A: ['확실', '원자료 코드·번호가 같다', 5], B: ['높음', '자리·경계를 맞춰 이었다', 4], C: ['근사', '거리 반지름으로 어림해 이었다', 3], D: ['추정', '이은 것들을 겹쳐 본 짐작', 2], E: ['가설', '아직 확인하지 않은 생각', 1] };
 
@@ -96,6 +96,9 @@
       case 'LAW': return esc(o.meta || '') + ' · ' + esc(o.penalty || '');
       case 'PREC': return esc(o.court || '') + ' ' + esc(o.date || '') + ' · ' + esc(o.nm || '');
       case 'RULE': return esc(o.d || '');
+      case 'SCN': var b0 = o.base || {}, r0 = o.res || {}, dv = b0.delayVh ? Math.round((r0.delayVh - b0.delayVh) / b0.delayVh * 100) : null, hm = function (x) { return x == null ? '—' : Math.floor(x / 3600) + ':' + ('0' + Math.round(x % 3600 / 60)).slice(-2); };
+        if (!b0.delayVh) return esc(o.date || '') + ' · 총 지체 ' + fmt(r0.delayVh) + ' · 갇힘 ' + fmt(r0.trappedMax) + ' · 해소 ' + hm(r0.clearT) + (o.match ? ' · 실측 맞음 ' + o.match.hit + '/' + o.match.n : '') + ' · 견줄 기준 판 · 개념 시연 · 수요는 설계값';
+        return esc(o.date || '') + ' · 총 지체 ' + fmt(b0.delayVh) + '→' + fmt(r0.delayVh) + (dv != null ? '(' + (dv > 0 ? '+' : '') + dv + '%)' : '') + ' · 갇힘 ' + fmt(b0.trappedMax) + '→' + fmt(r0.trappedMax) + ' · 해소 ' + hm(b0.clearT) + '→' + hm(r0.clearT) + (o.match ? ' · 실측 맞음 ' + o.match.hit + '/' + o.match.n : '') + (o.conflict ? ' · ⚠ ' + esc(o.conflict) : '') + ' · 개념 시연 · 수요는 설계값';
       case 'FK': return '「' + esc(String(o.said || '').slice(0, 60)) + '…」 ' + esc(o.date || '');
       default: return '';
     }

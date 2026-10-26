@@ -22,7 +22,7 @@ TEST = open(os.path.join(HERE, 'sim-diag.js'), encoding='utf-8').read() + ('' if
 def main():
     M = open(os.path.join(ROOT, 'data', 'sim-banpo.json'), encoding='utf-8').read()
     js = open(os.path.join(ROOT, 'js', 'sim.js'), encoding='utf-8').read()
-    AR = {os.path.basename(f)[4:-5]: json.load(open(f, encoding='utf-8')) for f in glob.glob(os.path.join(ROOT, 'data', 'sim-*.json')) if not f.endswith('sim-banpo.json') and not f.endswith('sim-areas.json')}
+    AR = {os.path.basename(f)[4:-5]: json.load(open(f, encoding='utf-8')) for f in glob.glob(os.path.join(ROOT, 'data', 'sim-*.json')) if not f.endswith('sim-banpo.json') and not f.endswith('sim-areas.json') and not f.endswith('sim-scenarios.json')}
     html = ('<!doctype html><meta charset="utf-8"><body><pre id="out">running</pre><script>window.__DIAG=' + ('1' if DIAG else '0') + ';window.__M=' + M.replace('</', '<\\/') +
             ';window.__AREAS=' + json.dumps(AR, ensure_ascii=False).replace('</', '<\\/') + ';</script><script>' + js +
             '</script><script>' + TEST + '</script>')

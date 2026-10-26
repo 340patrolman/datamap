@@ -200,6 +200,10 @@ def main():
            'mv': '이동류 키 = 들어오는 쪽.회전(nt 북 · et 동 · st 남 · wt 서 / St 직진 · Lt 좌회전 · Rt 우회전) · dir 줄 = [이동류, 녹색 초, 황색 초, 녹색 시작(1현시 시작 = 0)]',
            'off': '옵셋 = 자정부터 센 1현시 시작(가설 A — tbook-signal 현장 측정 4036 에서 맞음) · 패턴 바뀜은 시각이 지난 뒤 다음 1현시부터'}
     out = os.path.join(D, 'sim-banpo.json')
+    # 온톨로지 교차로 번호(INT-<T-GIS 코드>) — C-ITS 번호로 data/onto-int.json 에서 찾아 신호 교차로마다 int 칸에(2026-10-26 · 앱끼리 한 대상 번호 · 시뮬 판 「🧩 엮임 보기」)
+    oi = {str(r[4]): 'INT-%s' % r[0] for r in json.load(open(os.path.join(D, 'onto-int.json'), encoding='utf-8'))['items'] if r[4]}
+    for n9 in doc['nodes'].values():
+        if n9.get('ty') == 'sig' and str(n9['id']) in oi: n9['int'] = oi[str(n9['id'])]
     json.dump(doc, open(out, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print('ok', out, os.path.getsize(out), 'B · 교차로', len(nodes), '· 길', len(links), '· 4019 채움', fill)
 

@@ -202,6 +202,10 @@ def main():
            'sat': {'v': 2200, 'unit': '대/녹색 1시간/차로', 'src': '2차 자료', 'quote': '신호교차로 기본 조건에서 포화교통류율 2,200pcphgpl — 도로용량편람(2013) p.427'},
            'spacing': {'v': 7.5, 'unit': 'm/대', 'src': '설계값'}, 'log': log}
     out = os.path.join(D, 'sim-' + name + '.json')
+    # 온톨로지 교차로 번호(INT-<T-GIS 코드>) — C-ITS 번호로 data/onto-int.json 에서 찾아 신호 교차로마다 int 칸에(2026-10-26 · 앱끼리 한 대상 번호 · 시뮬 판 「🧩 엮임 보기」)
+    oi = {str(r[4]): 'INT-%s' % r[0] for r in json.load(open(os.path.join(D, 'onto-int.json'), encoding='utf-8'))['items'] if r[4]}
+    for n9 in doc['nodes'].values():
+        if n9.get('ty') == 'sig' and str(n9['id']) in oi: n9['int'] = oi[str(n9['id'])]
     json.dump(doc, open(out, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     print('ok', out, os.path.getsize(out), 'B · 신호 교차로', len(nodes), '·', ', '.join(no + ' ' + n['nm'] for no, n in nodes.items()), '· 길', len(links), '· 들어오는 길', len(entry), '(조사 지점', sum(1 for e in entry.values() if 'spot' in e), ')')
     for x in log: print('  ·', x)

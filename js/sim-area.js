@@ -202,6 +202,7 @@
     var t = e.target.closest('[data-sa],[data-simx]'); if (!t) return;
     if (t.hasAttribute('data-simx')) return close();
     var k = t.getAttribute('data-sa').split(':');
+    if (k[0] === 'lnk') { close(); if (window.tgLink) window.tgLink.open({ id: k[1] }); return; }
     if (k[0] === 'day') { ST.day = k[1]; reset(); } else if (k[0] === 'win') { ST.win = k[1]; ST.edit = {}; reset(); }
     else if (k[0] === 'ph') { var d = ST.edit[ST.sel] || (ST.edit[ST.sel] = []), i = +k[1], P = basePlan(ST.sel); d[i] = Math.max(5 - P.ph[i].d, (d[i] || 0) + (+k[2])); reset(); }
     else if (k[0] === 'reset') { ST.edit = {}; reset(); } else if (k[0] === 'shut') { var e9 = k.slice(1).join(':'); if (ST.shut[e9]) delete ST.shut[e9]; else ST.shut[e9] = 1; reset(); }
@@ -218,10 +219,13 @@
       PANEL.innerHTML = '<h3>🧪 시뮬 — ' + esc(AR.nm) + '<button data-simx="1" aria-label="닫기">✕ 닫기</button></h3>' +
         '<div class="sn">신호 교차로 ' + nm.length + '곳(' + esc(nm.join(' · ')) + ')과 그 사이 길 · 자동으로 엮은 구역 · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
         '<div class="warn">평소 속도(ITS 실측 · 평일 16~21시)와 맞대 본 맞음 <b>' + AR.mh + '/' + AR.mn + '</b>칸 · 실제로 막히는 칸 가운데 시뮬도 막힌 것 <b>' + AR.jh + '/' + AR.jn + '</b>' + (AR.jn && AR.jh / AR.jn < 0.5 ? ' — <b>막힘을 잘 못 낸다</b>(실제보다 덜 막히게 나온다)' : '') + ' · 반포 블록(손으로 짠 구역)보다 거칠다 · 신호 없는 교차로는 그냥 지나가고 회전 금지는 아직 안 넣었다 · 구역 밖에서 밀려 들어오는 막힘은 못 낸다(나가는 길은 늘 비어 있다고 봄) · 🏁 현장 결과가 이김(현장에서 본 것과 다르면 시뮬이 틀린 것)</div>' +
-        '<div id="simALive"></div><div id="simARun"></div><div id="simARes"></div><div id="simACtl"></div>' + srcList();
+        lnkRow() + '<div id="simALive"></div><div id="simARun"></div><div id="simARes"></div><div id="simACtl"></div>' + srcList();
       PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; paintCtl(); start(); liveGet();
     });
   }
+  /* 🧩 엮임 보기 — 시뮬 교차로마다 온톨로지 번호(int · INT-<T-GIS 코드>)로 연결 그림을 연다(근거·이유·결과 · 이 교차로에서 시험해 본 대책 SCN) */
+  function lnkRow() { if (!window.tgLink) return ''; var L = Object.keys(M.nodes).filter(function (k) { var n = M.nodes[k]; return n.ty === 'sig' && n.int && !/\(연등\)/.test(n.nm || ''); }); if (!L.length) return '';
+    return '<div class="row" style="margin:2px 0 4px"><span class="sn" style="margin:0">🧩 엮임 보기</span>' + L.map(function (k) { return '<button data-sa="lnk:' + esc(M.nodes[k].int) + '">' + esc(M.nodes[k].nm) + '</button>'; }).join('') + '</div>'; }
   function close() { stop(); if (PANEL) PANEL.classList.remove('on'); }
   window.tgSimArea = { open: open, close: close, near: nearArea, areas: function () { return IDX; }, state: function () { return ST; }, sims: function () { return [A, B]; } };
   function boot() {

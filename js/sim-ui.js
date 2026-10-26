@@ -320,8 +320,9 @@
     el.innerHTML = h;
   }
   function onClick(e) {
-    var b = e.target.closest('[data-sk],[data-pd],[data-simx]'); if (!b) return;
+    var b = e.target.closest('[data-sk],[data-pd],[data-simx],[data-simlnk]'); if (!b) return;
     if (b.hasAttribute('data-simx')) { close(); return; }
+    if (b.hasAttribute('data-simlnk')) { close(); if (window.tgLink) window.tgLink.open({ id: b.getAttribute('data-simlnk') }); return; }   /* 🧩 엮임 보기 — 그 교차로의 연결 그림 */
     if (b.hasAttribute('data-pd')) { var q = b.getAttribute('data-pd').split(':'), ph = ST.ph || JSON.parse(JSON.stringify(planOf(ST.plan).ph || curPh())); ph[+q[0]].d = Math.max(8, ph[+q[0]].d + +q[1]); ST.ph = ph; A = null; B = null; stop(); CMP = null; paintCmp(); paintCtl(); start(); paintHow(); return; }
     var k = b.getAttribute('data-sk'), restart = false;
     if (k.indexOf('day:') === 0) { ST.day = k.slice(4); var d = DAYS.filter(function (x) { return x[0] === ST.day; })[0]; ST.date = d[2]; var p = presetOf(ST.day); ST.shin = p && p.att && p.att.shin ? p.att.shin.inPeak : att0('shin').inPeak; ST.fount = p && p.att && p.att.fount ? p.att.fount.inPeak : att0('fount').inPeak; restart = true; toastS(p ? '「' + d[1] + '」 재현 설정 — 신세계 ' + ST.shin + ' · 분수 ' + ST.fount + '대/시(설계값)' : '「' + d[1] + '」 — 수요는 기본 설계값(신세계 ' + ST.shin + ' · 분수 ' + ST.fount + '대/시) · 신호·고속버스·평소 속도는 그 날 갈래'); }
@@ -358,6 +359,7 @@
       PANEL.innerHTML = '<h3>🧪 시뮬 — ' + esc(AREA.nm) + '<button data-simx="1" aria-label="닫기">✕ 닫기</button></h3>' +
         '<div class="sn">교차로 넷(고속터미널사거리·고속터미널·삼호가든·서울성모병원)과 블록 둘레 길 · 신호 = 교통과 현시도(4031·4028·4034) + T-Data(4019) · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
         '<div class="warn">10/18 실측(ITS 속도)과 맞대 보면 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(맞음 50/77) · <br>🏁 <b>현장 결과가 이김</b> — 서울성모병원 시차제(평일 16~20시 서→동 직진 23초 · 형님이 바꾼 것)는 현장에서 「많이 개선」(FK-4034-METER) · 이 시뮬은 반대로 나온다 → 시뮬이 틀린 것으로 본다(서쪽 접근로 수요가 설계값이라 늘 가득) · 다른 안도 현장 결과가 있으면 그것이 먼저</div>' +
+        (window.tgLink ? '<div class="row" style="margin:2px 0 4px"><span class="sn" style="margin:0">🧩 엮임 보기</span>' + Object.keys(M.nodes).filter(function (k) { return M.nodes[k].int; }).map(function (k) { return '<button data-simlnk="' + esc(M.nodes[k].int) + '">' + esc(SHORT[k] || M.nodes[k].nm) + '</button>'; }).join('') + '</div>' : '') +
         '<div id="simLive"></div><div id="simRun"></div><div id="simMsg" class="warn" style="display:none"></div><div id="simRes"></div><div id="simHow"></div><div id="simCmp"></div><div id="simCtl"></div>' + srcList();
       PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; CMP = null; paintCmp(); paintCtl(); start(); paintHow(); liveGet();
     });

@@ -16,11 +16,15 @@
   function logSet(a) { try { localStorage.setItem(LOGK, JSON.stringify(a)); return true; } catch (e) { return false; } }
   function hkey(id, t) { return id + '|' + String(t).split(' — ')[0]; }
   var LOOPS = null, SIMD = null, ACTK = 'tg_map2d_lnk_act';   /* 현장 조치 기록(고리) — 이 기기에만 · 적을 때 네 변 속도를 「조치 전」으로 같이 남긴다 */
+  function saveCsv(t, pre) {   /* 💾 파일로 받기 — 같은 CSV 를 기기에 내려받기만(통신 없음) · tg- 앞머리는 PC 의 feedback-run.py 가 다운로드 폴더에서 집어 간다 */
+    var d = new Date(), z = function (x) { return ('0' + x).slice(-2); }, nm0 = pre + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '-' + z(d.getHours()) + z(d.getMinutes()) + '.csv';
+    try { var u = URL.createObjectURL(new Blob(['﻿' + t], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a'); a.href = u; a.download = nm0; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 1500); return true; } catch (e) { return false; }
+  }
   function actGet() { try { return JSON.parse(localStorage.getItem(ACTK) || '[]'); } catch (e) { return []; } }
   function actSet(a) { try { localStorage.setItem(ACTK, JSON.stringify(a)); return true; } catch (e) { return false; } }   /* 막힘 고리(data/onto-loops.json · 소유자가 짚은 교착 자리) · 시뮬 구역 자료(data/sim-<구역>.json — 조치 목록) */
   var LIVE = null, LIVEAT = 0, NORM = null, NORMING = false;   /* 실시간 세 장(돌발 둘 · 통행속도) — 3분마다 다시(sw 가 네트워크 먼저 · 주소에 시각을 안 붙여 보관함이 쌓이지 않게) · 평소 속도(4MB)는 누를 때만 */
   var NAV = { INT: 1, DNG: 1, STN: 1, TRD: 1, PBX: 1, STA: 1, EVT: 1, ACC: 1, VIO: 1, LAW: 1, PREC: 1, ACT: 1 };   /* 사고 → 위반 → 법규 → 판례(T-Book) 까지 걸어갈 수 있게 */
-  var TN = { INT: '교차로', DNG: '행정동', STN: '지하철역', TRD: '상권', PBX: '지구대·파출소', STA: '경찰서', EVT: '사건', ACC: '사고(10년)', ACL: '사고 칸', CAM: '단속 카메라', ATT: '시설', PLC: '250m 칸', APR: '들어오는 길', RD: '도로 구간', ACT: '교통과 조치', REC: '조치 기록', VIO: '위반 유형', LAW: '법규', PREC: '판례', RULE: '규칙', FK: '현장 판단', SCN: '시뮬로 시험해 본 대책' };
+  var TN = { INT: '교차로', DNG: '행정동', STN: '지하철역', TRD: '상권', PBX: '지구대·파출소', STA: '경찰서', EVT: '사건', ACC: '사고(10년)', ACL: '사고 칸', CAM: '단속 카메라', ATT: '시설', PLC: '250m 칸', APR: '들어오는 길', RD: '도로 구간', ACT: '교통과 조치', REC: '조치 기록', VIO: '위반 유형', LAW: '법규', PREC: '판례', RULE: '규칙', FK: '현장 판단', SCN: '시뮬로 시험해 본 대책', CASE: '현장에서 일어난 일', MSR: '현장 조치', GEN: '수요를 끄는 곳' };
   var KEY = { 속함: '자리 — 교차로가 그 동 경계 안', 근처: '자리 + 때 — 둘레 반지름 안에서 그날 일어난 일', 흔적: '자리 + 때 — 그 해 침수 흔적 100m 안', 가까움: '자리 — 300m 안', 보유: '자리 — 100m 안', 들어감: '자리 — 교차로가 든 250m 칸', 지남: '자리 — 길이 지나는 250m 칸', 사고칸: '자리 — 길 가운데 50m 안 사고 칸', 품음: '자리 — 상권 경계 안', 가까운교차로: '자리 — 역에서 300m 안', 근처역: '자리 + 때 — 행사 자리에서 500m(큰 공연장 1km) 안 역', 가까운지구대: '자리 + 코드 — 관할서 지구대 중 가장 가까운 곳', 인접: '코드 — 신호망에서 이웃한 교차로', 관할: '코드 — 별표2 관할 × 행정동 + 현장 기준', 소속: '코드 — 소속 경찰서', 발생: '자리 — 교차로 70m 안 사고 칸 묶음', 주요원인: '코드 — 사고 칸의 주 위반', 근거: '코드 — 위반 → 법 조문', 해석: '코드 — 조문 → 판례', 들어오는길: '코드 — 표준노드링크 방향', 이룸: '코드 — ITS 링크 번호', 들어감동: '코드 — 원자료의 행정동 이름', 대상: '코드 — 교통과 조치의 교차로 번호', 근거기록: '코드 — 조치의 기록', 뒷받침: '코드 — 규칙을 받친 현장 판단' };
   var GR = { A: ['확실', '원자료 코드·번호가 같다', 5], B: ['높음', '자리·경계를 맞춰 이었다', 4], C: ['근사', '거리 반지름으로 어림해 이었다', 3], D: ['추정', '이은 것들을 겹쳐 본 짐작', 2], E: ['가설', '아직 확인하지 않은 생각', 1] };
 
@@ -99,6 +103,9 @@
       case 'SCN': var b0 = o.base || {}, r0 = o.res || {}, dv = b0.delayVh ? Math.round((r0.delayVh - b0.delayVh) / b0.delayVh * 100) : null, hm = function (x) { return x == null ? '—' : Math.floor(x / 3600) + ':' + ('0' + Math.round(x % 3600 / 60)).slice(-2); };
         if (!b0.delayVh) return esc(o.date || '') + ' · 총 지체 ' + fmt(r0.delayVh) + ' · 갇힘 ' + fmt(r0.trappedMax) + ' · 해소 ' + hm(r0.clearT) + (o.match ? ' · 실측 맞음 ' + o.match.hit + '/' + o.match.n : '') + ' · 견줄 기준 판 · 개념 시연 · 수요는 설계값';
         return esc(o.date || '') + ' · 총 지체 ' + fmt(b0.delayVh) + '→' + fmt(r0.delayVh) + (dv != null ? '(' + (dv > 0 ? '+' : '') + dv + '%)' : '') + ' · 갇힘 ' + fmt(b0.trappedMax) + '→' + fmt(r0.trappedMax) + ' · 해소 ' + hm(b0.clearT) + '→' + hm(r0.clearT) + (o.match ? ' · 실측 맞음 ' + o.match.hit + '/' + o.match.n : '') + (o.conflict ? ' · ⚠ ' + esc(o.conflict) : '') + ' · 개념 시연 · 수요는 설계값';
+      case 'CASE': return '「' + esc(String(o.story || '').slice(0, 70)) + '」' + (o.when ? ' · ' + esc([o.when.days, o.when.time].filter(Boolean).join(' ')) : '') + (o.result ? ' · 결과 <b>' + esc(o.result) + '</b>' : '') + ' · ' + esc(o.src || '');
+      case 'MSR': return esc(o.nm || '') + (o.how ? ' · ' + esc(o.how) : '') + (o.open ? ' · ⚠ ' + esc(o.open) : '');
+      case 'GEN': return esc(o.kind || '') + (o.schedule ? ' · ' + esc(o.schedule) : '') + ' · ' + esc(o.src || '');
       case 'FK': return '「' + esc(String(o.said || '').slice(0, 60)) + '…」 ' + esc(o.date || '');
       default: return '';
     }
@@ -292,7 +299,7 @@
     if (A.length) h += '<ul class="lg2">' + A.slice(-10).reverse().map(function (r) { var b = r.before, aft = cur && r.before && cur.at - r.at > 900 ? cur : null, d = new Date(r.at * 1000);
       var line = esc(('0' + (d.getMonth() + 1)).slice(-2) + '/' + ('0' + d.getDate()).slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2)) + ' <b>' + esc(r.nm) + '</b>' + (r.note ? ' · ' + esc(r.note) : '');
       if (b && b.v) line += '<br><small>전 ' + b.v.map(function (v) { return v == null ? '—' : v; }).join(' · ') + ' km/h' + (aft ? ' → 뒤(' + Math.round((aft.at - r.at) / 60) + '분 뒤) ' + aft.v.map(function (v, i) { var x = b.v[i]; return v == null ? '—' : '<b style="color:' + (x == null ? 'inherit' : v > x * 1.15 ? '#16a34a' : v < x * 0.85 ? '#dc2626' : 'inherit') + '">' + v + '</b>'; }).join(' · ') + ' km/h' : ' · 뒤 = 15분 넘게 지난 값을 기다리는 중') + '</small>';
-      return '<li>' + line + '</li>'; }).join('') + '</ul><div class="bar"><button data-actcsv="1">📋 CSV 복사</button><button data-actclr="1">지우기</button></div><div class="note">네 변 차례 = 위 고리 목록 차례 · 초록 = 15% 넘게 빨라짐 · 빨강 = 15% 넘게 느려짐 · 그 사이 수요가 바뀌었을 수 있어 조치 효과라고 단정하지 않는다(가능성 D)</div>';
+      return '<li>' + line + '</li>'; }).join('') + '</ul><div class="bar"><button data-actcsv="1">📋 CSV 복사</button><button data-actcsv="f">💾 파일로 받기</button><button data-actclr="1">지우기</button></div><div class="note">네 변 차례 = 위 고리 목록 차례 · 초록 = 15% 넘게 빨라짐 · 빨강 = 15% 넘게 느려짐 · 그 사이 수요가 바뀌었을 수 있어 조치 효과라고 단정하지 않는다(가능성 D)</div>';
     return h + '</details>';
   }
   function loopHyps(o) { var H = []; loopsOf(o).forEach(function (L) { var st = loopState(L); if (st.stale || (st.lvl !== 'full' && st.lvl !== 'part')) return;
@@ -355,7 +362,7 @@
         it.map(function (x) { return '<div class="lk"><div class="t"><b>' + esc(nm(x.o)) + '</b>' + (NAV[x.o.t] && x.o.id !== o.id ? '<button class="go" data-go="' + esc(x.o.id) + '">여기서 엮임 ›</button>' : '') + '</div>' + k4(g.rel, x.p, x.o, g.dir) + '</div>'; }).join('') +
         (g.items.length > lim ? '<button class="sb" data-more="' + esc(g.key) + '">' + (g.items.length - lim) + '개 더 보기</button>' : '') + '</details>'; });
     var LG = logGet(); if (LG.length) h += '<h4>📒 내가 매긴 가설 ' + LG.length + '건</h4><div class="note">이 기기에만 있다 · CSV 를 복사해 07_API키/out/onto_logs/in/ 에 넣으면 log-ingest 가 「현장 판단 후보」로 정리한다 — 형님이 맞다고 한 것만 규칙 장부에</div><ul class="lg2">' +
-      LG.slice(-8).reverse().map(function (r) { return '<li>' + esc(r.d) + ' · ' + esc(r.nm) + ' — ' + esc(r.h) + ' → <b>' + esc(r.v) + '</b>' + (r.why ? ' · ' + esc(r.why) : '') + '</li>'; }).join('') + '</ul><div class="bar"><button data-lcsv="1">📋 CSV 복사</button><button data-lclr="1">지우기</button></div>';
+      LG.slice(-8).reverse().map(function (r) { return '<li>' + esc(r.d) + ' · ' + esc(r.nm) + ' — ' + esc(r.h) + ' → <b>' + esc(r.v) + '</b>' + (r.why ? ' · ' + esc(r.why) : '') + '</li>'; }).join('') + '</ul><div class="bar"><button data-lcsv="1">📋 CSV 복사</button><button data-lcsv="f">💾 파일로 받기</button><button data-lclr="1">지우기</button></div>';
     h += '<div class="src">자료 = ' + esc(GUN[AREA] || '') + ' 온톨로지 코어(' + esc(Q.core.made || '') + ' 구움' + (AREA !== '11650' ? ' · 여섯 구 코어를 구로 나눈 것' : '') + ' · 원자료 값 그대로) · 가능성 A 확실 · B 높음 · C 근사 · D 추정 · E 가설 · 판단은 사람이 한다 — 이 화면은 이어 보일 뿐 · 법령·범칙금·판례 정본 = T-Book(출발점) · 게임 「만약에」·현장 기록·규칙 장부와 이어져 있다</div>';
     el.innerHTML = h;
   }
@@ -390,6 +397,7 @@
       var sc0 = $('m2dLnk').scrollTop; paint(); $('m2dLnk').scrollTop = sc0; return; }
     if (b.hasAttribute('data-actcsv')) { var rows = [['고리', '조치', '이름', '까닭', '시각', '전']].concat(actGet().map(function (r) { var d = new Date(r.at * 1000); return [r.loop, r.act, r.nm, r.note, d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), r.before && r.before.v ? r.before.v.join('/') : '']; }));
       var t = rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n');
+      if (b.getAttribute('data-actcsv') === 'f') { b.textContent = saveCsv(t, 'tg-act') ? '✔ 받음' : '받지 못함'; return; }
       if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { b.textContent = '✔ 복사됨'; }, function () { prompt('복사', t); }); else prompt('복사', t); return; }
     if (b.hasAttribute('data-actclr')) { if (confirm('이 기기의 현장 조치 기록을 모두 지울까요?')) { actSet([]); paint(); } return; }
     if (b.hasAttribute('data-sim')) { var sv = b.getAttribute('data-sim'); if (sv !== '1' && window.tgSimArea) { if (window.innerWidth < 760) close(); window.tgSimArea.open(sv); } else if (window.tgSimUI) { if (window.innerWidth < 760) close(); window.tgSimUI.open(); } return; }
@@ -400,6 +408,7 @@
       if (!logSet(L)) alert('이 기기에 저장하지 못했습니다'); var sc = $('m2dLnk').scrollTop; paint(); $('m2dLnk').scrollTop = sc; return; }
     if (b.hasAttribute('data-lcsv')) { var rows = [['날짜', '대상', '이름', '가설', '판정', '까닭', '가능성']].concat(logGet().map(function (r) { return [r.d, r.id, r.nm, r.h, r.v, r.why, r.g]; }));
       var t = rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n');
+      if (b.getAttribute('data-lcsv') === 'f') { b.textContent = saveCsv(t, 'tg-lnk-log') ? '✔ 받음' : '받지 못함'; return; }
       if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { b.textContent = '✔ 복사됨'; }, function () { prompt('복사', t); }); else prompt('복사', t); return; }
     if (b.hasAttribute('data-lclr')) { if (confirm('이 기기의 가설 판정 기록을 모두 지울까요? 되돌릴 수 없습니다.')) { logSet([]); paint(); } return; }
     if ((a = b.getAttribute('data-more'))) { ST.more[a] = 1; paint(); var d = $('lnk-' + a); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); } return; }

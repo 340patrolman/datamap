@@ -152,7 +152,7 @@
     var odd = L.filter(function (x) { return String(x.rank) !== '1'; });
     if (odd.length) h += '<b>1순위가 아닌 곳을 고른 까닭 — 형님 현장 판단(규칙 후보)</b><ul class="ev">' + odd.map(function (x) { return '<li>' + esc(x.date) + ' ' + esc(x.ctx) + ' → ' + esc(x.nm) + ' [' + esc(x.rank) + '위] ' + esc(x.why) + '</li>'; }).join('') + '</ul>';
     h += '<ul class="ev">' + L.slice().reverse().slice(0, 30).map(function (x) { return '<li>' + esc(x.date) + ' · ' + esc(x.nm) + ' · ' + esc(x.did) + ' · ' + esc(x.ctx) + (x.why ? ' · ' + esc(x.why) : '') + '</li>'; }).join('') + '</ul>';
-    return h + '<div class="btns"><button data-csv="1">📋 CSV 복사</button><button data-clear="1">🗑 모두 지우기</button></div><div class="s">복사한 CSV 를 Claude 에게 붙여 주면 「현장 판단 후보」로 정리해, 형님이 맞다고 한 줄만 규칙 장부에 올린다 · 사람 이름·차량번호는 적지 않는다</div>'; }
+    return h + '<div class="btns"><button data-csv="1">📋 CSV 복사</button><button data-csv="f">💾 파일로 받기</button><button data-clear="1">🗑 모두 지우기</button></div><div class="s">복사한 CSV 를 Claude 에게 붙여 주면 「현장 판단 후보」로 정리해, 형님이 맞다고 한 줄만 규칙 장부에 올린다 · 사람 이름·차량번호는 적지 않는다</div>'; }
 
   function paint() { var el = box(); if (!DATA) { el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정</h3><div class="s">자료를 읽는 중…</div>'; return; }
     var T = [['d1', '어디 설까'], ['d2', '🍺 음주'], ['d3', '📢 집회·행사'], ['d4', '🌧 큰비'], ['d5', '📒 기록']], body = { d1: d1, d2: d2, d3: d3, d4: d4, d5: d5 }[ST.tab]();
@@ -175,6 +175,7 @@
       if (!logSet(L)) alert('이 기기에 저장하지 못했습니다'); ST.form = null; paint(); return; }
     if (b.hasAttribute('data-csv')) { var rows = [['날짜', '적은때', '교차로', '이름', '브리핑순위', '결정', '한일', '까닭']].concat(logGet().map(function (x) { return [x.date, x.at, x.int, x.nm, x.rank, x.ctx, x.did, x.why]; }));
       var t = rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n');
+      if (b.getAttribute('data-csv') === 'f') { (function (t, nm) { try { var u = URL.createObjectURL(new Blob(['﻿' + t], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a'), d = new Date(), z = function (n) { return ('0' + n).slice(-2); }; a.href = u; a.download = nm + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '-' + z(d.getHours()) + z(d.getMinutes()) + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 1000); } catch (e) {} })(t, 'tg-dec-log'); b.textContent = '✔ 받음'; return; }   /* 다운로드 폴더 · 통신 없음 */
       if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { b.textContent = '✔ 복사됨'; }, function () { prompt('복사', t); }); else prompt('복사', t); return; }
     if (b.hasAttribute('data-clear')) { if (confirm('이 기기의 결정 기록을 모두 지울까요? 되돌릴 수 없습니다.')) { logSet([]); paint(); } return; } }
 

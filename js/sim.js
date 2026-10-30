@@ -150,6 +150,7 @@
     function bgRate(e, t) {
       var E = M.entry[e], h = Math.min(23, Math.floor(t / 3600)), CL = !scen.noCal && M.cal, sc = (scen.bg && scen.bg[e] != null ? scen.bg[e] : CL && CL.scale[e] != null ? CL.scale[e] : 1) * (scen.bgAll || (CL ? CL.all : 1));
       if (ACT.closeEntry[e]) return 0;
+      if (E.wdx != null && dow >= 1 && dow <= 5) sc *= E.wdx;   /* 평일(월~금)에만 곱하는 배율 — 평일 실측과 맞대 고른 설계값(일요일 재현은 그대로) */
       if (E.spot) { var v = M.vol[E.spot][VK][h]; return (v[0] + v[1]) / 2 * (scen.share && scen.share[e] != null ? scen.share[e] : E.share) * sc; }
       return (E.perLane * M.links[e].lanes) * sc;
     }

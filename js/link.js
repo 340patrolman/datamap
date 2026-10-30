@@ -36,7 +36,8 @@
   function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function ago(days) { var d = new Date(Date.now() - days * 864e5); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function O(id) { return Q && Q.O[id]; }
-  function nm(o) { if (!o) return '—'; if (o.t === 'ACC' && Q) { var i0 = Q.back(o.id, '발생')[0]; return '사고 10년 — ' + (i0 ? (i0.o.nm || i0.o.id) : o.id); } return o.nm || o.title || o.what || o.text || o.no || o.id; }
+  var FNM = { 'INT-352': '반포사거리' };   /* 소유자 현장 이름(tools/region/field-names.json · FK-NAME-4031 「4031 반포사거리가 가장 오해가 없겠다」) — 코어는 T-GIS 원래 이름 그대로 */
+  function nm(o) { if (!o) return '—'; if (FNM[o.id]) return FNM[o.id] + (o.nm && o.nm !== FNM[o.id] ? '(T-GIS ' + o.nm + ')' : ''); if (o.t === 'ACC' && Q) { var i0 = Q.back(o.id, '발생')[0]; return '사고 10년 — ' + (i0 ? (FNM[i0.o.id] || i0.o.nm || i0.o.id) : o.id); } return o.nm || o.title || o.what || o.text || o.no || o.id; }
   function won(v) { v = +v; if (!v) return '—'; return v >= 10000 ? (Math.round(v / 1000) / 10) + '억' : fmt(v) + '만'; }
 
   function css() {

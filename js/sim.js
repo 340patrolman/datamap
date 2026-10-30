@@ -176,6 +176,7 @@
     function makeV(k, e, t, att) {
       var p, a = att && S.A[att].a;
       if (k === 'bg') p = wander(e, R);
+      else if (k === 'ini') p = wander(e, RI);   /* 지금 상태에서 출발(scen.init)로 길에 미리 올린 차 — 따로 굴린 주사위라 다른 차의 길은 그대로 */
       else if (k === 'fl') { p = cached(e, a.to) || wander(e, R); }   // 가는 곳이 정해진 지나가는 수요(학원 → 궁전·삼호가든 학원가 등)
       else if (k === 'fo') p = wander(e, RO);
       else if (k === 'ai') {   // 가장 가까운 문(이동류가 가장 적은 길)으로
@@ -210,6 +211,7 @@
     S.step = function () {
       var t = S.t; S.inn = {};
       if (AC && t >= S.from - 600 && t % (AC.every || 5) === 0) autoCut(t);
+      if (INI && t === INI.at) Object.keys(INI.fill).forEach(function (lk) { var L = S.L[lk]; if (!L || L.l.sink) return; var add = Math.round(Math.min(1, INI.fill[lk]) * L.cap) - L.n; for (var q = 0; q < add; q++) { var vi = makeV('ini', lk, t); enter(vi, lk, t); } S.iniN = (S.iniN || 0) + Math.max(0, add); });
       Object.keys(S.N).forEach(function (id) { var ma = S.N[id].manual; if (ma && ma.clr > 0) { ma.clr--; if (!ma.clr) { ma.i = ma.next; ma.keep = []; } } });
       // 1 차 만들기 → 들어오는 길(자리가 없으면 망 밖에서 기다림)
       dem.forEach(function (d) {
@@ -287,6 +289,9 @@
     /* 자동 끊기(2026-10-25 · 게임 세션 「진행상황」 제안 · 소유자 현장 조작 「⛔ 들어오는 차만 끊기」를 규칙으로) — scen.autoCut = { node, link, hi, lo, every }:
        every 초마다 link(블록 안 길) 점유가 hi 를 넘으면 그 교차로를 블록으로 들어가는 이동류(cut — 기본 서→동 직진·북→동 좌회전)가 없는 현시로 붙잡고(나오는 이동류 keep 이 있는 현시 먼저 · 황색·전적색 지나서),
        lo 아래로 내려가면 원래 계획으로 돌려보낸다 · 실제 신호를 바꾸는 기능이 아니다 — 견주기용 · 값은 설계값 */
+    /* 지금 상태에서 출발(2026-10-30 · 소유자 「정확한 통행량이 없어도 신반포로가 시계 방향으로 꽉 찰 정도면 어느 정도 예측이 된다」) — scen.init = { at: 초, fill: { 길: 0~1 } }
+       그 시각에 그 길을 그만큼 채운다(이미 더 차 있으면 그대로) · 꽉 참 = 길이 × 차로 ÷ 정지 차량 한 대 자리 · 그 뒤는 평소대로 굴러감 — 「지금 본 모습」이 몇 대인지를 대신한다 */
+    var INI = scen.init && scen.init.fill ? scen.init : null, RI = rng((scen.seed || 7) + 404);
     var AC = scen.autoCut || null; S.ac = { n: 0, sec: 0, on: false }; S.drop = {};
     function autoCut(t) {
       var L = S.L[AC.link], r = L ? L.n / L.cap : 0, N = S.N[AC.node]; if (!N) return;

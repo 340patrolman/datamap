@@ -87,7 +87,7 @@
       (a.closeEntry || []).forEach(function (e) { ACT.closeEntry[e] = 1; }); Object.keys(a.mvp || {}).forEach(function (k) { ACT.mvp[k] = a.mvp[k]; });
       ['attOff', 'attInStop', 'attOutFirst', 'noTw'].forEach(function (f) { (a[f] || []).forEach(function (x) { ACT[f][x] = 1; }); }); Object.keys(a.attInCap || {}).forEach(function (k) { ACT.attInCap[k] = a.attInCap[k]; });
       Object.keys(a.doorShare || {}).forEach(function (k) { ACT.doorShare[k] = Object.assign(ACT.doorShare[k] || {}, a.doorShare[k]); }); });   /* 출차 우회 — 문마다 나오는 몫을 바꿈 */
-    var S = { M: M, from: FROM, t: FROM - WARM, end: scen.to != null ? scen.to : 22 * 3600, L: {}, mv: {}, N: {}, V: [], done: 0, delay: 0, boxN: 0, back: {}, samp: [], log: [], rtBlk: {}, A: {} };
+    var S = { M: M, from: FROM, t: FROM - WARM, end: scen.to != null ? scen.to : 22 * 3600, L: {}, mv: {}, N: {}, V: [], done: 0, delay: 0, boxN: 0, back: {}, samp: [], pre: [], log: [], rtBlk: {}, A: {} };
     Object.keys(M.links).forEach(function (k) { var l = M.links[k]; S.L[k] = { id: k, l: l, n: 0, cap: l.sink ? 1e9 : Math.max(2, l.len * l.lanes / sp), tt: l.sink ? 0 : l.len / vf }; });
     function addMv(node, key, fr, to, la, kind, cap, p) { var id = fr + '>' + to; S.mv[id] = { id: id, node: node, key: key, fr: fr, to: to, la: la, kind: kind, cap: cap, p: p == null ? 1 : p, q: [], acc: 0, served: 0, gs: 0 }; return S.mv[id]; }
     // 신호 교차로 이동류 — 다리(legs)와 현시에서
@@ -263,7 +263,7 @@
         }
       });
       eachDoor(function (X, d) { if (X.a.outFirst) return; d.mAcc -= S.inn[d.out] || 0; if (d.mAcc >= 1) d.mAcc -= attExit(d, Math.floor(d.mAcc)); if (d.mAcc < 0) d.mAcc = 0; });   // 본선이 먼저 쓰고 남은 틈으로
-      if (t % 60 === 0 && t >= FROM) S.samp.push(sample());
+      if (t % 60 === 0) { if (t >= FROM) S.samp.push(sample()); else if (scen.keepWarm) S.pre.push(sample()); }   /* keepWarm — 몸풀기(빈 길 → 16시) 동안도 1분 표본을 따로(S.pre) · 「왜 밀리나」 차례를 몸풀기부터 */
       S.t++;
     };
     function waiting(q) { var lo = 0, hi = q.length; while (lo < hi) { var md = (lo + hi) >> 1; if (q[md].rd <= S.t) lo = md + 1; else hi = md; } return lo; }   // 닿는 때(rd)가 차례대로라 반으로 갈라 센다

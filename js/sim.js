@@ -183,7 +183,7 @@
         p = best ? best.concat(['att:' + att]) : wander(e, R);
       }
       else if (k === 'ao') { var tot = 0, x = RO(), dd = a.doors[a.doors.length - 1]; a.doors.forEach(function (d) { tot += d.share != null ? d.share : 1; }); x *= tot; for (var j = 0; j < a.doors.length; j++) { x -= a.doors[j].share != null ? a.doors[j].share : 1; if (x < 0) { dd = a.doors[j]; break; } }
-        p = ['att:' + att, dd.out].concat(wander(dd.out, RO).slice(1)); var v0 = { k: k, att: att, p: p, i: 0, t0: t, ff: 0, rd: 0, door: dd }; S.V.push(v0); return v0; }
+        var fx = a.outTo && cached(dd.out, a.outTo); p = fx ? ['att:' + att].concat(fx) : ['att:' + att, dd.out].concat(wander(dd.out, RO).slice(1)); var v0   /* outTo = 나가는 차가 가는 곳이 정해진 경우(예: 호남선 버스 → 잠원IC · 소유자 현장 지식) */ = { k: k, att: att, p: p, i: 0, t0: t, ff: 0, rd: 0, door: dd }; S.V.push(v0); return v0; }
       var v = { k: k, att: att, p: p, i: 0, t0: t, ff: 0, rd: 0 }; S.V.push(v); return v;
     }
     function enter(v, lk, t) {   // 길에 올림

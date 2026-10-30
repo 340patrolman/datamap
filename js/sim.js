@@ -100,9 +100,11 @@
         ['St', 'Lt', 'Rt'].forEach(function (tu) {
           var key = lg + '.' + tu, O = n.legs[TURN[lg][tu]] && n.legs[TURN[lg][tu]].out;
           if (!O || (tu !== 'Rt' && !any[key]) || (n.ban || []).indexOf(key) >= 0) return;
-          var hasL = any[lg + '.Lt'] ? 1 : 0, la = tu === 'St' ? Math.max(1, ln - hasL - 0.5) : tu === 'Lt' ? (ln >= 2 ? 1 : 0.5) : 0.5;   // 차로 나눔(설계값): 좌회전 1 · 우회전은 바깥 차로를 직진과 나눠 반 · 나머지 직진
+          var hasL = any[lg + '.Lt'] ? 1 : 0, rl = (n.rtLane || {})[lg], la = tu === 'St' ? Math.max(1, ln - hasL - (rl ? 0 : 0.5)) : tu === 'Lt' ? (ln >= 2 ? 1 : 0.5) : (rl || 0.5);   /* rtLane = 라바콘 등으로 가른 우회전 전용 차로(그만큼 · 직진과 나눠 쓰지 않음) */   // 차로 나눔(설계값): 좌회전 1 · 우회전은 바깥 차로를 직진과 나눠 반 · 나머지 직진
           addMv(id, key, I, O, la, (n.free || []).indexOf(key) >= 0 ? 'free' : tu === 'Rt' ? 'rt' : 'sig');
         });
+        /* 유턴(n.uturn — 그 접근로 1차로 · 그 접근로 좌회전 녹색에 같이 · 좌회전 차로를 나눠 씀 · 설계값 반 차로) — 2026-10-30 소유자 확인(FK-BLOCK-WEST) */
+        if ((n.uturn || []).indexOf(lg) >= 0 && n.legs[lg].out && any[lg + '.Lt']) { var mu = addMv(id, lg + '.Ut', I, n.legs[lg].out, 0.5, 'sig'); mu.gkey = lg + '.Lt'; }
       });
     });
     // 신호 없는 갈림·합류(mvx · 자료가 준다)
@@ -134,7 +136,8 @@
           sig++;
           var sinks = O.filter(function (m) { return M.links[m.to].sink; });
           if (sig >= 3 && sinks.length) nx = sinks[Math.floor(r() * sinks.length)];
-          else { var x = r(), tu = x < TS.Lt ? 'Lt' : x < TS.Lt + TS.Rt ? 'Rt' : 'St'; nx = O.filter(function (m) { return m.key.split('.')[1] === tu; })[0] || O.filter(function (m) { return m.key.split('.')[1] === 'St'; })[0] || O[0]; }
+          else { var x = r(), up = M.nodes[L.to].uturnP || 0, ut = up && O.filter(function (m) { return m.key.split('.')[1] === 'Ut'; })[0];   /* 유턴 몫(uturnP · 설계값) — 그 몫이면 유턴 · 아니면 남은 몫을 좌·우·직으로 다시 나눔 */
+            if (ut && x < up) nx = ut; else { if (ut) x = (x - up) / (1 - up); var tu = x < TS.Lt ? 'Lt' : x < TS.Lt + TS.Rt ? 'Rt' : 'St'; nx = O.filter(function (m) { return m.key.split('.')[1] === tu; })[0] || O.filter(function (m) { return m.key.split('.')[1] === 'St'; })[0] || O[0]; } }
         } else { var tot = O.reduce(function (s9, m) { return s9 + m.p; }, 0), y = r() * tot; nx = O[O.length - 1]; for (var j = 0; j < O.length; j++) { y -= O[j].p; if (y < 0) { nx = O[j]; break; } } }
         if (!nx) { S.log.push('길 없음 ' + cur); return p; }
         p.push(nx.to); cur = nx.to;
@@ -241,7 +244,7 @@
       eachDoor(function (X, d) { var c9 = M.links[d.out].lanes * satS * (wv(X, d) && d.mv.some(function (m) { return m.q.length && m.q[0].rd <= t; }) ? 1 - wv(X, d) : 1); d.mAcc = Math.min(d.mAcc + c9, 2 * c9 + 1); if (X.a.outFirst) d.mAcc -= attExit(d, Math.floor(d.mAcc)); });
       Object.keys(S.mv).forEach(function (k) {
         var m = S.mv[k], q = m.q, on;
-        if (m.kind === 'sig') on = GS[m.node] && GS[m.node][m.key]; else on = true;
+        if (m.kind === 'sig') on = GS[m.node] && GS[m.node][m.gkey || m.key]; else on = true;
         var box = (S.N[m.node] || NOBOX).box; if (box.length && box.some(function (b) { return b.to !== m.to; })) on = false;
         var la = m.la - (m.key.slice(-2) === 'St' && S.rtBlk[m.fr] >= t - 1 ? 0.5 : 0);   // 우회전 차가 막혀 서 있으면 나눠 쓰는 바깥 차로가 직진에도 막힌다
         if (m.att9 && m.att9.occ != null && m.att9.occ >= m.att9.a.capacity) { on = false; if (m.att9.a.circle) circleOut(m, t); }   // 만차 — 문 닫힘 · 빙 도는 곳이면 다음 문으로

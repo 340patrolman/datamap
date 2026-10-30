@@ -10,9 +10,11 @@ js = open(os.path.join(ROOT, 'js', 'sim.js'), encoding='utf-8').read()
 for nm in sys.argv[1:]:
     f = os.path.join(ROOT, 'data', 'sim-' + nm + '.json')
     M = json.load(open(f, encoding='utf-8'))
-    M.pop('cal', None)
+    old = M.pop('cal', None)
+    st = json.dumps({'start': {'scale': old['scale'], 'all': old['all']}}) if old and old.get('scale') else 'null'
+    # 두 번 맞춘다 — 처음부터 · 지난 배율에서 출발 → 실측 칸(평소 속도 있는 칸) 맞음과 실측 막힘 잡음의 평균이 큰 쪽(2026-10-30 · 맞춤이 문턱에서 다른 답에 내려앉아 잘 맞던 구역이 나빠지던 것)
     html = ('<!doctype html><meta charset="utf-8"><pre id="out">x</pre><script>window.__M=' + json.dumps(M, ensure_ascii=False).replace('</', '<\\/') + ';</script><script>' + js +
-            '</script><script>try{document.getElementById("out").textContent=JSON.stringify(tgSim.calibrate(__M,{}));}catch(e){document.getElementById("out").textContent="ERR "+e.stack;}</script>')
+            '</script><script>try{var A=tgSim.calibrate(__M,{}),W=' + st + ',B=W?tgSim.calibrate(__M,W):null;function ms(c){var b=c.best;return b.mn?(b.mh/b.mn+(b.jn?b.jh/b.jn:b.mh/b.mn))/2:b.hit/b.n;}var C=B&&ms(B)>ms(A)?B:A;C.from=C===B?"warm":"fresh";document.getElementById("out").textContent=JSON.stringify(C);}catch(e){document.getElementById("out").textContent="ERR "+e.stack;}</script>')
     d = tempfile.mkdtemp()
     p = os.path.join(d, 'cal.html')
     open(p, 'w', encoding='utf-8').write(html)
@@ -26,4 +28,4 @@ for nm in sys.argv[1:]:
     cal = json.loads(t)
     M['cal'] = cal
     json.dump(M, open(f, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
-    print(nm, '맞춤', ' → '.join('%d/%d' % (h['hit'], h['n']) for h in cal['hist']), '· 전체 배율', cal['all'], '· 들어오는 길 배율', cal['scale'])
+    print(nm, cal.get('from'), '맞춤', ' → '.join('%d/%d' % (h['hit'], h['n']) for h in cal['hist']), '· 전체 배율', cal['all'], '· 들어오는 길 배율', cal['scale'])

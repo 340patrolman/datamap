@@ -239,13 +239,17 @@
         }
       }
       function attExit(d, lim) { var k = 0; while (d.q9.length && k < lim && room(d.out)) { var v = d.q9.shift(); v.i = 1; enter(v, d.out, t); k++; } return k; }
+      /* 꼬리물기 차가 막는 흐름(2026-10-30) — 가로지르는 접근로는 모두 막고 · 맞은편은 둘 중 하나가 좌회전(유턴)일 때만 · 같은 접근로는 안 막는다.
+         종전엔 교차로 전체를 세워 교차로 사이가 짧은 곳(언주로 110~180m)에서 두 교차로가 서로를 기다리며 영원히 안 풀렸다 · scen.boxAll = 종전 규칙 */
+      var OPP = { nt: 'st', st: 'nt', et: 'wt', wt: 'et' }, BOXT = scen.boxT != null ? scen.boxT : 120;   /* BOXT = 꼬리물기 차가 가로지르는 흐름을 막는 가장 긴 시간(초 · 설계값) — 그 뒤엔 비켜 선 것으로 본다(두 교차로가 서로를 영원히 기다리는 엉킴을 풀려고 · 들어갈 자리가 날 때까지 기다리는 것은 그대로) */
+      function boxHit(bk, mk) { if (scen.boxAll || !bk || !mk) return true; var a = bk.split('.'), b = mk.split('.'); if (a[0] === b[0]) return false; if (OPP[a[0]] !== b[0]) return true; return a[1] === 'Lt' || a[1] === 'Ut' || b[1] === 'Lt' || b[1] === 'Ut'; }
       function wv(X, d) { return d.weave != null ? d.weave : (X.a.weave || 0); }   /* 문마다 엉킴 몫 — 들어가는 곳·나오는 곳이 떨어진 문(반포대로 호남선 45%·20%)은 0 */
       function eachDoor(f) { Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (X.a.mode !== 'store' && X.a.mode !== 'table') return; X.a.doors.forEach(function (d) { f(X, d); }); }); }
       eachDoor(function (X, d) { var c9 = M.links[d.out].lanes * satS * (wv(X, d) && d.mv.some(function (m) { return m.q.length && m.q[0].rd <= t; }) ? 1 - wv(X, d) : 1); d.mAcc = Math.min(d.mAcc + c9, 2 * c9 + 1); if (X.a.outFirst) d.mAcc -= attExit(d, Math.floor(d.mAcc)); });
       Object.keys(S.mv).forEach(function (k) {
         var m = S.mv[k], q = m.q, on;
         if (m.kind === 'sig') on = GS[m.node] && GS[m.node][m.gkey || m.key]; else on = true;
-        var box = (S.N[m.node] || NOBOX).box; if (box.length && box.some(function (b) { return b.to !== m.to; })) on = false;
+        var box = (S.N[m.node] || NOBOX).box; if (box.length && box.some(function (b) { return b.to !== m.to && t - b.t0 < BOXT && boxHit(b.key, m.key); })) on = false;
         var la = m.la - (m.key.slice(-2) === 'St' && S.rtBlk[m.fr] >= t - 1 ? 0.5 : 0);   // 우회전 차가 막혀 서 있으면 나눠 쓰는 바깥 차로가 직진에도 막힌다
         if (m.att9 && m.att9.occ != null && m.att9.occ >= m.att9.a.capacity) { on = false; if (m.att9.a.circle) circleOut(m, t); }   // 만차 — 문 닫힘 · 빙 도는 곳이면 다음 문으로
         if (m.door9 && m.door9.q9.length && wv(m.att9, m.door9)) la *= 1 - wv(m.att9, m.door9);   // 같은 문에서 나오는 차와 엉킴(들어가는 쪽이 그만큼 느림)
@@ -258,7 +262,7 @@
           var v = q[0];
           if (!room(m.to)) {
             if (m.kind === 'rt') S.rtBlk[m.fr] = t;
-            if ((M.nodes[m.node] || {}).ty === 'sig' && box.length < 2 && RB() < (scen.box === 0 ? 0 : ((M.nodes[m.node].boxMv || {})[m.key] != null ? M.nodes[m.node].boxMv[m.key] : boxP))) {   /* boxMv = 그 이동류만 꼬리물기 몫을 달리(현장 지식 · 설계값) */ q.shift(); m.acc -= 1; box.push({ v: v, fr: m.fr, to: m.to }); S.boxN++; }
+            if ((M.nodes[m.node] || {}).ty === 'sig' && box.length < 2 && RB() < (scen.box === 0 ? 0 : ((M.nodes[m.node].boxMv || {})[m.key] != null ? M.nodes[m.node].boxMv[m.key] : boxP))) {   /* boxMv = 그 이동류만 꼬리물기 몫을 달리(현장 지식 · 설계값) */ q.shift(); m.acc -= 1; box.push({ v: v, fr: m.fr, to: m.to, key: m.key, t0: t }); S.boxN++; }
             break;
           }
           q.shift(); m.acc -= 1; S.L[m.fr].n--; m.served++;
@@ -317,25 +321,30 @@
      평소에도 막히는데(6 이하 두 시간↑) 시뮬이 안 막히면 늘린다 · 안쪽 길이 어긋나면 전체를 조금씩 · 10번 되풀이 · 결과는 대수가 아니라 「설계값 배율」(tools/sim/sim-cal.py 가 구역 자료 cal 칸에) */
   var DKC = [3, 0, 0, 0, 0, 1, 2];
   function calibrate(M, opt) {
-    opt = opt || {}; var date = opt.date || '2026-10-21', dk = DKC[dowOf(date)], H0 = opt.h0 || 16, H1 = opt.h1 || 21, sc = {}, all = 1, hist = [], BEST = null;
-    Object.keys(M.entry).forEach(function (e) { sc[e] = 1; });
+    opt = opt || {}; var date = opt.date || '2026-10-21', dk = DKC[dowOf(date)], H0 = opt.h0 || 16, H1 = opt.h1 || 21, sc = {}, all = 1, hist = [], BEST = null, stp = 1, prevSel = -1, NIT = opt.iter || 16;
+    /* stp = 고치는 폭 — 고른 값이 나빠지면 폭을 반으로(막힘이 문턱에서 한꺼번에 생겨 판이 오락가락하던 것 · 2026-10-30) */
+    Object.keys(M.entry).forEach(function (e) { sc[e] = opt.start && opt.start.scale && opt.start.scale[e] != null ? opt.start.scale[e] : 1; }); if (opt.start && opt.start.all) all = opt.start.all;   /* opt.start = 지난 맞춤에서 출발(sim-cal.py 가 처음부터 맞춘 판과 견줘 실측 칸이 더 맞는 쪽을 남긴다) */
+    /* 평소 속도가 없는 들어오는 길은 같은 길 맞은편으로 곧장 이어 나가는 망 안 길의 평소 속도를 빌려 맞춤에만 쓴다(실측 칸 수 mn·jn 에는 안 넣음) — 「막히지 않는다」로만 보면 실제로 막히는 큰길(언주로 북쪽 → 르네상스)의 수요까지 깎였다 · 2026-10-30 */
+    var OPPL = { nt: 'st', st: 'nt', et: 'wt', wt: 'et' }, PRX = {};
+    Object.keys(M.nodes).forEach(function (id) { var n = M.nodes[id]; Object.keys(n.legs || {}).forEach(function (lg) { var I = n.legs[lg].in, o = n.legs[OPPL[lg]]; if (I && M.entry[I] && !M.links[I].nsp && o && o.out && M.links[o.out] && M.links[o.out].nsp) PRX[I] = M.links[o.out].nsp; }); });
     function score(S) { var r = { hit: 0, n: 0, mh: 0, mn: 0, jh: 0, jn: 0, fp: {}, fn: {}, inner: 0 };
       Object.keys(M.links).forEach(function (k) { var l = M.links[k], E = M.entry[k]; if ((!l.nsp && !E) || l.sink) return; for (var h = H0; h <= H1; h++) { var v = l.nsp ? l.nsp[dk + '-' + h] : null; if (v == null && !E) continue;
         var L = S.samp.filter(function (s9) { return s9.t >= h * 3600 && s9.t < (h + 1) * 3600; }), o = L.length ? L.reduce(function (a, s9) { return a + (s9.occ[k] || 0); }, 0) / L.length / S.L[k].cap : 0,
-          bq = E && L.length ? L.reduce(function (a, s9) { return a + ((s9.bk || {})[k] || 0); }, 0) / L.length : 0, sj = o >= 0.8 || bq > 15, rj = v != null && v <= 6;
+          bq = E && L.length ? L.reduce(function (a, s9) { return a + ((s9.bk || {})[k] || 0); }, 0) / L.length : 0, sj = o >= 0.8 || bq > 15, pv = v == null && PRX[k] ? PRX[k][dk + '-' + h] : null, rj = v != null ? v <= 6 : pv != null && pv <= 6;
         /* 들어오는 길은 망 밖에서 못 들어온 차(bk)도 막힘으로 센다 — 평소 속도가 없는 들어오는 길은 「막히지 않는다」로 본다(조사 자료가 없을 때 차로당 대수 설계값이 길이 받아낼 수 있는 것보다 많아 그물 전체가 엉키던 것 · 2026-10-25) */
         if (v != null) { r.mn++; if (sj === rj) r.mh++; if (rj) { r.jn++; if (sj) r.jh++; } }   /* 실측이 있는 칸만 · 실측 막힘 칸 가운데 시뮬도 막힘 */
         r.n++; if (sj === rj) r.hit++; else if (sj) r.fp[k] = (r.fp[k] || 0) + 1; else r.fn[k] = (r.fn[k] || 0) + 1; } }); return r; }
-    for (var it = 0; it <= (opt.iter || 10); it++) {
+    for (var it = 0; it <= NIT; it++) {
       var S = run(M, { date: date, seed: 5, from: H0 * 3600, to: (H1 + 1) * 3600, bg: sc, bgAll: all, noCal: 1, noOut: opt.noOut }), r = score(S); hist.push({ it: it, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, all: Math.round(all * 100) / 100 });
       r.bal = r.jn ? (r.jh / r.jn + (r.hit - r.jh) / Math.max(1, r.n - r.jn)) / 2 : r.hit / Math.max(1, r.n);   /* 막힘 칸 맞힘과 안 막힘 칸 맞힘의 평균 — 안 막힘 칸이 훨씬 많아 그냥 맞힌 수로 고르면 「아무 데도 안 막힘」 판이 뽑힌다 */
       r.sel = (r.bal + r.hit / Math.max(1, r.n)) / 2;   /* 고르는 값 = 그 평균과 맞힌 몫의 평균(한쪽 끝 — 다 막힘·다 안 막힘 — 으로 쏠리지 않게) */
       if (!BEST || r.sel > BEST.sel) BEST = { sel: r.sel, bal: r.bal, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, it: it, all: all, sc: JSON.parse(JSON.stringify(sc)) };   /* 가장 잘 맞은 판을 남긴다(마지막 판이 더 나쁠 수 있다) */
-      if (it === (opt.iter || 10)) break;
+      if (it === NIT) break;
+      if (r.sel < prevSel) stp /= 2; prevSel = r.sel; var dn = 1 - 0.25 * stp, up = 1 + 0.15 * stp, ad = 1 - 0.1 * stp, au = 1 + 0.05 * stp;
       var innerFp = 0, innerFn = 0;
-      Object.keys(r.fp).forEach(function (k) { if (M.entry[k]) sc[k] *= 0.75; else innerFp++; });
-      Object.keys(r.fn).forEach(function (k) { if (r.fn[k] < 2) return; if (M.entry[k]) sc[k] = Math.min(sc[k] * 1.15, 3); else innerFn++; });
-      if (innerFp > innerFn) all *= 0.9; else if (innerFn > innerFp) all = Math.min(all * 1.05, 2);
+      Object.keys(r.fp).forEach(function (k) { if (M.entry[k]) sc[k] *= dn; else innerFp++; });
+      Object.keys(r.fn).forEach(function (k) { if (r.fn[k] < 2) return; if (M.entry[k]) sc[k] = Math.min(sc[k] * up, 3); else innerFn++; });
+      if (innerFp > innerFn) all *= ad; else if (innerFn > innerFp) all = Math.min(all * au, 2);
     }
     sc = BEST.sc; all = BEST.all; Object.keys(sc).forEach(function (e) { sc[e] = Math.round(sc[e] * 100) / 100; });
     return { date: date, dk: dk, best: { hit: BEST.hit, n: BEST.n, mh: BEST.mh, mn: BEST.mn, jh: BEST.jh, jn: BEST.jn, it: BEST.it }, scale: sc, all: Math.round(all * 100) / 100, hist: hist, src: '평소 속도(ITS 가운데값 · spd-normal-six · 요일 갈래 ' + dk + ' · ' + H0 + '~' + H1 + '시)로 맞춘 설계값 배율 — 대수 자료가 아니다' };

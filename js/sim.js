@@ -258,7 +258,7 @@
           var v = q[0];
           if (!room(m.to)) {
             if (m.kind === 'rt') S.rtBlk[m.fr] = t;
-            if ((M.nodes[m.node] || {}).ty === 'sig' && box.length < 2 && RB() < boxP) { q.shift(); m.acc -= 1; box.push({ v: v, fr: m.fr, to: m.to }); S.boxN++; }
+            if ((M.nodes[m.node] || {}).ty === 'sig' && box.length < 2 && RB() < (scen.box === 0 ? 0 : ((M.nodes[m.node].boxMv || {})[m.key] != null ? M.nodes[m.node].boxMv[m.key] : boxP))) {   /* boxMv = 그 이동류만 꼬리물기 몫을 달리(현장 지식 · 설계값) */ q.shift(); m.acc -= 1; box.push({ v: v, fr: m.fr, to: m.to }); S.boxN++; }
             break;
           }
           q.shift(); m.acc -= 1; S.L[m.fr].n--; m.served++;

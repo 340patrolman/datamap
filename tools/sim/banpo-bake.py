@@ -123,7 +123,8 @@ def main():
         if L.get('oto') and L['to'] in nodes: nodes[L['to']]['legs'].setdefault(L['oto'], {})['in'] = L['id']
         if L.get('ofr') and L['fr'] in nodes: nodes[L['fr']]['legs'].setdefault(L['ofr'], {})['out'] = L['id']
     # 4031 남쪽 접근로(반포대로 측도) — 소유자 확인 2026-10-30 「그대로 넣어」(FK-BLOCK-WEST · 카카오 로드뷰 7장을 진행상황 세션이 읽은 것): 남→동 우회전은 라바콘으로 가른 전용 차로(안내 요원 · 신호와 상관없이 흐름 → 신반포로 압박) · 1차로 유턴(좌회전 녹색에 같이)
-    nodes['4031']['free'] = ['st.Rt']; nodes['4031']['rtLane'] = {'st': 1}; nodes['4031']['uturn'] = ['st']; nodes['4031']['uturnP'] = 0.15; nodes['4031']['alias'] = ['고속터미널사거리', '강남터미널고가밑', '반포사거리']   # 출구·출차 차 가운데 4031 남쪽에서 유턴하는 몫(설계값 — 호남선 버스·센트럴 출차가 나간 뒤 어느 쪽으로 가는지는 형님 확인 전)
+    nodes['4031']['free'] = ['st.Rt']; nodes['4031']['rtLane'] = {'st': 1}; nodes['4031']['uturn'] = ['st']; nodes['4031']['uturnP'] = 0.15; nodes['4031']['boxMv'] = {'nt.Lt': 0.7}   # 반포대교에서 와 신반포로로 좌회전하는 차는 꼬리물기를 더 잦게(0.3 → 0.7 설계값) — 소유자 「그쪽에서 와서 4031 교차로 꼬리를 물어서 더 마비가 되지 · 차량 통행이 전혀 되지 않아서」(FK-BLOCK-BOX4031 · 2026-10-30)
+    nodes['4031']['nm'] = '반포사거리'; nodes['4031']['alias'] = ['고속터미널사거리', '강남터미널고가밑']   # 화면 이름 = 소유자 결정 「4031 반포사거리가 가장 오해가 없겠다」(FK-NAME-4031 · 2026-10-30) · 별칭은 현시도(강남터미널고가밑)·통칭(고속터미널사거리)   # 출구·출차 차 가운데 4031 남쪽에서 유턴하는 몫(설계값 — 호남선 버스·센트럴 출차가 나간 뒤 어느 쪽으로 가는지는 형님 확인 전)
     nodes['4034']['free'] = ['et.St']   # 지하차도
     # ---- 교통량 조사(서울시 · 시간당 대수 · 두 방향) ----
     vol = {s['id']: {k: s[k] for k in ('name', 'lat', 'lon', 'wd', 'sa', 'su', 'lanes')} for s in json.load(open(os.path.join(D, 'traffic-vol-seoul.json'), encoding='utf-8'))['spots'] if s['id'] in ('D-36', 'D-37', 'C-11')}

@@ -11,10 +11,10 @@
     doors: [{ id: 'N', ic: '🅿', nm: '신반포로 — 백화점', ll: [37.506215, 127.005068] }, { id: 'E', ic: '🚌', nm: '잠원로 — 경부·영동선 고속버스·백화점', ll: [37.5061, 127.009707] },
       { id: 'S', ic: '🏨', nm: '사평대로 — 메리어트·백화점 들어가는 곳(3번 출구 쪽)', ll: [37.503094, 127.006011] },
       { id: 'So', ic: '⤴', nm: '사평대로 — 메리어트·백화점 나오는 곳(동그라미 건물 옆길)', ll: [37.502696, 127.004969] }, { id: 'W', ic: '🚌', nm: '반포대로 — 호남선·백화점 들어가는 곳', ll: [37.503699, 127.002158] },
-      { id: 'Wo', ic: '⤴', nm: '반포대로 — 호남선 버스·백화점 나오는 곳', ll: [37.504421, 127.001575] }],   /* 서쪽 문 = 소유자 현장 지식(2026-10-25) — 강남터미널고가밑(4031)에서 나오는 곳 20% · 들어가는 곳 45% · 겹치지 않음 */
+      { id: 'Wo', ic: '⤴', nm: '반포대로 — 호남선 버스·백화점 나오는 곳', ll: [37.504421, 127.001575] }],   /* 서쪽 문 = 소유자 현장 지식(2026-10-25) — 반포사거리(4031)에서 나오는 곳 20% · 들어가는 곳 45% · 겹치지 않음 */
     // 막힘 고리 네 변(data/onto-loops.json LOOP-banpo-terminal 과 같은 차례) — 지금 ITS 속도를 받는 링크 · 시뮬 길 · 신반포로는 4031→4019 470m 링크(1210026104)가 ITS 에 안 와서 앞 224m 조각
-    legs: [{ nm: '신반포로 →고속터미널', its: '1210026102', sim: '4031>G' }, { nm: '잠원로 →삼호가든', its: '1210026203', sim: '4019>4028' }, { nm: '사평대로 →서울성모병원', its: '1210024802', sim: 'SO>4034' }, { nm: '반포대로 →고속터미널사거리', its: '1210025103', sim: 'WO>4031' }] };
-  var SHORT = { '4031': '고속터미널사거리', '4019': '고속터미널', '4028': '삼호가든', '4034': '서울성모병원', '4032': '반포대교남단' };
+    legs: [{ nm: '신반포로 →고속터미널', its: '1210026102', sim: '4031>G' }, { nm: '잠원로 →삼호가든', its: '1210026203', sim: '4019>4028' }, { nm: '사평대로 →서울성모병원', its: '1210024802', sim: 'SO>4034' }, { nm: '반포대로 →반포사거리', its: '1210025103', sim: 'WO>4031' }] };
+  var SHORT = { '4031': '반포사거리', '4019': '고속터미널', '4028': '삼호가든', '4034': '서울성모병원', '4032': '반포대교남단' };
   var M = null, A = null, B = null, RUN = 0, SPD = 600, LAST = 0, PANEL = null, CH = null, ST = null;
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -110,7 +110,7 @@
     if (M && window.tgSim) return cb();
     var go = function () { window.tgSim.load(AREA.id, '7').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=20'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=21'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   // ---- 판 ----
   var DAYS = [['1018', '10/18(일) 재현', '2026-10-18'], ['1011', '10/11(일) 평소', '2026-10-11'], ['mt', '평일(월~목)', '2026-10-21'], ['fr', '금요일', '2026-10-23'], ['sa', '토요일', '2026-10-24'], ['su', '일요일', '2026-10-25']];   // 소유자 「평일·금·토·일도 변수로」 — 신호 계획·고속버스 시간표·평소 속도 모두 이 네 갈래
@@ -130,7 +130,7 @@
     var a = { shin: { inPeak: ST.shin, outPeak: ST.shin, occ0: ST.occ / 100 }, fount: { inPeak: ST.fount }, academy: { inPeak: ST.academy }, busGB: { scale: ST.bus, off: ST.bus ? 0 : 1 }, busCT: { scale: ST.bus, off: ST.bus ? 0 : 1 } };
     return { date: ST.date, seed: 7, att: a, act: act, box: ST.box ? undefined : 0, from: 16 * 3600, to: 23 * 3600, keepWarm: 1 };
   }
-  /* 개선안 목록(4031 고속터미널사거리 · 소유자 「신호값별로 어떤 변화가 생길 수 있는지 — 개선안별로 시연」) — 현행은 그날 17시 현시도 계획 · 나머지는 그것을 고친 예시(초는 형님이 정한다) */
+  /* 개선안 목록(4031 반포사거리 · 소유자 「신호값별로 어떤 변화가 생길 수 있는지 — 개선안별로 시연」) — 현행은 그날 17시 현시도 계획 · 나머지는 그것을 고친 예시(초는 형님이 정한다) */
   function curPh() { return window.tgSim.planAt(M, '4031', 17 * 3600, window.tgSim.dowOf(ST.date)).ph.map(function (p) { return { d: p.d, y: p.y, ar: p.ar, mv: p.mv.slice(), nm: p.mv.join('+') }; }); }
   function plans() {
     var c = curPh(), K = function (f) { var q = JSON.parse(JSON.stringify(c)); f(q); return q; }, ex = exPhases(), exB = JSON.parse(JSON.stringify(ex)); exB[0].d -= 15; exB[1].d += 15;
@@ -278,15 +278,15 @@
   /* 형님(2026-10-30) 「현행과 개선안을 각각 따로 크게 · 왜 밀릴 수밖에 없고 마비가 생길 수밖에 없는지 구체적으로 · 개선안은 신호값과 신호(현시 구성)를 나눠 신반포로로 가해지는 압박을 어떻게 줄이고
      신세계에서 나오는 차와 들어가는 차를 적절히 배분해 주변 통행과 어울리게 — 일시적인 정체는 생길 수 있지만 마비까지는 되지 않는 것이 목표」
      마비 = 막힘 고리 네 변(AREA.legs) 가운데 셋 이상이 80% 넘게 찬 분 · 일시 정체 = 막힌 접근로는 있으나 마비는 아닌 분(1분 표본 · 설계 기준) */
-  var SIN = ['4031>G', 'G>4019'];   /* 신반포로 — 강남터미널고가밑(고속터미널사거리)~고속터미널 블록 쪽 차로 */
+  var SIN = ['4031>G', 'G>4019'];   /* 신반포로 — 반포사거리~고속터미널 블록 쪽 차로 */
   function occR(S, s9, k) { var L = S.L[k]; return L ? (s9.occ[k] || 0) / L.cap : 0; }
   function legsSim() { return AREA.legs.map(function (g) { return g.sim; }).filter(function (k) { return M.links[k]; }); }
   function para(S) { var P = 0, T = 0, sm = 0, mx = 0, n = 0, cp = SIN.reduce(function (a, k) { return a + (S.L[k] ? S.L[k].cap : 0); }, 0);
     S.samp.forEach(function (s9) { var c = legsSim().filter(function (k) { return occR(S, s9, k) >= 0.8; }).length; if (c >= 3) P++; else if (s9.jam.length) T++;
       var o = cp ? SIN.reduce(function (a, k) { return a + (s9.occ[k] || 0); }, 0) / cp : 0; sm += o; n++; if (o > mx) mx = o; });
     return { para: P, temp: T, sinAvg: n ? sm / n : 0, sinMax: mx, sinNow: n ? (function (s9) { return cp ? SIN.reduce(function (a, k) { return a + (s9.occ[k] || 0); }, 0) / cp : 0; })(S.samp[n - 1]) : 0 }; }
-  var NAMEK = { '4031>G': '신반포로(고속터미널사거리 → 신세계 북문)', 'G>4019': '신반포로(신세계 북문 → 고속터미널)', '4019>4028': '잠원로(고속터미널 → 삼호가든)', '4028>SI': '사평대로(삼호가든 → 메리어트 들어가는 곳)', 'SO>4034': '사평대로(메리어트 나오는 곳 → 서울성모병원)',
-    '4034>H': '반포대로(서울성모병원 → 고가 갈림)', 'WO>4031': '반포대로(호남선 나오는 곳 → 고속터미널사거리)', '4032>4031': '반포대로(반포대교남단 → 고속터미널사거리)', 'in.4031.wt': '신반포로 서쪽(신반포역 쪽) 들어오는 길', 'in.4019.et': '신반포로 동쪽(반포역 쪽) 들어오는 길',
+  var NAMEK = { '4031>G': '신반포로(반포사거리 → 신세계 북문)', 'G>4019': '신반포로(신세계 북문 → 고속터미널)', '4019>4028': '잠원로(고속터미널 → 삼호가든)', '4028>SI': '사평대로(삼호가든 → 메리어트 들어가는 곳)', 'SO>4034': '사평대로(메리어트 나오는 곳 → 서울성모병원)',
+    '4034>H': '반포대로(서울성모병원 → 고가 갈림)', 'WO>4031': '반포대로(호남선 나오는 곳 → 반포사거리)', '4032>4031': '반포대로(반포대교남단 → 반포사거리)', 'in.4031.wt': '신반포로 서쪽(신반포역 쪽) 들어오는 길', 'in.4019.et': '신반포로 동쪽(반포역 쪽) 들어오는 길',
     'in.4019.nt': '잠원로 북쪽 들어오는 길', 'in.4028.et': '사평대로 동쪽(사평역 쪽) 들어오는 길', 'in.4034.st': '반포대로 남쪽(서초역 쪽) 들어오는 길' };
   /* 왜 마비되나 — 그 판의 1분 표본에서 처음 넘은 일을 차례대로(엔진 samp 의 occ·box·att) */
   function chain(S) { var ev = [], seen = {}, b0 = 0, full = false, pd = false;
@@ -301,10 +301,10 @@
     }); return ev; }
   function whyCard(S, nm) { var ev = chain(S), p = para(S);
     return '<div class="pv" style="padding:6px 8px"><div class="pt" style="text-align:left">🧩 ' + esc(nm) + ' — 왜 밀리나(시각 차례)</div>' + (ev.length ? '<ol style="margin:4px 0;padding-left:18px;font-size:12px;line-height:1.5">' + ev.slice(0, 12).map(function (e) { return '<li><b>' + hh(e[0]) + '</b> ' + esc(e[1]) + '</li>'; }).join('') + '</ol><div class="sn" style="margin:0">16시 앞은 몸풀기(14시 빈 길에서 시작해 쌓여 가는 모양) · 개선안은 16~21시에만 쓰므로 16시 앞은 두 판이 같다</div>' : '<div class="sn">막힌 곳 없이 흘렀다</div>') +
-      '<div class="sn" style="margin:2px 0">마비 ' + p.para + '분 · 일시 정체 ' + p.temp + '분 · 신반포로(고가밑~터미널) 평균 ' + Math.round(p.sinAvg * 100) + '% · 최대 ' + Math.round(p.sinMax * 100) + '%</div></div>'; }
+      '<div class="sn" style="margin:2px 0">마비 ' + p.para + '분 · 일시 정체 ' + p.temp + '분 · 신반포로(반포사거리~터미널) 평균 ' + Math.round(p.sinAvg * 100) + '% · 최대 ' + Math.round(p.sinMax * 100) + '%</div></div>'; }
   function paintRun() {
     if (!A) return; var el = $('simRun'); if (!el) return;
-    var pa = para(A), pb = para(B), pstr = function (p) { return '<div class="sn" style="margin:2px 0;color:inherit">신반포로(고가밑~터미널) 지금 <b style="color:' + (p.sinNow >= 0.8 ? '#dc2626' : p.sinNow >= 0.5 ? '#ca8a04' : '#16a34a') + '">' + Math.round(p.sinNow * 100) + '%</b> · 평균 ' + Math.round(p.sinAvg * 100) + '% · ⛔ 마비 <b>' + p.para + '분</b> · 일시 정체 ' + p.temp + '분</div>'; };
+    var pa = para(A), pb = para(B), pstr = function (p) { return '<div class="sn" style="margin:2px 0;color:inherit">신반포로(반포사거리~터미널) 지금 <b style="color:' + (p.sinNow >= 0.8 ? '#dc2626' : p.sinNow >= 0.5 ? '#ca8a04' : '#16a34a') + '">' + Math.round(p.sinNow * 100) + '%</b> · 평균 ' + Math.round(p.sinAvg * 100) + '% · ⛔ 마비 <b>' + p.para + '분</b> · 일시 정체 ' + p.temp + '분</div>'; };
     el.innerHTML = '<div class="row" style="justify-content:space-between"><span class="clock">' + hh(A.t) + '</span><span class="sn" style="margin:0">16:00 → 23:00 · 같은 차 · 같은 날</span>' + chipB('big', ST.big === false ? '🔳 크게(위아래)' : '◫ 나란히', false) + '</div><div class="two' + (ST.big === false ? '' : ' big') + '">' +
       '<div class="pv"><div class="pt">현행 신호</div>' + pstr(pa) + svg(A) + info(A) + '</div><div class="pv"><div class="pt">' + esc(ST.ph ? planOf(ST.plan).nm + '(고침)' : planOf(ST.plan).nm) + (ST.auto ? ' + 🤖 자동 끊기' + (B.ac && B.ac.on ? ' <b style="color:#dc2626">끊는 중</b>' : '') : B.N['4031'].manual ? ' · 🖐 수동' : '') + '</div>' + pstr(pb) + svg(B) + info(B) + '</div></div>' +
       (A.t >= A.from + 1800 ? '<div class="two' + (ST.big === false ? '' : ' big') + '" style="margin-top:6px">' + whyCard(A, '현행') + whyCard(B, planOf(ST.plan).nm) + '</div>' : '') +
@@ -323,7 +323,7 @@
       '<tr><td>꼬리물기(교차로 안에 선 차 · 누적)</td><td>' + a.box + '</td><td>' + b.box + ' ' + dv(a.box, b.box) + '</td></tr>' +
       (ST.auto ? '<tr><td>🤖 자동 끊기</td><td>-</td><td>' + b.acN + '번 · ' + Math.round(b.acSec / 60) + '분 끊음</td></tr>' : '') +
       (function () { var pa = para(A), pb = para(B), ok = function (p) { return p.para === 0 ? '<b style="color:#16a34a">✓ 마비 없음</b>' : '<b style="color:#dc2626">✗ 마비 ' + p.para + '분</b>'; };
-        return '<tr><td>신반포로(고가밑~터미널) 찬 정도 평균 · 최대</td><td>' + Math.round(pa.sinAvg * 100) + '% · ' + Math.round(pa.sinMax * 100) + '%</td><td>' + Math.round(pb.sinAvg * 100) + '% · ' + Math.round(pb.sinMax * 100) + '% ' + dv(pa.sinAvg, pb.sinAvg) + '</td></tr>' +
+        return '<tr><td>신반포로(반포사거리~터미널) 찬 정도 평균 · 최대</td><td>' + Math.round(pa.sinAvg * 100) + '% · ' + Math.round(pa.sinMax * 100) + '%</td><td>' + Math.round(pb.sinAvg * 100) + '% · ' + Math.round(pb.sinMax * 100) + '% ' + dv(pa.sinAvg, pb.sinAvg) + '</td></tr>' +
           '<tr><td>⛔ 마비(블록 네 변 가운데 셋 이상 80%↑)</td><td>' + pa.para + '분</td><td>' + pb.para + '분 ' + dv(pa.para, pb.para) + '</td></tr>' +
           '<tr><td>일시 정체(막힌 곳은 있으나 마비 아님)</td><td>' + pa.temp + '분</td><td>' + pb.temp + '분</td></tr>' +
           '<tr><td><b>목표 — 일시 정체는 있어도 마비 없음</b></td><td>' + ok(pa) + '</td><td>' + ok(pb) + '</td></tr>'; })() +
@@ -344,7 +344,7 @@
       '<label class="sl"><b>🚌 고속버스(실측 × 배율)</b><input type="range" min="0" max="2" step="0.1" value="' + ST.bus + '" data-sv="bus"><em>× ' + ST.bus + '</em></label><div class="sn" style="margin:-2px 0 4px">TAGO 시간표 그날 갈래 그대로(×1) · 경부·영동 = 동 잠원로 출입구 · 호남 = 서 반포대로 출입구 · 0 = 끔</div>' +
       '<div class="row">' + chipB('box', '꼬리물기 있음', ST.box) + '</div>' +
       '<div class="sg">조치</div><div class="row">' + acts + '</div>' +
-      '<div class="sg">개선안 — 4031 고속터미널사거리(오른쪽 판)</div><div class="row">' + chipB('plan:cur', '현행', ST.plan === 'cur') + '</div>' +
+      '<div class="sg">개선안 — 4031 반포사거리(오른쪽 판)</div><div class="row">' + chipB('plan:cur', '현행', ST.plan === 'cur') + '</div>' +
       '<div class="sn" style="margin:4px 0 2px;color:inherit"><b>① 신호값만 바꾸기</b> — 현시 차례는 그대로, 초만</div><div class="row">' + plans().filter(function (p) { return p.kind === 'time'; }).map(function (p) { return chipB('plan:' + p.id, p.nm, ST.plan === p.id); }).join('') + '</div>' +
       '<div class="sn" style="margin:4px 0 2px;color:inherit"><b>② 신호(현시 구성) 바꾸기</b> — 직진·좌회전을 떼거나 현시를 나눔</div><div class="row">' + plans().filter(function (p) { return p.kind === 'phase'; }).map(function (p) { return chipB('plan:' + p.id, p.nm, ST.plan === p.id); }).join('') + '</div><div class="sn">' + esc(planOf(ST.plan).why) + ' · 주기 ' + cyc + '초' + (ST.ph ? ' · 초를 고침' : '') + ' · 안은 16~21시(현행 17시 계획이 도는 때)에만 쓰고 21시부터는 두 판 모두 현행 밤 계획</div>';
     if (ST.plan !== 'cur') h += ph.map(function (p, i) { return '<div class="ph"><b>' + (i + 1) + '</b><span>' + esc(p.nm || p.mv.join('+')) + '</span><button data-pd="' + i + ':-5">−5</button><b style="min-width:34px;text-align:center">' + p.d + '초</b><button data-pd="' + i + ':5">+5</button></div>'; }).join('');
@@ -394,7 +394,7 @@
       if (!ST) ST = defState();
       if (!PANEL) { PANEL = document.createElement('div'); PANEL.id = 'm2dSim'; document.body.appendChild(PANEL); PANEL.addEventListener('click', onClick); PANEL.addEventListener('input', onInput); PANEL.addEventListener('change', onChange); }
       PANEL.innerHTML = '<h3>🧪 시뮬 — ' + esc(AREA.nm) + '<button data-simx="1" aria-label="닫기">✕ 닫기</button></h3>' +
-        '<div class="sn">교차로 넷(고속터미널사거리·고속터미널·삼호가든·서울성모병원)과 블록 둘레 길 · 신호 = 교통과 현시도(4031·4028·4034) + T-Data(4019) · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
+        '<div class="sn">교차로 넷(반포사거리·고속터미널·삼호가든·서울성모병원)과 블록 둘레 길 · 신호 = 교통과 현시도(4031·4028·4034) + T-Data(4019) · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
         '<div class="warn">10/18 실측(ITS 속도)과 맞대 보면 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(맞음 50/77) · <br>🏁 <b>현장 결과가 이김</b> — 서울성모병원 시차제(평일 16~20시 서→동 직진 23초 · 형님이 바꾼 것)는 현장에서 「많이 개선」(FK-4034-METER) · 이 시뮬은 반대로 나온다 → 시뮬이 틀린 것으로 본다(서쪽 접근로 수요가 설계값이라 늘 가득) · 다른 안도 현장 결과가 있으면 그것이 먼저</div>' +
         (window.tgLink ? '<div class="row" style="margin:2px 0 4px"><span class="sn" style="margin:0">🧩 엮임 보기</span>' + Object.keys(M.nodes).filter(function (k) { return M.nodes[k].int; }).map(function (k) { return '<button data-simlnk="' + esc(M.nodes[k].int) + '">' + esc(SHORT[k] || M.nodes[k].nm) + '</button>'; }).join('') + '</div>' : '') +
         '<div id="simLive"></div><div id="simRun"></div><div id="simMsg" class="warn" style="display:none"></div><div id="simRes"></div><div id="simHow"></div><div id="simCmp"></div><div id="simCtl"></div>' + srcList();

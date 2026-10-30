@@ -276,12 +276,13 @@
       S.t++;
     };
     function waiting(q) { var lo = 0, hi = q.length; while (lo < hi) { var md = (lo + hi) >> 1; if (q[md].rd <= S.t) lo = md + 1; else hi = md; } return lo; }   // 닿는 때(rd)가 차례대로라 반으로 갈라 센다
+    var SIDEK = {};
     function sample() {
       var ap = {}, tot = 0;
       Object.keys(S.mv).forEach(function (k) { var m = S.mv[k]; if ((M.nodes[m.node] || {}).ty !== 'sig') return; var a = m.node + '.' + m.key.split('.')[0], w = waiting(m.q); ap[a] = (ap[a] || 0) + w; tot += w; });
       var back = 0, bk = {}; Object.keys(S.back).forEach(function (e) { var n9 = S.back[e].length; back += n9; if (n9) bk[e] = n9; });
       var occ = {}; Object.keys(S.L).forEach(function (k) { var L = S.L[k]; if (!L.l.sink && !L.sinkA) occ[k] = Math.round(L.n); });
-      var jam = []; Object.keys(S.N).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; Object.keys(n.legs).forEach(function (lg) { var I = n.legs[lg].in; if (I && S.L[I].n >= JAM * S.L[I].cap) jam.push(id + '.' + lg); }); });
+      var jam = []; Object.keys(S.N).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; Object.keys(n.legs).forEach(function (lg) { var I = n.legs[lg].in; if (!I) return; var SL = SIDEK[I] || (SIDEK[I] = side(M, I)), nn = 0, cc = 0; SL.forEach(function (k9) { if (S.L[k9]) { nn += S.L[k9].n; cc += S.L[k9].cap; } }); if (nn >= JAM * cc) jam.push(id + '.' + lg); });   /* 막힘 = 그 접근로 한 변 전체(앞 신호·갈림부터 정지선까지 · side)가 80% 넘게 참 — 마지막 짧은 토막만 보면 출구 차 몇 대에도 막힘으로 셌다(2026-10-30) */ });
       var att = {}; Object.keys(S.A).forEach(function (id) { var X = S.A[id]; if (!X.a.doors) return; var dq = 0, oq = 0, by = {}; X.a.doors.forEach(function (d) { var a9 = d.mv.reduce(function (s9, m) { return s9 + waiting(m.q); }, 0); dq += a9; oq += d.q9.length; by[d.id] = [a9, d.q9.length]; }); att[id] = { door: dq, out: oq, held: X.held, by: by, occ: X.occ, cap: X.a.capacity, circ: X.circ || 0 }; });
       return { t: S.t, jam: jam, ap: ap, q: tot, back: back, bk: bk, att: att, box: S.boxN, occ: occ };
     }
@@ -321,6 +322,16 @@
     S.inNet = function () { var n = 0; Object.keys(S.L).forEach(function (k) { n += S.L[k].n; }); Object.keys(S.A).forEach(function (k) { (S.A[k].a.doors || []).forEach(function (d) { n += d.q9.length; }); }); Object.keys(S.back).forEach(function (e) { n += S.back[e].length; }); return n; };
     return S;
   }
+  /* 한 변(접근로) = 정지선 길에서 거슬러 올라가 앞 신호·갈림까지 이어진 토막 전체(2026-10-30) — ITS 실측은 신호에서 신호까지 길 전체를 재는데,
+     시뮬은 마지막 짧은 토막(반포대로 호남선 출구→정지선 30m · 차 12대 자리)만 재서 출구 차 몇 대에도 「꽉 참」이 되었다.
+     거슬러 오르는 조건: 그 길이 시작하는 마디가 신호가 아니고 · 그 마디로 들어오는 길이 하나 · 나가는 길이 하나(갈림 앞에서 멈춤) */
+  function side(M, k) {
+    var out = [k], cur = k, inn = {}, outn = {};
+    Object.keys(M.links).forEach(function (id) { var l = M.links[id]; if (l.sink) return; (inn[l.to] = inn[l.to] || []).push(id); (outn[l.fr] = outn[l.fr] || []).push(id); });
+    for (var g = 0; g < 8; g++) { var fr = M.links[cur].fr, N = M.nodes[fr]; if (!N || N.ty === 'sig' || (inn[fr] || []).length !== 1 || (outn[fr] || []).length !== 1) break; cur = inn[fr][0]; if (out.indexOf(cur) >= 0) break; out.unshift(cur); }
+    return out;
+  }
+  function sideOcc(S, s9, L) { var n = 0, c = 0; L.forEach(function (k) { if (!S.L[k]) return; n += s9.occ[k] || 0; c += S.L[k].cap; }); return c ? n / c : 0; }
   function run(M, scen, alt) { var S = create(M, scen, alt); S.runTo(S.end); return S; }
   /* 평소 속도로 맞추기(자동 구역) — 접근로 정지선 링크의 평소 속도(ITS 가운데값 · links[].nsp 「요일 갈래-시」)가 6km/h 넘는데 시뮬이 막히면(점유 80%↑) 그 들어오는 길 수요를 줄이고,
      평소에도 막히는데(6 이하 두 시간↑) 시뮬이 안 막히면 늘린다 · 안쪽 길이 어긋나면 전체를 조금씩 · 10번 되풀이 · 결과는 대수가 아니라 「설계값 배율」(tools/sim/sim-cal.py 가 구역 자료 cal 칸에) */
@@ -355,5 +366,5 @@
     return { date: date, dk: dk, best: { hit: BEST.hit, n: BEST.n, mh: BEST.mh, mn: BEST.mn, jh: BEST.jh, jn: BEST.jn, it: BEST.it }, scale: sc, all: Math.round(all * 100) / 100, hist: hist, src: '평소 속도(ITS 가운데값 · spd-normal-six · 요일 갈래 ' + dk + ' · ' + H0 + '~' + H1 + '시)로 맞춘 설계값 배율 — 대수 자료가 아니다' };
   }
   function load(area, v) { return fetch('data/sim-' + (area || 'banpo') + '.json' + (v ? '?v=' + v : '')).then(function (r) { return r.json(); }); }
-  window.tgSim = { load: load, create: create, run: run, calibrate: calibrate, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
+  window.tgSim = { load: load, create: create, run: run, calibrate: calibrate, side: side, sideOcc: sideOcc, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
 })();

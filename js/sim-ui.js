@@ -13,7 +13,7 @@
       { id: 'So', ic: '⤴', nm: '사평대로 — 메리어트·백화점 나오는 곳(동그라미 건물 옆길)', ll: [37.502696, 127.004969] }, { id: 'W', ic: '🚌', nm: '반포대로 — 호남선·백화점 들어가는 곳', ll: [37.503699, 127.002158] },
       { id: 'Wo', ic: '⤴', nm: '반포대로 — 호남선 버스·백화점 나오는 곳', ll: [37.504421, 127.001575] }],   /* 서쪽 문 = 소유자 현장 지식(2026-10-25) — 반포사거리(4031)에서 나오는 곳 20% · 들어가는 곳 45% · 겹치지 않음 */
     // 막힘 고리 네 변(data/onto-loops.json LOOP-banpo-terminal 과 같은 차례) — 지금 ITS 속도를 받는 링크 · 시뮬 길 · 신반포로는 4031→4019 470m 링크(1210026104)가 ITS 에 안 와서 앞 224m 조각
-    legs: [{ nm: '신반포로 →고속터미널', its: '1210026102', sim: '4031>G' }, { nm: '잠원로 →삼호가든', its: '1210026203', sim: '4019>4028' }, { nm: '사평대로 →서울성모병원', its: '1210024802', sim: 'SO>4034' }, { nm: '반포대로 →반포사거리', its: '1210025103', sim: 'WO>4031' }] };
+    legs: [{ nm: '신반포로 →고속터미널', its: '1210026102', sim: 'G>4019' }, { nm: '잠원로 →삼호가든', its: '1210026203', sim: '4019>4028' }, { nm: '사평대로 →서울성모병원', its: '1210024802', sim: 'SO>4034' }, { nm: '반포대로 →반포사거리', its: '1210025103', sim: 'WO>4031' }] };
   var SHORT = { '4031': '반포사거리', '4019': '고속터미널', '4028': '삼호가든', '4034': '서울성모병원', '4032': '반포대교남단' };
   var M = null, A = null, B = null, RUN = 0, SPD = 600, LAST = 0, PANEL = null, CH = null, ST = null;
   function $(id) { return document.getElementById(id); }
@@ -101,16 +101,16 @@
     var cmp = '';
     if (A && age <= 20) { var t9 = now.getHours() * 3600 + now.getMinutes() * 60, sm = null; A.samp.forEach(function (x) { if (Math.abs(x.t - t9) < 60) sm = x; });
       var today = [3, 0, 0, 0, 0, 1, 2][window.tgSim.dowOf(ST.date)] === dk;
-      if (sm && today) { var hit = 0, nn = 0; AREA.legs.forEach(function (g, i) { var v = legSpd(i, LIVE.m); if (v == null) return; nn++; var sj = sm.occ[g.sim] >= 0.8 * A.L[g.sim].cap; if (sj === (v <= 5)) hit++; }); cmp = '<br>지금 시각(' + hh(t9) + ') 시뮬 현행 판과 맞대 봄 — 네 변 가운데 <b>' + hit + '/' + nn + '</b> 맞음(막힘 = 실측 5km/h 이하 · 시뮬 80% 넘게 참)'; }
+      if (sm && today) { var hit = 0, nn = 0; AREA.legs.forEach(function (g, i) { var v = legSpd(i, LIVE.m); if (v == null) return; nn++; var sj = sideR(A, sm, g.sim) >= 0.8; if (sj === (v <= 5)) hit++; }); cmp = '<br>지금 시각(' + hh(t9) + ') 시뮬 현행 판과 맞대 봄 — 네 변 가운데 <b>' + hit + '/' + nn + '</b> 맞음(막힘 = 실측 5km/h 이하 · 시뮬 80% 넘게 참)'; }
       else if (!today) cmp = '<br><small>지금 요일 갈래와 고른 날이 달라 시각별로 맞대 보지 않는다 — 오늘 요일을 고르면 맞대 본다</small>'; else cmp = '<br><small>시뮬 시계가 지금 시각(' + hh(t9) + ')에 닿으면 맞대 본다(16~23시)</small>'; }
     el.innerHTML = '<div class="sn" style="color:inherit;background:rgba(14,165,233,.08);border-radius:10px;padding:6px 8px">📡 <b>지금 실측</b>(ITS · ' + hh(new Date(LIVE.at * 1000).getHours() * 3600 + new Date(LIVE.at * 1000).getMinutes() * 60) + (age > 20 ? ' · <b style="color:#dc2626">' + Math.round(age) + '분 지남 — 판정 안 함</b>' : '') + ') 막힘 고리 네 변: ' + cells + (nR ? ' — 막힌 변 ' + jamR + '/' + nR : '') + cmp + '</div>';
   }
   // ---- 받기 ----
   function need(cb) {
     if (M && window.tgSim) return cb();
-    var go = function () { window.tgSim.load(AREA.id, '7').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
+    var go = function () { window.tgSim.load(AREA.id, '8').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=23'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=24'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   // ---- 판 ----
   var DAYS = [['1018', '10/18(일) 재현', '2026-10-18'], ['1011', '10/11(일) 평소', '2026-10-11'], ['mt', '평일(월~목)', '2026-10-21'], ['fr', '금요일', '2026-10-23'], ['sa', '토요일', '2026-10-24'], ['su', '일요일', '2026-10-25']];   // 소유자 「평일·금·토·일도 변수로」 — 신호 계획·고속버스 시간표·평소 속도 모두 이 네 갈래
@@ -299,8 +299,10 @@
   var SIN = ['4031>G', 'G>4019'];   /* 신반포로 — 반포사거리~고속터미널 블록 쪽 차로 */
   function occR(S, s9, k) { var L = S.L[k]; return L ? (s9.occ[k] || 0) / L.cap : 0; }
   function legsSim() { return AREA.legs.map(function (g) { return g.sim; }).filter(function (k) { return M.links[k]; }); }
+  var SIDEC = {}; function sideL(k) { return SIDEC[k] || (SIDEC[k] = window.tgSim.side(M, k)); }   /* 한 변 = 앞 신호·갈림부터 정지선까지 이어진 토막 전체(엔진 side) */
+  function sideR(S, s9, k) { return window.tgSim.sideOcc(S, s9, sideL(k)); }
   function para(S) { var P = 0, T = 0, sm = 0, mx = 0, n = 0, cp = SIN.reduce(function (a, k) { return a + (S.L[k] ? S.L[k].cap : 0); }, 0);
-    S.samp.forEach(function (s9) { var c = legsSim().filter(function (k) { return occR(S, s9, k) >= 0.8; }).length; if (c >= 3) P++; else if (s9.jam.length) T++;
+    S.samp.forEach(function (s9) { var c = legsSim().filter(function (k) { return sideR(S, s9, k) >= 0.8; }).length; if (c >= 3) P++; else if (s9.jam.length) T++;
       var o = cp ? SIN.reduce(function (a, k) { return a + (s9.occ[k] || 0); }, 0) / cp : 0; sm += o; n++; if (o > mx) mx = o; });
     return { para: P, temp: T, sinAvg: n ? sm / n : 0, sinMax: mx, sinNow: n ? (function (s9) { return cp ? SIN.reduce(function (a, k) { return a + (s9.occ[k] || 0); }, 0) / cp : 0; })(S.samp[n - 1]) : 0 }; }
   var NAMEK = { '4031>G': '신반포로(반포사거리 → 신세계 북문)', 'G>4019': '신반포로(신세계 북문 → 고속터미널)', '4019>4028': '잠원로(고속터미널 → 삼호가든)', '4028>SI': '사평대로(삼호가든 → 메리어트 들어가는 곳)', 'SO>4034': '사평대로(메리어트 나오는 곳 → 서울성모병원)',
@@ -314,7 +316,7 @@
       var sh = s9.att && s9.att.shin;
       if (!full && sh && sh.cap && sh.occ >= sh.cap) { full = true; ev.push([s9.t, '🅿 신세계·메리어트 주차장 만차 — 문이 닫혀 들어가려는 차가 길에 서고, 블록을 한 바퀴 돌아 다음 문으로']); }
       if (sh && !seen.out && sh.out >= 100) { seen.out = 1; ev.push([s9.t, '🚗 나가려는 차 100대 넘게 대기 — 본선이 차서 합류할 틈이 없음(나가야 자리가 나는데 못 나감)']); }
-      var c = legsSim().filter(function (k) { return occR(S, s9, k) >= 0.8; }).length;
+      var c = legsSim().filter(function (k) { return sideR(S, s9, k) >= 0.8; }).length;
       if (!pd && c >= 3) { pd = true; ev.push([s9.t, '⛔ 마비 — 블록 둘레 네 변 가운데 ' + c + '곳이 막혀, 블록을 도는 차가 서로의 꼬리를 막는다']); }
     }); return ev; }
   function whyCard(S, nm) { var ev = chain(S), p = para(S);
@@ -414,7 +416,7 @@
       if (!PANEL) { PANEL = document.createElement('div'); PANEL.id = 'm2dSim'; document.body.appendChild(PANEL); PANEL.addEventListener('click', onClick); PANEL.addEventListener('input', onInput); PANEL.addEventListener('change', onChange); }
       PANEL.innerHTML = '<h3>🧪 시뮬 — ' + esc(AREA.nm) + '<button data-simx="1" aria-label="닫기">✕ 닫기</button></h3>' +
         '<div class="sn">교차로 넷(반포사거리·고속터미널·삼호가든·서울성모병원)과 블록 둘레 길 · 신호 = 교통과 현시도(4031·4028·4034) + T-Data(4019) · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
-        '<div class="warn">10/18 실측(ITS 속도)과 맞대 보면 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(맞음 50/77) · <br>🏁 <b>현장 결과가 이김</b> — 서울성모병원 시차제(평일 16~20시 서→동 직진 23초 · 형님이 바꾼 것)는 현장에서 「많이 개선」(FK-4034-METER) · 이 시뮬은 반대로 나온다 → 시뮬이 틀린 것으로 본다(서쪽 접근로 수요가 설계값이라 늘 가득) · 다른 안도 현장 결과가 있으면 그것이 먼저</div>' +
+        '<div class="warn">10/18 실측(ITS 속도)과 맞대 보면 막히는 모양·풀리는 시각은 맞고 블록 바깥 길(반포대교·잠원로 북쪽·사평대로)로 번진 막힘은 덜 그린다(맞음 53/77 · 평일 4일 226/264 · 한 변 = 앞 신호부터 정지선까지 전체) · <br>🏁 <b>현장 결과가 이김</b> — 서울성모병원 시차제(평일 16~20시 서→동 직진 23초 · 형님이 바꾼 것)는 현장에서 「많이 개선」(FK-4034-METER) · 이 시뮬은 반대로 나온다 → 시뮬이 틀린 것으로 본다(서쪽 접근로 수요가 설계값이라 늘 가득) · 다른 안도 현장 결과가 있으면 그것이 먼저</div>' +
         (window.tgLink ? '<div class="row" style="margin:2px 0 4px"><span class="sn" style="margin:0">🧩 엮임 보기</span>' + Object.keys(M.nodes).filter(function (k) { return M.nodes[k].int; }).map(function (k) { return '<button data-simlnk="' + esc(M.nodes[k].int) + '">' + esc(SHORT[k] || M.nodes[k].nm) + '</button>'; }).join('') + '</div>' : '') +
         '<div id="simLive"></div><div id="simRun"></div><div id="simMsg" class="warn" style="display:none"></div><div id="simRes"></div><div id="simHow"></div><div id="simCmp"></div><div id="simCtl"></div>' + srcList();
       PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; CMP = null; paintCmp(); paintCtl(); start(); paintHow(); liveGet();

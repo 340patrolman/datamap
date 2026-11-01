@@ -194,8 +194,16 @@
         ck('🚨 시내 돌발(UTIC) — 서울 10분 파일이 신선하면 서울 줄은 그 파일로(옛 한 장 서울 줄 빼고) · 시각 꼴 YYYY-MM-DD HH:MM · credit 「경찰청 도시교통정보센터(UTIC) 제공」', U9 && /UTIC\) 제공/.test(U9.credit) && (U9.seoul10 ? L9.length > 0 && O9.length === 0 && L9.every(function (r) { return /^\d{4}-\d\d-\d\d \d\d:\d\d$/.test(r[6]) && isFinite(r.p[0]); }) : true), U9 ? (U9.seoul10 ? '서울 10분 ' + L9.length + '건 · 옛 서울 ' + O9.length : '옛 한 장만(서울 10분 파일이 40분 넘음)') + ' · 전체 ' + U9.items.length : '안 읽힘'); } catch (e) { ck('UTIC 돌발 검사', false, e.message); }
       try { var pr = m.petRows({ k: '11650510', gcd: '11650' }), prx = pr.replace(/<[^>]+>/g, ' '), pc = m.petRows({ k: '41281000', gcd: '41281' }).replace(/<[^>]+>/g, ' ');
         ck('🐕 동 카드 반려동물 — 서초구 공식(개 23,515 · 고양이 271 · 가구 1천당 152) · 같은 시·도 순위 막대 · 동 어림은 「어림」 표시 · 고양이 최소값 · 고양시 구는 시 전체 값 · 추정(서초 개 3.9만~4.2만) 다른 색 · 시 단위 값에는 추정 없음', /23,515/.test(prx) && /271/.test(prx) && /152/.test(prx) && /어림/.test(prx) && /최소값/.test(prx) && /고양시 전체 값/.test(pc) && /실제로 기르는 수\(추정\)/.test(prx) && /3\.9만~4\.2만/.test(prx) && !/실제로 기르는/.test(pc), prx.replace(/\s+/g, ' ').slice(0, 160)); } catch (e) { ck('반려동물 카드 검사', false, e.message); }
+      /* 🧪 고른 자리 시뮬(sim-pick · 2026-11-02) — 서초역 둘레 750m 를 이 기기에서 엮으면 tools/sim/area-bake.py(여섯 구 도로망)와 같은 답: 신호 11 · 길 44 · 들어오는 길 13 ·
+         조사 지점은 길 이름(괄호 앞)이 같은 길만(반포대로27길·34길 같은 골목은 설계값) · 막히는 교차로 줄 세우기가 느린 차례 */
+      (window.tgSimPick ? window.tgSimPick.build(37.4919, 127.0076, 750, 'chk').then(function (d) {
+        var ks = Object.keys(d.nodes), es = Object.keys(d.entry), alley = es.filter(function (e) { return /\d+길/.test(d.links[e].nm) && d.entry[e].spot; }), R9 = window.tgSimPick.rank(37.4919, 127.0076, 0, 18);
+        var srt = R9.every(function (r, i) { return !i || R9[i - 1].v <= r.v; });
+        ck('🧪 고른 자리 시뮬 — 서초역 750m: 신호 교차로 11 · 길 44 · 들어오는 길 13(area-bake.py 와 같음) · 골목에 큰길 교통량 0 · 막히는 교차로가 느린 차례',
+          ks.length === 11 && Object.keys(d.links).length === 44 && es.length === 13 && !alley.length && R9.length >= 5 && srt, ks.length + '/' + Object.keys(d.links).length + '/' + es.length + ' 골목 ' + alley.length + ' 줄 ' + R9.length + ' 차례 ' + srt);
+      }).catch(function (e9) { ck('🧪 고른 자리 시뮬', false, String(e9)); }) : Promise.resolve(ck('🧪 고른 자리 시뮬', false, 'tgSimPick 없음'))).then(function () {
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
-      setTimeout(send, 80); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
+      setTimeout(send, 80); }); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }
   }
 })();

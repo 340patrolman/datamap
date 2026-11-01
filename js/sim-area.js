@@ -210,9 +210,15 @@
   }
   function onInput(e) { var t = e.target; if (t.getAttribute('data-sa') === 'k') { ST.k = +t.value; var em = t.parentNode.querySelector('em'); if (em) em.textContent = ST.k + '%'; } }
   function onChange(e) { var t = e.target, k = t.getAttribute('data-sa'); if (k === 'k') reset(); else if (k === 'sel') { ST.sel = t.value; paintCtl(); } }
-  function open(id) {
+  /* 🧪 고른 자리(js/sim-pick.js 가 이 기기에서 엮은 구역 · 2026-11-02) — 미리 구운 구역과 같은 판으로 연다 · ar = 목록 칸과 같은 꼴(맞춤 결과) */
+  function openDoc(doc, ar) {
+    var go = function () { AR = ar; M = doc; M.actions = Object.keys(M.entry).map(function (e) { return { id: 'x:' + e, nm: '막기 — ' + (M.links[e].nm || e), closeEntry: [e] }; }); ST = null; RES = null; geo(); show(); };
+    if (window.tgSim) go(); else { var s = document.createElement('script'); s.src = 'js/sim.js?v=24'; s.onload = go; document.head.appendChild(s); }
+  }
+  function open(id) { need(id, show); }
+  function show() {
     css(); if (window.tgSimUI && window.tgSimUI.close) window.tgSimUI.close();
-    need(id, function () {
+    (function () {
       if (!ST) ST = defState();
       if (!PANEL) { PANEL = document.createElement('div'); PANEL.id = 'm2dSimA'; document.body.appendChild(PANEL); PANEL.addEventListener('click', onClick); PANEL.addEventListener('input', onInput); PANEL.addEventListener('change', onChange); }
       var nm = Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig' && !/\(연등\)/.test(M.nodes[k].nm || ''); }).map(function (k) { return M.nodes[k].nm; });
@@ -221,13 +227,13 @@
         '<div class="warn">평소 속도(ITS 실측 · 평일 16~21시)와 맞대 본 맞음 <b>' + AR.mh + '/' + AR.mn + '</b>칸 · 실제로 막히는 칸 가운데 시뮬도 막힌 것 <b>' + AR.jh + '/' + AR.jn + '</b>' + (AR.jn && AR.jh / AR.jn < 0.5 ? ' — <b>막힘을 잘 못 낸다</b>(실제보다 덜 막히게 나온다)' : '') + ' · 반포 블록(손으로 짠 구역)보다 거칠다 · 신호 없는 교차로는 그냥 지나가고 회전 금지는 아직 안 넣었다 · 구역 밖에서 밀려 들어오는 막힘은 못 낸다(나가는 길은 늘 비어 있다고 봄) · 🏁 현장 결과가 이김(현장에서 본 것과 다르면 시뮬이 틀린 것)</div>' +
         lnkRow() + '<div id="simALive"></div><div id="simARun"></div><div id="simARes"></div><div id="simACtl"></div>' + srcList();
       PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; paintCtl(); start(); liveGet();
-    });
+    })();
   }
   /* 🧩 엮임 보기 — 시뮬 교차로마다 온톨로지 번호(int · INT-<T-GIS 코드>)로 연결 그림을 연다(근거·이유·결과 · 이 교차로에서 시험해 본 대책 SCN) */
   function lnkRow() { if (!window.tgLink) return ''; var L = Object.keys(M.nodes).filter(function (k) { var n = M.nodes[k]; return n.ty === 'sig' && n.int && !/\(연등\)/.test(n.nm || ''); }); if (!L.length) return '';
     return '<div class="row" style="margin:2px 0 4px"><span class="sn" style="margin:0">🧩 엮임 보기</span>' + L.map(function (k) { return '<button data-sa="lnk:' + esc(M.nodes[k].int) + '">' + esc(M.nodes[k].nm) + '</button>'; }).join('') + '</div>'; }
   function close() { stop(); if (PANEL) PANEL.classList.remove('on'); }
-  window.tgSimArea = { open: open, close: close, near: nearArea, areas: function () { return IDX; }, state: function () { return ST; }, sims: function () { return [A, B]; } };
+  window.tgSimArea = { open: open, openDoc: openDoc, close: close, near: nearArea, areas: function () { return IDX; }, state: function () { return ST; }, sims: function () { return [A, B]; } };
   function boot() {
     css(); fetch('data/sim-areas.json?v=1').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (!j) return; IDX = j; cardHook(); chip(); }).catch(function () {});
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && PANEL && PANEL.classList.contains('on')) close(); });

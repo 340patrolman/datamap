@@ -138,7 +138,8 @@ def main():
                 # 교통량 조사 — 같은 길 이름 · 1.2km 안
                 sp = None
                 for s in vol.values():
-                    if a['nm'] and a['nm'][:3] in s['name'] and dist((s['lon'], s['lat']), sig[no]['c']) < 1200: sp = s; break
+                    # 조사 지점의 길 이름(괄호 앞)과 같은 길만(2026-11-02) — 앞 세 글자로 맞추면 반포대로27길(1차로 골목)이 반포대로 교통량 4,443대/시를 받았다 · 이 날 전에 구운 구역은 다시 구울 때 바뀐다
+                    if a['nm'] and a['nm'] == s['name'].split('(')[0].strip() and dist((s['lon'], s['lat']), sig[no]['c']) < 1200: sp = s; break
                 entry[lid] = {'spot': sp['id'], 'share': 1.0, 'src': '조사 ' + sp['id'] + ' ' + sp['name'] + ' 두 방향 평균(같은 길 1.2km 안)'} if sp else {'perLane': 300, 'src': '설계값 — 조사 지점 없음 · 차로 × 차로당 300대/시'}
                 if sp: used_spot[sp['id']] = vol[sp['id']]
             o = d.get('out')

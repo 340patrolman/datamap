@@ -202,6 +202,17 @@
         ck('🧪 고른 자리 시뮬 — 서초역 750m: 신호 교차로 11 · 길 44 · 들어오는 길 13(area-bake.py 와 같음) · 골목에 큰길 교통량 0 · 막히는 교차로가 느린 차례',
           ks.length === 11 && Object.keys(d.links).length === 44 && es.length === 13 && !alley.length && R9.length >= 5 && srt, ks.length + '/' + Object.keys(d.links).length + '/' + es.length + ' 골목 ' + alley.length + ' 줄 ' + R9.length + ' 차례 ' + srt);
       }).catch(function (e9) { ck('🧪 고른 자리 시뮬', false, String(e9)); }) : Promise.resolve(ck('🧪 고른 자리 시뮬', false, 'tgSimPick 없음'))).then(function () {
+      /* 🔀 합류부 시뮬(sim-merge · 2026-11-02) — 합류부 목록 · 같은 씨앗이면 같은 답 · 가속차로를 늘리면 억지 끼어들기+끝 멈춤이 준다(세 벌) · 차로가 더해지는 합류는 억지 끼어들기 0 · 값이 모두 수 */
+        var SM = window.tgSimMerge; if (!SM) return ck('🔀 합류부 시뮬', false, 'tgSimMerge 없음');
+        return SM.load().then(function (j) {
+          var m = j.items.filter(function (x) { return x.nm === '반포동 115-6'; })[0], g = j.items.filter(function (x) { return x.outL >= x.inL + x.ramp[1] && x.gr <= 2; })[0];
+          var c = SM.cfgOf(m, null), r1 = SM.run(JSON.parse(JSON.stringify(c)), 7).m, r2 = SM.run(JSON.parse(JSON.stringify(c)), 7).m, a0 = 0, a1 = 0, fin = true;
+          [7, 108, 209].forEach(function (sd) { var x = SM.run(JSON.parse(JSON.stringify(c)), sd).m, cb = JSON.parse(JSON.stringify(c)); cb.La += 100; var y = SM.run(cb, sd).m; a0 += x.forced + x.stall; a1 += y.forced + y.stall; [x, y].forEach(function (q) { Object.keys(q).forEach(function (k) { if (typeof q[k] === 'number' && !isFinite(q[k])) fin = false; }); }); });
+          var gg = SM.run(SM.cfgOf(g, null), 7).m, same = JSON.stringify(r1) === JSON.stringify(r2);
+          ck('🔀 합류부 시뮬 — 합류부 200곳↑ · 같은 씨앗 같은 답 · 가속차로 +100m 에 억지 끼어들기+끝 멈춤 줄어듦(세 벌) · 차로 더해지는 합류는 억지 끼어들기 0 · 값이 모두 수',
+            j.items.length >= 200 && same && a1 < a0 && gg.forced === 0 && gg.stall === 0 && fin && r1.merges > 0, j.items.length + ' · 같음 ' + same + ' · ' + a0 + '→' + a1 + ' · 더해짐 ' + (g && g.nm) + ' 억지 ' + gg.forced + ' · 합류 ' + r1.merges);
+        }).catch(function (e8) { ck('🔀 합류부 시뮬', false, String(e8)); });
+      }).then(function () {
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       setTimeout(send, 80); }); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }

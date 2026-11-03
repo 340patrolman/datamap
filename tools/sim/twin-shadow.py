@@ -61,11 +61,10 @@ C.days.forEach(function(d){var S=tgSim.run(M,{date:d,seed:5,from:16*3600,to:21*3
 C.cases.forEach(function(c){var fill={};ITS.forEach(function(k){var v=c.v[M.links[k].its];if(v==null)return;var f=Math.max(0,Math.min(1,1-v/vf(M.links[k])));tgSim.side(M,k).forEach(function(k2){fill[k2]=Math.max(fill[k2]||0,f);});});
   var S=tgSim.run(M,{date:c.d,seed:5,from:16*3600,to:c.t0+3600+300,init:{at:c.t0,fill:fill}}),o={};
   ITS.forEach(function(k){o[k]={b:occIn(S,k,c.t0+60,c.t0+360)};C.hz.forEach(function(h){o[k][h]=occAt(S,k,c.t0+h);});});
-  /* 트윈2 = 채움 + 빼기 — 실측으로 덜 찬 길은 그 길에 줄 선 차를 뒤에서부터 빼 실측 채움까지 낮춘다(엔진 밖에서 · 시험) */
-  var S2=tgSim.create(M,{date:c.d,seed:5,from:16*3600,to:c.t0+3600+300,init:{at:c.t0,fill:fill}}),dr=0;S2.runTo(c.t0+1);
-  Object.keys(fill).forEach(function(k2){var L=S2.L[k2];if(!L||L.l.sink)return;var ex=Math.round(L.n-fill[k2]*L.cap);if(ex<=0)return;
-    Object.keys(S2.mv).forEach(function(mk){var m=S2.mv[mk];if(m.fr!==k2)return;while(ex>0&&m.q.length){var v=m.q.pop();v.te=S2.t;v.gone=1;L.n--;ex--;dr++;}});});
-  S2.runTo(S2.end);var o2={};ITS.forEach(function(k){o2[k]={b:occIn(S2,k,c.t0+60,c.t0+360)};C.hz.forEach(function(h){o2[k][h]=occAt(S2,k,c.t0+h);});});
+  /* 경계 정답(oracle · 진단 전용 — 예측에는 못 씀) = 트윈 + t0 뒤에도 들어오는 길(entry)만 그 시각 실측 채움으로 붙듦(scen.bnd · 안쪽은 시뮬에 맡김) — 「밖에서 들어오는 양」 탓인지 「안쪽 구조」 탓인지 가름 */
+  var bnd=c.bs.map(function(b){var f={};Object.keys(M.entry).forEach(function(k){var l=M.links[k];if(!l||!l.its)return;var v=b.v[l.its];if(v==null)return;f[k]=Math.max(0,Math.min(1,1-v/vf(l)));});return {at:b.at,fill:f};});
+  var S2=tgSim.run(M,{date:c.d,seed:5,from:16*3600,to:c.t0+3600+300,init:{at:c.t0,fill:fill},bnd:bnd}),o2={};
+  ITS.forEach(function(k){o2[k]={b:occIn(S2,k,c.t0+60,c.t0+360)};C.hz.forEach(function(h){o2[k][h]=occAt(S2,k,c.t0+h);});});var dr=bnd.length;
   R.twin.push({d:c.d,t0:c.t0,o:o,o2:o2,ini:S.iniN||0,dr:dr});});
 document.getElementById('out').textContent=JSON.stringify(R);
 }catch(e){document.getElementById('out').textContent='ERR '+e.stack;}
@@ -103,12 +102,14 @@ for nm in AREAS:
         for t0 in TIMES:
             v0 = near(d, t0)
             if not v0 or not any(near(d, t0 + h) for h in HZ): continue
-            cases.append({'d': d, 't0': t0, 'v': {k: v0[k] for k in its if k in v0}}); days.add(d)
+            ent = {M['links'][k]['its'] for k in M['entry'] if k in M['links'] and M['links'][k].get('its')}
+            bs = [{'at': int(t), 'v': {k: m[k] for k in ent if k in m}} for t, m in SNAP[d] if t0 < t <= t0 + HZ[-1] + 300]
+            cases.append({'d': d, 't0': t0, 'v': {k: v0[k] for k in its if k in v0}, 'bs': bs}); days.add(d)
     if not cases: print(nm, '맞대 볼 실측 없음'); continue
     Ts = sorted({c['t0'] + h for c in cases for h in HZ})
     t_0 = datetime.datetime.now()
     R = run_js(M, {'days': sorted(days), 'Ts': Ts, 'cases': cases, 'hz': list(HZ)})
-    S = {v: {h: new() for h in HZ} for v in ('twin', 'twin2', 'plain', 'keep', 'mix')}
+    S = {v: {h: new() for h in HZ} for v in ('twin', 'oracle', 'plain', 'keep', 'mix')}
     DG = collections.Counter()
     k2its = {k: M['links'][k]['its'] for k in M['links'] if M['links'][k].get('its') and not M['links'][k].get('sink')}
     for c, tw in zip(cases, R['twin']):
@@ -122,7 +123,7 @@ for nm in AREAS:
                 ot, op = tw['o'][k][str(h)], R['plain'][c['d']][k][str(c['t0'] + h)]
                 if ot is None or op is None: continue
                 o2 = tw['o2'][k][str(h)]
-                if o2 is not None: tally(S['twin2'][h], o2 >= 0.8, rj, rj != j0)
+                if o2 is not None: tally(S['oracle'][h], o2 >= 0.8, rj, rj != j0)
                 ob = tw['o'][k]['b']
                 mix = j0 if ob is None or (ob >= 0.8) == (ot >= 0.8) else ot >= 0.8   # 섞음 = 지금 실측 상태에서 출발해 시뮬이 「바뀐다」고 할 때만 바꿈
                 if os.environ.get('TWIN_DIAG') and h == 1800: DG[(k, 'fp' if ot >= 0.8 and not rj else 'fn' if rj and ot < 0.8 else 'ok')] += 1
@@ -133,9 +134,9 @@ for nm in AREAS:
     OUT['areas'][nm] = {'nm': M.get('nm'), 'cases': len(cases), 'sec': round((datetime.datetime.now() - t_0).total_seconds()),
                         'score': {v: {str(h // 60): dict(S[v][h]) for h in HZ} for v in S}}
     def pct(c): return '%d/%d' % (c['hit'], c['n']) + ('·막힘%d/%d' % (c['jh'], c['jn']) if c['jn'] else '') + ('·바뀜%d/%d' % (c['ch'], c['cn']) if c['cn'] else '')
-    print(nm, len(cases), '판', OUT['areas'][nm]['sec'], '초 |', ' | '.join('%s %d분 %s' % (v, h // 60, pct(S[v][h])) for h in HZ for v in ('twin', 'twin2', 'plain', 'keep', 'mix')), flush=True)
+    print(nm, len(cases), '판', OUT['areas'][nm]['sec'], '초 |', ' | '.join('%s %d분 %s' % (v, h // 60, pct(S[v][h])) for h in HZ for v in ('twin', 'oracle', 'plain', 'keep', 'mix')), flush=True)
 
-tot = {v: {str(h // 60): sum((collections.Counter(a['score'][v][str(h // 60)]) for a in OUT['areas'].values()), collections.Counter()) for h in HZ} for v in ('twin', 'twin2', 'plain', 'keep', 'mix')}
+tot = {v: {str(h // 60): sum((collections.Counter(a['score'][v][str(h // 60)]) for a in OUT['areas'].values()), collections.Counter()) for h in HZ} for v in ('twin', 'oracle', 'plain', 'keep', 'mix')}
 OUT['total'] = {v: {h: dict(c) for h, c in d.items()} for v, d in tot.items()}
 dst = os.path.join(ROOT, 'data', 'twin-shadow.json') if not os.environ.get('TWIN_DRY') else os.path.join(tempfile.gettempdir(), 'twin-shadow.json')
 json.dump(OUT, open(dst, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

@@ -9,7 +9,7 @@
 #   실측 속도 → 길 채움 = Greenshields(1935) 밀도-속도 직선: 채움 = 1 − 속도 ÷ 자유 속도(그 길 평소 속도 가운데 가장 빠른 시각 값) — 설계값
 #   개념 시연 — 예측·보증 아님 · 결과는 data/twin-shadow.json(모은 칸 수만 · 시각별 실측 값은 안 담음)
 #   쓰기: py -3.12 -X utf8 tools/sim/twin-shadow.py [구역…] [--times 16:30,17:30,18:30,19:30] [--days 14] [--days-parity odd|even]
-#   (TWIN_DRY=1 이면 결과를 임시 폴더에 — data/twin-shadow.json 을 안 덮음)
+#   (TWIN_SCEN='{"tsg":1}' 이면 엔진 시험 스위치를 모든 시뮬에 · TWIN_DRY=1 이면 결과를 임시 폴더에 — data/twin-shadow.json 을 안 덮음)
 import os, sys, json, gzip, glob, subprocess, tempfile, re, datetime, collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -52,18 +52,18 @@ def near(day, T):
 JS = open(os.path.join(ROOT, 'js', 'sim.js'), encoding='utf-8').read()
 RUNNER = r'''
 try{
-var M=__M,C=__C,R={plain:{},twin:[]},ITS=Object.keys(M.links).filter(function(k){var l=M.links[k];return l.its&&!l.sink;});
+var M=__M,C=__C,X=C.x||{},R={plain:{},twin:[]},ITS=Object.keys(M.links).filter(function(k){var l=M.links[k];return l.its&&!l.sink;});
 function vf(l){var a=l.nsp?Object.keys(l.nsp).map(function(k){return l.nsp[k];}):[];return a.length?Math.max.apply(null,a):50;}
 function occIn(S,k,a,b){var n=0,c=0;S.samp.forEach(function(s){if(s.t>=a&&s.t<=b){n+=(s.occ[k]||0);c++;}});return c?n/c/S.L[k].cap:null;}
 function occAt(S,k,T){var n=0,c=0;S.samp.forEach(function(s){if(Math.abs(s.t-T)<=300){n+=(s.occ[k]||0);c++;}});return c?n/c/S.L[k].cap:null;}
-C.days.forEach(function(d){var S=tgSim.run(M,{date:d,seed:5,from:16*3600,to:21*3600}),o={};
+C.days.forEach(function(d){var S=tgSim.run(M,Object.assign({date:d,seed:5,from:16*3600,to:21*3600},X)),o={};
   ITS.forEach(function(k){o[k]={};C.Ts.forEach(function(T){o[k][T]=occAt(S,k,T);});});R.plain[d]=o;});
 C.cases.forEach(function(c){var fill={};ITS.forEach(function(k){var v=c.v[M.links[k].its];if(v==null)return;var f=Math.max(0,Math.min(1,1-v/vf(M.links[k])));tgSim.side(M,k).forEach(function(k2){fill[k2]=Math.max(fill[k2]||0,f);});});
-  var S=tgSim.run(M,{date:c.d,seed:5,from:16*3600,to:c.t0+3600+300,init:{at:c.t0,fill:fill}}),o={};
+  var S=tgSim.run(M,Object.assign({date:c.d,seed:5,from:16*3600,to:c.t0+3600+300,init:{at:c.t0,fill:fill}},X)),o={};
   ITS.forEach(function(k){o[k]={b:occIn(S,k,c.t0+60,c.t0+360)};C.hz.forEach(function(h){o[k][h]=occAt(S,k,c.t0+h);});});
   /* 경계 정답(oracle · 진단 전용 — 예측에는 못 씀) = 트윈 + t0 뒤에도 들어오는 길(entry)만 그 시각 실측 채움으로 붙듦(scen.bnd · 안쪽은 시뮬에 맡김) — 「밖에서 들어오는 양」 탓인지 「안쪽 구조」 탓인지 가름 */
   var bnd=c.bs.map(function(b){var f={};Object.keys(M.entry).forEach(function(k){var l=M.links[k];if(!l||!l.its)return;var v=b.v[l.its];if(v==null)return;f[k]=Math.max(0,Math.min(1,1-v/vf(l)));});return {at:b.at,fill:f};});
-  var S2=tgSim.run(M,{date:c.d,seed:5,from:16*3600,to:c.t0+3600+300,init:{at:c.t0,fill:fill},bnd:bnd}),o2={};
+  var S2=tgSim.run(M,Object.assign({date:c.d,seed:5,from:16*3600,to:c.t0+3600+300,init:{at:c.t0,fill:fill},bnd:bnd},X)),o2={};
   ITS.forEach(function(k){o2[k]={b:occIn(S2,k,c.t0+60,c.t0+360)};C.hz.forEach(function(h){o2[k][h]=occAt(S2,k,c.t0+h);});});var dr=bnd.length;
   R.twin.push({d:c.d,t0:c.t0,o:o,o2:o2,ini:S.iniN||0,dr:dr});});
 document.getElementById('out').textContent=JSON.stringify(R);
@@ -108,7 +108,7 @@ for nm in AREAS:
     if not cases: print(nm, '맞대 볼 실측 없음'); continue
     Ts = sorted({c['t0'] + h for c in cases for h in HZ})
     t_0 = datetime.datetime.now()
-    R = run_js(M, {'days': sorted(days), 'Ts': Ts, 'cases': cases, 'hz': list(HZ)})
+    R = run_js(M, {'days': sorted(days), 'Ts': Ts, 'cases': cases, 'hz': list(HZ), 'x': json.loads(os.environ.get('TWIN_SCEN') or '{}')})
     S = {v: {h: new() for h in HZ} for v in ('twin', 'oracle', 'plain', 'keep', 'mix')}
     DG = collections.Counter()
     k2its = {k: M['links'][k]['its'] for k in M['links'] if M['links'][k].get('its') and not M['links'][k].get('sink')}

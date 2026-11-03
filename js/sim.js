@@ -229,7 +229,7 @@
       var t = S.t; S.inn = {};
       if (EVS.length) { evTick(t); Object.keys(EVN).forEach(function (lk) { if (EVN[lk].shut) Object.keys(S.mv).forEach(function (k9) { var m9 = S.mv[k9]; if (m9.to === lk) divert(m9, t); }); }); }
       if (AC && t >= S.from - 600 && t % (AC.every || 5) === 0) autoCut(t);
-      if (INI && t === INI.at) Object.keys(INI.fill).forEach(function (lk) { var L = S.L[lk]; if (!L || L.l.sink) return; var add = Math.round(Math.min(1, INI.fill[lk]) * L.cap) - L.n; for (var q = 0; q < add; q++) { var vi = makeV('ini', lk, t); enter(vi, lk, t); } S.iniN = (S.iniN || 0) + Math.max(0, add); });
+      if (INI && t === INI.at) Object.keys(INI.fill).forEach(function (lk) { var L = S.L[lk]; if (!L || L.l.sink) return; var add = Math.round(Math.min(1, INI.fill[lk]) * L.cap) - L.n; for (var q = 0; q < add; q++) { var vi = makeV('ini', lk, t); enter(vi, lk, t); } if (add < 0 && INI.trim !== false) { var ex = -add; Object.keys(S.mv).forEach(function (mk) { var m9 = S.mv[mk]; if (m9.fr !== lk) return; while (ex > 0 && m9.q.length) { var vg = m9.q.pop(); vg.te = t; vg.gone = 1; L.n--; ex--; S.iniOut = (S.iniOut || 0) + 1; } }); }   /* 빼기(2026-11-03 · datamap 그림자 운행 채점 제안) — 실측상 뚫린 길에 시뮬이 쌓아 둔 차는 늦게 들어온 차부터 뺀다(셈에서 빠짐 · gone) · 끄기 init.trim:false */ S.iniN = (S.iniN || 0) + Math.max(0, add); });
       Object.keys(S.N).forEach(function (id) { var ma = S.N[id].manual; if (ma && ma.clr > 0) { ma.clr--; if (!ma.clr) { ma.i = ma.next; ma.keep = []; } } });
       // 1 차 만들기 → 들어오는 길(자리가 없으면 망 밖에서 기다림)
       dem.forEach(function (d) {
@@ -310,7 +310,7 @@
        every 초마다 link(블록 안 길) 점유가 hi 를 넘으면 그 교차로를 블록으로 들어가는 이동류(cut — 기본 서→동 직진·북→동 좌회전)가 없는 현시로 붙잡고(나오는 이동류 keep 이 있는 현시 먼저 · 황색·전적색 지나서),
        lo 아래로 내려가면 원래 계획으로 돌려보낸다 · 실제 신호를 바꾸는 기능이 아니다 — 견주기용 · 값은 설계값 */
     /* 지금 상태에서 출발(2026-10-30 · 소유자 「정확한 통행량이 없어도 신반포로가 시계 방향으로 꽉 찰 정도면 어느 정도 예측이 된다」) — scen.init = { at: 초, fill: { 길: 0~1 } }
-       그 시각에 그 길을 그만큼 채운다(이미 더 차 있으면 그대로) · 꽉 참 = 길이 × 차로 ÷ 정지 차량 한 대 자리 · 그 뒤는 평소대로 굴러감 — 「지금 본 모습」이 몇 대인지를 대신한다 */
+       그 시각에 그 길을 그만큼 채운다(더 차 있으면 늦게 들어온 차부터 뺀다 · trim:false 면 그대로) · 꽉 참 = 길이 × 차로 ÷ 정지 차량 한 대 자리 · 그 뒤는 평소대로 굴러감 — 「지금 본 모습」이 몇 대인지를 대신한다 */
     var INI = scen.init && scen.init.fill ? scen.init : null, RI = rng((scen.seed || 7) + 404);
     var AC = scen.autoCut || null; S.ac = { n: 0, sec: 0, on: false }; S.drop = {};
     function autoCut(t) {

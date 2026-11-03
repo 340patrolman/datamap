@@ -221,7 +221,7 @@
           var cf = JSON.parse(JSON.stringify(ca)); cf.ev.fast = 1; var S0 = { d: 0, o: 0 }, S1 = { d: 0, o: 0 }, S2 = { d: 0, o: 0 };
           [7, 108, 209].forEach(function (sd) { [[c, S0], [ca, S1], [cf, S2]].forEach(function (p) { var r = SM.run(JSON.parse(JSON.stringify(p[0])), sd).m; p[1].d += r.delay; p[1].o += r.oStall; }); });
           var okM = S1.d > S0.d + 15 && S1.o > 0 && S0.o === 0 && S2.d < S1.d;
-          return new Promise(function (res) { if (window.tgSim) return res(); var s9 = document.createElement('script'); s9.src = 'js/sim.js?v=25'; s9.onload = res; s9.onerror = res; document.head.appendChild(s9); }).then(function () {
+          return new Promise(function (res) { if (window.tgSim) return res(); var s9 = document.createElement('script'); s9.src = 'js/sim.js?v=26'; s9.onload = res; s9.onerror = res; document.head.appendChild(s9); }).then(function () {
             var G = window.tgSim; if (!G) return ck('🚧 도로 위 일', false, 'sim.js 없음');
             var f1 = G.evFactor({ kind: 'acc', k: 2 }, 5, 180), f2 = G.evFactor({ kind: 'bus', nb: 30 }, 2, 100), f3 = G.evFactor({ kind: 'ctrl' }, 3, 100);
             var okF = Math.abs(f1.f - 0.67 * 3 / 5) < 1e-9 && Math.abs(f2.f - (2 - 14.4 * 30 / 3600) / 2) < 1e-9 && f3.shut && f3.f === 1;

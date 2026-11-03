@@ -66,7 +66,7 @@
       }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); });
     };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=25'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=26'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   function defState() { var d = new Date(), h = d.getHours(); return { day: ['su', 'mt', 'mt', 'mt', 'mt', 'fr', 'sa'][d.getDay()], win: h >= 7 && h < 11 ? 'am' : h >= 11 && h < 16 ? 'md' : 'pm', k: 100, shut: {}, edit: {}, ev: [], evf: { kind: 'acc', link: null, k: 1, nb: 30, cars: 2, s: 30, d: 30 }, sel: Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig'; })[0] }; }
   function wOf() { return WINS.filter(function (w) { return w[0] === ST.win; })[0]; }
@@ -237,7 +237,7 @@
   /* 🧪 고른 자리(js/sim-pick.js 가 이 기기에서 엮은 구역 · 2026-11-02) — 미리 구운 구역과 같은 판으로 연다 · ar = 목록 칸과 같은 꼴(맞춤 결과) */
   function openDoc(doc, ar) {
     var go = function () { AR = ar; M = doc; M.actions = Object.keys(M.entry).map(function (e) { return { id: 'x:' + e, nm: '막기 — ' + (M.links[e].nm || e), closeEntry: [e] }; }); ST = null; RES = null; geo(); show(); };
-    if (window.tgSim) go(); else { var s = document.createElement('script'); s.src = 'js/sim.js?v=25'; s.onload = go; document.head.appendChild(s); }
+    if (window.tgSim) go(); else { var s = document.createElement('script'); s.src = 'js/sim.js?v=26'; s.onload = go; document.head.appendChild(s); }
   }
   function open(id) { need(id, show); }
   function show() {

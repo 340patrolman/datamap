@@ -27,13 +27,30 @@
     if (!(gap < 1e8)) return p.a * free;
     return p.a * (free - Math.pow(sst / Math.max(gap, 0.1), 2));
   }
+  /* 🚧 도로 위 일(cfg.ev · 2026-11-03 · 3단계) — { kind 'acc' 사고·'work' 공사·'bus' 버스 정차·'park' 불법 주정차·'ctrl' 통제, lane 첫 막힌 차로(0 = 1차로 · 왼쪽), k 막힌 차로 수, x 합류점부터 m, len 공사 길이 m,
+       when 'all' 처음부터 끝까지 · 'mid' 2분 뒤 생겨 5분 뒤 치움 · 'late' 3분 뒤 생겨 끝까지, warn 차로를 비우기 시작하는 거리 m(설계값), gawk 옆 차로 구경 감속 0~1(설계값), vz 공사 구간 속도 km/h, nb 버스 대/시, dwell 정차 초(설계값), cars 주정차 대수,
+       fast 막힌 시간 절반, slow 그 앞 300m 감속 km/h } → 차로마다 멈춰 선 「막힘」(o) — 앞차처럼 보이고(가까워져야 본다) · 그 차로 차는 warn 안에서 옆으로 비킨다 */
+  function obsOf(c) {
+    var e = c.ev; if (!e || !e.kind) return [];
+    var n = c.n, k = Math.max(1, Math.min(n, e.k || 1)), l0 = Math.max(0, Math.min(e.lane == null ? n - 1 : e.lane, n - k)), T = { all: [-1e9, 1e9], mid: [120, 420], late: [180, 1e9] }[e.when || 'all'] || [-1e9, 1e9], L = [], lanes = [];
+    if (e.fast && T[1] < 1e8) T = [T[0], T[0] + (T[1] - T[0]) / 2];
+    if (e.kind === 'bus' || e.kind === 'park') lanes = [n - 1]; else for (var i = 0; i < k; i++) lanes.push(l0 + i);
+    var len = e.kind === 'acc' ? 20 : e.kind === 'work' ? (e.len || 200) : e.kind === 'bus' ? 12 : e.kind === 'park' ? (e.cars || 2) * 7 : 5000;
+    var warn = e.warn || { acc: 150, work: 400, bus: 60, park: 100, ctrl: 300 }[e.kind];
+    lanes.forEach(function (l) { L.push({ kind: e.kind, lane: l, x: e.x || 0, len: len, t0: e.kind === 'bus' || e.kind === 'park' ? -1e9 : T[0], t1: e.kind === 'bus' || e.kind === 'park' ? 1e9 : T[1],
+      per: e.kind === 'bus' ? 3600 / Math.max(1, e.nb || 30) : 0, dwell: e.dwell || 20, ph: Math.abs(Math.round(e.x || 0)) % 37, warn: warn, gawk: e.kind === 'acc' ? (e.gawk != null ? e.gawk : 0.2) : 0,
+      vz: e.kind === 'work' && e.vz ? e.vz : 0, zs: 150, slow: e.slow || 0 }); });
+    return L;
+  }
+  function obOn(o, t, warm) { if (o.per) return ((t + o.ph) % o.per) < o.dwell; var tm = t - warm; return tm >= o.t0 && tm < o.t1; }
   /* cfg = { n 본선 차로, add 차로 더해짐(가속차로가 끝나지 않는다), La 가속차로 m, S 앞쪽 실선 m, qMain 대/시(본선 전 차로 합), qRamp 대/시, truck 0~1, lim km/h, rampLim km/h,
              W 다음 진출로까지 m(0 = 없음), exitP 본선 차 중 그곳으로 나갈 몫, meter 연결로 최소 간격 초(0 = 없음), courtesy 합류 구간 본선 바깥 차로 비켜 주기 0~1, dur, warm } */
   function run(cfg, seed) {
     var R = rng(seed), n = cfg.n, ACC = n, La = cfg.add ? 1e9 : cfg.La, S = Math.min(cfg.S || 0, cfg.add ? 1e9 : cfg.La - 10), W = cfg.W > 0 ? cfg.W : 0;
-    var xE = Math.min(1600, Math.max(cfg.add ? 400 : cfg.La, W) + 300), xr = P.xr, dt = P.dt, T = cfg.warm + cfg.dur;
+    var xE = Math.min(1600, Math.max(cfg.add ? 400 : cfg.La, W, cfg.ev && cfg.ev.kind ? (cfg.ev.x || 0) + Math.min(cfg.ev.kind === 'work' ? (cfg.ev.len || 200) : 40, 500) : 0) + 300), xr = P.xr, dt = P.dt, T = cfg.warm + cfg.dur;
     var V = [], idc = 0, t = 0, pend = [], lastSpawn = [], rampLast = -1e9;
-    var M = { forced: 0, endM: 0, merges: 0, dvSum: 0, stall: 0, ttc: 0, hard: 0, near: 0, exits: 0, missed: 0, exitForced: 0, thru: 0, vSum: 0, vN: 0, rampQ: 0, pendMax: 0, spawned: 0, bins: {}, binsK: {} };
+    var M = { forced: 0, endM: 0, merges: 0, dvSum: 0, stall: 0, ttc: 0, hard: 0, near: 0, exits: 0, missed: 0, exitForced: 0, thru: 0, vSum: 0, vN: 0, rampQ: 0, pendMax: 0, spawned: 0, oForced: 0, oStall: 0, ttS: 0, ttN: 0, bins: {}, binsK: {} };
+    var OB = obsOf(cfg), OBA = [];   /* 도로 위 일 — 지금 걸린 막힘 */
     var EV = [], FR = [], frT = 0;
     for (var k = 0; k <= n; k++) { pend[k] = 0; lastSpawn[k] = -1e9; }
     var limMs = cfg.lim / 3.6, rampMs = (cfg.rampLim || Math.min(cfg.lim, 60)) / 3.6;
@@ -47,7 +64,16 @@
       v.v = Math.min(v0of(v), ramp ? rampMs : limMs * 0.9);
       return v;
     }
-    function v0of(v) { var base = (v.lane === ACC && v.x < 0) ? rampMs : limMs; if (v.tr) base = Math.min(base, limMs * 0.88); return base * v.f; }
+    function v0of(v) { var base = (v.lane === ACC && v.x < 0) ? rampMs : limMs; if (v.tr) base = Math.min(base, limMs * 0.88); var b = base * v.f;
+      for (var i = 0; i < OBA.length; i++) { var o = OBA[i]; if (v.lane >= n) continue;
+        if (o.vz && v.x > o.x - o.zs && v.x < o.x + o.len) b = Math.min(b, o.vz / 3.6 * v.f);   /* 공사 구간 속도 */
+        if (o.slow && v.x > o.x - 300 && v.x < o.x) b = Math.min(b, Math.max(20, cfg.lim - o.slow) / 3.6 * v.f);   /* 그 앞 감속 안내 */
+        if (o.gawk && v.lane !== o.lane && v.x > o.x - 80 && v.x < o.x + o.len + 40) b = Math.min(b, base * v.f * (1 - o.gawk)); }   /* 옆 차로 구경 감속(설계값) */
+      return b; }
+    function obAhead(l, x) { var b = null; for (var i = 0; i < OBA.length; i++) { var o = OBA[i]; if (o.lane === l && o.x > x - 0.5 && (!b || o.x < b.x)) b = o; } return b; }
+    function obCover(l, x, len) { for (var i = 0; i < OBA.length; i++) { var o = OBA[i]; if (o.lane === l && x > o.x - 1 && x - len < o.x + o.len + 1) return true; } return false; }
+    function openLane(cur, ob) {   /* 막힌 곳에서 가장 가까운 열린 차로 쪽(−1 왼쪽 · +1 오른쪽 · 0 없음) */
+      var best = 0, bd = 99; for (var l = 0; l < (cfg.add ? n + 1 : n); l++) {   /* 차로가 더해진 합류면 더해진 차로(ACC)로도 비킨다 */ if (l === cur) continue; var o = obAhead(l, ob.x - 5); if (o && o.x < ob.x + ob.len) continue; if (Math.abs(l - cur) < bd) { bd = Math.abs(l - cur); best = l < cur ? -1 : 1; } } return best; }
     function laneOk(l, x) { if (l < 0) return false; if (l < n) return true; if (l === ACC) return x >= xr && x <= La; return false; }
     function spawn() {
       var lanesForTruck = [];
@@ -80,6 +106,7 @@
     function accFor(v, lane, L) {
       var gap = L ? L.x - L.len - v.x : Infinity, vl = L ? L.v : 0;
       if (lane === ACC && !cfg.add) { var ge = La - v.x; if (ge < gap && ge < Math.max(35, v.v * v.v / (2 * v.p.b) + 12)) { gap = ge; vl = 0; } }   /* 가속차로 끝 = 멈춘 벽(끝이 가까워져서야 본다 — 처음부터 보면 가속을 못 한다) */
+      if (OBA.length && lane < n) { var ob = obAhead(lane, v.x); if (ob) { var go = ob.x - v.x; if (go < gap && go < Math.max(40, v.v * v.v / (2 * v.p.b) + 15)) { gap = go; vl = 0; } } }   /* 막힌 곳 = 멈춘 벽(가까워져야 본다) */
       if (v.exit && W > 0 && lane < n - 1 && v.x < W) { var gw = W + 15 - v.x; if (gw < 140 && gw < gap) { gap = gw; vl = 0; } }   /* 못 빠진 진출 차는 진출로 앞에서 속도를 줄인다 */
       var v0 = v0of({ lane: lane, x: v.x, tr: v.tr, f: v.f });
       if (lane === ACC && !cfg.add && v.x > 0 && v.side) v0 = Math.min(v0, Math.max(v.side.v + 2, 8));   /* 가속차로에서는 옆 차로 흐름에 속도를 맞춘다(틈 찾기) */
@@ -87,16 +114,18 @@
     }
     function tryLc(v, by) {
       var cur = v.lane, x = v.x, opts = [], Lc = nbr(by, cur, x, v), aCur = accFor(v, cur, Lc[0]);
-      var mand = 0, dir = 0, forcedOk = false;
+      var mand = 0, dir = 0, forcedOk = false, obM = cur < n && OBA.length ? obAhead(cur, x) : null; if (obM && obM.x - x > obM.warn) obM = null;
       if (cur === ACC) {
         if (x < 0 || x < S) return;   /* 연결로에서는 아직 본선 옆이 아니다 · 실선 구간은 차로 바꾸기 금지 */
         if (cfg.add) { mand = 0; }
         else { mand = 1; dir = -1; forcedOk = x > La - P.endZ || (v.v < 2 && x > La - 60); }
-      } else if (v.exit && W > 0 && x < W && x > W - 1000 && cur < n - 1) { mand = 1; dir = +1; forcedOk = x > W - 90; }
+      } else if (obM) { dir = openLane(cur, obM); if (!dir) return; mand = 1; forcedOk = obM.x - x < 40 || (v.v < 2 && obM.x - x < 70); }   /* 막힌 차로 — 열린 쪽으로 비킨다 */
+      else if (v.exit && W > 0 && x < W && x > W - 1000 && cur < n - 1) { mand = 1; dir = +1; forcedOk = x > W - 90; }
       [-1, 1].forEach(function (d) {
         var nl = cur + d; if (!laneOk(nl, x)) return; if (nl === ACC && !cfg.add) return;   /* 본선 차는 끝나는 가속차로로 들어가지 않는다 */
-        if (cur < n && nl === ACC) return;
+        if (cur < n && nl === ACC && !(cfg.add && obM && x >= 0)) return;
         if (mand && d !== dir) return;
+        if (OBA.length && nl < n) { if (obCover(nl, x, v.len)) return; var o2 = obAhead(nl, x); if (o2 && o2.x - x < o2.warn && !(obM && o2.x >= obM.x - 5)) return; }   /* 앞이 막힌 차로로는 안 간다(같은 자리 막힘을 지나 열린 차로로 가는 길이면 됨) */
         var nb = nbr(by, nl, x, v), Ln = nb[0], Fn = nb[1];
         var gL = Ln ? Ln.x - Ln.len - x : 1e9, gF = Fn ? x - v.len - Fn.x : 1e9;
         if (gL < 0.6 || gF < 0.6) return;
@@ -106,7 +135,7 @@
         if (!safe && !okForce) return;
         var gain = aNew - aCur + P.pol * (aFnNew - aFnOld + aFoNew - aFoOld);
         var bias = 0;
-        if (mand) bias = 3 + (cur === ACC ? 6 * Math.max(0, x / Math.max(La, 1)) : 6 * Math.max(0, 1 - (W - x) / 1000));
+        if (mand) bias = 3 + (cur === ACC ? 6 * Math.max(0, x / Math.max(La, 1)) : obM ? 6 * Math.max(0, 1 - (obM.x - x) / obM.warn) : 6 * Math.max(0, 1 - (W - x) / 1000));
         if (!mand && v.coop && cur === n - 1 && d === -1 && x > -250 && x < (cfg.add ? 150 : La)) bias += 2.5;   /* 협조하는 운전자는 합류 구간에서 본선 바깥 차로를 비워 준다 */
         if (!mand && d === 1 && v.exit) bias += 0.6;
         if (!mand && d === -1 && v.exit && W > 0 && x > W - 900) bias -= 2;
@@ -120,12 +149,14 @@
         if (meas()) { M.merges++; var vf = o.Fn ? o.Fn.v : v.v; M.dvSum += Math.abs(v.v - vf); }
         if (o.forced) { M.forced++; ev('forced', v, Math.round(-o.aFn * 10) / 10); }
         if (x > La - P.endZ) { if (meas()) M.endM++; }
-      } else if (mand && o.forced) { if (meas()) M.exitForced++; ev('xforce', v); }
+      } else if (mand && o.forced && obM) { if (inZ(v)) M.oForced++; ev('oforce', v); }
+      else if (mand && o.forced) { if (meas()) M.exitForced++; ev('xforce', v); }
       by[cur].splice(by[cur].indexOf(v), 1);
       v.lane = o.nl;
       var a = by[o.nl], i = 0; while (i < a.length && a[i].x < v.x) i++; a.splice(i, 0, v);
     }
     function step() {
+      if (OB.length) OBA = OB.filter(function (o) { return obOn(o, t, cfg.warm); });
       spawn();
       var by = sortLanes(), i, v;
       for (i = 0; i < V.length; i++) { v = V[i]; v.lcT -= dt; if (v.lcT <= 0) { v.lcT += P.lcEvery; tryLc(v, by); } }
@@ -149,6 +180,8 @@
           var ttc = dv > 0.1 ? gap / dv : 99;
           if (ttc < P.ttc && gap >= 0) { if (!v.ttcOn) { v.ttcOn = true; if (inZ(v)) M.ttc++; ev('ttc', v, Math.round(ttc * 10) / 10); } } else if (ttc > 3) v.ttcOn = false;
         }
+        if (v.tIn == null && v.x >= P.x0 + 250) v.tIn = t;
+        if (OBA.length && v.lane < n) { var ob3 = obAhead(v.lane, v.x); if (ob3 && ob3.x - v.x < 80 && v.v < 0.5) { if (!v.oStOn) { v.oStOn = true; if (inZ(v)) M.oStall++; ev('ostall', v); } } else if (v.v > 3) v.oStOn = false; }
         if (v.lane === ACC && !cfg.add && v.x > 0 && v.v < 0.5 && !v.stallOn) { v.stallOn = true; if (inZ(v)) M.stall++; ev('stall', v); }
         if (meas() && v.lane < n && v.x > -300 && v.x < (cfg.add ? 200 : La) + 200) { M.vSum += v.v; M.vN++; }
         if (meas() && v.lane === ACC && v.x < 0 && v.v < 2) M.rampQ = Math.max(M.rampQ, (function () { var c = 0; V.forEach(function (u) { if (u.lane === ACC && u.x < 0 && u.v < 2) c++; }); return c; })());
@@ -157,7 +190,7 @@
           v.exit = false; if (meas()) M.missed++; ev('miss', v);
         }
         if (v.lane === ACC && !cfg.add && v.x > La + 1) { v.lane = n - 1; v.lat = n - 1; if (meas()) { M.forced++; M.merges++; } ev('forced', v, 0); }   /* 벽을 뚫었으면(없어야 한다) 본선으로 */
-        if (v.x >= xE) { if (meas()) M.thru++; continue; }
+        if (v.x >= xE) { if (meas()) { M.thru++; if (!v.ramp && v.tIn != null && v.tIn >= cfg.warm) { M.ttS += t - v.tIn; M.ttN++; } } continue; }
         keep.push(v);
       }
       V = keep;
@@ -171,9 +204,9 @@
     while (t < T) step();
     var hr = cfg.dur / 3600;
     return {
-      cfg: cfg, xE: xE, frames: FR, ev: EV,
+      cfg: cfg, xE: xE, frames: FR, ev: EV, obs: OB, warm: cfg.warm,
       m: { forced: M.forced, endM: M.endM, merges: M.merges, dv: M.merges ? M.dvSum / M.merges * 3.6 : 0, stall: M.stall, ttc: M.ttc, hard: M.hard, near: M.near,
-           exits: M.exits, missed: M.missed, exitForced: M.exitForced, thru: M.thru / hr, vMain: M.vN ? M.vSum / M.vN * 3.6 : 0, rampQ: M.rampQ, pend: M.pendMax, bins: M.bins, binsK: M.binsK, hr: hr }
+           exits: M.exits, missed: M.missed, exitForced: M.exitForced, thru: M.thru / hr, vMain: M.vN ? M.vSum / M.vN * 3.6 : 0, rampQ: M.rampQ, pend: M.pendMax, oForced: M.oForced, oStall: M.oStall, delay: (function () { var s9 = M.ttS - M.ttN * (xE - P.x0 - 250) / limMs, n9 = M.ttN; V.forEach(function (u) { if (!u.ramp && u.tIn != null && u.tIn >= cfg.warm) { s9 += (t - u.tIn) - (u.x - P.x0 - 250) / limMs; n9++; } }); return n9 ? Math.max(0, s9 / n9) : 0; })(),   /* 아직 못 빠진 차도 지금까지 늦은 만큼 넣는다(다 막히면 0 으로 보이지 않게) */ bins: M.bins, binsK: M.binsK, hr: hr }
     };
   }
 
@@ -217,6 +250,35 @@
     ['noexit', '다음 진출로 없음(엮임 구간 없애기)', function (c) { c.W = 0; }]
   ];
 
+  var EVCHG = [   /* 도로 위 일이 걸려 있을 때 맨 앞에 */
+    ['noev', '이 일이 없을 때(평소와 견주기 — 이 일이 얼마나 나쁘게 하나)', function (c) { c.ev = null; }],
+    ['warn', '미리 알림 — 600m 앞에서 차로 비우기 안내(표지·경광등)', function (c) { c.ev.warn = 600; }],
+    ['fast', '빨리 치움 — 막힌 시간 절반', function (c) { c.ev.fast = 1; }],
+    ['buffer', '옆 차로 하나 더 막아 안전 공간(경찰 통제)', function (c) { c.ev.k = Math.min(c.n, (c.ev.k || 1) + 1); }],
+    ['evspd', '그 앞 300m 감속 안내(제한속도 −20km/h)', function (c) { c.ev.slow = 20; }]
+  ];
+  function chgList() { return (CUR && CUR.cfg.ev && CUR.cfg.ev.kind ? EVCHG : []).concat(CHG); }
+  var EVK = [['', '없음'], ['acc', '🚑 사고 — 차로 막힘'], ['work', '🚧 공사 — 차로 막힘'], ['bus', '🚌 버스 정차(바깥 차로)'], ['park', '🅿️ 불법 주정차(바깥 차로)'], ['ctrl', '⛔ 통제(집회·행진·경찰) — 그 자리부터 끝까지']];
+  function evDef(kind, c) { var n = c.n; return { kind: kind, lane: n - 1, k: 1, x: kind === 'acc' ? Math.round(((c.add ? 150 : c.La) + 60) / 10) * 10 : kind === 'ctrl' ? 300 : 200, len: 200, when: kind === 'acc' ? 'mid' : kind === 'ctrl' ? 'late' : 'all', gawk: 0.2, vz: kind === 'work' ? Math.min(c.lim, 50) : 0, nb: 30, dwell: 20, cars: 2 }; }
+  function evHtml() {
+    var c = CUR.cfg, e = c.ev || { kind: '' }, n = c.n, opt = function (L, cur) { return L.map(function (x) { return '<option value="' + x[0] + '"' + (String(x[0]) === String(cur) ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join(''); };
+    var h = '<h4>🚧 도로 위 일 — 두 판 모두에 건다</h4><select data-mc="ev.kind">' + opt(EVK, e.kind) + '</select>';
+    if (!e.kind) return h + ' <span class="sn">사고·공사·버스 정차·불법 주정차·통제를 이 합류부에 놓고 돌려 본다</span>';
+    var row = function (lab, ctl, src) { return '<div class="row"><span>' + lab + '</span>' + ctl + '<b></b></div>' + (src ? '<div class="sn" style="margin:-2px 0 4px 9.5em">' + src + '</div>' : ''); };
+    var lanes = []; for (var l = 0; l < n; l++) lanes.push([l, (l + 1) + '차로' + (l === 0 ? '(중앙선 쪽)' : l === n - 1 ? '(바깥)' : '')]);
+    if (e.kind === 'acc' || e.kind === 'work' || e.kind === 'ctrl') { var ks = []; for (var q = 1; q <= n; q++) ks.push([q, q === n ? q + '개(모든 차로 — 막힘)' : q + '개']);
+      h += row('막힌 차로', '<span><select data-mc="ev.lane">' + opt(lanes, Math.min(e.lane, n - 1)) + '</select> 부터 <select data-mc="ev.k">' + opt(ks, e.k) + '</select></span>'); }
+    var xLab = function (x) { return x < 0 ? '합류점 앞 ' + (-x) + 'm' : '합류점 뒤 ' + x + 'm'; };
+    h += row('자리', '<input type="range" data-mc="ev.x" min="-400" max="900" step="10" value="' + e.x + '"><b id="m2dMrgV_ev_x">' + xLab(e.x) + '</b>', '').replace('<b></b></div>', '</div>');
+    if (e.kind === 'work') { h += row('공사 길이', '<input type="range" data-mc="ev.len" min="50" max="500" step="10" value="' + e.len + '"><b id="m2dMrgV_ev_len">' + e.len + 'm</b>').replace('<b></b></div>', '</div>');
+      h += row('공사 구간 속도', '<select data-mc="ev.vz">' + opt([[0, '그대로'], [30, '30km/h'], [40, '40km/h'], [50, '50km/h'], [60, '60km/h']], e.vz) + '</select>', '<span class="b d">설계값 — 현장 표지대로</span>'); }
+    if (e.kind === 'bus') h += row('버스', '<span><select data-mc="ev.nb">' + opt([10, 20, 30, 45, 60].map(function (x) { return [x, x + '대/시']; }), e.nb) + '</select> 한 대 <select data-mc="ev.dwell">' + opt([10, 20, 30, 45].map(function (x) { return [x, x + '초']; }), e.dwell) + '</select> 섬</span>', '<span class="b d">설계값 — 정류장 노선·배차로 바꾼다</span>');
+    if (e.kind === 'park') h += row('주정차', '<select data-mc="ev.cars">' + opt([1, 2, 3, 5, 8].map(function (x) { return [x, x + '대(약 ' + x * 7 + 'm)']; }), e.cars) + '</select>');
+    if (e.kind === 'acc' || e.kind === 'work' || e.kind === 'ctrl') h += row('언제', '<select data-mc="ev.when">' + opt([['all', '처음부터 끝까지'], ['mid', '2분 뒤 생겨 5분 뒤 치움'], ['late', '3분 뒤 생겨 끝까지']], e.when) + '</select>');
+    if (e.kind === 'acc') h += row('옆 차로 구경 감속', '<select data-mc="ev.gawk">' + opt([[0, '없음'], [0.1, '10%'], [0.2, '20%'], [0.3, '30%'], [0.4, '40%']], e.gawk) + '</select>', '<span class="b d">설계값 — 미국 도로용량편람도 값을 정하지 않았다(FHWA)</span>');
+    h += '<div class="sn">막힌 차로의 차는 그 앞 <b>' + (e.warn || { acc: 150, work: 400, bus: 60, park: 100, ctrl: 300 }[e.kind]) + 'm</b>부터 옆으로 비키기 시작한다 <span class="b d">설계값</span> · 막힌 곳은 멈춘 차처럼 보이고 가까워져서야 선다 · 두 판 모두에 걸리므로 아래 「바꿔 볼 것」으로 대응(미리 알림·빨리 치움·안전 공간·감속 안내)이나 「이 일이 없을 때」를 견준다</div>';
+    return h;
+  }
   /* ================= 화면 ================= */
   function css() {
     if ($('m2dMrgCss')) return; var s = document.createElement('style'); s.id = 'm2dMrgCss';
@@ -260,7 +322,8 @@
       '<label><input type="checkbox" data-mc="add"' + (c.add ? ' checked' : '') + '> 차로 더해짐</label></div>';
     SL.forEach(function (s) { if (c.add && (s[0] === 'La' || s[0] === 'S')) return;
       h += '<div class="row"><span>' + s[1] + '</span><input type="range" data-mc="' + s[0] + '" min="' + s[2] + '" max="' + s[3] + '" step="' + s[4] + '" value="' + c[s[0]] + '"><b id="m2dMrgV_' + s[0] + '">' + fmt(s[0], c[s[0]]) + s[5].replace('%', '%') + '</b></div><div class="sn" style="margin:-2px 0 4px 9.5em">' + srcOf(s[0]) + '</div>'; });
-    h += '<h4>🔁 바꿔 볼 것</h4><select data-mc="chg">' + CHG.map(function (x) { return '<option value="' + x[0] + '"' + (CUR.chg === x[0] ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select> ';
+    h += evHtml();
+    h += '<h4>🔁 바꿔 볼 것</h4><select data-mc="chg">' + chgList().map(function (x) { return '<option value="' + x[0] + '"' + (CUR.chg === x[0] ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select> ';
     h += '<button class="go" data-mg="run">▶ 10분 돌려 견주기</button> <span class="sn">같은 차들 세 벌(씨앗 ' + CUR.seed + '…)로 현행·바꾼 안 · 몇 초</span>';
     return h;
   }
@@ -296,7 +359,7 @@
   }
   function pct(a, b) { if (!a && !b) return '<span class="sn">0 → 0</span>'; var d = b - a, r = a ? Math.round(d / a * 100) : null; return (d === 0 ? '<span class="sn">같음</span>' : '<span class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '') + (Math.abs(d) < 10 ? Math.round(d * 10) / 10 : Math.round(d)) + (r != null ? ' (' + (r > 0 ? '+' : '') + r + '%)' : '') + '</span>'); }
   function resHtml() {
-    var A = CUR.res[0].m, B = CUR.res[1].m, ch = CHG.filter(function (x) { return x[0] === CUR.chg; })[0], per = function (x, r) { return Math.round(x / r.hr); };
+    var A = CUR.res[0].m, B = CUR.res[1].m, ch = CUR.res.ch || chgList().filter(function (x) { return x[0] === CUR.chg; })[0], per = function (x, r) { return Math.round(x / r.hr); };
     var rows = [
       ['억지 끼어들기(측면 충돌형)', per(A.forced, A), per(B.forced, B), '/시', true],
       ['가속차로 끝 30m 에서 합류', per(A.endM, A), per(B.endM, B), '/시', true],
@@ -309,13 +372,14 @@
       ['연결로에 선 줄(최대)', Math.round(A.rampQ), Math.round(B.rampQ), '대', true]
     ];
     if (CUR.res[0].cfg.W > 0 || CUR.res[1].cfg.W > 0) rows.push(['진출 놓침(엮임)', per(A.missed, A), per(B.missed, B), '/시', true], ['진출하려 억지 차로 바꾸기', per(A.exitForced, A), per(B.exitForced, B), '/시', true]);
+    if (CUR.res[0].obs.length || CUR.res[1].obs.length) rows.unshift(['이 구간을 지나는 데 더 걸린 시간(본선 차 평균)', Math.round(A.delay), Math.round(B.delay), '초', true], ['막힌 차로를 피해 억지 차로 바꾸기', per(A.oForced, A), per(B.oForced, B), '/시', true], ['막힌 곳 앞에서 멈춤', per(A.oStall, A), per(B.oStall, B), '/시', true]);
     if (A.pend >= 1 || B.pend >= 1) rows.push(['들어오지 못하고 밀린 차(최대)', Math.round(A.pend), Math.round(B.pend), '대', true]);
     var h = '<h4>📊 현행 ↔ 바꾼 안(' + esc(ch[1]) + ') — 10분 × 같은 차들 세 벌 평균</h4><table><tr><th>지표</th><th class="n">현행</th><th class="n">바꾼 안</th><th class="n">차이</th></tr>' +
       rows.map(function (r) { var cell = pct(r[1], r[2]); if (!r[4] && r[2] !== r[1]) cell = cell.replace('class="up"', 'class="dnX"').replace('class="dn"', 'class="up"').replace('class="dnX"', 'class="dn"'); return '<tr><td>' + r[0] + '</td><td class="n">' + r[1] + ' <small>' + r[3] + '</small></td><td class="n">' + r[2] + '</td><td class="n">' + cell + '</td></tr>'; }).join('') + '</table>';
     h += '<div class="sn">빨강 = 나빠짐 · 초록 = 좋아짐(속도·처리량은 늘면 좋아짐) · 세 벌 평균이어도 몇 건 차이는 우연일 수 있다 — 다른 차들로 다시 돌려 같은 쪽으로 움직이는지 본다 <button data-mg="seed">🎲 다른 차들로 다시</button></div>';
     h += causeHtml();
     h += '<h4>🎞 다시 보기</h4><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button data-mg="v0" class="' + (CUR.view === 0 ? 'on' : '') + '">현행</button><button data-mg="v1" class="' + (CUR.view === 1 ? 'on' : '') + '">바꾼 안</button><button data-mg="pp">⏯</button><span class="sn" id="m2dMrgT"></span></div>' +
-      '<canvas id="m2dMrgC" height="240"></canvas><div class="sn">색 = 제 속도 대비(초록 빠름 → 빨강 멈춤) · 네모가 큰 것 = 대형차 · 하늘색 테 = 연결로에서 온 차 · 노란 점 = 다음 진출로로 나갈 차 · ✖ 억지 끼어들기 · ● 아슬아슬 · ▼ 급제동 · 아래 막대 = 25m 마다 위험 사건이 몰린 곳(현행 회색 · 바꾼 안 파랑)</div>';
+      '<canvas id="m2dMrgC" height="240"></canvas><div class="sn">색 = 제 속도 대비(초록 빠름 → 빨강 멈춤) · 네모가 큰 것 = 대형차 · 하늘색 테 = 연결로에서 온 차 · 노란 점 = 다음 진출로로 나갈 차 · ✖ 억지 끼어들기 · ● 아슬아슬 · ▼ 급제동 · □ 막힌 곳 앞 멈춤 · 빨강 ✚ 사고 · 주황 ▲ 공사 · 파랑 B 버스 · 회색 P 주정차 · 보라 ⛔ 통제 · 아래 막대 = 25m 마다 위험 사건이 몰린 곳(현행 회색 · 바꾼 안 파랑)</div>';
     return h;
   }
   function causeHtml() {   /* 시뮬이 보인 위험이 어디서 왜 — 실제 사고 유형과 나란히(판단은 사람) */
@@ -325,6 +389,10 @@
     if (m.dv >= 15) out.push('합류하는 차가 본선보다 <b>' + Math.round(m.dv) + 'km/h 느리게</b> 들어온다 — 가속이 덜 된 채 붙는다.');
     if (c.W > 0 && (m.missed + m.exitForced) / hr >= 2) out.push(c.W + 'm 엮임 구간에서 나가려는 차가 <b>마지막에 오른쪽으로 꺾는다</b> — 들어오는 차와 엇갈린다.');
     if (m.rampQ >= 5) out.push('연결로에 <b>' + m.rampQ + '대</b>까지 줄이 선다 — 연결로 꼬리가 아래 일반도로 교차로까지 닿는지 볼 것.');
+    if (A.obs.length) { var e9 = c.ev, nm9 = EVK.filter(function (x) { return x[0] === e9.kind; })[0][1].split(' — ')[0];
+      if (m.delay >= 20) out.push(nm9 + ' 때문에 본선 차가 이 구간을 지나는 데 <b>평균 ' + Math.round(m.delay) + '초 더</b> 걸린다' + (m.pend >= 5 ? ' · 입구 밖까지 <b>' + Math.round(m.pend) + '대</b> 밀린다(줄이 이 그림보다 길다)' : '') + '.');
+      if (m.oForced / hr >= 3) out.push('막힌 차로에서 비키려는 차가 <b>억지로 옆 차로에 끼어든다(시간당 ' + Math.round(m.oForced / hr) + '건)</b> — 2차 사고(측면)가 날 자리.');
+      if (m.oStall / hr >= 3) out.push('막힌 곳 바로 앞에서 <b>서 버리는 차(시간당 ' + Math.round(m.oStall / hr) + '대)</b> — 뒤에서 오는 차와의 추돌(2차 사고) 위험 · 미리 알림·감속 안내를 견줘 본다.'); }
     if (!out.length) out.push('이 조건에서는 두드러진 위험 사건이 적다 — 교통량·대형차·가속차로를 바꿔 어디서부터 나빠지는지 본다.');
     var h = '<h4>🔎 시뮬이 보인 원인 후보</h4><ul style="margin:4px 0;padding-left:18px">' + out.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>';
     if (t && t.tot) { var side = t.ty['충돌'] || 0, rear = t.ty['추돌'] || 0; h += '<div class="ok">실제 사고(위)와 나란히: 칸마다 주된 유형이 <b>충돌 ' + side + '건 · 추돌 ' + rear + '건</b>이다 — 시뮬의 억지 끼어들기는 충돌(측면)형, 아슬아슬·급제동은 추돌형에 가깝다. <b>맞물리는지는 사람이 판단한다</b>(실제 사고 원인은 운전자 상태·날씨·노면도 섞인다).</div>'; }
@@ -346,7 +414,7 @@
   function draw(cv, R, k) {
     var dpr = window.devicePixelRatio || 1, W = cv.clientWidth || 320, H = 240; if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = H * dpr; }
     var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-    var c = R.cfg, n = c.n, xa = -260, xb = Math.min(R.xE, Math.max(c.add ? 260 : c.La + 160, c.W ? c.W + 60 : 0)), sx = (W - 16) / (xb - xa), LH = Math.min(16, 120 / (n + 1)), top = 22;
+    var c = R.cfg, n = c.n, ob0 = (R.obs || [])[0], xa = Math.min(-260, ob0 ? ob0.x - 60 : 0), xb = Math.min(R.xE, Math.max(c.add ? 260 : c.La + 160, c.W ? c.W + 60 : 0, ob0 ? ob0.x + Math.min(ob0.len, 400) + 80 : 0)), sx = (W - 16) / (xb - xa), LH = Math.min(16, 120 / (n + 1)), top = 22;
     function X(x) { return 8 + (x - xa) * sx; } function Y(l) { return top + l * LH + LH / 2; }
     g.fillStyle = '#374151'; g.fillRect(X(xa), top, X(xb) - X(xa), n * LH);
     g.fillRect(X(0), top + n * LH, X(c.add ? xb : c.La) - X(0), LH);
@@ -360,6 +428,9 @@
     if (c.W > 0) { g.fillStyle = '#fde047'; g.font = '10px sans-serif'; g.fillText('↘ 진출 ' + c.W + 'm', X(c.W) - 30, top + n * LH + LH * 2 + 10); g.fillRect(X(c.W), top + (n - 1) * LH, 2, LH); }
     g.fillStyle = '#e5e7eb'; g.font = '11px sans-serif'; g.fillText('본선 ' + n + '차로 →', 10, 14); g.fillText('합류점', X(0) - 16, 14);
     var f = R.frames[k] || [], t = k * P.frameDt;
+    (R.obs || []).forEach(function (o) { if (!obOn(o, t + (R.warm || 0), R.warm || 0)) return; var x1 = X(Math.max(xa, o.x)), x2 = X(Math.min(xb, o.x + o.len)), yy = top + o.lane * LH;
+      g.fillStyle = { acc: '#dc2626', work: '#f97316', bus: '#2563eb', park: '#6b7280', ctrl: '#7c3aed' }[o.kind] || '#dc2626'; g.fillRect(x1, yy + 1, Math.max(3, x2 - x1), LH - 2);
+      g.fillStyle = '#fff'; g.font = Math.round(LH * 0.7) + 'px sans-serif'; if (x2 - x1 > 10) g.fillText({ acc: '✚', work: '▲', bus: 'B', park: 'P', ctrl: '⛔' }[o.kind] || '!', x1 + 2, yy + LH * 0.78); });
     for (var i = 0; i < f.length; i += 4) {
       var x = f[i]; if (x < xa || x > xb) continue; var lat = f[i + 1], r = Math.max(0, Math.min(1, f[i + 2])), fl = f[i + 3], tr = fl & 1;
       var col = r > 0.8 ? '#22c55e' : r > 0.55 ? '#a3e635' : r > 0.3 ? '#facc15' : r > 0.1 ? '#f97316' : '#ef4444';
@@ -369,7 +440,8 @@
       if (fl & 4) { g.fillStyle = '#fde047'; g.fillRect(X(x) - 1, yy - 1, 2, 2); }
     }
     R.ev.forEach(function (e) { if (e[0] > t || e[0] < t - 2.5 || e[1] < xa || e[1] > xb) return; var xx = X(e[1]), yy = Y(Math.min(e[2], n)), a = 1 - (t - e[0]) / 2.5; g.globalAlpha = a;
-      if (e[3] === 'forced' || e[3] === 'xforce') { g.strokeStyle = '#f43f5e'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(xx - 5, yy - 5); g.lineTo(xx + 5, yy + 5); g.moveTo(xx + 5, yy - 5); g.lineTo(xx - 5, yy + 5); g.stroke(); }
+      if (e[3] === 'ostall') { g.strokeStyle = '#fde047'; g.lineWidth = 2; g.strokeRect(xx - 5, yy - 5, 10, 10); }
+      else if (e[3] === 'forced' || e[3] === 'xforce' || e[3] === 'oforce') { g.strokeStyle = '#f43f5e'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(xx - 5, yy - 5); g.lineTo(xx + 5, yy + 5); g.moveTo(xx + 5, yy - 5); g.lineTo(xx - 5, yy + 5); g.stroke(); }
       else if (e[3] === 'ttc' || e[3] === 'near') { g.strokeStyle = '#fb7185'; g.lineWidth = 2; g.beginPath(); g.arc(xx, yy, 6, 0, 7); g.stroke(); }
       else if (e[3] === 'hard') { g.fillStyle = '#fbbf24'; g.beginPath(); g.moveTo(xx - 4, yy - 9); g.lineTo(xx + 4, yy - 9); g.lineTo(xx, yy - 3); g.fill(); }
       g.globalAlpha = 1; });
@@ -385,14 +457,14 @@
   function avg(rs) {
     var m = {}, k0 = rs[0].m; Object.keys(k0).forEach(function (k) { if (typeof k0[k] === 'number') m[k] = rs.reduce(function (s, r) { return s + r.m[k]; }, 0) / rs.length; });
     m.bins = {}; m.binsK = {}; rs.forEach(function (r) { Object.keys(r.m.bins).forEach(function (b) { m.bins[b] = (m.bins[b] || 0) + r.m.bins[b] / rs.length; }); Object.keys(r.m.binsK).forEach(function (b) { var o = m.binsK[b] = m.binsK[b] || {}; Object.keys(r.m.binsK[b]).forEach(function (q) { o[q] = (o[q] || 0) + r.m.binsK[b][q] / rs.length; }); }); });
-    return { cfg: rs[0].cfg, xE: rs[0].xE, frames: rs[0].frames, ev: rs[0].ev, m: m };
+    return { cfg: rs[0].cfg, xE: rs[0].xE, frames: rs[0].frames, ev: rs[0].ev, obs: rs[0].obs, warm: rs[0].warm, m: m };
   }
   function runBoth(prog, done) {
-    var a = JSON.parse(JSON.stringify(CUR.cfg)), b = JSON.parse(JSON.stringify(CUR.cfg)), ch = CHG.filter(function (x) { return x[0] === CUR.chg; })[0], RA = [], RB = [], i = 0, my = CUR;
+    var a = JSON.parse(JSON.stringify(CUR.cfg)), b = JSON.parse(JSON.stringify(CUR.cfg)), ch = chgList().filter(function (x) { return x[0] === CUR.chg; })[0] || CHG[0], RA = [], RB = [], i = 0, my = CUR;
     ch[2](b);
     (function next() {
       if (CUR !== my) return;
-      if (i >= NSEED * 2) { CUR.res = [avg(RA), avg(RB)]; return done(); }
+      if (i >= NSEED * 2) { CUR.res = [avg(RA), avg(RB)]; CUR.res.ch = ch; return done(); }
       var sd = CUR.seed + Math.floor(i / 2) * 101, r = run(JSON.parse(JSON.stringify(i % 2 ? b : a)), sd); (i % 2 ? RB : RA).push(r); i++;
       prog(i, NSEED * 2); setTimeout(next, 0);
     })();
@@ -400,6 +472,11 @@
   function onInput(e) {
     var k = e.target.getAttribute('data-mc'); if (!k || !CUR) return;
     if (k === 'chg') { CUR.chg = e.target.value; return; }
+    if (k.indexOf('ev.') === 0) { var f = k.slice(3), val = e.target.value;
+      if (f === 'kind') { CUR.cfg.ev = val ? evDef(val, CUR.cfg) : null; CUR.chg = val ? 'noev' : (CUR.m.dn && CUR.m.dn[0] < 600 ? 'noexit' : 'la'); CUR.res = null; paint(); return; }
+      CUR.cfg.ev[f] = f === 'when' ? val : +val;
+      if (f === 'x' || f === 'len') { var o9 = $('m2dMrgV_ev_' + f); if (o9) o9.textContent = f === 'len' ? val + 'm' : (+val < 0 ? '합류점 앞 ' + (-val) + 'm' : '합류점 뒤 ' + val + 'm'); return; }
+      if (e.type === 'change') paint(); return; }
     if (k === 'add') { CUR.cfg.add = e.target.checked; CUR.res = null; paint(); return; }
     var v = +e.target.value; CUR.cfg[k] = v; var o = $('m2dMrgV_' + k), s = SL.filter(function (x) { return x[0] === k; })[0]; if (o) o.textContent = fmt(k, v) + s[5];
   }

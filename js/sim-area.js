@@ -66,22 +66,29 @@
       }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); });
     };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=24'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=25'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
-  function defState() { var d = new Date(), h = d.getHours(); return { day: ['su', 'mt', 'mt', 'mt', 'mt', 'fr', 'sa'][d.getDay()], win: h >= 7 && h < 11 ? 'am' : h >= 11 && h < 16 ? 'md' : 'pm', k: 100, shut: {}, edit: {}, sel: Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig'; })[0] }; }
+  function defState() { var d = new Date(), h = d.getHours(); return { day: ['su', 'mt', 'mt', 'mt', 'mt', 'fr', 'sa'][d.getDay()], win: h >= 7 && h < 11 ? 'am' : h >= 11 && h < 16 ? 'md' : 'pm', k: 100, shut: {}, edit: {}, ev: [], evf: { kind: 'acc', link: null, k: 1, nb: 30, cars: 2, s: 30, d: 30 }, sel: Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig'; })[0] }; }
   function wOf() { return WINS.filter(function (w) { return w[0] === ST.win; })[0]; }
   function dOf() { return DAYS.filter(function (d) { return d[0] === ST.day; })[0]; }
   function scen(withAct) {
     var w = wOf(), c = M.cal || {};
-    return { date: dOf()[2], seed: 7, from: w[2] * 3600, to: w[3] * 3600, bgAll: (c.all || 1) * ST.k / 100, act: withAct ? Object.keys(ST.shut).map(function (e) { return 'x:' + e; }) : [] };
+    return { date: dOf()[2], seed: 7, from: w[2] * 3600, to: w[3] * 3600, bgAll: (c.all || 1) * ST.k / 100, act: withAct ? Object.keys(ST.shut).map(function (e) { return 'x:' + e; }) : [], ev: evScen(withAct) };
   }
+  /* 🚧 도로 위 일(2026-11-03 · 3단계) — 기본은 바꾼 안에만(평소 ↔ 그 일이 생기면) · 「현행에도」면 두 판 모두(그 일 위에서 신호·막기 대응을 견줌) */
+  var EVK = [['acc', '🚑 사고 — 차로 막힘'], ['work', '🚧 공사 — 차로 막힘'], ['bus', '🚌 버스 정차(정류장)'], ['park', '🅿️ 불법 주정차 — 바깥 차로'], ['ctrl', '⛔ 통제(집회·행진) — 길 닫음']];
+  function evScen(withAct) { var w = wOf(); return (ST.ev || []).filter(function (e) { return withAct || e.both; }).map(function (e) { var t0 = w[2] * 3600 + e.s * 60; return { link: e.link, kind: e.kind, k: e.k, nb: e.nb, cars: e.cars, t0: t0, t1: e.d ? t0 + e.d * 60 : w[3] * 3600 + 1 }; }); }
+  function apprList() { var L = []; Object.keys(M.nodes).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig' || /\(연등\)/.test(n.nm || '')) return; Object.keys(n.legs).forEach(function (lg) { var I = n.legs[lg].in; if (I && M.links[I] && !M.links[I].sink) L.push([I, n.nm + ' ' + (LEGK[lg] || lg) + '쪽에서 들어가는 길', M.links[I].lanes]); }); }); return L; }
+  function evDesc(e) { var A9 = apprList().filter(function (x) { return x[0] === e.link; })[0], l = M.links[e.link], N = l ? l.lanes : 1, f = window.tgSim.evFactor(e, N, l && l.len), w = wOf(), t0 = w[2] * 3600 + e.s * 60;
+    var what = e.kind === 'acc' || e.kind === 'work' ? (e.k ? e.k + '차로 막힘' : '갓길·가장자리') : e.kind === 'bus' ? '버스 ' + e.nb + '대/시 정차' : e.kind === 'park' ? e.cars + '대' : '닫음';
+    return { t: EVK.filter(function (x) { return x[0] === e.kind; })[0][1].split(' — ')[0] + ' · ' + (A9 ? A9[1] : e.link) + '(' + N + '차로) · ' + what + ' · ' + hh(t0) + '~' + (e.d ? hh(t0 + e.d * 60) : '끝까지'), f: f }; }
   function basePlan(id) { var w = wOf(), t = Math.round((w[2] + w[3]) / 2 * 3600); return window.tgSim.planAt(M, id, t, window.tgSim.dowOf(dOf()[2]), null); }
   /* 신호를 바꾼 교차로는 두 판 모두 그 시간대 가운데 계획 하나로 고정한다(현행 = 고친 것 없이 · 바꾼 안 = 고친 것) — 시간대 안 계획 바뀜이 차이에 섞이지 않게 */
   function alt(edited) { var o = null; Object.keys(ST.edit).forEach(function (id) { var d = ST.edit[id], P = basePlan(id); if (!d.some(function (x) { return x; })) return; o = o || {}; o[id] = { off: P.off, ph: P.ph.map(function (p, i) { return { d: Math.max(5, p.d + (edited ? d[i] || 0 : 0)), y: p.y, ar: p.ar, mv: p.mv }; }) }; }); return o; }
   /* 신호 기록에 녹색이 한 번도 없는 접근로 — T-Data 가 그 방향을 못 읽은 기록이면 그 길은 시뮬에서 늘 적색이라 줄이 길게 나온다(실제와 다름) · 화면에 밝힌다 */
   function noGreen(gap) { var L = []; Object.keys(M.nodes).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; var P = basePlan(id), G = {}, F = {}; (P.win || []).forEach(function (w) { var lg = String(w[0]).split('.')[0]; if (w[4] === 'gap') F[lg] = 1; else G[lg] = 1; });
     Object.keys(n.legs).forEach(function (lg) { if (n.legs[lg].in && !G[lg] && (gap ? F[lg] : !F[lg])) L.push(n.nm + ' ' + (LEGK[lg] || lg) + '쪽에서'); }); }); return L; }
-  function changed() { return Object.keys(ST.shut).length > 0 || !!alt(1); }
+  function changed() { return Object.keys(ST.shut).length > 0 || !!alt(1) || (ST.ev || []).some(function (e) { return !e.both; }); }
   // ---- 구역 그림(두 판 같은 꼴) — 길 색 = 점유(대수 ÷ 길이×차로÷간격) ----
   var GEO = null;
   function geo() {
@@ -126,7 +133,10 @@
       '<tr><td>총 지체(대·시)</td><td>' + a.delayVh.toLocaleString() + '</td><td>' + b.delayVh.toLocaleString() + dv(a.delayVh, b.delayVh) + '</td></tr>' +
       '<tr><td>막힘 시작→풀림</td><td>' + jm(a) + '</td><td>' + jm(b) + '</td></tr>' +
       '<tr><td>한꺼번에 막힌 접근로(가장 많을 때)</td><td>' + a.jamMax + '</td><td>' + b.jamMax + '</td></tr>' +
-      '<tr><td>꼬리물기(교차로 안에 선 차)</td><td>' + a.box + '</td><td>' + b.box + '</td></tr></table>' +
+      '<tr><td>꼬리물기(교차로 안에 선 차)</td><td>' + a.box + '</td><td>' + b.box + '</td></tr>' +
+      ((a.evDiv || b.evDiv) ? '<tr><td>통제로 다른 길로 돌린 차</td><td>' + (a.evDiv || 0).toLocaleString() + '</td><td>' + (b.evDiv || 0).toLocaleString() + '</td></tr>' : '') + '</table>' +
+      ((ST.ev || []).length ? '<div class="sn">🚧 걸린 일 — ' + ST.ev.map(function (e) { return esc(evDesc(e).t) + (e.both ? '(두 판)' : '(바꾼 안)'); }).join(' · ') + '</div>' +
+        (ST.ev.some(function (e) { return !e.both; }) && Math.abs(b.delayVh - a.delayVh) <= Math.max(20, a.delayVh * 0.02) ? '<div class="warn">차이가 작다 — 그 길 앞(하류)이 이미 막혀 차가 신호보다 <b>앞이 비는 만큼만</b> 빠지고 있으면, 그 길의 차로를 막아도 빠지는 양이 거의 같다(막힘의 원인이 다른 곳). 다른 시간대·더 위쪽 길에 놓아 본다.</div>' : '') : '') +
       '<div class="sg">접근로별 가장 긴 줄(m)</div><table><tr><th>접근로</th><th>현행</th><th>바꾼 안</th></tr>' + ks.map(function (k) { return '<tr><td>' + esc(apNm(k)) + '</td><td>' + (a.maxQm[k] || 0) + '</td><td>' + (b.maxQm[k] || 0) + dv(a.maxQm[k] || 0, b.maxQm[k] || 0) + '</td></tr>'; }).join('') + '</table>' +
       (function () { var g = noGreen(), f = noGreen(1); return (f.length ? '<div class="warn">✎ 신호 기록에 녹색이 없어 <b>빈 시간으로 채운</b> 접근로 — ' + esc(f.join(' · ')) + ' · 서울시 T-Data 가 그 방향을 못 읽어, 주기 안에서 읽힌 녹색이 없는 가장 긴 시간을 그 길 녹색으로 줌(설계값 — 실제는 보행 현시 등으로 더 짧을 수 있다)</div>' : '') +
         (g.length ? '<div class="warn">⚠ 신호 기록에 녹색이 없는 접근로 — ' + esc(g.join(' · ')) + ' · 시뮬에서는 늘 적색(우회전만 빠짐) → 그 줄은 실제보다 길게 나온다</div>' : ''); })() +
@@ -144,7 +154,7 @@
       '<label class="sl"><b>수요(평소 = 100%)</b><input type="range" min="50" max="160" step="5" value="' + ST.k + '" data-sa="k"><em>' + ST.k + '%</em></label>' +
       '<div class="sg">바꾼 안 — 신호 현시 길이</div><div class="row"><select data-sa="sel">' + sigs.map(function (k) { return '<option value="' + esc(k) + '"' + (k === ST.sel ? ' selected' : '') + '>' + esc(M.nodes[k].nm) + ' (' + esc(k) + ')' + (ST.edit[k] && ST.edit[k].some(function (x) { return x; }) ? ' ✎' : '') + '</option>'; }).join('') + '</select><button data-sa="reset">↺ 신호 원래대로</button></div>' +
       '<div class="sn">' + esc(wOf()[1]) + ' 가운데 시각의 계획 · 주기 ' + P.c + '초 · 출처 ' + esc(P.src || '') + (P.day ? ' ' + esc(P.day) : '') + ' · 현시를 늘리면 주기도 늘어난다 · 고친 교차로는 두 판 모두 이 계획 하나로 고정(시간대 안 계획 바뀜을 빼고 견줌)</div>' + phs +
-      '<div class="sg">바꾼 안 — 들어오는 길 막기(라바콘·통제)</div><div class="row">' + Object.keys(M.entry).map(function (e) { return '<button data-sa="shut:' + esc(e) + '"' + (ST.shut[e] ? ' class="on"' : '') + '>⛔ ' + esc((M.links[e].nm || e).replace(' — 들어옴', '')) + ' (' + esc(M.nodes[M.links[e].to] ? M.nodes[M.links[e].to].nm : '') + ')</button>'; }).join('') + '</div>' +
+      '<div class="sg">바꾼 안 — 들어오는 길 막기(라바콘·통제)</div><div class="row">' + Object.keys(M.entry).map(function (e) { return '<button data-sa="shut:' + esc(e) + '"' + (ST.shut[e] ? ' class="on"' : '') + '>⛔ ' + esc((M.links[e].nm || e).replace(' — 들어옴', '')) + ' (' + esc(M.nodes[M.links[e].to] ? M.nodes[M.links[e].to].nm : '') + ')</button>'; }).join('') + '</div>' + evCtl() +
       '<div class="row" style="margin-top:8px"><button data-sa="play" class="on">▶ 두 판 시연</button><button data-sa="end">⏩ 끝까지 · 결과</button><button data-sa="spd">속도 ×' + (SPD / 600) + '</button></div>';
   }
   function srcList() {
@@ -198,6 +208,18 @@
   }
   function toEnd() { if (!A) start(); stop(); A.runTo(A.end); B.runTo(B.end); paintRun(); paintRes(); paintLive(); }
   function reset() { stop(); A = B = null; $('simARun').innerHTML = '<div class="sn">고른 뒤 ▶ 시연 또는 ⏩ 끝까지</div>'; paintRes(); paintCtl(); }
+  function evCtl() {
+    var F = ST.evf, AL = apprList(); if (!AL.length) return ''; if (!F.link || !AL.some(function (x) { return x[0] === F.link; })) F.link = AL[0][0];
+    var N = M.links[F.link].lanes, opt = function (L, cur) { return L.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (String(x[0]) === String(cur) ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join(''); }, rng9 = function (a, b, f) { var r = []; for (var i = a; i <= b; i++) r.push([i, f(i)]); return r; };
+    var par = F.kind === 'acc' || F.kind === 'work' ? '<select data-sa="ev:k">' + opt(rng9(F.kind === 'acc' ? 0 : 1, N, function (i) { return i === 0 ? '갓길·가장자리' : i >= N ? '모든 차로(닫힘)' : i + '차로 막힘'; }), Math.min(F.k, N)) + '</select>'
+      : F.kind === 'bus' ? '<select data-sa="ev:nb">' + opt([10, 20, 30, 45, 60, 90].map(function (x) { return [x, '버스 ' + x + '대/시']; }), F.nb) + '</select>'
+      : F.kind === 'park' ? '<select data-sa="ev:cars">' + opt([1, 2, 3, 5, 8].map(function (x) { return [x, x + '대']; }), F.cars) + '</select>' : '';
+    return '<div class="sg">🚧 도로 위 일 — 사고·공사·버스 정차·불법 주정차·통제</div>' +
+      '<div class="row"><select data-sa="ev:kind">' + opt(EVK, F.kind) + '</select><select data-sa="ev:link">' + opt(AL.map(function (x) { return [x[0], x[1] + ' · ' + x[2] + '차로']; }), F.link) + '</select>' + par + '</div>' +
+      '<div class="row">시작 <select data-sa="ev:s">' + opt([0, 15, 30, 60, 90, 120].map(function (x) { return [x, x ? x + '분 뒤' : '처음부터']; }), F.s) + '</select> 동안 <select data-sa="ev:d">' + opt([[15, '15분'], [30, '30분'], [60, '1시간'], [120, '2시간'], [0, '끝까지']], F.d) + '</select><button data-sa="evadd">＋ 넣기</button></div>' +
+      (ST.ev || []).map(function (e, i) { var D = evDesc(e); return '<div class="ph"><span>' + esc(D.t) + '<br><small>' + (D.f.shut ? '' : '빠지는 힘 ' + Math.round(D.f.f * 100) + '% · ') + esc(D.f.src) + '</small></span><button data-sa="evboth:' + i + '"' + (e.both ? ' class="on"' : '') + '>현행에도</button><button data-sa="evdel:' + i + '">✕</button></div>'; }).join('') +
+      '<div class="sn">넣은 일은 기본으로 <b>바꾼 안에만</b> 걸린다 → 「평소」와 「그 일이 생기면」을 견준다 · 「현행에도」를 켜면 두 판 모두에 걸려, 그 일 위에서 신호·막기로 대응한 것을 견준다 · 그 교차로 정지선 앞에서 생긴 일로 본다 · 통제는 그 앞 교차로에서 다른 길로 돌린다(경찰 안내 · 돌린 차는 평소 회전 몫대로 새 길을 고른다 — 실제 우회로와 다를 수 있다) · 계수 출처는 줄마다</div>';
+  }
   function onClick(e) {
     var t = e.target.closest('[data-sa],[data-simx]'); if (!t) return;
     if (t.hasAttribute('data-simx')) return close();
@@ -206,14 +228,16 @@
     if (k[0] === 'day') { ST.day = k[1]; reset(); } else if (k[0] === 'win') { ST.win = k[1]; ST.edit = {}; reset(); }
     else if (k[0] === 'ph') { var d = ST.edit[ST.sel] || (ST.edit[ST.sel] = []), i = +k[1], P = basePlan(ST.sel); d[i] = Math.max(5 - P.ph[i].d, (d[i] || 0) + (+k[2])); reset(); }
     else if (k[0] === 'reset') { ST.edit = {}; reset(); } else if (k[0] === 'shut') { var e9 = k.slice(1).join(':'); if (ST.shut[e9]) delete ST.shut[e9]; else ST.shut[e9] = 1; reset(); }
+    else if (k[0] === 'evadd') { var F = ST.evf, N9 = M.links[F.link].lanes; ST.ev.push({ kind: F.kind, link: F.link, k: Math.min(F.k, N9), nb: F.nb, cars: F.cars, s: F.s, d: F.d, both: false }); reset(); }
+    else if (k[0] === 'evdel') { ST.ev.splice(+k[1], 1); reset(); } else if (k[0] === 'evboth') { var e8 = ST.ev[+k[1]]; e8.both = !e8.both; reset(); }
     else if (k[0] === 'play') { start(); paintCtl(); } else if (k[0] === 'end') { toEnd(); } else if (k[0] === 'spd') { SPD = SPD >= 2400 ? 300 : SPD * 2; paintCtl(); }
   }
   function onInput(e) { var t = e.target; if (t.getAttribute('data-sa') === 'k') { ST.k = +t.value; var em = t.parentNode.querySelector('em'); if (em) em.textContent = ST.k + '%'; } }
-  function onChange(e) { var t = e.target, k = t.getAttribute('data-sa'); if (k === 'k') reset(); else if (k === 'sel') { ST.sel = t.value; paintCtl(); } }
+  function onChange(e) { var t = e.target, k = t.getAttribute('data-sa'); if (k === 'k') reset(); else if (k === 'sel') { ST.sel = t.value; paintCtl(); } else if (k && k.slice(0, 3) === 'ev:') { var f9 = k.slice(3), v9 = t.value; ST.evf[f9] = (f9 === 'kind' || f9 === 'link') ? v9 : +v9; if (f9 === 'kind' && v9 === 'work' && !ST.evf.k) ST.evf.k = 1; paintCtl(); } }
   /* 🧪 고른 자리(js/sim-pick.js 가 이 기기에서 엮은 구역 · 2026-11-02) — 미리 구운 구역과 같은 판으로 연다 · ar = 목록 칸과 같은 꼴(맞춤 결과) */
   function openDoc(doc, ar) {
     var go = function () { AR = ar; M = doc; M.actions = Object.keys(M.entry).map(function (e) { return { id: 'x:' + e, nm: '막기 — ' + (M.links[e].nm || e), closeEntry: [e] }; }); ST = null; RES = null; geo(); show(); };
-    if (window.tgSim) go(); else { var s = document.createElement('script'); s.src = 'js/sim.js?v=24'; s.onload = go; document.head.appendChild(s); }
+    if (window.tgSim) go(); else { var s = document.createElement('script'); s.src = 'js/sim.js?v=25'; s.onload = go; document.head.appendChild(s); }
   }
   function open(id) { need(id, show); }
   function show() {

@@ -213,6 +213,29 @@
             j.items.length >= 200 && same && a1 < a0 && gg.forced === 0 && gg.stall === 0 && fin && r1.merges > 0, j.items.length + ' · 같음 ' + same + ' · ' + a0 + '→' + a1 + ' · 더해짐 ' + (g && g.nm) + ' 억지 ' + gg.forced + ' · 합류 ' + r1.merges);
         }).catch(function (e8) { ck('🔀 합류부 시뮬', false, String(e8)); });
       }).then(function () {
+      /* 🚧 도로 위 일(3단계 · 2026-11-03) — 합류부: 바깥 차로 사고(2분 뒤 5분)가 지체·막힌 곳 앞 멈춤을 늘리고 「빨리 치움」이 지체를 줄인다(세 벌) · 계수: 5차로 2개 막힘 사고 = HCM 0.67 × 3/5 · 버스 30대/시 2차로 = (2−14.4×30/3600)/2 · 통제 = 닫힘 ·
+         신호 구역(서초역): 같은 판을 두 번 돌려도 같은 답(쓰는 신호 기록을 미리 채움 — 전엔 처음 판만 달랐다) · 아침을 먼저 돌려도 저녁 답이 같다 · 통제한 길은 끝날 무렵 비고 돌린 차가 생긴다 */
+        var SM = window.tgSimMerge; if (!SM) return ck('🚧 도로 위 일', false, 'tgSimMerge 없음');
+        return SM.load().then(function (j) {
+          var m = j.items.filter(function (x) { return x.nm === '반포동 115-6'; })[0], c = SM.cfgOf(m, null), ca = JSON.parse(JSON.stringify(c)); ca.ev = { kind: 'acc', lane: c.n - 1, k: 1, x: 220, when: 'mid', gawk: 0.2 };
+          var cf = JSON.parse(JSON.stringify(ca)); cf.ev.fast = 1; var S0 = { d: 0, o: 0 }, S1 = { d: 0, o: 0 }, S2 = { d: 0, o: 0 };
+          [7, 108, 209].forEach(function (sd) { [[c, S0], [ca, S1], [cf, S2]].forEach(function (p) { var r = SM.run(JSON.parse(JSON.stringify(p[0])), sd).m; p[1].d += r.delay; p[1].o += r.oStall; }); });
+          var okM = S1.d > S0.d + 15 && S1.o > 0 && S0.o === 0 && S2.d < S1.d;
+          return new Promise(function (res) { if (window.tgSim) return res(); var s9 = document.createElement('script'); s9.src = 'js/sim.js?v=25'; s9.onload = res; s9.onerror = res; document.head.appendChild(s9); }).then(function () {
+            var G = window.tgSim; if (!G) return ck('🚧 도로 위 일', false, 'sim.js 없음');
+            var f1 = G.evFactor({ kind: 'acc', k: 2 }, 5, 180), f2 = G.evFactor({ kind: 'bus', nb: 30 }, 2, 100), f3 = G.evFactor({ kind: 'ctrl' }, 3, 100);
+            var okF = Math.abs(f1.f - 0.67 * 3 / 5) < 1e-9 && Math.abs(f2.f - (2 - 14.4 * 30 / 3600) / 2) < 1e-9 && f3.shut && f3.f === 1;
+            return fetch('data/sim-areas.json?v=1').then(function (r) { return r.json(); }).then(function (ix) { return G.load('seochoyeok', ix.made); }).then(function (M0) {
+              var C = function () { return JSON.parse(JSON.stringify(M0)); }, sc = function (f, t, ev) { return { date: '2026-10-21', seed: 7, from: f * 3600, to: t * 3600, ev: ev }; }, R = function (MM, s9) { var r = G.run(MM, s9).result(); return r.delayVh + '/' + r.jamMax; };
+              var X = C(), a = R(X, sc(16, 19)), b = R(X, sc(16, 19)), Y = C(); R(Y, sc(7, 10)); var c9 = R(Y, sc(16, 19));
+              var Lk = '4040>4039', S = G.create(C(), sc(16, 19, [{ link: Lk, kind: 'ctrl', t0: 61200, t1: 63000 }])); S.runTo(S.end); var sm = S.samp.filter(function (q) { return q.t === 62940; })[0], rr = S.result();
+              ck('🚧 도로 위 일 — 합류부 사고가 지체·막힌 곳 앞 멈춤을 늘리고 빨리 치우면 줄어듦(세 벌) · 계수 HCM 사고 0.67×3/5 · 버스 막힘 식 · 통제 = 닫힘 · 신호 구역 두 번 돌려도 같은 답 · 아침 먼저 돌려도 저녁 같음 · 통제한 길 비고 돌린 차 생김',
+                okM && okF && a === b && a === c9 && sm && sm.occ[Lk] === 0 && rr.evDiv > 0,
+                '합류 지체 ' + Math.round(S0.d) + '→' + Math.round(S1.d) + '→빨리 ' + Math.round(S2.d) + ' · 멈춤 ' + S1.o + ' · 계수 ' + okF + ' · 구역 ' + a + '/' + b + '/' + c9 + ' · 통제 길 ' + (sm ? sm.occ[Lk] : '?') + ' · 돌림 ' + rr.evDiv);
+            });
+          });
+        }).catch(function (e7) { ck('🚧 도로 위 일', false, String(e7)); });
+      }).then(function () {
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       setTimeout(send, 80); }); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }

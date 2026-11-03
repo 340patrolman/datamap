@@ -28,6 +28,18 @@
     });
     return { c: t, win: W.sort(function (a, b) { return a[3] - b[3]; }) };
   }
+  /* 그 기록에 빠진 이동류 채우기(planAt 에서 떼어 냄 · 2026-11-03) — 처음엔 시뮬이 돌다가 그 기록을 처음 쓸 때 채웠는데, 이동류(길)는 create 때
+     「어느 기록에든 녹색이 있는 이동류」로만 만들어서 처음 돌린 판만 채운 이동류가 빠져 두 번째 판부터 결과가 달랐다(서초역 구역 지체 1,156 → 2,408 대·시) → create 앞에서 모두 채운다(prefill) */
+  function fillRec(M, n, p, best) {
+    var have = {}, W = best.win.slice(); best.win.forEach(function (r) { have[r[0]] = 1; });
+        p.recs.forEach(function (r) { r.win.forEach(function (w) { if (w[4] || have[w[0]]) return; var dn = null, dv = 1e9; p.recs.forEach(function (q) { if (!q.win.some(function (x) { return x[0] === w[0] && !x[4]; })) return;   /* 원래 기록 값만 빌린다(채운 값·빈 시간 값을 다시 빌리면 먼저 돌린 시간대에 따라 달라졌다) */ var dd = (q.cyc === best.cyc ? 0 : 1e5) + Math.abs(q.t - best.t); if (dd < dv) { dv = dd; dn = q; } });
+          var x = dn.win.filter(function (z) { return z[0] === w[0] && !z[4]; })[0], k = best.cyc / dn.cyc; W.push([x[0], Math.round(x[1] * k), x[2], Math.round(x[3] * k) % best.cyc, 'fill']); have[w[0]] = 1; }); });
+        if (M.auto) gapFill(n, W, best.cyc);
+        best.win = W.sort(function (a9, b9) { return a9[3] - b9[3]; }); best.full = 1; 
+  }
+  /* 이 판이 쓸 기록(그 요일 · 몸풀기부터 끝까지 1분마다 고른 기록)만 미리 채우고 그 기록들을 돌려준다 — 이동류는 「빈 시간 채움(gap)」을 이 기록들 것만 센다(다른 시간대를 먼저 돌려 본 기록이 섞이지 않게) */
+  function prefill(M, dow, t0, t1) { var U = {}; Object.keys(M.nodes).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig' || !n.plan || !n.plan.recs) return; var u = U[id] = []; for (var t = t0; t <= t1; t += 60) { var P = planAt(M, id, t, dow, null), r = n.plan.recs.filter(function (x) { return x.win === P.win; })[0]; if (r && u.indexOf(r) < 0) u.push(r); } }); return U; }
+  function winUsed(p, u) { if (!p.recs || !u) return allWin(p); var o = []; p.recs.forEach(function (r) { var mine = u.indexOf(r) >= 0; r.win.forEach(function (w) { if (w[4] !== 'gap' || mine) o.push(w); }); }); return o; }
   /* 녹색 창 → 현시(수동 조작용) — 녹색이 새로 켜지는 때마다 한 현시 */
   function winToPhases(w, c, Y, AR) {
     var S = []; w.forEach(function (r) { if (S.indexOf(r[3]) < 0) S.push(r[3]); }); S.sort(function (a, b) { return a - b; });
@@ -43,11 +55,7 @@
       var best = null, bs = 1e9;
       p.recs.forEach(function (r) { var dsc = r.dk.indexOf(dow) >= 0 ? 0 : 1e6, h = Math.abs(r.t - t); if (dsc + h < bs) { bs = dsc + h; best = r; } });
       // 그 기록에 빠진 이동류(T-Data 가 몇 개만 읽힌 기록)는 그 이동류가 있는 가장 가까운 기록에서 채운다(주기 비율로 늘이거나 줄임 · 지도 신호 카드의 「채움」과 같은 생각)
-      if (!best.full) { var have = {}, W = best.win.slice(); best.win.forEach(function (r) { have[r[0]] = 1; });
-        p.recs.forEach(function (r) { r.win.forEach(function (w) { if (have[w[0]]) return; var dn = null, dv = 1e9; p.recs.forEach(function (q) { if (!q.win.some(function (x) { return x[0] === w[0]; })) return; var dd = (q.cyc === best.cyc ? 0 : 1e5) + Math.abs(q.t - best.t); if (dd < dv) { dv = dd; dn = q; } });
-          var x = dn.win.filter(function (z) { return z[0] === w[0]; })[0], k = best.cyc / dn.cyc; W.push([x[0], Math.round(x[1] * k), x[2], Math.round(x[3] * k) % best.cyc, 'fill']); have[w[0]] = 1; }); });
-        if (M.auto) gapFill(n, W, best.cyc);
-        best.win = W.sort(function (a9, b9) { return a9[3] - b9[3]; }); best.full = 1; }
+      if (!best.full) fillRec(M, n, p, best);
       return { c: best.cyc, off: best.off || 0, win: best.win, src: p.src, day: best.day, ph: winToPhases(best.win, best.cyc) };
     }
     if (p.win) return { c: p.cyc, off: 0, win: p.win, src: p.src, ph: winToPhases(p.win, p.cyc) };
@@ -80,7 +88,7 @@
     /* 구역 밖 막힘(자동 구역 · 2026-10-25) — 나가는 길(sink)에 그 너머 1.5km 평소 속도(onsp · 요일 갈래-시 · 가장 느린 링크)가 있으면 빠지는 속도를 줄인다: 18km/h↑ 그대로 · 6km/h 면 0.2배 · 아래로 0.15배(설계값) — 끄기 scen.noOut */
     var DKO = [3, 0, 0, 0, 0, 1, 2][dow], OUTK = {}; if (!scen.noOut) Object.keys(M.links).forEach(function (k) { if (M.links[k].sink && M.links[k].onsp) OUTK[k] = M.links[k].onsp; });
     function outFac(k, t) { var v = OUTK[k][DKO + '-' + Math.min(23, Math.floor(t / 3600))]; return v == null ? 1 : Math.max(0.15, Math.min(1, (v - 3) / 15)); }
-    var FROM = scen.from != null ? scen.from : 16 * 3600, WARM = scen.warm != null ? scen.warm : 7200;   // 몸풀기 2시간 — 빈 길에서 시작하면 16시에 이미 쌓여 있던 차가 없다
+    var FROM = scen.from != null ? scen.from : 16 * 3600, WARM = scen.warm != null ? scen.warm : 7200, USED = prefill(M, dow, FROM - WARM, scen.to != null ? scen.to : 22 * 3600);   // 몸풀기 2시간 — 빈 길에서 시작하면 16시에 이미 쌓여 있던 차가 없다
     // 조치(라바콘·입차 중단 …) 모으기
     var ACT = { closeEntry: {}, mvp: {}, attOff: {}, attInStop: {}, attOutFirst: {}, noTw: {}, attInCap: {}, doorShare: {}, boxGuard: {} };
     (scen.act || []).forEach(function (aid) { var a = (M.actions || []).filter(function (x) { return x.id === aid; })[0]; if (!a) return;
@@ -88,13 +96,17 @@
       ['attOff', 'attInStop', 'attOutFirst', 'noTw'].forEach(function (f) { (a[f] || []).forEach(function (x) { ACT[f][x] = 1; }); }); Object.keys(a.attInCap || {}).forEach(function (k) { ACT.attInCap[k] = a.attInCap[k]; }); Object.keys(a.boxGuard || {}).forEach(function (k) { ACT.boxGuard[k] = a.boxGuard[k]; });
       Object.keys(a.doorShare || {}).forEach(function (k) { ACT.doorShare[k] = Object.assign(ACT.doorShare[k] || {}, a.doorShare[k]); }); });   /* 출차 우회 — 문마다 나오는 몫을 바꿈 */
     var S = { M: M, from: FROM, t: FROM - WARM, end: scen.to != null ? scen.to : 22 * 3600, L: {}, mv: {}, N: {}, V: [], done: 0, delay: 0, boxN: 0, back: {}, samp: [], pre: [], log: [], rtBlk: {}, A: {} };
+    /* 🚧 도로 위 일(scen.ev · 2026-11-03 · intent/20261102-road-sim-anywhere.md 3단계) — [{link, kind 'acc' 사고·'work' 공사·'bus' 버스 정차·'park' 불법 주정차·'ctrl' 통제, k 막힌 차로(0 = 갓길·가장자리), nb 버스 대/시, cars 주정차 대수, len 공사 m, t0·t1 자정부터 초}]
+       그 길에서 빠지는 힘(f)과 설 자리(cf)를 줄이고 · 통제·모든 차로 막힘은 닫는다(못 들어감 · 그 앞에서 다른 길로 돌린다 · 꼬리물기로 들어가지도 않는다) · 계수 = evFactor */
+    var EVS = (scen.ev || []).filter(function (e) { return M.links[e.link] && !M.links[e.link].sink; }), EVN = {}, RE = rng((scen.seed || 7) + 404); S.evDiv = 0;
+    function evTick(t) { EVN = {}; EVS.forEach(function (e) { if (t < e.t0 || t >= e.t1) return; var l = M.links[e.link], x = evFactor(e, l.lanes, l.len), o = EVN[e.link] || (EVN[e.link] = { f: 1, cf: 1, shut: false }); o.f *= x.f; o.cf *= x.cf; if (x.shut) o.shut = true; }); }
     Object.keys(M.links).forEach(function (k) { var l = M.links[k]; S.L[k] = { id: k, l: l, n: 0, cap: l.sink ? 1e9 : Math.max(2, l.len * l.lanes / sp), tt: l.sink ? 0 : l.len / vf }; });
     function addMv(node, key, fr, to, la, kind, cap, p) { var id = fr + '>' + to; S.mv[id] = { id: id, node: node, key: key, fr: fr, to: to, la: la, kind: kind, cap: cap, p: p == null ? 1 : p, q: [], acc: 0, served: 0, gs: 0 }; return S.mv[id]; }
     // 신호 교차로 이동류 — 다리(legs)와 현시에서
     Object.keys(M.nodes).forEach(function (id) {
       var n = M.nodes[id]; S.N[id] = { id: id, n: n, box: [], manual: null };
       if (n.ty !== 'sig') return;
-      var any = {}; allWin(n.plan).forEach(function (r) { any[r[0]] = 1; }); (n.free || []).forEach(function (k) { any[k] = 1; });
+      var any = {}; winUsed(n.plan, USED[id]).forEach(function (r) { any[r[0]] = 1; }); (n.free || []).forEach(function (k) { any[k] = 1; });
       Object.keys(n.legs).forEach(function (lg) {
         var I = n.legs[lg].in; if (!I || !TURN[lg]) return; var ln = M.links[I].lanes;
         ['St', 'Lt', 'Rt'].forEach(function (tu) {
@@ -130,6 +142,7 @@
       for (var g = 0; g < 14; g++) {
         var L = M.links[cur]; if (!L || L.sink) return p;
         var O = (outOf[cur] || []).filter(function (m) { return !isAtt(m) && m.p > 0; });
+        if (EVS.length) { var O2 = O.filter(function (m) { return !(EVN[m.to] && EVN[m.to].shut); }); if (O2.length) O = O2; }   /* 닫힌 길(통제)은 피해 간다 */
         if (!O.length) return p;
         var nx;
         if (M.nodes[L.to].ty === 'sig') {
@@ -195,8 +208,12 @@
       S.inn[lk] = (S.inn[lk] || 0) + 1;
       m.q.push(v);
     }
+    function divert(m, t) {   /* 닫힌 길 앞(정지선)에 닿은 차 — 경찰이 다른 이동류로 돌린다(돌린 뒤 길은 따로 굴린 주사위 RE · 끌어들이는 곳으로 가던 차도 그냥 돌아다님) */
+      var alt = (outOf[m.fr] || []).filter(function (x) { return x !== m && !isAtt(x) && x.p > 0 && !(EVN[x.to] && EVN[x.to].shut); }); if (!alt.length) return;
+      var nW = waiting(m.q); for (var j = 0; j < nW; j++) { var v = m.q.shift(), a = alt[Math.floor(RE() * alt.length)]; v.p = v.p.slice(0, v.i + 1).concat([a.to]).concat(wander(a.to, RE).slice(1)); var ix = 0; while (ix < a.q.length && a.q[ix].rd <= v.rd) ix++; a.q.splice(ix, 0, v); S.evDiv++; }
+    }
     function finish(v, t) { S.done++; v.te = t; if (v.t0 >= FROM) S.delay += Math.max(0, t - v.t0 - v.ff); }
-    function room(lk) { var L = S.L[lk]; return L.l && L.l.sink || L.sinkA || L.n < L.cap; }
+    function room(lk) { var L = S.L[lk], E = EVN[lk]; if (E && E.shut) return false; return L.l && L.l.sink || L.sinkA || L.n < L.cap * (E ? E.cf : 1); }
     // 신호
     function greenSet(id, t) {
       var N = S.N[id], G = {};
@@ -210,6 +227,7 @@
     S.inn = {};
     S.step = function () {
       var t = S.t; S.inn = {};
+      if (EVS.length) { evTick(t); Object.keys(EVN).forEach(function (lk) { if (EVN[lk].shut) Object.keys(S.mv).forEach(function (k9) { var m9 = S.mv[k9]; if (m9.to === lk) divert(m9, t); }); }); }
       if (AC && t >= S.from - 600 && t % (AC.every || 5) === 0) autoCut(t);
       if (INI && t === INI.at) Object.keys(INI.fill).forEach(function (lk) { var L = S.L[lk]; if (!L || L.l.sink) return; var add = Math.round(Math.min(1, INI.fill[lk]) * L.cap) - L.n; for (var q = 0; q < add; q++) { var vi = makeV('ini', lk, t); enter(vi, lk, t); } S.iniN = (S.iniN || 0) + Math.max(0, add); });
       Object.keys(S.N).forEach(function (id) { var ma = S.N[id].manual; if (ma && ma.clr > 0) { ma.clr--; if (!ma.clr) { ma.i = ma.next; ma.keep = []; } } });
@@ -255,6 +273,7 @@
         var la = m.la - (m.key.slice(-2) === 'St' && S.rtBlk[m.fr] >= t - 1 ? 0.5 : 0);   // 우회전 차가 막혀 서 있으면 나눠 쓰는 바깥 차로가 직진에도 막힌다
         if (m.att9 && m.att9.occ != null && m.att9.occ >= m.att9.a.capacity) { on = false; if (m.att9.a.circle) circleOut(m, t); }   // 만차 — 문 닫힘 · 빙 도는 곳이면 다음 문으로
         if (m.door9 && m.door9.q9.length && wv(m.att9, m.door9)) la *= 1 - wv(m.att9, m.door9);   // 같은 문에서 나오는 차와 엉킴(들어가는 쪽이 그만큼 느림)
+        if (EVN[m.fr]) la *= EVN[m.fr].f;   /* 도로 위 일 — 그 길에서 덜 빠진다(막힌 차로·버스·주정차) */
         if (OUTK[m.to]) la *= outFac(m.to, t);   /* 나가는 길 너머가 평소 막히는 시간 — 덜 빠진다(자동 구역 · onsp) */
         var rate = m.kind === 'cap' ? m.cap / 3600 * (m.door9 && m.door9.q9.length && wv(m.att9, m.door9) ? 1 - wv(m.att9, m.door9) : 1) : la * satS * (m.kind === 'rt' && !(GS[m.node] && GS[m.node][m.key]) ? rtRed : 1);
         if (!on || !q.length) { m.acc = 0; return; }
@@ -264,7 +283,7 @@
           var v = q[0];
           if (!room(m.to)) {
             if (m.kind === 'rt') S.rtBlk[m.fr] = t;
-            if ((M.nodes[m.node] || {}).ty === 'sig' && box.length < 2 && RB() < (scen.box === 0 ? 0 : ((M.nodes[m.node].boxMv || {})[m.key] != null ? M.nodes[m.node].boxMv[m.key] : boxP) * (GD ? (GD.p != null ? GD.p : 0) : 1))) {   /* GD.p = 경찰관이 정지선에서 세워도 남는 꼬리물기 몫(설계값) */   /* boxMv = 그 이동류만 꼬리물기 몫을 달리(현장 지식 · 설계값) */ q.shift(); m.acc -= 1; box.push({ v: v, fr: m.fr, to: m.to, key: m.key, t0: t }); S.boxN++; }
+            if ((M.nodes[m.node] || {}).ty === 'sig' && box.length < 2 && !(EVN[m.to] && EVN[m.to].shut) && RB() < (scen.box === 0 ? 0 : ((M.nodes[m.node].boxMv || {})[m.key] != null ? M.nodes[m.node].boxMv[m.key] : boxP) * (GD ? (GD.p != null ? GD.p : 0) : 1))) {   /* GD.p = 경찰관이 정지선에서 세워도 남는 꼬리물기 몫(설계값) */   /* boxMv = 그 이동류만 꼬리물기 몫을 달리(현장 지식 · 설계값) */ q.shift(); m.acc -= 1; box.push({ v: v, fr: m.fr, to: m.to, key: m.key, t0: t }); S.boxN++; }
             break;
           }
           q.shift(); m.acc -= 1; S.L[m.fr].n--; m.served++;
@@ -317,7 +336,7 @@
       if (st != null) { for (var i = A.length - 1; i >= 0; i--) { if (A[i].jam.length >= 3) { clr = A[i + 1] ? A[i + 1].t : null; break; } } }
       var inNet = S.V.filter(function (v) { return v.te == null && v.t0 >= FROM; }), dl = S.delay + inNet.reduce(function (a, v) { return a + Math.max(0, S.t - v.t0 - v.ff); }, 0);
       var maxQ = {}; A.forEach(function (s) { Object.keys(s.ap).forEach(function (a) { var nd = a.split('.')[0], lg = a.split('.')[1], I = M.nodes[nd].legs[lg].in, m = s.ap[a] * M.spacing.v / M.links[I].lanes; if (!maxQ[a] || m > maxQ[a]) maxQ[a] = Math.round(m); }); });
-      return { delayVh: Math.round(dl / 3600), maxQm: maxQ, trappedMax: Math.max.apply(null, A.map(attW).concat([0])), jamStart: st, clearT: clr, jamMax: Math.max.apply(null, A.map(function (s) { return s.jam.length; }).concat([0])), acN: S.ac.n, acSec: S.ac.sec, peak: peak, peakT: pkT, box: S.boxN, made: S.V.length, done: S.done };
+      return { evDiv: S.evDiv || 0, delayVh: Math.round(dl / 3600), maxQm: maxQ, trappedMax: Math.max.apply(null, A.map(attW).concat([0])), jamStart: st, clearT: clr, jamMax: Math.max.apply(null, A.map(function (s) { return s.jam.length; }).concat([0])), acN: S.ac.n, acSec: S.ac.sec, peak: peak, peakT: pkT, box: S.boxN, made: S.V.length, done: S.done };
     };
     S.inNet = function () { var n = 0; Object.keys(S.L).forEach(function (k) { n += S.L[k].n; }); Object.keys(S.A).forEach(function (k) { (S.A[k].a.doors || []).forEach(function (d) { n += d.q9.length; }); }); Object.keys(S.back).forEach(function (e) { n += S.back[e].length; }); return n; };
     return S;
@@ -366,5 +385,20 @@
     return { date: date, dk: dk, best: { hit: BEST.hit, n: BEST.n, mh: BEST.mh, mn: BEST.mn, jh: BEST.jh, jn: BEST.jn, it: BEST.it }, scale: sc, all: Math.round(all * 100) / 100, hist: hist, src: '평소 속도(ITS 가운데값 · spd-normal-six · 요일 갈래 ' + dk + ' · ' + H0 + '~' + H1 + '시)로 맞춘 설계값 배율 — 대수 자료가 아니다' };
   }
   function load(area, v) { return fetch('data/sim-' + (area || 'banpo') + '.json' + (v ? '?v=' + v : '')).then(function (r) { return r.json(); }); }
-  window.tgSim = { load: load, create: create, run: run, calibrate: calibrate, side: side, sideOcc: sideOcc, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
+  /* 도로 위 일 계수(2026-11-03) — f = 그 길에서 빠지는 힘의 몫 · cf = 설 자리의 몫 · shut = 닫힘
+     사고: HCM 7판 사고 구간 용량 조정계수(남은 차로에 곱함 · 고속도로 값을 빌림 · TxDOT Roadway Design Manual 15.4.4.3 표 15-7 = FHWA-HOP-13-042 부록 C 표 41)
+     공사·불법 주정차: 막힌 차로만큼만(공사 구간 감속·합류 손실은 자료 미확인이라 안 넣음 · 설계값) · 버스 정차: HCM 2000 버스 막힘 식 (N − 14.4·NB/3600)/N, 0.05 아래로 안 내림(2차 출처로 확인 · 원문 미대조)
+     한 차로 길의 주정차 = 마주 오는 차를 피해 비켜 가는 것으로 0.5(설계값) */
+  var EV_CAF = { 2: [0.81, 0.70], 3: [0.83, 0.74, 0.51], 4: [0.85, 0.77, 0.50, 0.52], 5: [0.87, 0.81, 0.67, 0.50, 0.50], 6: [0.89, 0.85, 0.75, 0.52, 0.52], 7: [0.91, 0.88, 0.80, 0.63, 0.63], 8: [0.93, 0.89, 0.84, 0.66, 0.66] };   /* [갓길만, 1차로, 2차로, 3차로, 4차로 막힘] */
+  function evFactor(e, N, len) {
+    N = Math.max(1, N || 1); len = len || 100; var k = Math.max(0, Math.min(N, e.k || 0)), part = function (m) { return Math.min(1, m / len); };
+    if (e.kind === 'ctrl') return { f: 1, cf: 0, shut: true, src: '통제 — 길을 닫음(그 앞 교차로에서 다른 길로 돌림 · 이미 들어간 차는 빠져나간다)' };
+    if ((e.kind === 'acc' || e.kind === 'work') && k >= N) return { f: 0, cf: 0, shut: true, src: '모든 차로 막힘 — 길을 닫음(이미 들어간 차는 갇힌다)' };
+    if (e.kind === 'acc') { var row = EV_CAF[Math.min(8, Math.max(2, N))], c = row[Math.min(k, row.length - 1)]; return { f: (N - k) / N * c, cf: 1 - k / N * part(40), shut: false, src: 'HCM 7판 사고 구간 용량 조정계수 ' + c + (N < 2 ? '(2차로 줄 값을 빌림)' : '') + ' × 남은 차로 ' + (N - k) + '/' + N }; }
+    if (e.kind === 'work') return { f: (N - k) / N, cf: 1 - k / N * part(e.len || 150), shut: false, src: '막힌 차로만큼 ' + (N - k) + '/' + N + '(설계값 — 공사 구간 감속·합류 손실은 안 넣음)' };
+    if (e.kind === 'bus') { var nb = e.nb || 0, fb = Math.max(0.05, (N - 14.4 * nb / 3600) / N); return { f: fb, cf: 1, shut: false, src: 'HCM 2000 버스 막힘 식 (N − 14.4×' + nb + '/3600)/N = ' + fb.toFixed(2) + '(정류장이 정지선 75m 안일 때의 식)' }; }
+    if (e.kind === 'park') { var pf = N > 1 ? (N - 1) / N : 0.5; return { f: pf, cf: 1 - 1 / N * part((e.cars || 1) * 7), shut: false, src: N > 1 ? '바깥 차로 하나가 막힘 ' + (N - 1) + '/' + N + '(설계값)' : '한 차로 길 — 비켜 가는 것으로 0.5(설계값)' }; }
+    return { f: 1, cf: 1, shut: false, src: '' };
+  }
+  window.tgSim = { evFactor: evFactor, load: load, create: create, run: run, calibrate: calibrate, side: side, sideOcc: sideOcc, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
 })();

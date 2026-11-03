@@ -234,7 +234,7 @@
         close(); if (window.tgSimArea && window.tgSimArea.openDoc) window.tgSimArea.openDoc(doc, ar); else alert('시뮬 판(sim-area.js)을 찾지 못했다');
       }); }, 30); }
   }
-  function simReady(cb) { if (window.tgSim) return cb(); var s = document.createElement('script'); s.src = 'js/sim.js?v=24'; s.onload = cb; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s); }
+  function simReady(cb) { if (window.tgSim) return cb(); var s = document.createElement('script'); s.src = 'js/sim.js?v=25'; s.onload = cb; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s); }
   var SEQ = 0;
   function open(lat, lon, nm, R) {
     var my = ++SEQ, P = panel(); P.innerHTML = head((nm || '고른 자리') + ' 둘레 — 엮는 중') + '<div class="sn" id="m2dSimPProg">준비…</div>';

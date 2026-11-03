@@ -238,7 +238,8 @@
       var t = S.t; S.inn = {};
       if (EVS.length) { evTick(t); Object.keys(EVN).forEach(function (lk) { if (EVN[lk].shut) Object.keys(S.mv).forEach(function (k9) { var m9 = S.mv[k9]; if (m9.to === lk) divert(m9, t); }); }); }
       if (AC && t >= S.from - 600 && t % (AC.every || 5) === 0) autoCut(t);
-      if (INI && t === INI.at) Object.keys(INI.fill).forEach(function (lk) { var L = S.L[lk]; if (!L || L.l.sink) return; var add = Math.round(Math.min(1, INI.fill[lk]) * L.cap) - L.n; for (var q = 0; q < add; q++) { var vi = makeV('ini', lk, t); enter(vi, lk, t); } if (add < 0 && INI.trim !== false) { var ex = -add; Object.keys(S.mv).forEach(function (mk) { var m9 = S.mv[mk]; if (m9.fr !== lk) return; while (ex > 0 && m9.q.length) { var vg = m9.q.pop(); vg.te = t; vg.gone = 1; L.n--; ex--; S.iniOut = (S.iniOut || 0) + 1; } }); }   /* 빼기(2026-11-03 · datamap 그림자 운행 채점 제안) — 실측상 뚫린 길에 시뮬이 쌓아 둔 차는 늦게 들어온 차부터 뺀다(셈에서 빠짐 · gone) · 끄기 init.trim:false */ S.iniN = (S.iniN || 0) + Math.max(0, add); });
+      if (INI && t === INI.at) Object.keys(INI.fill).forEach(function (lk) { setFill(lk, INI.fill[lk], t, INI.trim); });
+      if (BND && BND[t]) Object.keys(BND[t]).forEach(function (lk) { setFill(lk, BND[t][lk], t, true); });   /* 경계 정답 주입(진단 전용) */
       Object.keys(S.N).forEach(function (id) { var ma = S.N[id].manual; if (ma && ma.clr > 0) { ma.clr--; if (!ma.clr) { ma.i = ma.next; ma.keep = []; } } });
       // 1 차 만들기 → 들어오는 길(자리가 없으면 망 밖에서 기다림)
       dem.forEach(function (d) {
@@ -321,6 +322,11 @@
     /* 지금 상태에서 출발(2026-10-30 · 소유자 「정확한 통행량이 없어도 신반포로가 시계 방향으로 꽉 찰 정도면 어느 정도 예측이 된다」) — scen.init = { at: 초, fill: { 길: 0~1 } }
        그 시각에 그 길을 그만큼 채운다(더 차 있으면 늦게 들어온 차부터 뺀다 · trim:false 면 그대로) · 꽉 참 = 길이 × 차로 ÷ 정지 차량 한 대 자리 · 그 뒤는 평소대로 굴러감 — 「지금 본 모습」이 몇 대인지를 대신한다 */
     var INI = scen.init && scen.init.fill ? scen.init : null, RI = rng((scen.seed || 7) + 404);
+    /* 경계 정답 주입(scen.bnd · 2026-11-03 · datamap 세션 진단 제안 · 예측에는 못 씀) — [{ at 초, fill { 길: 0~1 } }] — 그 시각마다 그 길(보통 들어오는 길 in.*)을 실측 채움으로 맞춘다(채우기·빼기)
+       안쪽은 시뮬에 맡겨 「밖에서 들어오는 양 예측」과 「안쪽 구조(회전 몫·용량)」 가운데 어느 쪽이 트윈을 틀리게 하나 가른다 */
+    var BND = null; (scen.bnd || []).forEach(function (b) { if (!b || !b.fill) return; BND = BND || {}; BND[Math.round(b.at)] = Object.assign(BND[Math.round(b.at)] || {}, b.fill); });
+    function setFill(lk, f, t, trim) { var L = S.L[lk]; if (!L || L.l.sink) return; var add = Math.round(Math.max(0, Math.min(1, f)) * L.cap) - L.n; for (var q = 0; q < add; q++) { var vi = makeV('ini', lk, t); enter(vi, lk, t); } if (add < 0 && trim !== false) { var ex = -add; Object.keys(S.mv).forEach(function (mk) { var m9 = S.mv[mk]; if (m9.fr !== lk) return; while (ex > 0 && m9.q.length) { var vg = m9.q.pop(); vg.te = t; vg.gone = 1; L.n--; ex--; S.iniOut = (S.iniOut || 0) + 1; } }); }   /* 빼기(2026-11-03 · datamap 그림자 운행 채점 제안) — 실측상 뚫린 길에 시뮬이 쌓아 둔 차는 늦게 들어온 차부터 뺀다(셈에서 빠짐 · gone) · 끄기 init.trim:false */ S.iniN = (S.iniN || 0) + Math.max(0, add); }
+
     var AC = scen.autoCut || null; S.ac = { n: 0, sec: 0, on: false }; S.drop = {};
     function autoCut(t) {
       var L = S.L[AC.link], r = L ? L.n / L.cap : 0, N = S.N[AC.node]; if (!N) return;

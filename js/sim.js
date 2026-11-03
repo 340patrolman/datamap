@@ -140,6 +140,13 @@
        datamap 세션 길별 진단(서초역 법원후문 서쪽·서초대로 헛막힘)에서 나옴 · 짝수 날 그림자 판정: 헛막힘은 줄지만 실제 막힘도 덜 잡아(4구역 트윈 막힘 95→51/146 · 나가는 길 너머 막힘을 함께 끄면 66) 균형 점수가 나빠져 기본으로 안 켬
        켜기 = scen.route2 또는 구역 cal.route2(sim-cal.py SIMCAL_ROUTE2=1) */
     var R2 = scen.route2 != null ? scen.route2 : !!(M.cal && M.cal.route2);
+    /* 회전 몫을 신호에서(tsg · 2026-11-03 시험 · 기본 끔) — 신호 담당은 이동류마다 수요만큼 녹색을 준다고 보고, 접근로마다 우회전 몫(설계값)을 뺀 나머지를 직진·좌회전의 「녹색 초 × 차로」 비로 나눈다
+       (판 가운데 시각의 계획 · 회전 비율 조사가 없어 전 교차로 좌·우 15% 설계값을 쓰던 것의 대안) · 켜기 = scen.tsg 또는 cal.tsg(sim-cal.py SIMCAL_TSG=1) */
+    var TSG = scen.tsg != null ? scen.tsg : !!(M.cal && M.cal.tsg), TSL = {};
+    if (TSG) { var tMid = Math.round(((scen.from != null ? scen.from : 16 * 3600) + (scen.to != null ? scen.to : 22 * 3600)) / 2); Object.keys(M.nodes).forEach(function (id) { var n = M.nodes[id]; if (n.ty !== 'sig') return; var P = planAt(M, id, tMid, dow, alt), G = {};
+      P.win.forEach(function (w) { G[w[0]] = (G[w[0]] || 0) + w[1]; });
+      Object.keys(n.legs || {}).forEach(function (lg) { var I = n.legs[lg].in; if (!I) return; var mS = S.mv[I + '>' + ((n.legs[TURN[lg] && TURN[lg].St] || {}).out)], mL = S.mv[I + '>' + ((n.legs[TURN[lg] && TURN[lg].Lt] || {}).out)];
+        var wS = mS ? (G[lg + '.St'] || 0) * mS.la : 0, wL = mL ? (G[lg + '.Lt'] || 0) * mL.la : 0; if (wS + wL <= 0) return; var rest = 1 - TS.Rt; TSL[I] = { Lt: rest * wL / (wS + wL), Rt: TS.Rt }; }); }); }
     function isAtt(m) { return m.to.slice(0, 4) === 'att:'; }
     function wander(start, r) {
       var p = [start], cur = start, sig = 0;
@@ -154,7 +161,7 @@
           var sinks = O.filter(function (m) { return M.links[m.to].sink; });
           if (!R2 && sig >= 3 && sinks.length) nx = sinks[Math.floor(r() * sinks.length)];   /* 종전 — 신호 셋을 지나면 아무 나가는 길로 */
           else { var x = r(), up = M.nodes[L.to].uturnP || 0, ut = up && O.filter(function (m) { return m.key.split('.')[1] === 'Ut'; })[0];   /* 유턴 몫(uturnP · 설계값) — 그 몫이면 유턴 · 아니면 남은 몫을 좌·우·직으로 다시 나눔 */
-            if (ut && x < up) nx = ut; else { if (ut) x = (x - up) / (1 - up); var tu = x < TS.Lt ? 'Lt' : x < TS.Lt + TS.Rt ? 'Rt' : 'St'; nx = O.filter(function (m) { return m.key.split('.')[1] === tu; })[0];
+            if (ut && x < up) nx = ut; else { if (ut) x = (x - up) / (1 - up); var TT = (TSG && TSL[cur]) || TS, tu = x < TT.Lt ? 'Lt' : x < TT.Lt + TT.Rt ? 'Rt' : 'St'; nx = O.filter(function (m) { return m.key.split('.')[1] === tu; })[0];
             if (!nx && R2) { var W9 = O.filter(function (m) { return m.key.split('.')[1] !== 'Ut'; }).map(function (m) { var q = m.key.split('.')[1]; return [m, q === 'Lt' ? TS.Lt : q === 'Rt' ? TS.Rt : 1 - TS.Lt - TS.Rt]; }), tw = W9.reduce(function (a9, w) { return a9 + w[1]; }, 0), y9 = r() * tw;
               for (var j9 = 0; j9 < W9.length; j9++) { y9 -= W9[j9][1]; if (y9 < 0) { nx = W9[j9][0]; break; } } }   /* 그 회전이 없는 교차로(T자 · 직진 없음) — 있는 회전끼리 몫을 다시 나눔(종전엔 모자란 몫이 첫 이동류(좌회전)로 몰려 법원후문 서쪽 좌회전 19초에 줄이 늘 찼다 · 2026-11-03) */
             nx = nx || O.filter(function (m) { return m.key.split('.')[1] === 'St'; })[0] || O[0];

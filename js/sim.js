@@ -86,7 +86,7 @@
     var JAM = 0.8, sp = M.spacing.v, satS = M.sat.v / 3600, vf = (scen.freeV || DS.freeV.v) / 3.6, lost = DS.lostStart.v, rtRed = scen.rtRed != null ? scen.rtRed : DS.rtRed.v;
     var boxP = scen.box != null ? scen.box : DS.box.v, R = rng(scen.seed || 7), RB = rng((scen.seed || 7) + 101), RD = rng((scen.seed || 7) + 202), RO = rng((scen.seed || 7) + 303);   // 길(R) · 꼬리물기(RB) · 머무는 시간(RD) · 나가는 차의 길(RO) — 판마다 달라지는 것은 R 을 쓰지 않아 두 판이 같은 차를 쓴다
     /* 구역 밖 막힘(자동 구역 · 2026-10-25) — 나가는 길(sink)에 그 너머 1.5km 평소 속도(onsp · 요일 갈래-시 · 가장 느린 링크)가 있으면 빠지는 속도를 줄인다: 18km/h↑ 그대로 · 6km/h 면 0.2배 · 아래로 0.15배(설계값) — 끄기 scen.noOut */
-    var DKO = [3, 0, 0, 0, 0, 1, 2][dow], OUTK = {}; if (!scen.noOut) Object.keys(M.links).forEach(function (k) { if (M.links[k].sink && M.links[k].onsp) OUTK[k] = M.links[k].onsp; });
+    var DKO = [3, 0, 0, 0, 0, 1, 2][dow], OUTK = {}, NOOUT = scen.noOut != null ? scen.noOut : (!scen.noCal && M.cal && M.cal.noOut); if (!NOOUT) Object.keys(M.links).forEach(function (k) { if (M.links[k].sink && M.links[k].onsp) OUTK[k] = M.links[k].onsp; });
     function outFac(k, t) { var v = OUTK[k][DKO + '-' + Math.min(23, Math.floor(t / 3600))]; return v == null ? 1 : Math.max(0.15, Math.min(1, (v - 3) / 15)); }
     var FROM = scen.from != null ? scen.from : 16 * 3600, WARM = scen.warm != null ? scen.warm : 7200, USED = prefill(M, dow, FROM - WARM, scen.to != null ? scen.to : 22 * 3600);   // 몸풀기 2시간 — 빈 길에서 시작하면 16시에 이미 쌓여 있던 차가 없다
     // 조치(라바콘·입차 중단 …) 모으기
@@ -136,6 +136,10 @@
     // 길 찾기(차를 만들 때 한 번) — 들어온 길에서 이동류를 차례로 고른다
     var outOf = {}; Object.keys(S.mv).forEach(function (k) { var m = S.mv[k]; (outOf[m.fr] = outOf[m.fr] || []).push(m); });
     var TS = { Lt: (scen.turn || DS.turn).Lt, Rt: (scen.turn || DS.turn).Rt };
+    /* 길 고르기 시험판(route2 · 2026-11-03 · 기본 끔) — ① T자 교차로에서 없는 회전 몫을 있는 회전끼리 다시 나눔 ② 신호 셋을 지나면 곧장 나가는 길이 있을 때만 나가고 다섯이면 어디로든
+       datamap 세션 길별 진단(서초역 법원후문 서쪽·서초대로 헛막힘)에서 나옴 · 짝수 날 그림자 판정: 헛막힘은 줄지만 실제 막힘도 덜 잡아(4구역 트윈 막힘 95→51/146 · 나가는 길 너머 막힘을 함께 끄면 66) 균형 점수가 나빠져 기본으로 안 켬
+       켜기 = scen.route2 또는 구역 cal.route2(sim-cal.py SIMCAL_ROUTE2=1) */
+    var R2 = scen.route2 != null ? scen.route2 : !!(M.cal && M.cal.route2);
     function isAtt(m) { return m.to.slice(0, 4) === 'att:'; }
     function wander(start, r) {
       var p = [start], cur = start, sig = 0;
@@ -148,9 +152,14 @@
         if (M.nodes[L.to].ty === 'sig') {
           sig++;
           var sinks = O.filter(function (m) { return M.links[m.to].sink; });
-          if (sig >= 3 && sinks.length) nx = sinks[Math.floor(r() * sinks.length)];
+          if (!R2 && sig >= 3 && sinks.length) nx = sinks[Math.floor(r() * sinks.length)];   /* 종전 — 신호 셋을 지나면 아무 나가는 길로 */
           else { var x = r(), up = M.nodes[L.to].uturnP || 0, ut = up && O.filter(function (m) { return m.key.split('.')[1] === 'Ut'; })[0];   /* 유턴 몫(uturnP · 설계값) — 그 몫이면 유턴 · 아니면 남은 몫을 좌·우·직으로 다시 나눔 */
-            if (ut && x < up) nx = ut; else { if (ut) x = (x - up) / (1 - up); var tu = x < TS.Lt ? 'Lt' : x < TS.Lt + TS.Rt ? 'Rt' : 'St'; nx = O.filter(function (m) { return m.key.split('.')[1] === tu; })[0] || O.filter(function (m) { return m.key.split('.')[1] === 'St'; })[0] || O[0]; } }
+            if (ut && x < up) nx = ut; else { if (ut) x = (x - up) / (1 - up); var tu = x < TS.Lt ? 'Lt' : x < TS.Lt + TS.Rt ? 'Rt' : 'St'; nx = O.filter(function (m) { return m.key.split('.')[1] === tu; })[0];
+            if (!nx && R2) { var W9 = O.filter(function (m) { return m.key.split('.')[1] !== 'Ut'; }).map(function (m) { var q = m.key.split('.')[1]; return [m, q === 'Lt' ? TS.Lt : q === 'Rt' ? TS.Rt : 1 - TS.Lt - TS.Rt]; }), tw = W9.reduce(function (a9, w) { return a9 + w[1]; }, 0), y9 = r() * tw;
+              for (var j9 = 0; j9 < W9.length; j9++) { y9 -= W9[j9][1]; if (y9 < 0) { nx = W9[j9][0]; break; } } }   /* 그 회전이 없는 교차로(T자 · 직진 없음) — 있는 회전끼리 몫을 다시 나눔(종전엔 모자란 몫이 첫 이동류(좌회전)로 몰려 법원후문 서쪽 좌회전 19초에 줄이 늘 찼다 · 2026-11-03) */
+            nx = nx || O.filter(function (m) { return m.key.split('.')[1] === 'St'; })[0] || O[0];
+            if (R2 && sig >= 3 && sinks.length && !M.links[nx.to].sink) { var sSt = sinks.filter(function (m) { return m.key.split('.')[1] === 'St'; })[0]; if (sSt) nx = sSt; else if (sig >= 5) nx = sinks[Math.floor(r() * sinks.length)]; }   /* 자동 구역 — 신호 셋을 지나면 곧장 나가는 길이 있을 때만 나가고 · 다섯을 지나면 어디로든 나감(종전엔 셋째부터 아무 나가는 길로 → 법원정문에서 서초대로 직진 차가 모두 우회전 한 차로로 몰려 서초역·대법원까지 늘 막힘) */
+          } }
         } else { var tot = O.reduce(function (s9, m) { return s9 + m.p; }, 0), y = r() * tot; nx = O[O.length - 1]; for (var j = 0; j < O.length; j++) { y -= O[j].p; if (y < 0) { nx = O[j]; break; } } }
         if (!nx) { S.log.push('길 없음 ' + cur); return p; }
         p.push(nx.to); cur = nx.to;

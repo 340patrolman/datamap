@@ -354,9 +354,30 @@
   function run(M, scen, alt) { var S = create(M, scen, alt); S.runTo(S.end); return S; }
   /* 평소 속도로 맞추기(자동 구역) — 접근로 정지선 링크의 평소 속도(ITS 가운데값 · links[].nsp 「요일 갈래-시」)가 6km/h 넘는데 시뮬이 막히면(점유 80%↑) 그 들어오는 길 수요를 줄이고,
      평소에도 막히는데(6 이하 두 시간↑) 시뮬이 안 막히면 늘린다 · 안쪽 길이 어긋나면 전체를 조금씩 · 10번 되풀이 · 결과는 대수가 아니라 「설계값 배율」(tools/sim/sim-cal.py 가 구역 자료 cal 칸에) */
+  /* 그림자 판(2026-11-03 · datamap 세션이 정한 잣대 · tools/sim/twin-shadow.py RUNNER 와 같은 셈) — 디지털 트윈이 「지금 모습에서 출발해 30분 뒤」를 맞히는지
+     cases = [{ d 날짜, t0 자정부터 초, v { ITS 링크: 그 시각 실측 km/h }, w { ITS 링크: 30분 뒤 실측 km/h } }] (sim-cal.py 가 07_API키/out/livespd 를 되감아 넘긴다 · 폰에서는 실측이 없어 못 셈)
+     그 시각 실측으로 길을 채우고(Greenshields 채움 1 − 속도 ÷ 자유 속도 · 자유 속도 = 그 길 평소 속도 가운데 가장 빠른 값 · 없으면 50 · 한 변 전체 · 설계값) 빼기까지(init.trim)
+     30분 뒤 ±5분 평균 점유 0.8 이상 = 막힘 ↔ 실측 6km/h 이하 · 돌려줌 = 트윈(sim)·그대로(keep · 지금 상태가 이어짐)·섞음(mix · 지금 실측 상태에서 시뮬이 「바뀐다」 할 때만 바꿈) 칸 수
+     sel2 = (실측 막힘 칸 맞힘 몫 + 실측 안 막힘 칸 맞힘 몫) ÷ 2 · 「지금과 30분 뒤가 다른 칸」(cn/ch)은 기록만 */
+  function shadowScore(M, cases, extra) {
+    var H = 1800, ITS = Object.keys(M.links).filter(function (k) { var l = M.links[k]; return l.its && !l.sink; }), O = {};
+    ['sim', 'keep', 'mix'].forEach(function (k) { O[k] = { n: 0, hit: 0, jn: 0, jh: 0, fn: 0, fh: 0, cn: 0, ch: 0 }; });
+    function tal(o, sj, rj, chg) { o.n++; if (sj === rj) o.hit++; if (rj) { o.jn++; if (sj) o.jh++; } else { o.fn++; if (!sj) o.fh++; } if (chg) { o.cn++; if (sj === rj) o.ch++; } }
+    function vf(l) { var a = l.nsp ? Object.keys(l.nsp).map(function (k) { return l.nsp[k]; }) : []; return a.length ? Math.max.apply(null, a) : 50; }
+    function occ(S9, k, a, b) { var n = 0, c = 0; S9.samp.forEach(function (x) { if (x.t >= a && x.t <= b) { n += x.occ[k] || 0; c++; } }); return c ? n / c / S9.L[k].cap : null; }
+    (cases || []).forEach(function (cs) {
+      var fill = {}; ITS.forEach(function (k) { var v = cs.v[M.links[k].its]; if (v == null) return; var f = Math.max(0, Math.min(1, 1 - v / vf(M.links[k]))); side(M, k).forEach(function (k2) { fill[k2] = Math.max(fill[k2] || 0, f); }); });
+      var S9 = run(M, Object.assign({ date: cs.d, seed: 5, from: 16 * 3600, to: cs.t0 + H + 300, init: { at: cs.t0, fill: fill } }, extra || {}));
+      ITS.forEach(function (k) { var il = M.links[k].its, v0 = cs.v[il], v1 = (cs.w || {})[il]; if (v0 == null || v1 == null) return; var ot = occ(S9, k, cs.t0 + H - 300, cs.t0 + H + 300), ob = occ(S9, k, cs.t0 + 60, cs.t0 + 360); if (ot == null) return;
+        var rj = v1 <= 6, j0 = v0 <= 6, sj = ot >= 0.8, mx = ob == null || (ob >= 0.8) === sj ? j0 : sj;
+        tal(O.sim, sj, rj, rj !== j0); tal(O.keep, j0, rj, rj !== j0); tal(O.mix, mx, rj, rj !== j0); });
+    });
+    Object.keys(O).forEach(function (k) { var o = O[k]; o.sel2 = o.jn ? (o.jh / o.jn + o.fh / Math.max(1, o.fn)) / 2 : o.fh / Math.max(1, o.fn); });
+    O.cases = (cases || []).length; return O;
+  }
   var DKC = [3, 0, 0, 0, 0, 1, 2];
   function calibrate(M, opt) {
-    opt = opt || {}; var date = opt.date || '2026-10-21', dk = DKC[dowOf(date)], H0 = opt.h0 || 16, H1 = opt.h1 || 21, sc = {}, all = 1, hist = [], BEST = null, stp = 1, prevSel = -1, NIT = opt.iter || 16;
+    opt = opt || {}; var date = opt.date || '2026-10-21', dk = DKC[dowOf(date)], H0 = opt.h0 || 16, H1 = opt.h1 || 21, sc = {}, all = 1, hist = [], BEST = null, BEST0 = null, stp = 1, prevSel = -1, NIT = opt.iter || 16;
     /* stp = 고치는 폭 — 고른 값이 나빠지면 폭을 반으로(막힘이 문턱에서 한꺼번에 생겨 판이 오락가락하던 것 · 2026-10-30) */
     Object.keys(M.entry).forEach(function (e) { sc[e] = opt.start && opt.start.scale && opt.start.scale[e] != null ? opt.start.scale[e] : 1; }); if (opt.start && opt.start.all) all = opt.start.all;   /* opt.start = 지난 맞춤에서 출발(sim-cal.py 가 처음부터 맞춘 판과 견줘 실측 칸이 더 맞는 쪽을 남긴다) */
     /* 평소 속도가 없는 들어오는 길은 같은 길 맞은편으로 곧장 이어 나가는 망 안 길의 평소 속도를 빌려 맞춤에만 쓴다(실측 칸 수 mn·jn 에는 안 넣음) — 「막히지 않는다」로만 보면 실제로 막히는 큰길(언주로 북쪽 → 르네상스)의 수요까지 깎였다 · 2026-10-30 */
@@ -373,7 +394,11 @@
       var S = run(M, { date: date, seed: 5, from: H0 * 3600, to: (H1 + 1) * 3600, bg: sc, bgAll: all, noCal: 1, noOut: opt.noOut }), r = score(S); hist.push({ it: it, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, all: Math.round(all * 100) / 100 });
       r.bal = r.jn ? (r.jh / r.jn + (r.hit - r.jh) / Math.max(1, r.n - r.jn)) / 2 : r.hit / Math.max(1, r.n);   /* 막힘 칸 맞힘과 안 막힘 칸 맞힘의 평균 — 안 막힘 칸이 훨씬 많아 그냥 맞힌 수로 고르면 「아무 데도 안 막힘」 판이 뽑힌다 */
       r.sel = (r.bal + r.hit / Math.max(1, r.n)) / 2;   /* 고르는 값 = 그 평균과 맞힌 몫의 평균(한쪽 끝 — 다 막힘·다 안 막힘 — 으로 쏠리지 않게) */
-      if (!BEST || r.sel > BEST.sel) BEST = { sel: r.sel, bal: r.bal, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, it: it, all: all, sc: JSON.parse(JSON.stringify(sc)) };   /* 가장 잘 맞은 판을 남긴다(마지막 판이 더 나쁠 수 있다) */
+      if (!BEST0 || r.sel > BEST0.sel) BEST0 = { sel: r.sel, tgt: r.sel, bal: r.bal, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, it: it, all: all, sc: JSON.parse(JSON.stringify(sc)) };
+      /* 그림자 판(opt.shadow · 2026-11-03 datamap 세션 잣대) — 고르는 값 = (평소 속도 sel + 그림자 sel2) ÷ 2 · 평소 속도 맞음(mh/mn)이 opt.mhFloor 아래면 그 판은 안 고름 */
+      var sh = opt.shadow && opt.shadow.length ? shadowScore(M, opt.shadow, { bg: sc, bgAll: all, noCal: 1, noOut: opt.noOut }) : null; r.tgt = sh ? (r.sel + sh.sim.sel2) / 2 : r.sel; if (sh) { hist[hist.length - 1].sel2 = Math.round(sh.sim.sel2 * 1000) / 1000; }
+      var okMh = opt.mhFloor == null || !r.mn || r.mh / r.mn >= opt.mhFloor;
+      if (okMh && (!BEST || r.tgt > BEST.tgt)) BEST = { sel: r.sel, tgt: r.tgt, sh: sh, bal: r.bal, hit: r.hit, n: r.n, mh: r.mh, mn: r.mn, jh: r.jh, jn: r.jn, it: it, all: all, sc: JSON.parse(JSON.stringify(sc)) };   /* 가장 잘 맞은 판을 남긴다(마지막 판이 더 나쁠 수 있다) */
       if (it === NIT) break;
       if (r.sel < prevSel) stp /= 2; prevSel = r.sel; var dn = 1 - 0.25 * stp, up = 1 + 0.15 * stp, ad = 1 - 0.1 * stp, au = 1 + 0.05 * stp;
       var innerFp = 0, innerFn = 0;
@@ -381,8 +406,9 @@
       Object.keys(r.fn).forEach(function (k) { if (r.fn[k] < 2) return; if (M.entry[k]) sc[k] = Math.min(sc[k] * up, 3); else innerFn++; });
       if (innerFp > innerFn) all *= ad; else if (innerFn > innerFp) all = Math.min(all * au, 2);
     }
+    if (!BEST) BEST = BEST0;   /* 하한을 넘는 판이 없으면 평소 속도로 가장 잘 맞은 판 */
     sc = BEST.sc; all = BEST.all; Object.keys(sc).forEach(function (e) { sc[e] = Math.round(sc[e] * 100) / 100; });
-    return { date: date, dk: dk, best: { hit: BEST.hit, n: BEST.n, mh: BEST.mh, mn: BEST.mn, jh: BEST.jh, jn: BEST.jn, it: BEST.it }, scale: sc, all: Math.round(all * 100) / 100, hist: hist, src: '평소 속도(ITS 가운데값 · spd-normal-six · 요일 갈래 ' + dk + ' · ' + H0 + '~' + H1 + '시)로 맞춘 설계값 배율 — 대수 자료가 아니다' };
+    return { date: date, dk: dk, best: { hit: BEST.hit, n: BEST.n, mh: BEST.mh, mn: BEST.mn, jh: BEST.jh, jn: BEST.jn, it: BEST.it, sel: Math.round(BEST.sel * 1000) / 1000, tgt: Math.round(BEST.tgt * 1000) / 1000, shadow: BEST.sh || null }, scale: sc, all: Math.round(all * 100) / 100, hist: hist, src: '평소 속도(ITS 가운데값 · spd-normal-six · 요일 갈래 ' + dk + ' · ' + H0 + '~' + H1 + '시)로 맞춘 설계값 배율 — 대수 자료가 아니다' };
   }
   function load(area, v) { return fetch('data/sim-' + (area || 'banpo') + '.json' + (v ? '?v=' + v : '')).then(function (r) { return r.json(); }); }
   /* 도로 위 일 계수(2026-11-03) — f = 그 길에서 빠지는 힘의 몫 · cf = 설 자리의 몫 · shut = 닫힘
@@ -400,5 +426,5 @@
     if (e.kind === 'park') { var pf = N > 1 ? (N - 1) / N : 0.5; return { f: pf, cf: 1 - 1 / N * part((e.cars || 1) * 7), shut: false, src: N > 1 ? '바깥 차로 하나가 막힘 ' + (N - 1) + '/' + N + '(설계값)' : '한 차로 길 — 비켜 가는 것으로 0.5(설계값)' }; }
     return { f: 1, cf: 1, shut: false, src: '' };
   }
-  window.tgSim = { evFactor: evFactor, load: load, create: create, run: run, calibrate: calibrate, side: side, sideOcc: sideOcc, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
+  window.tgSim = { shadowScore: shadowScore, evFactor: evFactor, load: load, create: create, run: run, calibrate: calibrate, side: side, sideOcc: sideOcc, planAt: planAt, phasesToWin: phasesToWin, winToPhases: winToPhases, dowOf: dowOf };
 })();

@@ -221,16 +221,16 @@
           var cf = JSON.parse(JSON.stringify(ca)); cf.ev.fast = 1; var S0 = { d: 0, o: 0 }, S1 = { d: 0, o: 0 }, S2 = { d: 0, o: 0 };
           [7, 108, 209].forEach(function (sd) { [[c, S0], [ca, S1], [cf, S2]].forEach(function (p) { var r = SM.run(JSON.parse(JSON.stringify(p[0])), sd).m; p[1].d += r.delay; p[1].o += r.oStall; }); });
           var okM = S1.d > S0.d + 15 && S1.o > 0 && S0.o === 0 && S2.d < S1.d;
-          return new Promise(function (res) { if (window.tgSim) return res(); var s9 = document.createElement('script'); s9.src = 'js/sim.js?v=26'; s9.onload = res; s9.onerror = res; document.head.appendChild(s9); }).then(function () {
+          return new Promise(function (res) { if (window.tgSim) return res(); var s9 = document.createElement('script'); s9.src = 'js/sim.js?v=27'; s9.onload = res; s9.onerror = res; document.head.appendChild(s9); }).then(function () {
             var G = window.tgSim; if (!G) return ck('🚧 도로 위 일', false, 'sim.js 없음');
             var f1 = G.evFactor({ kind: 'acc', k: 2 }, 5, 180), f2 = G.evFactor({ kind: 'bus', nb: 30 }, 2, 100), f3 = G.evFactor({ kind: 'ctrl' }, 3, 100);
             var okF = Math.abs(f1.f - 0.67 * 3 / 5) < 1e-9 && Math.abs(f2.f - (2 - 14.4 * 30 / 3600) / 2) < 1e-9 && f3.shut && f3.f === 1;
-            return fetch('data/sim-areas.json?v=1').then(function (r) { return r.json(); }).then(function (ix) { return G.load('seochoyeok', ix.made); }).then(function (M0) {
+            var ix; return fetch('data/sim-areas.json?v=1').then(function (r) { return r.json(); }).then(function (j9) { ix = j9; return G.load('seochoyeok', ix.made); }).then(function (M0) {
               var C = function () { return JSON.parse(JSON.stringify(M0)); }, sc = function (f, t, ev) { return { date: '2026-10-21', seed: 7, from: f * 3600, to: t * 3600, ev: ev }; }, R = function (MM, s9) { var r = G.run(MM, s9).result(); return r.delayVh + '/' + r.jamMax; };
               var X = C(), a = R(X, sc(16, 19)), b = R(X, sc(16, 19)), Y = C(); R(Y, sc(7, 10)); var c9 = R(Y, sc(16, 19));
               var Lk = '4040>4039', S = G.create(C(), sc(16, 19, [{ link: Lk, kind: 'ctrl', t0: 61200, t1: 63000 }])); S.runTo(S.end); var sm = S.samp.filter(function (q) { return q.t === 62940; })[0], rr = S.result();
               ck('🚧 도로 위 일 — 합류부 사고가 지체·막힌 곳 앞 멈춤을 늘리고 빨리 치우면 줄어듦(세 벌) · 계수 HCM 사고 0.67×3/5 · 버스 막힘 식 · 통제 = 닫힘 · 신호 구역 두 번 돌려도 같은 답 · 아침 먼저 돌려도 저녁 같음 · 통제한 길 비고 돌린 차 생김',
-                okM && okF && a === b && a === c9 && sm && sm.occ[Lk] === 0 && rr.evDiv > 0,
+                okM && okF && a === b && a === c9 && sm && sm.occ[Lk] === 0 && rr.evDiv > 0 && typeof G.shadowScore === 'function' && ix.areas.every(function (q) { return q.twin && q.twin.cases > 0 && typeof q.twin.pass === 'boolean'; }),
                 '합류 지체 ' + Math.round(S0.d) + '→' + Math.round(S1.d) + '→빨리 ' + Math.round(S2.d) + ' · 멈춤 ' + S1.o + ' · 계수 ' + okF + ' · 구역 ' + a + '/' + b + '/' + c9 + ' · 통제 길 ' + (sm ? sm.occ[Lk] : '?') + ' · 돌림 ' + rr.evDiv);
             });
           });

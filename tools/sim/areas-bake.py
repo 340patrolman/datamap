@@ -24,10 +24,11 @@ for p in sorted(glob.glob(os.path.join(D, 'sim-*.json'))):
     h = cal.get('best') or (cal.get('hist') or [{}])[-1]
     out.append({'id': nm, 'nm': NAMES.get(nm, nm), 'c': d['center'], 'r': d['r'],
                 'sig': [[n['id'], n['nm'], n['ll'][0], n['ll'][1]] for n in sig],
-                'hit': h.get('hit'), 'n': h.get('n'), 'mh': h.get('mh'), 'mn': h.get('mn'), 'jh': h.get('jh'), 'jn': h.get('jn'), 'calDay': cal.get('date'), 'made': d.get('made'), 'bytes': os.path.getsize(p)})
+                'hit': h.get('hit'), 'n': h.get('n'), 'mh': h.get('mh'), 'mn': h.get('mn'), 'jh': h.get('jh'), 'jn': h.get('jn'), 'calDay': cal.get('date'), 'made': d.get('made'), 'bytes': os.path.getsize(p),
+                'twin': (lambda t: {'pass': t['pass'], 'cases': t['cases'], 'd0': t['d0'], 'd1': t['d1'], 'sim': [t['sim']['hit'], t['sim']['n']], 'mix': [t['mix']['hit'], t['mix']['n']], 'keep': [t['keep']['hit'], t['keep']['n']]} if t else None)(cal.get('twin'))})   # 디지털 트윈 판정(짝수 날 · 30분 뒤 맞은 칸/칸 · sim-cal.py)
 J = {'schema': 'tg-sim-areas/1', 'made': datetime.date.today().isoformat(),
      'source': 'tools/sim/areas-bake.py ← data/sim-<이름>.json(tools/sim/area-bake.py 가 서울 도로망·신호값·교통량 조사로 엮음 · sim-cal.py 가 평소 속도로 수요 배율 맞춤)',
-     'fields': {'id': '구역 자료 data/sim-<id>.json', 'nm': '이름', 'c': '가운데 [위도, 경도]', 'r': '반지름 m', 'sig': '신호 교차로 [번호, 이름, 위도, 경도]',
+     'fields': {'id': '구역 자료 data/sim-<id>.json', 'nm': '이름', 'c': '가운데 [위도, 경도]', 'r': '반지름 m', 'sig': '신호 교차로 [번호, 이름, 위도, 경도]', 'twin': '디지털 트윈 판정 — 짝수 날 그 시각 실측에서 출발해 30분 뒤 막힘 맞은 칸/칸(sim 트윈 · mix 섞음 · keep 그대로) · pass = 섞음 ≥ 그대로',
                 'hit/n': '맞춤 칸 가운데 맞은 수(가장 잘 맞은 맞춤 · 실측 없는 들어오는 길은 「막히지 않음」으로 셈)', 'mh/mn': '평소 속도(ITS) 실측이 있는 칸만 맞은 수', 'jh/jn': '실측 막힘(6km/h 이하) 칸 가운데 시뮬도 막힌 수', 'calDay': '맞춘 날'},
      'note': '개념 시연 — 예측·보증 아님 · 반포 터미널 블록은 sim-banpo(손으로 짠 구역 · js/sim-ui.js)', 'areas': out}
 json.dump(J, open(os.path.join(D, 'sim-areas.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))

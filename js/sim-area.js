@@ -66,7 +66,7 @@
       }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); });
     };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=26'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=27'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   function defState() { var d = new Date(), h = d.getHours(); return { day: ['su', 'mt', 'mt', 'mt', 'mt', 'fr', 'sa'][d.getDay()], win: h >= 7 && h < 11 ? 'am' : h >= 11 && h < 16 ? 'md' : 'pm', k: 100, shut: {}, edit: {}, ev: [], evf: { kind: 'acc', link: null, k: 1, nb: 30, cars: 2, s: 30, d: 30 }, sel: Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig'; })[0] }; }
   function wOf() { return WINS.filter(function (w) { return w[0] === ST.win; })[0]; }
@@ -237,7 +237,7 @@
   /* 🧪 고른 자리(js/sim-pick.js 가 이 기기에서 엮은 구역 · 2026-11-02) — 미리 구운 구역과 같은 판으로 연다 · ar = 목록 칸과 같은 꼴(맞춤 결과) */
   function openDoc(doc, ar) {
     var go = function () { AR = ar; M = doc; M.actions = Object.keys(M.entry).map(function (e) { return { id: 'x:' + e, nm: '막기 — ' + (M.links[e].nm || e), closeEntry: [e] }; }); ST = null; RES = null; geo(); show(); };
-    if (window.tgSim) go(); else { var s = document.createElement('script'); s.src = 'js/sim.js?v=26'; s.onload = go; document.head.appendChild(s); }
+    if (window.tgSim) go(); else { var s = document.createElement('script'); s.src = 'js/sim.js?v=27'; s.onload = go; document.head.appendChild(s); }
   }
   function open(id) { need(id, show); }
   function show() {
@@ -248,7 +248,7 @@
       var nm = Object.keys(M.nodes).filter(function (k) { return M.nodes[k].ty === 'sig' && !/\(연등\)/.test(M.nodes[k].nm || ''); }).map(function (k) { return M.nodes[k].nm; });
       PANEL.innerHTML = '<h3>🧪 시뮬 — ' + esc(AR.nm) + '<button data-simx="1" aria-label="닫기">✕ 닫기</button></h3>' +
         '<div class="sn">신호 교차로 ' + nm.length + '곳(' + esc(nm.join(' · ')) + ')과 그 사이 길 · 자동으로 엮은 구역 · <b>개념 시연 — 예측·보증이 아니다</b></div>' +
-        '<div class="warn">평소 속도(ITS 실측 · 평일 16~21시)와 맞대 본 맞음 <b>' + AR.mh + '/' + AR.mn + '</b>칸 · 실제로 막히는 칸 가운데 시뮬도 막힌 것 <b>' + AR.jh + '/' + AR.jn + '</b>' + (AR.jn && AR.jh / AR.jn < 0.5 ? ' — <b>막힘을 잘 못 낸다</b>(실제보다 덜 막히게 나온다)' : '') + ' · 반포 블록(손으로 짠 구역)보다 거칠다 · 신호 없는 교차로는 그냥 지나가고 회전 금지는 아직 안 넣었다 · 구역 밖에서 밀려 들어오는 막힘은 못 낸다(나가는 길은 늘 비어 있다고 봄) · 🏁 현장 결과가 이김(현장에서 본 것과 다르면 시뮬이 틀린 것)</div>' +
+        '<div class="warn">평소 속도(ITS 실측 · 평일 16~21시)와 맞대 본 맞음 <b>' + AR.mh + '/' + AR.mn + '</b>칸 · 실제로 막히는 칸 가운데 시뮬도 막힌 것 <b>' + AR.jh + '/' + AR.jn + '</b>' + (AR.jn && AR.jh / AR.jn < 0.5 ? ' — <b>막힘을 잘 못 낸다</b>(실제보다 덜 막히게 나온다)' : '') + (AR.twin ? ' · 🪞 디지털 트윈(그 시각 실측에서 출발해 30분 뒤 · ' + esc(AR.twin.d0.slice(5)) + '~' + esc(AR.twin.d1.slice(5)) + ' 짝수 날 ' + AR.twin.cases + '판) 섞음 <b>' + Math.round(AR.twin.mix[0] / AR.twin.mix[1] * 100) + '%</b> · 「지금 그대로」 ' + Math.round(AR.twin.keep[0] / AR.twin.keep[1] * 100) + '%' + (AR.twin.pass ? '' : ' — <b>그대로보다 못함</b>(이 구역은 지금 막힌 곳이 30분 뒤에도 막혀 있다고 보는 편이 더 맞다)') : '') + ' · 반포 블록(손으로 짠 구역)보다 거칠다 · 신호 없는 교차로는 그냥 지나가고 회전 금지는 아직 안 넣었다 · 구역 밖에서 밀려 들어오는 막힘은 못 낸다(나가는 길은 늘 비어 있다고 봄) · 🏁 현장 결과가 이김(현장에서 본 것과 다르면 시뮬이 틀린 것)</div>' +
         lnkRow() + '<div id="simALive"></div><div id="simARun"></div><div id="simARes"></div><div id="simACtl"></div>' + srcList();
       PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; paintCtl(); start(); liveGet();
     })();

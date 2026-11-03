@@ -57,7 +57,7 @@
   var OV = null;
   function ovPaint() {
     var T = window.TGMap2D, cv = document.querySelector('#m2d canvas') || document.querySelector('canvas'); if (!OV || !T || !T.S || !cv) return;
-    var show = near() && T.view.s > 0.2; OV.style.display = show ? 'block' : 'none'; if (!show) return;
+    var show = near() && T.view.s > 0.2 && !!(PANEL && PANEL.classList.contains('on'));   /* 소유자 2026-11-03 「지도를 너무 가린다 · 시뮬을 눌렀을 때만」 — 시뮬 판이 열려 있을 때만 */ OV.style.display = show ? 'block' : 'none'; if (!show) return;
     var r = cv.getBoundingClientRect(), xy = function (ll) { var q = T.S(T.LL(ll[1], ll[0])); return [r.left + q[0], r.top + q[1]]; }, Q = AREA.q4.map(xy), c = [Q.reduce(function (a, p) { return a + p[0]; }, 0) / 4, Q.reduce(function (a, p) { return a + p[1]; }, 0) / 4];
     var h = '<defs><marker id="simOvA" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#7c3aed"/></marker></defs>';
     var In = function (p, k) { return [p[0] + (c[0] - p[0]) * k, p[1] + (c[1] - p[1]) * k]; }, P2 = Q.map(function (p) { return In(p, 0.12); });
@@ -110,7 +110,7 @@
     if (M && window.tgSim) return cb();
     var go = function () { window.tgSim.load(AREA.id, '8').then(function (j) { M = j; cb(); }).catch(function () { alert('시뮬 자료를 받지 못했다 — 통신을 확인하고 다시'); }); };
     if (window.tgSim) return go();
-    var s = document.createElement('script'); s.src = 'js/sim.js?v=26'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
+    var s = document.createElement('script'); s.src = 'js/sim.js?v=27'; s.onload = go; s.onerror = function () { alert('시뮬 계산기(sim.js)를 받지 못했다'); }; document.head.appendChild(s);
   }
   // ---- 판 ----
   var DAYS = [['1018', '10/18(일) 재현', '2026-10-18'], ['1011', '10/11(일) 평소', '2026-10-11'], ['mt', '평일(월~목)', '2026-10-21'], ['fr', '금요일', '2026-10-23'], ['sa', '토요일', '2026-10-24'], ['su', '일요일', '2026-10-25']];   // 소유자 「평일·금·토·일도 변수로」 — 신호 계획·고속버스 시간표·평소 속도 모두 이 네 갈래
@@ -445,10 +445,10 @@
         '<div class="warn">10/18 실측(ITS 속도)과 맞대 보면 막히는 모양·풀리는 시각은 맞고 블록 바깥 길(반포대교·잠원로 북쪽·사평대로)로 번진 막힘은 덜 그린다(맞음 53/77 · 평일 4일 226/264 · 한 변 = 앞 신호부터 정지선까지 전체) · <br>🏁 <b>현장 결과가 이김</b> — 서울성모병원 시차제(평일 16~20시 서→동 직진 23초 · 형님이 바꾼 것)는 현장에서 「많이 개선」(FK-4034-METER) · 이 시뮬은 반대로 나온다 → 시뮬이 틀린 것으로 본다(서쪽 접근로 수요가 설계값이라 늘 가득) · 다른 안도 현장 결과가 있으면 그것이 먼저</div>' +
         (window.tgLink ? '<div class="row" style="margin:2px 0 4px"><span class="sn" style="margin:0">🧩 엮임 보기</span>' + Object.keys(M.nodes).filter(function (k) { return M.nodes[k].int; }).map(function (k) { return '<button data-simlnk="' + esc(M.nodes[k].int) + '">' + esc(SHORT[k] || M.nodes[k].nm) + '</button>'; }).join('') + '</div>' : '') +
         '<div id="simLive"></div><div id="simRun"></div><div id="simMsg" class="warn" style="display:none"></div><div id="simRes"></div><div id="simHow"></div><div id="simCmp"></div><div id="simCtl"></div>' + srcList();
-      PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; CMP = null; paintCmp(); paintCtl(); start(); paintHow(); liveGet();
+      PANEL.classList.add('on'); if (CH) CH.style.display = 'none'; CMP = null; paintCmp(); paintCtl(); start(); paintHow(); liveGet(); ovPaint();
     });
   }
-  function close() { stop(); if (PANEL) PANEL.classList.remove('on'); }
+  function close() { stop(); if (PANEL) PANEL.classList.remove('on'); ovPaint(); }
   window.tgSimUI = { open: open, close: close, near: near, state: function () { return ST; }, sims: function () { return [A, B]; } };
   function boot() { css(); cardHook(); chip(); overlay(); document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && PANEL && PANEL.classList.contains('on')) close(); }); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();

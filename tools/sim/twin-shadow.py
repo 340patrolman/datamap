@@ -109,6 +109,7 @@ for nm in AREAS:
     t_0 = datetime.datetime.now()
     R = run_js(M, {'days': sorted(days), 'Ts': Ts, 'cases': cases, 'hz': list(HZ)})
     S = {v: {h: new() for h in HZ} for v in ('twin', 'twin2', 'plain', 'keep', 'mix')}
+    DG = collections.Counter()
     k2its = {k: M['links'][k]['its'] for k in M['links'] if M['links'][k].get('its') and not M['links'][k].get('sink')}
     for c, tw in zip(cases, R['twin']):
         for k, il in k2its.items():
@@ -124,7 +125,11 @@ for nm in AREAS:
                 if o2 is not None: tally(S['twin2'][h], o2 >= 0.8, rj, rj != j0)
                 ob = tw['o'][k]['b']
                 mix = j0 if ob is None or (ob >= 0.8) == (ot >= 0.8) else ot >= 0.8   # 섞음 = 지금 실측 상태에서 출발해 시뮬이 「바뀐다」고 할 때만 바꿈
+                if os.environ.get('TWIN_DIAG') and h == 1800: DG[(k, 'fp' if ot >= 0.8 and not rj else 'fn' if rj and ot < 0.8 else 'ok')] += 1
                 tally(S['twin'][h], ot >= 0.8, rj, rj != j0); tally(S['plain'][h], op >= 0.8, rj, rj != j0); tally(S['keep'][h], j0, rj, rj != j0); tally(S['mix'][h], mix, rj, rj != j0)
+    if os.environ.get('TWIN_DIAG'):
+        for k in sorted(k2its, key=lambda k: -DG[(k, 'fp')] - DG[(k, 'fn')])[:6]:
+            L = M['links'][k]; print('   ', k, L.get('nm'), '차로', L.get('lanes'), '길이', L.get('len'), '헛막힘', DG[(k, 'fp')], '놓침', DG[(k, 'fn')], '맞음', DG[(k, 'ok')], '들어오는길' if k in M['entry'] else '')
     OUT['areas'][nm] = {'nm': M.get('nm'), 'cases': len(cases), 'sec': round((datetime.datetime.now() - t_0).total_seconds()),
                         'score': {v: {str(h // 60): dict(S[v][h]) for h in HZ} for v in S}}
     def pct(c): return '%d/%d' % (c['hit'], c['n']) + ('·막힘%d/%d' % (c['jh'], c['jn']) if c['jn'] else '') + ('·바뀜%d/%d' % (c['ch'], c['cn']) if c['cn'] else '')

@@ -8,7 +8,8 @@
 #   셋을 그 뒤 실제 실측과 맞대 칸 수로 센다(막힘 = 실측 6km/h 이하 · 시뮬 점유 80% 이상 — 맞춤·지금 실측과 같은 잣대).
 #   실측 속도 → 길 채움 = Greenshields(1935) 밀도-속도 직선: 채움 = 1 − 속도 ÷ 자유 속도(그 길 평소 속도 가운데 가장 빠른 시각 값) — 설계값
 #   개념 시연 — 예측·보증 아님 · 결과는 data/twin-shadow.json(모은 칸 수만 · 시각별 실측 값은 안 담음)
-#   쓰기: py -3.12 -X utf8 tools/sim/twin-shadow.py [구역…] [--times 16:30,17:30,18:30,19:30] [--days 14]
+#   쓰기: py -3.12 -X utf8 tools/sim/twin-shadow.py [구역…] [--times 16:30,17:30,18:30,19:30] [--days 14] [--days-parity odd|even]
+#   (TWIN_DRY=1 이면 결과를 임시 폴더에 — data/twin-shadow.json 을 안 덮음)
 import os, sys, json, gzip, glob, subprocess, tempfile, re, datetime, collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -26,6 +27,7 @@ def opt(k, d):
     return d
 TIMES = [int(x.split(':')[0]) * 3600 + int(x.split(':')[1]) * 60 for x in opt('--times', '16:30,17:30,18:30,19:30').split(',')]
 NDAYS = int(opt('--days', '0'))
+PAR = opt('--days-parity', '')   # odd | even — 맞춤(홀수 날)과 판정(짝수 날)을 나눌 때 · 날짜의 일(日)로 가름
 AREAS = args or [a['id'] for a in json.load(open(os.path.join(ROOT, 'data', 'sim-areas.json'), encoding='utf-8'))['areas']]
 
 # ---- 실측 되감기: 날짜 → [(초, {링크: 속도})] ----
@@ -39,6 +41,7 @@ for f in sorted(glob.glob(os.path.join(SPD, '*.jsonl.gz'))):
         t = datetime.datetime.fromtimestamp(j['at']); rows.append((t.hour * 3600 + t.minute * 60 + t.second, j['m']))
     SNAP[day] = sorted(rows, key=lambda r: r[0])
 DAYS = sorted(SNAP)[-NDAYS:] if NDAYS else sorted(SNAP)
+if PAR: DAYS = [d for d in DAYS if int(d[-2:]) % 2 == (1 if PAR == 'odd' else 0)]
 
 def near(day, T):
     best = None

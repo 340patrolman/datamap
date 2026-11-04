@@ -1,6 +1,6 @@
 {
  "schema": "tg-ai-catalog/1",
- "built": "2026-11-03",
+ "built": "2026-11-04",
  "guide": "https://340patrolman.github.io/datamap/data/ai.json",
  "fields": "files[{file, url, bytes, schema, date(만든 날·기준 해), source, fields(칸 설명), note, about{그 밖 설명 글}, top{맨 위 열쇠: {개수} 또는 [개수]}, sample{큰 묶음의 첫 항목 — 꼴 보기}, shape(칸 설명이 없는 파일의 꼴 — 저절로 적은 것: 열쇠·값 종류·보기)}]",
  "files": [
@@ -1390,15 +1390,15 @@
   {
    "file": "live-acc-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/live-acc-seoul.json",
-   "bytes": 12149,
+   "bytes": 4379,
    "schema": "tg-live-acc/1",
-   "date": "2026-11-03 15:49",
+   "date": "2026-11-04 17:26",
    "source": "서울 열린데이터광장 「서울시 실시간 돌발 정보」(AccInfo · TOPIS) — 큰길(ITS 링크)에 걸린 공사·통제·사고",
    "fields": "items[[돌발 ID, 갈래 코드, 갈래 이름, 세부 코드, ITS 링크 ID, 위도, 경도, 시작 YYYYMMDDhhmm, 끝(예상) YYYYMMDDhhmm, 내용 글]]",
    "note": "골목 공사·이삿짐 차량은 이 자료에 없다 — 큰길만 · 끝 시각은 예상 · 받은 그대로 · 좌표 = GRS80 중부원점(EPSG:5181) → WGS84",
    "top": {
     "note": "[3]",
-    "items": "[63]"
+    "items": "[18]"
    },
    "sample": {
     "items[0]": "[\"1071788\", \"A04\", \"공사\", \"04B01\", \"1220031600\", 37.515672, 127.068736, \"202604071000\", \"202703010000\", \"탄천나들목 및 봉은교 구조개선공사\\r-일시 : 26.4.7(화)10:00~27.2.28(일) 23:59\\r-장소 : 봉은교\\r-통제 : 양방향 전면통제\"]",
@@ -1408,30 +1408,30 @@
   {
    "file": "live-ims-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/live-ims-seoul.json",
-   "bytes": 38531,
+   "bytes": 14245,
    "schema": "tg-live-ims/1",
-   "date": "2026-11-03 15:49",
+   "date": "2026-11-04 17:14",
    "source": "경찰청 도시교통정보센터(UTIC) 개방데이터 돌발 정보(imsOpenData.do) — 서울(법정동 11…)",
    "fields": "items[[돌발 ID, 갈래 글(제목 [ ] 안 · 사고·공사·통제 등), 갈래 코드, 세부 코드, 위도, 경도, 법정동 10자리, 도로 이름, 차로, 시작, 끝(예상), 제목 글, 표준 링크 ID]]",
    "note": "데이터지도 표시 · 가르고(v0.29.0 부터) 길 계산에 쓴다 — UTIC 두 번째 신청(2026-10-15 승인 · 경찰업무 보조 연구개발) · 실제 상황과 몇 분 차이가 날 수 있다 · 끝 시각은 예상 · 서울시 AccInfo(data/live-acc-seoul.json)와 겹치는 공사가 있다 — 사고는 이쪽이 촘촘",
    "top": {
     "note": "[3]",
-    "items": "[88]"
+    "items": "[30]"
    },
    "about": {
     "credit": "교통정보: 경찰청 도시교통정보센터(UTIC) 제공"
    },
    "sample": {
-    "items[0]": "[\"L93175205636\", \"사고\", \"1\", \"8\", 37.559056, 126.892333, \"1144012700\", \"강변북로\", \"3차로\", \"2026년 11월 03일  15시 45분\", \"2026년 11월 03일  16시 15분\", \"[사고] 강변북로 성산대교북측 에서 성산대교북측 방향 3차로 고장차량 강변북로 월드컵대교북단→성산대교북단 구리 방향\", \"1130004301\"]",
+    "items[0]": "[\"L93106217263\", \"공사\", \"2\", \"255\", 37.512047, 127.061548, \"1168010500\", \"영동대로\", \"6차로\", \"2021년 06월 30일  00시 00분\", \"2028년 04월 30일  23시 59분\", \"[공사] 영동대로 삼성역사거리 에서 코엑스 방향 6차로 도로공사 영동대로 지하공간 복합개발 건설공사, 장소: 코엑스사거리~삼성역 일원 부분통제 서울청\", \"1220003402\"]",
     "note[0]": "데이터지도 표시 · 가르고(v0.29.0 부터) 길 계산에 쓴다 — UTIC 두 번째 신청(2026-10-15 승인 · 경찰업무 보조 연구개발)"
    }
   },
   {
    "file": "live-seocho.json",
    "url": "https://340patrolman.github.io/datamap/data/live-seocho.json",
-   "bytes": 1050223,
+   "bytes": 1040342,
    "schema": "tg-live/1",
-   "date": "2026-11-03 13:05",
+   "date": "2026-11-04 16:05",
    "source": "서울 열린데이터광장 「서울시 실시간 도시데이터」(OA-21285) · 장소 영역 「서울시 주요 121장소 영역」(OA-21778) — 받은 시각의 한 장(지도는 통신 0 · 다시 받으려면 tools/flow-bake.py live)",
    "note": "인구는 통신사 기지국 추정 범위 · 카드 결제는 신한카드 표본(최근 10분 · 장소 안 가맹점) · 도로 소통은 TOPIS 링크 속도. 예측(fcst)은 받은 시각부터 12시간.",
    "top": {
@@ -1445,10 +1445,10 @@
   {
    "file": "live-spd-seocho.json",
    "url": "https://340patrolman.github.io/datamap/data/live-spd-seocho.json",
-   "bytes": 40626,
+   "bytes": 40484,
    "schema": "tg-live-spd/1",
-   "date": "15:49",
-   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261103154500",
+   "date": "17:26",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261104172000",
    "fields": "m{ITS 링크 ID: 통행속도 km/h(정수)} — data/sig-approach-seocho.json 의 링크와 data/nav-seocho.json 의 등급 1~4 링크 · n 값이 온 링크 수 · want 찾는 링크 수",
    "note": "실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다 · 통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다 · 자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다",
    "top": {
@@ -1457,26 +1457,26 @@
     "m": "{2489}"
    },
    "sample": {
-    "m.1020000101": "25",
+    "m.1020000101": "17",
     "box[0]": "126.955"
    }
   },
   {
    "file": "live-spd-six.json",
    "url": "https://340patrolman.github.io/datamap/data/live-spd-six.json",
-   "bytes": 143787,
+   "bytes": 143471,
    "schema": "tg-live-spd/1",
-   "date": "15:49",
-   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261103154500",
+   "date": "17:26",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261104172000",
    "fields": "m{ITS 링크 ID: 통행속도 km/h(정수)} — 서초 신호 교차로에 들어오는 링크 + data/nav-six.json(여섯 구 길 묶음)의 등급 1~4 링크(그 파일이 없으면 상자 안 모든 링크) · n 값이 온 링크 수 · want 찾는 링크 수",
    "note": "실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다 · 통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다 · 자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다",
    "top": {
     "box": "[4]",
     "note": "[3]",
-    "m": "{8982}"
+    "m": "{8983}"
    },
    "sample": {
-    "m.1000002701": "11",
+    "m.1000002701": "9",
     "box[0]": "126.875"
    }
   },
@@ -1968,9 +1968,9 @@
   {
    "file": "onto-loop-hist.json",
    "url": "https://340patrolman.github.io/datamap/data/onto-loop-hist.json",
-   "bytes": 8901,
+   "bytes": 8993,
    "schema": "tg-onto-loop-hist/1",
-   "date": "2026-11-03",
+   "date": "2026-11-04",
    "source": "국가교통정보센터(ITS) 실시간 소통정보를 이 PC 가 약 11분마다 받아 쌓은 것(07_API키/out/livespd) × data/onto-loops.json 네 변 — tools/onto/loop-hist.py",
    "fields": "rule{th km/h, legs 몇 변 이상, snaps 이어진 받은 때 수} · from·to 쌓인 기록 처음·끝 · loops{고리 id: {ep[{d 날짜, w 요일, b 시작, e 끝, n 받은 때 수, min[변마다 가장 느린 km/h], first[먼저 막힌 변 번호 차례 · 0부터 = onto-loops legs 차례]}], days[{d, w, eve 저녁 15~22시 받은 때 수, ep 그날 막힘 토막 수}], med[변마다 쌓인 기록 가운데값 km/h], chronic[늘 느린 변 번호 — 문턱 이하가 평소라 「먼저 막힌 차례」에서 뺌]}}",
    "note": "「고리 막힘」 = 네 변 중 셋 이상이 10 km/h 이하인 받은 때가 1 번 넘게 이어짐 — 앱이 정한 문턱(어림)이지 공식 기준이 아니다 · 받은 때 사이는 약 11분 — 시작·끝은 그 간격만큼 어긋날 수 있다 · 저녁 받은 기록이 없는 날(eve 0)은 막힘이 없었다는 뜻이 아니다(PC 가 꺼져 못 받음)",
@@ -1981,7 +1981,7 @@
    },
    "about": {
     "from": "2026-10-11 12:26",
-    "to": "2026-11-03 14:55"
+    "to": "2026-11-04 16:49"
    },
    "sample": {
     "note[0]": "「고리 막힘」 = 네 변 중 셋 이상이 10 km/h 이하인 받은 때가 1 번 넘게 이어짐 — 앱이 정한 문턱(어림)이지 공식 기준이 아니다",
@@ -2934,18 +2934,18 @@
   {
    "file": "sig-audit.json",
    "url": "https://340patrolman.github.io/datamap/data/sig-audit.json",
-   "bytes": 318554,
+   "bytes": 317693,
    "schema": "tg-sig-audit/1",
-   "date": "2026-11-03 15:52",
+   "date": "2026-11-04 17:16",
    "source": "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)",
    "fields": "spots{교차로 번호: {ok[[길, 글]], bad[[길, 글]]}} — 길: ksc 교통과 현시도 · pol 경찰청 계획 · api 잔여시간×신호 상태 두 API · re 다시 받아 맞대기 · fld 현장 지식(sig-field) · perp 직각 직진 겹침 · opp 마주 오는 직진×좌회전 겹침 · sum 녹+황+적≠주기. 아무 길로도 맞대 보지 못한 교차로는 없다(목록에 없음 = 대조 전)",
    "top": {
     "sum": "{25}",
-    "spots": "{2468}"
+    "spots": "{2469}"
    },
    "sample": {
     "spots.1007": "{\"ok\": [[\"re\", \"다시 받아 맞음 8번(가장 길게 28855분 뒤 · 어긋남 0.8초)\"]], \"bad\": []}",
-    "sum.shape_ok": "2445"
+    "sum.shape_ok": "2453"
    }
   },
   {
@@ -3132,18 +3132,18 @@
   {
    "file": "sigdir-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/sigdir-seoul.json",
-   "bytes": 12137338,
+   "bytes": 12139290,
    "schema": "tg-sigdir/1",
-   "date": "2026-11-03 15:52",
+   "date": "2026-11-04 17:23",
    "source": "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간",
    "fields": "pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API · f = Fusion 지금 한 줄로 시각만 맞춘 닻(fb = 녹색 길이·자리를 빌린 기록 「YYYY-MM-DD HH:MM」), dq dir = 원자료의 방위 이름이 실제와 다름(직각 방향 직진이 함께 녹색 — 초는 쓸 수 있어도 어느 쪽인지는 현장 확인)} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]} · pl{교차로 번호: [[요일 갈래(0 월~목 · 1 금 · 2 토 · 3 일), 시, 주기, 자정 기준 옵셋(기준 이동류 녹색이 켜지는 하루 초 mod 주기), 받은 달-날, 그 옵셋의 기준 이동류 「방위:이동류」(기록마다 기준이 다를 수 있다 — 쓸 때 그 기록의 그 이 …(전문은 파일에)",
    "note": "받은 시간대에 실제로 돈 값이다(하루 계획표가 아니다) · 방위 = 그 신호를 받는 차가 들어오는 쪽 · 잔여시간 API 로 읽은 기록의 색은 황색 3~6초 앞뒤로 읽은 추정이고 src p 기록은 상태 값 그대로 · 이어 센 「지금 몇 초」는 a·ci 로 지도가 계산한 추정",
    "top": {
     "mvcols": "[7]",
-    "pts": "{2496}",
-    "its": "{2496}",
-    "tod": "{2496}",
-    "pl": "{2494}"
+    "pts": "{2497}",
+    "its": "{2497}",
+    "tod": "{2497}",
+    "pl": "{2495}"
    },
    "about": {
     "how": "잔여시간이 새 값으로 뛰는 자리 사이를 한 구간으로 보고, 차량 신호는 3~6초 구간을 황색으로 보아 그 앞을 녹색·뒤를 적색으로 읽었다(추정). 받은 시간대의 실제 운영값이며 다른 시간대·요일은 다르다. 보행 신호는 색을 가릴 수 없어 구간 길이만 싣는다."
@@ -3261,7 +3261,7 @@
   {
    "file": "sim-apgujeong.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-apgujeong.json",
-   "bytes": 33146,
+   "bytes": 33153,
    "schema": "tg-sim/2",
    "date": "2026-10-30 10:28",
    "top": {
@@ -3278,7 +3278,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[4]",
-    "cal": "{9}"
+    "cal": "{10}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -3292,14 +3292,14 @@
   {
    "file": "sim-areas.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-areas.json",
-   "bytes": 5847,
+   "bytes": 7317,
    "schema": "tg-sim-areas/1",
    "date": "2026-11-03",
    "source": "tools/sim/areas-bake.py ← data/sim-<이름>.json(tools/sim/area-bake.py 가 서울 도로망·신호값·교통량 조사로 엮음 · sim-cal.py 가 평소 속도로 수요 배율 맞춤)",
-   "fields": "{\"id\": \"구역 자료 data/sim-<id>.json\", \"nm\": \"이름\", \"c\": \"가운데 [위도, 경도]\", \"r\": \"반지름 m\", \"sig\": \"신호 교차로 [번호, 이름, 위도, 경도]\", \"hit/n\": \"맞춤 칸 가운데 맞은 수(가장 잘 맞은 맞춤 · 실측 없는 들어오는 길은 「막히지 않음」으로 셈)\", \"mh/mn\": \"평소 속도(ITS) 실측이 있는 칸만 맞은 수\", \"jh/jn\": \"실측 막힘(6km/h 이하) 칸 가운데 시뮬도 막힌 수\", \"calDay\": \"맞춘 날\"}",
+   "fields": "{\"id\": \"구역 자료 data/sim-<id>.json\", \"nm\": \"이름\", \"c\": \"가운데 [위도, 경도]\", \"r\": \"반지름 m\", \"sig\": \"신호 교차로 [번호, 이름, 위도, 경도]\", \"twin\": \"디지털 트윈 판정 — 짝수 날 그 시각 실측에서 출발해 30분 뒤 막힘 맞은 칸/칸(sim 트윈 · mix 섞음 · keep 그대로) · pass = 섞음 ≥ 그대로\", \"hit/n\": \"맞춤 칸 가운데 맞은 수(가장 잘 맞은 맞춤 · 실측 없는 들어오는 길은 「막히지 않음」으로 셈)\", \"mh/mn\": \"평소 속도(ITS) 실측이 있는 칸만 맞은 수\", \"jh/jn\": \"실측 막힘(6km/h 이하) 칸 가운데 시뮬도 막힌 수\", \"calDay\": \"맞춘 날\"}",
    "note": "개념 시연 — 예측·보증 아님 · 반포 터미널 블록은 sim-banpo(손으로 짠 구역 · js/sim-ui.js)",
    "top": {
-    "fields": "{9}",
+    "fields": "{10}",
     "areas": "[11]"
    },
    "sample": {
@@ -3373,7 +3373,7 @@
   {
    "file": "sim-gangnam.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-gangnam.json",
-   "bytes": 32167,
+   "bytes": 32179,
    "schema": "tg-sim/2",
    "date": "2026-11-02 07:30",
    "top": {
@@ -3390,7 +3390,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[0]",
-    "cal": "{9}"
+    "cal": "{10}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -3404,7 +3404,7 @@
   {
    "file": "sim-hyeonchung.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-hyeonchung.json",
-   "bytes": 12308,
+   "bytes": 12337,
    "schema": "tg-sim/2",
    "date": "2026-10-30 10:28",
    "top": {
@@ -3421,7 +3421,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[1]",
-    "cal": "{9}"
+    "cal": "{10}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -3435,7 +3435,7 @@
   {
    "file": "sim-isu.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-isu.json",
-   "bytes": 28186,
+   "bytes": 29158,
    "schema": "tg-sim/2",
    "date": "2026-11-02 07:30",
    "top": {
@@ -3452,7 +3452,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[1]",
-    "cal": "{8}"
+    "cal": "{10}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -3482,7 +3482,7 @@
   {
    "file": "sim-naebang.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-naebang.json",
-   "bytes": 16822,
+   "bytes": 17725,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3499,7 +3499,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[0]",
-    "cal": "{8}"
+    "cal": "{10}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -3513,7 +3513,7 @@
   {
    "file": "sim-nambu.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-nambu.json",
-   "bytes": 32116,
+   "bytes": 33017,
    "schema": "tg-sim/2",
    "date": "2026-11-02 07:30",
    "top": {
@@ -3530,7 +3530,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[2]",
-    "cal": "{8}"
+    "cal": "{10}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -3544,7 +3544,7 @@
   {
    "file": "sim-renaissance.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-renaissance.json",
-   "bytes": 29245,
+   "bytes": 30221,
    "schema": "tg-sim/2",
    "date": "2026-10-30 10:28",
    "top": {
@@ -3561,21 +3561,21 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[0]",
-    "cal": "{8}"
+    "cal": "{10}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
    },
    "sample": {
     "links.4500>2219": "{\"id\": \"4500>2219\", \"fr\": \"4500\", \"to\": \"2219\", \"len\": 176, \"lanes\": 4, \"nm\": \"언주로(4500→2219)\", \"src\": \"노드링크\", \"ofr\": \"st\", \"oto\": \"nt\", \"its\": \"1220027401\", \"nsp\": {\"3-17\": 9, \"3-16\": 8, \"3-15\": 9, \"3-14\": 12, \"3-13\": 12, \"3-12\": 12, \"3-18 …(전문은 파일에)",
-    "entry.in.2219.wt": "{\"spot\": \"D-42\", \"share\": 1.0, \"src\": \"조사 D-42 테헤란로(선릉역) 두 방향 평균(같은 길 1.2km 안)\"}"
+    "cal.date": "2026-10-21"
    },
    "shape": "{<열쇠 14개 · 예 center>: [2개 · 예 [37.50263, 127.04276]]}"
   },
   {
    "file": "sim-sadang.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-sadang.json",
-   "bytes": 22998,
+   "bytes": 23934,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3592,14 +3592,14 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[0]",
-    "cal": "{8}"
+    "cal": "{9}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
    },
    "sample": {
     "links.in.65.st": "{\"id\": \"in.65.st\", \"fr\": null, \"to\": \"65\", \"len\": 600, \"lanes\": 5, \"nm\": \"과천대로 — 들어옴\", \"src\": \"노드링크 · 길이 600m 넘으면 600(설계값)\", \"oto\": \"st\", \"src_in\": 1, \"its\": \"1210008103\", \"nsp\": {\"3-17\": 9, \"3-16\": 9, \"3-15\": 11, \"3-14\": 10, \"3-13\": 9, \"3- …(전문은 파일에)",
-    "entry.in.65.st": "{\"perLane\": 300, \"src\": \"설계값 — 조사 지점 없음 · 차로 × 차로당 300대/시\"}"
+    "cal.date": "2026-10-21"
    },
    "shape": "{<열쇠 14개 · 예 center>: [2개 · 예 [37.4766, 126.9816]]}"
   },
@@ -3627,7 +3627,7 @@
   {
    "file": "sim-seochoyeok.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-seochoyeok.json",
-   "bytes": 56776,
+   "bytes": 57749,
    "schema": "tg-sim/2",
    "date": "2026-11-02 07:30",
    "top": {
@@ -3644,7 +3644,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[1]",
-    "cal": "{8}"
+    "cal": "{9}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -3658,7 +3658,7 @@
   {
    "file": "sim-yangjae.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-yangjae.json",
-   "bytes": 25690,
+   "bytes": 26650,
    "schema": "tg-sim/2",
    "date": "2026-10-25 21:36",
    "top": {
@@ -3675,7 +3675,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[0]",
-    "cal": "{8}"
+    "cal": "{9}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -3689,7 +3689,7 @@
   {
    "file": "sim-yeomgok.json",
    "url": "https://340patrolman.github.io/datamap/data/sim-yeomgok.json",
-   "bytes": 23788,
+   "bytes": 24756,
    "schema": "tg-sim/2",
    "date": "2026-10-30 10:28",
    "top": {
@@ -3706,7 +3706,7 @@
     "sat": "{4}",
     "spacing": "{3}",
     "log": "[1]",
-    "cal": "{8}"
+    "cal": "{9}"
    },
    "about": {
     "about": "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
@@ -4283,20 +4283,21 @@
   {
    "file": "twin-shadow.json",
    "url": "https://340patrolman.github.io/datamap/data/twin-shadow.json",
-   "bytes": 21855,
+   "bytes": 26502,
    "schema": "tg-twin-shadow/1",
-   "date": "2026-11-03 15:44",
-   "fields": "{\"n\": \"맞대 본 칸(길 × 시각 × 내다본 폭)\", \"hit\": \"맞은 칸\", \"jn/jh\": \"실제 막힘 칸 / 그 가운데 맞힘\", \"fn/fh\": \"실제 안 막힘 칸 / 그 가운데 맞힘\", \"cn/ch\": \"지금과 그 뒤가 달라진 칸 / 그 가운데 맞힘(그대로 어림은 늘 0)\"}",
+   "date": "2026-11-04 17:15",
+   "fields": "{\"n\": \"맞대 본 칸(길 × 시각 × 내다본 폭)\", \"hit\": \"맞은 칸\", \"jn/jh\": \"실제 막힘 칸 / 그 가운데 맞힘\", \"fn/fh\": \"실제 안 막힘 칸 / 그 가운데 맞힘\", \"cn/ch\": \"지금과 그 뒤가 달라진 칸 / 그 가운데 맞힘(그대로 어림은 늘 0)\", \"use\": \"구역마다 고른 방식(홀수 날 30분 뒤로 고름 · keep=그대로 · mix=섞음, d=변화 폭 문턱) · even = 짝수 날 판정(hit 고른 방식 · keep 그대로 · cn/ch 바뀐 칸/맞힘)\"}",
    "note": "개념 시연 — 예측·보증 아님 · 트윈 = 그 시각 ITS 실측으로 길을 채우고(Greenshields 채움 · 설계값) 앞을 돌린 시뮬 · 평소 = 실측 없이 평소 수요 · 그대로 = 지금 상태가 이어진다는 어림 · 막힘 = 실측 6km/h 이하 / 시뮬 점유 80% 이상",
    "top": {
-    "fields": "{5}",
+    "fields": "{6}",
     "times": "[4]",
     "days": "[2]",
     "areas": "{11}",
-    "total": "{5}"
+    "total": "{5}",
+    "select": "{2}"
    },
    "sample": {
-    "areas.apgujeong": "{\"nm\": \"apgujeong\", \"cases\": 82, \"sec\": 69, \"score\": {\"twin\": {\"30\": {\"n\": 560, \"hit\": 436, \"fn\": 482, \"fh\": 401, \"cn\": 90, \"ch\": 40, \"jn\": 78, \"jh\": 35}, \"60\": {\"n\": 560, \"hit\": 436, \"fn\": 479, \"fh\": 393, \"cn\": 97, \"ch\": 43, \"jn\": 81, \"jh\" …(전문은 파일에)",
+    "areas.apgujeong": "{\"nm\": \"apgujeong\", \"cases\": 87, \"sec\": 53, \"score\": {\"twin\": {\"30\": {\"n\": 595, \"hit\": 481, \"fn\": 511, \"fh\": 457, \"cn\": 97, \"ch\": 47, \"jn\": 84, \"jh\": 24}, \"60\": {\"n\": 588, \"hit\": 477, \"fn\": 504, \"fh\": 447, \"cn\": 98, \"ch\": 45, \"jn\": 84, \"jh\" …(전문은 파일에)",
     "fields.n": "맞대 본 칸(길 × 시각 × 내다본 폭)"
    }
   },
@@ -4319,18 +4320,18 @@
   {
    "file": "utic-ims.json",
    "url": "https://340patrolman.github.io/datamap/data/utic-ims.json",
-   "bytes": 64563,
+   "bytes": 66597,
    "schema": "tg-utic-ims/1",
-   "date": "2026-11-03 13:06",
+   "date": "2026-11-04 16:06",
    "source": "경찰청 도시교통정보센터(UTIC) 개방데이터 — 돌발정보(www.utic.go.kr/guide/imsOpenData.do · 인증키·등록 IP 로 받음) · 시내 도로의 사고·공사·행사·통제 등",
    "fields": "items[[id, kind 갈래(제목 글머리), lon, lat, title 제목(200자까지), road 도로 이름, start 시작, end 끝(예정), upd 고친 때, addr 지번 주소, tc 유형 코드, gc 등급 코드, rc 지역 코드, sc 출처 코드, lane]] · 때 = YYYY-MM-DD HH:MM · 고친 때가 새 것부터",
    "note": "실시간이 아니다 — made 시각에 이 PC 가 받아 구운 한 장이다(PC 가 꺼져 있으면 낡는다 · 끝 시각 end 가 지난 것은 이미 풀렸을 수 있다) · 자치단체 사정에 따라 일부 지역은 비어 있을 수 있다(UTIC 안내) · 코드 칸(tc·gc·rc·sc)은 UTIC 원문 값 그대로다 — 뜻은 UTIC 「개방데이터 세부내용」 문서에 있다(여기에 지어 적지 않았다) · 갈래(kind)는 제목 맨 앞 [ ] 안 글",
    "top": {
     "note": "[4]",
-    "items": "[167]"
+    "items": "[173]"
    },
    "sample": {
-    "items[0]": "[\"L90175200458\", \"사고\", 127.016624, 37.524296, \"[사고] 올림픽대로 한남IC 에서 서초구강남구 방향 차로 차량고장 올림픽대로 동호대교 → 한남대교 김포방향, [차량고장] 올림픽대로 (김포방향) 동호대교 → 한남대교 4차로 통제, 차량고장\", \"올림픽대로\", \"2026-11-03 12:09\", \"2026-11-03 13:20\", \"2026-11-03 13:05\", \"서울 강남구 압구정동 386 …(전문은 파일에)",
+    "items[0]": "[\"L90175246486\", \"통제\", 126.898407, 37.230529, \"[통제] 비봉매송간도시고속도로 비봉매송로479 에서 쌍학터널 방향 차로 공사 비봉매송간고속화도로 내리IC → 백학IC 비봉방향, [공사] 비봉매송간고속화도로 (비봉방향) 내리IC → 백학IC 2차로 통제, 시설물보수공사\", \"비봉매송간도시고속도로\", \"2026-11-04 13:19\", \"2026-11-04 16:10\", \"2026-11-04 1 …(전문은 파일에)",
     "note[0]": "실시간이 아니다 — made 시각에 이 PC 가 받아 구운 한 장이다(PC 가 꺼져 있으면 낡는다 · 끝 시각 end 가 지난 것은 이미 풀렸을 수 있다)"
    }
   },

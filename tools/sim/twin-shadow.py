@@ -92,6 +92,7 @@ OUT = {'schema': 'tg-twin-shadow/1', 'made': datetime.datetime.now().strftime('%
        'note': '개념 시연 — 예측·보증 아님 · 트윈 = 그 시각 ITS 실측으로 길을 채우고(Greenshields 채움 · 설계값) 앞을 돌린 시뮬 · 평소 = 실측 없이 평소 수요 · 그대로 = 지금 상태가 이어진다는 어림 · 막힘 = 실측 6km/h 이하 / 시뮬 점유 80% 이상',
        'fields': {'n': '맞대 본 칸(길 × 시각 × 내다본 폭)', 'hit': '맞은 칸', 'jn/jh': '실제 막힘 칸 / 그 가운데 맞힘', 'fn/fh': '실제 안 막힘 칸 / 그 가운데 맞힘', 'cn/ch': '지금과 그 뒤가 달라진 칸 / 그 가운데 맞힘(그대로 어림은 늘 0)'},
        'times': TIMES, 'days': [DAYS[0], DAYS[-1]] if DAYS else [], 'areas': {}}
+CELLS = []   # 칸 기록(구역 고르기에 씀 · TWIN_CELLS=경로 면 파일로도)
 for nm in AREAS:
     f = os.path.join(ROOT, 'data', 'sim-' + nm + '.json')
     if not os.path.exists(f): print(nm, '구역 자료 없음'); continue
@@ -127,6 +128,7 @@ for nm in AREAS:
                 ob = tw['o'][k]['b']
                 mix = j0 if ob is None or (ob >= 0.8) == (ot >= 0.8) else ot >= 0.8   # 섞음 = 지금 실측 상태에서 출발해 시뮬이 「바뀐다」고 할 때만 바꿈
                 if os.environ.get('TWIN_DIAG') and h == 1800: DG[(k, 'fp' if ot >= 0.8 and not rj else 'fn' if rj and ot < 0.8 else 'ok')] += 1
+                if CELLS is not None: CELLS.append([nm, c['d'], c['t0'], k, h, int(j0), int(rj), ob, ot, op])
                 tally(S['twin'][h], ot >= 0.8, rj, rj != j0); tally(S['plain'][h], op >= 0.8, rj, rj != j0); tally(S['keep'][h], j0, rj, rj != j0); tally(S['mix'][h], mix, rj, rj != j0)
     if os.environ.get('TWIN_DIAG'):
         for k in sorted(k2its, key=lambda k: -DG[(k, 'fp')] - DG[(k, 'fn')])[:6]:
@@ -138,6 +140,37 @@ for nm in AREAS:
 
 tot = {v: {str(h // 60): sum((collections.Counter(a['score'][v][str(h // 60)]) for a in OUT['areas'].values()), collections.Counter()) for h in HZ} for v in ('twin', 'oracle', 'plain', 'keep', 'mix')}
 OUT['total'] = {v: {h: dict(c) for h, c in d.items()} for v, d in tot.items()}
+# ---- 구역마다 쓸 방식 고르기(2026-11-04) — 홀수 날 30분 뒤 맞음으로 「그대로」 또는 「섞음(변화 폭 문턱 d)」 중 하나를 고르고(같으면 그대로) 짝수 날로 판정 ----
+#   섞음 문턱 d = 시뮬 점유가 그 뒤 d 이상 움직여 80% 를 넘나들 때만 바꿈 · 고른 판은 맞춤에 안 쓴 날로만 성적을 냄(과적합 막기)
+def spred(c, r):
+    nm, day, t0, k, h, j0, rj, ob, ot, op = c
+    if r[0] == 'keep' or ob is None or (ob >= 0.8) == (ot >= 0.8) or abs(ot - ob) < r[1]: return j0
+    return int(ot >= 0.8)
+def sc(cs, r):
+    t = collections.Counter()
+    for c in cs:
+        p, rj, j0 = spred(c, r), c[6], c[5]; t['n'] += 1; t['hit'] += p == rj
+        if rj != j0: t['cn'] += 1; t['ch'] += p == rj
+    return t
+RULES = [('keep', 0)] + [('mix', d) for d in (0, 0.1, 0.2, 0.3, 0.4)]
+SEL = {str(h // 60): collections.Counter() for h in HZ}
+for nm in OUT['areas']:
+    cs = [c for c in CELLS if c[0] == nm]
+    O = [c for c in cs if int(c[1][-2:]) % 2 == 1 and c[4] == HZ[0]]
+    best = max(RULES, key=lambda r: (sc(O, r)['hit'], r[0] == 'keep'))
+    u = {'rule': best[0], 'd': best[1], 'odd30': dict(sc(O, best)), 'even': {}}
+    for h in HZ:
+        E = [c for c in cs if int(c[1][-2:]) % 2 == 0 and c[4] == h]
+        a, k = sc(E, best), sc(E, ('keep', 0))
+        u['even'][str(h // 60)] = {'n': a['n'], 'hit': a['hit'], 'keep': k['hit'], 'cn': a['cn'], 'ch': a['ch']}
+        for f in ('n', 'hit', 'cn', 'ch'): SEL[str(h // 60)][f] += a[f]
+        SEL[str(h // 60)]['keep'] += k['hit']
+    OUT['areas'][nm]['use'] = u
+OUT['select'] = {h: dict(c) for h, c in SEL.items()}
+OUT['fields']['use'] = '구역마다 고른 방식(홀수 날 30분 뒤로 고름 · keep=그대로 · mix=섞음, d=변화 폭 문턱) · even = 짝수 날 판정(hit 고른 방식 · keep 그대로 · cn/ch 바뀐 칸/맞힘)'
+print('고르기 짝수 날:', {h: '%.1f%% (그대로 %.1f%%) 바뀜 %d/%d' % (100 * c['hit'] / c['n'], 100 * c['keep'] / c['n'], c['ch'], c['cn']) for h, c in SEL.items() if c['n']})
 dst = os.path.join(ROOT, 'data', 'twin-shadow.json') if not os.environ.get('TWIN_DRY') else os.path.join(tempfile.gettempdir(), 'twin-shadow.json')
 json.dump(OUT, open(dst, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('→', dst); print(json.dumps(OUT['total'], ensure_ascii=False))
+if os.environ.get('TWIN_CELLS'):
+    json.dump(CELLS, open(os.environ['TWIN_CELLS'], 'w'))

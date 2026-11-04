@@ -1456,6 +1456,11 @@ def build():
             if bad:
                 keep[kk] = dict(r, mv=[({'d': x['d'], 'm': x['m'], 'n': 0} if any(x is z for z in bad) else x) for x in r['mv']])   # 채운 직진이 받은 그대로의 직각 직진과 겹친다 — 채움을 물린다(못 읽음으로)
         vv = sorted(keep.values(), key=lambda r: (r['day'], r['to']))[-12:]
+        # (2026-11-04 소유자 「이수역교차로 신호값이 지금 안 나오는데」) 최근 12장만 남기면 시각대 표(pl)에 있는 (요일 갈래, 주기)의 기록이 밀려 지워져
+        #  지도가 그 시각대를 이어 셀 근거를 잃는다 — 이수역 월~목 19·20시 220초(16~21시 같은 계획)가 지워져 17시에 남은 초가 안 나왔다 → 시각대 표에 쓰인 (갈래, 주기)마다 한 장은 남긴다
+        pk = {(q[0], q[2]) for q in plan.values()}
+        vv += [r for kk, r in keep.items() if r not in vv and any(kk[0] == c9 and abs(kk[1] - cy9) < 1 for c9, cy9 in pk)]
+        vv.sort(key=lambda r: (r['day'], r['to']))
         # 약한 줄(일곱째 칸 1) — 정각 뒤 5분 안에 시작해 8분도 안 되는 창에서 받았고, 같은 날 바로 앞 시각대의 주기와 다르다 = 계획이 바뀌는 사이의 헛값일 수 있다(이수역 일 8시 237초 — 앞은 180 · 계획은 190).
         #  그 시각대를 뒤에 다시 받으면(창이 길어지면) 덮어써져 풀린다. 지도·맞대 보기는 약한 줄을 쓰지 않는다
         for (c9, h9), row in plan.items():

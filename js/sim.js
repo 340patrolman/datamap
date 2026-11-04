@@ -140,6 +140,9 @@
        datamap 세션 길별 진단(서초역 법원후문 서쪽·서초대로 헛막힘)에서 나옴 · 짝수 날 그림자 판정: 헛막힘은 줄지만 실제 막힘도 덜 잡아(4구역 트윈 막힘 95→51/146 · 나가는 길 너머 막힘을 함께 끄면 66) 균형 점수가 나빠져 기본으로 안 켬
        켜기 = scen.route2 또는 구역 cal.route2(sim-cal.py SIMCAL_ROUTE2=1) */
     var R2 = scen.route2 != null ? scen.route2 : !!(M.cal && M.cal.route2);
+    /* 빈 시간 채움 녹색 배율(gapK · 2026-11-04 시험 · 기본 1) — T-Data 가 그 방향을 못 읽어 주기 안 빈 시간을 통째로 녹색으로 준 접근로(gap · 설계값)는 실제로는 보행 현시 등으로 더 짧을 수 있다
+       (서초역 반포대로27길 in.4040.wt = gap 37초 · 실측 막힘 209/223 인데 시뮬은 안 막힘) · 켜기 = scen.gapK 또는 cal.gapK(sim-cal.py SIMCAL_SW='{"gapK":0.5}') */
+    var GAPK = scen.gapK != null ? scen.gapK : (M.cal && M.cal.gapK != null ? M.cal.gapK : 1);
     /* 회전 몫을 신호에서(tsg · 2026-11-03 시험 · 기본 끔) — 신호 담당은 이동류마다 수요만큼 녹색을 준다고 보고, 접근로마다 우회전 몫(설계값)을 뺀 나머지를 직진·좌회전의 「녹색 초 × 차로」 비로 나눈다
        (판 가운데 시각의 계획 · 회전 비율 조사가 없어 전 교차로 좌·우 15% 설계값을 쓰던 것의 대안) · 켜기 = scen.tsg 또는 cal.tsg(sim-cal.py SIMCAL_TSG=1) */
     var TSG = scen.tsg != null ? scen.tsg : !!(M.cal && M.cal.tsg), TSL = {};
@@ -235,7 +238,7 @@
       var N = S.N[id], G = {};
       if (N.manual) { var ma = N.manual; (ma.clr > 0 ? ma.keep : ma.ph[ma.i].mv).forEach(function (m) { G[m] = 1; }); return G; }
       var P = planAt(M, id, t, dow, alt, ACT.noTw[id]), c = P.c, x = ((t - P.off) % c + c) % c;
-      P.win.forEach(function (r) { var a = (x - r[3] + c) % c; if (a >= lost && a < r[1] + r[2] - 1) G[r[0]] = 1; });
+      P.win.forEach(function (r) { var a = (x - r[3] + c) % c; if (a >= lost && a < (r[4] === 'gap' ? r[1] * GAPK : r[1]) + r[2] - 1) G[r[0]] = 1; });
       if (AC && AC.mode === 'drop' && S.ac.on && id === AC.node) (AC.cut || []).forEach(function (m) { delete G[m]; });
       (S.drop[id] || []).forEach(function (m) { delete G[m]; });   /* 손으로 빼기(⛔) — 그 이동류만 적색 */   /* 자동 끊기 「빼기」 — 차례는 그대로 돌고 그 이동류만 적색 */
       N.cur = P; return G;

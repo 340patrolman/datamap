@@ -46,11 +46,13 @@ for nm in sys.argv[1:]:
     SH = {'cal': cases_of(M, ODD), 'judge': cases_of(M, EVEN)} if SNAP else {'cal': [], 'judge': []}
     o0 = {'shadow': SH['cal'], 'mhFloor': floor}
     if os.environ.get('SIMCAL_NOOUT'): o0['noOut'] = 1   # 시험 — 나가는 길 너머 막힘(onsp)을 끄고 맞춤·판정
-    if os.environ.get('SIMCAL_ROUTE2') or os.environ.get('SIMCAL_TSG'): M['cal'] = {k: 1 for k, e in (('route2', 'SIMCAL_ROUTE2'), ('tsg', 'SIMCAL_TSG')) if os.environ.get(e)}   # 시험 스위치 — 맞춤 runs 는 noCal 이라 배율은 안 읽고 이 스위치만 본다
+    SW = {k: 1 for k, e in (('route2', 'SIMCAL_ROUTE2'), ('tsg', 'SIMCAL_TSG')) if os.environ.get(e)}
+    SW.update(json.loads(os.environ.get('SIMCAL_SW') or '{}'))   # 엔진 시험 스위치 모음(JSON · 예 {"gapK":0.5}) — twin-shadow.py TWIN_SCEN 과 같은 이름
+    if SW: M['cal'] = dict(SW)   # 맞춤 runs 는 noCal 이라 배율은 안 읽고 이 스위치만 본다
     st = json.dumps(dict(o0, start={'scale': old['scale'], 'all': old['all']})) if old and old.get('scale') else 'null'
     # 두 번 맞춘다 — 처음부터 · 지난 배율에서 출발 → 실측 칸(평소 속도 있는 칸) 맞음과 실측 막힘 잡음의 평균이 큰 쪽(2026-10-30 · 맞춤이 문턱에서 다른 답에 내려앉아 잘 맞던 구역이 나빠지던 것)
     html = ('<!doctype html><meta charset="utf-8"><pre id="out">x</pre><script>window.__M=' + json.dumps(M, ensure_ascii=False).replace('</', '<\\/') + ';</script><script>' + js +
-            '</script><script>window.__SH=' + json.dumps(SH) + ';</script><script>try{var A=tgSim.calibrate(__M,' + json.dumps(o0) + '),W=' + st + ',B=W?tgSim.calibrate(__M,W):null;function ms(c){var b=c.best;if(b.tgt!=null&&b.shadow)return b.tgt;return b.mn?(b.mh/b.mn+(b.jn?b.jh/b.jn:b.mh/b.mn))/2:b.hit/b.n;}var C=B&&ms(B)>ms(A)?B:A;C.from=C===B?"warm":"fresh";if(__M.cal&&__M.cal.route2)C.route2=1;if(__M.cal&&__M.cal.tsg)C.tsg=1;if(__SH.judge.length){__M.cal=C;var J=tgSim.shadowScore(__M,__SH.judge,' + json.dumps({'noOut': 1} if os.environ.get('SIMCAL_NOOUT') else {}) + '),pc=function(o){return o.n?o.hit/o.n:0;};C.twin={days:"even",d0:__SH.judge[0].d,d1:__SH.judge[__SH.judge.length-1].d,cases:J.cases,calCases:__SH.cal.length,sim:J.sim,keep:J.keep,mix:J.mix,pass:pc(J.mix)>=pc(J.keep)};}document.getElementById("out").textContent=JSON.stringify(C);}catch(e){document.getElementById("out").textContent="ERR "+e.stack;}</script>')
+            '</script><script>window.__SH=' + json.dumps(SH) + ';</script><script>try{var A=tgSim.calibrate(__M,' + json.dumps(o0) + '),W=' + st + ',B=W?tgSim.calibrate(__M,W):null;function ms(c){var b=c.best;if(b.tgt!=null&&b.shadow)return b.tgt;return b.mn?(b.mh/b.mn+(b.jn?b.jh/b.jn:b.mh/b.mn))/2:b.hit/b.n;}var C=B&&ms(B)>ms(A)?B:A;C.from=C===B?"warm":"fresh";if(__M.cal)Object.keys(__M.cal).forEach(function(k){C[k]=__M.cal[k];});if(__SH.judge.length){__M.cal=C;var J=tgSim.shadowScore(__M,__SH.judge,' + json.dumps({'noOut': 1} if os.environ.get('SIMCAL_NOOUT') else {}) + '),pc=function(o){return o.n?o.hit/o.n:0;};C.twin={days:"even",d0:__SH.judge[0].d,d1:__SH.judge[__SH.judge.length-1].d,cases:J.cases,calCases:__SH.cal.length,sim:J.sim,keep:J.keep,mix:J.mix,pass:pc(J.mix)>=pc(J.keep)};}document.getElementById("out").textContent=JSON.stringify(C);}catch(e){document.getElementById("out").textContent="ERR "+e.stack;}</script>')
     d = tempfile.mkdtemp()
     p = os.path.join(d, 'cal.html')
     open(p, 'w', encoding='utf-8').write(html)
@@ -63,8 +65,7 @@ for nm in sys.argv[1:]:
         sys.exit(1)
     cal = json.loads(t)
     if os.environ.get('SIMCAL_NOOUT'): cal['noOut'] = 1   # 화면에서도 같은 조건으로 돌게(create 가 M.cal.noOut 을 본다)
-    if os.environ.get('SIMCAL_ROUTE2'): cal['route2'] = 1
-    if os.environ.get('SIMCAL_TSG'): cal['tsg'] = 1
+    cal.update(SW)   # 화면에서도 같은 조건으로 돌게
     M['cal'] = cal
     json.dump(M, open(f, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     tw = cal.get('twin')

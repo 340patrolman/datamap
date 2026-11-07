@@ -245,7 +245,7 @@
       if (acts.length) h += '<details><summary>교통과가 이 넷에 해 온 조치 ' + acts.length + '건(교통과 출력물 · 근거기록)</summary><ul class="lg2">' + acts.slice(0, 30).map(function (a) { return '<li>' + esc(nm(O(a.int))) + ' — ' + esc(a.what) + '</li>'; }).join('') + '</ul></details>';
       var sd = SIMD && SIMD.a === L.sim ? SIMD.d : null;
       if (sd && sd.actions) h += '<details><summary>🧪 시뮬로 견줘 볼 수 있는 조치 ' + sd.actions.length + '가지</summary><ul class="lg2">' + sd.actions.map(function (a) { return '<li>' + esc(a.nm) + (a.src ? ' <small>— ' + esc(a.src) + '</small>' : '') + '</li>'; }).join('') + '</ul></details>';
-      h += fieldBox(L) + histBox(L) + actBox(L) + (L.sim === 'banpo' ? '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div>' : L.sim && window.tgSimArea ? '<div class="bar"><button data-sim="' + esc(L.sim) + '">🧪 이 둘레 시뮬 열기</button></div><div class="note">자동으로 엮은 구역 시뮬(' + esc(L.sim) + ') — 반포 블록(손으로 짠 구역)보다 거칠고 실제 막힘을 덜 낸다(시뮬 화면에 맞음 수) · 개념 시연 · 형님 현장 결과가 이긴다</div>' : '<div class="note">이 블록 시뮬은 아직 없다</div>') + '</div>';
+      h += lwBtn() + fieldBox(L) + histBox(L) + actBox(L) + (L.sim === 'banpo' ? '<div class="bar">' + (window.tgSimUI ? '<button data-sim="1">🧪 이 블록 시뮬 열기</button>' : '') + '</div><div class="note">시뮬은 개념 시연(예측·보증 아님) — 10/18 실측과 막히는 모양·풀리는 시각은 맞고 일부 접근로는 틀린다(시뮬 화면 경고 그대로) · 형님 현장 결과가 시뮬과 다르면 현장 결과가 이긴다</div>' : L.sim && window.tgSimArea ? '<div class="bar"><button data-sim="' + esc(L.sim) + '">🧪 이 둘레 시뮬 열기</button></div><div class="note">자동으로 엮은 구역 시뮬(' + esc(L.sim) + ') — 반포 블록(손으로 짠 구역)보다 거칠고 실제 막힘을 덜 낸다(시뮬 화면에 맞음 수) · 개념 시연 · 형님 현장 결과가 이긴다</div>' : '<div class="note">이 블록 시뮬은 아직 없다</div>') + '</div>';
       return h; }).join('');
   }
 
@@ -391,6 +391,7 @@
     if (b.hasAttribute('data-back')) { go(ST.back.pop(), false); return; }
     if (b.hasAttribute('data-pick')) { if (ST.id) ST.back.push(ST.id); ST.id = null; ST.q = ''; pick(); return; }
     if (b.hasAttribute('data-norm')) { normLoad(); return; }
+    if (b.hasAttribute('data-lw')) { try { localStorage.setItem(LWK, lwOn() ? '0' : '1'); } catch (e2) {} lwStart(); paint(); return; }
     if ((a = b.getAttribute('data-actadd'))) { var L0 = (LOOPS || []).filter(function (x) { return x.id === a; })[0], sel = $('m2dLnkAct'), v = sel ? sel.value : 'etc', nm0 = sel ? sel.options[sel.selectedIndex].text : '', note = '';
       if (v === 'etc') { note = (prompt('무엇을 했나요? (한 줄 · 사람·차량번호는 적지 않습니다)', '') || '').trim().slice(0, 120); if (!note) return; nm0 = '그 밖'; }
       if (PII.some(function (r) { return r.test(note); })) { alert('전화번호·주민번호·차량번호 꼴이 있어 저장하지 않았습니다.'); return; }
@@ -433,7 +434,44 @@
     }, function () { el.innerHTML = '<button class="lx" data-close="1">닫기</button><h3>🧩 엮임 보기</h3><div class="wait">온톨로지 코어를 받지 못했습니다 — 통신을 확인해 주세요.</div>'; });
   }
   function close() { var el = $('m2dLnk'); if (el) el.classList.remove('on'); }
-  window.tgLink = { open: open, close: close, _hyps: function (id) { return Q && O(id) ? hyps(O(id)) : null; }, _q: function () { return Q; }, _area: function () { return AREA; }, _load: load };
+  /* v2.312.0 🔔 고리 지켜보기(소유자 2026-11-07 「계속 진행」 — 차례 셋째 「지금 고리 막힘 시작 · 먼저 막힌 변」) — 켜 둔 기기에서만 · 지도가 열려 있고 화면이 보이는 동안 3분마다
+     data/live-spd-six.json(약 140KB · ITS 실측)을 받아 data/loop-watch.json(tools/onto/loopwatch-bake.py · 변마다 볼 링크와 평소 속도)으로 네 변을 센다 — 고리 카드와 같은 잣대(평소의 60% 아래 · 평소 값 없으면 15km/h 아래 · 둘 = 일부 · 셋 넘게 = 전체)
+     막히기 시작하면(풀림 → 일부·전체) 위에 한 줄 · 전체로 번지면 한 번 더 · 먼저 막힌 변 = 이 기기가 본 받은 때 차례(지켜보기를 켤 때 이미 막혀 있던 변은 그렇다고 밝힌다 · 받은 때 사이 약 11분 — 차례가 그만큼 어긋날 수 있다)
+     기록은 이 기기에만(tg_map2d_loopwatch_h · 3시간 지나면 버림) · 서버로 안 감 · 통행속도는 공개 자료(도달 시간·출동 지연 아님) · 어림 — 판단은 사람이 */
+  var LWK = 'tg_map2d_loopwatch', LWH = 'tg_map2d_loopwatch_h', LWD = null, LWI = 0;
+  function lwOn() { try { return localStorage.getItem(LWK) === '1'; } catch (e) { return false; } }
+  function lwJ(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  function lwLeg(lg, M, key) { var rd = lg.fix.filter(function (l) { return M[l] != null; }); if (!rd.length) rd = lg.apr.filter(function (l) { return M[l] != null; }).slice(0, 2); if (!rd.length) return null;
+    var v = Math.round(sum(rd.map(function (l) { return M[l]; })) / rd.length), ns = rd.map(function (l) { var c = (lg.norm[l] || {})[key]; return c ? c[0] : null; }).filter(function (x) { return x != null; }), nv = ns.length ? Math.round(sum(ns) / ns.length) : null, ratio = nv ? v / nv : null;
+    return { v: v, nv: nv, slow: ratio != null ? ratio < LWD.rule.ratio : v < LWD.rule.abs }; }
+  function lwEval(S) { var at = +S.at, d = new Date(at * 1000), key = dcls(d) + '-' + d.getHours();
+    return LWD.loops.map(function (L) { var st = L.legs.map(function (lg) { return lwLeg(lg, S.m, key); }), k = st.filter(function (x) { return x && x.slow; }).length, seen = st.filter(function (x) { return x; }).length;
+      return { L: L, st: st, at: at, lvl: seen < 3 ? 'unk' : k >= 4 || (k >= 3 && seen === 3) ? 'full' : k >= 2 ? 'part' : 'ok' }; }); }
+  function lwHm(t) { var d = new Date(t * 1000); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function lwStep(H, r) { var h = H[r.L.id]; if (!h || r.at - h.at > 5400 || r.at < h.at) h = H[r.L.id] = { at: 0, w0: r.at, slow: r.L.legs.map(function () { return 0; }), ep: 0, told: '' };
+    if (h.at === r.at) return null; h.at = r.at;
+    r.st.forEach(function (x, i) { if (!x) return; if (x.slow) { if (!h.slow[i]) h.slow[i] = r.at; } else h.slow[i] = 0; });
+    var say = null; if (r.lvl === 'part' || r.lvl === 'full') { if (!h.ep) { h.ep = r.at; h.told = r.lvl; say = 'start'; } else if (r.lvl === 'full' && h.told !== 'full') { h.told = 'full'; say = 'full'; } }
+    else if (r.lvl === 'ok') { if (h.ep) say = 'end'; h.ep = 0; h.told = ''; }
+    if (!say) return null; var ord = h.slow.map(function (t, i) { return [t, i]; }).filter(function (x) { return x[0]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    return { say: say, L: r.L, lvl: r.lvl, at: r.at, first: ord.map(function (x) { return { nm: r.L.legs[x[1]].nm, t: x[0], pre: x[0] === h.w0 }; }), st: r.st }; }
+  function lwShow(a) { var el = $('m2dLoopW'); if (!el) { el = document.createElement('div'); el.id = 'm2dLoopW'; el.setAttribute('role', 'status'); el.style.cssText = 'position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 58px);z-index:1200;max-width:520px;margin:0 auto;background:var(--card,#fff);color:var(--ink,#111);border:2px solid #dc2626;border-radius:12px;padding:8px 10px;font-size:13.5px;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.25)'; document.body.appendChild(el);
+      el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; e.stopPropagation(); if (b.hasAttribute('data-lwopen') && window.tgLink) window.tgLink.open({ id: b.getAttribute('data-lwopen') }); el.style.display = 'none'; }); }
+    var c = a.say === 'end' ? '#16a34a' : a.lvl === 'full' ? '#dc2626' : '#d97706', t = a.say === 'end' ? '풀림' : a.say === 'full' ? '고리 전체로 번짐 — 교착 위험' : (a.lvl === 'full' ? '고리 전체 막힘 시작' : '고리 일부 막히기 시작');
+    var fr = a.first.length ? '<br>먼저 막힌 변: ' + a.first.map(function (x) { return esc(x.nm) + ' ' + (x.pre ? '(켤 때 이미)' : lwHm(x.t)); }).join(' → ') : '';
+    el.style.borderColor = c; el.style.display = 'block';
+    el.innerHTML = '<b style="color:' + c + '">🔔 ' + esc(a.L.nm) + ' — ' + t + '</b> <small>(' + lwHm(a.at) + ' 실측)</small>' + (a.say === 'end' ? '' : fr) + '<br><small>네 변: ' + a.st.map(function (x, i) { return esc(a.L.legs[i].nm) + ' ' + (x ? x.v + 'km/h' + (x.slow ? '⛔' : '') : '—'); }).join(' · ') + ' · 어림(평소의 60% 아래 = 막힘)</small><div style="margin-top:4px;display:flex;gap:6px"><button class="sb" data-lwopen="' + esc(a.L.open) + '">🔁 고리 보기</button><button class="sb">닫기</button></div>'; }
+  function lwTick() { if (!lwOn() || document.hidden) return;
+    Promise.all([LWD ? Promise.resolve(LWD) : lwJ('data/loop-watch.json'), lwJ('data/live-spd-six.json')]).then(function (a) { LWD = a[0]; var S = a[1]; if (!S || !S.m || !S.at || (Date.now() / 1000 - (+S.at)) / 60 > LWD.rule.stale) return;
+      var H; try { H = JSON.parse(localStorage.getItem(LWH) || '{}') || {}; } catch (e) { H = {}; }
+      var said = lwEval(S).map(function (r) { return lwStep(H, r); }).filter(function (x) { return x; });
+      try { localStorage.setItem(LWH, JSON.stringify(H)); } catch (e) {}
+      if (said.length) lwShow(said.filter(function (x) { return x.say !== 'end'; })[0] || said[0]); }).catch(function () {}); }
+  function lwStart() { if (LWI) clearInterval(LWI); LWI = 0; if (!lwOn()) return; LWI = setInterval(lwTick, 180000); lwTick(); }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && lwOn()) lwTick(); });
+  setTimeout(lwStart, 4000);
+  function lwBtn() { return '<div class="bar"><button class="sb" data-lw="1">' + (lwOn() ? '🔕 고리 지켜보기 끄기' : '🔔 고리 지켜보기 켜기') + '</button></div><div class="note">켜 두면 이 지도가 열려 있는 동안 3분마다 통행속도(약 140KB)를 받아, 고리가 막히기 시작하거나 전체로 번지면 화면 위에 한 줄로 알리고 먼저 막힌 변을 보인다 · 이 기기에만 · 어림</div>'; }
+  window.tgLink = { _lwShow: lwShow, lwTest: function (wd, S, H) { LWD = wd; H = H || {}; return { r: lwEval(S).map(function (r) { return { id: r.L.id, lvl: r.lvl }; }), s: lwEval(S).map(function (r) { return lwStep(H, r); }), H: H }; }, open: open, close: close, _hyps: function (id) { return Q && O(id) ? hyps(O(id)) : null; }, _q: function () { return Q; }, _area: function () { return AREA; }, _load: load };
   function fromHash() { var h = location.hash || ''; if (!/(^|[#&])lnk=1(?=&|$)/.test(h)) return; var im = /(^|[#&])id=([A-Z]+-[^&]+)(?=&|$)/.exec(h), lm = /(^|[#&])ll=(-?[\d.]+),(-?[\d.]+)(?=&|$)/.exec(h);
     open(im ? { id: decodeURIComponent(im[2]) } : lm ? { lat: +lm[2], lon: +lm[3] } : null);
     var rest = h.replace(/^#/, '').split('&').filter(function (x) { return x && !/^(lnk|id|ll)=/.test(x); }).join('&');

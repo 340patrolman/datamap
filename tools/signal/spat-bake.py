@@ -394,7 +394,7 @@ def split_write(doc):
         except Exception:
             old = None
         if old != t:
-            open(fp, 'w', encoding='utf-8').write(t); nw += 1
+            atomic_write(fp, t); nw += 1
     # 2026-10-24 06:00 부터 색인에서 pl 을 뺀다(지도 v2.290.2 · 가르고 v0.36.3 이 칸 pl 을 읽는다 · 폰에 남은 옛 판이 새 판을 받을 하룻밤 여유를 둠 — 게임 세션과 맞춘 때)
     DROP_PL = datetime.datetime.now() >= datetime.datetime(2026, 10, 24, 6, 0)
     idx = {k: v for k, v in doc.items() if k != 'its' and not (DROP_PL and k == 'pl')}
@@ -404,8 +404,24 @@ def split_write(doc):
     idx['fl'] = fl
     idx['fields'] = 'fl{교차로 번호: 표시(1 다시 받아 맞은 기록이 있다 + 2 닻이 있다)} · cell[위도 칸, 경도 칸] · cells{칸: 교차로 수} · 기록(its)은 c/<칸>.json 의 its{교차로 번호: [기록…]} · 계획표 pl 도 c/<칸>.json 의 pl{교차로 번호: […]}(2026-10-23 · 색인 pl 은 읽는 쪽이 바뀐 뒤 뺀다) — 칸 = floor(위도/cell[0])_floor(경도/cell[1]) · 자리 없는 교차로는 x · ' + doc.get('fields', '')
     ip = os.path.join(d, 'index.json')
-    json.dump(idx, open(ip, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    atomic_write(ip, json.dumps(idx, ensure_ascii=False, separators=(',', ':')))
     print('나눠 쓰기: 색인', os.path.getsize(ip), 'B · 칸', len(cells), '· 바뀐 칸', nw)
+
+
+def atomic_write(path, text):
+    """(2026-11-07) 임시 파일에 다 쓴 뒤 바꿔 끼운다 — sweep 고리와 fusion 고리가 build() 를 동시에 불러 같은 파일을 덮어쓰면
+    짧은 쪽 뒤에 긴 쪽 꼬리가 남아(Extra data) 깨진 sigdir-seoul.json 이 두 번 올라갔다(f1dbe7dac · a2bb130fa)."""
+    t = '%s.%d.tmp' % (path, os.getpid())
+    with open(t, 'w', encoding='utf-8') as f:
+        f.write(text)
+    os.replace(t, path)
+
+
+def json_ok(path):
+    try:
+        json.load(open(path, encoding='utf-8')); return True
+    except Exception:
+        return False
 
 
 def publish():
@@ -424,6 +440,9 @@ def publish():
         run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json', 'data/onto-loop-hist.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
         if run(sys.executable, '-X', 'utf8', os.path.join('tools', 'keycheck.py')).returncode != 0:
             print('열쇠 검사에 걸려 올리지 않았다', flush=True); return
+        bad = [f for f in ('data/sigdir-seoul.json', 'data/sigdir/index.json') if not json_ok(os.path.join(ROOT, f))]   # 깨진 JSON 은 올리지 않는다(다음 굽기가 고친다)
+        if bad:
+            print('깨진 JSON 이라 올리지 않았다', bad, flush=True); return
         run('git', 'pull', '-q', '--ff-only', 'origin', 'main')
         c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json', 'data/onto-loop-hist.json')
         p2 = run('git', 'push', '-q', 'origin', 'main')
@@ -1538,7 +1557,7 @@ def build():
            'note': '받은 시간대에 실제로 돈 값이다(하루 계획표가 아니다) · 방위 = 그 신호를 받는 차가 들어오는 쪽 · 잔여시간 API 로 읽은 기록의 색은 황색 3~6초 앞뒤로 읽은 추정이고 src p 기록은 상태 값 그대로 · 이어 센 「지금 몇 초」는 a·ci 로 지도가 계산한 추정',
            'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'pts': pts, 'its': its, 'tod': tod, 'pl': pl}
     p = os.path.join(ROOT, 'data', 'sigdir-seoul.json')
-    json.dump(doc, open(p, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    atomic_write(p, json.dumps(doc, ensure_ascii=False, separators=(',', ':')))
     try:
         split_write(doc)
     except Exception as e:

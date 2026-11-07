@@ -244,6 +244,7 @@
       /* 켜놓고 다니기(v0.6.0) — 안내를 끝내고 길을 지운 뒤: 반포대로를 북쪽으로 가는 자리·속도를 넣으면 진행 방향이 위로 돌고, 내 길 앞의 신호가 「남쪽에서 직진」 값으로 잡힌다 */
       try { var b1 = document.getElementById('gStop'); if (b1) b1.click(); var b2 = document.getElementById('gClr'); if (b2) b2.click();
         ck('목적지가 없으면 「켜놓고 다니기」 단추가 있다', !!document.getElementById('gCruise'));
+        var cb9 = document.getElementById('gCruise'); ck('📐 「켜놓고 다니기」 단추 글이 단추 안에 든다(v0.37.3 · 375 폭에서 두 줄 글이 48px 단추 밑으로 잘렸다)', !!cb9 && cb9.scrollHeight <= cb9.clientHeight + 1, cb9 ? cb9.offsetWidth + 'x' + cb9.offsetHeight + ' · 글 높이 ' + cb9.scrollHeight : '없음');
         var bt0 = String(document.getElementById('gBot').innerText || ''); ck('목적지가 없으면 지금 색을 아는 신호 수와 까닭을 보인다(v0.6.2)', /지금 색·남은 초를 아는 신호 \d+곳/.test(bt0), bt0.replace(/\s+/g, ' ').slice(0, 80));
         var pa = g.P(127.0113, 37.4835), pb = g.P(127.0076, 37.4925), rr = g.findRoute(pa[0], pa[1], pb[0], pb[1], (function () { var d9 = new Date(); d9.setHours(14, 0, 0, 0); return d9.getTime() / 1000; })(), null),   /* 2026-10-23 밤(22시대)에 관문을 돌리면 그 시각 소통으로 길이 달라져 자리가 반포대로를 벗어났다 — 자리 잡기용 길은 낮 14시 값으로 */ hp9 = g.P(127.0097, 37.4875), hx = hp9[0], hy = hp9[1], hd = 338;   /* 2026-11-07 밤 — 14시 값으로 잡은 길도 그때 신호 기록에 따라 갈려 가운데 자리가 이름 없는 짧은 길(방위 38°)에 떨어졌다 → 자리는 반포대로 북쪽 방향 고정(서초3동우체국 남쪽) · 길 rr 은 아래 「제한속도」 검사에만 */
         g.setMe(hx, hy, 5, hd, 11); var onC = g.cruise(), A = g.ahead(), top2 = String(document.getElementById('gTop').innerText || '');

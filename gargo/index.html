@@ -163,6 +163,7 @@
   #gTop .tx small.ln2 { font-size: calc(14px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.16); border-radius: 8px; padding: 2px 8px; align-self: flex-start; margin-top: 3px; } #gTop .tx small.ln2 em { font-style: normal; opacity: .8; }
   #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: 13px; border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: calc(14.5px * var(--fz, 1)); font-weight: 700; }
   #gBot .hand { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: calc(12.5px * var(--fz, 1)); color: var(--dim, #64748b); } #gBot .hand span { flex: 1 0 100%; } #gBot .hand button { height: 34px; border-radius: 10px; border: 1px solid var(--line); background: transparent; padding: 0 10px; font-size: calc(13px * var(--fz, 1)); font-weight: 700; color: inherit; }
+  #gBot .btns #gCruise { height: auto; min-height: 48px; line-height: 1.2; padding: 6px 10px; word-break: keep-all; } #gBot .btns #gCruise small { display: block; font-size: .72em; font-weight: 700; opacity: .9; margin-top: 1px; }   /* v0.37.3 375 폭에서 두 줄로 꺾인 글이 48px 단추 밑으로 잘렸다 */
   #gBot .btns .go { flex: 1; background: linear-gradient(135deg, #2f6bff, #1b54d6); color: #fff; border: 0; font-size: calc(17px * var(--fz, 1)); font-weight: 900; box-shadow: 0 6px 16px rgba(47,107,255,.35); }
   .steps { margin-top: 10px; } .steps summary { font-size: calc(14px * var(--fz, 1)); font-weight: 800; padding: 8px 0; cursor: pointer; }
   .steps .st { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: calc(13.5px * var(--fz, 1)); line-height: 1.5; } .steps .st i { font-style: normal; width: 22px; text-align: center; flex: 0 0 auto; } .steps .st b { width: 52px; flex: 0 0 auto; }
@@ -249,7 +250,7 @@
 <div id="gBot"><div class="hint">길 자료를 읽는 중…</div></div>
 <div id="gMsg"></div><div id="gNote"></div><div id="gPick"></div><div id="gCfg" role="dialog" aria-label="설정"></div>
 <div id="gIntro"><div>
-  <h1>🚓 네비 가르고 — 서초·강남·송파·동작·관악·용산 출동 길 안내 <small style="font-size:13px;color:#b45309">시험판</small></h1>
+  <h1>🚓 네비 가르고 — 서초·강남·송파·동작·관악·용산 출동 길 안내 <small style="font-size:13px;color:#b45309;white-space:nowrap;display:inline-block">시험판</small></h1>
   <ul>
     <li><b>신호를 아는 길 안내</b> — 길 위 신호의 지금 색과 남은 초를 보여 준다. 신호값은 <b>계획값</b>이라 수동 조작·감응 신호면 다르다 — <b>눈으로 확인</b>한다.</li>
     <li>제한속도를 넘는 안내는 하지 않는다. 운전 중에는 화면을 조작하지 않는다 — 판단은 운전자 몫이다.</li>
@@ -275,7 +276,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.37.2"></script>
+<script src="gargo.js?v=0.37.3"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

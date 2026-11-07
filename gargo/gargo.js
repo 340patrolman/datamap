@@ -400,7 +400,7 @@
   function ago(t) { var d = Date.now() / 1000 - t; return d < 3600 ? Math.max(1, Math.round(d / 60)) + '분 전' : d < 172800 ? Math.round(d / 3600) + '시간 전' : Math.round(d / 86400) + '일 전'; }
   var SSTAT = null;
   function sigStat() { if (!G || !SIG.ready) return ''; var now = Date.now() / 1000; if (!SSTAT || now - SSTAT.t > 60) { var k = 0, n = 0; G.sig.forEach(function (sg) { if (!(SIG.its[sg.no] || []).length) return; n++; for (var i = 0; i < DIRS.length; i++) { var st = sigAt(sg.no, now, DIRS[i], 'St'); if (st && st.kind !== 'avg') { k++; break; } } }); SSTAT = { t: now, k: k, n: n }; }
-    return '<div class="hint" style="margin-top:8px;font-size:12.5px">🚦 지금 색·남은 초를 아는 신호 <b>' + SSTAT.k + '곳</b> / 자료 있는 ' + SSTAT.n + '곳 — 서울시 자료가 5분에 교차로 20~40곳씩만 와서 모으는 중이다(나머지는 평균 기다림)</div>'; }
+    return '<div class="hint" style="margin-top:8px;font-size:12.5px">🚦 지금 색·남은 초를 아는 신호 <b>' + SSTAT.k + '곳</b> / 자료 있는 ' + SSTAT.n + '곳 — 나머지는 지금 요일·시각대 값을 아직 못 익혔거나 버튼·감응 신호라 <b>평균 기다림</b>으로 센다(시각대 값은 계속 모으는 중)</div>'; }
   /* v0.7.0 — T-Data 값이 없는 교차로(예: 인재개발원 3971 — 장비는 줄을 보내지만 방향별 남은 초가 비어 있다)는 경찰청 공개 계획(../data/signal-tod-seoul.json · 요일 1 일 … 7 토 · 특수일은 일요일)이라도 보인다.
      계획에는 「어느 현시가 어느 방향인지」와 「지금 몇 초인지」가 없다 — 주기·현시 길이만. 누를 때 처음 한 번 받는다(573KB) */
   var TOD = null, TODP = null, TODM = '';
@@ -710,7 +710,7 @@
     var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd');
     if (!route && cruise) { paintCruise(); return; }
     if (!route) { top.style.display = 'none'; sg.style.display = 'none'; spd.style.display = 'none'; $('gFind').style.display = guide ? 'none' : 'flex';
-      setH(bot, '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest ? '' : sigStat() + '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기 — 앞 신호·소통</button><button data-sr="open|">🚇 열차 안 신고</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 길을 찾는다.</div>' : '')); return; }
+      setH(bot, '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest ? '' : sigStat() + '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기<small>앞 신호·소통</small></button><button data-sr="open|">🚇 열차 안 신고</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 길을 찾는다.</div>' : '')); return; }
     var r = route, now = Date.now() / 1000, pos = r.pos || 0, left = Math.max(0, r.dist - pos), frac = r.dist ? left / r.dist : 0, tLeft = r.tc ? Math.max(0, r.time - tAt(r, pos)) : r.time * frac;
     var nx = null, n2 = null; for (var i = 0; i < r.mans.length; i++) if (r.mans[i].d > pos + 5) { nx = r.mans[i]; n2 = r.mans[i + 1] || null; break; }
     var known = r.sigs.filter(function (g) { return g.s && g.s.kind !== 'avg'; }).length, wsum = 0; r.sigs.forEach(function (g) { wsum += g.tw || 0; });

@@ -755,6 +755,7 @@
         if (i) ctx.lineTo(sp[i][0] + ox, sp[i][1] + oy); else ctx.moveTo(sp[i][0] + ox, sp[i][1] + oy); }
       ctx.lineWidth = wd; ctx.lineCap = 'round'; ctx.strokeStyle = spdCol(v[0], L.rk); ctx.stroke();
       var mid = sp[n >> 1]; hit.push({ x: mid[0], y: mid[1], r: 7, it: { kind: 'lspd', L: L, v: v } }); });
+    if (window.tgNowcast) tgNowcast.draw(ctx, ITSL, LIVE.sp, S, a, b, wd, hit, HOL, draw);   /* v2.317.0 🔮 30분 뒤 막힐 듯 — 보라 점선(js/nowcast.js) */
   }
   // 📹 CCTV — 구운 목록(또는 「🔄 목록 새로 받기」로 받은 것) · 누르면 카드에서 영상(HLS) — 사파리는 그대로, 크롬 등은 hls.js(같은 사이트 js/vendor · 그때만 읽음)
   var HLS = null, HLSP = null;
@@ -1011,7 +1012,7 @@
     return h + '<p class="desc">하늘 낱말은 구름 양으로 가른다(20·50·80% — 앱 기준). 관측소에서 잰 값이 아니라 기상 모형이 그 자리(격자 약 1~2km)에 낸 현재값이다. 화면을 ' + (LIVE.wx.pts.length) + '칸으로 나눠 가운데 값을 찍는다.</p>' + src('Open-Meteo(open-meteo.com) 현재 기상 API — CC BY 4.0 · 키 없음 · 이 폰이 직접 받음 · 저장하지 않음'); }
   function spdCard(it) { var L = it.L, v = it.v;
     var h = '<h3>🚦 ' + esc(L.nm || '(이름 없는 길)') + ' <small style="font-weight:400;color:var(--ink2)">' + esc(RKN[L.rk] || '') + '</small></h3>';
-    h += row('지금 속도', '<b style="color:' + spdCol(v[0], L.rk) + '">' + v[0] + 'km/h</b>' + (L.ms ? ' · 제한 ' + L.ms + 'km/h' : '')) + row('이 구간 지나는 시간', (v[1] ? Math.round(v[1]) + '초' : '-')) + row('ITS 기준 시각', esc(ymdhm(v[2]))) + row('받은 시각', hhmm(LIVE.sp.at) + ' <em>(열 때 한 번 · 「🔄 이 화면 소통 받기」)</em>');
+    h += row('지금 속도', '<b style="color:' + spdCol(v[0], L.rk) + '">' + v[0] + 'km/h</b>' + (L.ms ? ' · 제한 ' + L.ms + 'km/h' : '')) + row('이 구간 지나는 시간', (v[1] ? Math.round(v[1]) + '초' : '-')) + row('ITS 기준 시각', esc(ymdhm(v[2]))) + row('받은 시각', hhmm(LIVE.sp.at) + ' <em>(열 때 한 번 · 「🔄 이 화면 소통 받기」)</em>') + (window.tgNowcast && tgNowcast.ready() ? row('30분 뒤(어림)', tgNowcast.card(L.id, v, LIVE.sp.at, HOL)) : '');
     return h + '<p class="desc">선은 달리는 방향의 오른쪽에 그린다(같은 길 두 방향이 나란히). 색은 앱 기준 — 고속·도시고속은 40·70km/h, 그 밖은 15·30km/h 로 정체·서행·원활을 가른다. 링크 ' + esc(L.id) + '.</p>' + src('국가교통정보센터(ITS) 교통소통정보 OpenAPI(실시간 · 이 폰이 직접 받음 · 저장 안 함) · 도로 선 = ' + (ITSL.src || 'ITS 표준노드링크')); }
   function ccCard(it) { var t = it.t; setTimeout(function () { ccPlay(t[3]); }, 0);
     var h = '<h3>📹 ' + esc(t[0]) + '</h3><video id="ccv" controls muted playsinline autoplay style="width:100%;max-height:42vh;background:#000;border-radius:8px"></video><p id="ccm" class="desc">불러오는 중… (소리 없음 · 몇 초 늦을 수 있다)</p>';
@@ -1025,7 +1026,7 @@
   function liveLegend() { var b = [];
     if (on.lev || on.lspd || on.lcc) b.push('<div class="lg-btns"><button data-lkey="its">🔑 ITS 키' + (LK.its ? ' 바꾸기' : ' 넣기') + '</button>' + (LK.its || !TRY.url || TRY.off.its ? '' : '</div>' + tryBtn(false) + '<div class="lg-btns">') + '<button data-itst="dev" class="' + (itsTier() === 'dev' ? 'on' : '') + '">개발키(월 100)</button><button data-itst="op" class="' + (itsTier() === 'op' ? 'on' : '') + '">운영키(월 10,000)</button></div><small class="lg-n">ITS 호출 이번 달 ' + itsQuota() + '/' + itsMax() + '(이 기기) · 개발키는 지도를 열 때 한 번 받고 「🔄」로 다시 · 운영키면 저절로</small>');
     if (on.lspd) { var sp = LIVE.sp, vv = viewLL(), inb = sp && sp.box && vv[0] >= sp.box[0] && vv[1] >= sp.box[1] && vv[2] <= sp.box[2] && vv[3] <= sp.box[3];
-      b.push('<b>🚦 소통</b> ' + li('#16a34a', '원활') + li('#f59e0b', '서행') + li('#dc2626', '정체') + '<small class="lg-n">' + (!spdSpan() ? '<b>더 확대하면(화면 가로 약 14km 안) 받는다</b>' : sp && sp.err ? '<b style="color:#b91c1c">' + esc(sp.err) + '</b>' : sp && !sp.busy ? (sp.n || 0) + '구간 · ' + hhmm(sp.at) + ' 받음' + (inb ? '' : ' · <b>지금 화면은 받은 범위 밖</b>') : LK.its ? '받는 중' : 'ITS 키 필요') + '</small><div class="lg-btns"><button data-lre="sp">🔄 이 화면 소통 받기(ITS 1건)</button></div>'); }
+      b.push('<b>🚦 소통</b> ' + li('#16a34a', '원활') + li('#f59e0b', '서행') + li('#dc2626', '정체') + li('#7c3aed', '30분 뒤 막힐 듯(점선)') + '<small class="lg-n">' + (window.tgNowcast ? esc(tgNowcast.legend()) + ' · ' : '') + (!spdSpan() ? '<b>더 확대하면(화면 가로 약 14km 안) 받는다</b>' : sp && sp.err ? '<b style="color:#b91c1c">' + esc(sp.err) + '</b>' : sp && !sp.busy ? (sp.n || 0) + '구간 · ' + hhmm(sp.at) + ' 받음' + (inb ? '' : ' · <b>지금 화면은 받은 범위 밖</b>') : LK.its ? '받는 중' : 'ITS 키 필요') + '</small><div class="lg-btns"><button data-lre="sp">🔄 이 화면 소통 받기(ITS 1건)</button></div>'); }
     if (on.utc) b.push('<b>🎥 교차로 CCTV(서울 시내)</b> ' + li('#7c3aed', '카메라 자리(근사)') + '<small class="lg-n">' + (UCAM ? UCAM.it.length + '대 자리 · 전체 ' + UCAM.all + '대' : '…') + ' · 누르면 TOPIS 누리집 · 영상은 정차 중·동승자만 · <b>' + esc((UCAM && UCAM.credit) || '교통정보: 경찰청 도시교통정보센터(UTIC) 제공') + '</b></small>');
     if (on.lcc) b.push('<b>📹 CCTV</b> ' + li('#1d4ed8', '국도·기타') + li('#0f766e', '고속도로') + '<small class="lg-n">' + ccList().length + '대 · 목록 ' + esc(CCLIVE ? CCLIVE.at : (CCB.at || '…') + ' 구움') + ' · 누르면 영상(ITS 호출 없음)</small>');
     if (on.lrad) { var rd = LIVE.rad; b.push('<b>🌧 레이더</b><small class="lg-n">' + (rd && rd.err ? '<b style="color:#b91c1c">' + esc(rd.err) + '</b>' : rd && rd.f ? hhmm(rd.f.t) + ' 관측 · 10분마다 · 파랑(약함) → 노랑·빨강(강함)' : '받는 중') + ' · RainViewer(rainviewer.com) 레이더 합성 · 무료 판은 7단 확대까지(한 칸 약 1km)</small>'); }

@@ -242,6 +242,17 @@
           ck('📏 정밀도로지도 가속차로 — 잰 곳 현행 = 잰 길이 · 실선 < 가속차로 · 설계값(raw) 그대로', n > 0 && !bad.length && H.schema === 'tg-sim-merge-accel/1', n + '곳 · 어긋남 ' + bad.slice(0, 5).join(','));
         }).catch(function (e8) { ck('📏 정밀도로지도 가속차로', false, String(e8)); });
       }).then(function () {
+      /* 🔮 30분 뒤 막힘 어림(v2.317.0 · js/nowcast.js · data/nowcast.json ← tools/sim/nowcast.py --bake) — 굽는 쪽이 넣은 시험 사례(probe)와 지도 셈이 같은 값(1e-4) · 밤 0~6시는 null ·
+         4km/h 는 지금 막힘(j0) · 성적(data/nowcast-score.json): 판정 날 30·60분 뒤 틀린 칸이 「그대로」보다 적고 헛막힘도 적다 */
+        var NW = window.tgNowcast; if (!NW) return ck('🔮 30분 뒤 막힘 어림', false, 'tgNowcast 없음');
+        return Promise.all([NW.load(), fetch('data/nowcast.json').then(function (r) { return r.json(); }), fetch('data/nowcast-score.json').then(function (r) { return r.json(); })]).then(function (a9) {
+          var J9 = a9[1], S9 = a9[2], bad = [], n = 0, j0ok = true;
+          J9.probe.forEach(function (c) { var dd = c[2].split('-'), at = new Date(+dd[0], +dd[1] - 1, +dd[2], 0, 0, c[3]).getTime(), r = NW.prob(c[0], c[1], at, {}, 1); n++;
+            if (c[4] === null ? r !== null : !r || Math.abs(r.p - c[4]) > 1e-4) bad.push(c[0] + '@' + c[3] + ' ' + (r && r.p) + '≠' + c[4]); if (r && c[1] <= 6 && !r.j0) j0ok = false; });
+          var s3 = S9.score['30'], s6 = S9.score['60'], okS = s3.now.hit > s3.keep.hit && s6.now.hit > s6.keep.hit && s3.now.fa < s3.keep.fa;
+          ck('🔮 30분 뒤 막힘 어림 — 지도 셈 = 굽는 쪽 시험 사례 · 밤 안 냄 · 성적이 그대로보다 나음', n >= 8 && !bad.length && j0ok && okS, n + '사례 · 어긋남 ' + bad.slice(0, 3).join(',') + ' · 30분 틀림 ' + (s3.keep.n - s3.keep.hit) + '→' + (s3.now.n - s3.now.hit));
+        }).catch(function (e8) { ck('🔮 30분 뒤 막힘 어림', false, String(e8)); });
+      }).then(function () {
       /* 🚧 도로 위 일(3단계 · 2026-11-03) — 합류부: 바깥 차로 사고(2분 뒤 5분)가 지체·막힌 곳 앞 멈춤을 늘리고 「빨리 치움」이 지체를 줄인다(세 벌) · 계수: 5차로 2개 막힘 사고 = HCM 0.67 × 3/5 · 버스 30대/시 2차로 = (2−14.4×30/3600)/2 · 통제 = 닫힘 ·
          신호 구역(서초역): 같은 판을 두 번 돌려도 같은 답(쓰는 신호 기록을 미리 채움 — 전엔 처음 판만 달랐다) · 아침을 먼저 돌려도 저녁 답이 같다 · 통제한 길은 끝날 무렵 비고 돌린 차가 생긴다 */
         var SM = window.tgSimMerge; if (!SM) return ck('🚧 도로 위 일', false, 'tgSimMerge 없음');

@@ -15,6 +15,7 @@ warnings.filterwarnings('ignore', category=RuntimeWarning)
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 SPD = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'livespd')
 SWAP = '--swap' in sys.argv
+BAKE = '--bake' in sys.argv   # 지도에 싣는 판 — 모든 날로 배워 data/nowcast.json(평소 막힘 비율 표 · 무게) 을 쓰고 끝(판정은 안 함 · 성적은 nowcast-score.json)
 JAMV, NEAR, HZ = 6.0, 8 * 60, (1800, 3600)
 HOLF = os.path.join(ROOT, 'data', 'holidays.json')
 HOL = set()
@@ -46,7 +47,7 @@ def at(d, T):
     if not len(ts): return None
     i = int(np.argmin(np.abs(ts - T)))
     return V[i] if abs(ts[i] - T) <= NEAR else None
-train = lambda d: (int(d[-2:]) % 2 == 1) != SWAP
+train = (lambda d: True) if BAKE else (lambda d: (int(d[-2:]) % 2 == 1) != SWAP)
 # 날마다 15분 칸 막힘 표(96 × 길) · 평소 = 배우는 날 합
 FL = {}
 for d in DAYS:
@@ -93,15 +94,57 @@ for d in DAYS:
             TR.append(np.full(ok.sum(), train(d))); HH.append(np.full(ok.sum(), h, np.int32)); TT.append(np.full(ok.sum(), hr, np.int8))
 X, Y, K, TR, HH, TT = (np.concatenate(a) for a in (X, Y, K, TR, HH, TT))
 print('칸', len(Y), '막힘 비율', round(float(Y.mean()), 4), '바뀜 비율', round(float((Y != K).mean()), 4), flush=True)
+names = ['j0', 'v0', 'v0/vf', '추세', '추세있음', '평소(h)', '평소(지금)', '평소차', '주말', 'sin', 'cos', '폭', '느림', '애매']
+
+AL = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'   # 평소 막힘 비율 → 로짓 −5~+5 를 62칸으로(한 칸 약 0.16)
+def enc(p):
+    q = np.clip(np.round((np.log(p / (1 - p)) + 5) / 10 * 61), 0, 61).astype(int); return ''.join(AL[i] for i in q)
+def bake():
+    inv = {i: k for k, i in LID.items()}; P96 = (HS + .5) / (HN + 1); nev = HS.sum((0, 1)) == 0; dflt = [float(np.median(P96[w][:, nev])) if nev.any() else .03 for w in (0, 1)]
+    Ptr = (f(X) >= th).astype(np.int8); gate = []
+    for b in ((0, 6), (6, 10), (10, 16), (16, 20), (20, 24)):
+        mt = (HH == 1800) & (TT >= b[0]) & (TT < b[1])
+        if mt.sum() and (K[mt] == Y[mt]).sum() >= (Ptr[mt] == Y[mt]).sum(): gate.append(list(b))
+    L = {}
+    for i in range(NL):
+        if HS[:, :, i].sum() == 0: continue   # 한 번도 막힌 적 없는 길 = 기본값(dflt)
+        L[inv[i]] = [int(round(float(VF[i]))), enc(P96[0, :, i]), enc(P96[1, :, i])]
+    vf0 = {}
+    for i in range(NL):
+        if inv[i] not in L and abs(float(VF[i]) - 50) > .5: vf0[inv[i]] = int(round(float(VF[i])))
+    O = {'schema': 'tg-nowcast/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'days': [DAYS[0], DAYS[-1]], 'n_days': len(DAYS),
+         'note': '30분 뒤 막힘(6km/h 이하) 어림 — 지금 ITS 속도·30분 추세·이 길 평소 막힘 비율(같은 날 종류 · 15분 칸)·시각 로지스틱 회귀 · 쌓인 ITS 실측으로 배움(tools/sim/nowcast.py --bake) · 개념 시연 — 예측·보증 아님 · 성적 = data/nowcast-score.json',
+         'jam': JAMV, 'th': round(float(th), 3), 'gate': gate, 'feat': names, 'mu': [round(float(x), 5) for x in fit.mu], 'sd': [round(float(x), 5) for x in fit.sd], 'w': [round(float(x), 5) for x in w],
+         'enc': 'links{ITS 링크: [자유 속도 km/h, 평일 96칸, 주말·공휴일 96칸]} · 칸 글자 = AL 의 자리 i → 로짓 = i/61×10−5 · 없는 길 = dflt(평일·주말) · vf0 = 표에 없는 길의 자유 속도(없으면 50)', 'AL': AL, 'dflt': [round(x, 4) for x in dflt], 'links': L, 'vf0': vf0}
+    # 시험 사례(지도 관문이 js/nowcast.js 의 값과 맞대 봄) — 표에서 막힌 적 많은 길·처음 길 · 평일·주말 · 낮·저녁 · 지금 속도 여럿 · 30분 앞 값 없음
+    def dec(id_, w_, b_):
+        Lx = L.get(id_)
+        if not Lx or b_ < 0 or b_ > 95: return O['dflt'][w_]
+        return 1 / (1 + math.exp(-(AL.index(Lx[1 + w_][b_]) / 61 * 10 - 5)))
+    def pyp(id_, v0, ymd, sec):
+        dt = datetime.date.fromisoformat(ymd); w_ = 1 if dt.weekday() >= 5 or ymd in HOL else 0; hr = sec / 3600
+        if any(g[0] <= int(hr) < g[1] for g in gate) or sec + 1800 >= 86400: return None
+        vf = L[id_][0] if id_ in L else vf0.get(id_, 50); hf, h0 = dec(id_, w_, (sec + 1800) // 900), dec(id_, w_, sec // 900); lgx = lambda q: math.log(q / (1 - q))
+        x = [1 if v0 <= JAMV else 0, min(v0, 60) / 60, v0 / vf, 0.0, 0, lgx(hf), lgx(h0), lgx(hf) - lgx(h0), w_, math.sin(2 * math.pi * hr / 24), math.cos(2 * math.pi * hr / 24), 0.5, 1 if JAMV < v0 <= 10 else 0, 1 if JAMV < v0 <= 15 else 0]
+        z = O['w'][0] + sum((x[i] - O['mu'][i]) / O['sd'][i] * O['w'][i + 1] for i in range(len(x))); return 1 / (1 + math.exp(-z))
+    top = sorted(L, key=lambda k: -float(HS[:, :, LID[k]].sum()))[:3]
+    O['probe'] = []
+    for id_ in top + [next(iter(vf0), top[0])]:
+        for ymd, sec, v0 in (('2026-11-04', 18 * 3600 + 600, 9), ('2026-11-04', 8 * 3600 + 1200, 25), ('2026-11-08', 15 * 3600, 4), ('2026-11-04', 3 * 3600, 20)):
+            pv = pyp(id_, v0, ymd, sec); O['probe'].append([id_, v0, ymd, sec, None if pv is None else round(pv, 6)])
+    dst = os.path.join(ROOT, 'data', 'nowcast.json'); json.dump(O, open(dst, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    print('→', dst, len(L), '길(막힌 적 있음) ·', os.path.getsize(dst), 'B · 문턱', O['th'], '· 그대로 띠', gate)
 def fit(Xt, yt, l2=1e-3, it=400, lr=1.0):
     mu, sd = Xt.mean(0), Xt.std(0) + 1e-6; w = np.zeros(Xt.shape[1] + 1); Z = ((Xt - mu) / sd).astype(np.float64)
     for _ in range(it):
         z = Z @ w[1:] + w[0]; p = 1 / (1 + np.exp(-z)); e = p - yt
         g = np.r_[e.mean(), Z.T @ e / len(yt)] + l2 * np.r_[0, w[1:]]; w -= lr * g
+    fit.mu, fit.sd = mu, sd
     return lambda Xs: 1 / (1 + np.exp(-(((Xs - mu) / sd) @ w[1:] + w[0]))), w
 rng = np.random.default_rng(1); itr = np.where(TR)[0]; sub = rng.choice(itr, min(len(itr), 1500000), replace=False)
 f, w = fit(X[sub], Y[sub].astype(np.float64))
 ptr = f(X[sub]); th = max(np.arange(.2, .81, .02), key=lambda t: ((ptr >= t) == Y[sub]).mean())
+if BAKE: bake(); sys.exit(0)
 te = ~TR; P = (f(X[te]) >= th).astype(np.int8); Yt, Kt, Ht, Tt = Y[te], K[te], HH[te], TT[te]
 # 시간 띠마다 고르기 — 배우는 날에서 그 띠·그 폭에 「그대로」가 어림보다 나으면 판정 날에도 그 띠는 그대로(밤 0~6시가 그랬다) · 판정 날 값은 안 봄
 BANDS = ((0, 6), (6, 10), (10, 16), (16, 20), (20, 24)); GATE = {}
@@ -122,7 +165,6 @@ for h in HZ:
     for band in ((6, 10), (16, 20), (22, 24)):
         mb = m & (Tt >= band[0]) & (Tt < band[1])
         if mb.sum(): print('   %02d~%02d시 그대로 %.2f%% · 어림 %.2f%% (%d칸)' % (band[0], band[1], 100 * (Kt[mb] == Yt[mb]).mean(), 100 * (P[mb] == Yt[mb]).mean(), mb.sum()))
-names = ['j0', 'v0', 'v0/vf', '추세', '추세있음', '평소(h)', '평소(지금)', '평소차', '주말', 'sin', 'cos', '폭', '느림', '애매']
 print('무게:', ' '.join('%s %+.2f' % z for z in sorted(zip(names, w[1:]), key=lambda z: -abs(z[1]))))
 
 OUT = {'schema': 'tg-nowcast-score/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'days': [DAYS[0], DAYS[-1]], 'n_days': len(DAYS), 'links': NL,

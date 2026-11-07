@@ -150,6 +150,7 @@
   #gTop .tx small.ic { display: block; font-size: calc(12.5px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.12); border-radius: 8px; padding: 3px 8px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #gTop .tx small.ic b { font-weight: 800; }
   #gBot .mode button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
   #gBot .eta.rg { gap: 10px; } #gBot .eta.rg b { font-size: calc(19px * var(--fz, 1)); letter-spacing: -.4px; }
+  @media (max-width: 430px) { #gBot .eta.rg { gap: 6px; } #gBot .eta.rg b { font-size: calc(16px * var(--fz, 1)); letter-spacing: -.5px; } #gBot .eta.rg .rp { width: 38px; } #gBot .eta.rg .mnu { width: 42px; } #gBot .eta.rg .here { padding-left: 6px; } } @media (max-width: 360px) { #gBot .eta.rg .here { display: none; } }   /* v0.37.3 안내 중 아래 막대 — 375 폭에서 칸 합 378px 이 343px 자리를 넘어 오른쪽 ≡ 메뉴가 잘렸다 */
   /* v0.13.0 카카오내비 참고 — 회전 전 남은 거리 막대 · 왼쪽 경로 소통 막대 */
   #gTop .tx .cd { display: block; width: 100%; max-width: 240px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); margin: 4px 0 3px; overflow: hidden; }
   #gTop .tx .cd u { display: block; height: 100%; border-radius: 3px; background: #fff; transition: width .4s linear; }

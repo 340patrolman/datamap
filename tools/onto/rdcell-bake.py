@@ -5,12 +5,14 @@ data/nav-seocho.json 의 링크 선을 25m 마다 읽어 국가지점번호식 2
 통신 없음 · pyproj 필요(grid250.py 와 같은 변환):
     py -3.12 -X utf8 tools/onto/rdcell-bake.py
 nav-seocho.json 을 다시 구우면 이것도 다시.
+    py -3.12 -X utf8 tools/onto/rdcell-bake.py six  → data/rd-cell-six.json(2026-11-07 · nav-six.json · 여섯 구 코어 build.py --area six 가 읽는다)
 """
-import json, os, math, datetime, importlib.util
+import json, os, sys, math, datetime, importlib.util
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SRC = os.path.join(ROOT, 'data', 'nav-seocho.json')
-OUT = os.path.join(ROOT, 'data', 'rd-cell-seocho.json')
+SIX = 'six' in sys.argv[1:]
+SRC = os.path.join(ROOT, 'data', 'nav-six.json' if SIX else 'nav-seocho.json')
+OUT = os.path.join(ROOT, 'data', 'rd-cell-six.json' if SIX else 'rd-cell-seocho.json')
 STEP = 25.0
 
 _s = importlib.util.spec_from_file_location('grid250', os.path.join(ROOT, 'tools', 'region', 'grid250.py'))
@@ -52,7 +54,7 @@ def main():
         links[L[0]] = o
     multi = sum(1 for v in links.values() if len(v) > 1)
     doc = {'schema': 'tg-rd-cell/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
-           'source': 'data/nav-seocho.json(국가교통정보센터 ITS 전국 표준노드링크 2026-09-14판 · 서초구 + 경계 밖 2km) 의 링크 선 × 국가지점번호식 250m 격자(EPSG:5179 · tools/region/grid250.py 와 같은 변환)',
+           'source': ('data/nav-six.json(국가교통정보센터 ITS 전국 표준노드링크 2026-09-14판 · 서초·강남·송파·동작·관악·용산구 + 경계 밖 2km)' if SIX else 'data/nav-seocho.json(국가교통정보센터 ITS 전국 표준노드링크 2026-09-14판 · 서초구 + 경계 밖 2km)') + ' 의 링크 선 × 국가지점번호식 250m 격자(EPSG:5179 · tools/region/grid250.py 와 같은 변환)',
            'fields': 'cells[250m 칸 번호] · links{ITS 링크 ID: [cells 의 차례 번호 — 링크 방향(F → T)으로 지나는 차례]}',
            'note': ['링크 선을 %dm 마다 읽어 칸을 셌다 — 칸 모서리를 %dm 보다 짧게 스치는 곳은 빠질 수 있다' % (STEP, STEP),
                     '온톨로지 결정 D1(ONTOLOGY-2-조합.md): 길은 링크 ID 가 열쇠이고, 이 표는 격자에서 길로 닿는 다리다 — 길을 칸으로 쪼개 쓰라는 뜻이 아니다',
@@ -61,7 +63,7 @@ def main():
            'cells': cells, 'links': links}
     with open(OUT, 'w', encoding='utf-8') as f:
         json.dump(doc, f, ensure_ascii=False, separators=(',', ':'))
-    print('rd-cell-seocho.json', os.path.getsize(OUT), 'B · 링크', len(links), '· 칸', len(cells), '· 여러 칸을 지나는 링크', multi)
+    print(os.path.basename(OUT), os.path.getsize(OUT), 'B · 링크', len(links), '· 칸', len(cells), '· 여러 칸을 지나는 링크', multi)
 
 
 if __name__ == '__main__':

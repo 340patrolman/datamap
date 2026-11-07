@@ -9,7 +9,7 @@
     APR·RD   = 접근로·도로 구간(2026-10-23 엮임 지도 셋째) = data/sig-approach-seocho.json(신호 교차로에 들어오는 쪽마다 ITS 링크) → 교차로 「들어오는길」 접근로 「이룸」 도로 구간(ITS 링크 · 등급 B)
                도로 구간 값 = nav-seocho(길 이름·길이·제한속도·등급·차로) · spd-normal-seocho(월~목 8·18·3시 평소 속도 · 잠정 표시) · flood-link-seocho(침수 흔적 해 수·마지막 해·침수심·돌아가는 부담 초)
                도로 구간 → TAAS 100m 사고 칸 「사고칸」(ACL · 칸 가운데가 구간 선 50m 안 · 가장 가까운 구간 하나에만 · 칸은 방향이 없어 맞은편 차로 사고도 섞임 · 근사 C · 2026-10-23)
-               도로 구간 → 250m 칸 「지남」(rd-cell-seocho) · 범위는 서초구 + 경계 밖 2km 뿐(여섯 구 코어에서도 그 밖 교차로는 접근로가 없다)
+               도로 구간 → 250m 칸 「지남」(rd-cell-seocho) · 범위 = 서초 코어는 서초구 + 경계 밖 2km · 여섯 구 코어는 2026-11-07 부터 여섯 구 판(sig-approach-six·nav-six·spd-normal-six·flood-link-six·rd-cell-six · 신호 번호가 있는 교차로만)
     도착     = 교차로 「도착」 지구대·파출소(data/onto-reach-<area>.json · tools/onto/reach-bake.py · s0 제한속도 · s8·s18 평일 8·18시 평소 속도 + eta-cal 배율 · 다섯 곳 · 견주는 값 C)
     STA·PBX  = 관할 경찰서·지구대·파출소(2026-10-23) — 교차로 「관할」 경찰서(jur-seocho 현장 기준 경계 → 밖이면 police.json 별표2 × 행정동 · 나눠 맡는 동은 둘 다 C · T-GIS 관할 코드와 맞는지 tg)
                지구대·파출소 「소속」 경찰서(경찰청 주소 현황 · A) · 교차로 「가까운지구대」(그 서의 지구대·파출소 가운데 가장 가까운 곳 · 관할 경계 비공개 — 근사 C · d m)
@@ -95,18 +95,27 @@ def evt_build(O, obj, edge, INTs):
         if fid not in O: obj(fid, 'EVT', **{k: fl[fid].get(k) for k in keep})
         edge(fid, '흔적', i, 'C', 'season-seocho.json(서울시 침수흔적도 · 교차로 100m 안 흔적 점)', n=n, dep=round(dep, 2))
 DIR_KO = {'nt': '북쪽', 'ne': '북동쪽', 'et': '동쪽', 'se': '남동쪽', 'st': '남쪽', 'sw': '남서쪽', 'wt': '서쪽', 'nw': '북서쪽'}
+RF = dict(ap='sig-approach-six.json', nav='nav-six.json', spd='spd-normal-six', fl='flood-link-six.json', rc='rd-cell-six.json') if AREA == 'six' else \
+     dict(ap='sig-approach-seocho.json', nav='nav-seocho.json', spd='spd-normal-seocho.json', fl='flood-link-seocho.json', rc='rd-cell-seocho.json')   # 2026-11-07 여섯 구 코어도 접근로·도로 구간을 여섯 구 판으로(전에는 서초 + 2km 만)
+def spd_links():   # 평소 속도 — 여섯 구 판은 구마다 쪼갠 파일(data/spd-normal-six/<구>.json)을 합친다
+    if RF['spd'].endswith('.json'): return J(os.path.join(D, RF['spd']))['links']
+    L = {}
+    for f in sorted(os.listdir(os.path.join(D, RF['spd']))):
+        if f.endswith('.json') and f[:2].isdigit():
+            for k, v in J(os.path.join(D, RF['spd'], f))['links'].items(): L.setdefault(k, v)
+    return L
 SPD_K = ('0-8', '0-18', '0-3')   # 평소 속도는 월~목 8시·18시·3시(막힘 없는 때 견줌)만 싣는다 — 나머지 칸은 spd-normal-seocho.json 그대로 본다
 def rd_build(obj, edge, by_cits):
-    ap = J(os.path.join(D, 'sig-approach-seocho.json'))['spots']; nv = {l[0]: l for l in J(os.path.join(D, 'nav-seocho.json'))['links']}
-    sn = J(os.path.join(D, 'spd-normal-seocho.json'))['links']; fl = {x[0]: x for x in J(os.path.join(D, 'flood-link-seocho.json'))['items']}
-    rc = J(os.path.join(D, 'rd-cell-seocho.json')); cells = rc['cells']
+    ap = J(os.path.join(D, RF['ap']))['spots']; nv = {l[0]: l for l in J(os.path.join(D, RF['nav']))['links']}
+    sn = spd_links(); fl = {x[0]: x for x in J(os.path.join(D, RF['fl']))['items']}
+    rc = J(os.path.join(D, RF['rc'])); cells = rc['cells']
     for no in sorted(ap, key=lambda k: int(k)):
         it = by_cits.get(no)
         if not it: continue
         for dr in sorted(ap[no]['in'], key=lambda k: list(DIR_KO).index(k)):
             roads = ap[no]['in'][dr]; a = 'APR-%s-%s' % (no, dr)
             obj(a, 'APR', no=no, dir=dr, frm=DIR_KO[dr] + '에서 오는 길', nm=' · '.join(dict.fromkeys(r[0] for r in roads)), rds=[r[:4] for r in roads])
-            edge(it, '들어오는길', a, 'B', 'sig-approach-seocho.json(ITS 링크 방위로 들어오는 쪽을 가름 — 대각 교차로는 45° 어긋날 수 있다)')
+            edge(it, '들어오는길', a, 'B', RF['ap'] + '(ITS 링크 방위로 들어오는 쪽을 가름 — 대각 교차로는 45° 어긋날 수 있다)')
             for ri, r in enumerate(roads):
                 for k, (lid, ln) in enumerate(r[4]):
                     rid = 'RD-' + lid
@@ -117,8 +126,8 @@ def rd_build(obj, edge, by_cits):
                             sp={h: [s[h][0], s[h][1], s[h][3], s[h][4]] for h in SPD_K if h in s} or None,
                             fy=f[5] if f else None, fl=f[6] if f else None, fd=f[7] if f else None, dt=f[9] if f else None)
                         for ci in rc['links'].get(lid, []):
-                            edge(rid, '지남', obj('PLC-' + cells[ci], 'PLC'), 'B', 'rd-cell-seocho.json(링크 선을 25m 마다 읽어 250m 칸을 셈)')
-                    edge(a, '이룸', rid, 'B', 'sig-approach-seocho.json(교차로에서 거슬러 모은 ITS 링크)', r=ri, k=k)
+                            edge(rid, '지남', obj('PLC-' + cells[ci], 'PLC'), 'B', RF['rc'] + '(링크 선을 25m 마다 읽어 250m 칸을 셈)')
+                    edge(a, '이룸', rid, 'B', RF['ap'] + '(교차로에서 거슬러 모은 ITS 링크)', r=ri, k=k)
 O_RD = set()
 ACL_R = 50   # 사고 칸(100m) 가운데가 도로 구간 선에서 50m 안이면 그 칸이 그 길에 걸친다고 본다 — 한 칸은 가장 가까운 구간 하나에만(겹쳐 세지 않게)
 def acl_build(obj, edge, rds, nv, ta):
@@ -175,6 +184,11 @@ ASOF = {
     'spd-normal-seocho.json': 'ITS 실시간 소통 2026-10-11~ 쌓음(요일 갈래 3날 미만은 잠정)',
     'flood-link-seocho.json': '침수흔적도 2010~2025 × ITS 2026-09-14판',
     'rd-cell-seocho.json': 'ITS 표준노드링크 2026-09-14판',
+    'sig-approach-six.json': 'ITS 표준노드링크 2026-09-14판',
+    'nav-six.json': 'ITS 표준노드링크 2026-09-14판',
+    'spd-normal-six/index.json': 'ITS 실시간 소통 2026-10-14~ 쌓음(구마다 쪼갠 판 · 요일 갈래 3날 미만은 잠정)',
+    'flood-link-six.json': '침수흔적도 2010~2025 × ITS 2026-09-14판',
+    'rd-cell-six.json': 'ITS 표준노드링크 2026-09-14판',
     'jur-seocho.json': '별표2 2026-08-31 시행 · 반포 현장 기준 2026-10-04',
     'tgis-pe.json': 'T-GIS 관할 코드 × 별표2(2026-10-18 맞춤)',
     'r/stations.json': '서울 역사마스터(역 대표 점)',
@@ -412,7 +426,7 @@ def main():
     sta_build(obj, edge, INTs)
     stn_build(O, obj, edge, INTs)
     TRDF[:] = trd_build(O, obj, edge, INTs)
-    acl_build(obj, edge, sorted(O_RD), {l[0]: l for l in J(os.path.join(D, 'nav-seocho.json'))['links']}, ta)
+    acl_build(obj, edge, sorted(O_RD), {l[0]: l for l in J(os.path.join(D, RF['nav']))['links']}, ta)
     ks = J(os.path.join(D, 'sig-ksc-seocho.json'))
     for it in ks['items']:
         tgt = by_cits.get(str(it['no']))
@@ -484,7 +498,7 @@ def main():
     used_ids = set(i for e in E for i in (e[0], e[2]))
     O = {k: v for k, v in O.items() if v['t'] in ('INT', 'VIO', 'RULE', 'FK') or k in used_ids}   # 아무 링크도 없는 PREC·LAW 는 뺀다
     pplf = plc_people(O)
-    srcs = pplf + TRDF + [f9 for f9 in ('sim-scenarios.json', 'onto-game-cases.json') if os.path.exists(os.path.join(D, f9))] + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', 'sig-approach-seocho.json', 'nav-seocho.json', 'spd-normal-seocho.json', 'flood-link-seocho.json', 'rd-cell-seocho.json', 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
+    srcs = pplf + TRDF + [f9 for f9 in ('sim-scenarios.json', 'onto-game-cases.json') if os.path.exists(os.path.join(D, f9))] + ['onto-int.json', 'sig-net-seocho.json'] + taf + ['gargo-alerts-seoul.json', 'sig-ksc-seocho.json', 'onto-rules.json', 'house-dong.json', 'mig-dong.json', 'foreign-dong.json', 'econ-dong.json', 'dui-ref-seoul.json', 'police.json', 'onto-events.json', 'season-seocho.json', RF['ap'], RF['nav'], RF['spd'] if RF['spd'].endswith('.json') else RF['spd'] + '/index.json', RF['fl'], RF['rc'], 'jur-seocho.json', 'tgis-pe.json', 'r/stations.json', 'subway-hour-seoul.json']
     doc = {'schema': 'onto-core/1', 'area': AREA_NM, 'made': datetime.datetime.now().isoformat(timespec='seconds'), 'schema_ext': 'ontology-core/schema-ext.json',
            'sources': {s: hashlib.sha256(open(os.path.join(D, s), 'rb').read()).hexdigest()[:16] for s in srcs} | {'src/tbook-law.json': tl.get('sha256_of_values', '')[:16] + ' · T-Book ' + str(tl.get('ver'))},
            'asof': {s: asof_of(s) for s in srcs} | {'src/tbook-law.json': 'T-Book ' + str(tl.get('ver')) + ' 범칙금 DB·원문 대조 판례'},

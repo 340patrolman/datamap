@@ -17,6 +17,7 @@ for f in sorted(glob.glob(os.path.join(ROOT, 'ontology-core', 'data', 'core-six'
     rows = {}
     for i, o in O.items():
         if o['t'] != 'INT' or not E.get((i, '발생')): continue
+        if str(o.get('dong') or '')[:5] != gu: continue   # 구 파일에는 경계 너머 이웃 구 교차로도 들어 있다 — 교차로가 든 행정동의 구에서만 센다
         A = O.get(E[(i, '발생')][0][0])
         if not A or sum(A['years']) <= 0: continue
         mv = collections.Counter()
@@ -36,7 +37,6 @@ for f in sorted(glob.glob(os.path.join(ROOT, 'ontology-core', 'data', 'core-six'
     acc = [r[1] for r in rows.values()]
     for r in rows.values(): r[0] = 1 + sum(1 for a in acc if a > r[1])
     for k, r in rows.items():
-        if k in out and out[k][1] >= r[1]: continue   # 구 경계 교차로가 두 구 파일에 다 있으면 사고가 많이 잡힌 쪽
         out[k] = r
     gus[gu] = [GUN.get(gu, gu), len(rows)]
 json.dump({'schema': 'tg-int-brief/2', 'made': made[:16], 'gus': gus, 'y0': 2016, 'y1': 2025,

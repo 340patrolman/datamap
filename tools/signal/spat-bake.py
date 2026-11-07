@@ -384,10 +384,17 @@ def split_write(doc):
         q = pts.get(k)
         key = '%d_%d' % (math.floor(q[0] / CELL[0]), math.floor(q[1] / CELL[1])) if q else 'x'
         pls.setdefault(key, {})[k] = L
+    # 2026-11-07 시각대별 주기(tod)도 칸으로 — 색인 1.06MB 가운데 tod 가 0.91MB 였다(폰이 신호 층을 켤 때마다·15분마다 다시 받는다).
+    #  tod 는 교차로 카드(기록을 받은 뒤)에서만 쓴다 · 지도 v2.314.1 이 칸 tod 를 먼저 읽는다 · 색인 tod 는 아래 DROP_TOD 때 뺀다
+    tds = {}
+    for k, L in (doc.get('tod') or {}).items():
+        q = pts.get(k)
+        key = '%d_%d' % (math.floor(q[0] / CELL[0]), math.floor(q[1] / CELL[1])) if q else 'x'
+        tds.setdefault(key, {})[k] = L
     nw = 0
-    for key in sorted(set(cells) | set(pls)):
+    for key in sorted(set(cells) | set(pls) | set(tds)):
         part = cells.get(key, {})
-        t = json.dumps({'schema': 'tg-sigdir-cell/1', 'cell': key, 'its': part, 'pl': pls.get(key, {})}, ensure_ascii=False, separators=(',', ':'))
+        t = json.dumps({'schema': 'tg-sigdir-cell/1', 'cell': key, 'its': part, 'pl': pls.get(key, {}), 'tod': tds.get(key, {})}, ensure_ascii=False, separators=(',', ':'))
         fp = os.path.join(d, 'c', key + '.json')
         try:
             old = open(fp, encoding='utf-8').read()
@@ -397,7 +404,8 @@ def split_write(doc):
             atomic_write(fp, t); nw += 1
     # 2026-10-24 06:00 부터 색인에서 pl 을 뺀다(지도 v2.290.2 · 가르고 v0.36.3 이 칸 pl 을 읽는다 · 폰에 남은 옛 판이 새 판을 받을 하룻밤 여유를 둠 — 게임 세션과 맞춘 때)
     DROP_PL = datetime.datetime.now() >= datetime.datetime(2026, 10, 24, 6, 0)
-    idx = {k: v for k, v in doc.items() if k != 'its' and not (DROP_PL and k == 'pl')}
+    DROP_TOD = datetime.datetime.now() >= datetime.datetime(2026, 11, 8, 6, 0)   # 2026-11-08 06:00 부터 색인에서 tod 를 뺀다(폰에 남은 옛 판이 v2.314.1 을 받을 하룻밤 여유)
+    idx = {k: v for k, v in doc.items() if k != 'its' and not (DROP_PL and k == 'pl') and not (DROP_TOD and k == 'tod')}
     idx['schema'] = 'tg-sigdir-idx/1'
     idx['cell'] = CELL
     idx['cells'] = {k: len(v) for k, v in sorted(cells.items())}

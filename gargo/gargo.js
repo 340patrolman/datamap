@@ -1089,6 +1089,23 @@
     var its = {}, pl = {}; Object.keys(j.pl || {}).forEach(function (no) { pl[no] = j.pl[no]; }); return Promise.all(Object.keys(need).map(function (k) { return getJ('../data/sigdir/c/' + k + '.json').then(function (c) { if (c && c.its) Object.keys(c.its).forEach(function (no) { its[no] = c.its[no]; }); if (c && c.pl) Object.keys(c.pl).forEach(function (no) { pl[no] = c.pl[no]; }); }); })).then(function () { if (!Object.keys(its).length) return false; SIG.idx = j; SIG.pl = pl; SIG.cell = j.cell; SIG.its = its; SIG.at = Date.now(); ACTU = {}; return true; }); }); }
   setInterval(function () { if (!G || document.hidden) return; Promise.all([liveLoad(), sigRefresh(), accLoad()]).then(function (r) { if (dest && me && !guide) plan(); else { paint(); draw(); } }); }, 300000);
   window.addEventListener('resize', function () { draw(); });
+  /* v0.37.2 폰 폭(760px 아래)에서 오른쪽 단추 줄이 아래 판 밑에 깔리던 것 — 375×812 실측: 처음 화면 ⚙ 가 판(599px~) 밑 · 경로를 고르면 판이 503px 로 커져 단추 6개가 모두 판 밑. 단추 줄을 판 위로 올리고, 세로로 들어갈 자리(위 찾기 칸·칩 줄 아래)가 없으면 판 바로 위 가로 한 줄로 */
+  (function () {
+    var bt = $('gBtn'), bo = $('gBot'), TOP = 112;
+    function fit() {
+      if (!bt || !bo) return;
+      bt.style.bottom = ''; bt.classList.remove('row');
+      if (innerWidth >= 760) return;
+      var base = parseFloat(getComputedStyle(bt).bottom) || 0, h = bo.offsetHeight ? Math.max(0, innerHeight - bo.getBoundingClientRect().top) : 0, want = Math.max(base, h + 10);
+      if (want === base) return;
+      if (innerHeight - want - bt.offsetHeight >= TOP) { bt.style.bottom = want + 'px'; return; }
+      bt.classList.add('row'); bt.style.bottom = (h + 10) + 'px';
+    }
+    window.__gBtnFit = fit;
+    var p0 = paint; paint = function () { var r = p0.apply(this, arguments); fit(); return r; };   /* 크기 감시(ResizeObserver)는 화면이 숨어 있으면 안 돈다 — 판을 다시 그릴 때마다도 맞춘다 */
+    try { if (window.ResizeObserver) new ResizeObserver(function () { fit(); }).observe(bo); } catch (e) {}
+    window.addEventListener('resize', fit); setTimeout(fit, 0);
+  })();
   document.addEventListener('visibilitychange', function () { if (!document.hidden && (guide || cruise) && navigator.wakeLock) { try { navigator.wakeLock.request('screen').then(function (w) { wake = w; }).catch(function () {}); } catch (e) {} } });
   try { var dk = localStorage.getItem('tg_gargo_dark'), hr = new Date().getHours(); if (dk === '1' || (dk == null && (hr >= 19 || hr < 6))) document.documentElement.classList.add('dark'); } catch (e) {}
   function boot() { cfgApply(); try { if (window.TT && TT.VIP_ON && $('gVip')) $('gVip').hidden = false; } catch (e) {}  if (document.documentElement.classList.contains('gated')) return; var seen = false; try { seen = localStorage.getItem('tg_gargo_intro') === '1'; } catch (e) {} if (seen) { $('gIntro').style.display = 'none'; if (!/[#&]from=/.test(location.hash)) gpsStart(); } load(); }

@@ -58,6 +58,7 @@
   #gBtn { position: fixed; right: 8px; z-index: 4; bottom: calc(190px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 7px; }
   #gBtn button { width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--panel); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--sh); font-size: calc(19px * var(--fz, 1)); font-weight: 800; color: var(--ink); }
   #gBtn #gVoice.on { background: var(--acc); color: #fff; } #gBtn #gCen.off { opacity: .55; }
+  #gBtn.row { flex-direction: row; }   /* v0.37.2 폰에서 아래 판이 커 세로 자리가 없으면 판 바로 위 가로 한 줄(gargo.js __gBtnFit) */
   #gSpd { position: fixed; left: 8px; z-index: 4; bottom: calc(110px + env(safe-area-inset-bottom)); display: none; gap: 8px; align-items: center; flex-wrap: wrap; max-width: 60vw; }
   #gSpd .lim { width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 6px solid #dc2626; display: flex; align-items: center; justify-content: center; font-size: calc(19px * var(--fz, 1)); font-weight: 900; color: #111; }
   #gSpd .cur { background: var(--panel); border-radius: 14px; padding: 5px 11px; box-shadow: var(--sh); display: flex; flex-direction: column; align-items: center; }
@@ -274,7 +275,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.37.1"></script>
+<script src="gargo.js?v=0.37.2"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

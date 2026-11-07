@@ -28,7 +28,7 @@ SETS = [
     ['data/rally-seoul.json', 1, 'auto', '서울경찰청 「오늘의 주요집회」 날마다(전날 올라옴) — `py -3.12 -X utf8 tools/region/rally-bake.py`(새 글만 받음 · 지난 90일 · 자리 = 지하철 출입구·브이월드 장소 검색·동 가운데 · 끝에서 data/rally-seocho.ics 도 굽는다) → ai-guide-bake → 커밋'],
     ['../07_API키/out/onto/onto-reach-seocho.json', 14, 'manual', '🧩 온톨로지 도착(지구대·파출소 → 교차로 초 · **비공개** 07_API키/out/onto — 공개 저장소에 두지 않는다) — 평소 속도(spd-normal)가 쌓이면 다시: `py -3.12 -X utf8 tools/onto/reach-bake.py` · `… six` → ontology-core/build.py(서초·--area six · 비공개 전체 판은 ontology-core/data/private/) → 07_API키 backup.bat'],
     ['data/onto-events.json', 1, 'auto', '🧩 온톨로지 사건(집회·공연·침수·돌발) — rally-bake.py 끝에서 evt-bake → ontology-core/build.py(서초) 로 같이 굽는다 · 돌발은 07_API키/out/liveacc·utic/ims 받은 기록 · 여섯 구 코어는 손으로 `py -3.12 -X utf8 ontology-core/build.py --area six` → 커밋'],
-    ['data/decide-seocho.json', 1, 'auto', '🧭 오늘의 결정 한 장 — rally-bake.py 끝에서 같이 굽는다(집회·공연 날짜) · 따로 굽기 `py -3.12 -X utf8 tools/onto/decide-bake.py` · ontology-core·침수·음주 자료를 다시 구우면 같이 다시 → 커밋'],
+    ['data/decide-seocho.json', 1, 'auto', '🧭 오늘의 결정 — 서초 한 장 + 여섯 구 data/decide/<구>.json·index.json(2026-11-07 · 커밋할 때 data/decide 도 같이) — rally-bake.py 끝에서 같이 굽는다(집회·공연 날짜) · 따로 굽기 `py -3.12 -X utf8 tools/onto/decide-bake.py` · ontology-core·침수·음주 자료를 다시 구우면 같이 다시 → 커밋'],
     ['data/r/41111/lamp.json', 183, 'hand', '경기데이터드림 시트 다시 받기(regionwork/ggsheet.py) → `tools/region/gg-life-bake.py`(AED·화장실·주차장·충전소·응급·축제·보안등)'],
     ['data/r/11680/fac.json', 365, 'auto', 'KOSIS 서울 동별 사업체(해마다 새 해) — `tools/region/biz10-bake.py fetch` → `build`(fac-bake 다음)'],
     ['data/r/11650/itscctv.json', 30, 'auto', 'ITS CCTV 목록(영상 주소) — `tools/region/itscctv-bake.py fetch` → `build`(ITS 2건) · 지도에서 영상이 안 열리면 더 자주'],

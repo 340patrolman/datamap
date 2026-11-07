@@ -215,18 +215,27 @@
         var SM = window.tgSimMerge; if (!SM) return ck('🔀 합류부 시뮬', false, 'tgSimMerge 없음');
         return SM.load().then(function (j) {
           var m = j.items.filter(function (x) { return x.nm === '반포동 115-6'; })[0], g = j.items.filter(function (x) { return x.outL >= x.inL + x.ramp[1] && x.gr <= 2; })[0];
-          var c = SM.cfgOf(m, null), r1 = SM.run(JSON.parse(JSON.stringify(c)), 7).m, r2 = SM.run(JSON.parse(JSON.stringify(c)), 7).m, a0 = 0, a1 = 0, fin = true;
+          var c = SM.cfgOf(m, null, 1), r1 = SM.run(JSON.parse(JSON.stringify(c)), 7).m, r2 = SM.run(JSON.parse(JSON.stringify(c)), 7).m, a0 = 0, a1 = 0, fin = true;
           [7, 108, 209].forEach(function (sd) { var x = SM.run(JSON.parse(JSON.stringify(c)), sd).m, cb = JSON.parse(JSON.stringify(c)); cb.La += 100; var y = SM.run(cb, sd).m; a0 += x.forced + x.stall; a1 += y.forced + y.stall; [x, y].forEach(function (q) { Object.keys(q).forEach(function (k) { if (typeof q[k] === 'number' && !isFinite(q[k])) fin = false; }); }); });
-          var gg = SM.run(SM.cfgOf(g, null), 7).m, same = JSON.stringify(r1) === JSON.stringify(r2);
+          var gg = SM.run(SM.cfgOf(g, null, 1), 7).m, same = JSON.stringify(r1) === JSON.stringify(r2);
           ck('🔀 합류부 시뮬 — 합류부 200곳↑ · 같은 씨앗 같은 답 · 가속차로 +100m 에 억지 끼어들기+끝 멈춤 줄어듦(세 벌) · 차로 더해지는 합류는 억지 끼어들기 0 · 값이 모두 수',
             j.items.length >= 200 && same && a1 < a0 && gg.forced === 0 && gg.stall === 0 && fin && r1.merges > 0, j.items.length + ' · 같음 ' + same + ' · ' + a0 + '→' + a1 + ' · 더해짐 ' + (g && g.nm) + ' 억지 ' + gg.forced + ' · 합류 ' + r1.merges);
         }).catch(function (e8) { ck('🔀 합류부 시뮬', false, String(e8)); });
+      }).then(function () {
+      /* 📏 정밀도로지도 가속차로(2026-11-07 · data/sim-merge-accel.json · tools/sim/merge-hdmap.py) — 잰 곳은 현행 가속차로 = 잰 길이(노즈에서 바로 합쳐짐 = 30m · 차로 더해짐 = add) · 실선 < 가속차로 · 검사용 raw 는 설계값 150m 그대로 · 자료가 아직 없으면 설계값만(통과) */
+        var SM = window.tgSimMerge; if (!SM) return ck('📏 정밀도로지도 가속차로', false, 'tgSimMerge 없음');
+        return SM.load().then(function (j) {
+          var H = SM.hd(); if (!H) return ck('📏 정밀도로지도 가속차로 — 자료 아직 없음(설계값)', true, 'data/sim-merge-accel.json 없음');
+          var n = 0, bad = []; j.items.forEach(function (m) { var h = H.items[m.id + ':' + m.link[1]]; if (!h || h.k === 'dead') return; n++; var c = SM.cfgOf(m, null), r = SM.cfgOf(m, null, 1);
+            var ok = r.La === 150 && r.S === 0 && c.hd === 1 && (h.k === 'add' ? c.add : !c.add && c.La === (h.k === 'none' ? 30 : Math.max(30, h.m)) && c.S >= 0 && c.S < c.La); if (!ok) bad.push(m.nm); });
+          ck('📏 정밀도로지도 가속차로 — 잰 곳 현행 = 잰 길이 · 실선 < 가속차로 · 설계값(raw) 그대로', n > 0 && !bad.length && H.schema === 'tg-sim-merge-accel/1', n + '곳 · 어긋남 ' + bad.slice(0, 5).join(','));
+        }).catch(function (e8) { ck('📏 정밀도로지도 가속차로', false, String(e8)); });
       }).then(function () {
       /* 🚧 도로 위 일(3단계 · 2026-11-03) — 합류부: 바깥 차로 사고(2분 뒤 5분)가 지체·막힌 곳 앞 멈춤을 늘리고 「빨리 치움」이 지체를 줄인다(세 벌) · 계수: 5차로 2개 막힘 사고 = HCM 0.67 × 3/5 · 버스 30대/시 2차로 = (2−14.4×30/3600)/2 · 통제 = 닫힘 ·
          신호 구역(서초역): 같은 판을 두 번 돌려도 같은 답(쓰는 신호 기록을 미리 채움 — 전엔 처음 판만 달랐다) · 아침을 먼저 돌려도 저녁 답이 같다 · 통제한 길은 끝날 무렵 비고 돌린 차가 생긴다 */
         var SM = window.tgSimMerge; if (!SM) return ck('🚧 도로 위 일', false, 'tgSimMerge 없음');
         return SM.load().then(function (j) {
-          var m = j.items.filter(function (x) { return x.nm === '반포동 115-6'; })[0], c = SM.cfgOf(m, null), ca = JSON.parse(JSON.stringify(c)); ca.ev = { kind: 'acc', lane: c.n - 1, k: 1, x: 220, when: 'mid', gawk: 0.2 };
+          var m = j.items.filter(function (x) { return x.nm === '반포동 115-6'; })[0], c = SM.cfgOf(m, null, 1), ca = JSON.parse(JSON.stringify(c)); ca.ev = { kind: 'acc', lane: c.n - 1, k: 1, x: 220, when: 'mid', gawk: 0.2 };
           var cf = JSON.parse(JSON.stringify(ca)); cf.ev.fast = 1; var S0 = { d: 0, o: 0 }, S1 = { d: 0, o: 0 }, S2 = { d: 0, o: 0 };
           [7, 108, 209].forEach(function (sd) { [[c, S0], [ca, S1], [cf, S2]].forEach(function (p) { var r = SM.run(JSON.parse(JSON.stringify(p[0])), sd).m; p[1].d += r.delay; p[1].o += r.oStall; }); });
           var okM = S1.d > S0.d + 15 && S1.o > 0 && S0.o === 0 && S2.d < S1.d;

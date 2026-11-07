@@ -2,7 +2,7 @@
    기존 🧪 시뮬(sim.js)은 「차가 줄을 서는」 대기열 모형이라 끼어들기·차로 바꾸기·추돌 위험을 못 낸다 → 차를 한 대씩 움직이는 합류부 전용 모형을 따로 둔다.
    · 앞차 따라가기 = IDM(Treiber·Hennecke·Helbing 2000) · 차로 바꾸기 = MOBIL(Kesting·Treiber·Helbing 2007) — 계수는 교과서 값을 설계값으로 썼다(아래 P).
    · 합류부 자리·본선 차로·연결로 차로·제한속도 = data/sim-merges.json(tools/sim/merge-bake.py 가 국가표준 노드링크 여섯 구 판에서 구움).
-   · 본선 교통량 = 서울시 교통량 조사(같은 길 이름 2.5km 안 · 방향 구분이 자료에 없어 두 방향 평균) · 없으면 설계값 · 가속차로 길이·연결로 교통량·대형차 비율 = 설계값(막대로 바꾼다).
+   · 본선 교통량 = 서울시 교통량 조사(같은 길 이름 2.5km 안 · 방향 구분이 자료에 없어 두 방향 평균) · 없으면 설계값 · 가속차로 길이·앞 실선 = data/sim-merge-accel.json(국토지리정보원 정밀도로지도로 잰 곳만 · tools/sim/merge-hdmap.py · 없으면 설계값) · 연결로 교통량·대형차 비율 = 설계값(막대로 바꾼다).
    · 그 자리 실제 사고(TAAS 10년 100m 칸 · 사망사고 한 건씩)는 화면에 나란히 보이기만 한다 — 시뮬 입력에 쓰지 않는다.
    · 현행과 바꾼 안을 같은 씨앗(같은 차들)으로 두 번 돌려 견준다. 개념 시연 — 예측·보증이 아니다. 서버·통신 없음(공개 파일만 읽는다). */
 (function () {
@@ -13,7 +13,7 @@
     pol: 0.2, dth: 0.25, bsafe: 4.0, bsafeM: 5.0, bforce: 9.0, hard: 4.0, ttc: 1.5, endZ: 30, dt: 0.25, lcEvery: 0.5, react: 0.9,   /* react = 끼어든 차를 알아채기까지(초) — 설계값 */
     x0: -700, xr: -220, warm: 90, dur: 600, frameDt: 0.5
   };
-  var MRG = null, RIDX = null, VOL = null, TAAS = {}, PANEL = null, CUR = null, ANIM = null, CARDSEQ = 0;
+  var MRG = null, HDA, RIDX = null, VOL = null, TAAS = {}, PANEL = null, CUR = null, ANIM = null, CARDSEQ = 0;
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function getJ(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }); }
@@ -211,7 +211,8 @@
   }
 
   /* ================= 자료 ================= */
-  function mrgGet() { if (MRG) return Promise.resolve(MRG); return getJ('data/sim-merges.json').then(function (j) { MRG = j; return j; }); }
+  function mrgGet() { if (MRG) return Promise.resolve(MRG); return Promise.all([getJ('data/sim-merges.json'), HDA !== undefined ? HDA : getJ('data/sim-merge-accel.json').catch(function () { return false; })]).then(function (a) { HDA = a[1]; MRG = a[0]; return MRG; }); }
+  function hdOf(m) { var it = HDA && HDA.items ? HDA.items[m.id + ':' + m.link[1]] : null; return it && (it.k === 'end' || it.k === 'add' || it.k === 'none') ? it : null; }   /* 정밀도로지도로 잰 가속차로(없으면 null) */
   function near(ll, R) { if (!MRG) return []; return MRG.items.map(function (m) { return { m: m, d: dist(ll, [m.lat, m.lon]) }; }).filter(function (o) { return o.d <= R; }).sort(function (a, b) { return a.d - b.d; }); }
   function volFor(m) {   /* 같은 길 이름 조사 지점 2.5km 안 — 지금 시각 · 두 방향 평균 */
     if (!VOL) return null; var d = new Date().getDay(), h = new Date().getHours(), best = null, bd = 2500;
@@ -232,9 +233,10 @@
       return { n: cells.length, tot: tot, dead: dead, ser: ser, ty: ty, vi: vi, fat: fat, src: j.source };
     });
   }
-  function cfgOf(m, vol) {
-    var add = m.outL >= m.inL + m.ramp[1];
-    return { n: Math.max(1, Math.min(6, m.inL)), add: add, La: 150, S: 0, qMain: vol ? Math.min(vol.q, m.inL * 2100) : m.inL * 1300, qRamp: 600 * Math.min(2, m.ramp[1]),
+  function cfgOf(m, vol, raw) {   /* raw = 정밀도로지도 값을 안 씀(설계값 · 검사용) */
+    var add = m.outL >= m.inL + m.ramp[1], hd = raw ? null : hdOf(m), La = 150, S = 0;
+    if (hd) { add = hd.k === 'add'; La = hd.k === 'none' ? 30 : Math.max(30, hd.m); S = hd.k === 'end' && hd.sol > 0 ? Math.min(hd.sol, La - 10) : 0; }   /* none = 노즈에서 바로 합쳐짐 → 30m 로 둠 */
+    return { n: Math.max(1, Math.min(6, m.inL)), add: add, La: La, S: S, hd: hd ? 1 : 0, qMain: vol ? Math.min(vol.q, m.inL * 2100) : m.inL * 1300, qRamp: 600 * Math.min(2, m.ramp[1]),
       truck: 0.1, lim: m.lim || 60, rampLim: m.ramp[2] || Math.min(m.lim || 60, 50), W: m.dn && m.dn[0] <= 900 ? m.dn[0] : 0, exitP: 0.12, meter: 0, courtesy: 0.3, warm: P.warm, dur: P.dur };
   }
   var CHG = [
@@ -312,16 +314,18 @@
   function srcOf(k) {
     var C = CUR; if (k === 'qMain') return C.vol ? '<span class="b k">조사 ' + esc(C.vol.spot.id) + ' ' + esc(C.vol.spot.name) + ' · ' + C.vol.h + '시 · 두 방향 평균(' + C.vol.both.join('/') + ') · ' + C.vol.d + 'm</span>' : '<span class="b d">설계값 — 같은 길 이름 조사 지점 없음(차로당 1,300)</span>';
     if (k === 'lim') return '<span class="b k">표준노드링크</span>'; if (k === 'W') return C.m.dn ? '<span class="b k">표준노드링크 ' + C.m.dn[0] + 'm</span>' : '<span class="b x">1.5km 안 없음</span>';
+    var h = hdOf(C.m); if (h && (k === 'La' || k === 'S')) return k === 'La' ? '<span class="b k">정밀도로지도 기준 · ' + (h.k === 'none' ? '가속차로 없이 노즈에서 바로 합쳐짐(30m 로 둠)' : '노즈→차로가 합쳐지는 곳 ' + h.m + 'm' + (h.last ? '(마지막 링크 ' + h.last + 'm — 테이퍼 포함일 수 있음)' : '')) + '</span>' + (h.rv ? ' <span class="b d">차선 길이와 30m 넘게 다름 — 검토 필요</span>' : '') + ' <span class="sn">도로 구조 규칙 제35조 최소 길이는 설계속도 기준이라 참고로만</span>'
+      : '<span class="b k">정밀도로지도 차선 — 실선 ' + h.sol + 'm · 점선 ' + h.dash + 'm' + (h.mxL || h.mxR ? ' · 혼선 ' + (h.mxL + h.mxR) + 'm' : '') + '</span>';
     var s = SL.filter(function (x) { return x[0] === k; })[0]; return '<span class="b d">' + esc(s[6]) + '</span>';
   }
   function cfgHtml() {
     var c = CUR.cfg, m = CUR.m;
     var h = '<h4>⚙ 현행(지금 모습) — 막대로 바꿀 수 있다</h4>';
     h += '<div class="sn">본선 <b>' + m.inL + '차로</b> 들어옴 · 연결로 <b>' + m.ramp[1] + '차로</b>(' + esc(m.ramp[0]) + ', 제한 ' + (m.ramp[2] || '—') + ') · 본선 <b>' + m.outL + '차로</b> 나감 → ' +
-      (c.add ? '<b>차로가 더해지는 합류</b>(가속차로가 끝나지 않는다)' : '<b>가속차로가 끝나는 합류</b>(끝까지 못 들어가면 멈춘다)') + ' <span class="b k">표준노드링크 차로 수 — 현장과 다를 수 있다</span> ' +
+      (c.add ? '<b>차로가 더해지는 합류</b>(가속차로가 끝나지 않는다)' : '<b>가속차로가 끝나는 합류</b>(끝까지 못 들어가면 멈춘다)') + (hdOf(m) ? ' <span class="b k">합류 모양 = 정밀도로지도(국토지리정보원)</span> ' : ' <span class="b k">표준노드링크 차로 수 — 현장과 다를 수 있다</span> ') +
       '<label><input type="checkbox" data-mc="add"' + (c.add ? ' checked' : '') + '> 차로 더해짐</label></div>';
     SL.forEach(function (s) { if (c.add && (s[0] === 'La' || s[0] === 'S')) return;
-      h += '<div class="row"><span>' + s[1] + '</span><input type="range" data-mc="' + s[0] + '" min="' + s[2] + '" max="' + s[3] + '" step="' + s[4] + '" value="' + c[s[0]] + '"><b id="m2dMrgV_' + s[0] + '">' + fmt(s[0], c[s[0]]) + s[5].replace('%', '%') + '</b></div><div class="sn" style="margin:-2px 0 4px 9.5em">' + srcOf(s[0]) + '</div>'; });
+      h += '<div class="row"><span>' + s[1] + '</span><input type="range" data-mc="' + s[0] + '" min="' + s[2] + '" max="' + Math.max(s[3], c[s[0]]) + '" step="' + s[4] + '" value="' + c[s[0]] + '"><b id="m2dMrgV_' + s[0] + '">' + fmt(s[0], c[s[0]]) + s[5].replace('%', '%') + '</b></div><div class="sn" style="margin:-2px 0 4px 9.5em">' + srcOf(s[0]) + '</div>'; });
     h += evHtml();
     h += '<h4>🔁 바꿔 볼 것</h4><select data-mc="chg">' + chgList().map(function (x) { return '<option value="' + x[0] + '"' + (CUR.chg === x[0] ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select> ';
     h += '<button class="go" data-mg="run">▶ 10분 돌려 견주기</button> <span class="sn">같은 차들 세 벌(씨앗 ' + CUR.seed + '…)로 현행·바꾼 안 · 몇 초</span>';
@@ -341,7 +345,7 @@
   function openM(m) {
     var my = ++CARDSEQ, Pn = panel(); stopAnim();
     Pn.innerHTML = head(title(m)) + '<div class="sn">자료 받는 중…</div>';
-    Promise.all([VOL ? VOL : getJ('data/traffic-vol-seoul.json').then(function (j) { VOL = j; return j; }).catch(function () { return null; }), taasFor(m)]).then(function (a) {
+    Promise.all([VOL ? VOL : getJ('data/traffic-vol-seoul.json').then(function (j) { VOL = j; return j; }).catch(function () { return null; }), taasFor(m), mrgGet()]).then(function (a) {
       if (my !== CARDSEQ) return;
       var vol = volFor(m), seed = 1 + (parseInt(String(m.id).slice(-6), 10) % 9973 || 7);
       CUR = { m: m, vol: vol, taas: a[1], cfg: cfgOf(m, vol), chg: m.dn && m.dn[0] < 600 ? 'noexit' : 'la', seed: seed, res: null, view: 1 };
@@ -524,7 +528,7 @@
       }).catch(function () {});
     }).observe(c, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   }
-  window.tgSimMerge = { run: run, list: list, open: openM, close: close, load: mrgGet, near: function (lat, lon, R) { return near([lat, lon], R || 200); }, taas: taasFor, cfgOf: cfgOf, CHG: CHG, P: P };
+  window.tgSimMerge = { run: run, list: list, open: openM, close: close, load: mrgGet, near: function (lat, lon, R) { return near([lat, lon], R || 200); }, taas: taasFor, cfgOf: cfgOf, hd: function () { return HDA || null; }, CHG: CHG, P: P };
   function boot() { cardHook(); document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && PANEL && PANEL.classList.contains('on')) close(); }); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

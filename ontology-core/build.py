@@ -29,7 +29,7 @@
         여섯 구의 사고 칸 = 서초 data/taas10-seocho.json + 나머지 data/r/<구>/taas10.json(권역 저장소 datamap-data-seoul 에 올린 것과 같은 로컬 빌드 출력 · 같은 꼴 tg-taas10/1)
         여섯 구에서도 인접(sig-net)·조치(교통과 출력물)는 서초에만 있다
 """
-import json, os, re, math, hashlib, datetime, collections, sys
+import json, os, re, math, hashlib, datetime, collections, sys, glob
 CORE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(CORE); D = os.path.join(ROOT, 'data'); PRIV = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'onto')
 def J(p): return json.load(open(p, encoding='utf-8'))
 def m(la1, lo1, la2, lo2): return math.hypot((lo1 - lo2) * 88400.0, (la1 - la2) * 111000.0)
@@ -369,11 +369,20 @@ def main():
         a, b = by_cits.get(str(l[0])), by_cits.get(str(l[1]))
         if a and b and a != b: edge(a, '인접', b, 'B', 'sig-net-seocho.json', m=l[2], s=l[3])
     ta = J(os.path.join(D, 'taas10-seocho.json')); dv = ta['dic']['v']; R = 70
-    taf = ['taas10-seocho.json'] + ['r/%s/taas10.json' % g for g in GUS if g != '11650']
-    for f in taf[1:]:
+    # 2026-11-07 — 구 경계의 같은 100m 칸은 구 파일마다 제 구 몫 사고만 담는다(양재역 칸 = 서초 32·17 + 강남 46·77) → 그 구 파일만 읽으면 경계 교차로를 덜 센다(서초 코어 양재역 49 ↔ 실제 172)
+    #   그래서 구 범위와 상관없이 모든 구 파일을 보되 이 코어 교차로 둘레(±0.04° ≈ 3.5km — 접근로가 구 밖 2km 까지 가서) 칸만 싣는다 · 서초는 taas10-seocho.json(r/11650 과 같은 값)
+    INTs0 = [O[k] for k in O if O[k]['t'] == 'INT']
+    la0, la1 = min(o['lat'] for o in INTs0) - .04, max(o['lat'] for o in INTs0) + .04
+    lo0, lo1 = min(o['lon'] for o in INTs0) - .04, max(o['lon'] for o in INTs0) + .04
+    def inbox(c): return la0 <= c[0] <= la1 and lo0 <= c[1] <= lo1
+    cells = [c for c in ta['cells'] if inbox(c)]; taf = ['taas10-seocho.json']
+    for f in sorted(os.path.relpath(p, D).replace('\\', '/') for p in glob.glob(os.path.join(D, 'r', '*', 'taas10.json'))):
+        if f == 'r/11650/taas10.json': continue
         tb = J(os.path.join(D, f))
         if tb.get('schema') != ta.get('schema') or tb['dic']['v'] != dv: raise SystemExit('사고 칸 꼴·위반 사전이 서초와 다르다: ' + f)
-        ta = dict(ta, cells=ta['cells'] + tb['cells'])
+        cs = [c for c in tb['cells'] if inbox(c)]
+        if cs: cells += cs; taf.append(f)
+    ta = dict(ta, cells=cells)
     CG = collections.defaultdict(list)
     for k, c in enumerate(ta['cells']): CG[(int(c[0] * 1000), int(c[1] * 1000))].append((k, c))   # 위도·경도 0.001° 칸(약 111×88m) — 70m 안 칸만 빨리 찾기
     def near_cells(la, lo):
@@ -386,10 +395,10 @@ def main():
         if not cs: continue
         yrs = [sum(c[2 + k] for c in cs) for k in range(10)]
         a = obj('ACC-%s' % it['id'], 'ACC', y0=2016, years=yrs, dead=sum(c[12] for c in cs), serious=sum(c[13] for c in cs), ped=sum(c[14] for c in cs), night=sum(c[18] for c in cs), tod=[sum(c[19 + k] for c in cs) for k in range(4)], cells=len(cs), r=R)
-        edge(it['id'], '발생', a, 'C', ('taas10-seocho.json' if AREA == 'seocho' else 'taas10(여섯 구)') + '(70m 안 100m 칸)')
+        edge(it['id'], '발생', a, 'C', 'taas10(이 구 + 경계 너머 이웃 구 칸)' + '(70m 안 100m 칸)')
         vc = collections.Counter()
         for c in cs: vc[c[23]] += c[24]
-        for code, n in vc.items(): edge(a, '주요원인', 'VIO-%s' % code, 'C', ('taas10-seocho.json' if AREA == 'seocho' else 'taas10(여섯 구)') + '(칸마다 주 위반 하나)', n=n)
+        for code, n in vc.items(): edge(a, '주요원인', 'VIO-%s' % code, 'C', 'taas10(이 구 + 경계 너머 이웃 구 칸)' + '(칸마다 주 위반 하나)', n=n)
     al = J(os.path.join(D, 'gargo-alerts-seoul.json'))
     for it in INTs:
         for c in al['cam']:

@@ -14,7 +14,18 @@ C = []
 def ck(name, ok, got=''): C.append((name, bool(ok), str(got)[:160]))
 # ---- 원자료에서 정답 ----
 oi = {r[0]: r for r in J(os.path.join(D, 'onto-int.json'))['items']}
-ta = J(os.path.join(D, 'taas10-seocho.json')); al = J(os.path.join(D, 'gargo-alerts-seoul.json')); ks = {x['no']: x for x in J(os.path.join(D, 'sig-ksc-seocho.json'))['items']}
+ta = J(os.path.join(D, 'taas10-seocho.json'))
+for f_ in sorted(os.listdir(os.path.join(D, 'r'))):   # 2026-11-07 구 경계 칸은 이웃 구 파일에도 제 구 몫이 있다 — 모든 구 파일을 더해 따로 센다
+    p_ = os.path.join(D, 'r', f_, 'taas10.json')
+    if f_ != '11650' and os.path.exists(p_): ta['cells'] = ta['cells'] + J(p_)['cells']
+TAM = {}
+for c_ in ta['cells']:   # 같은 자리 칸은 한 칸(도로 구간 사고 칸 셈) — 건수는 더하고 주 위반은 큰 쪽
+    k_ = (c_[0], c_[1]); o_ = TAM.get(k_)
+    if o_ is None: TAM[k_] = list(c_); continue
+    for i_ in range(2, 23): o_[i_] += c_[i_]
+    if o_[23] == c_[23]: o_[24] += c_[24]
+    elif c_[24] > o_[24]: o_[23], o_[24], o_[25] = c_[23], c_[24], c_[25]
+al = J(os.path.join(D, 'gargo-alerts-seoul.json')); ks = {x['no']: x for x in J(os.path.join(D, 'sig-ksc-seocho.json'))['items']}
 tl = J(os.path.join(CORE, 'src', 'tbook-law.json'))
 def truth(tg):
     r = oi[tg]; la, lo = r[2], r[3]; cs = [c for c in ta['cells'] if m(c[0], c[1], la, lo) <= 70]
@@ -157,7 +168,7 @@ def dseg(la, lo, a, b):
     ax, ay = (a[0] - lo) * 88400.0, (a[1] - la) * 111000.0; bx, by = (b[0] - lo) * 88400.0, (b[1] - la) * 111000.0
     vx, vy = bx - ax, by - ay; L2 = vx * vx + vy * vy; t = 0 if L2 == 0 else max(0.0, min(1.0, -(ax * vx + ay * vy) / L2)); return math.hypot(ax + t * vx, ay + t * vy)
 PL = {l: pline(l) for l in LK if l in NVL}; OWN = collections.defaultdict(list)
-for c_ in ta['cells']:
+for c_ in TAM.values():
     bd = None
     for l, pts in PL.items():
         if abs(pts[0][1] - c_[0]) > 0.02 or abs(pts[0][0] - c_[1]) > 0.02: continue

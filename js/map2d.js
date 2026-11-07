@@ -1702,16 +1702,16 @@
   var INTB = null;
   function intBrief(c) { if (INTB === null) { INTB = 0; fetch('data/int-brief.json').then(function (r) { return r.json(); }).then(function (j) { INTB = j; if (sel && sel.it && sel.it.kind === 'tgis') show(sel.it); }).catch(function () { INTB = {}; }); return ''; }
     var r = INTB && INTB.int && INTB.int[String(c)]; if (!r) return '';
-    var acc = r[1], tod = r[5], mx = Math.max.apply(null, tod) || 1, TN = ['새벽 0~6', '오전 6~12', '오후 12~18', '저녁 18~24'], v = r[6][0];
+    var acc = r[1], tod = r[5], mx = Math.max.apply(null, tod) || 1, TN = ['새벽 0~6', '오전 6~12', '오후 12~18', '저녁 18~24'], V = r[6] || [], v = V[0], lv = V.filter(function (x) { return x[2]; })[0], G = (INTB.gus || {})[r[12]] || ['', INTB.n];   /* v2.313.0 여섯 구 · 칸이 둘인 교차로(구 경계 등)는 위반 둘 · 법규 단추는 T-Book 항목이 있는 첫 위반 */
     var bars = '<div style="display:flex;gap:4px;align-items:flex-end;height:44px;margin:4px 0 2px">' + tod.map(function (n, k) { return '<div style="flex:1;text-align:center;font-size:11px"><div style="height:' + Math.max(2, Math.round(26 * n / mx)) + 'px;background:#64748b;border-radius:3px 3px 0 0;margin:0 6px"></div>' + TN[k].split(' ')[0] + ' <b>' + n + '</b></div>'; }).join('') + '</div>';
-    var law = v && v[2] ? ' <a class="orcb" style="text-decoration:none" target="_blank" rel="noopener" href="https://340patrolman.github.io/traffic-app/#laws&q=' + encodeURIComponent(v[2]) + '" title="T-Book 법령자료에서 이 항목 찾기">⚖ T-Book 「' + esc(v[2]) + '」</a>' : (v ? ' <small>(T-Book 범칙금 항목과 바로 이어지지 않는 갈래)</small>' : '');
+    var law = lv ? ' <a class="orcb" style="text-decoration:none" target="_blank" rel="noopener" href="https://340patrolman.github.io/traffic-app/#laws&q=' + encodeURIComponent(lv[2]) + '" title="T-Book 법령자료에서 이 항목 찾기">⚖ T-Book 「' + esc(lv[2]) + '」</a>' : (v ? ' <small>(T-Book 범칙금 항목과 바로 이어지지 않는 갈래)</small>' : '');
     var rd = r[11].length ? '<div>들어오는 길 ' + r[11].length + ': ' + r[11].map(function (x) { return esc(x[0].replace('쪽', '')) + ' ' + esc(x[1]) + ' ' + x[2] + '차로'; }).join(' · ') + '</div>' : '';
     return '<div class="ibr" style="border:1px solid #cbd5e1;border-radius:10px;padding:7px 9px;margin:4px 0 8px;font-size:13px;line-height:1.5"><b>📋 이 자리 진단</b> <small>10년(' + INTB.y0 + '~' + INTB.y1 + ') · 있는 사실만 · 원인 단정 아님</small>' +
-      '<div>사고 <b>' + acc + '건</b> — 사고 건수 ' + r[0] + '위 / ' + INTB.n + '곳 <small>(교통량 반영 안 됨)</small> · 사망 ' + r[2] + ' · 중상 ' + r[3] + ' · 보행자 ' + r[4] + '</div>' + bars +
-      (v ? '<div>주 위반 ' + esc(v[0]) + ' ' + v[1] + '건(' + Math.round(100 * v[1] / acc) + '%)' + law + '</div>' : '') +
+      '<div>사고 <b>' + acc + '건</b> — ' + esc(G[0] || '') + ' 사고 교차로 ' + G[1] + '곳 중 사고 건수 ' + r[0] + '위 <small>(교통량 반영 안 됨)</small> · 사망 ' + r[2] + ' · 중상 ' + r[3] + ' · 보행자 ' + r[4] + '</div>' + bars +
+      (v ? '<div>주 위반 ' + V.map(function (x) { return esc(x[0]) + ' ' + x[1] + '건(' + Math.round(100 * x[1] / acc) + '%)'; }).join(' · ') + law + '</div>' : '') +
       '<div>앞 3년(2016~18) ' + r[7] + ' → 뒤 3년(2023~25) ' + r[8] + '</div>' + rd +
       '<div>100m 안 경찰 카메라 ' + r[9] + ' · 300m 안 보호구역 시설 ' + r[10] + '</div>' +
-      '<div style="font-size:11px;color:#64748b">TAAS 교차로 70m 안 · T-GIS · ITS 링크 · 값 그대로(tools/onto/brief-bake.py) · 판단은 사람이</div></div>'; }
+      '<div style="font-size:11px;color:#64748b">TAAS 교차로 70m 안 100m 칸(칸마다 가장 많은 위반 하나) · T-GIS · ITS 링크 · 값 그대로(tools/onto/brief-bake.py ← core-six) · 판단은 사람이</div></div>'; }
   function drawPub(dark) {
     if (!PUB) return;
     if (on.risk) PUB.risk.forEach(function (q) { ring(q.ring, 'rgba(220,38,38,.18)', '#b91c1c'); dot(q.p, 5, '#b91c1c', '#fff', { kind: 'pub', layer: 'risk', q: q }); });

@@ -315,6 +315,15 @@
       try { ensR(); if (window.__gBtnFit) window.__gBtnFit(); var bmiss = [].filter.call(document.querySelectorAll('#gBtn button'), function (x) { if (!x.offsetWidth) return false; var r = x.getBoundingClientRect(), e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !(e === x || x.contains(e)); }).map(function (x) { return x.id; });
         ck('📐 오른쪽 단추 줄 — 경로를 고른 뒤에도 아래 판에 안 깔림(단추 가운데를 누르면 그 단추 · v0.37.2 · 375 폭에서 판 503px 이 6개를 다 덮었다)', bmiss.length === 0, bmiss.length ? '깔림 ' + bmiss.join(',') : '다 눌림 · ' + (document.getElementById('gBtn').classList.contains('row') ? '가로 한 줄' : '세로')); } catch (e) { ck('단추 줄 검사', false, e.message); }
       try { offF(); } catch (e) { ck('경로 이탈 안내 검사', false, e.message); }
+      /* v0.39.1 말소리 따라 달리기 — 서초 길 다섯을 5m 씩 밀며 안내 말을 모두 듣는다(형님 「상용네비급으로」): 우회전·오른쪽에 「1차로」가 없고 · 200m 안 짧은 정체를 말하지 않고 · 꺾는 곳마다 「곧」이 한 번씩 */
+      try { var AR = [[127.00764, 37.49182, 126.98193, 37.48141], [127.0049, 37.5049, 127.0141, 37.4934], [126.9976, 37.4815, 127.0344, 37.4846], [127.0276, 37.4979, 127.0058, 37.4956]], SD = [], spA = speechSynthesis.speak, cnA = speechSynthesis.cancel, badA = [], nA = 0;
+        speechSynthesis.speak = function (u) { SD.push(u.text); }; speechSynthesis.cancel = function () {}; var vbA = document.getElementById('gVoice'); if (!vbA.classList.contains('on')) vbA.click();
+        AR.forEach(function (q, ri) { var pa = g.P(q[0], q[1]), pb = g.P(q[2], q[3]); g.setMe(pa[0], pa[1], 5, null, 0); g.setDest(pb[0], pb[1], '시험' + ri, false, true); g.plan(true); var rA = g.state().route; if (!rA) { badA.push(ri + ' 길 없음'); return; } nA++; g.guideStart(); SD.length = 0; var said = [];
+          for (var pA = 0; pA < rA.dist - 26; pA += 5) { rA.pos = pA; var k0 = SD.length; g.paint(); for (var k = k0; k < SD.length; k++) said.push(SD[k]); }
+          said.forEach(function (t) { if (/(우회전|오른쪽 방향)[^.]*\. 1차로/.test(t)) badA.push(ri + ' ' + t); var mz = /정체, 약 (\d+)미터/.exec(t); if (mz && +mz[1] < 200) badA.push(ri + ' ' + t); });
+          rA.mans.forEach(function (m) { if (m.k === 'E' || m.d < 90) return; var soon = said.filter(function (t) { return t.indexOf('곧 ') === 0 && t.indexOf('목적지') < 0; }).length; if (!soon) badA.push(ri + ' 곧 없음 ' + m.k); }); g.guideStop(false); });
+        speechSynthesis.speak = spA; speechSynthesis.cancel = cnA;
+        ck('🔊 말소리 따라 달리기 — 서초 길 넷 · 우회전·오른쪽에 「1차로」 없음 · 200m 안 정체 말 안 함 · 꺾는 곳마다 「곧」 (v0.39.1)', nA === 4 && !badA.length, badA.slice(0, 3).join(' | ') || nA + '길'); } catch (e) { ck('말소리 따라 달리기 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       send(); }, 50); }); }, 4200);
   }

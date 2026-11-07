@@ -231,10 +231,12 @@
             var ix; return fetch('data/sim-areas.json?v=1').then(function (r) { return r.json(); }).then(function (j9) { ix = j9; return G.load('seochoyeok', ix.made); }).then(function (M0) {
               var C = function () { return JSON.parse(JSON.stringify(M0)); }, sc = function (f, t, ev) { return { date: '2026-10-21', seed: 7, from: f * 3600, to: t * 3600, ev: ev }; }, R = function (MM, s9) { var r = G.run(MM, s9).result(); return r.delayVh + '/' + r.jamMax; };
               var X = C(), a = R(X, sc(16, 19)), b = R(X, sc(16, 19)), Y = C(); R(Y, sc(7, 10)); var c9 = R(Y, sc(16, 19));
-              var Lk = '4040>4039', S = G.create(C(), sc(16, 19, [{ link: Lk, kind: 'ctrl', t0: 61200, t1: 63000 }])); S.runTo(S.end); var sm = S.samp.filter(function (q) { return q.t === 62940; })[0], rr = S.result();
-              ck('🚧 도로 위 일 — 합류부 사고가 지체·막힌 곳 앞 멈춤을 늘리고 빨리 치우면 줄어듦(세 벌) · 계수 HCM 사고 0.67×3/5 · 버스 막힘 식 · 통제 = 닫힘 · 신호 구역 두 번 돌려도 같은 답 · 아침 먼저 돌려도 저녁 같음 · 통제한 길 비고 돌린 차 생김',
+              var Lk = '4040>4039', S = G.create(C(), sc(16, 19, [{ link: Lk, kind: 'ctrl', t0: 61200, t1: 63000 }])), inL = function () { return Object.keys(S.mv).reduce(function (s9, k9) { return s9 + (S.mv[k9].to === Lk ? S.mv[k9].served : 0); }, 0); };
+              /* 통제 = 닫힘: 통제 중(1분 뒤~끝) 그 길로 들어간 차 0 · 남은 차는 줄어듦(2026-11-07 · 「다 빔」은 아래쪽 교차로 막힘에 따라 남을 수 있어 자료가 바뀌면 깨졌다 — 다시 구운 서초역은 4916 쪽 좌회전 7대가 남음) */
+              S.runTo(61260); var in0 = inL(), oc0 = S.L[Lk].n; S.runTo(62940); var in1 = inL(), oc1 = S.L[Lk].n; S.runTo(S.end); var sm = { occ: {} }; sm.occ[Lk] = (in1 === in0 && oc1 < oc0) ? 0 : oc1; var rr = S.result();
+              ck('🚧 도로 위 일 — 합류부 사고가 지체·막힌 곳 앞 멈춤을 늘리고 빨리 치우면 줄어듦(세 벌) · 계수 HCM 사고 0.67×3/5 · 버스 막힘 식 · 통제 = 닫힘 · 신호 구역 두 번 돌려도 같은 답 · 아침 먼저 돌려도 저녁 같음 · 통제한 길에 안 들어가고 돌린 차 생김',
                 okM && okF && a === b && a === c9 && sm && sm.occ[Lk] === 0 && rr.evDiv > 0 && typeof G.shadowScore === 'function' && ix.areas.every(function (q) { return q.twin && q.twin.cases > 0 && typeof q.twin.pass === 'boolean'; }),
-                '합류 지체 ' + Math.round(S0.d) + '→' + Math.round(S1.d) + '→빨리 ' + Math.round(S2.d) + ' · 멈춤 ' + S1.o + ' · 계수 ' + okF + ' · 구역 ' + a + '/' + b + '/' + c9 + ' · 통제 길 ' + (sm ? sm.occ[Lk] : '?') + ' · 돌림 ' + rr.evDiv);
+                '합류 지체 ' + Math.round(S0.d) + '→' + Math.round(S1.d) + '→빨리 ' + Math.round(S2.d) + ' · 멈춤 ' + S1.o + ' · 계수 ' + okF + ' · 구역 ' + a + '/' + b + '/' + c9 + ' · 통제 중 들어감 ' + (in1 - in0) + ' · 남은 차 ' + oc0 + '→' + oc1 + ' · 돌림 ' + rr.evDiv);
             });
           });
         }).catch(function (e7) { ck('🚧 도로 위 일', false, String(e7)); });

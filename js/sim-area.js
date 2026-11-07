@@ -208,6 +208,25 @@
   }
   function toEnd() { if (!A) start(); stop(); A.runTo(A.end); B.runTo(B.end); paintRun(); paintRes(); paintLive(); }
   function reset() { stop(); A = B = null; $('simARun').innerHTML = '<div class="sn">고른 뒤 ▶ 시연 또는 ⏩ 끝까지</div>'; paintRes(); paintCtl(); }
+  /* 🚏 버스 정차 근거(2026-11-07) — 고른 접근로 정지선 앞 실제 정류장 · 서울시 버스정류소 위치 + 교통카드 승하차(data/r/<구>/transit.json · 2026년 6월 하루 평균)
+     서울 시내버스 배차 간격 자료가 없어 「시간당 몇 대」는 여전히 설계값 막대 — 정류장이 있는지 · 그 시간대 이용객이 얼마인지만 보여 고르는 근거로 · HCM 버스 막힘 식은 정지선 75m(250ft) 안 정류장 기준 */
+  var TRN = null, TRNK = null;   /* TRNK = 정류장을 받은 구역 — 구역이 바뀌면 다시 받는다 */
+  function trnLoad() { var k9 = AR && (AR.id || AR.nm); if (TRN && TRNK === k9) return; TRNK = k9; TRN = 'loading'; var ll = Object.keys(M.nodes).map(function (k) { return M.nodes[k].ll; }).filter(function (x) { return x; });
+    fetch('data/r/index.json').then(function (r) { return r.json(); }).then(function (ix) { var G = ix.gus.filter(function (g) { var b = g.box; return ll.some(function (p) { return p[1] >= b[0] - 0.005 && p[1] <= b[2] + 0.005 && p[0] >= b[1] - 0.005 && p[0] <= b[3] + 0.005; }); }).slice(0, 4);
+      return Promise.all(G.map(function (g) { return fetch('data/r/' + g.gu + '/transit.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); })); })
+      .then(function (L) { var A = [], seen = {}; L.forEach(function (j) { (j && j.bus || []).forEach(function (b) { if (!seen[b[0]]) { seen[b[0]] = 1; A.push(b); } }); }); TRN = A; if (PANEL && PANEL.classList.contains('on') && ST.evf.kind === 'bus') paintCtl(); })
+      .catch(function () { TRN = []; }); }
+  function stopsNear(lk) { if (!Array.isArray(TRN)) return null; var l = M.links[lk], to = l && M.nodes[l.to] && M.nodes[l.to].ll, fr = l && M.nodes[l.fr] && M.nodes[l.fr].ll; if (!to) return [];
+    var ux = 0, uy = 0; if (fr) { ux = (fr[1] - to[1]) * 88200; uy = (fr[0] - to[0]) * 111000; var n9 = Math.hypot(ux, uy) || 1; ux /= n9; uy /= n9; }
+    else { var nd = M.nodes[l.to], lg9 = nd && nd.legs && Object.keys(nd.legs).filter(function (g) { return nd.legs[g].in === lk; })[0]; if (lg9 && LEGA[lg9] != null) { var a9 = LEGA[lg9] * Math.PI / 180; ux = Math.sin(a9); uy = Math.cos(a9); fr = 1; } }   /* 들어오는 길(구역 밖 마디) — 다리 방위로 방향을 잡는다 */
+    var h = Math.floor((wOf()[2] + wOf()[3]) / 2), out = [];
+    TRN.forEach(function (b) { var dx = (b[2] - to[1]) * 88200, dy = (b[3] - to[0]) * 111000, d = Math.hypot(dx, dy); if (d > 160) return; var al = fr ? dx * ux + dy * uy : d, sr = fr ? dx * -uy + dy * ux : 0;   /* sr = 들어오는 차의 오른쪽(우측통행)으로 떨어진 거리 — 길 건너 반대 방향 정류장은 뺀다 */
+      if (fr && (al < -15 || al > 150 || sr < -6 || sr > 30)) return; out.push({ nm: b[1], al: Math.round(Math.max(0, al)), ph: Math.round((b[4][h] || 0) + (b[5][h] || 0)) }); });
+    return out.sort(function (a, b) { return a.al - b.al; }).slice(0, 3); }
+  function busNote(lk) { trnLoad(); var S9 = stopsNear(lk); if (S9 === null) return '<div class="sn">🚏 정류장 찾는 중…</div>';
+    var h = Math.floor((wOf()[2] + wOf()[3]) / 2);
+    if (!S9.length) return '<div class="warn">🚏 이 접근로 정지선 앞 150m 안에 서울시 버스정류소가 없다 — 버스 정차를 넣을 근거가 약하다(다른 길을 골라 본다)</div>';
+    return '<div class="sn">🚏 정지선 앞 정류장(서울시 버스정류소 위치 · 교통카드 2026년 6월 하루 평균 ' + h + '시 승하차): ' + S9.map(function (x) { return esc(x.nm) + ' <b>' + x.al + 'm</b> · ' + x.ph.toLocaleString() + '명' + (x.al > 75 ? '(75m 밖 — HCM 버스 막힘 식은 75m 안 기준)' : ''); }).join(' · ') + ' · 시간당 버스 대수는 서울 시내버스 배차 자료가 없어 <b>설계값</b></div>'; }
   function evCtl() {
     var F = ST.evf, AL = apprList(); if (!AL.length) return ''; if (!F.link || !AL.some(function (x) { return x[0] === F.link; })) F.link = AL[0][0];
     var N = M.links[F.link].lanes, opt = function (L, cur) { return L.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (String(x[0]) === String(cur) ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join(''); }, rng9 = function (a, b, f) { var r = []; for (var i = a; i <= b; i++) r.push([i, f(i)]); return r; };
@@ -217,6 +236,7 @@
     return '<div class="sg">🚧 도로 위 일 — 사고·공사·버스 정차·불법 주정차·통제</div>' +
       '<div class="row"><select data-sa="ev:kind">' + opt(EVK, F.kind) + '</select><select data-sa="ev:link">' + opt(AL.map(function (x) { return [x[0], x[1] + ' · ' + x[2] + '차로']; }), F.link) + '</select>' + par + '</div>' +
       '<div class="row">시작 <select data-sa="ev:s">' + opt([0, 15, 30, 60, 90, 120].map(function (x) { return [x, x ? x + '분 뒤' : '처음부터']; }), F.s) + '</select> 동안 <select data-sa="ev:d">' + opt([[15, '15분'], [30, '30분'], [60, '1시간'], [120, '2시간'], [0, '끝까지']], F.d) + '</select><button data-sa="evadd">＋ 넣기</button></div>' +
+      (F.kind === 'bus' ? busNote(F.link) : '') +
       (ST.ev || []).map(function (e, i) { var D = evDesc(e); return '<div class="ph"><span>' + esc(D.t) + '<br><small>' + (D.f.shut ? '' : '빠지는 힘 ' + Math.round(D.f.f * 100) + '% · ') + esc(D.f.src) + '</small></span><button data-sa="evboth:' + i + '"' + (e.both ? ' class="on"' : '') + '>현행에도</button><button data-sa="evdel:' + i + '">✕</button></div>'; }).join('') +
       '<div class="sn">넣은 일은 기본으로 <b>바꾼 안에만</b> 걸린다 → 「평소」와 「그 일이 생기면」을 견준다 · 「현행에도」를 켜면 두 판 모두에 걸려, 그 일 위에서 신호·막기로 대응한 것을 견준다 · 그 교차로 정지선 앞에서 생긴 일로 본다 · 통제는 그 앞 교차로에서 다른 길로 돌린다(경찰 안내 · 돌린 차는 평소 회전 몫대로 새 길을 고른다 — 실제 우회로와 다를 수 있다) · 계수 출처는 줄마다</div>';
   }

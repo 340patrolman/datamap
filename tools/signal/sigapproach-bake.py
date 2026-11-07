@@ -5,11 +5,13 @@
 #   들어오는 쪽 = 교차로 밖에서 안으로 들어오는 큰길 링크(등급 1~6)의 끝머리 방위의 반대를 8방으로(sigdir 과 같은 이름 nt·ne·et·se·st·sw·wt·nw)
 #   한 쪽에 그 링크와, 같은 길로 거슬러 올라간 링크들을 300m 까지 모은다(교차로 바로 앞 한 조각만 보면 짧아서 값이 튄다)
 #   py -3.12 -X utf8 tools/signal/sigapproach-bake.py
-import json, os, math, datetime, collections
+#   py -3.12 -X utf8 tools/signal/sigapproach-bake.py six  → data/sig-approach-six.json(2026-11-07 · nav-six.json · 여섯 구 막힘 고리 후보 찾기 loop-find.py six 가 읽는다 · 서초 판은 그대로)
+import json, os, sys, math, datetime, collections
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SIX = 'six' in sys.argv[1:]; NAV = 'nav-six.json' if SIX else 'nav-seocho.json'
 DIRS = ['nt', 'ne', 'et', 'se', 'st', 'sw', 'wt', 'nw']
 def main():
-    nav = json.load(open(os.path.join(ROOT, 'data', 'nav-seocho.json'), encoding='utf-8')); N = nav['nodes']; L = nav['links']
+    nav = json.load(open(os.path.join(ROOT, 'data', NAV), encoding='utf-8')); N = nav['nodes']; L = nav['links']
     grp = collections.defaultdict(set); name = {}
     for k, v in N.items():
         if len(v) > 7 and v[7].get('no'):
@@ -33,14 +35,14 @@ def main():
                     cur = up[0]; ids.append([cur[0], cur[3]]); ln += cur[3]
                 side[d].append([x[7], lim, x[6], round(ln), ids])
         if side: out[no] = {'nm': name.get(no, ''), 'in': {d: v for d, v in sorted(side.items())}}
-    doc = {'schema': 'tg-sig-approach/2', 'made': datetime.date.today().isoformat(), 'area': '서초구 + 경계 밖 2km(data/nav-seocho.json 과 같다)',
-           'source': 'data/nav-seocho.json — 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판 · 신호 교차로 묶음(no)',
+    doc = {'schema': 'tg-sig-approach/2', 'made': datetime.date.today().isoformat(), 'area': ('서초·강남·송파·동작·관악·용산구 + 경계 밖 2km(data/nav-six.json 과 같다)' if SIX else '서초구 + 경계 밖 2km(data/nav-seocho.json 과 같다)'),
+           'source': 'data/' + NAV + ' — 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판 · 신호 교차로 묶음(no)',
            'note': ['신호 교차로에 **들어오는 쪽마다** 그 길의 ITS 링크 ID 를 모은 표다 — ITS 실시간 소통(trafficInfo 의 linkId → speed)과 맞대면 방향별 지금 통행속도가 나온다',
                     '들어오는 쪽 이름은 sigdir 과 같다(nt = 북쪽에서 오는 차). 링크 방위로 가른 것이라 대각 교차로에서는 한 칸(45°) 어긋날 수 있다',
                     '한 쪽에 길이 여럿이면(본선·연결로·측도) 줄이 여럿이다 · 링크 묶음은 교차로에서 거슬러 300m 까지(같은 길 이름) — 길이 가중 평균으로 쓰면 된다',
                     '통행속도는 「얼마나 막히나」이지 「몇 대 지나가나(교통량)」가 아니다 — 실시간 교통량은 이 자료로 알 수 없다'],
            'fields': 'spots{신호 교차로 번호: {nm, in{들어오는 쪽: [[길 이름, 제한속도, 차로, 모은 길이 m, [[ITS 링크 ID, 길이 m]…]]…]}}}',
            'spots': out}
-    p = os.path.join(ROOT, 'data', 'sig-approach-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    p = os.path.join(ROOT, 'data', 'sig-approach-six.json' if SIX else 'sig-approach-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('신호 교차로', len(out), '· 들어오는 쪽', sum(len(v['in']) for v in out.values()), '· 바이트', os.path.getsize(p)); k = '4039'; print(k, json.dumps(out.get(k), ensure_ascii=False)[:600])
 if __name__ == '__main__': main()

@@ -6,7 +6,10 @@
 #   ⚠ 후보일 뿐이다 — onto-loops.json 에 고리를 올리는 것은 형님이 현장에서 「맞다」 한 것만(onto-loops note).
 #   결과는 저장소 밖 07_API키/out/onto_logs/loop_candidates_<날짜>.md (공개 자료로 만든 것이지만 형님 확인 전 목록이라 올리지 않는다)
 #   py -3.12 -X utf8 tools/onto/loop-find.py
-import os, json, math, datetime, collections, importlib.util
+#   py -3.12 -X utf8 tools/onto/loop-find.py six  (2026-11-07) → 여섯 구(서초·강남·송파·동작·관악·용산) — 코어 대신 data/onto-int.json(교차로 자리·신호 번호) +
+#     data/sig-approach-six.json(sigapproach-bake.py six · 들어오는 쪽마다 ITS 링크)로 같은 꼴(INT · APR · 이룸)을 만든다 · 결과 loop_candidates_six_<날짜>.md
+#     ⚠ 여섯 구 속도 기록은 큰길(등급 1~4)만 쌓인다 — 골목 변은 값이 없어 그 고리는 「함께 막힘」을 못 센다
+import os, sys, json, math, datetime, collections, importlib.util
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.dirname(ROOT)
 TH, PERIM, NEIGH_M, ANG = 10, 3200, 900, 50
@@ -23,8 +26,32 @@ def bearing(a, b):
 def angd(a, b): return abs((a - b + 180) % 360 - 180)
 
 
+SIXG = {'11650', '11680', '11710', '11590', '11620', '11170'}
+def six_core():   # 코어와 같은 꼴(objects · edges)을 onto-int + sig-approach-six 로 만든다 — 아래 셈은 그대로
+    oi = json.load(open(os.path.join(ROOT, 'data', 'onto-int.json'), encoding='utf-8'))['items']
+    sa = json.load(open(os.path.join(ROOT, 'data', 'sig-approach-six.json'), encoding='utf-8'))['spots']
+    objs, edges, by = [], [], {}
+    for r in oi:
+        if r[6] in SIXG:
+            i = 'INT-%s' % r[0]; objs.append({'id': i, 't': 'INT', 'nm': r[1], 'lat': r[2], 'lon': r[3], 'gu': r[6]})
+            if r[4]: by[str(r[4])] = i
+    seen = set()
+    for no, v in sa.items():
+        i = by.get(no)
+        if not i: continue
+        for d, roads in v['in'].items():
+            a = 'APR-%s-%s' % (no, d); objs.append({'id': a, 't': 'APR', 'dir': d}); edges.append([i, '들어오는길', a, {}])
+            for ri, rr in enumerate(roads):
+                for k, (lid, ln) in enumerate(rr[4]):
+                    rid = 'RD-' + lid
+                    if rid not in seen: seen.add(rid); objs.append({'id': rid, 't': 'RD', 'link': lid})
+                    edges.append([a, '이룸', rid, {'r': ri, 'k': k}])
+    return {'objects': objs, 'edges': edges}
+
+
 def main():
-    c = json.load(open(os.path.join(ROOT, 'ontology-core', 'data', 'core-seocho.json'), encoding='utf-8'))
+    SIX = 'six' in sys.argv[1:]
+    c = six_core() if SIX else json.load(open(os.path.join(ROOT, 'ontology-core', 'data', 'core-seocho.json'), encoding='utf-8'))
     O = {o['id']: o for o in c['objects']}
     adj = collections.defaultdict(set); apr = collections.defaultdict(list); ir = collections.defaultdict(list)
     for e in c['edges']:
@@ -87,10 +114,14 @@ def main():
                 run = [a]
         if len(run) >= 3: eps.append(run)
         hits = [a for r in eps for a in r]
+        nslow = 0   # 밤 2~5시에도 가운데 속도가 TH 이하인 변 — 막힘이 아니라 길 자체가 느린(좁은 길·공사·자료) 의심
+        for ls in lks:
+            nv = sorted(sum(v) / len(v) for a, m in S if 2 <= datetime.datetime.fromtimestamp(a).hour < 5 for v in [[m[l] for l in ls if l in m][:2]] if v)
+            if nv and nv[len(nv) // 2] <= TH: nslow += 1
         days = collections.Counter(datetime.datetime.fromtimestamp(a).strftime('%m-%d') + '(' + W[datetime.datetime.fromtimestamp(a).weekday()] + ')' for a in hits)
         x0 = sum(O[i]['lon'] for i in key); y0 = sum(O[i]['lat'] for i in key)
         area = sum(O[key[i]]['lon'] * O[key[(i + 1) % len(key)]]['lat'] - O[key[(i + 1) % len(key)]]['lon'] * O[key[i]]['lat'] for i in range(len(key)))
-        res.append({'ints': key, 'legs': legs, 'per': round(per), 'hits': len(hits), 'eps': len(eps), 'hrs': collections.Counter(datetime.datetime.fromtimestamp(a).hour for a in hits), 'longest': max((len(r) for r in eps), default=0), 'seen': seen, 'days': days, 'dir': '시계방향' if area < 0 else '반시계방향'})
+        res.append({'ints': key, 'legs': legs, 'per': round(per), 'hits': len(hits), 'eps': len(eps), 'hrs': collections.Counter(datetime.datetime.fromtimestamp(a).hour for a in hits), 'longest': max((len(r) for r in eps), default=0), 'seen': seen, 'nslow': nslow, 'days': days, 'dir': '시계방향' if area < 0 else '반시계방향'})
     best = {}
     for r in res:
         k = frozenset(r['ints'])
@@ -98,14 +129,22 @@ def main():
     res = sorted((r for r in best.values() if r['eps']), key=lambda r: (-r['hits'], -r['eps']))
     reg = {tuple(L['members']) for L in json.load(open(os.path.join(ROOT, 'data', 'onto-loops.json'), encoding='utf-8'))['loops']}
     def regd(k): return any(set(k) == set(m) and len(k) == len(m) for m in reg)
-    out = ['# 막힘 고리 후보 — 서초 · %s' % datetime.date.today().isoformat(), '',
+    out = ['# 막힘 고리 후보 — %s · %s' % ('여섯 구(서초·강남·송파·동작·관악·용산)' if SIX else '서초', datetime.date.today().isoformat()), '',
            '찾은 닫힌 고리 %d개(교차로 셋·넷 · 둘레 %dm 이하 · 이웃 %dm 이하) · 쌓인 속도 %d장 · 「함께 막힘」 = 넷이면 셋 이상, 셋이면 셋 다 %dkm/h 이하' % (len(res), PERIM, NEIGH_M, len(S), TH), '',
            '⚠ 후보다 — 방위로 변을 이었기 때문에 대각 교차로는 어긋날 수 있다 · onto-loops 에 올리는 것은 형님이 현장에서 맞다 한 것만', '',
-           '| 차례 | 교차로(도는 차례) | 방향 | 둘레 | 이어진 막힘 토막(30분↑) · 가장 긴 것 · 받은 때 합 | 날 | 많은 시각 | 등록 |', '|---|---|---|---|---|---|---|---|']
-    for i, r in enumerate(res[:25], 1):
-        out.append('| %d | %s | %s | %dm | %s | %s | %s | %s |' % (i, ' → '.join('%s(%s)' % (O[x]['nm'], x) for x in r['ints']), r['dir'], r['per'], '%d토막 · 약 %d분 · %d' % (r['eps'], r['longest'] * 11, r['hits']),
-                   ' '.join('%s %d' % (d, n) for d, n in sorted(r['days'].items())) or '—', ' '.join('%d시 %d' % (h, n) for h, n in r['hrs'].most_common(4)), '✅ 형님 지정' if regd(r['ints']) else ''))
-    p = os.path.join(KB, '07_API키', 'out', 'onto_logs', 'loop_candidates_%s.md' % datetime.date.today().strftime('%Y%m%d'))
+           '| 차례 | 교차로(도는 차례)' + (' | 구' if SIX else '') + ' | 방향 | 둘레 | 이어진 막힘 토막(30분↑) · 가장 긴 것 · 받은 때 합 | 날 | 많은 시각 | 밤에도 느린 변 | 등록 |', '|---|---|' + ('---|' if SIX else '') + '---|---|---|---|---|---|---|']
+    GN = {'11650': '서초', '11680': '강남', '11710': '송파', '11590': '동작', '11620': '관악', '11170': '용산'}
+    if SIX:
+        pick, cnt = [], collections.Counter()
+        for r in res:
+            g = collections.Counter(O[x].get('gu') for x in r['ints']).most_common(1)[0][0]
+            if cnt[g] < 6: pick.append(r); cnt[g] += 1
+        res = pick
+        out[2] += ' · 구마다 위 6(고리 교차로가 가장 많이 든 구)'
+    for i, r in enumerate(res[:40 if SIX else 25], 1):
+        out.append(('| %d | %s | ' + ('%s | ' if SIX else '%s') + '%s | %dm | %s | %s | %s | %s | %s |') % ((i, ' → '.join('%s(%s)' % (O[x]['nm'], x) for x in r['ints'])) + ((('·'.join(sorted({GN.get(O[x].get('gu'), '?') for x in r['ints']})),) if SIX else ('',))) + (r['dir'], r['per'], '%d토막 · 약 %d분 · %d' % (r['eps'], r['longest'] * 11, r['hits']),
+                   ' '.join('%s %d' % (d, n) for d, n in sorted(r['days'].items())) or '—', ' '.join('%d시 %d' % (h, n) for h, n in r['hrs'].most_common(4)), ('⚠ %d' % r['nslow']) if r['nslow'] else '', '✅ 형님 지정' if regd(r['ints']) else '')))
+    p = os.path.join(KB, '07_API키', 'out', 'onto_logs', 'loop_candidates_%s%s.md' % ('six_' if SIX else '', datetime.date.today().strftime('%Y%m%d')))
     os.makedirs(os.path.dirname(p), exist_ok=True)
     open(p, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
     print('\n'.join(out[:20])); print('→', p)

@@ -4,6 +4,9 @@
 #   결정 넷: D1 이 날·시간대에 어느 교차로에 설까 · D2 음주 단속 어디·언제 · D3 집회·행사 날 미리 볼 곳·상류 · D4 큰비 때 먼저 통제할 길·출동 지연
 #   숫자는 원자료 값 그대로 옮긴다(순위·둘레 찾기는 지도가 기기에서 한다 — 잣대는 결정마다 하나)
 #   py -3.12 -X utf8 tools/onto/decide-bake.py      (rally-bake.py 끝에서도 부른다 — 집회·공연 날짜가 날마다 바뀜)
+#   2026-11-07 여섯 구(소유자 「진행」) — 서초 = data/decide-seocho.json(주소 그대로) · 강남·송파·동작·관악·용산 = data/decide/<구>.json · 색인 data/decide/index.json(구 이름·교차로 수·상자 · 교차로 → 구)
+#     구마다 다른 것: 교차로(그 구 행정동) · 다발지(r/<구>/hot10.json) · 음주 = 그 구 동을 맡은 경찰서 · 집회·공연 = 그 구 교차로 700m 안
+#     큰비 = 서초 flood-link-seocho · 그 밖 flood-link-six 구간 첫 점이 그 구 행정동 안 · 출동 지연 모은 수 = 서초 flood-delay-seocho · 그 밖 여섯 구 전체 모은 수(구마다 따로 없음 — 화면에 밝힘)
 import json, os, math, datetime, collections
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); D = os.path.join(ROOT, 'data')
 def J(p): return json.load(open(os.path.join(ROOT, p), encoding='utf-8'))
@@ -11,13 +14,23 @@ def m(la1, lo1, la2, lo2): return math.hypot((lo1 - lo2) * 88400.0, (la1 - la2) 
 R5 = lambda x: round(x, 5)
 
 
-def main():
-    core = J('ontology-core/data/core-six/11650.json')   # 2026-11-07 core-seocho → core-six: 구 경계 칸은 이웃 구 TAAS 파일에 그 구 몫 사고가 따로 있다(양재역 서초 49 + 강남 쪽 123) — 서초 전용 코어는 경계 교차로를 덜 셌다
+GUN = {'11650': '서초구', '11680': '강남구', '11710': '송파구', '11590': '동작구', '11620': '관악구', '11170': '용산구'}
+def inside(x, y, ring):   # 짝홀 셈 — 고리(경도·위도)
+    c = False; j = len(ring) - 1
+    for i in range(len(ring)):
+        xi, yi = ring[i][0], ring[i][1]; xj, yj = ring[j][0], ring[j][1]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-12) + xi: c = not c
+        j = i
+    return c
+
+
+def bake(gu):
+    core = J('ontology-core/data/core-six/%s.json' % gu)   # 2026-11-07 core-seocho → core-six: 구 경계 칸은 이웃 구 TAAS 파일에 그 구 몫 사고가 따로 있다(양재역 서초 49 + 강남 쪽 123) — 서초 전용 코어는 경계 교차로를 덜 셌다
     O = {o['id']: o for o in core['objects']}; out = collections.defaultdict(list)
     for a, rel, b, p in core['edges']: out[(a, rel)].append((b, p))
     ints = {}
     for i, o in O.items():
-        if o['t'] != 'INT' or str(o.get('dong') or '')[:5] != '11650': continue   # 구 파일에 든 이웃 구 경계 교차로는 뺀다(교차로가 든 행정동의 구)
+        if o['t'] != 'INT' or str(o.get('dong') or '')[:5] != gu: continue   # 구 파일에 든 이웃 구 경계 교차로는 뺀다(교차로가 든 행정동의 구)
         acc = out.get((i, '발생'))
         if not acc: continue
         A = O[acc[0][0]]; mv = collections.Counter()
@@ -33,15 +46,16 @@ def main():
             if b not in ints and b in O: nb[b] = [O[b]['nm'], R5(O[b]['lat']), R5(O[b]['lon'])]
     vio = {k: [o['nm'], [b for b, _ in out.get((k, '근거'), [])]] for k, o in O.items() if o['t'] == 'VIO'}
     law = {k: [o['title'], o.get('penalty') or '', o.get('meta') or '', [O[b]['no'] for b, _ in out.get((k, '해석'), [])]] for k, o in O.items() if o['t'] == 'LAW'}
-    hot = [[s['n'], s['la'], s['lo'], sorted({r[0] for r in s['rec']}), sorted({r[1] for r in s['rec']})] for s in J('data/hot10-seocho.json')['spots']]
+    hot = [[s['n'], s['la'], s['lo'], sorted({r[0] for r in s['rec']}), sorted({r[1] for r in s['rec']})] for s in J('data/hot10-seocho.json' if gu == '11650' else 'data/r/%s/hot10.json' % gu)['spots']]
     # D2 음주
-    dc = J('data/dui-catch-st.json'); yrs = sorted(dc['years']); ST = ['서울서초경찰서', '서울방배경찰서']
+    dc = J('data/dui-catch-st.json'); yrs = sorted(dc['years']); DR = J('data/dui-ref-seoul.json')['items']
+    ST = ['서울서초경찰서', '서울방배경찰서'] if gu == '11650' else sorted({s for r in DR if str(r[0])[:5] == gu for s in (r[17] or [])})   # 그 구 행정동을 맡은 서
     grid = {s: [[sum(dc['years'][y][s]['dow_hour'][d][h] for y in yrs if s in dc['years'][y]) for h in range(12)] for d in range(7)] for s in ST}
     dong = []
-    for r in J('data/dui-ref-seoul.json')['items']:
+    for r in DR:
         if any(s in (r[17] or []) for s in ST):
             dong.append([r[0], r[1], r[17], r[13], r[14], r[4], r[10], r[8], (r[15] or [None] * 5)])
-    # D3 집회·공연 — 서초 교차로 700m 안
+    # D3 집회·공연 — 그 구 교차로 700m 안
     def near(la, lo, rr=700): return any(m(la, lo, v[1], v[2]) <= rr for v in ints.values())
     RS = J('data/rally-seoul.json'); today = datetime.date.today()
     rally = [[x['d'], x.get('from'), x.get('to'), x['p'], x.get('n'), 1 if x.get('march') else 0, R5(x['lat']), R5(x['lon']), [R5(v) for v in x['dest']] if x.get('dest') else None, x.get('approx', 0), x.get('st')]
@@ -54,8 +68,11 @@ def main():
             if (s[7] or 0) >= 1000 and s[3] >= t0 and s[2] <= hz:
                 shows.append([v['n'], R5(v['lat']), R5(v['lon']), s[0], s[2], s[3], s[4], s[5], s[6], s[7]])
     # D4 큰비
-    F = J('data/flood-link-seocho.json'); S = {}
+    F = J('data/flood-link-seocho.json' if gu == '11650' else 'data/flood-link-six.json'); S = {}
+    DP = [poly[0] for d in J('data/r/%s/dong.json' % gu).get('dong', []) for poly in d['polys']]   # 구간 첫 점이 그 구 행정동 안 — 서초 파일도 서초 + 2km 라 개포동 등 이웃 구 길이 섞여 있었다(2026-11-07 거름)
+    def ingu(it): x, y = it[11][0] / 1e5, it[11][1] / 1e5; return any(inside(x, y, r) for r in DP)
     for it in F['items']:
+        if DP and not ingu(it): continue
         s = S.setdefault(it[12], dict(n=it[1], ty=it[10], y=0, last=0, dep=0, ln=0, det=it[9], len=it[13], p=None))
         s['y'] = max(s['y'], it[14]); s['last'] = max(s['last'], it[6]); s['dep'] = max(s['dep'], it[7] or 0); s['ln'] = max(s['ln'], it[3] or 0)
         if s['p'] is None: s['p'] = (it[11][1] / 1e5, it[11][0] / 1e5)
@@ -65,11 +82,11 @@ def main():
         if any(q[1] == s['n'] and q[3] == s['y'] and m(q[9], q[10], *s['p']) <= 150 for q in seg): continue   # 맞은편 방향 같은 구간
         seg.append([sid, s['n'], s['ty'], s['y'], s['last'], s['dep'], s['ln'], s['det'], s['len'], R5(s['p'][0]), R5(s['p'][1])])
         if len(seg) >= 60: break
-    Dl = json.load(open(os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'onto', 'flood-delay-seocho.json'), encoding='utf-8')); dly = {}   # 비공개(소유자 2026-10-23 「flood-delay 도 비공개로」) — 공개 판에는 모은 수만
+    Dl = json.load(open(os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'onto', 'flood-delay-%s.json' % ('seocho' if gu == '11650' else 'six')), encoding='utf-8')); dly = {}   # 비공개(소유자 2026-10-23 「flood-delay 도 비공개로」) — 공개 판에는 모은 수만
     for sc in ('polA', 'polB'):
-        dly[sc[-1]] = {'what': Dl['scenarios'][sc[-1]], 'stat': Dl['stat'][sc], 'trapN': sum(1 for x in Dl[sc] if x[3] < 0 and not x[7])}   # 교차로별 값(top·trap)은 관할 도달 공백이 드러나 공개하지 않는다
-    doc = {'schema': 'tg-decide/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
-           'source': 'ontology-core/data/core-six/11650.json(TAAS 2016~2025 · 경찰 단속 카메라 · 어린이보호구역 · 다음 신호 · T-Book 범칙금 DB·판례) · data/hot10-seocho.json(TAAS 다발지) · dui-catch-st.json(경찰청 음주운전 적발 2020~2024) · dui-ref-seoul.json · rally-seoul.json(서울경찰청 오늘의 주요집회) · venue-events-kopis.json(KOPIS) · flood-link-seocho.json(서울시 침수흔적도 × ITS) · 출동 지연 모은 수(비공개 07_API키/out/onto/flood-delay-seocho.json)',
+        dly[sc[-1]] = {'what': Dl['scenarios'][sc[-1]], 'stat': Dl['stat'][sc], 'trapN': sum(1 for x in Dl[sc] if x[3] < 0 and not x[7]), 'area': '서초구' if gu == '11650' else '여섯 구 전체(서초·강남·송파·동작·관악·용산 — 구마다 따로 센 값 없음)'}   # 교차로별 값(top·trap)은 관할 도달 공백이 드러나 공개하지 않는다
+    doc = {'schema': 'tg-decide/1', 'gu': gu, 'gunm': GUN[gu], 'st': ST, 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
+           'source': 'ontology-core/data/core-six/' + gu + '.json(TAAS 2016~2025 · 경찰 단속 카메라 · 어린이보호구역 · 다음 신호 · T-Book 범칙금 DB·판례) · ' + ('data/hot10-seocho.json' if gu == '11650' else 'data/r/' + gu + '/hot10.json') + '(TAAS 다발지) · dui-catch-st.json(경찰청 음주운전 적발 2020~2024) · dui-ref-seoul.json · rally-seoul.json(서울경찰청 오늘의 주요집회) · venue-events-kopis.json(KOPIS) · ' + ('flood-link-seocho.json' if gu == '11650' else 'flood-link-six.json') + '(구간 첫 점이 그 구 행정동 안)' + '(서울시 침수흔적도 × ITS) · 출동 지연 모은 수(비공개 07_API키/out/onto/flood-delay-' + ('seocho' if gu == '11650' else 'six') + '.json)',
            'note': ['결정 넷(D1 어디 설까 · D2 음주 단속 · D3 집회·행사 · D4 큰비)이 읽는 값 — 원자료 값 그대로 · 순위는 지도가 결정마다 잣대 하나로',
                     '사고 = 교차로 70m 안 100m 칸 합(근사 · 가까운 교차로끼리 겹침) · 시간대 넷 = 0~6 · 6~12 · 12~18 · 18~24',
                     '음주 적발 = 단속한 만큼 나온다(일어난 수가 아님) · 요일 0 = 일요일',
@@ -80,8 +97,20 @@ def main():
            'd2': {'years': [yrs[0], yrs[-1]], 'grid': grid, 'dong': dong},
            'd3': {'collected': RS['collected'], 'kopis': K['made'], 'rally': rally, 'shows': shows},
            'd4': {'seg': seg, 'delay': dly}}
-    p = os.path.join(D, 'decide-seocho.json'); json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
-    print('decide-seocho.json 교차로', len(ints), '· 집회', len(rally), '· 공연', len(shows), '· 침수 구간', len(seg), '·', os.path.getsize(p) // 1024, 'KB')
+    p = os.path.join(D, 'decide-seocho.json') if gu == '11650' else os.path.join(D, 'decide', gu + '.json'); os.makedirs(os.path.dirname(p), exist_ok=True)
+    json.dump(doc, open(p, 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
+    print(os.path.relpath(p, D), GUN[gu], '교차로', len(ints), '· 집회', len(rally), '· 공연', len(shows), '· 침수 구간', len(seg), '· 서', ' '.join(x.replace('서울', '') for x in ST), '·', os.path.getsize(p) // 1024, 'KB')
+    las = [v[1] for v in ints.values()]; los = [v[2] for v in ints.values()]
+    return [GUN[gu], len(ints), [min(las), min(los), max(las), max(los)]], {i: gu for i in ints}
+
+
+def main():
+    gus, own = {}, {}
+    for gu in GUN:
+        gus[gu], o = bake(gu); own.update(o)
+    ix = {'schema': 'tg-decide-index/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'fields': 'gus{구 코드: [이름, 사고 교차로 수, [남, 서, 북, 동]]} · int{INT: 구 코드} · 서초 = data/decide-seocho.json · 그 밖 = data/decide/<구>.json',
+          'gus': gus, 'int': own}
+    json.dump(ix, open(os.path.join(D, 'decide', 'index.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, separators=(',', ':'))
 
 
 if __name__ == '__main__':

@@ -1,12 +1,12 @@
 /* 데이터 압축지도 — 🧭 오늘의 결정 (팔란티어 방식: 결정 → 근거 객체 → 행동 기록 → 되돌아보기)
    소유자 2026-10-23 「온톨로지 팔란티어 방식을 내 앱들에 · 지도와 티북에 구현」 · 설계 = 지식베이스/14_팔란티어AIP/설계_앱적용.md
-   자료 = data/decide-seocho.json(tools/onto/decide-bake.py · 원자료 값 그대로) · 순위는 결정마다 잣대 하나 · 섞은 점수 없음
+   자료 = data/decide-seocho.json(서초) · data/decide/<구>.json(강남·송파·동작·관악·용산 · 2026-11-07 여섯 구) · 색인 data/decide/index.json(tools/onto/decide-bake.py · 원자료 값 그대로) · 순위는 결정마다 잣대 하나 · 섞은 점수 없음
    행동 기록 = 이 기기 localStorage tg_map2d_dec_log 에만(교차로 id · 한 일 · 까닭) · 좌표·사람·차량번호 안 씀
    열기: 도구 모음 「🧭 오늘의 결정」 · 주소 #dec=1 (T-Book 등에서) · window.tgDecide.open() */
 (function () {
   'use strict';
-  var URL_DATA = 'data/decide-seocho.json', TB = 'https://340patrolman.github.io/traffic-app/#laws', LOGK = 'tg_map2d_dec_log';
-  var DATA = null, LOADING = null, ST = { tab: 'd1', date: '', slot: '18-24', goal: '사고', slot2: '22-24', form: null, focus: null };
+  var URL_IX = 'data/decide/index.json', GUK = 'tg_map2d_dec_gu', IX = null, DATAS = {}, TB = 'https://340patrolman.github.io/traffic-app/#laws', LOGK = 'tg_map2d_dec_log';
+  var DATA = null, LOADING = null, ST = { gu: (function () { try { return localStorage.getItem(GUK) || '11650'; } catch (e) { return '11650'; } })(), tab: 'd1', date: '', slot: '18-24', goal: '사고', slot2: '22-24', form: null, focus: null };
   var WD = '일월화수목금토', SLOTS = ['00-06', '06-12', '12-18', '18-24'], SLOTN = { '00-06': '새벽 0~6시', '06-12': '오전 6~12시', '12-18': '낮 12~18시', '18-24': '저녁 18~24시' };
   var GOALS = { '사고': '그 시간대 둘레 사고 10년 합', '공백': '그 시간대 사고 — 100m 안 경찰 카메라 없는 곳만', '보행자': '보행자 피해 10년 합(하루 전체)' };
   var PII = [/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/, /\d{6}[-\s]?[1-4]\d{6}/, /\d{2,3}\s?[가-힣]\s?\d{4}/];
@@ -38,14 +38,22 @@
   }
   function box() { var el = $('m2dDec'); if (el) return el; el = document.createElement('div'); el.id = 'm2dDec'; el.setAttribute('aria-label', '오늘의 결정'); document.body.appendChild(el); el.addEventListener('click', onClick); el.addEventListener('change', onChange); return el; }
 
-  function load() {
-    if (DATA) return Promise.resolve(DATA); if (LOADING) return LOADING;
-    LOADING = fetch(URL_DATA, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
-      DATA = d; d.into = {};
-      Object.keys(d.int).forEach(function (i) { (d.int[i][14] || []).forEach(function (x) { (d.into[x[0]] = d.into[x[0]] || []).push([i, x[1]]); }); });
-      return d; });
+  function getJ(u) { return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  function urlOf(gu) { return gu === '11650' ? 'data/decide-seocho.json' : 'data/decide/' + gu + '.json'; }
+  function ixLoad() { return IX ? Promise.resolve(IX) : getJ(URL_IX).then(function (j) { IX = j; return j; }, function () { IX = { gus: { '11650': ['서초구', 0, null] }, int: {} }; return IX; }); }
+  function guOfLL(la, lo) { var best = null, bd = 1e9; Object.keys(IX.gus).forEach(function (g) { var b = IX.gus[g][2]; if (!b) return; var dx = Math.max(b[0] - la, 0, la - b[2]) * 111000, dy = Math.max(b[1] - lo, 0, lo - b[3]) * 88400, d = Math.sqrt(dx * dx + dy * dy); if (d < bd) { bd = d; best = g; } }); return best; }
+  function load() {   /* 구마다 한 장 — 먼저 색인(구 이름·교차로 → 구)으로 대상의 구를 고른다 */
+    if (DATA && DATA.gu === ST.gu || DATA && !DATA.gu && ST.gu === '11650') return Promise.resolve(DATA); if (LOADING) return LOADING;
+    LOADING = ixLoad().then(function () {
+      if (ST.focus && IX.int[ST.focus]) ST.gu = IX.int[ST.focus]; else if (ST.focusLL) ST.gu = guOfLL(ST.focusLL[0], ST.focusLL[1]) || ST.gu;
+      if (!IX.gus[ST.gu]) ST.gu = '11650';
+      if (DATAS[ST.gu]) return DATAS[ST.gu];
+      var gu = ST.gu; return getJ(urlOf(gu)).then(function (d) { d.into = {};
+        Object.keys(d.int).forEach(function (i) { (d.int[i][14] || []).forEach(function (x) { (d.into[x[0]] = d.into[x[0]] || []).push([i, x[1]]); }); });
+        d.gu = d.gu || gu; DATAS[gu] = d; return d; }); }).then(function (d) { DATA = d; LOADING = null; return d; }, function (e) { LOADING = null; throw e; });
     return LOADING;
   }
+  function gunm() { return (DATA && DATA.gunm) || ((IX && IX.gus[ST.gu]) || ['서초구'])[0]; }
   function nm(i) { var r = DATA.int[i] || DATA.nb[i]; return r ? r[0] : i; }
   function ll(i) { var r = DATA.int[i] || DATA.nb[i]; return r ? [r[1], r[2]] : null; }
   function slotAcc(i, s) { var r = DATA.int[i]; return r ? r[5][slotIdx(s)] : 0; }
@@ -117,8 +125,8 @@
   function d3() { var ev = dayEvents(ST.date), D3 = DATA.d3, h = '<div class="rule">둘레 교차로 잣대: <b>그 시각이 든 6시간 칸 사고 10년 합</b> · 상류 = 길 따라 바로 앞 신호 교차로(둘레 밖) — 「상류에서 먼저 끊는다 · 분기점 앞에서」(형님 원칙)</div>';
     if (ST.date > D3.collected) { var w = dow(ST.date), past = D3.rally.filter(function (x) { return dow(x[0]) === w; }), cnt = {};
       past.forEach(function (x) { var p = x[3].replace(/\s*<.*/, ''); cnt[p] = (cnt[p] || 0) + 1; });
-      h += '<div class="warn">집회 글은 받은 날(' + esc(D3.collected) + ')까지만 — 경찰청이 전날 올린다. 지난 기록: 같은 요일 서초 둘레 ' + past.length + '건 · ' + esc(Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 3).map(function (p) { return p + ' ' + cnt[p]; }).join(' · ') || '없음') + '</div>'; }
-    if (!ev.length) h += '<div class="cd">이 날 서초 둘레 주요집회·큰 공연 자료 없음 <span class="s">(주요집회만 · 공연은 ' + esc(D3.kopis) + ' 받은 것)</span></div>';
+      h += '<div class="warn">집회 글은 받은 날(' + esc(D3.collected) + ')까지만 — 경찰청이 전날 올린다. 지난 기록: 같은 요일 ' + esc(gunm()) + ' 둘레 ' + past.length + '건 · ' + esc(Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 3).map(function (p) { return p + ' ' + cnt[p]; }).join(' · ') || '없음') + '</div>'; }
+    if (!ev.length) h += '<div class="cd">이 날 ' + esc(gunm()) + ' 둘레 주요집회·큰 공연 자료 없음 <span class="s">(주요집회만 · 공연은 ' + esc(D3.kopis) + ' 받은 것)</span></div>';
     ev.sort(function (a, b) { return (b.n || b.seats || 0) - (a.n || a.seats || 0); }).forEach(function (e, n) {
       var r = e.k === '집회' ? 500 : 700, s = slotOfHour(e.h), A = around(e.la, e.lo, r, s, 3), path = '';
       if (e.march && e.dest) { var p = marchPath(e.la, e.lo, e.dest[0], e.dest[1]); p.forEach(function (i) { A.area[i] = 1; }); if (p.length) path = '<li>🚶 행진 길(직선 150m 근사): ' + esc(p.map(nm).join(' → ')) + '</li>'; }
@@ -139,9 +147,9 @@
       return '<div class="cd"><div class="t"><span>' + n + '</span><b>' + esc(s[1] || '(이름 없음)') + (s[2] === '002' ? ' 🚇지하차도' : '') + '</b><span class="k">' + s[3] + '해</span></div><div class="s">마지막 ' + s[4] + ' · 가장 깊은 ' + s[5] + 'm · ' + s[6] + '차로 · 구간 ' + fmt(s[8]) + 'm · ' + (s[7] < 0 ? '돌아갈 길 없음/못 셈' : s[7] < 10 ? '곁길로 돌아도 거의 안 늦음' : '돌아가면 +' + s[7] + '초') + '</div>' +
         (near ? '<ul class="ev"><li>가까운 교차로 ' + esc(nm(near)) + ' ' + Math.round(dmin) + 'm' + (up.length ? ' · 상류 ' + up.map(function (u) { return esc(nm(u[0])) + ' ' + u[2] + 'm'; }).join(' · ') : '') + '</li></ul>' + btns(near, n, 'd4') : '<div class="btns"><button data-go="' + s[9] + ',' + s[10] + '">🗺 지도에서</button></div>') + '</div>'; }
     h += '<b>🚇 지하차도</b>' + (under.length ? under.slice(0, 4).map(function (s, n) { return segCard(s, n + 1); }).join('') : '<div class="cd">침수 흔적 30m 안 지하차도 없음</div>');
-    h += '<b>그 밖의 길</b>' + rest.slice(0, 6).map(function (s, n) { return segCard(s, n + 1); }).join('');
+    h += '<b>그 밖의 길</b>' + (rest.length ? rest.slice(0, 6).map(function (s, n) { return segCard(s, n + 1); }).join('') : '<div class="cd">이 구 안에 침수 흔적 30m 안 길 자료 없음</div>');
     ['A', 'B'].forEach(function (k) { var X = D4.delay[k]; if (!X) return;
-      h += '<details><summary>🚓 출동이 늦어지는 곳 — 시나리오 ' + k + ' (견주는 값 · 실제 출동 시간 아님)</summary><div class="s">' + esc(X.what) + ' · 교차로 ' + fmt(X.stat['교차로']) + '곳 중 닿지 못함 ' + fmt(X.stat['닿지 못함']) + ' · 3분 넘게 늦음 ' + fmt(X.stat['3분 넘게 늦음']) + ' · 갇힘 ' + X.trapN + '</div><div class="s">교차로별 값은 비공개 — 관할 도달 공백이 드러나는 자료라 공개 지도에 싣지 않는다</div></details>'; });
+      h += '<details><summary>🚓 출동이 늦어지는 곳 — 시나리오 ' + k + ' (견주는 값 · 실제 출동 시간 아님)</summary><div class="s">' + esc(X.what) + ' · <b>' + esc(X.area || '서초구') + '</b> 교차로 ' + fmt(X.stat['교차로']) + '곳 중 닿지 못함 ' + fmt(X.stat['닿지 못함']) + ' · 3분 넘게 늦음 ' + fmt(X.stat['3분 넘게 늦음']) + ' · 갇힘 ' + X.trapN + '</div><div class="s">교차로별 값은 비공개 — 관할 도달 공백이 드러나는 자료라 공개 지도에 싣지 않는다</div></details>'; });
     return h + '<div class="src">서울시 침수흔적도(2010~2025 · 2022·2011·2010 큰비 흔적이 대부분 · 배수 공사 뒤 덜 잠길 수 있음) × ITS 표준노드링크 · 출동 지연 = 막힘·신호 없이 센 견줌값</div>'; }
 
   /* ---------- 📒 되돌아보기 ---------- */
@@ -156,12 +164,13 @@
 
   function paint() { var el = box(); if (!DATA) { el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정</h3><div class="s">자료를 읽는 중…</div>'; return; }
     var T = [['d1', '어디 설까'], ['d2', '🍺 음주'], ['d3', '📢 집회·행사'], ['d4', '🌧 큰비'], ['d5', '📒 기록']], body = { d1: d1, d2: d2, d3: d3, d4: d4, d5: d5 }[ST.tab]();
-    el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정 <small style="font-weight:400;color:var(--ink2);font-size:12px">서초 · 방배</small></h3>' +
-      '<div class="ctl"><input type="date" data-k="date" value="' + ST.date + '"><span class="s">' + WD.charAt(dow(ST.date)) + '요일</span></div>' +
+    el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정 <small style="font-weight:400;color:var(--ink2);font-size:12px">' + esc(gunm()) + ' · ' + esc((DATA.st || ['서울서초경찰서', '서울방배경찰서']).map(function (x) { return x.replace(/서울|경찰서/g, ''); }).join(' · ')) + '</small></h3>' +
+      '<div class="ctl"><select data-k="gu" aria-label="구 고르기">' + Object.keys((IX || {}).gus || { '11650': 1 }).map(function (g) { var G = IX ? IX.gus[g] : ['서초구', 0]; return '<option value="' + g + '"' + (g === ST.gu ? ' selected' : '') + '>' + esc(G[0]) + (G[1] ? ' ' + G[1] + '곳' : '') + '</option>'; }).join('') + '</select><input type="date" data-k="date" value="' + ST.date + '"><span class="s">' + WD.charAt(dow(ST.date)) + '요일</span></div>' +
       '<div class="tabs">' + T.map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (t[0] === ST.tab ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>' + body +
-      '<div class="src">자료 한 장 data/decide-seocho.json(' + esc(DATA.made) + ' 구움) · 판단은 사람이 한다 — 이 화면은 근거를 모아 줄 뿐</div>'; }
+      '<div class="src">자료 한 장 ' + esc(urlOf(ST.gu)) + '(' + esc(DATA.made) + ' 구움) · 판단은 사람이 한다 — 이 화면은 근거를 모아 줄 뿐</div>'; }
 
-  function onChange(e) { var k = e.target.getAttribute('data-k'); if (!k) return; ST[k] = e.target.value; if (k === 'date' && !ST.date) ST.date = today(); ST.form = null; paint(); }
+  function onChange(e) { var k = e.target.getAttribute('data-k'); if (!k) return; ST[k] = e.target.value;
+    if (k === 'gu') { try { localStorage.setItem(GUK, ST.gu); } catch (x) {} ST.focus = null; ST.focusLL = null; ST.form = null; DATA = null; paint(); load().then(paint, function () { paint(); }); return; } if (k === 'date' && !ST.date) ST.date = today(); ST.form = null; paint(); }
   function onClick(e) { e.stopPropagation(); var b = e.target.closest('button,a'); if (!b) return; var a;
     if (b.hasAttribute('data-close')) return close();
     if (b.hasAttribute('data-unfocus')) { ST.focus = null; ST.focusLL = null; paint(); return; }
@@ -180,6 +189,7 @@
     if (b.hasAttribute('data-clear')) { if (confirm('이 기기의 결정 기록을 모두 지울까요? 되돌릴 수 없습니다.')) { logSet([]); paint(); } return; } }
 
   function open(tab, opt) { css(); var el = box(); if (!ST.date) { ST.date = today(); ST.slot = slotOfHour(new Date().getHours()); }
+    if (opt) DATA = null;   /* 대상(교차로·좌표)이 오면 그 구를 색인에서 다시 고른다 */
     if (tab && /^d[1-5]$/.test(tab)) ST.tab = tab; if (opt && opt.int) { ST.focus = String(opt.int); ST.focusLL = null; ST.tab = 'd1'; } else if (opt && isFinite(+opt.lat) && isFinite(+opt.lon)) { ST.focus = null; ST.focusLL = [+opt.lat, +opt.lon]; ST.tab = 'd1'; } el.classList.add('on'); paint(); load().then(paint, function (e) { el.innerHTML = '<button class="x" data-close="1">닫기</button><h3>🧭 오늘의 결정</h3><div class="warn">자료를 읽지 못했습니다(' + esc(e && e.message) + ') — 통신이 되는 곳에서 한 번 열면 다음부터 됩니다.</div>'; }); }
   function close() { var el = $('m2dDec'); if (el) el.classList.remove('on'); }
   window.tgDecide = { open: open, close: close };

@@ -31,6 +31,7 @@
   #gList { position: fixed; left: 10px; right: 10px; top: calc(68px + env(safe-area-inset-top)); z-index: 6; display: none; background: var(--solid); border-radius: 18px; box-shadow: 0 12px 32px rgba(15,23,42,.24); max-height: 46vh; overflow: auto; padding: 6px; }
   #gList button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 12px 10px; font-size: calc(15px * var(--fz, 1)); border-bottom: 1px solid var(--line); }
   #gList button small { color: var(--dim); font-size: calc(12px * var(--fz, 1)); margin-left: 4px; }
+  #gList .wpb { float: right; margin-left: 8px; padding: 4px 10px; border-radius: 999px; background: #1b54d6; color: #fff; font-size: calc(12.5px * var(--fz, 1)); font-weight: 800; }   /* v0.42.2 찾기에서 경유지 */
   #gMic { width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(47,123,255,.12); font-size: calc(18px * var(--fz, 1)); flex: 0 0 auto; } #gMic.on { background: #e11d48; animation: gpulse 1s infinite; }
   @keyframes gpulse { 50% { opacity: .55; } }
   #gOv { position: fixed; left: 10px; top: calc(68px + env(safe-area-inset-top)); z-index: 4; display: flex; gap: 6px; } body.guiding #gOv { display: none; }
@@ -277,7 +278,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.42.1"></script>
+<script src="gargo.js?v=0.42.2"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

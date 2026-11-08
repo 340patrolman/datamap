@@ -486,7 +486,7 @@
   function vwKeyGet() { var k = vwKey(); if (k) return Promise.resolve(k); if (VWK) return Promise.resolve(VWK); if (VWKP) return VWKP;
     VWKP = getJ('../data/relay.json').then(function (r) { if (!r || !r.url) throw new Error('중계 주소를 못 읽었다'); return fetch(r.url + '/vwkey', { cache: 'no-store' }); })
       .then(function (res) { return res.json().then(function (j) { if (!res.ok || !j || !j.key) throw new Error(res.status === 429 ? '오늘 찾기 한도를 다 썼다' : (j && j.err) || ('중계 응답 ' + res.status)); VWK = j.key; VWWHY = ''; return VWK; }); })
-      .catch(function (e) { VWKP = null; VWWHY = String(e && e.message || e); if (/Failed to fetch|NetworkError|Load failed/i.test(VWWHY)) VWWHY = '주소 검색 중계에 닿지 못했다(통신)'; return ''; });
+      .catch(function (e) { VWKP = null; VWWHY = String(e && e.message || e); if (/Failed to fetch|NetworkError|Load failed/i.test(VWWHY)) VWWHY = '중계 서버와 통신이 안 된다 · 이 기기 안의 이름만 찾았다';   /* v0.43.3 「주소 검색에 닿지 못했다 — 주소 검색 중계에 닿지 못했다」 같은 말 두 번 */ return ''; });
     return VWKP; }
   function vwSearch(q) { return vwKeyGet().then(function (key) { if (!key) return { list: [], err: VWWHY || '키를 받지 못했다' };
     var b = G.box, bb = [(b[0] - 300) / KX + LON0, LAT0 - (b[3] + 300) / KY, (b[1] + 300) / KX + LON0, LAT0 - (b[2] - 300) / KY].map(function (v) { return v.toFixed(5); }).join(',');
@@ -508,6 +508,8 @@
     var L = Math.hypot(b[0] - a[0], b[1] - a[1]), d = num * 10; if (L < 30 || d > L + 60) return null; var q = roadNear(ids, a[0] + (b[0] - a[0]) / L * d, a[1] + (b[1] - a[1]) / L * d);
     return ['📐', road + ' ' + num + ' 쯤', q[0], q[1], '어림 자리 — 도로명 번호로 셈(시작점에서 ' + km(d) + ') · 길 위의 자리라 건물에서 100m 넘게 어긋날 수 있다']; }
   function localFind(q) { var out = [], seen = {}; function add(ic, nm, x, y) { if (out.length > 40 || seen[ic + nm]) return; seen[ic + nm] = 1; out.push([ic, nm, x, y, '']); } var has = function (t) { return String(t).replace(/\s+/g, '').indexOf(q) >= 0; };
+    /* v0.43.3 「강남역 1번 출구」「강남 3번」「사당역10출구」 — 역 출구(OSM 출구 번호 · data/exits-kr.json)를 맨 앞에. 출동 자리를 말로 정할 때 가장 많이 쓰는 꼴 */
+    var em = /^(.+?)역?(\d{1,2})(?:번(?:출구)?|출구)$/.exec(q); if (em) { var en = em[1].replace(/역$/, '') + '역', eno = String(+em[2]); STN.forEach(function (o) { if (o.n !== en || !o.ex) return; o.ex.forEach(function (e) { if (String(e[2]) === eno) add('🚪', o.n + ' ' + eno + '번 출구', e[0], e[1]); }); }); }
     STN.forEach(function (o) { if (has(o.n)) add('🚇', o.n, o.x, o.y); }); G.sig.forEach(function (g) { if (has(g.nm)) add('🚦', g.nm, g.x, g.y); }); (BNM || (BIDX ? [] : BLD || [])).forEach(function (b) { if (b.n && has(b.n)) add('🏢', b.n, b.x, b.y); });
     Object.keys(BASE.T).forEach(function (k) { BASE.T[k].jn.forEach(function (j) { if (has(j.n)) add(j.k === 'g' ? '🌳' : '✚', j.n, j.x, j.y); }); }); G.LAB.forEach(function (L) { if (has(L.n)) add('🛣', L.n, L.x, L.y); }); return out; }
   var FSEQ = 0, FEXT = false;

@@ -35,6 +35,8 @@
   #gMic { width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(47,123,255,.12); font-size: calc(18px * var(--fz, 1)); flex: 0 0 auto; } #gMic.on { background: #e11d48; animation: gpulse 1s infinite; }
   @keyframes gpulse { 50% { opacity: .55; } }
   #gOv { position: fixed; left: 10px; top: calc(68px + env(safe-area-inset-top)); z-index: 4; display: flex; gap: 6px; } body.guiding #gOv { display: none; }
+  /* v0.43.2 누르는 자리 — 신호·소통 칩은 보이는 크기 그대로 닿는 자리만 넓히고(::before · ::after 는 초록 점) · 아래 판 단추는 40px 로(375 폭 실측: 신호·소통 92×34 · 집으로·근무지로·즐겨찾기 34 · 지도 가운데·내 자리 37 → 손가락 기준 40~44px) */
+  #gOv button { position: relative; } #gOv button::before { content: ''; position: absolute; inset: -5px -2px; } #gBot .hand button { min-height: 40px; } #gBot .disp .dbtn button { min-height: 40px; }
   #gOv button { height: 34px; border-radius: 999px; border: 0; background: var(--panel); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: var(--sh); padding: 0 13px 0 11px; font-size: calc(13px * var(--fz, 1)); font-weight: 800; color: var(--dim); display: flex; align-items: center; gap: 5px; } #gOv button::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; } #gOv button.on { color: var(--ink); } #gOv button.on::after { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.18); }
   #gPick .si { display: flex; justify-content: space-between; gap: 8px; font-size: calc(13px * var(--fz, 1)); padding: 3px 4px; border-bottom: 1px dashed var(--line); } #gPick .si em { font-style: normal; color: var(--dim); } #gPick .si b { padding: 0; }
   #gList .no { padding: 12px; font-size: calc(13.5px * var(--fz, 1)); color: var(--dim); line-height: 1.6; }
@@ -151,7 +153,7 @@
   #gTop .tx small.ic { display: block; font-size: calc(12.5px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.12); border-radius: 8px; padding: 3px 8px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } #gTop .tx small.ic b { font-weight: 800; }
   #gBot .mode button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
   #gBot .eta.rg { gap: 10px; } #gBot .eta.rg b { font-size: calc(19px * var(--fz, 1)); letter-spacing: -.4px; }
-  @media (max-width: 430px) { #gBot .eta.rg { gap: 6px; } #gBot .eta.rg b { font-size: calc(16px * var(--fz, 1)); letter-spacing: -.5px; } #gBot .eta.rg .rp { width: 38px; } #gBot .eta.rg .mnu { width: 42px; } #gBot .eta.rg .here { padding-left: 6px; } } @media (max-width: 360px) { #gBot .eta.rg .here { display: none; } }   /* v0.37.3 안내 중 아래 막대 — 375 폭에서 칸 합 378px 이 343px 자리를 넘어 오른쪽 ≡ 메뉴가 잘렸다 */
+  @media (max-width: 430px) { #gBot .eta.rg { gap: 6px; } #gBot .eta.rg b { font-size: calc(16px * var(--fz, 1)); letter-spacing: -.5px; } #gBot .eta.rg .rp { width: 40px; } #gBot .eta.rg .mnu { width: 42px; } #gBot .eta.rg .here { padding-left: 6px; } } @media (max-width: 360px) { #gBot .eta.rg .here { display: none; } }   /* v0.37.3 안내 중 아래 막대 — 375 폭에서 칸 합 378px 이 343px 자리를 넘어 오른쪽 ≡ 메뉴가 잘렸다 */
   /* v0.13.0 카카오내비 참고 — 회전 전 남은 거리 막대 · 왼쪽 경로 소통 막대 */
   #gTop .tx .cd { display: block; width: 100%; max-width: 240px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); margin: 4px 0 3px; overflow: hidden; }
   #gTop .tx .cd u { display: block; height: 100%; border-radius: 3px; background: #fff; transition: width .4s linear; }
@@ -278,7 +280,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.43.1"></script>
+<script src="gargo.js?v=0.43.2"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

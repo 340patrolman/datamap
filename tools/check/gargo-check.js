@@ -7,7 +7,7 @@
   function send() { var o = { checks: C }, s = btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), n = Math.ceil(s.length / 1500), id = String(Date.now());
     for (var i = 0; i < n; i++) (new Image()).src = '/__r?p=' + window.__PAGE + '&k=' + id + '&i=' + i + '&n=' + n + '&d=' + s.substr(i * 1500, 1500); }
   function fail(m) { ck('검사 스크립트가 끝까지 돌았다', false, m); send(); }
-  function ready() { try { var g = window.GARGO, st = g && g.state(); return !!(st && st.G && st.G.S && st.G.S.length && st.G.XS); } catch (e) { return false; } }
+  function ready() { try { var g = window.GARGO, st = g && g.state(); return !!(st && st.G && st.G.S && st.G.S.length && st.G.XS && st.route); }   /* v0.44.1 값 없는 신호가 그물과 같이 붙어 — 주소의 #from·#to 길까지 기다린다(칸을 받기 전에 첫 검사가 돌았다) */ catch (e) { return false; } }
   /* v0.8.0 칸 묶음 — 처음엔 큰길만(칸 0) 받는지 보고, 검사(길 찾기 여러 벌)는 칸을 모두 받은 뒤에 한다 */
   var poll = setInterval(function () { if (ready()) { clearInterval(poll); try { var g0 = window.GARGO; g0.todFor('3971', function () {}); if (g0.alrLoad) g0.alrLoad(); if (g0.icLoad) g0.icLoad(); } catch (e) {}   /* v0.44.0 뒤 검사가 쓰는 자료(경찰청 계획·카메라·나들목)를 먼저 받아 둔다 — 전에는 다른 단계가 우연히 받아 둔 것에 기댔다(신호 칸을 필요한 곳만 받으면서 드러남) */ var P0 = window.GARGO.pk(); ck('칸 묶음 — 처음엔 큰길 한 장 + 받은 자리(#from·#to) 둘레 칸만(전체의 1/4 아래)', !P0.on || (P0.tiles > 0 && P0.tiles < P0.total / 4), JSON.stringify(P0));
       if (P0.on) ck('칸 묶음 — 큰길만·일부 칸만 받아도 큰길 마디의 회전 제한은 다 있다', window.GARGO.pkTurns() > P0.turnsTotal * 0.8, window.GARGO.pkTurns() + ' / 원본 ' + P0.turnsTotal);
@@ -292,7 +292,8 @@
       var offF = function () { /* v0.30.0 경로 이탈 — 벗어나 있는 동안 다시 찾기를 여러 번 해도 「경로를 벗어났습니다」·「새 경로입니다」는 한 번씩 · 길로 돌아왔다가 다시 벗어나면 그때 또 한 번 */
     if (g.state().guide) g.guideStop(false); if (!g.state().route) { var sO = g.P(127.0076, 37.4919), tO = g.P(127.0341, 37.4844); g.setMe(sO[0], sO[1], 5, null, 0); g.setDest(tO[0], tO[1], '시험 출동지', false, true); g.plan(true); } if (!g.state().route) { ck('경로 이탈 안내 검사 — 길을 만들지 못함', false, ''); return; } if (window.speechSynthesis) { var SAY2 = [], sp2 = speechSynthesis.speak, cn2 = speechSynthesis.cancel, st2 = window.setTimeout, me2 = g.state().me, mk2 = me2 ? { x: me2.x, y: me2.y } : null; speechSynthesis.speak = function (u) { SAY2.push(u.text); }; speechSynthesis.cancel = function () {}; window.setTimeout = function (f, ms) { if (ms === 1500) { f(); return 0; } return st2.apply(window, arguments); };
       try { var vb2 = document.getElementById('gVoice'); vb2.click(); g.guideStart(); var ds2 = g.state().dest, rr2 = g.state().route, x0 = rr2.pts[0], y0 = rr2.pts[1], dx = ds2.x - x0, dy = ds2.y - y0, dl = Math.hypot(dx, dy) || 1, ux = -dx / dl, uy = -dy / dl, nRe = 0, p0 = g.plan;
-        var off2 = function (k) { for (var j = 0; j < 4; j++) g.setMe(x0 + ux * 260 * k + uy * 7 * j, y0 + uy * 260 * k - ux * 7 * j, 5, null, 6); g.offe().last -= 20000; };
+        var off2 = function (k) { var rq = g.state().route; if (rq) rq.offN = 0;   /* v0.44.1 앞 검사에서 남은 벗어남 셈(offN)에 따라 다시 찾는 때가 1·3번째로 갈려, 이른 날엔 남은 세 점이 새 길 위라 「돌아옴」으로 쳐졌다 — 단계마다 0 에서 */
+          for (var j = 0; j < 4; j++) g.setMe(x0 + ux * 260 * k + uy * 7 * j, y0 + uy * 260 * k - ux * 7 * j, 5, null, 6); g.offe().last -= 20000; };
         for (var k2 = 1; k2 <= 5; k2++) off2(k2);
         var said1 = SAY2.join(' | '), nOff1 = (said1.match(/경로를 벗어났습니다/g) || []).length, nNew1 = (said1.match(/새 경로입니다/g) || []).length, on1 = g.offe().on;
         var rr3 = g.state().route; for (var j3 = 0; j3 < 4; j3++) g.setMe(rr3.pts[0], rr3.pts[1], 5, null, 6); var on2 = g.offe().on;

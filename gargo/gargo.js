@@ -20,6 +20,8 @@
   function getJ(u) { return fetch(u).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
   function load() {
     msg('길 자료를 읽는 중…');
+    /* v0.43.4 서울 전체 묶음은 폰에서 처음 8~9초·다시 열어도 6초쯤(받기보다 읽고 짓기) — 멈춘 줄 알고 끄지 않게 「준비 중 n초」. 도는 표시는 transform 움직임이라 읽고 짓는 동안에도 돈다 · 다른 msg 가 오면 그친다 */
+    if (PKA === 'seoul') { var t0p = Date.now(), pm = function () { var el = $('gMsg'); el.innerHTML = '<span class="prep"><i class="spin"></i><b>서울 25구 길 묶음 준비 중</b> · ' + Math.round((Date.now() - t0p) / 1000) + '초</span><small class="prep2">처음엔 10초 안팎 · 그동안 화면이 잠깐 멈출 수 있다</small>'; el.style.display = 'block'; }; pm(); PREP = setInterval(pm, 1000); }
     /* v0.7.0 — 소유자 2026-10-14 「서초·강남·송파·동작·관악·용산」 여섯 구 묶음(마디 81,049 · 신호 680 · 9.5MB/전송 2.6MB) · 못 읽으면 서초 묶음 */
     /* v0.8.0 — 칸 묶음(pk-<PKA>/core.json)이 있으면 큰길만 먼저 · 없으면 종전 한 장 */
     return getJ('pk-' + PKA + '/core.json').then(function (c) { if (c && c.segs && c.tiles && c.cell) { PK = c; return pkMerge(); } return getJ('pack-six.json').then(function (j) { if (j && j.seg) return j; AREA_KO = '서초구'; return getJ('pack-seocho.json'); }); }).then(function (j) { if (!j || !j.seg) { msg('길 자료를 읽지 못했다 — 새로 고쳐 본다'); return; } build(j); msg(''); fitAll(); draw(); hashGo(); sigLoad(); xsLoad(); baseLoad(); ['s', 't'].forEach(function (k) { var b = document.querySelector('[data-ov=' + k + ']'); if (b) b.classList.toggle('on', !!OV[k]); }); });
@@ -595,7 +597,8 @@
     /* 길 묶음의 가운데가 보이는 자리의 가운데에 오게 */ view.cx = (b[0] + b[1]) / 2 - ((f[0] + f[2]) / 2 - cv.clientWidth / 2) / view.s; view.cy = (b[2] + b[3]) / 2 - ((f[1] + f[3]) / 2 - cv.clientHeight * 0.5) / view.s; follow = false; }
 
   /* ---------- 화면 글 ---------- */
-  function msg(t) { var el = $('gMsg'); el.textContent = t; el.style.display = t ? 'block' : 'none'; }
+  var PREP = null;
+  function msg(t) { if (PREP) { clearInterval(PREP); PREP = null; } var el = $('gMsg'); el.textContent = t; el.style.display = t ? 'block' : 'none'; }
   var noteT = 0; function note(t) { var el = $('gNote'); el.textContent = t; el.style.display = t ? 'block' : 'none'; clearTimeout(noteT); if (t) noteT = setTimeout(function () { el.style.display = 'none'; }, 7000); }
   /* ---------- v0.26.0 🚓 여러 순찰차 — 누가 먼저 닿나(참고용 예측) ----------
      가까운 순서가 아니라 빨리 닿는 순서 · 차 자리는 이 화면 메모리에만(저장·전송 없음 · 지도 그리기와 길 계산만) · 가까운데 늦으면 까닭 한 줄(돌아가는 길 / 신호 기다림 / 막힘) */

@@ -112,10 +112,10 @@ def bake():
     vf0 = {}
     for i in range(NL):
         if inv[i] not in L and abs(float(VF[i]) - 50) > .5: vf0[inv[i]] = int(round(float(VF[i])))
-    O = {'schema': 'tg-nowcast/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'days': [DAYS[0], DAYS[-1]], 'n_days': len(DAYS),
+    O = {'schema': 'tg-nowcast/1', 'source': '국가교통정보센터(ITS) 통행속도 — 이 PC 가 약 11분마다 받아 쌓은 것(07_API키/out/livespd) · 공휴일 = data/holidays.json · 굽는 도구 tools/sim/nowcast.py', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'days': [DAYS[0], DAYS[-1]], 'n_days': len(DAYS),
          'note': '30분 뒤 막힘(6km/h 이하) 어림 — 지금 ITS 속도·30분 추세·이 길 평소 막힘 비율(같은 날 종류 · 15분 칸)·시각 로지스틱 회귀 · 쌓인 ITS 실측으로 배움(tools/sim/nowcast.py --bake) · 개념 시연 — 예측·보증 아님 · 성적 = data/nowcast-score.json',
          'jam': JAMV, 'th': round(float(th), 3), 'gate': gate, 'feat': names, 'mu': [round(float(x), 5) for x in fit.mu], 'sd': [round(float(x), 5) for x in fit.sd], 'w': [round(float(x), 5) for x in w],
-         'enc': 'links{ITS 링크: [자유 속도 km/h, 평일 96칸, 주말·공휴일 96칸]} · 칸 글자 = AL 의 자리 i → 로짓 = i/61×10−5 · 없는 길 = dflt(평일·주말) · vf0 = 표에 없는 길의 자유 속도(없으면 50)', 'AL': AL, 'dflt': [round(x, 4) for x in dflt], 'links': L, 'vf0': vf0}
+         'enc': 'links{ITS 링크: [자유 속도 km/h, 평일 96칸, 주말·공휴일 96칸]} · 칸 글자 = AL 의 자리 i → 로짓 = i/61×10−5 · 없는 길 = dflt(평일·주말) · vf0 = 표에 없는 길의 자유 속도(없으면 50)', 'fields': 'th 문턱(모형 값이 넘으면 막힘 어림) · gate 안 내는 시간 띠[시작 시, 끝 시] · feat 특성 이름 · mu·sd 표준화 · w [절편, 무게…] · links·vf0·dflt·AL 은 enc 참고 · probe [ITS 링크, 지금 속도, 날짜, 그날 초, 굽는 쪽 값] = 관문 시험 사례', 'AL': AL, 'dflt': [round(x, 4) for x in dflt], 'links': L, 'vf0': vf0}
     # 시험 사례(지도 관문이 js/nowcast.js 의 값과 맞대 봄) — 표에서 막힌 적 많은 길·처음 길 · 평일·주말 · 낮·저녁 · 지금 속도 여럿 · 30분 앞 값 없음
     def dec(id_, w_, b_):
         Lx = L.get(id_)
@@ -167,7 +167,7 @@ for h in HZ:
         if mb.sum(): print('   %02d~%02d시 그대로 %.2f%% · 어림 %.2f%% (%d칸)' % (band[0], band[1], 100 * (Kt[mb] == Yt[mb]).mean(), 100 * (P[mb] == Yt[mb]).mean(), mb.sum()))
 print('무게:', ' '.join('%s %+.2f' % z for z in sorted(zip(names, w[1:]), key=lambda z: -abs(z[1]))))
 
-OUT = {'schema': 'tg-nowcast-score/1', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'days': [DAYS[0], DAYS[-1]], 'n_days': len(DAYS), 'links': NL,
+OUT = {'schema': 'tg-nowcast-score/1', 'source': '국가교통정보센터(ITS) 통행속도 — 이 PC 가 약 11분마다 받아 쌓은 것(07_API키/out/livespd) · 공휴일 = data/holidays.json · 굽는 도구 tools/sim/nowcast.py', 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'days': [DAYS[0], DAYS[-1]], 'n_days': len(DAYS), 'links': NL,
        'judge': '홀수 날' if SWAP else '짝수 날', 'th': round(float(th), 2), 'gate': {'%d|%02d-%02d' % (h // 60, b[0], b[1]): g for (h, b), g in GATE.items()}, 'weights': {n: round(float(x), 3) for n, x in zip(names, w[1:])},
        'note': '실측 어림 = 지금 속도·30분 추세·평소 막힘 비율(배우는 날만 · 자기 날 뺌) 로지스틱 회귀 · 그대로 = 지금 상태가 이어진다 · 평소만 = 그 시각 평소 막힘 비율 50%↑ · 막힘 = 6km/h 이하 · 개념 시연 — 예측·보증 아님',
        'fields': {'n': '맞대 본 칸(길 × 시각)', 'hit': '맞은 칸', 'cn/ch': '지금과 그 뒤가 달라진 칸 / 맞힘', 'jn/jh': '실제 막힘 칸 / 맞힘', 'fa': '헛막힘(막힌다 했는데 안 막힘)'}, 'score': {}}

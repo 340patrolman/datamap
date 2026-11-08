@@ -363,6 +363,16 @@ def anchors(strong=False):
     return out
 
 
+LITE_KEYS = ('day', 'cl', 'from', 'cyc', 'ci', 'a', 'v', 'x', 'dq', 'src', 'kp')
+
+
+def lite_rec(r):
+    """가르고가 읽는 칸만 남긴 기록(split_write 의 cl/ 칸). mv = [방위, 이동류, 녹색, 황색, 녹색 시작 자리, 닻 차이] 여섯 칸까지."""
+    o = {k: r[k] for k in LITE_KEYS if k in r}
+    o['mv'] = [m[:6] for m in (r.get('mv') or []) if (len(m) > 2 and m[2] is not None) or (len(m) > 4 and m[4] is not None) or (len(m) > 5 and m[5] is not None)]
+    return o
+
+
 def split_write(doc):
     """지도(폰)가 읽는 꼴 — data/sigdir/index.json(기록 its 를 뺀 나머지 + fl 교차로마다 표시 · cell 칸 크기) + data/sigdir/c/<칸>.json(그 칸 교차로들의 its · pl — pl 은 2026-10-23 부터 칸에도).
     칸 = floor(위도 / 0.03)_floor(경도 / 0.04) (약 3.3 × 3.5km) · 자리 없는 교차로는 'x'. fl 값: 1 = 다시 받아 맞은 기록(v)이 있다 · 2 = 닻(a)이 있다(더한 값).
@@ -371,6 +381,7 @@ def split_write(doc):
     CELL = [0.03, 0.04]
     d = os.path.join(ROOT, 'data', 'sigdir')
     os.makedirs(os.path.join(d, 'c'), exist_ok=True)
+    os.makedirs(os.path.join(d, 'cl'), exist_ok=True)
     its, pts = doc['its'], doc['pts']
     cells, fl = {}, {}
     for k, L in its.items():
@@ -402,6 +413,17 @@ def split_write(doc):
             old = None
         if old != t:
             atomic_write(fp, t); nw += 1
+        # 2026-11-08 가르고용 가벼운 칸 cl/<칸>.json — 가르고(sigAt·mvOf·sigSides·sigActu·recOk·kscApply)가 읽는 칸만. 기록 수는 줄이지 않는다(sigActu 가 기록 수·시각대별 주기로 감응식을 가린다)
+        #  남김: day cl from cyc ci a v x dq src kp · mv 는 앞 여섯 칸만, 녹색·시작 자리·닻 차이(2·4·5)가 모두 비면 뺌 · pl 그대로 · tod 뺌
+        #  뺌: dow to ped pd fb fix · mv 6·7번째 칸 — 폰 조건 실측(라이브 v0.45.8 서울)에서 첫 길 뒤 칸 파싱 등으로 주 스레드가 약 9초 막혔다
+        lt = json.dumps({'schema': 'tg-sigdir-cell-lite/1', 'cell': key, 'its': {no: [lite_rec(r) for r in L] for no, L in part.items()}, 'pl': pls.get(key, {})}, ensure_ascii=False, separators=(',', ':'))
+        fl2 = os.path.join(d, 'cl', key + '.json')
+        try:
+            old = open(fl2, encoding='utf-8').read()
+        except Exception:
+            old = None
+        if old != lt:
+            atomic_write(fl2, lt)
     # 2026-10-24 06:00 부터 색인에서 pl 을 뺀다(지도 v2.290.2 · 가르고 v0.36.3 이 칸 pl 을 읽는다 · 폰에 남은 옛 판이 새 판을 받을 하룻밤 여유를 둠 — 게임 세션과 맞춘 때)
     DROP_PL = datetime.datetime.now() >= datetime.datetime(2026, 10, 24, 6, 0)
     DROP_TOD = datetime.datetime.now() >= datetime.datetime(2026, 11, 8, 6, 0)   # 2026-11-08 06:00 부터 색인에서 tod 를 뺀다(폰에 남은 옛 판이 v2.314.1 을 받을 하룻밤 여유)
@@ -410,6 +432,7 @@ def split_write(doc):
     idx['cell'] = CELL
     idx['cells'] = {k: len(v) for k, v in sorted(cells.items())}
     idx['fl'] = fl
+    idx['cl'] = 1   # 2026-11-08 가르고용 가벼운 칸 data/sigdir/cl/<칸>.json 이 있다(꼴 tg-sigdir-cell-lite/1)
     idx['fields'] = 'fl{교차로 번호: 표시(1 다시 받아 맞은 기록이 있다 + 2 닻이 있다)} · cell[위도 칸, 경도 칸] · cells{칸: 교차로 수} · 기록(its)은 c/<칸>.json 의 its{교차로 번호: [기록…]} · 계획표 pl 도 c/<칸>.json 의 pl{교차로 번호: […]}(2026-10-23 · 색인 pl 은 읽는 쪽이 바뀐 뒤 뺀다) — 칸 = floor(위도/cell[0])_floor(경도/cell[1]) · 자리 없는 교차로는 x · ' + doc.get('fields', '')
     ip = os.path.join(d, 'index.json')
     atomic_write(ip, json.dumps(idx, ensure_ascii=False, separators=(',', ':')))

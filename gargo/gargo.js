@@ -147,19 +147,20 @@
   var XS = [];
   var XSJ = null, XSP = null, LOADT = 0, XSWAIT = false;   /* v0.44.2 첫 길 셈은 값 없는 신호가 붙을 때까지(최대 3초) 미룬다 — 붙은 뒤 길이 바뀌지 않게 */
   function xsLoad() { if (!XSP) XSP = getJ('../data/tgis-seoul.json').then(function (j) { if (j && j.items) XSJ = j; else XSP = null; return j; }); return XSP.then(function (j) { if (!j || !j.items || !G) return; xsBuild(j); if (dest && me && !guide) plan(); else draw(); }); }
-  function xsBuild(j) { if (!j || !j.items || !G) return; var C = 60, ng = {}, i, k; for (i = 0; i < G.n; i++) { k = Math.floor(G.X[i] / C) + ',' + Math.floor(G.Y[i] / C); (ng[k] || (ng[k] = [])).push(i); }
+  function xsBuild(j) { if (!j || !j.items || !G) return; var t0x = Date.now(), C = 60, ng = new Map(), i, k, KM = 1048576;   /* v0.44.3 칸 열쇠를 숫자로 · 신호로 칠 수 있는 마디(okNode)와 값 있는 신호 마디만 칸에 넣는다(서울 묶음 PC 2초 넘게 → 폰 8초쯤이던 것) */
       /* 마디마다 닿는 길의 가장 큰 길·가장 작은 길 등급 — 자동차전용 본선만 닿는 마디(신호가 없다)와 골목끼리 만나는 마디(큰길 신호를 건너지 않는다)는 신호로 치지 않는다 */
       var cmin = new Uint8Array(G.n).fill(9), cmax = new Uint8Array(G.n); G.S.forEach(function (q) { var c = q[4]; if (c < cmin[q[0]]) cmin[q[0]] = c; if (c < cmin[q[1]]) cmin[q[1]] = c; if (c > cmax[q[0]]) cmax[q[0]] = c; if (c > cmax[q[1]]) cmax[q[1]] = c; });
       function okNode(nd) { return G.n2s[nd] < 0 && cmin[nd] <= 5 && cmax[nd] >= 3; }
+      for (i = 0; i < G.n; i++) { if (G.n2s[i] < 0 && !(cmin[i] <= 5 && cmax[i] >= 3)) continue; k = Math.floor(G.X[i] / C) * KM + Math.floor(G.Y[i] / C); var Lk = ng.get(k); if (Lk) Lk.push(i); else ng.set(k, [i]); }
       var have = {}; G.sig.forEach(function (g) { have[String(g.no)] = 1; });
       var nxs = new Int32Array(G.n), list = [];
       j.items.forEach(function (it) { if (/\(경보\)/.test(it[1])) return;   /* 경보등(점멸)은 기다리는 신호가 아니라고 보고 뺀다 — 가정 */
         if (it[6] && have[String(it[6])]) return;   /* 값 있는 교차로와 같은 번호(C-ITS) — 이미 센다 */
         var x = PX(it[3]), y = PY(it[2]); if (x < G.box[0] - 60 || x > G.box[1] + 60 || y < G.box[2] - 60 || y > G.box[3] + 60) return; var gx = Math.floor(x / C), gy = Math.floor(y / C), near = [], known = false, bn = -1, bd = 50;
-        for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { var L = ng[(gx + dx) + ',' + (gy + dy)]; if (!L) continue; for (var q = 0; q < L.length; q++) { var nd = L[q], d = Math.hypot(G.X[nd] - x, G.Y[nd] - y); if (d <= 60 && G.n2s[nd] >= 0) known = true; if (!okNode(nd)) continue; if (d <= 32) near.push(nd); if (d < bd) { bd = d; bn = nd; } } }
+        for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { var L = ng.get((gx + dx) * KM + (gy + dy)); if (!L) continue; for (var q = 0; q < L.length; q++) { var nd = L[q], d = Math.hypot(G.X[nd] - x, G.Y[nd] - y); if (d <= 60 && G.n2s[nd] >= 0) known = true; if (!okNode(nd)) continue; if (d <= 32) near.push(nd); if (d < bd) { bd = d; bn = nd; } } }
         if (known) return;   /* 60m 안에 값 있는 신호 마디 — 두 자료의 좌표가 수십 m 어긋나 같은 교차로일 수 있다(두 번 세지 않는다) */
         if (!near.length && bn >= 0) near = [bn]; if (!near.length) return; list.push({ nm: it[1], x: x, y: y }); near.forEach(function (nd) { if (!nxs[nd]) nxs[nd] = list.length; }); });
-      XS = list; G.nxs = nxs; G.XS = list; }
+      XS = list; G.nxs = nxs; G.XS = list; G.xsMs = Date.now() - t0x; }
   function recOk(r) { return r && r.mv && r.dq !== 'dir' && !(r.x && !r.v); }
   /* 내가 들어가는 쪽의 기록 고르기 — 같은 방위가 있으면 그것. 없으면 바로 옆 방위(45°) 하나뿐일 때만 그것을 쓴다.
      옆 방위가 양쪽에 다 있으면(비스듬한 길: 남서쪽에서 들어가는데 기록은 남·서 둘) 어느 쪽인지 가릴 수 없으므로 「모름」으로 둔다 — v0.5.0 까지는 먼저 나온 쪽을 골라 다른 방향의 초를 보일 수 있었다 */
@@ -347,7 +348,8 @@
     return { esp: esp, es: es, pts: pts, cum: cum, dist: dist, time: t, tc: tc, free: free, mans: mans, sigs: sigs, lims: lims, T0: T0, a: a, b: b, live: dist ? liveLen / dist : 0, cong: cong, kn: kn, accs: accs, mode: MODE, viaLive: !!LIVER };
   }
   var OFFE = { on: false, ns: 0, nsT: 0, back: 0, last: 0 };   /* v0.30.0 경로 이탈 한 번(길이 바뀌어도 이어 셈) — on 이탈 중 · ns 「새 경로」 말함 · back 길 위로 이어 돌아온 횟수 · last 마지막 다시 찾기 */
-  function plan(noFit) { if (!G || !dest || !me) return; if (!G.XS && XSP && !guide && Date.now() - LOADT < 3000) { if (!XSWAIT) { XSWAIT = true; note('길을 고르는 중…'); setTimeout(function () { if (XSWAIT) { XSWAIT = false; plan(noFit); } }, Math.max(50, 3000 - (Date.now() - LOADT))); } return; } XSWAIT = false; var TG = tgtOf(); if (PK && !PKW) { var mk = pkKeys([[me.x, me.y], [TG.x, TG.y]].concat(WPS.map(function (w) { return [w.x, w.y]; })).concat([[dest.x, dest.y]]), 2200); if (mk.length) { PKW = true; note('골목 길을 받는 중…'); pkLoad(mk).then(function (n) { PKW = false; if (n) pkRebuild(true, false, mk); plan(noFit); }); return; } }
+  function plan(noFit) { if (!G || !dest || !me) return; var TG = tgtOf(); if (PK && !PKW) { var mk = pkKeys([[me.x, me.y], [TG.x, TG.y]].concat(WPS.map(function (w) { return [w.x, w.y]; })).concat([[dest.x, dest.y]]), 2200); if (mk.length) { PKW = true; note('골목 길을 받는 중…'); pkLoad(mk).then(function (n) { PKW = false; if (n) pkRebuild(true, false, mk); plan(noFit); }); return; } }   /* v0.44.3 골목 칸 받기를 값 없는 신호 기다림보다 앞에 — 둘이 겹쳐 돈다(신호 세션 폰 재측: 차례로 기다려 첫 길이 여섯 구 7.3초 · 서울 17초) */
+    if (!G.XS && XSP && !guide && Date.now() - LOADT < 3000) { if (!XSWAIT) { XSWAIT = true; note('길을 고르는 중…'); setTimeout(function () { if (XSWAIT) { XSWAIT = false; plan(noFit); } }, Math.max(50, 3000 - (Date.now() - LOADT))); } return; } XSWAIT = false;
     if (SIG.ready && !SIGW) { var CR = sigCorridor(), mk2 = CR ? sigKeys(CR.pts, CR.r) : []; if (mk2.length) { SIGW = true; var dk = dest; sigEnsure(CR.pts, CR.r).then(function () { SIGW = false; if (!guide && dest === dk && route) plan(true); }, function () { SIGW = false; }); } }   /* 길은 지금 있는 값으로 바로 · 칸이 오면 조용히 다시(안내 중이면 다시 안 함) */
     var T0 = Date.now() / 1000, r = findRoute(me.x, me.y, TG.x, TG.y, T0, me.spd > 2 ? me.hd : null);
     if (!r && PKA === 'six' && !(dest && dest.vip) && MODE !== 'v' && (outBox(TG) || outBox(me))) { var LLd = LL(dest.x, dest.y); if (seoulJump(LLd[0], LLd[1], dest.nm)) return; }
@@ -1170,7 +1172,7 @@
   function pickWp(i) { var o = fl._o && fl._o[i]; if (!o || !dest) return; fl.style.display = 'none'; fi.value = ''; fi.blur(); pkEnsure([[o[2], o[3]]], 800).then(function () { var ns = nearSeg(o[2], o[3], 400); WPS.push({ x: ns ? ns.x : o[2], y: ns ? ns.y : o[3], nm: o[1] }); route = null; plan(); note('📍 경유지로 넣었다 — ' + o[1]); }); }   /* v0.42.2 찾기에서 경유지 */
   /* 주소로 받은 목적지 — #to=위도,경도&nm=이름 · #from=위도,경도(시험) · 주소에서 지운다(좌표가 남지 않게) */
   function hashGo() { var H = location.hash || '', t = /[#&]to=(-?[\d.]+),(-?[\d.]+)/.exec(H), f = /[#&]from=(-?[\d.]+),(-?[\d.]+)/.exec(H), n = /[#&]nm=([^&]*)/.exec(H);
-    if (f) setMe(PX(+f[2]), PY(+f[1]), 5, null, 0); if (t) { var x = PX(+t[2]), y = PY(+t[1]), nmH = n ? decodeURIComponent(n[1]) : '받은 자리', tk2 = ++PICKSEQ, vq2 = MODE === 'v'; pkEnsure([[x, y]], 800).then(function () { if (tk2 !== PICKSEQ) return; var ns = nearSeg(x, y, 600); if (ns) setDest(ns.x, ns.y, nmH, vq2); else if (!vq2 && seoulJump(+t[2], +t[1], nmH)) {} else note('받은 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 된다'); }); }
+    if (f) setMe(PX(+f[2]), PY(+f[1]), 5, null, 0); if (t) { var x = PX(+t[2]), y = PY(+t[1]), nmH = n ? decodeURIComponent(n[1]) : '받은 자리', tk2 = ++PICKSEQ, vq2 = MODE === 'v'; pkEnsure(f ? [[x, y], [PX(+f[2]), PY(+f[1])]] : [[x, y]], f ? 2200 : 800).then(function () { if (tk2 !== PICKSEQ) return;   /* v0.44.3 떠나는 자리도 주면 길 셈에 쓸 골목 칸을 한 번에 받고 한 번만 다시 짓는다 */ var ns = nearSeg(x, y, 600); if (ns) setDest(ns.x, ns.y, nmH, vq2); else if (!vq2 && seoulJump(+t[2], +t[1], nmH)) {} else note('받은 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 된다'); }); }
     /* #q=주소·이름 — 받은 글로 바로 찾는다(티북 같은 데서 주소를 넘길 때 · # 뒤라 서버로 가지 않는다 · 읽고 지운다) */
     var qq = /[#&]q=([^&]*)/.exec(H); if (qq) { var qv = ''; try { qv = decodeURIComponent(qq[1]); } catch (e) {} if (qv) { fi.value = qv; findRun(qv, true); } }
     if (t || f || qq) { try { history.replaceState(null, '', location.pathname); } catch (e) {} } }

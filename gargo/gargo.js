@@ -1033,11 +1033,17 @@
     if (PK && !PKVIPALL) { var ks = Object.keys(PK.tiles).filter(function (k) { return !PKT[k]; }); if (ks.length) { PKVIP++; note('🔒 업무 — 길 조각을 모두 한 번 받아 두는 중(약 2MB) · 그 뒤로는 화면 둘레만큼 따로 받지 않는다'); pkLoad(ks).then(function () { PKVIP--; PKVIPALL = true; pkRebuild(true, true); note(''); if (dest && me) plan(true); else { paint(); draw(); } }, function () { PKVIP--; }); } else PKVIPALL = true; } }
   function vipLock() { if (MODE === 'v') vipEnter(); var on = MODE === 'v', b = $('gVip'); document.body.classList.toggle('vip', on); if (b) b.classList.toggle('on', on); if (fi) fi.placeholder = on ? '🔒 업무 — 이 기기 안 이름·도로명 번호로만 찾는다' : '어디로? 주소·이름을 적거나 🎤 말한다'; }
   function setH(el, h) { if (el._h === h && el._hs === el.innerHTML) return; el._h = h; el.innerHTML = h; el._hs = el.innerHTML; }
+  /* v0.43.1 켜놓고 다니기 위 상자 — 왼쪽 절반(178px) 안 글 칸이 100px 안팎이라 큰 길 이름(30px)이 「반포/대로」, 「위/치가/끊겼/다」로 한두 글자씩 꺾였다.
+     한 줄에 들 때까지 글씨를 2px씩 줄이고(가장 작게 17px) 그래도 길면 낱말 단위로만 꺾는다 · 뒷줄(span)은 낱말 단위 줄바꿈 */
+  function topFit(top) { var b = top.querySelector('.tx b'), sp = top.querySelector('.tx > span'); if (!b) return; if (sp) { sp.style.whiteSpace = 'normal'; sp.style.wordBreak = 'keep-all'; sp.style.fontSize = 'calc(13px * var(--fz, 1))'; sp.style.lineHeight = '1.3'; } if (b._fitT === b.textContent && b._fitW === b.clientWidth) return;
+    b.style.fontSize = ''; b.style.whiteSpace = 'nowrap'; b.style.wordBreak = ''; var px = parseFloat(getComputedStyle(b).fontSize) || 30, n = 0;
+    while (b.scrollWidth > b.clientWidth + 1 && px > 17 && n++ < 10) { px = Math.max(17, px - 2); b.style.fontSize = px + 'px'; }
+    if (b.scrollWidth > b.clientWidth + 1) { b.style.whiteSpace = 'normal'; b.style.wordBreak = 'keep-all'; } b._fitT = b.textContent; b._fitW = b.clientWidth; }
   function paintCruise() { var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd'), now = Date.now() / 1000, age = me && !sim ? (Date.now() - me.t) / 1000 : 0, lost = age > 5, A = lost ? null : ahead(); CRA = A; $('gFind').style.display = 'none'; top.style.display = 'flex';
     var lv = A && A.live ? spdLv(A.live, A.cls, A.lim) : -1, flow = lv < 0 ? '' : '<small class="ln2">이 길 지금 — <b>' + ['원활', '서행', '정체'][lv] + '</b>' + (A.live <= A.lim ? ' · 시속 ' + Math.round(A.live) + 'km쯤' : '') + '</small>';
     var t1 = lost ? '📡 위치가 끊겼다' : A && A.nm ? esc(A.nm) : !me ? '내 자리 기다리는 중' : !me.hk ? '방향을 잡는 중' : me.out ? '가르고 지도 밖' : A && A.off ? '가는 쪽의 길을 못 찾았다' : '길 위가 아니다',
       t2 = lost ? Math.round(age) + '초 전 자리 — 다시 잡히면 이어서 보인다' : me && !me.hk ? '조금 움직이면 가는 쪽의 앞 신호를 보인다' : me && me.out ? AREA_KO + '과 둘레에서만 길을 안다' : '켜놓고 다니기 — 목적지 없음';
-    setH(top, '<div class="arw">' + (lost ? '…' : '⬆') + '</div><div class="tx"><b>' + t1 + '</b><span>' + t2 + '</span>' + flow + '</div>');
+    setH(top, '<div class="arw">' + (lost ? '…' : '⬆') + '</div><div class="tx"><b>' + t1 + '</b><span>' + t2 + '</span>' + flow + '</div>'); topFit(top);
     setH(bot, '<div class="eta"><div><b>' + hm(now) + '</b><span>지금</span></div><div><b>' + (LIVE.m ? esc(String(LIVE.made || '').slice(-5)) : '없음') + '</b><span>소통 받은 때</span></div><button id="gCruiseX" class="stop">끝</button></div>');
     if (A && !A.off && me) { var v = Math.round((me.spd || 0) * 3.6); spd.style.display = 'flex'; setH(spd, '<div class="lim">' + A.lim + '</div><div class="cur' + (v > A.lim + 2 ? ' over' : '') + '"><b>' + v + '</b><span>km/h</span></div>' + (A.nm ? '<div class="rn">' + esc(A.nm) + '</div>' : '')); } else spd.style.display = 'none';
     alrLoad(); try { alrShow(lost ? null : alrAhead(aheadPoly(A))); } catch (e) {}

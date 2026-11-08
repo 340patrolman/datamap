@@ -178,7 +178,7 @@
   #gMsg, #gNote { position: fixed; left: 50%; transform: translateX(-50%); z-index: 7; display: none; background: rgba(15,23,42,.9); color: #fff; border-radius: 12px; padding: 9px 14px; font-size: calc(13.5px * var(--fz, 1)); line-height: 1.55; max-width: 88vw; }
   #gMsg .prep { display: flex; align-items: center; gap: 8px; } #gMsg .prep2 { display: block; opacity: .8; font-size: calc(12px * var(--fz, 1)); margin-top: 2px; } #gMsg .spin { flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.3); border-top-color: #fff; animation: gspin .8s linear infinite; } @keyframes gspin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { #gMsg .spin { animation-duration: 2.4s; } }
   #gFast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 180px; z-index: 8; display: none; width: max-content; max-width: 94vw; white-space: nowrap; min-height: 48px; padding: 10px 16px; border: 0; border-radius: 999px; background: #0b7a3b; color: #fff; font-size: calc(14.5px * var(--fz, 1)); font-weight: 800; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
-  #gFast b { margin-left: 10px; padding: 4px 12px; border-radius: 999px; background: #fff; color: #0b7a3b; }   /* v0.45.0 안내 중 더 빠른 길 */
+  #gFast b { margin-left: 8px; padding: 4px 12px; border-radius: 999px; background: #fff; color: #0b7a3b; }   /* v0.45.0 안내 중 더 빠른 길 */
   #gMsg, #gNote { width: max-content; } #gMsg { top: 45%; }   /* v0.43.4 left:50% 상자는 저절로 화면 절반 폭에 갇힌다 — 글 길이만큼(최대 88vw) */ #gNote { top: calc(72px + env(safe-area-inset-top)); } body.guiding #gNote { top: calc(262px + env(safe-area-inset-top)); font-size: calc(12.5px * var(--fz, 1)); max-width: 78vw; }
   #gPick { position: fixed; z-index: 8; display: none; flex-direction: column; gap: 5px; width: 220px; background: var(--solid); border-radius: 18px; box-shadow: 0 12px 32px rgba(15,23,42,.28); padding: 10px; }
   #gPick b { font-size: calc(13.5px * var(--fz, 1)); padding: 2px 4px 4px; } #gPick button { height: 44px; border-radius: 10px; border: 1px solid var(--line); background: transparent; font-size: calc(15px * var(--fz, 1)); font-weight: 800; } #gPick button[data-p=to] { background: var(--acc); color: #fff; border: 0; }
@@ -283,7 +283,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.45.1"></script>
+<script src="gargo.js?v=0.45.2"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

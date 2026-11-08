@@ -137,8 +137,8 @@
     return { pts: out, r: Math.max(2000, Math.min(5000, L / 4)) }; }
   function sigLoad() { accLoad(); getJ('../data/eta-cal.json').then(function (j) { if (window.TT && TT.calTab) { TT.calTab(j); GCF.t = 0; } }); liveLoad().then(function () { if (dest && me && !guide) plan(); else paint(); }); getJ('../data/sig-special.json').then(function (j) { if (j && j.days) SIG.hol = j.days; });
     return getJ('../data/sigdir/index.json').then(function (j) { if (!j || !j.fl) { SIG.fail = 1; paint(); note('신호 자료를 읽지 못했다 — 길 안내는 제한속도 기준으로만 한다'); return; } SIG.idx = j; SIG.pl = j.pl || {}; SIG.cell = j.cell; var need = {};   /* v0.36.3 계획표(pl)는 칸 파일에도 있다(색인에서 곧 빠진다 · 지도 v2.290.2) — 기록 없이 계획표만 있는 교차로도 그 칸을 받는다 */
-      var P0 = [[view.cx, view.cy]]; if (me) P0.push([me.x, me.y]); if (dest) P0.push([dest.x, dest.y]); WPS.forEach(function (w) { P0.push([w.x, w.y]); });
-      return sigEnsure(P0, 3000, true).then(function () {
+      var P0 = me && dest ? [] : [[view.cx, view.cy]], R0 = me && dest ? 1500 : 3000; if (me) P0.push([me.x, me.y]); if (dest) P0.push([dest.x, dest.y]); WPS.forEach(function (w) { P0.push([w.x, w.y]); });   /* v0.45.3 목적지가 있으면 두 끝(과 경유지) 둘레 1.5km 만 먼저 — 서울 시청→잠실에서 처음 22칸·풀린 크기 8.3MB 를 다 받아야 시간이 나왔다(폰 22초) · 길 둘레는 plan 이 뒤에서 받아 다듬는다 */
+      return sigEnsure(P0, R0, true).then(function () {
         var v = []; Object.keys(SIG.its).forEach(function (no) { SIG.its[no].forEach(function (r) { if (!recOk(r)) return; var C = r.ci || r.cyc; if (!C) return; r.mv.forEach(function (m) { if (m[1] === 'St' && m[2] != null && m[2] < C) v.push((C - m[2]) * (C - m[2]) / (2 * C)); }); }); });
         v.sort(function (a, b) { return a - b; }); if (v.length) SIG.typ = v[v.length >> 1]; kscLoad().then(function () { kscApply(); if (SIG.ready) { if (dest && me) plan(); draw(); paint(); } }); }).then(function () { SIG.ready = 1; SIG.at = Date.now(); if (dest && me) plan(); draw(); paint(); }); });
   }

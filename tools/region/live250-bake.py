@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # 데이터 압축지도 v2.4.0 — 👥 서울 생활인구 250m 격자(서울시 「서울특별시 250M격자 생활인구(내국인)」 OA-22784 · 공공누리 1유형 · 매일)
 #   행정동 단위 생활인구는 2026-07-31 생산 끝 → 이 격자 자료로 바꾼다(전국 확장 설계서 2장)
-#   한 주(2026-09-07 월 ~ 09-13 일 · 추석 9/24~26 을 피함)를 받아 칸마다 평일 평균·주말 평균 24시간 + 낮(11~14시)·밤(0~4시) 연령 구성
+#   한 주(DAYS · 평범한 주 — 명절·연휴를 피함 · 지금 2026-10-19 월 ~ 10-25 일)를 받아 칸마다 평일 평균·주말 평균 24시간 + 낮(11~14시)·밤(0~4시) 연령 구성
 #   한 칸에 행정동이 여럿이면 동마다 줄이 따로 온다 → 칸 합계는 더한다 · 「*」(3명 이하 비식별)은 0 으로 본다(작은 칸은 조금 적게 나온다)
 #   py -3.12 -X utf8 tools/region/live250-bake.py fetch → 07_API키/out/grid/*.zip · build → data/r/<서울 구>/live250.json
 import csv, io, json, os, sys, time, zipfile, urllib.request, collections, datetime
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'grid')
-DAYS = ['202609%02d' % d for d in range(7, 14)]
+DAYS = ['202610%02d' % d for d in range(19, 26)]   # 2026-11-08 다시: 10-19 월 ~ 10-25 일(공휴일 없음) · 종전 09-07~13 · ⚠ 지난 달은 날마다 파일이 아니라 달 묶음(seq=YYMM · 250_LOCAL_RESD_YYYYMM.zip 안에 날마다 CSV)만 남는다 — 달 묶음을 받아 날마다 zip 으로 풀어 두면 fetch 가 건너뛴다
 AGES = ['0~9', '10대', '20대', '30대', '40대', '50대', '60대', '70~']
 COLS = {i: b for b, idx in enumerate([[0], [1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12], [13]]) for i in idx}   # 남·여 14칸(0~9 … 70~) → 8칸
 

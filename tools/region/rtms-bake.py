@@ -13,7 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 KB = os.path.join(os.path.dirname(ROOT), '07_API키'); OUT = os.path.join(KB, 'out', 'rtms')
 sp0 = importlib.util.spec_from_file_location('rc', os.path.join(ROOT, 'tools', 'region', 'regcfg.py')); RC = importlib.util.module_from_spec(sp0); sp0.loader.exec_module(RC)   # 시도 이름(v2.7.0)
 sp = importlib.util.spec_from_file_location('g250', os.path.join(ROOT, 'tools', 'region', 'grid250.py')); G = importlib.util.module_from_spec(sp); sp.loader.exec_module(G)
-END = (2026, 8); NM = 24
+END = (2026, 10); NM = 24   # 2026-11-08 9·10월 더함(10월은 신고 30일이라 덜 찼을 수 있다)
 def months():
     y, m = END; o = []
     for _ in range(NM): o.append('%d%02d' % (y, m)); m -= 1; y, m = (y - 1, 12) if m == 0 else (y, m)

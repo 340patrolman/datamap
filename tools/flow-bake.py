@@ -77,7 +77,10 @@ def bake_flow():
     pub = json.load(open(os.path.join(ROOT, 'data', 'pubdata-seocho.json'), encoding='utf-8'))
     ids = {b['id'] for b in pub['bus']['items']}
     bus = {i: [[0] * 24, [0] * 24] for i in ids}
-    f = os.path.join(KB, 'out', '2026년_버스노선별_정류장별_시간대별_승하차_인원_정보(06월).csv')
+    import calendar
+    YM = '202610'   # 교통카드 달 — 다음 달로 올릴 때 이 한 줄(2026-11-08 06 → 10 · transit-bake.py 와 같은 달)
+    ND = calendar.monthrange(int(YM[:4]), int(YM[4:]))[1]; YMK = '%s년 %d월' % (YM[:4], int(YM[4:]))
+    f = os.path.join(KB, 'out', '%s년_버스노선별_정류장별_시간대별_승하차_인원_정보(%s월).csv' % (YM[:4], YM[4:]))
     with open(f, encoding='cp949', newline='') as h:
         rd = csv.reader(h); next(rd)
         for row in rd:
@@ -85,13 +88,13 @@ def bake_flow():
             if not b: continue
             for hr in range(24):
                 b[0][hr] += int(row[6 + 2 * hr] or 0); b[1][hr] += int(row[7 + 2 * hr] or 0)
-    busOut = {i: [[round(x / 30) for x in v[0]], [round(x / 30) for x in v[1]]] for i, v in bus.items() if sum(v[0]) + sum(v[1]) > 0}
-    # 지하철 시간대(2026년 6월 — 버스와 같은 달)
+    busOut = {i: [[round(x / ND) for x in v[0]], [round(x / ND) for x in v[1]]] for i, v in bus.items() if sum(v[0]) + sum(v[1]) > 0}
+    # 지하철 시간대(YM — 버스와 같은 달)
     names = {s['name'] for s in pub['subway']['items']}
     sub = {}
     rows = []
     for st in range(1, 1300, 1000):
-        v = seoul('json/CardSubwayTime/%d/%d/202606' % (st, st + 999)).get('CardSubwayTime') or {}
+        v = seoul('json/CardSubwayTime/%d/%d/%s' % (st, st + 999, YM)).get('CardSubwayTime') or {}
         rows += v.get('row') or []
         if st + 999 >= (v.get('list_total_count') or 0): break
     for r in rows:
@@ -105,7 +108,7 @@ def bake_flow():
                 on = r.get(kk + '_GET_ON_NOPE'); off = r.get(kk + '_GET_OFF_NOPE')
                 if on is not None:
                     s[0][hr] += on; s[1][hr] += off; break
-    subOut = {k: [[round(x / 30) for x in v[0]], [round(x / 30) for x in v[1]], v[2]] for k, v in sub.items()}
+    subOut = {k: [[round(x / ND) for x in v[0]], [round(x / ND) for x in v[1]], v[2]] for k, v in sub.items()}
     # 행정동 카드 추정매출(서울시 상권분석서비스 · 가장 최근 분기)
     q = None
     for cand in ('20263', '20262', '20261', '20254'):
@@ -136,8 +139,8 @@ def bake_flow():
         salesOut[nm] = {'amt': round(dd['amt'] / M), 'cnt': round(dd['cnt']), 'tb': [round(x / M) for x in dd['tb']], 'dw': [round(x / M) for x in dd['dw']],
                         'top': [[k, round(v[0] / M)] + [round(x / M) for x in v[1:]] for k, v in top]}
     out = {'schema': 'tg-flow/1', 'baked': time.strftime('%Y-%m-%d %H:%M'),
-           'bus': {'source': '서울시 버스노선별 정류장별 시간대별 승하차 인원(2026년 6월 · 교통카드) — 하루 평균 · [승차 24, 하차 24] · 정류장 id = 표준버스정류장ID', 'items': busOut},
-           'subway': {'source': '서울시 지하철 호선별 역별 시간대별 승하차 인원(CardSubwayTime · 2026년 6월 · 교통카드) — 하루 평균 · [승차 24, 하차 24, 노선]', 'items': subOut},
+           'bus': {'source': '서울시 버스노선별 정류장별 시간대별 승하차 인원(' + YMK + ' · 교통카드) — 하루 평균 · [승차 24, 하차 24] · 정류장 id = 표준버스정류장ID', 'items': busOut},
+           'subway': {'source': '서울시 지하철 호선별 역별 시간대별 승하차 인원(CardSubwayTime · ' + YMK + ' · 교통카드) — 하루 평균 · [승차 24, 하차 24, 노선]', 'items': subOut},
            'sales': {'source': '서울시 상권분석서비스(추정매출-행정동 · VwsmAdstrdSelngW) %s년 %s분기 — 카드사 결제 자료로 추정한 매출(만원) · 시간대 6구간(00~06·06~11·11~14·14~17·17~21·21~24) · 요일 월~일' % (q[:4], q[4]),
                      'quarter': q, 'tb': ['0~6시', '6~11시', '11~14시', '14~17시', '17~21시', '21~24시'], 'items': salesOut}}
     p = os.path.join(ROOT, 'data', 'flow-seocho.json')

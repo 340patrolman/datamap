@@ -1,6 +1,6 @@
 {
  "schema": "tg-ai-guide/2",
- "built": "2026-11-04",
+ "built": "2026-11-08",
  "what": "데이터 압축지도 — 대한민국 전국 256개 시군구·3558개 행정동의 공공데이터(인구·머무는 사람·이동·카드 소비·가게·집값·공시가격·세금·교통사고·신호·시설·경찰·소방·세무서·법원·등기소·교육지원청 관할 등)를 한 곳에 묶은 정적 파일 모음. 서버·키 없이 주소만으로 읽는다(JSON · UTF-8).",
  "start_here": [
   "1) 이 파일의 gus 에서 시군구 코드(5자리)와 저장소(repo)를 찾는다",
@@ -1416,7 +1416,7 @@
   "find_it": "https://340patrolman.github.io/datamap/data/find-it.json (없는 자료의 공식 창구)"
  },
  "privacy": "개인정보 없음 — 사고는 나이·성별·상해·사고번호·날짜의 일을 받는 자리에서 버렸고, 실거래는 매수·매도인·중개사·일자·층을 버렸다. 기관 전화는 대표번호만.",
- "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 209개",
+ "catalog_fields": "catalog[[파일 이름, 만든 날·기준, 출처 한 줄]] · 주소 = https://340patrolman.github.io/datamap/data/<파일 이름> · 자세한 것(칸 설명 fields · 한계 note · 맨 위 열쇠 top · 표본 sample)은 catalog_full — 전국 한 파일짜리 215개",
  "catalog": [
   [
    "acad-dong.json",
@@ -1510,18 +1510,18 @@
   ],
   [
    "cctv-utic-seoul.json",
-   "2026-10-23",
-   "경찰청 도시교통정보센터(UTIC) 개방데이터 CCTV 목록(cctvOpenData.do) — 서울교통정보센터(TOPIS) 카메라 · cctv_20261023.html"
+   "2026-11-08",
+   "경찰청 도시교통정보센터(UTIC) 개방데이터 CCTV 목록(cctvOpenData.do) — 서울교통정보센터(TOPIS) 카메라 · cctv_20261108.html"
   ],
   [
    "cpi.json",
-   "202609",
+   "202610",
    "통계청 소비자물가지수(2020=100) 품목성질별 — KOSIS 101 DT_1J22002 · 월별을 분기 평균(그 분기에 나온 달만)"
   ],
   [
    "decide-seocho.json",
-   "2026-10-24 10:06",
-   "ontology-core/data/core-seocho.json(TAAS 2016~2025 · 경찰 단속 카메라 · 어린이보호구역 · 다음 신호 · T-Book 범칙금 DB·판례) · data/ho …(전문은 파일에)"
+   "2026-11-08 09:35",
+   "ontology-core/data/core-six/11650.json(TAAS 2016~2025 · 경찰 단속 카메라 · 어린이보호구역 · 다음 신호 · T-Book 범칙금 DB·판례) · data …(전문은 파일에)"
   ],
   [
    "dong-near.json",
@@ -1585,7 +1585,7 @@
   ],
   [
    "eta-cal.json",
-   "2026-10-15 13:22",
+   "2026-11-08 09:31",
    "국가교통정보센터(ITS) 통행속도 — 이 PC 가 약 22분마다 받아 쌓은 것(07_API키/out/livespd) · 신호 = data/sigdir-seoul.json · 길 = data/nav- …(전문은 파일에)"
   ],
   [
@@ -1645,8 +1645,8 @@
   ],
   [
    "flow-seocho.json",
-   "2026-10-04 09:40",
-   "금액·건수는 서울시 상권분석서비스 분기 합계 ÷ 3 = 한 달 평균(datamap v2.60.0 q3-fix)"
+   "2026-11-08 09:59",
+   ""
   ],
   [
    "foreign-dong.json",
@@ -1749,6 +1749,11 @@
    "인허가 30 = tools/region/biz-bake.py CATS(행안부 지방행정인허가 업태 묶음) · 상권분석 100 = 서울시 상권분석서비스 서비스업종(r/<구>/storind.json·tr …(전문은 파일에)"
   ],
   [
+   "int-brief.json",
+   "2026-11-07T22:42",
+   "TAAS 교통사고 10년(2016~2025 · 교차로 70m 안 100m 칸) · T-GIS 교차로 · ITS 링크(들어오는 길·차로) · 경찰 카메라 · 보호구역 — ontology-core/da …(전문은 파일에)"
+  ],
+  [
    "intersections-seocho.json",
    "",
    "OpenStreetMap contributors (ODbL) · Overpass API 2026-09-28 — 두 도로 이름의 모든 way(motorway~unclassified) 선분 사이 최단  …(전문은 파일에)"
@@ -1780,28 +1785,28 @@
   ],
   [
    "live-acc-seoul.json",
-   "2026-11-04 17:26",
+   "2026-11-08 09:57",
    "서울 열린데이터광장 「서울시 실시간 돌발 정보」(AccInfo · TOPIS) — 큰길(ITS 링크)에 걸린 공사·통제·사고"
   ],
   [
    "live-ims-seoul.json",
-   "2026-11-04 17:14",
+   "2026-11-08 09:57",
    "경찰청 도시교통정보센터(UTIC) 개방데이터 돌발 정보(imsOpenData.do) — 서울(법정동 11…)"
   ],
   [
    "live-seocho.json",
-   "2026-11-04 16:05",
+   "2026-11-08 09:21",
    "서울 열린데이터광장 「서울시 실시간 도시데이터」(OA-21285) · 장소 영역 「서울시 주요 121장소 영역」(OA-21778) — 받은 시각의 한 장(지도는 통신 0 · 다시 받으려면 tools …(전문은 파일에)"
   ],
   [
    "live-spd-seocho.json",
-   "17:26",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261104172000"
+   "09:57",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261108095500"
   ],
   [
    "live-spd-six.json",
-   "17:26",
-   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261104172000"
+   "09:57",
+   "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261108095500"
   ],
   [
    "livepop.json",
@@ -1812,6 +1817,11 @@
    "lodging-seoul.json",
    "",
    "서울 열린데이터광장 지방행정인허가 — 외국인관광 도시민박업(LOCALDATA_031104) · 관광숙박업(LOCALDATA_031101) · 영업 중만 · 2026-10-06 받음"
+  ],
+  [
+   "loop-watch.json",
+   "2026-10-22",
+   "data/onto-loops.json · ontology-core/data/core-seocho.json(접근로 이룸) · data/spd-normal-seocho.json(ITS 쌓은 속도) —  …(전문은 파일에)"
   ],
   [
    "med-dong.json",
@@ -1894,13 +1904,23 @@
    "서울시 상권분석서비스(서울 열린데이터광장) — 영역-상권(OA-15560) · 추정매출 20262(카드사 결제 추정 · 1년 전 20252) · 점포 · 길단위유동인구(20262) · 직장인구(20 …(전문은 파일에)"
   ],
   [
+   "nowcast-score.json",
+   "2026-11-08 09:36",
+   "국가교통정보센터(ITS) 통행속도 — 이 PC 가 약 11분마다 받아 쌓은 것(07_API키/out/livespd) · 공휴일 = data/holidays.json · 굽는 도구 tools/sim/ …(전문은 파일에)"
+  ],
+  [
+   "nowcast.json",
+   "2026-11-08 09:36",
+   "국가교통정보센터(ITS) 통행속도 — 이 PC 가 약 11분마다 받아 쌓은 것(07_API키/out/livespd) · 공휴일 = data/holidays.json · 굽는 도구 tools/sim/ …(전문은 파일에)"
+  ],
+  [
    "npa-stats.json",
    "2026-10-20",
    "경찰청 누리집 「경찰통계자료」(www.police.go.kr › 정보공개 › 공공데이터 › 경찰통계자료) — 국·관마다 한 쪽"
   ],
   [
    "onto-events.json",
-   "2026-10-30 09:21",
+   "2026-11-08 09:35",
    "집회 = 서울경찰청 「오늘의 주요집회」(rally-seoul.json) · 공연 = 공연예술통합전산망 KOPIS(venue-events-kopis.json) · 침수 = 서울시 침수흔적도(seaso …(전문은 파일에)"
   ],
   [
@@ -1915,7 +1935,7 @@
   ],
   [
    "onto-loop-hist.json",
-   "2026-11-04",
+   "2026-11-08",
    "국가교통정보센터(ITS) 실시간 소통정보를 이 PC 가 약 11분마다 받아 쌓은 것(07_API키/out/livespd) × data/onto-loops.json 네 변 — tools/onto/lo …(전문은 파일에)"
   ],
   [
@@ -2035,13 +2055,18 @@
   ],
   [
    "rally-seoul.json",
-   "2026-10-24",
+   "2026-11-08",
    "서울특별시경찰청 「오늘의 주요집회」(www.smpa.go.kr/user/nd54882.do · 집회/시위 게시판) 본문 글 · 자리 = OpenStreetMap 지하철 출입구(© OpenStreet …(전문은 파일에)"
   ],
   [
    "rd-cell-seocho.json",
    "2026-10-12 04:54",
    "data/nav-seocho.json(국가교통정보센터 ITS 전국 표준노드링크 2026-09-14판 · 서초구 + 경계 밖 2km) 의 링크 선 × 국가지점번호식 250m 격자(EPSG:5179 · …(전문은 파일에)"
+  ],
+  [
+   "rd-cell-six.json",
+   "2026-11-07 22:41",
+   "data/nav-six.json(국가교통정보센터 ITS 전국 표준노드링크 2026-09-14판 · 서초·강남·송파·동작·관악·용산구 + 경계 밖 2km) 의 링크 선 × 국가지점번호식 250m 격자 …(전문은 파일에)"
   ],
   [
    "reach-hubs.json",
@@ -2144,8 +2169,13 @@
    "data/nav-seocho.json — 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판 · 신호 교차로 묶음(no)"
   ],
   [
+   "sig-approach-six.json",
+   "2026-11-07",
+   "data/nav-six.json — 국가교통정보센터(ITS) 전국 표준노드링크 2026-09-14판 · 신호 교차로 묶음(no)"
+  ],
+  [
    "sig-audit.json",
-   "2026-11-04 17:16",
+   "2026-11-08 09:57",
    "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)"
   ],
   [
@@ -2195,7 +2225,7 @@
   ],
   [
    "sigdir-seoul.json",
-   "2026-11-04 17:23",
+   "2026-11-08 09:59",
    "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간"
   ],
   [
@@ -2225,12 +2255,12 @@
   ],
   [
    "sim-apgujeong.json",
-   "2026-10-30 10:28",
+   "2026-11-07 12:40",
    "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
   ],
   [
    "sim-areas.json",
-   "2026-11-03",
+   "2026-11-07",
    "tools/sim/areas-bake.py ← data/sim-<이름>.json(tools/sim/area-bake.py 가 서울 도로망·신호값·교통량 조사로 엮음 · sim-cal.py 가 평소  …(전문은 파일에)"
   ],
   [
@@ -2245,12 +2275,12 @@
   ],
   [
    "sim-gangnam.json",
-   "2026-11-02 07:30",
+   "2026-11-07 12:42",
    "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
   ],
   [
    "sim-hyeonchung.json",
-   "2026-10-30 10:28",
+   "2026-11-07 12:46",
    "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
   ],
   [
@@ -2265,7 +2295,7 @@
   ],
   [
    "sim-naebang.json",
-   "2026-10-25 21:36",
+   "2026-11-07 12:53",
    "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
   ],
   [
@@ -2275,12 +2305,12 @@
   ],
   [
    "sim-renaissance.json",
-   "2026-10-30 10:28",
+   "2026-11-07 12:58",
    "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
   ],
   [
    "sim-sadang.json",
-   "2026-10-25 21:36",
+   "2026-11-07 13:01",
    "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
   ],
   [
@@ -2290,7 +2320,7 @@
   ],
   [
    "sim-seochoyeok.json",
-   "2026-11-02 07:30",
+   "2026-11-07 13:04",
    "자동으로 엮은 구역(tools/sim/area-bake.py) — 개념 시연 · 신호 없는 교차로는 지나감 · 다리는 넷으로 줄임 · 회전 금지 미반영 · 고가·지하차도 차는 빠짐"
   ],
   [
@@ -2305,7 +2335,7 @@
   ],
   [
    "spd-normal-seocho.json",
-   "2026-10-22",
+   "2026-11-08",
    "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo 를 약 10분마다 받아 쌓은 것(tools/signal/livespd-bake.py → 저장소 밖 livespd/) — 서초구 + 2k …(전문은 파일에)"
   ],
   [
@@ -2315,7 +2345,7 @@
   ],
   [
    "station-events.json",
-   "2026-10-24",
+   "2026-11-08",
    "공연 = (재)예술경영지원센터 KOPIS OpenAPI(data/venue-events-kopis.json · 수도권 밖은 venue-events-kopis/<시도>.json) · 집회 = 서울특별 …(전문은 파일에)"
   ],
   [
@@ -2435,7 +2465,7 @@
   ],
   [
    "twin-shadow.json",
-   "2026-11-04 17:15",
+   "2026-11-07 13:34",
    "개념 시연 — 예측·보증 아님 · 트윈 = 그 시각 ITS 실측으로 길을 채우고(Greenshields 채움 · 설계값) 앞을 돌린 시뮬 · 평소 = 실측 없이 평소 수요 · 그대로 = 지금 상태가 …(전문은 파일에)"
   ],
   [
@@ -2445,7 +2475,7 @@
   ],
   [
    "utic-ims.json",
-   "2026-11-04 16:06",
+   "2026-11-08 09:21",
    "경찰청 도시교통정보센터(UTIC) 개방데이터 — 돌발정보(www.utic.go.kr/guide/imsOpenData.do · 인증키·등록 IP 로 받음) · 시내 도로의 사고·공사·행사·통제 등"
   ],
   [

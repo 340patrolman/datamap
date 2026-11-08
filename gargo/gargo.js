@@ -24,8 +24,8 @@
     if (PKA === 'seoul') { var t0p = Date.now(), pm = function () { var el = $('gMsg'); el.innerHTML = '<span class="prep"><i class="spin"></i><b>서울 25구 길 묶음 준비 중</b> · ' + Math.round((Date.now() - t0p) / 1000) + '초</span><small class="prep2">처음엔 10초 안팎 · 그동안 화면이 잠깐 멈출 수 있다</small>'; el.style.display = 'block'; }; pm(); PREP = setInterval(pm, 1000); }
     /* v0.7.0 — 소유자 2026-10-14 「서초·강남·송파·동작·관악·용산」 여섯 구 묶음(마디 81,049 · 신호 680 · 9.5MB/전송 2.6MB) · 못 읽으면 서초 묶음 */
     /* v0.8.0 — 칸 묶음(pk-<PKA>/core.json)이 있으면 큰길만 먼저 · 없으면 종전 한 장 */
-    if (!XSP) XSP = getJ('../data/tgis-seoul.json').then(function (j) { if (j && j.items) XSJ = j; else XSP = null; return j; });   /* v0.44.1 신호값 없는 교차로(T-GIS)는 길 묶음과 같이 받기 시작 — 짓기 뒤에 받기 시작하면 폰에서 길 그물보다 4~5초 늦게 붙어 그 사이 고른 길이 바뀌었다(신호 세션 실측) */
-    return getJ('pk-' + PKA + '/core.json').then(function (c) { if (c && c.segs && c.tiles && c.cell) { PK = c; return pkMerge(); } return getJ('pack-six.json').then(function (j) { if (j && j.seg) return j; AREA_KO = '서초구'; return getJ('pack-seocho.json'); }); }).then(function (j) { if (!j || !j.seg) { msg('길 자료를 읽지 못했다 — 새로 고쳐 본다'); return; } build(j); msg(''); fitAll(); draw(); xsLoad(); hashGo(); sigLoad(); baseLoad(); ['s', 't'].forEach(function (k) { var b = document.querySelector('[data-ov=' + k + ']'); if (b) b.classList.toggle('on', !!OV[k]); }); });
+    LOADT = Date.now(); if (!XSP) XSP = getJ('../data/tgis-seoul.json').then(function (j) { if (j && j.items) XSJ = j; else XSP = null; return j; });   /* v0.44.1 신호값 없는 교차로(T-GIS)는 길 묶음과 같이 받기 시작 — 짓기 뒤에 받기 시작하면 폰에서 길 그물보다 4~5초 늦게 붙어 그 사이 고른 길이 바뀌었다(신호 세션 실측) */
+    return getJ('pk-' + PKA + '/core.json').then(function (c) { if (c && c.segs && c.tiles && c.cell) { PK = c; return pkMerge(); } return getJ('pack-six.json').then(function (j) { if (j && j.seg) return j; AREA_KO = '서초구'; return getJ('pack-seocho.json'); }); }).then(function (j) { if (!j || !j.seg) { msg('길 자료를 읽지 못했다 — 새로 고쳐 본다'); return; } build(j); msg(''); fitAll(); draw(); requestAnimationFrame(function () { setTimeout(xsLoad, 0); }); hashGo(); sigLoad(); baseLoad();   /* v0.44.2 지도를 먼저 그리고 값 없는 신호는 다음 그림 뒤에 붙인다(폰 실측 — 짓기 바로 뒤에 붙이면 지도가 처음 뜨는 때가 여섯 구 다시 열기 0.8 → 1.3초로 늦었다) */ ['s', 't'].forEach(function (k) { var b = document.querySelector('[data-ov=' + k + ']'); if (b) b.classList.toggle('on', !!OV[k]); }); });
   }
   /* ---------- v0.8.0 칸 묶음 — 소유자 2026-10-14 「한강 이남이 완성되면 서울 전체로」 · 서울 한 장은 약 40MB 라 폰에 못 싣는다 ----------
      core = 등급 1~5 길 줄 · 칸 = 2km 골목 줄(tools/gargo/pack-tile.py) · 번호는 전체 번호 → 받은 것끼리 다시 매겨(pkMerge) 종전 build 로 */
@@ -145,7 +145,7 @@
   /* v0.5.0 값 없는 신호 — 서울 모든 신호 교차로(T-GIS · data/tgis-seoul.json) 가운데 신호값을 못 받은 곳. 길 마디에 붙여 두고 「신호가 있다」고만 친다(기다림은 받은 값의 가운데값에 견준 어림).
      종전에는 값 있는 189곳만 신호로 쳐서, 그 신호를 피하려고 값 없는 신호가 줄지어 선 길이나 골목으로 돌았다 */
   var XS = [];
-  var XSJ = null, XSP = null;
+  var XSJ = null, XSP = null, LOADT = 0, XSWAIT = false;   /* v0.44.2 첫 길 셈은 값 없는 신호가 붙을 때까지(최대 3초) 미룬다 — 붙은 뒤 길이 바뀌지 않게 */
   function xsLoad() { if (!XSP) XSP = getJ('../data/tgis-seoul.json').then(function (j) { if (j && j.items) XSJ = j; else XSP = null; return j; }); return XSP.then(function (j) { if (!j || !j.items || !G) return; xsBuild(j); if (dest && me && !guide) plan(); else draw(); }); }
   function xsBuild(j) { if (!j || !j.items || !G) return; var C = 60, ng = {}, i, k; for (i = 0; i < G.n; i++) { k = Math.floor(G.X[i] / C) + ',' + Math.floor(G.Y[i] / C); (ng[k] || (ng[k] = [])).push(i); }
       /* 마디마다 닿는 길의 가장 큰 길·가장 작은 길 등급 — 자동차전용 본선만 닿는 마디(신호가 없다)와 골목끼리 만나는 마디(큰길 신호를 건너지 않는다)는 신호로 치지 않는다 */
@@ -347,7 +347,7 @@
     return { esp: esp, es: es, pts: pts, cum: cum, dist: dist, time: t, tc: tc, free: free, mans: mans, sigs: sigs, lims: lims, T0: T0, a: a, b: b, live: dist ? liveLen / dist : 0, cong: cong, kn: kn, accs: accs, mode: MODE, viaLive: !!LIVER };
   }
   var OFFE = { on: false, ns: 0, nsT: 0, back: 0, last: 0 };   /* v0.30.0 경로 이탈 한 번(길이 바뀌어도 이어 셈) — on 이탈 중 · ns 「새 경로」 말함 · back 길 위로 이어 돌아온 횟수 · last 마지막 다시 찾기 */
-  function plan(noFit) { if (!G || !dest || !me) return; var TG = tgtOf(); if (PK && !PKW) { var mk = pkKeys([[me.x, me.y], [TG.x, TG.y]].concat(WPS.map(function (w) { return [w.x, w.y]; })).concat([[dest.x, dest.y]]), 2200); if (mk.length) { PKW = true; note('골목 길을 받는 중…'); pkLoad(mk).then(function (n) { PKW = false; if (n) pkRebuild(true, false, mk); plan(noFit); }); return; } }
+  function plan(noFit) { if (!G || !dest || !me) return; if (!G.XS && XSP && !guide && Date.now() - LOADT < 3000) { if (!XSWAIT) { XSWAIT = true; note('길을 고르는 중…'); setTimeout(function () { if (XSWAIT) { XSWAIT = false; plan(noFit); } }, Math.max(50, 3000 - (Date.now() - LOADT))); } return; } XSWAIT = false; var TG = tgtOf(); if (PK && !PKW) { var mk = pkKeys([[me.x, me.y], [TG.x, TG.y]].concat(WPS.map(function (w) { return [w.x, w.y]; })).concat([[dest.x, dest.y]]), 2200); if (mk.length) { PKW = true; note('골목 길을 받는 중…'); pkLoad(mk).then(function (n) { PKW = false; if (n) pkRebuild(true, false, mk); plan(noFit); }); return; } }
     if (SIG.ready && !SIGW) { var CR = sigCorridor(), mk2 = CR ? sigKeys(CR.pts, CR.r) : []; if (mk2.length) { SIGW = true; var dk = dest; sigEnsure(CR.pts, CR.r).then(function () { SIGW = false; if (!guide && dest === dk && route) plan(true); }, function () { SIGW = false; }); } }   /* 길은 지금 있는 값으로 바로 · 칸이 오면 조용히 다시(안내 중이면 다시 안 함) */
     var T0 = Date.now() / 1000, r = findRoute(me.x, me.y, TG.x, TG.y, T0, me.spd > 2 ? me.hd : null);
     if (!r && PKA === 'six' && !(dest && dest.vip) && MODE !== 'v' && (outBox(TG) || outBox(me))) { var LLd = LL(dest.x, dest.y); if (seoulJump(LLd[0], LLd[1], dest.nm)) return; }

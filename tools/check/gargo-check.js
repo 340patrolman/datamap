@@ -9,7 +9,7 @@
   function fail(m) { ck('검사 스크립트가 끝까지 돌았다', false, m); send(); }
   function ready() { try { var g = window.GARGO, st = g && g.state(); return !!(st && st.G && st.G.S && st.G.S.length && st.G.XS); } catch (e) { return false; } }
   /* v0.8.0 칸 묶음 — 처음엔 큰길만(칸 0) 받는지 보고, 검사(길 찾기 여러 벌)는 칸을 모두 받은 뒤에 한다 */
-  var poll = setInterval(function () { if (ready()) { clearInterval(poll); var P0 = window.GARGO.pk(); ck('칸 묶음 — 처음엔 큰길 한 장 + 받은 자리(#from·#to) 둘레 칸만(전체의 1/4 아래)', !P0.on || (P0.tiles > 0 && P0.tiles < P0.total / 4), JSON.stringify(P0));
+  var poll = setInterval(function () { if (ready()) { clearInterval(poll); try { var g0 = window.GARGO; g0.todFor('3971', function () {}); if (g0.alrLoad) g0.alrLoad(); if (g0.icLoad) g0.icLoad(); } catch (e) {}   /* v0.44.0 뒤 검사가 쓰는 자료(경찰청 계획·카메라·나들목)를 먼저 받아 둔다 — 전에는 다른 단계가 우연히 받아 둔 것에 기댔다(신호 칸을 필요한 곳만 받으면서 드러남) */ var P0 = window.GARGO.pk(); ck('칸 묶음 — 처음엔 큰길 한 장 + 받은 자리(#from·#to) 둘레 칸만(전체의 1/4 아래)', !P0.on || (P0.tiles > 0 && P0.tiles < P0.total / 4), JSON.stringify(P0));
       if (P0.on) ck('칸 묶음 — 큰길만·일부 칸만 받아도 큰길 마디의 회전 제한은 다 있다', window.GARGO.pkTurns() > P0.turnsTotal * 0.8, window.GARGO.pkTurns() + ' / 원본 ' + P0.turnsTotal);
       window.GARGO.pkAll().then(function () { var P1 = window.GARGO.pk(); if (P1.on) ck('칸 묶음 — 골목 칸을 모두 받아 합쳤다', P1.tiles === P1.total && window.GARGO.state().G.S.length > 60000, P1.tiles + '/' + P1.total + '칸 · 길 줄 ' + window.GARGO.state().G.S.length);
         /* 내용 맞대기 — 큰길 묶음(core)의 회전 제한 200개가 길 계산이 쓰는 표(G.ban·G.only · 열쇠 「마디|들어오는 길 번호」)에 그대로 있는가. core 마디는 합칠 때 맨 앞에 core.nodes 차례로 번호가 매겨진다 */

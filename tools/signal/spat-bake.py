@@ -468,14 +468,18 @@ def publish():
             if not os.path.exists(hp) or time.time() - os.path.getmtime(hp) > 3600: run(sys.executable, '-X', 'utf8', os.path.join('tools', 'onto', 'loop-hist.py'))
         except Exception:
             pass
-        run('git', 'add', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json', 'data/onto-loop-hist.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
+        # 2026-11-09 한 장 data/sigdir-seoul.json(15.8MB)은 하루 한 번만 올린다 — 15분마다 올려 저장소가 하루 11.9MB 늘었다(전체 24.8MB 중).
+        #  웹은 칸(data/sigdir/c·cl·index)을 읽고 한 장은 색인 없을 때 대신 받기뿐(map2d.js) · 도구는 이 PC 파일을 읽는다
+        lt9 = run('git', 'log', '-1', '--format=%ct', '--', 'data/sigdir-seoul.json').stdout.strip()
+        one9 = ['data/sigdir-seoul.json'] if (not lt9.isdigit() or time.time() - int(lt9) > 20 * 3600) else []
+        run('git', 'add', '--', *one9, 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json', 'data/onto-loop-hist.json')            # 열쇠 검사는 올릴 준비가 된 변경만 본다 — 먼저 올릴 준비를 한다
         if run(sys.executable, '-X', 'utf8', os.path.join('tools', 'keycheck.py')).returncode != 0:
             print('열쇠 검사에 걸려 올리지 않았다', flush=True); return
         bad = [f for f in ('data/sigdir-seoul.json', 'data/sigdir/index.json') if not json_ok(os.path.join(ROOT, f))]   # 깨진 JSON 은 올리지 않는다(다음 굽기가 고친다)
         if bad:
             print('깨진 JSON 이라 올리지 않았다', bad, flush=True); return
         run('git', 'pull', '-q', '--ff-only', 'origin', 'main')
-        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', 'data/sigdir-seoul.json', 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json', 'data/onto-loop-hist.json')
+        c = run('git', 'commit', '-q', '-m', 'sigdir: 방향별 신호 자동 갱신\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>', '--', *one9, 'data/sigdir', 'data/sig-audit.json', 'data/live-spd-seocho.json', 'data/live-spd-six.json', 'data/live-acc-seoul.json', 'data/live-ims-seoul.json', 'data/onto-loop-hist.json')
         p2 = run('git', 'push', '-q', 'origin', 'main')
         print(datetime.datetime.now().strftime('%H:%M:%S'), '올림' if c.returncode == 0 and p2.returncode == 0 else '올리기 실패 ' + (c.stderr or p2.stderr)[:120], flush=True)
     except Exception as e:

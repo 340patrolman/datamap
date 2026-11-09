@@ -171,6 +171,7 @@
   #gBot .btns .go { flex: 1; background: linear-gradient(135deg, #2f6bff, #1b54d6); color: #fff; border: 0; font-size: calc(17px * var(--fz, 1)); font-weight: 900; box-shadow: 0 6px 16px rgba(47,107,255,.35); }
   .steps { margin-top: 10px; } .steps summary { font-size: calc(14px * var(--fz, 1)); font-weight: 800; padding: 8px 0; cursor: pointer; }
   .steps .st { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: calc(13.5px * var(--fz, 1)); line-height: 1.5; } .steps .st i { font-style: normal; width: 22px; text-align: center; flex: 0 0 auto; } .steps .st b { width: 52px; flex: 0 0 auto; }
+  .steps .manb { margin-left: 4px; padding: 2px 8px; min-height: 30px; border-radius: 8px; border: 1px solid #b45309; background: transparent; color: #b45309; font-weight: 800; font-size: calc(12.5px * var(--fz, 1)); cursor: pointer; }   /* v0.47.0 ✍ 주기 넣기 */
   .steps .cap { font-size: calc(12.5px * var(--fz, 1)); font-weight: 800; color: var(--dim); margin: 10px 0 2px; }
   .rk summary { color: #b45309; } .rk .st b.nm { width: auto; } .rk .st span b { width: auto; } .rk .st b.r { color: #dc2626; } .rk .cap { font-weight: 600; line-height: 1.5; }
   #gBot .eta { display: flex; align-items: center; gap: 14px; } #gBot .eta div { display: flex; flex-direction: column; } #gBot .eta b { font-size: calc(21px * var(--fz, 1)); font-weight: 900; } #gBot .eta span { font-size: calc(11.5px * var(--fz, 1)); color: var(--dim); }
@@ -283,7 +284,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.46.8"></script>
+<script src="gargo.js?v=0.47.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

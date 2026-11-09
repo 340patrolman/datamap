@@ -24,7 +24,7 @@
     if (PKA === 'seoul') { var t0p = Date.now(), pm = function () { var el = $('gMsg'); el.innerHTML = '<span class="prep"><i class="spin"></i><b>서울 25구 길 묶음 준비 중</b> · ' + Math.round((Date.now() - t0p) / 1000) + '초</span><small class="prep2">처음엔 10초 안팎 · 그동안 화면이 잠깐 멈출 수 있다</small>'; el.style.display = 'block'; }; pm(); PREP = setInterval(pm, 1000); }
     /* v0.7.0 — 소유자 2026-10-14 「서초·강남·송파·동작·관악·용산」 여섯 구 묶음(마디 81,049 · 신호 680 · 9.5MB/전송 2.6MB) · 못 읽으면 서초 묶음 */
     /* v0.8.0 — 칸 묶음(pk-<PKA>/core.json)이 있으면 큰길만 먼저 · 없으면 종전 한 장 */
-    LOADT = Date.now(); if (!XSP) XSP = getJ('../data/tgis-seoul.json').then(function (j) { if (j && j.items) XSJ = j; else XSP = null; return j; }); sigPrefetch(); livePrefetch();   /* v0.44.1 신호값 없는 교차로(T-GIS)는 길 묶음과 같이 받기 시작 — 짓기 뒤에 받기 시작하면 폰에서 길 그물보다 4~5초 늦게 붙어 그 사이 고른 길이 바뀌었다(신호 세션 실측) */
+    LOADT = Date.now(); if (!XSP) XSP = getJ('../data/tgis-seoul.json').then(function (j) { if (j && j.items) XSJ = j; else XSP = null; return j; }); sigPrefetch(); livePrefetch(); kscLoad();   /* v0.44.1 신호값 없는 교차로(T-GIS)는 길 묶음과 같이 받기 시작 — 짓기 뒤에 받기 시작하면 폰에서 길 그물보다 4~5초 늦게 붙어 그 사이 고른 길이 바뀌었다(신호 세션 실측) */
     return getJ('pk-' + PKA + '/core.json').then(function (c) { if (c && c.segs && c.tiles && c.cell) { PK = c; return pkMerge(); } return getJ('pack-six.json').then(function (j) { if (j && j.seg) return j; AREA_KO = '서초구'; return getJ('pack-seocho.json'); }); }).then(function (j) { if (!j || !j.seg) { msg('길 자료를 읽지 못했다 — 새로 고쳐 본다'); return; } build(j); if (XSJ) xsBuild(XSJ); msg(''); fitAll(); draw(); if (!G.XS) xsLoad();   /* v0.45.7 값 없는 신호가 이미 와 있으면 짓자마자 붙인다(xsBuild PC 27ms) — 그리기 뒤로 미루니 폰(CPU 4배)에서 그사이 색인·칸 읽기·그리기가 먼저 돌아 첫 길이 2~5초 늦었다(신호 세션 tm: build→xs 여섯 구 2.0 · 서울 4.9초) */ hashGo(); sigLoad(); baseLoad();   /* v0.44.2 지도를 먼저 그리고 값 없는 신호는 다음 그림 뒤에 붙인다(폰 실측 — 짓기 바로 뒤에 붙이면 지도가 처음 뜨는 때가 여섯 구 다시 열기 0.8 → 1.3초로 늦었다) */ ['s', 't'].forEach(function (k) { var b = document.querySelector('[data-ov=' + k + ']'); if (b) b.classList.toggle('on', !!OV[k]); }); });
   }
   /* ---------- v0.8.0 칸 묶음 — 소유자 2026-10-14 「한강 이남이 완성되면 서울 전체로」 · 서울 한 장은 약 40MB 라 폰에 못 싣는다 ----------
@@ -149,7 +149,7 @@
       var P0 = me && dest ? [] : [[view.cx, view.cy]], R0 = me && dest ? 1500 : 3000; if (me) P0.push([me.x, me.y]); if (dest) P0.push([dest.x, dest.y]); WPS.forEach(function (w) { P0.push([w.x, w.y]); }); if (me && dest) { var LN = lineP(me.x, me.y, dest.x, dest.y, 1000); P0 = P0.concat(LN); R0 = 1200; }   /* v0.46.0 두 끝 1.5km → 두 끝을 잇는 곧은 줄 둘레 1.2km(칸은 미리 받기로 같이 받아 둠) */   /* v0.45.3 목적지가 있으면 두 끝(과 경유지) 둘레 1.5km 만 먼저 — 서울 시청→잠실에서 처음 22칸·풀린 크기 8.3MB 를 다 받아야 시간이 나왔다(폰 22초) · 길 둘레는 plan 이 뒤에서 받아 다듬는다 */
       return sigEnsure(P0, R0, true).then(function () {
         var v = []; Object.keys(SIG.its).forEach(function (no) { SIG.its[no].forEach(function (r) { if (!recOk(r)) return; var C = r.ci || r.cyc; if (!C) return; r.mv.forEach(function (m) { if (m[1] === 'St' && m[2] != null && m[2] < C) v.push((C - m[2]) * (C - m[2]) / (2 * C)); }); }); });
-        v.sort(function (a, b) { return a - b; }); if (v.length) SIG.typ = v[v.length >> 1]; kscLoad().then(function () { kscApply(); if (SIG.ready) { if (dest && me) planQ(false, 'ksc'); draw(); paint(); } }); }).then(function () { tmk('sigReady'); SIG.ready = 1; SIG.at = Date.now(); if (dest && me) planQ(false, 'sigReady'); draw(); paint(); }); });
+        v.sort(function (a, b) { return a - b; }); if (v.length) SIG.typ = v[v.length >> 1]; kscLoad().then(function () { var u0 = kscUsed(); kscApply(); if (SIG.ready) { if (dest && me && kscOnRoute(u0)) planQ(false, 'ksc'); draw(); paint(); } }); }).then(function () { tmk('sigReady'); SIG.ready = 1; SIG.at = Date.now(); if (dest && me) planQ(false, 'sigReady'); draw(); paint(); }); });
   }
   /* v0.5.0 값 없는 신호 — 서울 모든 신호 교차로(T-GIS · data/tgis-seoul.json) 가운데 신호값을 못 받은 곳. 길 마디에 붙여 두고 「신호가 있다」고만 친다(기다림은 받은 값의 가운데값에 견준 어림).
      종전에는 값 있는 189곳만 신호로 쳐서, 그 신호를 피하려고 값 없는 신호가 줄지어 선 길이나 골목으로 돌았다 */
@@ -196,6 +196,9 @@
     return null; }
   var KSC = null, KSCP = null;
   function kscLoad() { if (KSCP) return KSCP; KSCP = getJ('../data/sig-ksc-seocho.json').then(function (j) { KSC = j && j.items ? j : null; return KSC; }, function () { return null; }); return KSCP; }
+  /* v0.46.3 (신호 세션 폰 재측: 서울 시청→잠실에서 교통과 계획(서초 5곳)이 14~15초에 와 길을 한 번 더 셌다 — 그 길엔 그 교차로가 없다) 미리 받고 · 새로 붙은 교통과 교차로가 지금 길 위에 있을 때만 다시 센다(길이 없으면 센다) */
+  function kscUsed() { return KSC && KSC.used ? Object.keys(KSC.used) : []; }
+  function kscOnRoute(u0) { var nw = kscUsed().filter(function (no) { return u0.indexOf(no) < 0; }); if (!nw.length) return false; if (!route || !route.es || !G || !G.n2s) return true; var on = {}; route.es.forEach(function (e) { var si = G.n2s[G.eB[e]]; if (si >= 0 && G.sig[si]) on[G.sig[si].no] = 1; }); return nw.some(function (no) { return on[no]; }); }
   function kscApply() { try { kscApply0(); } catch (e) { if (window.console) console.warn('교통과 계획 적용 실패', e); } }
   function kscApply0() { if (!KSC || !G) return; var have = {}; G.sig.forEach(function (s) { have[s.no] = 1; });
     KSC.items.forEach(function (it) { var no = String(it.no); if (!have[no] || (SIG.its[no] || []).some(function (q) { return q.src !== 'k'; })) return;

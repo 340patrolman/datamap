@@ -13,6 +13,7 @@ import os, sys, json, math, datetime, collections, importlib.util
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.dirname(ROOT)
 TH, PERIM, NEIGH_M, ANG = 10, 3200, 900, 50
+IQ = 0.1   # 블록 넓이 비율(4π·넓이÷둘레²) 아래면 뺀다 — 한 길 위에 늘어선 교차로를 오가는 「고리」(2026-11-09 · 신반포로 고속터미널·반포역·주홍교·기린한방병원 0.012 = 양방향 막힘이지 블록이 아님) · 실제 블록: 반포 터미널 0.69 · 서초역·법원 0.60 · 대치 0.27
 DIRS = {'nt': 0, 'ne': 45, 'et': 90, 'se': 135, 'st': 180, 'sw': 225, 'wt': 270, 'nw': 315}
 spec = importlib.util.spec_from_file_location('ae', os.path.join(ROOT, 'tools', 'onto', 'act-effect.py'))
 ae = importlib.util.module_from_spec(spec); spec.loader.exec_module(ae)
@@ -93,6 +94,10 @@ def main():
         pts = [(O[i]['lon'], O[i]['lat']) for i in key]
         cr = [(pts[(i + 1) % len(pts)][0] - pts[i][0]) * (pts[(i + 2) % len(pts)][1] - pts[(i + 1) % len(pts)][1]) - (pts[(i + 1) % len(pts)][1] - pts[i][1]) * (pts[(i + 2) % len(pts)][0] - pts[(i + 1) % len(pts)][0]) for i in range(len(pts))]
         if not (all(x > 0 for x in cr) or all(x < 0 for x in cr)): continue   # 볼록한 블록만 — 꼬인 차례(같은 넷을 엇갈려 도는 것)는 블록을 도는 고리가 아니다
+        la0 = sum(p[1] for p in pts) / len(pts); xy = [(p[0] * 111000 * math.cos(math.radians(la0)), p[1] * 111000) for p in pts]
+        ar = abs(sum(xy[i][0] * xy[(i + 1) % len(xy)][1] - xy[(i + 1) % len(xy)][0] * xy[i][1] for i in range(len(xy)))) / 2
+        pl = sum(math.dist(xy[i], xy[(i + 1) % len(xy)]) for i in range(len(xy)))
+        if 4 * math.pi * ar / pl ** 2 < IQ: continue   # 한 줄로 늘어선 넷(길 하나를 오가는 것)은 블록을 도는 고리가 아니다
         legs = [G[key[i]][key[(i + 1) % len(key)]][0] for i in range(len(key))]
         lks = [[l for k, l in sorted(ir.get(a, []))] for a in legs]
         if any(not x for x in lks): continue
@@ -131,7 +136,7 @@ def main():
     def regd(k): return any(set(k) == set(m) and len(k) == len(m) for m in reg)
     out = ['# 막힘 고리 후보 — %s · %s' % ('여섯 구(서초·강남·송파·동작·관악·용산)' if SIX else '서초', datetime.date.today().isoformat()), '',
            '찾은 닫힌 고리 %d개(교차로 셋·넷 · 둘레 %dm 이하 · 이웃 %dm 이하) · 쌓인 속도 %d장 · 「함께 막힘」 = 넷이면 셋 이상, 셋이면 셋 다 %dkm/h 이하' % (len(res), PERIM, NEIGH_M, len(S), TH), '',
-           '⚠ 후보다 — 방위로 변을 이었기 때문에 대각 교차로는 어긋날 수 있다 · onto-loops 에 올리는 것은 형님이 현장에서 맞다 한 것만', '',
+           '⚠ 후보다 — 방위로 변을 이었기 때문에 대각 교차로는 어긋날 수 있다 · onto-loops 에 올리는 것은 형님이 현장에서 맞다 한 것만 · 블록 넓이 비율(4π·넓이÷둘레²) %.2f 아래 = 한 길 위에 늘어선 교차로라 뺐다' % IQ, '',
            '| 차례 | 교차로(도는 차례)' + (' | 구' if SIX else '') + ' | 방향 | 둘레 | 이어진 막힘 토막(30분↑) · 가장 긴 것 · 받은 때 합 | 날 | 많은 시각 | 밤에도 느린 변 | 등록 |', '|---|---|' + ('---|' if SIX else '') + '---|---|---|---|---|---|---|']
     GN = {'11650': '서초', '11680': '강남', '11710': '송파', '11590': '동작', '11620': '관악', '11170': '용산'}
     if SIX:

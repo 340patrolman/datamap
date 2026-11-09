@@ -32,14 +32,14 @@
   var PKF = {};   /* 받기에 실패한 칸 → 시각(30초 동안 다시 안 부른다 — 끊긴 곳에서 받기·다시 짓기를 끝없이 되풀이하지 않게) */
   var PKA = (/[?&]pk=(seoul|six)(?![a-z])/.exec(location.search) || (function () { try { return localStorage.getItem('tg_gargo_pk') === 'seoul' ? [0, 'seoul'] : null; } catch (e) { return null; } })() || [0, 'six'])[1], PK = null,   /* v0.43.0 여섯 구 밖을 한 번 고르면 이 기기는 서울 전체 묶음(tg_gargo_pk) · ?pk=six 로 되돌림 */   /* 범위 — 지금 여섯 구 · 이남이 차면 'seoul' · 시험은 주소 뒤 ?pk=seoul */
    PKT = {}, PKL = {}, PKRT = 0, PKW = false;
-  function pkMerge() { var C = PK, nl = {}, nx = [], ny = [], seg = [], geo = [], sl = {}, turns = [], F = [C].concat(Object.keys(PKT).map(function (k) { return PKT[k]; }));
+  function pkMerge() { var C = PK, nl = {}, nx = [], ny = [], seg = [], geo = [], sl = {}, turns = [], gid = [], F = [C].concat(Object.keys(PKT).map(function (k) { return PKT[k]; }));
     F.forEach(function (f) { f.nodes.forEach(function (r) { if (nl[r[0]] == null) { nl[r[0]] = nx.length; nx.push(r[1]); ny.push(r[2]); } }); });
     /* v0.15.1 칸의 길 줄을 복사하지 않고 그대로 쓴다 — 받은 칸 줄을 한 번 「합친 꼴」로 바꿔 두고(앞 칸 = 길 줄 번호를 뒤 17~20 칸으로 · 원래 마디·모양 번호 보관) 합칠 때마다 0·1·8 칸만 고쳐 쓴다(종전 r.slice(1) 복사본이 칸 원본과 두 벌로 남았다) */
     F.forEach(function (f) { if (f._a) return; var n = f.segs.length, A = new Float64Array(n), B = new Float64Array(n), I = new Float64Array(n), Q = new Int32Array(n); f.segs.forEach(function (r, i) { I[i] = r.shift(); A[i] = r[0]; B[i] = r[1]; Q[i] = r[8]; }); f._a = A; f._b = B; f._id = I; f._g = Q; });   /* 덧붙일 값은 배열 뒤가 아니라 칸마다 숫자 배열에(배열을 늘리면 자리를 크게 다시 잡아 절약분을 먹었다) */
-    F.forEach(function (f) { f.segs.forEach(function (r, i) { if (sl[f._id[i]] != null) return; var a = nl[f._a[i]], b = nl[f._b[i]]; if (a == null || b == null) return; r[0] = a; r[1] = b; if (f._g[i] >= 0) { geo.push(f.geo[f._g[i]]); r[8] = geo.length - 1; } else r[8] = f._g[i]; sl[f._id[i]] = seg.length; seg.push(r); }); });
+    F.forEach(function (f) { f.segs.forEach(function (r, i) { if (sl[f._id[i]] != null) return; var a = nl[f._a[i]], b = nl[f._b[i]]; if (a == null || b == null) return; r[0] = a; r[1] = b; if (f._g[i] >= 0) { geo.push(f.geo[f._g[i]]); r[8] = geo.length - 1; } else r[8] = f._g[i]; sl[f._id[i]] = seg.length; gid.push(f._id[i]); seg.push(r); }); });
     var tk = {}; F.forEach(function (f) { f.turns.forEach(function (t) { var v = nl[t[0]]; if (v == null) return; var k = t[0] + '|' + t[1] + '|' + t[2] + '|' + t[3]; if (tk[k]) return; tk[k] = 1; turns.push([v, t[1], t[2], t[3]]); }); });   /* v0.9.2 — t[1]·t[2] 는 길(way) 번호다(길 줄 번호가 아니다) — v0.8.0~0.9.1 은 길 줄 번호로 바꿔 회전 제한이 모두 무효였다(독립 검수) */
     var sig = C.sig.map(function (g) { return [g[0], g[1], g[2], g[3], g[4], g[5], g[6].map(function (n) { return nl[n]; }).filter(function (n) { return n != null; })]; });
-    return { base: C.base, nx: nx, ny: ny, names: C.names, ways: C.ways, seg: seg, links: C.links, tl: C.tl, geo: geo, turns: turns, sig: sig, area: C.area, made: C.made }; }
+    return { gid: gid, base: C.base, nx: nx, ny: ny, names: C.names, ways: C.ways, seg: seg, links: C.links, tl: C.tl, geo: geo, turns: turns, sig: sig, area: C.area, made: C.made }; }
   function pkKeys(pts, r) { if (!PK) return []; var c = PK.cell, out = {}; pts.forEach(function (q) { if (!q) return; for (var ix = Math.floor((q[0] - r) / c); ix <= Math.floor((q[0] + r) / c); ix++) for (var iz = Math.floor((q[1] - r) / c); iz <= Math.floor((q[1] + r) / c); iz++) { var k = ix + '_' + iz; if (PK.tiles[k] != null && !PKT[k] && !PKL[k] && !(PKF[k] && Date.now() - PKF[k] < 30000)) out[k] = 1; } }); return Object.keys(out); }
   var PKVIP = 0, PKVIPALL = false;
   function pkLoad(keys) { if (MODE === 'v' && !PKVIP) return Promise.resolve(0); var n = 0; keys.forEach(function (k) { PKL[k] = 1; }); return Promise.all(keys.map(function (k) { return getJ('pk-' + PKA + '/t/' + k + '.json' + (PK.bake ? '?b=' + PK.bake : '')).then(function (t) { delete PKL[k];
@@ -108,15 +108,17 @@
     if (all.length < 30) return; LIVER = { all: med(all) }; Object.keys(by).forEach(function (c) { if (by[c].length >= 20) LIVER[c] = med(by[c]); }); liveFill(); }
   /* v0.14.2 이웃 메움 — 실시간 값이 없는 줄(이름 있는 길 · 등급 5 까지)은 같은 이름으로 곧게(45° 안) 이어지는 앞뒤 줄을 700m·여섯 걸음까지 따라가 처음 만난 실시간 값을 거리 반비례로 쓴다 · 없으면 종전대로 등급 비율 */
   var FILL = null;
-  function liveFill() { FILL = null; if (!LIVE.m || !G) return; var ne = G.ne, F = new Float32Array(ne), inH, inL, i, e;
+  /* v0.46.4 (신호 세션 폰 CPU 기록: 골목 칸이 붙어 길 그래프를 다시 지으면 liveFill(이웃 메움 · 폰 약 1초)을 처음부터 다시 걸었다) 메운 값을 길 줄의 전체 번호(gid × 2 + 방향)로 기억해, 같은 소통 자료(LIVE.at)면 다시 걷지 않는다 — 골목 칸은 등급 6 아래 줄이라 큰길 메움 값이 안 바뀐다 */
+  var FILLC = null;
+  function liveFill() { FILL = null; if (!LIVE.m || !G) return; var ne = G.ne, F = new Float32Array(ne), inH, inL, i, e, GID = G.j && G.j.gid, C0 = FILLC && FILLC.at === LIVE.at && GID ? FILLC.m : null, C1 = C0 || {};
     var cnt = new Int32Array(G.n + 1); for (e = 0; e < ne; e++) cnt[G.eB[e] + 1]++; for (i = 0; i < G.n; i++) cnt[i + 1] += cnt[i]; inH = cnt.slice(); inL = new Int32Array(ne); var pos = cnt.slice(); for (e = 0; e < ne; e++) inL[pos[G.eB[e]]++] = e;
     function nmOf(x) { return G.S[G.eS[x]][5]; }
     function walk(e0, fwd) { var cur = e0, d = eLen(e0) * 0.5, nm = nmOf(e0); for (var k = 0; k < 6; k++) {   /* d = 메울 줄 가운데에서 잰 거리 — 긴 줄(우면산터널 1,964m)은 첫 걸음에 벌써 700m 를 넘어 메우지 않는다 */ var best = -1, ba = 46, a0, a1, j;
         if (fwd) { a0 = G.oHead[G.eB[cur]]; a1 = G.oHead[G.eB[cur] + 1]; } else { a0 = inH[G.eA[cur]]; a1 = inH[G.eA[cur] + 1]; }
         for (j = a0; j < a1; j++) { var f = fwd ? G.oList[j] : inL[j]; if (G.eS[f] === G.eS[cur] || nmOf(f) !== nm) continue; var ad = Math.abs(fwd ? angDiff(eBrgIn(cur), eBrgOut(f)) : angDiff(eBrgIn(f), eBrgOut(cur))); if (ad < ba) { ba = ad; best = f; } }
         if (best < 0 || d > 700) return null; var v = eLive(best); if (v) return [v, d + eLen(best) * 0.5]; d += eLen(best); cur = best; } return null; }
-    for (e = 0; e < ne; e++) { var q = G.S[G.eS[e]]; if (q[5] == null || q[5] < 0 || q[4] > 5 || eLive(e)) continue; var A = walk(e, true), B = walk(e, false); if (!A && !B) continue; var w1 = A ? 1 / Math.max(50, A[1]) : 0, w2 = B ? 1 / Math.max(50, B[1]) : 0; F[e] = ((A ? A[0] * w1 : 0) + (B ? B[0] * w2 : 0)) / (w1 + w2); }
-    FILL = F; }
+    for (e = 0; e < ne; e++) { var q = G.S[G.eS[e]]; if (q[5] == null || q[5] < 0 || q[4] > 5 || eLive(e)) continue; var ck = GID ? GID[G.eS[e]] * 2 + G.eR[e] : -1; if (C0 && ck >= 0 && C0[ck] !== undefined) { F[e] = C0[ck]; continue; } var A = walk(e, true), B = walk(e, false); if (!A && !B) { if (ck >= 0) C1[ck] = 0; continue; } var w1 = A ? 1 / Math.max(50, A[1]) : 0, w2 = B ? 1 / Math.max(50, B[1]) : 0; F[e] = ((A ? A[0] * w1 : 0) + (B ? B[0] * w2 : 0)) / (w1 + w2); if (ck >= 0) C1[ck] = F[e]; }
+    FILL = F; if (GID) FILLC = { at: LIVE.at, m: C1 }; }
   var AREA_KO = PKA === 'seoul' ? '서울 25구' : '서초·강남·송파·동작·관악·용산';
   try { if (/[?&]pk=six(?![a-z])/.test(location.search)) localStorage.removeItem('tg_gargo_pk'); } catch (e) {}
   if (PKA === 'seoul') try { document.title = document.title.replace('서초·강남·송파·동작·관악·용산', '서울 25구'); } catch (e) {}

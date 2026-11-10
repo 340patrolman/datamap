@@ -349,22 +349,32 @@
     var mv = tk === 'L' || tk === 'l' ? 'Lt' : 'St', s = SIG.ready ? sigAt(G.sig[si].no, T, side, mv) : null; if (!s && SIG.ready && !(SIG.its[G.sig[si].no] || []).length) { var mx2 = manExp('s' + si, G.sig[si].x, G.sig[si].y, T, mv, G.S[G.eS[ei]][4]); if (mx2) return { w: mx2.w, c: mx2.w, mv: mv, side: side, si: si, s: null, man: mx2 }; } return { w: s ? s.wait : SIG.typ, c: sigExp(s), mv: mv, side: side, si: si, s: s }; }
   function findRoute(sx, sy, tx, ty, T0, sbrg) {
     var a0 = nearSeg(sx, sy, 400), b0 = nearSeg(tx, ty, 600); if (!a0 || !b0) return null;
-    var D = new Float64Array(G.ne).fill(Infinity), PR = new Int32Array(G.ne).fill(-1), h = [], i, e, SA = {}, SB = {}, goal = {};
+    var D = new Float64Array(G.ne).fill(Infinity), PR = new Int32Array(G.ne).fill(-1), i, e, SA = {}, SB = {}, goal = {};
+    /* v0.48.0 더미(heap)를 숫자 배열 두 개로 — 넣을 때마다 작은 배열을 만들지 않는다(차례 규칙은 종전 heapPush·heapPop 과 같음) */
+    var HK = new Float64Array(1024), HI = new Int32Array(1024), hn = 0;
+    function hp(k, v) { if (hn === HK.length) { var K2 = new Float64Array(hn * 2), I2 = new Int32Array(hn * 2); K2.set(HK); I2.set(HI); HK = K2; HI = I2; } var j = hn++; while (j > 0) { var q = (j - 1) >> 1; if (HK[q] <= k) break; HK[j] = HK[q]; HI[j] = HI[q]; j = q; } HK[j] = k; HI[j] = v; }
+    function hpop() { var v = HI[0], lk = HK[--hn], lv = HI[hn], j = 0; if (hn) { for (;;) { var l = j * 2 + 1, r = l + 1, m = -1, mk = lk; if (l < hn && HK[l] < mk) { m = l; mk = HK[l]; } if (r < hn && HK[r] < mk) { m = r; mk = HK[r]; } if (m < 0) break; HK[j] = HK[m]; HI[j] = HI[m]; j = m; } HK[j] = lk; HI[j] = lv; } return v; }
     function edgesOf(seg) { var out = [], k; for (k = G.oHead[G.S[seg][0]]; k < G.oHead[G.S[seg][0] + 1]; k++) if (G.eS[G.oList[k]] === seg) out.push(G.oList[k]); for (k = G.oHead[G.S[seg][1]]; k < G.oHead[G.S[seg][1] + 1]; k++) if (G.eS[G.oList[k]] === seg) out.push(G.oList[k]); return out; }
     /* 후보 = 가장 가까운 길 + 그것과 나란한 길(맞은편 차로 · 고가 밑 길). 같은 마디에 물린 길은 뺀다(그 갈림길의 회전 제한·신호를 건너뛰게 된다) · 자동차전용과 일반 길은 서로 바꾸지 않는다 · 40m 넘게 먼 길은 뺀다 */
     function cands(x, y, maxD, n0, mix) { var s0 = G.S[n0.seg]; var out = nearSegs(x, y, maxD, 24).filter(function (o) { if (o.seg === n0.seg) return true; var q = G.S[o.seg]; if (o.d > Math.max(n0.d, 40)) return false; if (q[0] === s0[0] || q[0] === s0[1] || q[1] === s0[0] || q[1] === s0[1]) return false; if (!mix && (q[4] <= 2) !== (s0[4] <= 2)) return false; var dd = Math.abs(angDiff(o.brg, n0.brg)); if (dd > 90) dd = 180 - dd; return dd <= 30; }); return out.length ? out : [n0]; }
     function along(a) { var p = G.SP[a.seg], al = 0, tot = 0, u; for (u = 0; u + 3 < p.length; u += 2) { var l = Math.hypot(p[u + 2] - p[u], p[u + 3] - p[u + 1]); if (u < a.u) al += l; else if (u === a.u) al += l * a.t; tot += l; } return tot ? al / tot : 0; }
     /* 떠나는 자리 — 가장 가까운 길과, 그보다 24m 안으로 더 먼 나란한 길들(고가 밑·맞은편 차로). 더 먼 길은 1m 에 1초씩 불리하게 · 달리는 중이면 진행 방향과 반대인 쪽에 30초 */
-    cands(sx, sy, 400, a0).forEach(function (a) { var fr = along(a); edgesOf(a.seg).forEach(function (se) { var frac = G.eR[se] ? fr : 1 - fr, c = eLen(se) * frac / (eV(se) / 3.6) + (a.d - a0.d) * 1; if (sbrg != null) { var eb = G.eR[se] ? (a.brg + 180) % 360 : a.brg; if (Math.abs(angDiff(sbrg, eb)) > 110) c += 30; } if (c < D[se]) { D[se] = c; heapPush(h, c, se); SA[a.seg] = a; } }); });
+    cands(sx, sy, 400, a0).forEach(function (a) { var fr = along(a); edgesOf(a.seg).forEach(function (se) { var frac = G.eR[se] ? fr : 1 - fr, c = eLen(se) * frac / (eV(se) / 3.6) + (a.d - a0.d) * 1; if (sbrg != null) { var eb = G.eR[se] ? (a.brg + 180) % 360 : a.brg; if (Math.abs(angDiff(sbrg, eb)) > 110) c += 30; } if (c < D[se]) { D[se] = c; SA[a.seg] = a; } }); });
     /* 닿는 자리 — 같은 방식(더 먼 길은 1m 에 1초씩 불리하게) */
     /* v0.14.1 닿는 자리는 자동차전용·일반 길을 섞어 후보로 — 예술의전당 교차로 한가운데에서 우면산로(전용) 3m · 남부순환로 3m 인데 전용 길만 후보라 신사역 → 예술의전당이 양재IC 를 돌아 12.3km(카카오 5.5km · route-spot 대조 2026-10-15) · 떠나는 자리는 그대로(고가 위에서 밑길로 잘못 잡지 않게) */
-    cands(tx, ty, 600, b0, true).forEach(function (b) { SB[b.seg] = b; edgesOf(b.seg).forEach(function (ge) { goal[ge] = (b.d - b0.d) * 1; }); });
+    var RB = 0; cands(tx, ty, 600, b0, true).forEach(function (b) { SB[b.seg] = b; edgesOf(b.seg).forEach(function (ge) { goal[ge] = (b.d - b0.d) * 1; var rg = Math.hypot(G.X[G.eB[ge]] - tx, G.Y[G.eB[ge]] - ty); if (rg > RB) RB = rg; }); });   /* 독립 검수: RB = 닿는 줄 머리 마디들의 목적지 거리 가운데 가장 먼 것(닿는 줄에서 아래 한계가 0) — 수직 거리만 빼면 긴 줄 가운데에 목적지가 있을 때 더 나쁜 줄로 끝날 수 있었다 */
+    /* v0.48.0 (서울 시청→잠실 폰 CPU 4배에서 길 찾기 한 번 2.7초 — 출발점에서 사방으로 고르게 넓혀 서울 대부분을 훑었다) A* — 마디에서 목적지까지 직선거리 ÷ 가장 빠른 속도(가장 높은 제한속도 × 실측 보정·실시간 배율 중 1 넘는 몫)를 남은 값의 아래 한계로 더해 목적지 쪽부터 넓힌다 · 길 무게는 모두 「길이 ÷ 속도」 이상이고(골목·공사·벌점 배수 ≥1 · 신호·꺾임 ≥0) 직선은 길보다 짧으므로 아래 한계가 넘치지 않아 고르는 길은 종전과 같다 · 닿는 자리가 길에서 떨어진 만큼(RB)은 뺀다 */
+    var VM = G.vMax; if (!VM) { VM = 30; for (i = 0; i < G.S.length; i++) if (G.S[i][3] > VM) VM = G.S[i][3]; G.vMax = VM; } var kx = Math.max(1, 1 / (gCalF() || 1)); if (LIVER) Object.keys(LIVER).forEach(function (k9) { if (+LIVER[k9] > kx) kx = +LIVER[k9]; }); var HV = VM * kx / 3.6;
+    function H(ed) { var nd9 = G.eB[ed]; return 0.98 * Math.max(0, Math.hypot(G.X[nd9] - tx, G.Y[nd9] - ty) - RB) / HV; }   /* 0.98 = 평면 좌표(동서 0.5~1% 큼)·줄 길이 반올림 여유 */
+    Object.keys(SA).forEach(function (sg) { edgesOf(+sg).forEach(function (se) { if (D[se] < Infinity && PR[se] < 0) hp(D[se] + H(se), se); }); });
+    /* v0.48.0 같은 줄 무게를 한 번 찾기 안에서 두 번 넘게 셈하지 않는다(WC · 평균 두 번 셈했다) · 회전 제한이 없는 마디는 제한 열쇠 글자를 만들지 않는다(G.tr) — 고르는 길은 그대로 */
+    var WC = new Float64Array(G.ne).fill(NaN); if (!G.tr) { G.tr = new Uint8Array(G.n); [G.ban, G.only].forEach(function (M) { Object.keys(M).forEach(function (k9) { G.tr[parseInt(k9, 10)] = 1; }); }); }
     var end = -1, bestC = Infinity;
-    while (h.length) { var top = heapPop(h), d = top[0]; e = top[1]; if (d > D[e]) continue; if (d >= bestC) break; if (goal[e] != null) { var tc = d + goal[e]; if (tc < bestC) { bestC = tc; end = e; } }
-      var nd = G.eB[e], key = nd + '|' + eWay(e), bn = G.ban[key], on = G.only[key];
-      for (i = G.oHead[nd]; i < G.oHead[nd + 1]; i++) { var f = G.oList[i], w2 = eWay(f); if ((bn && bn[w2]) || (on && !on[w2])) continue;
-        var w = eCost(f); if (G.eB[f] === G.eA[e] && G.eS[f] === G.eS[e]) w += 30; var sc = sigCost(e, f, T0 + d); if (sc && !NOSIG()) w += LIVER ? turnAdd(sc.mv) : sc.c; if (!sc || NOSIG()) w += turnPen(e, f);
-        if (d + w < D[f]) { D[f] = d + w; PR[f] = e; heapPush(h, d + w, f); } } }
+    while (hn) { var tk0 = HK[0]; e = hpop(); var d = D[e]; if (tk0 > d + H(e) + 1e-9) continue; if (tk0 >= bestC) break; if (goal[e] != null) { var tc = d + goal[e]; if (tc < bestC) { bestC = tc; end = e; } }
+      var nd = G.eB[e], bn = null, on = null; if (G.tr[nd]) { var key = nd + '|' + eWay(e); bn = G.ban[key]; on = G.only[key]; }
+      for (i = G.oHead[nd]; i < G.oHead[nd + 1]; i++) { var f = G.oList[i]; if (bn || on) { var w2 = eWay(f); if ((bn && bn[w2]) || (on && !on[w2])) continue; }
+        var w = WC[f]; if (w !== w) w = WC[f] = eCost(f); if (G.eB[f] === G.eA[e] && G.eS[f] === G.eS[e]) w += 30; var sc = sigCost(e, f, T0 + d); if (sc && !NOSIG()) w += LIVER ? turnAdd(sc.mv) : sc.c; if (!sc || NOSIG()) w += turnPen(e, f);
+        if (d + w < D[f]) { D[f] = d + w; PR[f] = e; hp(d + w + H(f), f); } } }
     if (end < 0) return null; var es = [end]; while (PR[es[es.length - 1]] >= 0) es.push(PR[es[es.length - 1]]); es.reverse();
     return shape(es, SA[G.eS[es[0]]] || a0, SB[G.eS[end]] || b0, T0); }
   /* 길 꼴 — 선 · 거리 · 꺾는 곳 · 지나는 신호 */

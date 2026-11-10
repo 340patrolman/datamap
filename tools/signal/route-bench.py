@@ -25,6 +25,8 @@ PK = '?pk=seoul' if '--seoul' in sys.argv else ''
 
 
 def main():
+    if '--help' in sys.argv or '-h' in sys.argv:   # (2026-11-11) 도움말만 찍고 끝낸다 — 없을 때 --help 가 그대로 한 번 돌아 카카오를 불렀다
+        print(__doc__); return 0
     key = json.load(open(os.path.join(RS.RAW, 'keys.json'), encoding='utf-8-sig')).get('kakao_navi')
     miss = [n for p in PAIRS for n in p if n not in ST]
     if miss:

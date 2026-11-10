@@ -639,7 +639,8 @@
   /* v0.48.5 (신호 세션 tracing: 넓은 서울 보기를 소프트웨어로 처음 한 번 그리는 값(CPU 4배 2~3.5초)이 시간보다 먼저 와 첫 시간을 늦췄다) 목적지를 정하고 시간이 처음 보이기 전(12초 상한)에는 소통 색을 그리지 않는다 — 시간이 보이면 바로 그린다 */
   function trPre() { return !!(dest && !dest.shown && !guide && !dest.vip && Date.now() - (dest.t0 || 0) < 12000); }   /* BCC = 찍을 보기(다음 쉬는 틈에 같은 보기로 그리면 찍음) */
   var DQ = 0; function drawSoon() { if (DQ) return; DQ = 1; var f = function () { if (!DQ) return; DQ = 0; draw(); }; requestAnimationFrame(f); setTimeout(f, 150); }
-  function draw() { resize(); var W = cv.clientWidth, H = cv.clientHeight; if (!W) return; ANCH = null; ANCH = anchorCalc(); var dark = document.documentElement.classList.contains('dark');
+  function draw() { if (PQ && trPre()) return;   /* v0.49.1 (신호 세션 tracing: 시간 뜨기 전 sigReady 무렵 그림이 바탕 전체를 래스터 0.8초 — 곧 돌 다시 셈이 끝에서 또 그린다) 시간이 처음 보이기 전에 모아 둔 다시 셈(PQ)이 있으면 그리지 않는다 — 다시 셈 끝(plan)에서 그린다 · 보이는 것은 같은 「…」 화면 */
+    resize(); var W = cv.clientWidth, H = cv.clientHeight; if (!W) return; ANCH = null; ANCH = anchorCalc(); var dark = document.documentElement.classList.contains('dark');
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0); if (!G) { ctx.fillStyle = dark ? '#0f1726' : '#f2f0ea'; ctx.fillRect(0, 0, W, H); return; }
     /* v0.48.3 (신호 세션 Chrome tracing: GPU 없는 캔버스에서 바탕(길·건물·소통 색)을 1초 남짓마다 다시 그려 서울 0.7초·여섯 구 0.3초씩 주 스레드를 잡았다) 바탕층을 화면 밖 캔버스에 찍어 두고, 보기·크기·밤낮·길 그래프·소통 자료·바탕 칸·건물 칸·모드가 그대로면 찍어 둔 것을 한 번 붙이고 길 선·신호·이름만 위에 그린다 */
     var bk9 = [cv.width, cv.height, W, H, DPR, dark ? 1 : 0, view.cx, view.cy, view.s, view.rot, anchorY(), LIVE.at, OV.t ? 1 : 0, MODE, Object.keys(BASE.T).length, Object.keys(BT).length, BLD ? BLD.length : -1, BIDX ? 1 : 0, (PK && !route && !guide) ? 1 : 0, trPre() ? 1 : 0].join('|'), hit9 = BCV && BCG === G && BCK === bk9;

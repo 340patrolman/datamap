@@ -39,12 +39,18 @@ def main():
         for x in json.load(open(os.path.join(ROOT, 'data', 'nav-six.json'), encoding='utf-8'))['links']:
             if x[5] <= 4: KEEP.add(str(x[0]))
     C = collections.defaultdict(list); DD = collections.defaultdict(set); days = collections.defaultdict(set); n = 0; t0 = t1 = None
+    try: FIL = json.load(open(os.path.join(ROOT, 'data', 'live-spd-filler.json'), encoding='utf-8')).get('m') or {}   # (2026-11-10) 채움 값(실측 없을 때 ITS 가 내는 고정 숫자 · livefiller-bake.py)은 평소 속도 셈에서 뺀다 — 올림픽대로 반포~한남이 밤마다 시속 21km 로 「평소 막힘」이 되던 것
+    except Exception: FIL = {}
+    nfil = 0
     for x in lines():
         d = datetime.datetime.fromtimestamp(x['at']); wd = d.weekday(); cl = 3 if d.date().isoformat() in HOL else 0 if wd <= 3 else 1 if wd == 4 else 2 if wd == 5 else 3; days[cl].add(d.date().isoformat()); n += 1
         t0 = x['at'] if t0 is None else min(t0, x['at']); t1 = x['at'] if t1 is None else max(t1, x['at'])
         for k, v in x['m'].items():
-            if k in KEEP: C[(k, cl, d.hour)].append(v); DD[(k, cl, d.hour)].add(d.date().isoformat())
+            if k in KEEP:
+                if FIL.get(k) == v: nfil += 1; continue
+                C[(k, cl, d.hour)].append(v); DD[(k, cl, d.hour)].add(d.date().isoformat())
     if not n: print('쌓인 것이 없다'); return 1
+    print('채움 값이라 뺀 관측', nfil)
     out = collections.defaultdict(dict); cells = 0; prov = 0; NEED = 3   # (2026-10-18 소유자) 요일 갈래마다 3날(3주) 미만으로 본 칸은 「잠정」
     for (k, cl, h), v in C.items():
         if len(v) < 3: continue

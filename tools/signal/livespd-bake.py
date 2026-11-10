@@ -30,19 +30,28 @@ def main():
     u = 'https://openapi.its.go.kr:9443/trafficInfo?apiKey=%s&type=all&drcType=all&minX=%s&maxX=%s&minY=%s&maxY=%s&getType=json' % (K, BOX6[0], BOX6[2], BOX6[1], BOX6[3])
     try: j = json.loads(urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'}), timeout=40).read().decode('utf-8', 'replace'))
     except Exception as e: print('못 받음', type(e).__name__); return 1
-    items = (j.get('body') or {}).get('items') or []; m = {}; m6 = {}
+    items = (j.get('body') or {}).get('items') or []; m = {}; m6 = {}; raw = {}; raw6 = {}; drop = 0
+    try: FIL = json.load(open(os.path.join(ROOT, 'data', 'live-spd-filler.json'), encoding='utf-8')).get('m') or {}   # (2026-11-10) 채움 값 — 실측이 없을 때 ITS 가 내는 고정 숫자(livefiller-bake.py) · 값이 그 숫자와 같으면 올리는 파일에서 뺀다(쌓아 두는 원자료에는 그대로)
+    except Exception: FIL = {}
     for it in items:
         try:
             lk, v = str(it['linkId']), int(round(float(it['speed'])))
-            if lk in want: m[lk] = v
-            if want6 is None or lk in want6: m6[lk] = v
+            fil = FIL.get(lk) == v
+            if lk in want:
+                raw[lk] = v
+                if fil: drop += 1
+                else: m[lk] = v
+            if want6 is None or lk in want6:
+                raw6[lk] = v
+                if not fil: m6[lk] = v
         except Exception: pass
     if len(m) < 50: print('받은 링크가 너무 적다', len(m), '/', len(items), '— 파일을 바꾸지 않는다'); return 1
     doc = {'schema': 'tg-live-spd/1', 'at': int(time.time()), 'made': datetime.datetime.now().strftime('%H:%M'), 'day': datetime.date.today().isoformat(), 'box': BOX,
            'source': '국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 ' + str(items[0].get('createdDate') if items else ''),
            'note': ['실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다',
                     '통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다',
-                    '자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다'],
+                    '자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다',
+                    '(2026-11-10) 채움 값은 뺐다 — 실측이 없을 때 ITS 가 내는 고정 숫자로 보이는 링크(data/live-spd-filler.json · 새벽에도 제한속도의 60% 아래로 내내 같은 값)는 값이 그 숫자와 같을 때 싣지 않는다(「값 없음」)'],
            'fields': 'm{ITS 링크 ID: 통행속도 km/h(정수)} — data/sig-approach-seocho.json 의 링크와 data/nav-seocho.json 의 등급 1~4 링크 · n 값이 온 링크 수 · want 찾는 링크 수',
            'n': len(m), 'want': len(want), 'm': dict(sorted(m.items()))}
     p = os.path.join(ROOT, 'data', 'live-spd-seocho.json'); tmp = p + '.tmp'
@@ -55,7 +64,7 @@ def main():
     try:   # 쌓아 두기(저장소 밖) — 「평소 속도」의 바탕(링크 × 요일 × 시각)을 만들려는 것. 하루 한 파일 · 한 번 받을 때마다 한 줄(gzip 이어 붙이기) · 실패해도 위 파일은 이미 썼다
         import gzip
         ad = os.path.join(KB, '07_API키', 'out', 'livespd'); os.makedirs(ad, exist_ok=True)
-        with gzip.open(os.path.join(ad, datetime.date.today().strftime('%Y%m%d') + '.jsonl.gz'), 'at', encoding='utf-8') as f: f.write(json.dumps({'at': doc['at'], 'm': m6 if len(m6) >= len(m) else doc['m'], 'box': 'six' if len(m6) >= len(m) else 'seocho'}, separators=(',', ':')) + chr(10))   # (10-14부터) 여섯 구 링크를 쌓는다 — 서초 링크를 모두 담는다
+        with gzip.open(os.path.join(ad, datetime.date.today().strftime('%Y%m%d') + '.jsonl.gz'), 'at', encoding='utf-8') as f: f.write(json.dumps({'at': doc['at'], 'm': raw6 if len(raw6) >= len(raw) else raw, 'box': 'six' if len(raw6) >= len(raw) else 'seocho'}, separators=(',', ':')) + chr(10))   # (10-14부터) 여섯 구 링크를 쌓는다 — 서초 링크를 모두 담는다
     except Exception as e: print('쌓아 두기 실패', type(e).__name__)
-    print(doc['made'], '· 서초 링크', len(m), '/', len(want), '· 여섯 구 링크', len(m6), '· 상자 안 전부', len(items), '· 바이트', os.path.getsize(p)); return 0
+    print(doc['made'], '· 서초 링크', len(m), '/', len(want), '· 채움 값 뺌(서초)', drop, '· 여섯 구 링크', len(m6), '(원자료', len(raw6), ')', '· 상자 안 전부', len(items), '· 바이트', os.path.getsize(p)); return 0
 if __name__ == '__main__': sys.exit(main())

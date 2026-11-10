@@ -73,28 +73,29 @@
     j.turns.forEach(function (t) { var k = t[0] + '|' + t[1]; (t[3] ? only : ban)[k] = (t[3] ? only : ban)[k] || {}; (t[3] ? only : ban)[k][t[2]] = 1; });
     var n2s = new Int16Array(n).fill(-1); j.sig.forEach(function (sg, si) { sg[6].forEach(function (nd) { n2s[nd] = si; }); });
     /* 그리기용 길(등급마다 한 길) */
-    var PATH = {}; for (i = 0; i < ns; i++) { var c = S[i][4], pa = PATH[c] || (PATH[c] = new Path2D()), pp = SP[i]; pa.moveTo(pp[0], pp[1]); for (var u = 2; u < pp.length; u += 2) pa.lineTo(pp[u], pp[u + 1]); }
+    var PATH = {}, PCN = {}; for (i = 0; i < ns; i++) PCN[S[i][4]] = 1;   /* v0.49.0 등급마다 그리는 길은 처음 그릴 때 만든다(pathOf) — 멀리 보는 첫 화면은 큰길 줄인 줄(pathFar)만 쓰므로 처음 열 때 서울 모든 등급 Path2D 를 짓지 않는다 · PCN = 있는 등급 */
     /* 이름표 후보 — 큰길(등급 1~5)의 긴 줄 가운데 */
     var LAB = []; for (i = 0; i < ns; i++) { var z = S[i]; if (z[5] < 0 || z[4] > 6 || z[2] < 90) continue; var p2 = SP[i], mi = (p2.length >> 2) * 2, x1 = p2[Math.max(0, mi - 2)], y1 = p2[Math.max(1, mi - 1)], x2 = p2[Math.min(p2.length - 2, mi)], y2 = p2[Math.min(p2.length - 1, mi + 1)]; if (x1 === x2 && y1 === y2) { x1 = p2[0]; y1 = p2[1]; }
       LAB.push({ n: j.names[z[5]], c: z[4], x: (x1 + x2) / 2, y: (y1 + y2) / 2, a: Math.atan2(y2 - y1, x2 - x1), L: z[2] }); }
     LAB.sort(function (a, b) { return a.c - b.c || b.L - a.L; });
     var box = [1e9, -1e9, 1e9, -1e9]; for (i = 0; i < n; i++) { if (X[i] < box[0]) box[0] = X[i]; if (X[i] > box[1]) box[1] = X[i]; if (Y[i] < box[2]) box[2] = Y[i]; if (Y[i] > box[3]) box[3] = Y[i]; }
-    G = { j: j, X: X, Y: Y, S: S, SP: SP, eA: eA, eB: eB, eS: eS, eR: eR, oHead: oHead, oList: oList, ban: ban, only: only, n2s: n2s, PATH: PATH, LAB: LAB, box: box, ne: ne, n: n,
+    G = { j: j, X: X, Y: Y, S: S, SP: SP, eA: eA, eB: eB, eS: eS, eR: eR, oHead: oHead, oList: oList, ban: ban, only: only, n2s: n2s, PATH: PATH, PCN: PCN, LAB: LAB, box: box, ne: ne, n: n,
       sig: j.sig.map(function (sg) { return { no: sg[0], nm: sg[1], x: PX(sg[2]), y: PY(sg[3]), lon: sg[2], lat: sg[3], r: sg[4], anchor: sg[5] }; }) };
     gridBuild();
   }
   /* 가까운 길 찾기용 칸(200m) */
   var GRID = null, GC = 200;
-  function gridBuild() { GRID = {}; for (var i = 0; i < G.S.length; i++) { if (G.S[i][4] > 7) continue; var p = G.SP[i]; for (var u = 0; u < p.length; u += 2) { var k = Math.floor(p[u] / GC) + ',' + Math.floor(p[u + 1] / GC), L = GRID[k] || (GRID[k] = []); if (L[L.length - 1] !== i) L.push(i); } } }
+  function gk9(x, y) { return (x + 32768) * 65536 + (y + 32768); }   /* v0.49.0 칸 열쇠를 글자("x,y") 대신 숫자로 · Map — 처음 열 때 gridBuild(폰 4배 121ms)가 길 점마다 글자를 만들었다 */
+  function gridBuild() { GRID = new Map(); for (var i = 0; i < G.S.length; i++) { if (G.S[i][4] > 7) continue; var p = G.SP[i]; for (var u = 0; u < p.length; u += 2) { var k = gk9(Math.floor(p[u] / GC), Math.floor(p[u + 1] / GC)), L = GRID.get(k); if (!L) { L = []; GRID.set(k, L); } if (L[L.length - 1] !== i) L.push(i); } } }
   /* 가까운 길 여럿 — 가장 가까운 것보다 slack m 안으로 더 먼 것까지(길마다 가장 가까운 자리 하나씩 · 많아야 5). 고가 밑의 길·맞은편 차로처럼 나란한 길 가운데서 고르려고 */
   function nearSegs(x, y, maxD, slack) { var gx = Math.floor(x / GC), gy = Math.floor(y / GC), by = {}, list = [], bd = 1e9;
-    for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { var L = GRID[(gx + dx) + ',' + (gy + dy)]; if (!L) continue; for (var q = 0; q < L.length; q++) { var i = L[q]; if (by[i]) continue; var p = G.SP[i], best = null;
+    for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { var L = GRID.get(gk9(gx + dx, gy + dy)); if (!L) continue; for (var q = 0; q < L.length; q++) { var i = L[q]; if (by[i]) continue; var p = G.SP[i], best = null;
       for (var u = 0; u + 3 < p.length; u += 2) { var ax = p[u], ay = p[u + 1], bx = p[u + 2], by2 = p[u + 3], vx = bx - ax, vy = by2 - ay, l2 = vx * vx + vy * vy, t = l2 ? Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / l2)) : 0, px = ax + vx * t, py = ay + vy * t, d = Math.hypot(px - x, py - y);
         if (!best || d < best.d) best = { seg: i, u: u, t: t, x: px, y: py, d: d, brg: brg(ax, ay, bx, by2) }; }
       by[i] = 1; if (best && best.d <= (maxD || 300)) { list.push(best); if (best.d < bd) bd = best.d; } } }
     return list.filter(function (o) { return o.d <= bd + slack; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 5); }
   function nearSeg(x, y, maxD) { var gx = Math.floor(x / GC), gy = Math.floor(y / GC), best = null, bd = maxD || 300, seen = {};
-    for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { var L = GRID[(gx + dx) + ',' + (gy + dy)]; if (!L) continue; for (var q = 0; q < L.length; q++) { var i = L[q]; if (seen[i]) continue; seen[i] = 1; var p = G.SP[i];
+    for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { var L = GRID.get(gk9(gx + dx, gy + dy)); if (!L) continue; for (var q = 0; q < L.length; q++) { var i = L[q]; if (seen[i]) continue; seen[i] = 1; var p = G.SP[i];
       for (var u = 0; u + 3 < p.length; u += 2) { var ax = p[u], ay = p[u + 1], bx = p[u + 2], by = p[u + 3], vx = bx - ax, vy = by - ay, l2 = vx * vx + vy * vy, t = l2 ? Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / l2)) : 0, px = ax + vx * t, py = ay + vy * t, d = Math.hypot(px - x, py - y);
         if (d < bd) { bd = d; best = { seg: i, u: u, t: t, x: px, y: py, d: d, brg: brg(ax, ay, bx, by) }; } } } }
     return best; }
@@ -631,6 +632,7 @@
   function anchorCalc() { if (!(guide || cruise)) return cv.clientHeight * 0.5; if (!guide) return cv.clientHeight * 0.68; var H = cv.clientHeight, y = H * 0.70, b = $('gBot'), bt = b && b.offsetHeight ? H - b.offsetHeight : H; return Math.max(H * 0.5, Math.min(y, bt - 70)); }   /* v0.31.0 소유자 「차량은 화면의 30% 지점」 — 위에서 70%(티맵·카카오내비처럼 앞을 넓게) · 아래 막대 위 70px 안으로 */
   function W2S(x, y) { var c = Math.cos(-view.rot * Math.PI / 180), s = Math.sin(-view.rot * Math.PI / 180), dx = (x - view.cx) * view.s, dy = (y - view.cy) * view.s; return [cv.clientWidth / 2 + dx * c - dy * s, anchorY() + dx * s + dy * c]; }
   function S2W(px, py) { var c = Math.cos(view.rot * Math.PI / 180), s = Math.sin(view.rot * Math.PI / 180), dx = (px - cv.clientWidth / 2) / view.s, dy = (py - anchorY()) / view.s; return [view.cx + dx * c - dy * s, view.cy + dx * s + dy * c]; }
+  function pathOf(c) { var P = G.PATH; if (P[c]) return P[c]; var pa = new Path2D(); for (var i = 0; i < G.S.length; i++) { if (G.S[i][4] !== c) continue; var pp = G.SP[i]; pa.moveTo(pp[0], pp[1]); for (var u = 2; u < pp.length; u += 2) pa.lineTo(pp[u], pp[u + 1]); } return (P[c] = pa); }
   function pathFar(c) { var F = G.PATHF || (G.PATHF = {}); if (F[c]) return F[c]; var pa = new Path2D(); for (var i = 0; i < G.S.length; i++) { if (G.S[i][4] !== c) continue; var pp = G.SP[i], n = pp.length, lx = pp[0], ly = pp[1]; pa.moveTo(lx, ly); for (var u = 2; u < n; u += 2) { if (u + 2 < n && Math.abs(pp[u] - lx) + Math.abs(pp[u + 1] - ly) < 40) continue; lx = pp[u]; ly = pp[u + 1]; pa.lineTo(lx, ly); } } return (F[c] = pa); }   /* v0.48.6 멀리 볼 때 쓰는 큰길 줄 — 앞 점에서 40m 안 점은 건너뜀(끝점은 늘 남김) */
   function drawSoonPk(W, H) { var vw = [S2W(0, 0), S2W(W, H), S2W(W, 0), S2W(0, H)], vcx = (vw[0][0] + vw[1][0]) / 2, vcy = (vw[0][1] + vw[1][1]) / 2, vk = pkKeys([[vcx, vcy]], Math.max(Math.abs(vw[0][0] - vw[1][0]), Math.abs(vw[2][1] - vw[3][1]), 600) / 2).sort(function (a, b) { var A = a.split('_'), B = b.split('_'), C = PK.cell; return Math.hypot((+A[0] + 0.5) * C - vcx, (+A[1] + 0.5) * C - vcy) - Math.hypot((+B[0] + 0.5) * C - vcx, (+B[1] + 0.5) * C - vcy); }).slice(0, 9); if (vk.length) pkLoad(vk).then(pkSoon); }   /* v0.48.3 화면 둘레 골목 칸 미리 받기 — 바탕을 찍어 둔 것으로 그릴 때도 돈다 */
   var BCV = null, BCK = '', BCG = null, BCC = '', BCCG = null, BCI = 0;
@@ -647,8 +649,8 @@
     if (!hit9) { drawBase(dark, s);
     /* v0.48.6 (신호 세션 tracing: 시간 뜨기 전 넓은 서울 보기의 바탕 래스터가 소통 색 없이도 2.6~3초 · CPU 4배 소프트웨어) 멀리 볼 때(배율 0.05 아래 — 서울 시청→잠실을 폰에 맞춘 보기는 0.025)는 큰길(등급 3까지)을 40m 안 점을 건너뛴 줄로 · 테두리 없이 한 번만 긋는다 — 가까이 보면 종전 그대로 */
     var far9 = s < 0.05;
-    if (!far9) for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s) + 2 / s; ctx.strokeStyle = dark ? '#0a101c' : RS[c][2]; ctx.stroke(G.PATH[c]); }
-    for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c) || (far9 && c > 3)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s); ctx.strokeStyle = dark ? RS[c][3] : (far9 ? RS[c][2] : RS[c][1]); ctx.stroke(far9 ? pathFar(c) : G.PATH[c]); }
+    if (!far9) for (c = 8; c >= 1; c--) { if (!G.PCN[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s) + 2 / s; ctx.strokeStyle = dark ? '#0a101c' : RS[c][2]; ctx.stroke(pathOf(c)); }
+    for (c = 8; c >= 1; c--) { if (!G.PCN[c] || !show(c) || (far9 && c > 3)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s); ctx.strokeStyle = dark ? RS[c][3] : (far9 ? RS[c][2] : RS[c][1]); ctx.stroke(far9 ? pathFar(c) : pathOf(c)); }
     if (PK && !route && !guide && s > 0.25) drawSoonPk(W, H);
     drawBld(dark, s); if (OV.t && !trPre()) drawTraf(s);
       /* v0.48.4 (신호 세션 V8 프로필: 찍기(drawImage 로 화면을 복사)가 그 자리에서 소프트웨어 래스터를 강제해 첫 그림이 2초 동기로 돌고 첫 길 셈을 2초 밀었다) 새 보기의 첫 그림에서는 찍지 않고 「찍을 보기」로만 적어 두고, 쉬는 틈(requestIdleCallback)에 같은 보기로 다시 그릴 때 찍는다 · 안내·켜놓고 다니기 중(보기가 매초 바뀜)에는 찍지 않는다 */

@@ -483,7 +483,7 @@
     var n = 0; for (var ix = Math.floor(x0 / T); ix <= Math.floor(x1 / T); ix++) for (var iz = Math.floor(y0 / T); iz <= Math.floor(y1 / T); iz++) { var k = ix + '_' + iz; if (++n > 12) return; if (!BASE.set[k] || BASE.T[k] || BASE.ld[k] || BASE.q >= 2) continue; BASE.ld[k] = 1; BASE.q++;
       (function (k) { getJ(tileUrl(k)).then(function (j) { BASE.q--; if (j) { BASE.T[k] = tilePrep(j, k); drawSoon(); } }); })(k); } }
   function drawBase(dark, s) { needTiles(); var ks = Object.keys(BASE.T); if (!ks.length) return; var col = dark ? { park: '#173426', wood: '#142f21', pitch: '#1b3a29', cem: '#213228', w: '#17324f' } : { park: '#d3ecc6', wood: '#c1e2b0', pitch: '#c9e8bc', cem: '#dde8d6', w: '#a9d4f5' };
-    ['park', 'wood', 'pitch', 'cem'].forEach(function (kd) { ctx.fillStyle = col[kd]; ks.forEach(function (k) { (BASE.T[k].g[kd] || []).forEach(function (c) { ctx.fill(c.p, 'evenodd'); }); }); });
+    if (s >= 0.05) ['park', 'wood', 'pitch', 'cem'].forEach(function (kd) { ctx.fillStyle = col[kd]; ks.forEach(function (k) { (BASE.T[k].g[kd] || []).forEach(function (c) { ctx.fill(c.p, 'evenodd'); }); }); });
     ctx.fillStyle = col.w; ks.forEach(function (k) { BASE.T[k].w.forEach(function (c) { ctx.fill(c.p, 'evenodd'); }); });
     ctx.strokeStyle = col.w; ctx.lineWidth = Math.max(5, 2 / s); ks.forEach(function (k) { ctx.stroke(BASE.T[k].ww); });
     if (s > 0.08) { ctx.strokeStyle = dark ? '#475569' : '#9aa3af'; ctx.lineWidth = Math.max(3, 1.6 / s); ks.forEach(function (k) { ctx.stroke(BASE.T[k].rail); }); ctx.strokeStyle = dark ? '#111827' : '#eef1f4'; ctx.lineWidth = Math.max(1.4, 0.8 / s); ctx.setLineDash([9, 9]); ks.forEach(function (k) { ctx.stroke(BASE.T[k].rail); }); ctx.setLineDash([]); } }
@@ -631,6 +631,7 @@
   function anchorCalc() { if (!(guide || cruise)) return cv.clientHeight * 0.5; if (!guide) return cv.clientHeight * 0.68; var H = cv.clientHeight, y = H * 0.70, b = $('gBot'), bt = b && b.offsetHeight ? H - b.offsetHeight : H; return Math.max(H * 0.5, Math.min(y, bt - 70)); }   /* v0.31.0 소유자 「차량은 화면의 30% 지점」 — 위에서 70%(티맵·카카오내비처럼 앞을 넓게) · 아래 막대 위 70px 안으로 */
   function W2S(x, y) { var c = Math.cos(-view.rot * Math.PI / 180), s = Math.sin(-view.rot * Math.PI / 180), dx = (x - view.cx) * view.s, dy = (y - view.cy) * view.s; return [cv.clientWidth / 2 + dx * c - dy * s, anchorY() + dx * s + dy * c]; }
   function S2W(px, py) { var c = Math.cos(view.rot * Math.PI / 180), s = Math.sin(view.rot * Math.PI / 180), dx = (px - cv.clientWidth / 2) / view.s, dy = (py - anchorY()) / view.s; return [view.cx + dx * c - dy * s, view.cy + dx * s + dy * c]; }
+  function pathFar(c) { var F = G.PATHF || (G.PATHF = {}); if (F[c]) return F[c]; var pa = new Path2D(); for (var i = 0; i < G.S.length; i++) { if (G.S[i][4] !== c) continue; var pp = G.SP[i], n = pp.length, lx = pp[0], ly = pp[1]; pa.moveTo(lx, ly); for (var u = 2; u < n; u += 2) { if (u + 2 < n && Math.abs(pp[u] - lx) + Math.abs(pp[u + 1] - ly) < 40) continue; lx = pp[u]; ly = pp[u + 1]; pa.lineTo(lx, ly); } } return (F[c] = pa); }   /* v0.48.6 멀리 볼 때 쓰는 큰길 줄 — 앞 점에서 40m 안 점은 건너뜀(끝점은 늘 남김) */
   function drawSoonPk(W, H) { var vw = [S2W(0, 0), S2W(W, H), S2W(W, 0), S2W(0, H)], vcx = (vw[0][0] + vw[1][0]) / 2, vcy = (vw[0][1] + vw[1][1]) / 2, vk = pkKeys([[vcx, vcy]], Math.max(Math.abs(vw[0][0] - vw[1][0]), Math.abs(vw[2][1] - vw[3][1]), 600) / 2).sort(function (a, b) { var A = a.split('_'), B = b.split('_'), C = PK.cell; return Math.hypot((+A[0] + 0.5) * C - vcx, (+A[1] + 0.5) * C - vcy) - Math.hypot((+B[0] + 0.5) * C - vcx, (+B[1] + 0.5) * C - vcy); }).slice(0, 9); if (vk.length) pkLoad(vk).then(pkSoon); }   /* v0.48.3 화면 둘레 골목 칸 미리 받기 — 바탕을 찍어 둔 것으로 그릴 때도 돈다 */
   var BCV = null, BCK = '', BCG = null, BCC = '', BCCG = null, BCI = 0;
   /* v0.48.5 (신호 세션 tracing: 넓은 서울 보기를 소프트웨어로 처음 한 번 그리는 값(CPU 4배 2~3.5초)이 시간보다 먼저 와 첫 시간을 늦췄다) 목적지를 정하고 시간이 처음 보이기 전(12초 상한)에는 소통 색을 그리지 않는다 — 시간이 보이면 바로 그린다 */
@@ -644,8 +645,10 @@
     ctx.save(); ctx.translate(W / 2, anchorY()); ctx.rotate(-view.rot * Math.PI / 180); ctx.scale(view.s, view.s); ctx.translate(-view.cx, -view.cy); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     var s = view.s, show = function (c) { return c <= 3 || (c <= 5 && s > 0.05) || (c === 6 && s > 0.12) || (c === 7 && s > 0.2) || (c === 8 && s > 0.35); }, c;
     if (!hit9) { drawBase(dark, s);
-    for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s) + 2 / s; ctx.strokeStyle = dark ? '#0a101c' : RS[c][2]; ctx.stroke(G.PATH[c]); }
-    for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s); ctx.strokeStyle = dark ? RS[c][3] : RS[c][1]; ctx.stroke(G.PATH[c]); }
+    /* v0.48.6 (신호 세션 tracing: 시간 뜨기 전 넓은 서울 보기의 바탕 래스터가 소통 색 없이도 2.6~3초 · CPU 4배 소프트웨어) 멀리 볼 때(배율 0.05 아래 — 서울 시청→잠실을 폰에 맞춘 보기는 0.025)는 큰길(등급 3까지)을 40m 안 점을 건너뛴 줄로 · 테두리 없이 한 번만 긋는다 — 가까이 보면 종전 그대로 */
+    var far9 = s < 0.05;
+    if (!far9) for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s) + 2 / s; ctx.strokeStyle = dark ? '#0a101c' : RS[c][2]; ctx.stroke(G.PATH[c]); }
+    for (c = 8; c >= 1; c--) { if (!G.PATH[c] || !show(c) || (far9 && c > 3)) continue; ctx.lineWidth = Math.max(RS[c][0], (c <= 3 ? 2.6 : 1.4) / s); ctx.strokeStyle = dark ? RS[c][3] : (far9 ? RS[c][2] : RS[c][1]); ctx.stroke(far9 ? pathFar(c) : G.PATH[c]); }
     if (PK && !route && !guide && s > 0.25) drawSoonPk(W, H);
     drawBld(dark, s); if (OV.t && !trPre()) drawTraf(s);
       /* v0.48.4 (신호 세션 V8 프로필: 찍기(drawImage 로 화면을 복사)가 그 자리에서 소프트웨어 래스터를 강제해 첫 그림이 2초 동기로 돌고 첫 길 셈을 2초 밀었다) 새 보기의 첫 그림에서는 찍지 않고 「찍을 보기」로만 적어 두고, 쉬는 틈(requestIdleCallback)에 같은 보기로 다시 그릴 때 찍는다 · 안내·켜놓고 다니기 중(보기가 매초 바뀜)에는 찍지 않는다 */

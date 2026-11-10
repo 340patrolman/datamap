@@ -96,7 +96,7 @@ SETS = [
     # v2.99.0(2026-10-09) 이번 판들에서 생긴 자료
     ['data/esig/index.json', 365, 'auto', '📶 업종 조기 신호 — 인허가 개업·폐업(bizsv)이나 서울 상권분석 점포(storind)를 다시 구운 뒤 `py -3.12 -X utf8 tools/onto/esig-bake.py`(data/r 를 읽음 · 업종 사전을 고쳤으면 먼저 `tools/onto/inddict-bake.py`)'],
     ['data/venue-events-kopis.json', 31, 'auto', 'KOPIS 공연 일정 — 날마다 회차(day)는 받은 날 앞뒤 95일뿐이라 달마다 다시 받는다(안 받으면 석 달 뒤 지도·T-Book 의 🎭 공연 시각이 빈다) · `py -3.12 -X utf8 tools/region/kopis-bake.py fetch` → `build`(열쇠 keys.json kopis · 서울·경기·인천)'],
-    ['data/mig-dong.json', 31, 'hand', '동별 전입·전출(행정안전부 지역별 인구이동 15108093 · 달마다) — 코워크가 받아 동·달 CSV(07_API키/out/mig) → `py -3.12 -X utf8 tools/region/mig-bake.py "<자료 이름 (받은 날)>"` · 지금 서초·강남만(전국은 받는 방식부터)'],
+    ['data/mig-dong.json', 31, 'auto', '동별 전입·전출(행정안전부 지역별 인구이동 15108093 · 달마다 · 다음 달 중순쯤 나옴) — `07_API키/ppltnmove.py <새 달> <새 달>`(2026-11-10 · ps1 판은 새 달에서 resultCode 10) → `07_API키/mig_agg.py` → `py -3.12 -X utf8 tools/region/mig-bake.py "<자료 이름 (받은 날)>"` · 지금 서초·강남만(전국은 받는 방식부터)'],
     ['data/redev.json', 31, 'hand', '입주 예정 단지(손 목록 · 출처·checked) — 새 입주 예정(고시·국토부 15160169·언론)을 더하고, 주민 기준월보다 앞이 된 단지는 add=false 로'],
     ['data/home-ref.json', 92, 'auto', '시도·시군구 집값 기준표 — 실거래(home.json)를 다시 구운 뒤 `py -3.12 -X utf8 tools/region/homeref-bake.py`'],
     ['data/ind-age.json', 92, 'auto', '업종×나이 카드 비중(서울 추정매출 분기) — `py -3.12 -X utf8 tools/region/indage-bake.py`'],

@@ -13,6 +13,30 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 AREA = sys.argv[1] if len(sys.argv) > 1 else 'seoul'
 CELL = 2000; CORE = 5
 LON0, LAT0, KX, KY = 127.01, 37.49, 88800, 111000   # gargo.js PX·PY 와 같은 값이어야 한다(아래에서 gargo.js 를 읽어 대조)
+def ramp_links(links):
+    """2026-11-11 (게임 세션 route-bench: 실시간 소통을 넣으면 올림픽대로를 피함) 도시고속 본선 줄(제한 70↑)에 연결로 ITS 링크가 짝지어진 것을 찾는다 —
+    그 링크의 속도(연결로 시속 9~27km)가 본선 줄에 붙어 본선이 막힌 것처럼 보였다. 링크 = 연결로(nav links[8]==1)이거나 링크 제한이 줄 제한보다 30↓ 낮으면 짝을 푼다(-1).
+    돌려주는 것 = 풀 링크 번호 판정 함수 bad(줄 제한, 링크 번호)"""
+    info = {}
+    for f in ('nav-seoul.json', 'nav-six.json'):
+        q = os.path.join(ROOT, 'data', f)
+        if not os.path.exists(q): continue
+        for L in json.load(open(q, encoding='utf-8'))['links']: info.setdefault(str(L[0]), (L[8], L[4]))
+    def bad(lim, li):
+        if li is None or li < 0 or lim < 70: return False
+        o = info.get(str(links[li]))
+        return bool(o and (o[0] == 1 or (o[1] and o[1] <= lim - 30)))
+    return bad, len(info)
+def fix_core():
+    """이미 구운 core.json 을 그 자리에서 고친다(구운 판 bake 그대로 — 칸 파일은 안 건드림 · 칸은 등급 6~8 이라 해당 없음). 쓰기: pack-tile.py <area> --fix-core"""
+    p = os.path.join(ROOT, 'gargo', 'pk-%s' % AREA, 'core.json'); C = json.load(open(p, encoding='utf-8'))
+    bad, n = ramp_links(C['links']); cnt = 0; m = 0
+    for r in C['segs']:   # r = [길 줄 번호, …seg] → 제한 r[4] · 링크 r[14]·r[15]
+        for k in (14, 15):
+            if len(r) > k and bad(r[4], r[k]): r[k] = -1; cnt += 1; m += r[3]
+    C['ramp_fix'] = '2026-11-11 본선 줄(제한 70↑)에 붙은 연결로·제한 30↓ 낮은 ITS 링크 %d짝을 풂' % cnt
+    json.dump(C, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
+    print(AREA, '링크 정보', n, '· 푼 짝', cnt, '· 줄 길이 합', m, 'm ·', os.path.getsize(p), 'B')
 def main():
     js = open(os.path.join(ROOT, 'gargo', 'gargo.js'), encoding='utf-8').read()
     for k, v in (('LON0', LON0), ('LAT0', LAT0), ('KX', KX), ('KY', KY)):
@@ -21,6 +45,11 @@ def main():
     bx, by = P['base']; nx, ny = P['nx'], P['ny']
     def XY(i): lon = (bx + nx[i]) / 1e6; lat = (by + ny[i]) / 1e6; return ((lon - LON0) * KX, (LAT0 - lat) * KY)
     def cell(x, y): return '%d_%d' % (x // CELL, y // CELL)
+    bad, _n = ramp_links(P['links']); rf = 0
+    for s0 in P['seg']:
+        for k in (13, 14):
+            if len(s0) > k and bad(s0[3], s0[k]): s0[k] = -1; rf += 1
+    print('본선 줄에 붙은 연결로 링크 푼 짝', rf)
     S = P['seg']; core = [i for i, s in enumerate(S) if s[4] <= CORE]; cs = set(core); cn = set()
     for i in core: cn.add(S[i][0]); cn.add(S[i][1])
     T = collections.defaultdict(list)
@@ -68,4 +97,6 @@ def main():
               'fields_tiles': 'core = 등급 1~%d 길 줄과 그 마디 · t/<칸>.json = 나머지 길 줄(가운데 점 기준 %dm 칸) · nodes[[마디 번호(전체), nx, ny]] · segs[[길 줄 번호(전체), …seg 한 줄(마디 = 전체 번호 · 선 번호 = 그 파일 geo 번호)]] · turns = [거치는 마디(전체 번호), 들어오는 길(way) 번호, 나가는 길 번호, 0 금지·1 이 길로만] — 마디가 core 에 있으면 core, 아니면 그 마디가 든 칸 모두' % (CORE, CELL)})
     p = os.path.join(D, 'core.json'); json.dump(C, open(p, 'w', encoding='utf-8', newline=chr(10)), ensure_ascii=False, separators=(',', ':'))
     print('core', len(core), '줄 ·', len(cn), '마디 ·', os.path.getsize(p), 'B · 칸', len(keys), '· 칸 합', sum(sz), 'B · 가장 큰 칸', max(sz) if sz else 0, 'B · 회전 제한 core', len(turns_core), '칸', sum(len(v) for v in turns_t.values()))
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    if '--fix-core' in sys.argv: fix_core()
+    else: main()

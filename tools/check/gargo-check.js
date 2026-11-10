@@ -126,6 +126,9 @@
       ck('🚨 모드를 바꾸면 단계는 코드 0·1 로 돌아온다(코드 2 → 일반 → 긴급 · 긴급 단추를 다시 눌러도)', emBack === '1' && emAgain === '1' && emClick === '1', [emBack, emAgain, emClick].join(' · '));
       ck('🚨 출동 단계 줄 — 긴급 출동일 때만 단추 셋 · 코드 2 면 주황 테(em-2)·「신호 기다림을 뺐다」 글 없음 · 소방·일반이면 em-2 아님 · 일반이면 단계 줄 없음 · 단추 글 안 잘림', rowE.length === 3 && bx2 && bxf && !!on2 && on2.getAttribute('data-em') === '2' && !/신호 기다림을 셈에서 뺐다/.test(subE) && rowN === 0 && fitE, [rowE.length, bx2, bxf, fitE, on2 ? on2.getAttribute('data-em') : '-', rowN].join(' · '));
     } catch (e) { g.em('1'); g.mode('n'); ck('출동 단계 검사', false, e.message); }
+    /* v0.50.1 요약 판 「▶ 안내 시작」 줄은 판 바닥에 붙어 늘 보인다(긴급 출동 단계 줄이 있어도) */
+    try { g.mode('e'); g.paint(); var gb9 = document.getElementById('gBot'), go9 = document.getElementById('gGo'), rw9 = go9 && go9.parentNode; gb9.scrollTop = 0; var rb9 = gb9.getBoundingClientRect(), rg9 = go9 ? go9.getBoundingClientRect() : null;
+      ck('▶ 「안내 시작」 줄이 요약 판 바닥에 붙어 보인다(sticky · 긴급 출동 · 판을 내리지 않고도 단추 전체가 판 안)', !!rg9 && getComputedStyle(rw9).position === 'sticky' && rg9.height >= 44 && rg9.top >= rb9.top && rg9.bottom <= rb9.bottom + 1 && rg9.bottom <= innerHeight + 1, rg9 ? Math.round(rg9.top) + '~' + Math.round(rg9.bottom) + ' · 판 ' + Math.round(rb9.top) + '~' + Math.round(rb9.bottom) + ' · 창 ' + innerHeight : '단추 없음'); g.mode('n'); g.paint(); } catch (e) { g.mode('n'); ck('안내 시작 줄 검사', false, e.message); }
     /* v0.14.0 주행 기록 — 기본 끔 · 켜면 안내 중 2초마다 기기에 · 끝나면 최근 목록에 · 업무·모의 주행은 안 남김 · 시험 뒤 지움 */
     if (st.route && !g.state().guide) { var dv0 = g.drv(); g.guideStart(); var off0 = g.drv().cur; g.guideStop(false);
       localStorage.setItem('tg_gargo_drvon', '1'); g.guideStart(); var dn = Date.now, tt9 = dn(); Date.now = function () { return tt9 += 2500; };

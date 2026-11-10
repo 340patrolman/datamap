@@ -16,6 +16,7 @@
   .sr { max-width: 1100px; margin: 8px auto 0; display: flex; gap: 8px; }
   .sr input { flex: 1; font-size: 16px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); }
   nav { max-width: 1100px; margin: 8px auto 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; } nav::-webkit-scrollbar { display: none; }
+  table.ov tr { cursor: pointer; } table.spec.ov th { white-space: normal; width: 7.6em; word-break: keep-all; } table.ov small { font-weight: 400; opacity: .8; }
   nav a { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; background: var(--chip); color: var(--ink); text-decoration: none; font-weight: 700; font-size: 13.5px; }
   main { max-width: 1100px; margin: 0 auto; padding: 12px 16px 60px; }
   section { margin-top: 22px; scroll-margin-top: 150px; } h2 { font-size: 19px; margin: 0 0 4px; } .lead { color: var(--ink2); margin: 0 0 12px; font-size: 14px; }
@@ -46,7 +47,7 @@
 <header>
   <div class="hd"><h1>📖 데이터 압축지도 사용설명서</h1><a href="./">← 지도로</a></div>
   <div class="sr"><input id="q" type="search" placeholder="찾기 — 예: 신호, 사고, 관할, 반려동물, 침수, 매출" autocomplete="off"></div>
-  <nav><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#police">👮 경찰 통계</a><a href="#onto">🧩 엮어서 답 찾기</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
+  <nav><a href="#over">📦 자료 한눈에</a><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#police">👮 경찰 통계</a><a href="#onto">🧩 엮어서 답 찾기</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
 </header>
 <main id="main"><p class="empty">설명서를 읽는 중…</p></main>
 <script>
@@ -64,6 +65,10 @@
     var nH = G.n.help, nL = G.n.layers;
     h += '<section id="top"><div class="kpi"><span><b>' + G.tasks.length + '</b><small>할 수 있는 일</small></span><span><b>' + nL + '</b><small>레이어(켜고 끄는 층)</small></span><span><b>' + G.files.length + '</b><small>자료 파일</small></span><span><b>' + G.tools.length + '</b><small>도구</small></span></div><p class="lead">지도 판 ' + esc(G.ver) + ' · 설명서 ' + esc(G.made) + ' · 이 설명서는 지도 코드와 자료 목록에서 저절로 뽑아 만든다(지도와 어긋나지 않게).</p></section>';
     /* 0-0 이 지도만의 특징 · 활용 범위 · 왜 이런 자료까지 (2026-10-18) */
+    if (!w && G.over && G.spec) { var Zo = G.spec.size, ro = 0; Object.keys(Zo.regions || {}).forEach(function (k) { ro += Zo.regions[k]; });
+      h += '<section id="over"><h2>📦 자료 한눈에</h2><p class="lead">공공기관이 공개한 자료만 모았다 — 모두 <b>' + kb(Zo.total) + '</b>(지도·공통 자료 ' + kb(Zo.site) + ' · 시군구별 자료 ' + kb(ro) + ' · 바탕 지도 조각 ' + kb(Zo.tiles) + '). ' + G.spec.sidos + '개 시·도 · 시군구 ' + G.spec.gus + '곳 · 읍면동 ' + G.spec.dongs.toLocaleString() + '곳. 폰은 보고 있는 지역 것만 받는다. 묶음을 누르면 그 레이어 설명으로 간다.</p><table class="spec ov"><tbody>'
+        + G.over.map(function (r) { return '<tr data-tab="' + r[0] + '"><th>' + esc(r[2]) + '<br><small>' + esc(r[1]) + ' · 레이어 ' + r[3] + '개</small></th><td><b>' + esc(r[5]) + '</b><br><small>예: ' + esc(r[4].join(' · ')) + '</small></td></tr>'; }).join('')
+        + '</tbody></table><p class="lg-n">자료마다 범위(서초만·서울·수도권·전국)와 기준일이 다르다 — 레이어 이름 끝 괄호와 아래 「📦 자료 목록」에 적혀 있다. 무엇을 겹쳐 무엇을 알아내는지는 「🔎 알아낼 수 있는 것」과 「🧩 엮어서 답 찾기」에.</p></section>'; }
     if (!w && G.about) { var A = G.about, cd = function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; };
       h += '<section id="about"><h2>🌟 이 지도는</h2><p class="lead"><b>' + esc(A.lead) + '</b></p><div class="grid">' + A.feat.map(cd).join('') + '</div>'
         + '<h3 class="grp">누가 쓰나 — 활용 범위</h3><div class="grid">' + A.who.map(cd).join('') + '</div>'

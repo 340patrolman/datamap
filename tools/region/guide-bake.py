@@ -49,6 +49,22 @@ INFER = [
     ['📈', '바뀌고 있는 것', '해마다 쌓인 자료(사고 10년·매출 분기·인구·업종 증감·집값 흐름)로 늘고 주는 흐름을 본다 — 「왜」는 카드의 근거와 함께 사람이 판단한다.'],
 ]
 # (2026-10-18 소유자 「이 지도만의 특징점 · 활용 범위 경찰과 민간인 · 상권분석을 왜 넣었나 · 국세청 세금 자료도 우리 삶 속에 경찰업무가 있고 · 경찰 내부 자료는 하나도 없어도 이 정도 해낼 수 있다 · 공공데이터니까 시비를 걸 수 없지」)
+# (2026-11-11 소유자 「데이터만 1기가 넘어가니 뭐뭐가 있고 어떻게 뭘 알아낼 수 있다는 걸 알려줄 필요가 있어」) 묶음마다 「무엇을 알 수 있나」 한 줄 — 레이어 수·예시는 지도 코드에서 저절로 센다
+OVER = {
+    'pop': '어느 동에 누가 사는지(나이·가구·외국인), 낮과 밤에 사람이 얼마나 달라지는지.',
+    'move': '사람이 어디서 타고 내리는지, 어느 역·정류장·길목이 언제 붐비는지.',
+    'life': '병의원·약국·응급실·AED·쉼터·관공서가 어디 있는지 — 급할 때 가까운 곳.',
+    'care': '학교·학원·어린이집·보호구역이 어디 몰려 있는지 — 등하교 시간에 볼 곳.',
+    'traf': '사고가 어디서·언제 잦은지(10년), 신호가 몇 초로 도는지, 단속 장비와 길 이름.',
+    'local': '이 자리가 어느 경찰서·지구대 몫인지, 밤에 주점·숙박·인파가 몰리는 곳.',
+    'safety': '안심 시설(CCTV·비상벨·보안등), 보행 약자가 많은 칸, 큰비·눈 때 먼저 볼 길.',
+    'spend': '어디서 언제 돈을 쓰는지(카드 매출), 상권이 커지는지 줄어드는지.',
+    'estate': '땅값·집값·실거래·구매력 — 그 동네의 형편과 바뀌는 흐름.',
+    'now': '지금 날씨·미세먼지·비구름·특보.',
+    'season': '침수 이력·지하차도·결빙 우려 자리·쉼터 — 계절마다 위험한 곳.',
+    'live': '지금 막히는 길, 돌발·공사·통제, 교통 CCTV, 버스·주차 현황.',
+    'map': '행정동·도로·건물·관할 경계 — 다른 자료를 얹는 바탕.',
+}
 ABOUT = {
     'lead': '경찰 내부 시스템 자료 없이, 누구나 받을 수 있는 공공데이터만으로 「경찰 업무가 벌어지는 생활의 자리」를 한 장에 겹쳐 본다.',
     'feat': [
@@ -198,7 +214,18 @@ def main():
         orc = {'how': orc['how'], 'grade': orc['grade'], 'note': orc.get('note', []), 'recipes': [{k: r[k] for k in ('id', 'q', 'who', 'start', 'steps', 'judge', 'act')} for r in orc['recipes']], 'ex': {k: v[:1] for k, v in orc.get('examples', {}).items()}}
     except Exception:
         orc = None   # v2.278.0 🧩 엮어서 답 찾기 — 레시피 파일 그대로(다른 세션 tools/onto/recipes-bake.py)
-    out = {'schema': 'tg-guide/1', 'made': datetime.date.today().isoformat(), 'ver': ver, 'about': ABOUT, 'police': POLICE, 'onto': orc, 'howto': HOWTO, 'infer': INFER, 'spec': spec, 'tasks': TASKS, 'tools': tools, 'cats': cats, 'layers': layers, 'help': helps, 'where': where, 'files': files,
+    import re as _re
+    def _nm(t): return _re.sub(r'^[^0-9A-Za-z가-힣]+', '', _re.sub(r'\(.*?\)', '', t)).split(' — ')[0].strip()
+    over = []
+    for top in cats:
+        for grp in top[2]:
+            ks = [k2 for sub in grp[2] for k2 in sub[1] if k2 in layers]
+            ex = []
+            for k2 in ks:
+                n2 = _nm(layers[k2]['nm'])
+                if n2 and n2 not in ex: ex.append(n2)
+            over.append([top[0], top[1], grp[1], len(ks), ex[:4], OVER.get(grp[0], '')])
+    out = {'schema': 'tg-guide/1', 'over': over, 'made': datetime.date.today().isoformat(), 'ver': ver, 'about': ABOUT, 'police': POLICE, 'onto': orc, 'howto': HOWTO, 'infer': INFER, 'spec': spec, 'tasks': TASKS, 'tools': tools, 'cats': cats, 'layers': layers, 'help': helps, 'where': where, 'files': files,
            'n': {'layers': len(layers), 'help': sum(1 for k2 in layers if k2 in helps), 'files': len(files)}}
     json.dump(out, open(os.path.join(ROOT, 'data', 'guide.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     miss = [k2 for k2 in layers if k2 not in helps]

@@ -117,6 +117,10 @@ def sig_wait(SD, no, hd, t):
 
 def load_spd(d0, d1):
     S = []
+    try:   # (2026-11-11) ITS 채움 값(실측 없을 때 내는 고정 숫자 · data/live-spd-filler.json · livefiller-bake.py)은 실측이 아니므로 뺀다
+        FIL = json.load(open(os.path.join(ROOT, 'data', 'live-spd-filler.json'), encoding='utf-8')).get('m') or {}
+    except Exception:
+        FIL = {}
     for f in sorted(glob.glob(os.path.join(RAW, 'out', 'livespd', '*.jsonl.gz'))):
         day = os.path.basename(f)[:8]
         if day < d0 or day > d1:
@@ -125,6 +129,8 @@ def load_spd(d0, d1):
             try:
                 j = json.loads(ln)
                 m = j['m'] if isinstance(j['m'], dict) else json.loads(j['m'])
+                if FIL:
+                    m = {k: v for k, v in m.items() if FIL.get(k) != v}
                 S.append((int(j['at']), m))
             except Exception:
                 continue

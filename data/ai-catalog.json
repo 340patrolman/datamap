@@ -1,6 +1,6 @@
 {
  "schema": "tg-ai-catalog/1",
- "built": "2026-11-10",
+ "built": "2026-11-11",
  "guide": "https://340patrolman.github.io/datamap/data/ai.json",
  "fields": "files[{file, url, bytes, schema, date(만든 날·기준 해), source, fields(칸 설명), note, about{그 밖 설명 글}, top{맨 위 열쇠: {개수} 또는 [개수]}, sample{큰 묶음의 첫 항목 — 꼴 보기}, shape(칸 설명이 없는 파일의 꼴 — 저절로 적은 것: 열쇠·값 종류·보기)}]",
  "files": [
@@ -642,14 +642,14 @@
   {
    "file": "eta-cal.json",
    "url": "https://340patrolman.github.io/datamap/data/eta-cal.json",
-   "bytes": 4452,
+   "bytes": 4501,
    "schema": "tg-eta-cal/1",
-   "date": "2026-11-08 09:31",
+   "date": "2026-11-11 04:35",
    "source": "국가교통정보센터(ITS) 통행속도 — 이 PC 가 약 22분마다 받아 쌓은 것(07_API키/out/livespd) · 신호 = data/sigdir-seoul.json · 길 = data/nav-seocho.json · 굽는 도구 tools/signal/etacal-its.py --bake",
    "fields": "f{「요일 갈래|시간대」: 주행 배율(제한속도 주행 시간 × f = 실측에서 신호 기다림·가감속을 뺀 시간)} · r{같은 칸: [25% ÷ 가운데, 75% ÷ 가운데] — 실측 없는 길의 시간 폭} · n{같은 칸: 맞댄 줄 수(30 아래면 f 없음)} · fill{빈 칸: 대신 쓸 칸} · bands[[이름, 시작 시, 끝 시]] · kinds[요일 갈래] · holidays[일·공휴로 볼 날]",
    "note": "서초 간선 28구간에서 잰 값을 다른 곳에도 쓴다(근사) · 토요일 등 줄이 모자란 칸은 fill 의 칸 값을 쓴다 · 이레 넘게 쌓일 때마다 다시 굽는다",
    "top": {
-    "days": "[29]",
+    "days": "[32]",
     "bands": "[5]",
     "kinds": "[3]",
     "f": "{15}",
@@ -1118,10 +1118,11 @@
   {
    "file": "guide.json",
    "url": "https://340patrolman.github.io/datamap/data/guide.json",
-   "bytes": 332306,
+   "bytes": 335994,
    "schema": "tg-guide/1",
-   "date": "2026-11-10",
+   "date": "2026-11-11",
    "top": {
+    "over": "[13]",
     "about": "{4}",
     "police": "{7}",
     "onto": "{5}",
@@ -1134,14 +1135,14 @@
     "layers": "{170}",
     "help": "{170}",
     "where": "{167}",
-    "files": "[216]",
+    "files": "[217]",
     "n": "{3}"
    },
    "sample": {
     "files[0]": "{\"f\": \"acad-dong.json\", \"s\": \"소상공인시장진흥공단 상가(상권)정보(공공데이터포털 OpenAPI storeListInDong) — 등록된 상가업소 · 영업 여부·매출은 담지 않는다 · 교육 업종 · 행정동 = 통계청 SGIS(가공 vuski/admdongkor 2026-07 · CC BY 4.0)\", \"k\": \"dong = {행정동 8자리: [경도, 위도, 이름, 종류별 수(types 차례)]}\", \"n\" …(전문은 파일에)",
     "layers.dong": "{\"nm\": \"🏘 행정동\", \"on\": true, \"grp\": \"바탕\"}"
    },
-   "shape": "{<열쇠 14개 · 예 about>: {lead: 글, feat: [6개 × […3]], who: [3개 × […3]], why: [4개 × […3]]}}"
+   "shape": "{<열쇠 15개 · 예 over>: [13개 × [6개 × \"people\"]]}"
   },
   {
    "file": "heritage-seocho.json",
@@ -1405,15 +1406,15 @@
   {
    "file": "live-acc-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/live-acc-seoul.json",
-   "bytes": 3090,
+   "bytes": 1816,
    "schema": "tg-live-acc/1",
-   "date": "2026-11-10 23:27",
+   "date": "2026-11-11 04:34",
    "source": "서울 열린데이터광장 「서울시 실시간 돌발 정보」(AccInfo · TOPIS) — 큰길(ITS 링크)에 걸린 공사·통제·사고",
    "fields": "items[[돌발 ID, 갈래 코드, 갈래 이름, 세부 코드, ITS 링크 ID, 위도, 경도, 시작 YYYYMMDDhhmm, 끝(예상) YYYYMMDDhhmm, 내용 글]]",
    "note": "골목 공사·이삿짐 차량은 이 자료에 없다 — 큰길만 · 끝 시각은 예상 · 받은 그대로 · 좌표 = GRS80 중부원점(EPSG:5181) → WGS84",
    "top": {
     "note": "[3]",
-    "items": "[10]"
+    "items": "[4]"
    },
    "sample": {
     "items[0]": "[\"1071788\", \"A04\", \"공사\", \"04B01\", \"1220031600\", 37.515672, 127.068736, \"202604071000\", \"202703010000\", \"탄천나들목 및 봉은교 구조개선공사\\r-일시 : 26.4.7(화)10:00~27.2.28(일) 23:59\\r-장소 : 봉은교\\r-통제 : 양방향 전면통제\"]",
@@ -1423,21 +1424,21 @@
   {
    "file": "live-ims-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/live-ims-seoul.json",
-   "bytes": 13274,
+   "bytes": 9656,
    "schema": "tg-live-ims/1",
-   "date": "2026-11-10 23:27",
+   "date": "2026-11-11 04:34",
    "source": "경찰청 도시교통정보센터(UTIC) 개방데이터 돌발 정보(imsOpenData.do) — 서울(법정동 11…)",
    "fields": "items[[돌발 ID, 갈래 글(제목 [ ] 안 · 사고·공사·통제 등), 갈래 코드, 세부 코드, 위도, 경도, 법정동 10자리, 도로 이름, 차로, 시작, 끝(예상), 제목 글, 표준 링크 ID]]",
    "note": "데이터지도 표시 · 가르고(v0.29.0 부터) 길 계산에 쓴다 — UTIC 두 번째 신청(2026-10-15 승인 · 경찰업무 보조 연구개발) · 실제 상황과 몇 분 차이가 날 수 있다 · 끝 시각은 예상 · 서울시 AccInfo(data/live-acc-seoul.json)와 겹치는 공사가 있다 — 사고는 이쪽이 촘촘",
    "top": {
     "note": "[3]",
-    "items": "[29]"
+    "items": "[20]"
    },
    "about": {
     "credit": "교통정보: 경찰청 도시교통정보센터(UTIC) 제공"
    },
    "sample": {
-    "items[0]": "[\"L93175561387\", \"사고\", \"1\", \"8\", 37.50533, 126.975458, \"1159010600\", \"올림픽대로\", \"1차로\", \"2026년 11월 10일  23시 02분\", \"2026년 11월 10일  23시 32분\", \"[사고] 올림픽대로 동작구서초구 에서 동작대교JC 방향 1차로 고장차량 올림픽대로 동작대교남단→한강대교남단 김포 방향\", \"1190028900\"]",
+    "items[0]": "[\"L93157867342\", \"공사\", \"2\", \"255\", 37.510375, 127.07051, \"1171010100\", \"탄천동로\", \"양방향 전체차로\", \"2025년 08월 25일  13시 00분\", \"2027년 09월 30일  23시 59분\", \"[공사] 탄천동로 종합운동장교차로 에서 잠실동352 방향 양방향 전체차로 도로공사 [공사/전면통제] 탄천동로 지하화 공사 / 장소: 탄천동로 삼성교동단↔잠실유수지 / 통제: …(전문은 파일에)",
     "note[0]": "데이터지도 표시 · 가르고(v0.29.0 부터) 길 계산에 쓴다 — UTIC 두 번째 신청(2026-10-15 승인 · 경찰업무 보조 연구개발)"
    }
   },
@@ -1482,38 +1483,38 @@
   {
    "file": "live-spd-seocho.json",
    "url": "https://340patrolman.github.io/datamap/data/live-spd-seocho.json",
-   "bytes": 40328,
+   "bytes": 40543,
    "schema": "tg-live-spd/1",
-   "date": "23:27",
-   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261110232500",
+   "date": "04:34",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261111043000",
    "fields": "m{ITS 링크 ID: 통행속도 km/h(정수)} — data/sig-approach-seocho.json 의 링크와 data/nav-seocho.json 의 등급 1~4 링크 · n 값이 온 링크 수 · want 찾는 링크 수",
    "note": "실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다 · 통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다 · 자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다",
    "top": {
     "box": "[4]",
-    "note": "[3]",
-    "m": "{2460}"
+    "note": "[4]",
+    "m": "{2458}"
    },
    "sample": {
-    "m.1020000101": "72",
+    "m.1020000101": "76",
     "box[0]": "126.955"
    }
   },
   {
    "file": "live-spd-six.json",
    "url": "https://340patrolman.github.io/datamap/data/live-spd-six.json",
-   "bytes": 142253,
+   "bytes": 142308,
    "schema": "tg-live-spd/1",
-   "date": "23:27",
-   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261110232500",
+   "date": "04:34",
+   "source": "국가교통정보센터(ITS) 실시간 소통정보 trafficInfo(openapi.its.go.kr) — 원자료의 만든 때 20261111043000",
    "fields": "m{ITS 링크 ID: 통행속도 km/h(정수)} — 서초 신호 교차로에 들어오는 링크 + data/nav-six.json(여섯 구 길 묶음)의 등급 1~4 링크(그 파일이 없으면 상자 안 모든 링크) · n 값이 온 링크 수 · want 찾는 링크 수",
    "note": "실시간이 아니다 — 이 PC 가 약 11분마다 한 번 받아 올린 값이다(at = 받은 때 epoch 초) · 올라가 보이기까지 몇 분 더 걸린다 · PC 가 꺼져 있으면 멈춘다 → at 이 20분 넘게 지났으면 쓰지 않는다 · 통행속도 = 그 링크를 지난 차들의 평균 속도(km/h) — 「얼마나 막히나」이지 「신호를 몇 번 기다리나」가 아니다 · 값이 없는 링크는 「값 없음」이지 「원활」이 아니다 · 자기 열쇠로 실시간 소통을 켠 사람은 이 파일이 아니라 직접 받은 값을 쓴다",
    "top": {
     "box": "[4]",
-    "note": "[3]",
-    "m": "{8852}"
+    "note": "[4]",
+    "m": "{8841}"
    },
    "sample": {
-    "m.1000002701": "11",
+    "m.1000002701": "14",
     "box[0]": "126.875"
    }
   },
@@ -2077,9 +2078,9 @@
   {
    "file": "onto-loop-hist.json",
    "url": "https://340patrolman.github.io/datamap/data/onto-loop-hist.json",
-   "bytes": 10029,
+   "bytes": 10117,
    "schema": "tg-onto-loop-hist/1",
-   "date": "2026-11-10",
+   "date": "2026-11-11",
    "source": "국가교통정보센터(ITS) 실시간 소통정보를 이 PC 가 약 11분마다 받아 쌓은 것(07_API키/out/livespd) × data/onto-loops.json 네 변 — tools/onto/loop-hist.py",
    "fields": "rule{th km/h, legs 몇 변 이상, snaps 이어진 받은 때 수} · from·to 쌓인 기록 처음·끝 · loops{고리 id: {ep[{d 날짜, w 요일, b 시작, e 끝, n 받은 때 수, min[변마다 가장 느린 km/h], first[먼저 막힌 변 번호 차례 · 0부터 = onto-loops legs 차례]}], days[{d, w, eve 저녁 15~22시 받은 때 수, ep 그날 막힘 토막 수}], med[변마다 쌓인 기록 가운데값 km/h], chronic[늘 느린 변 번호 — 문턱 이하가 평소라 「먼저 막힌 차례」에서 뺌]}}",
    "note": "「고리 막힘」 = 네 변 중 셋 이상이 10 km/h 이하인 받은 때가 1 번 넘게 이어짐 — 앱이 정한 문턱(어림)이지 공식 기준이 아니다 · 받은 때 사이는 약 11분 — 시작·끝은 그 간격만큼 어긋날 수 있다 · 저녁 받은 기록이 없는 날(eve 0)은 막힘이 없었다는 뜻이 아니다(PC 가 꺼져 못 받음)",
@@ -2090,7 +2091,7 @@
    },
    "about": {
     "from": "2026-10-11 12:26",
-    "to": "2026-11-10 22:52"
+    "to": "2026-11-11 04:22"
    },
    "sample": {
     "note[0]": "「고리 막힘」 = 네 변 중 셋 이상이 10 km/h 이하인 받은 때가 1 번 넘게 이어짐 — 앱이 정한 문턱(어림)이지 공식 기준이 아니다",
@@ -3106,9 +3107,9 @@
   {
    "file": "sig-audit.json",
    "url": "https://340patrolman.github.io/datamap/data/sig-audit.json",
-   "bytes": 325322,
+   "bytes": 325287,
    "schema": "tg-sig-audit/1",
-   "date": "2026-11-10 23:27",
+   "date": "2026-11-11 04:34",
    "source": "이 지도가 받은 방향별 신호(data/sigdir-seoul.json)를 교통과 현시도 · 경찰청 교차로계획정보 · 두 API 서로 · 다시 받은 값과 맞대 본 결과(값을 고치지 않는다)",
    "fields": "spots{교차로 번호: {ok[[길, 글]], bad[[길, 글]]}} — 길: ksc 교통과 현시도 · pol 경찰청 계획 · api 잔여시간×신호 상태 두 API · re 다시 받아 맞대기 · fld 현장 지식(sig-field) · perp 직각 직진 겹침 · opp 마주 오는 직진×좌회전 겹침 · sum 녹+황+적≠주기. 아무 길로도 맞대 보지 못한 교차로는 없다(목록에 없음 = 대조 전)",
    "top": {
@@ -3117,7 +3118,7 @@
    },
    "sample": {
     "spots.1007": "{\"ok\": [[\"re\", \"다시 받아 맞음 10번(가장 길게 35995분 뒤 · 어긋남 0.8초)\"]], \"bad\": []}",
-    "sum.shape_ok": "2454"
+    "sum.shape_ok": "2453"
    }
   },
   {
@@ -3304,9 +3305,9 @@
   {
    "file": "sigdir-seoul.json",
    "url": "https://340patrolman.github.io/datamap/data/sigdir-seoul.json",
-   "bytes": 15991649,
+   "bytes": 16000482,
    "schema": "tg-sigdir/1",
-   "date": "2026-11-10 23:32",
+   "date": "2026-11-11 04:32",
    "source": "서울특별시 교통빅데이터플랫폼(T-Data) V2X 신호 잔여시간 정보(v2xSignalPhaseTimingInformation) — 교차로 신호제어기가 1초마다 보낸 방위별·이동류별 잔여시간",
    "fields": "pts{교차로 번호: [위도, 경도, 이름]} · its{교차로 번호: [기록…]} 기록 = {day 받은 날, dow 요일(0 일), from~to 받은 시각, cyc 주기 초, mv[[방위, 이동류, 녹색, 황색, 적색, 녹색 시작(주기 안), 본 횟수(, 2 = 한 주기에 두 번)]], pd[[방위, 보행 녹색, 점멸, 적색, 녹색 시작, 본 횟수]](신호 상태 API 로 받은 기록만), ped[[방위, …]](보행 신호가 있는 쪽), a 기준 이동류 녹색이 켜진 실제 시각(epoch 초), ci 주기(이어 세기용), v[띄운 분, 어긋난 초](두 번 대조 통과), x[…](대조 실패), src p = 신호 상태 API · f = Fusion 지금 한 줄로 시각만 맞춘 닻(fb = 녹색 길이·자리를 빌린 기록 「YYYY-MM-DD HH:MM」), dq dir = 원자료의 방위 이름이 실제와 다름(직각 방향 직진이 함께 녹색 — 초는 쓸 수 있어도 어느 쪽인지는 현장 확인)} · tod{교차로 번호: [[요일 갈래 0 평일·1 토·2 일, 시, 주기 초]]} · pl{교차로 번호: [[요일 갈래(0 월~목 · 1 금 · 2 토 · 3 일), 시, 주기, 자정 기준 옵셋(기준 이동류 녹색이 켜지는 하루 초 mod 주기), 받은 달-날, 그 옵셋의 기준 이동류 「방위:이동류」(기록마다 기준이 다를 수 있다 — 쓸 때 그 기록의 그 이 …(전문은 파일에)",
    "note": "받은 시간대에 실제로 돈 값이다(하루 계획표가 아니다) · 방위 = 그 신호를 받는 차가 들어오는 쪽 · 잔여시간 API 로 읽은 기록의 색은 황색 3~6초 앞뒤로 읽은 추정이고 src p 기록은 상태 값 그대로 · 이어 센 「지금 몇 초」는 a·ci 로 지도가 계산한 추정",

@@ -247,6 +247,22 @@
   body.guiding #gSig.cp .tx1 { white-space: normal; } body.guiding #gSig .ln.eco, body.guiding #gSig.cp .ln { white-space: normal; word-break: keep-all; }
   body.guiding #gSig.cp .now b small:first-child { display: none; }   /* 남은 초 크기는 ⚙ 설정 그대로 · 좁은 상자에서는 「적색/녹색」 낱말을 빼고 점·숫자 색으로 */ body.guiding #gSig.cp .now i { width: 14px; height: 14px; } body.guiding #gSig.cp .ar { font-size: calc(22px * var(--fz, 1)); } body.guiding #gSig.cp .c1 { column-gap: 6px; }   /* v0.33.0 좁은 상자에서도 화살표·색·초가 한 줄 */
   body.guiding #gSig .ln.eco.ovr { background: rgba(245,158,11,.16); border-radius: 7px; padding: 1px 6px; } body.guiding #gSig .ln.eco.em { background: rgba(239,68,68,.16); border-radius: 7px; padding: 1px 6px; }   /* v0.34.0 제한 넘는 속도 사실(노랑) · 긴급 운행 속도(빨강) */
+  /* v0.51.0 다듬기(형님 「상용 티맵·네이버지도·카카오내비처럼 디자인도 좋고 완성도 높게」) — 자리는 그대로 · 모양만 */
+  #gBtn #gIn { border-radius: 23px 23px 0 0; margin-bottom: -7px; } #gBtn #gOut { border-radius: 0 0 23px 23px; box-shadow: var(--sh), inset 0 1px 0 var(--line); }   /* 확대·축소 = 한 덩어리 알약 */
+  #gBtn.row #gIn { border-radius: 23px 0 0 23px; margin: 0 -7px 0 0; } #gBtn.row #gOut { border-radius: 0 23px 23px 0; box-shadow: var(--sh), inset 1px 0 0 var(--line); }
+  #gBtn #gIn, #gBtn #gOut { font-size: calc(24px * var(--fz, 1)); font-weight: 500; }
+  #gNote { top: calc(116px + env(safe-area-inset-top)); background: rgba(24,35,58,.95); border-radius: 14px; font-size: calc(13px * var(--fz, 1)); line-height: 1.5; box-shadow: 0 8px 22px rgba(9,15,30,.28); }   /* 알림은 위 칩 줄 밑 */
+  body:has(#gList[style*="block"]) #gNote { display: none !important; }   /* 찾기 목록을 덮지 않는다 */
+  #gList button { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink); font-size: calc(15.5px * var(--fz, 1)); } #gList button small { font-weight: 500; margin-left: 0; } #gList button:active { background: rgba(47,107,255,.08); }
+  #gList button .dst { order: 2; margin-left: auto; flex: 0 0 auto; padding-left: 8px; font-size: calc(12.5px * var(--fz, 1)); font-weight: 700; color: var(--dim); } #gList .wpb { order: 3; float: none; margin-left: 4px; }   /* 내 자리에서 몇 km */
+  #gBot .hint:first-child { font-size: calc(16px * var(--fz, 1)); font-weight: 800; color: var(--ink); line-height: 1.5; } #gBot .hint:first-child b { color: var(--acc); }   /* 첫 화면 머리 */
+  #gBot .hint[style*="12.5px"] { background: rgba(47,107,255,.06); border-radius: 12px; padding: 8px 11px; line-height: 1.55 !important; } :root.dark #gBot .hint[style*="12.5px"] { background: rgba(147,197,253,.08); }
+  #gBot .sub { font-size: calc(12.5px * var(--fz, 1)); background: rgba(15,23,42,.035); border-radius: 12px; padding: 8px 11px; line-height: 1.6; } :root.dark #gBot .sub { background: rgba(255,255,255,.05); }   /* 길 요약의 근거 글은 한 상자로 */
+  #gBot .hand button[data-alt] { border-color: #b8c4d8; font-weight: 800; color: var(--ink); } #gBot .hand button[data-alt]::after { content: ' ›'; color: var(--dim); }
+  #gBot .btns button:not(.go) { font-weight: 800; color: var(--ink); } #gBot .btns button:active { transform: scale(.98); }
+  #gBtn.row { gap: 6px; } #gBtn.row button { width: 42px; height: 42px; font-size: calc(17px * var(--fz, 1)); } #gBtn.row #gIn, #gBtn.row #gOut { font-size: calc(22px * var(--fz, 1)); } #gBtn.row #gIn { margin-right: -6px; border-radius: 21px 0 0 21px; } #gBtn.row #gOut { border-radius: 0 21px 21px 0; }   /* 길 요약 때 판 위 가로 줄은 조금 작게(지도를 덜 가림) */
+  body.guiding #gTop .arw { width: calc(46px * var(--fz, 1)); height: calc(46px * var(--fz, 1)); font-size: calc(30px * var(--fz, 1)); } body.guiding #gTop .arwc { max-width: calc(50px * var(--fz, 1)); } body.guiding #gTop .tx span { letter-spacing: -.3px; overflow-wrap: normal; }   /* 길 이름이 「남부순환/로」처럼 글자 가운데서 꺾이던 것 */
+  @media (max-width: 420px) { body.guiding #gBot .eta .here { display: none; } }   /* 폰 폭에서는 「지금 달리는 길」 칸이 20px 로 눌려 「반 서..」만 보였다 — 펼친 화면(폴드 안쪽 등)에서만 */
 </style>
 </head>
 <body>
@@ -259,7 +275,7 @@
 <div id="gSig" aria-live="polite"></div>
 <div id="gSpd"></div>
 <div id="gBar" role="img" aria-label="남은 길 소통"></div>
-<div id="gBtn"><button id="gVoice" aria-label="음성 안내">🔊</button><button id="gCen" aria-label="내 자리로">◎</button><button id="gIn" aria-label="확대">＋</button><button id="gOut" aria-label="축소">－</button><button id="gDark" aria-label="밤 화면">◐</button><button id="gCfgB" aria-label="설정">⚙</button></div>
+<div id="gBtn"><button id="gVoice" aria-label="음성 안내">🔊</button><button id="gCen" aria-label="내 자리로">◎</button><button id="gIn" aria-label="확대">＋</button><button id="gOut" aria-label="축소">−</button><button id="gDark" aria-label="밤 화면">◐</button><button id="gCfgB" aria-label="설정">⚙</button></div>
 <div id="gBot"><div class="hint">길 자료를 읽는 중…</div></div>
 <div id="gMsg"></div><div id="gNote"></div><div id="gPick"></div><div id="gCfg" role="dialog" aria-label="설정"></div>
 <div id="gIntro"><div>
@@ -289,7 +305,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.50.4"></script>
+<script src="gargo.js?v=0.51.0"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

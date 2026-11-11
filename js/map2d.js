@@ -10407,6 +10407,8 @@
       var t = (m ? m[1] : 'https://340patrolman.github.io/datamap/data/ai.json 을 먼저 읽어라.') + (raw ? ' (그 주소를 못 열면 ' + raw[1] + ' 을 읽어라.)' : '');
       return navigator.clipboard.writeText(t).then(function () { toast('🤖 복사했다 — AI 대화창에 붙여 넣으면 이 지도의 자료 길잡이(ai.json)를 읽고 답한다'); }); })
       .catch(function () { toast('복사하지 못했다 — 주소 340patrolman.github.io/datamap/data/ai.json 을 AI 에게 직접 알려 준다'); }); });
+  /* v2.321.0 위 막대의 실제 높이(--topr) — 칩 줄을 펴면 폰에서 160px 인데 CSS 는 고정값(90·110px)을 써서 「🧪 시뮬」 알약·알림이 칩 줄을 덮었다 */
+  (function () { var tp = $('m2dTop'); if (!tp) return; var put = function () { document.documentElement.style.setProperty('--topr', tp.offsetHeight + 'px'); }; put(); try { new ResizeObserver(put).observe(tp); } catch (e) { window.addEventListener('resize', put); } })();
   function toast(t) { var el = $('m2dToast'); if (!el) { el = document.createElement('div'); el.id = 'm2dToast'; el.setAttribute('role', 'status'); document.body.appendChild(el); } el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 1600); }
   if ($('m2dDN')) $('m2dDN').onclick = function () { MODE = MODE === 'auto' ? 'light' : MODE === 'light' ? 'dark' : 'auto'; try { localStorage.setItem('tg_map2d_mode', MODE); } catch (e) {} dnApply(); toast(MODE === 'auto' ? '🌓 자동 — 기기 설정을 따른다' : MODE === 'dark' ? '🌙 밤 화면' : '☀️ 낮 화면'); };
   if (MQD && MQD.addEventListener) MQD.addEventListener('change', function () { if (MODE === 'auto') dnApply(); });

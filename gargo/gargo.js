@@ -896,7 +896,7 @@
     var top = $('gTop'), bot = $('gBot'), sg = $('gSig'), spd = $('gSpd');
     if (!route && cruise) { paintCruise(); return; }
     if (!route) { top.style.display = 'none'; sg.style.display = 'none'; spd.style.display = 'none'; $('gFind').style.display = guide ? 'none' : 'flex';
-      setH(bot, '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest ? '' : sigStat() + '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기<small>앞 신호·소통</small></button><button data-sr="open|">🚇 열차 안 신고</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 길을 찾는다.</div>' : '')); return; }
+      setH(bot, '<div class="hint">' + (dest ? (me ? '길을 찾는 중…' : '내 자리를 기다리는 중 — 위치를 허락하거나, 지도를 <b>길게 눌러</b> 「여기서 떠나기」를 고른다') : '목적지를 정한다 — 지도를 <b>길게 누르거나</b> 위에서 이름을 찾는다') + '</div>' + (dest || MODE === 'v' ? '' : qplHtml()) + (dest ? '' : sigStat() + '<div class="btns" style="margin-top:10px"><button id="gCruise" class="go">▶ 켜놓고 다니기<small>앞 신호·소통</small></button><button data-sr="open|">🚇 열차 안 신고</button></div>') + (me && me.out ? '<div class="hint warn">지금 자리가 길 묶음 밖이다 — 시험판은 ' + AREA_KO + '과 둘레 2km 안에서만 길을 찾는다.</div>' : '')); return; }
     var r = route, now = Date.now() / 1000, pos = r.pos || 0, left = Math.max(0, r.dist - pos), frac = r.dist ? left / r.dist : 0, tLeft = r.tc ? Math.max(0, r.time - tAt(r, pos)) : r.time * frac;
     var nx = null, n2 = null; for (var i = 0; i < r.mans.length; i++) if (r.mans[i].d > pos + 5) { nx = r.mans[i]; n2 = r.mans[i + 1] || null; break; }
     var known = r.sigs.filter(function (g) { return g.s && g.s.kind !== 'avg'; }).length, wsum = 0; r.sigs.forEach(function (g) { wsum += g.tw || 0; });
@@ -1255,6 +1255,7 @@
   $('gPick').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var w = this._w, k = b.getAttribute('data-p'); this.style.display = 'none'; if (k === 'to') setDest(w[0], w[1], w[2]); else if (k === 'wp') { WPS.push({ x: w[0], y: w[1], nm: w[2] || '경유지' }); route = null; plan(); } else if (k === 'from') { if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; } sim = null; setMe(w[0], w[1], 5, null, 0); note('떠나는 곳을 손으로 정했다 — 실제 위치로 돌아가려면 ◎ 를 누른다'); } });
   function setDest(x, y, nm, vq, noRec) { var vip = !!(vq || MODE === 'v'); if (cruise) cruiseStop(); WPS = []; dest = { x: x, y: y, nm: nm || '목적지', ext: !!(FEXT && !vip), vip: vip ? 1 : 0, t0: Date.now(), rx: DPT ? DPT[0] : x, ry: DPT ? DPT[1] : y }; DPT = null; FEXT = false; if (!vip && !noRec) { try { plPut('r', dest); } catch (e) {} } route = null; if (!me) gpsStart(); if (me) plan(); else { paint(); draw(); } }
   document.addEventListener('click', function (e) { var t = e.target.closest('button'); if (!t) return; var id = t.id;
+    var qpk = t.getAttribute('data-qp'); if (qpk != null && MODE !== 'v') { fl._o = plList(); pickFound(+qpk); return; }
     var srk = t.getAttribute('data-sr'); if (srk) { if (srk === 'open|') srOpen(true); else srClick(srk); return; }
     var dck = t.getAttribute('data-dc'); if (dck) { dispClick(dck); return; } var dcp = t.getAttribute('data-dcp'); if (dcp != null && DRES && DRES.ok[+dcp]) { var tx9 = dispOrder(DRES.ok[+dcp]); try { navigator.clipboard.writeText(tx9).then(function () { note('📋 복사했다 — ' + tx9); }, function () { note(tx9); }); } catch (e) { note(tx9); } return; }
     var plk = t.getAttribute('data-pl'); if (plk && dest && (dest.vip || MODE === 'v')) { note('🔒 업무 목적지는 이 기기에 남기지 않는다'); return; } if (plk && dest) { plPut(plk, dest); note({ h: '🏠 집', o: '🚓 근무지', f: '⭐ 즐겨찾기' }[plk] + '으로 넣었다 — 찾기 칸을 누르면 나온다(이 기기에만)'); return; }
@@ -1293,6 +1294,8 @@
     if (kind === 'h' || kind === 'o') P[kind] = o;
     else { var L = P[kind], same = function (q) { return Math.abs(q.lon - o.lon) < 0.0003 && Math.abs(q.lat - o.lat) < 0.0003; }; P[kind] = [o].concat(L.filter(function (q) { return !same(q); })).slice(0, kind === 'f' ? 12 : 8); }
     plSave(); }
+  /* v0.51.1 첫 화면 바로가기(상용 내비의 집·회사 칩) — 이 기기에 넣어 둔 🏠·🚓·⭐·🕘 를 한 줄로 · 누르면 찾기 목록에서 고른 것과 같다 · 업무 모드에서는 안 보임 */
+  function qplHtml() { var L = plList(); if (!L.length) return ''; return '<div class="qpl">' + L.slice(0, 8).map(function (o, i) { return '<button data-qp="' + i + '"><i>' + o[0] + '</i>' + esc(o[1]) + '</button>'; }).join('') + '</div>'; }
   function plList() { var P = plLoad(), out = [], add = function (ic, q, note) { if (q && q.lon) out.push([ic, q.n, PX(q.lon), PY(q.lat), note]); };
     add('🏠', P.h, '집'); add('🚓', P.o, '근무지'); P.f.forEach(function (q) { add('⭐', q, '즐겨찾기'); }); P.r.forEach(function (q) { add('🕘', q, '최근'); }); return out; }
   var fi = $('gQ'), fl = $('gList');

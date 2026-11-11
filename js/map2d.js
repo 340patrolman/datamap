@@ -1452,7 +1452,7 @@
       h += talkDong(it.d); }   // v2.67.0 소유자 「손익 계산을 업종별 개업 시 예상으로 바꾸고 · 이 동 풀어 읽기 오른쪽에 · 학원·교습소 개업은 그 오른쪽에」
     if (sel && sel.it === it && !sel.w) sel.w = [(sel.x - cv.clientWidth / 2) / view.s + view.cx, (sel.y - cv.clientHeight / 2) / view.s + view.cy];
     NAVW = cardW(it);
-    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig|prd|gdr)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + (it && it.kind === 'prd' && PRD.set === 'v' ? '' : fbHtml()); card.classList.add('on'); var h3x = card.querySelector('h3'); if (h3x && !h3x.querySelector('.hx')) h3x.insertAdjacentHTML('beforeend', '<button class="hx" data-cardx aria-label="카드 닫기">✕</button>');   /* v2.295.0 소유자 「이수역 교차로라고 하면 우측에 닫기 버튼」 — 자리 사다리가 붙으면 위 「닫기」가 숨어(haslad) 제목 옆에 ✕ */   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
+    card.classList.remove('haslad'); var sig9 = (it && /^(sgd|ksc|sig|prd|gdr)$/.test(it.kind)) || /id="(sdNow|kscNow|sigTick)"/.test(h); card.classList.toggle('sigc', !!sig9); card.innerHTML = '<div class="grab" aria-hidden="true"><i></i></div><button class="x" id="m2dX">닫기</button>' + (sig9 ? h + '<div id="m2dLad"></div>' : '<div id="m2dLad"></div>' + h) + '<div id="m2dLadB"></div>' + (it && it.kind === 'prd' ? '' : sitCard(it)) + (it && it.kind === 'prd' && PRD.set === 'v' ? '' : fbHtml()); card.classList.add('on'); var h3x = card.querySelector('h3'); if (h3x && !h3x.querySelector('.hx')) h3x.insertAdjacentHTML('beforeend', '<button class="hx" data-cardx aria-label="카드 닫기">✕</button>');   /* v2.295.0 소유자 「이수역 교차로라고 하면 우측에 닫기 버튼」 — 자리 사다리가 붙으면 위 「닫기」가 숨어(haslad) 제목 옆에 ✕ */   /* v2.139.0 신호 카드는 흐르는 신호값이 맨 먼저(자리 사다리는 아래) */
     $('m2dX').onclick = function () { sel = null; show(null); draw(); };
     try { ladderFill(it); } catch (e) {}
   }
@@ -2142,6 +2142,13 @@
   function preAct(x) { return LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); }
   function sitTap(id) { var P4 = PRESETS.filter(function (x) { return x[0] === id; })[0]; if (!P4) return; if (preAct(P4)) { if (SITP) { LAYERS.forEach(function (l) { on[l[0]] = !!SITP[l[0]]; }); SITP = null; unitKeep(); saveOn(); paintLayers(); paintPre(); sel = null; show(null); draw(); summary(); } else layersReset(); return; }
     if (!SITP || !SIT.some(function (q) { var P5 = PRESETS.filter(function (x) { return x[0] === q[0]; })[0]; return P5 && preAct(P5); })) { SITP = {}; LAYERS.forEach(function (l) { SITP[l[0]] = !!on[l[0]]; }); } preset(id); }
+  /* v2.320.0 카드 아래 「🎯 이 자리에서 볼 것」 — 누른 자리 종류에 맞는 상황 묶음 두세 개(메뉴를 거치지 않고 지도 → 자리 → 묶음) · 카드는 닫지 않는다 · 업무(🔒)·예측 카드에는 안 붙인다 */
+  var SITK = { node: ['traffic', 'rain', 'kids'], tgis: ['traffic', 'rain'], sig: ['traffic', 'rain'], sgd: ['traffic', 'rain'], ksc: ['traffic', 'rain'], jct: ['traffic'], hot10: ['traffic'], cam: ['traffic'], dong: ['night', 'crowd', 'kids'], ri: ['night', 'kids'], schl: ['kids', 'traffic'], edu: ['kids', 'traffic'], sz: ['kids', 'traffic'], crowd: ['crowd', 'night'], evt: ['crowd', 'traffic'], evb: ['crowd', 'traffic'], rally: ['crowd', 'traffic'], trd: ['night', 'crowd'], fldl: ['rain', 'traffic'] };
+  function sitCard(it) { var L9 = it && SITK[it.kind]; if (!L9) return ''; var b9 = L9.map(function (id) { var q = SIT.filter(function (x) { return x[0] === id; })[0], P7 = PRESETS.filter(function (x) { return x[0] === id; })[0]; if (!q || !P7) return ''; return '<button data-sit="' + id + '" class="' + (preAct(P7) ? 'on' : '') + '">' + q[1] + '</button>'; }).join(''); return b9 ? '<div class="sitc"><b>🎯 이 자리에서 볼 것</b>' + b9 + '<small>누르면 그 상황의 레이어만 켠다 · 다시 누르면 되돌린다</small></div>' : ''; }
+  document.addEventListener('click', function (e) { var b8 = e.target.closest && e.target.closest('#m2dCard button[data-sit]'); if (!b8) return; var keep = sel; sitTap(b8.getAttribute('data-sit')); if (keep && keep.it) { sel = keep; show(keep.it); draw(); } });
+  /* v2.320.0 겹침 알림 — 바탕(행정동·도로·바탕·건물·지하철) 말고 켜진 레이어가 OVN 개를 넘는 순간 한 번 알린다(끄지는 않는다) */
+  var OVN = 10, OVT = 0;
+  function overChk() { var n9 = LAYERS.filter(function (l) { return on[l[0]] && KEEP.indexOf(l[0]) < 0; }).length; if (n9 > OVN && Date.now() - OVT > 20000) { OVT = Date.now(); try { toast('레이어 ' + n9 + '개가 겹쳐 읽기 어렵다 — 「🎯 상황 묶음」을 고르거나 안 보는 것을 끄면 빠르고 또렷하다'); clearTimeout(toast.t); toast.t = setTimeout(function () { var t9 = $('m2dToast'); if (t9) t9.classList.remove('on'); }, 4500); } catch (e) {} } }
   function paintSit() { var el = $('m2dSit'); if (!el) return; var any = false, h = SIT.map(function (q) { var P6 = PRESETS.filter(function (x) { return x[0] === q[0]; })[0]; if (!P6) return ''; var a = preAct(P6); if (a) any = true; return '<button data-s="' + q[0] + '" class="' + (a ? 'on' : '') + '" title="' + esc(P6[2].filter(hasL).map(lname).join(' · ')) + '">' + q[1] + '</button>'; }).join('');
     el.innerHTML = h + '<p class="sitn">' + (any ? '켜진 묶음을 다시 누르면 ' + (SITP ? '누르기 전 레이어로' : '처음 레이어로') + ' 돌아간다' : '상황을 고르면 그때 볼 레이어만 켠다 · 다시 누르면 되돌린다') + '</p>'; }
   var KEEP = ['dong', 'road', 'base', 'bld', 'sub'];
@@ -7820,7 +7827,7 @@
     var mt = m ? '<details class="lmd"><summary>📎 범위·출처·이용허락</summary><i class="lm">' + esc(m.cover || '') + ' · ' + esc(m.src) + (m.estimate ? ' · 추정 포함' : '') + ' · 이용허락 ' + esc(m.license) + '</i></details>' : '';   // v2.33.0 소유자 「범위·출처는 필요할 때만」
     return t || mt ? '<small>' + t + mt + '</small>' : '';
   }
-  function toggle(k) { on[k] = !on[k]; if (k === 'bld' && on[k]) loadBld(); saveOn(); paintLayers(); draw(); }
+  function toggle(k) { on[k] = !on[k]; if (k === 'bld' && on[k]) loadBld(); saveOn(); paintLayers(); draw(); if (on[k]) overChk(); }
   function onLayerClick(e) {
     var b = e.target.closest('button'); if (!b) return; var pn = $('m2dPanel');
     if (catClick(b)) return;

@@ -9,6 +9,7 @@ route-bench.py 는 그 시각 실측(카카오 대조)이라 17~19시에만 잴 
 
 셈: 짝마다 소통 한 장씩 길을 다시 고르고(그 장을 받은 시각 · 신호 계획도 그 시각), 앞 장 길과 겹친 길이 ÷ 둘 중 긴 길 < 0.7 이면 「바뀜」.
   바뀜 = 앞 장과 다른 길로 넘어간 횟수 · 갈래 = 서로 90% 넘게 겹치지 않는 길 가짓수 · 돔 = 소통 뺀 길보다 1.3배 넘게 긴 장 수
+시험: --stick 0.9 = 앞 장에 고른 길 조각을 0.9배로 쳐서 고름(gargo.js 는 서버가 내줄 때만 시험 창구를 끼움 · 저장소 무변경) · 고른 길이 가장 빠른 길보다 얼마나 늦은지 같이 찍음 · --cap 1.12 --capmin 120 = 고집한 길이 가장 빠른 길보다 1.12배 넘게 그리고 120초 넘게 늦으면 빠른 길(가르고 v0.52.0 과 같은 규칙)
 대조: --fix-t = 시각을 첫 장에 묶음(소통만 바뀜) · --fix-live = 소통을 첫 장에 묶음(신호 시각만 바뀜)
 여섯 구 묶음 = gargo/ 기본 · --seoul = ?pk=seoul(골목 칸 전부 받음 · 느림)
 """
@@ -30,7 +31,7 @@ def main():
     if '--help' in sys.argv or '-h' in sys.argv:
         print(__doc__); return 0
     day, f0, f1 = opt('--day', (dt.datetime.now(KST) - dt.timedelta(days=1)).strftime('%Y%m%d')), opt('--from', '17:00'), opt('--to', '19:30')
-    skip = {opt('--day', ''), opt('--from', ''), opt('--to', '')}
+    skip = {opt('--day', ''), opt('--from', ''), opt('--to', ''), opt('--stick', ''), opt('--cap', ''), opt('--capmin', '')}
     ARG = [a for a in sys.argv[1:] if not a.startswith('-') and a not in skip]
     pk = '?pk=seoul' if '--seoul' in sys.argv else ''
     fn = os.path.join(RS.RAW, 'out', 'livespd', day + '.jsonl.gz')
@@ -50,6 +51,8 @@ def main():
         print('그 시간 소통 기록이 두 장 아래', len(snaps)); return 1
     pairs = [p for p in PAIRS if not ARG or any(x in p for x in ARG)]
     CUR = {'j': None, 'n': 0}
+    STICK = float(opt('--stick', '0'))
+    CAP = float(opt('--cap', '0')); CMIN = float(opt('--capmin', '0'))
 
     class H(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *a):
@@ -60,6 +63,13 @@ def main():
                 b = json.dumps(dict(CUR['j'], at=int(time.time()), made='재생 ' + CUR['j']['made'])).encode('utf-8')
                 self.send_response(200); self.send_header('Content-Type', 'application/json'); self.send_header('Content-Length', str(len(b))); self.send_header('Cache-Control', 'no-store'); self.end_headers(); self.wfile.write(b)
                 CUR['n'] += 1; return
+            if STICK and self.path.split('?')[0].endswith('/gargo/gargo.js') and '__pen:' not in open(os.path.join(ROOT, 'gargo', 'gargo.js'), encoding='utf-8').read():   # v0.52.0 부터는 gargo.js 에 창구가 들어 있다
+                src = open(os.path.join(ROOT, 'gargo', 'gargo.js'), encoding='utf-8').read()
+                h0, g0 = 'return 0.98 * Math.max(0, Math.hypot(G.X[nd9] - tx', 'window.GARGO = {'
+                if src.count(h0) != 1 or src.count(g0) != 1:
+                    self.send_error(500); return
+                src = src.replace(h0, 'return (PEN && PEN.k < 1 ? 0.98 * PEN.k : 0.98) * Math.max(0, Math.hypot(G.X[nd9] - tx').replace(g0, g0 + ' __pen: function (p) { PEN = p; },')
+                b = src.encode('utf-8'); self.send_response(200); self.send_header('Content-Type', 'application/javascript'); self.send_header('Content-Length', str(len(b))); self.send_header('Cache-Control', 'no-store'); self.end_headers(); self.wfile.write(b); return
             return super().do_GET()
     s = socket.socket(); s.bind(('127.0.0.1', 0)); port = s.getsockname()[1]; s.close()
     srv = http.server.ThreadingHTTPServer(('127.0.0.1', port), functools.partial(H, directory=ROOT)); threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -96,9 +106,11 @@ def main():
                 time.sleep(3)
             for a, b in pairs:
                 A, Bn = ST[a], ST[b]
-                js = ("(function(){var g=GARGO,G=g.state().G,s=g.P(%f,%f),t=g.P(%f,%f),now=%d,r=g.findRoute(s[0],s[1],t[0],t[1],now,null); if(!r) return null;"
+                prev = R[(a, b)][-1] if R[(a, b)] else None
+                pen = json.dumps(dict({k9: 1 for k9 in prev['m']}, k=STICK)) if STICK and prev else 'null'
+                js = ("(function(){var g=GARGO,G=g.state().G,s=g.P(%f,%f),t=g.P(%f,%f),now=%d,b0=g.findRoute(s[0],s[1],t[0],t[1],now,null),r=b0; if(!r) return null; var P0=" + pen + "; if(P0){g.__pen(P0); try{r=g.findRoute(s[0],s[1],t[0],t[1],now,null)||b0;}finally{g.__pen(null);} if(%f>0 && r.time>%f*b0.time && r.time-b0.time>=%f) r=b0;}"
                       "var n=g.noLive(function(){return g.findRoute(s[0],s[1],t[0],t[1],now,null);})||r, m={}; r.es.forEach(function(e){var i=G.eS[e]; m[i]=(m[i]||0)+G.S[i][2];});"
-                      "return JSON.stringify({d:r.dist,t:r.time,nd:n.dist,m:m});})()") % (A[0], A[1], Bn[0], Bn[1], snaps[0]['at'] if '--fix-t' in sys.argv else j['at'])
+                      "return JSON.stringify({d:r.dist,t:r.time,bt:b0.time,nd:n.dist,m:m});})()") % (A[0], A[1], Bn[0], Bn[1], snaps[0]['at'] if '--fix-t' in sys.argv else j['at'], CAP, CAP, CMIN)
                 rj = c.ev(js)
                 R[(a, b)].append(json.loads(rj) if rj else None)
             print('  %s 장 %d/%d' % (j['made'], k + 1, len(snaps)), flush=True)
@@ -111,6 +123,7 @@ def main():
     print('가르고 길 흔들림 재생 · %s %s~%s 소통 %d장 · %s%s' % (day, snaps[0]['made'], snaps[-1]['made'], len(snaps), '서울 묶음' if pk else '여섯 구', ''.join(' · ' + x for x in ('--fix-t', '--fix-live') if x in sys.argv)))
     print('%-18s %4s %4s %4s %6s %6s' % ('짝', '바뀜', '갈래', '돔', '시간폭', '거리폭'))
     tf = tg = td = moved = 0
+    loss = []
     for p in pairs:
         L = [x for x in R[p] if x]
         if len(L) < 2:
@@ -122,9 +135,12 @@ def main():
                 kinds.append(x)
         dt_ = sum(1 for x in L if x['d'] > 1.3 * max(1, x['nd']))
         ts, ds = [x['t'] for x in L], [x['d'] for x in L]
+        loss += [x['t'] / max(1, x['bt']) for x in L]
         tf += fl; tg += len(kinds); td += dt_; moved += 1 if fl else 0
         print('%-18s %4d %4d %4d %5.2f배 %5.2f배%s' % ('→'.join(p), fl, len(kinds), dt_, max(ts) / max(1, min(ts)), max(ds) / max(1, min(ds)), '  ⚠' if fl >= 2 else ''))
     print('짝 %d · 길이 한 번이라도 바뀐 짝 %d · 바뀜 합 %d · 갈래 합 %d · 1.3배 넘게 돈 장 합 %d' % (len(pairs), moved, tf, tg, td))
+    if STICK:
+        loss.sort(); print('앞 길 고집 k=%.2f%s · 고른 길 시간 ÷ 그때 가장 빠른 길 시간: 가운데 %.3f · 90%%째 %.3f · 가장 큰 %.3f' % (STICK, ' · 상한 %.2f배·%d초' % (CAP, CMIN) if CAP else '', loss[len(loss) // 2], loss[int(len(loss) * 0.9)], loss[-1]))
     return 0
 
 

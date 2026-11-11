@@ -267,12 +267,17 @@
   #gBot .qpl { display: flex; gap: 8px; overflow-x: auto; margin: 10px -2px 2px; padding: 2px; scrollbar-width: none; } #gBot .qpl::-webkit-scrollbar { display: none; }
   #gBot .qpl button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--solid); color: var(--ink); font-size: calc(14px * var(--fz, 1)); font-weight: 800; box-shadow: 0 1px 3px rgba(15,23,42,.08); max-width: 62vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #gBot .qpl button i { font-style: normal; } #gBot .qpl button:active { transform: scale(.97); }
-  :root.dark #gBot .hint:first-child b { color: #93c5fd; }   /* 폰 폭에서는 「지금 달리는 길」 칸이 20px 로 눌려 「반 서..」만 보였다 — 펼친 화면(폴드 안쪽 등)에서만 */
+  :root.dark #gBot .hint:first-child b { color: #93c5fd; }
+  /* v0.51.2 길 요약 근거 글은 두 줄로 접고 눌러서 펼친다(상용 내비처럼 요약 판을 짧게 · 「실측 없는 길 · 추정 폭」 줄은 늘 보임) */
+  #gBot .sub { position: relative; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; cursor: pointer; padding: 0; border: solid transparent; border-width: 8px 30px 8px 11px; }   /* 안쪽 여백 대신 투명 테 — 여백 칸에는 셋째 줄이 비쳐 보였다 */
+  #gBot .hand button[data-alt] { height: auto; min-height: 40px; padding: 7px 12px; text-align: left; line-height: 1.35; }   /* 다른 길 글이 길면 두 줄(34px 에 잘렸다) */
+  #gBot .sub::after { content: '▾'; position: absolute; right: -20px; top: 0; color: var(--dim); font-size: calc(13px * var(--fz, 1)); }
+  #gBot .sub.open { display: block; -webkit-line-clamp: unset; } #gBot .sub.open::after { content: '▴'; }   /* 폰 폭에서는 「지금 달리는 길」 칸이 20px 로 눌려 「반 서..」만 보였다 — 펼친 화면(폴드 안쪽 등)에서만 */
 </style>
 </head>
 <body>
 <canvas id="gMap"></canvas>
-<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="어디로? 주소·이름을 적거나 🎤 말한다" aria-label="목적지 찾기"><button id="gMic" aria-label="음성으로 목적지">🎤</button><button id="gVip" aria-label="업무 — 기기 안에서만" hidden>🔒</button></div>
+<div id="gFind"><b>가르고</b><input id="gQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="어디로? 주소·이름" title="주소·이름을 적거나 🎤 말한다" aria-label="목적지 찾기 — 주소·이름을 적거나 말한다"><button id="gMic" aria-label="음성으로 목적지">🎤</button><button id="gVip" aria-label="업무 — 기기 안에서만" hidden>🔒</button></div>
 <div id="gOv"><button data-ov="s" class="on">🚦 신호</button><button data-ov="t" class="on">🚗 소통</button></div>
 <div id="gList"></div>
 <div id="gTop" aria-live="polite"></div>
@@ -310,7 +315,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.51.1"></script>
+<script src="gargo.js?v=0.51.2"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

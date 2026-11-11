@@ -1836,7 +1836,7 @@
     var tJ = performance.now(); addJunctions(cand, 'pub'); BOOTT.junc = Math.round(performance.now() - tJ); BOOTT.juncN = cand.length;
     if (D.bidx) { BIDX = D.bidx; TBAKE = String(BIDX.bake || BIDX.total || ''); BIDX.tiles.forEach(function (t) { BSET[t[0] + '_' + t[1]] = t[2]; });
       // 새로 구운 조각이 올라오면 보관함의 옛 조각은 지운다(받은 지역 표시는 다시 받으라고 비워진다)
-      if ('caches' in window) caches.open('tg-tiles').then(function (c) { c.keys().then(function (ks) { ks.forEach(function (r) { if (r.url.indexOf('b=' + encodeURIComponent(TBAKE)) < 0) c.delete(r); }); }); }).catch(function () {}); }
+      if ('caches' in window) caches.open('tg-tiles').then(function (c) { c.keys().then(function (ks) { ks.forEach(function (r) { if (/[?&]b=/.test(r.url) && r.url.indexOf('b=' + encodeURIComponent(TBAKE)) < 0) c.delete(r); });   /* v2.320.1 판 표시(b=)가 붙은 바탕 조각만 — 종전에는 b= 없는 「지역 받기」 행정동 자료(r/<구>/…)까지 부팅 때마다 지워져 통신 끊긴 곳에서 동 자료가 안 열렸다 */ }); }).catch(function () {}); }
     if (D.ov) { var tO = performance.now(); OVP = prepPack(D.ov, 'ov'); OSM = OVP; BOOTT.ovPack = Math.round(performance.now() - tO); }
   }
   function visTiles() { if (!BIDX) return []; var W = cv.clientWidth, H = cv.clientHeight, a = M(0, 0), b = M(W, H), T = BIDX.size, out = [];

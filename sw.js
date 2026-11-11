@@ -1,11 +1,11 @@
 // 데이터 압축지도(datamap) 서비스워커 — 앱 파일을 미리 저장(설치형·오프라인)하고 새 판은 다음 실행 때 바꿔 끼운다.
 // 바탕 조각(data/base/t/)과 「📥 지역 받기」로 받은 구 자료는 판과 상관없는 보관함 tg-tiles 에서 먼저 꺼낸다.
 // 쓰면서 받은 파일(가르고 파일·길 묶음·신호 칸·구 자료)은 판과 상관없는 보관함 dm-run-1 에 둔다 — 판 보관함(dm-v…)에는 미리 받는 FILES 만. 고치면 tools/check/swcheck.py 를 돌린다.
-var CACHE = 'dm-v2.320.1-d20';
+var CACHE = 'dm-v2.320.2-d20';
 var TILES = 'tg-tiles';
 var RUN = 'dm-run-1', KEEPN = 2000;   // 쓰면서 받은 것 — 판이 바뀌어도 남긴다(activate 는 dm-v… 만 지운다) · 아래 ⑦
 var SLOW = 4000, QUICK = 1500, BAD = 0, DOC = 0;   // 먹통 대비 — 아래 fetch 마지막 갈래(앱 기준 · 가정)
-var FILES = ['./', './index.html', './manifest.json', './js/map2d.js?v=2.320.1', './js/decide.js?v=7', './js/link.js?v=24', './js/travel-time.js?v=5', './js/sim-ui.js?v=32', './js/sim-area.js?v=19', './js/sim-pick.js?v=1', './js/sim-merge.js?v=3', './js/nowcast.js?v=1', './data/regions.json', './data/place-keys-seocho.json', './data/base/index.json', './data/base/ov.json', './data/base/sgg.json', './icon-192.png', './icon-512.png'];
+var FILES = ['./', './index.html', './manifest.json', './js/map2d.js?v=2.320.2', './js/decide.js?v=7', './js/link.js?v=24', './js/travel-time.js?v=5', './js/sim-ui.js?v=32', './js/sim-area.js?v=19', './js/sim-pick.js?v=1', './js/sim-merge.js?v=3', './js/nowcast.js?v=1', './data/regions.json', './data/place-keys-seocho.json', './data/base/index.json', './data/base/ov.json', './data/base/sgg.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
 });

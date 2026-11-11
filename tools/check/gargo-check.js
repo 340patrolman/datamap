@@ -41,7 +41,9 @@
       r0.pos = p0; g.guideStop(false); }
     /* v0.14.1 닿는 자리 — 자동차전용(우면산로)과 일반 길(남부순환로)이 겹친 교차로에서 전용 길만 후보로 잡아 돌아가던 것(route-spot 대조 · 신사역 → 예술의전당 12.3km) */
     g.icLoad();   /* v0.15.0 나들목 목록을 미리 받아 둔다 — 검사는 맨 끝(4.2초 뒤) */
-    var s9 = g.P(127.019517, 37.516137), t9 = g.P(127.013111, 37.480682), r9 = g.findRoute(s9[0], s9[1], t9[0], t9[1], Date.now() / 1000, null);
+    var s9 = g.P(127.019517, 37.516137), t9 = g.P(127.013111, 37.480682), r9 = g.noLive(function () { return g.findRoute(s9[0], s9[1], t9[0], t9[1], Date.now() / 1000, null); });   /* (2026-11-11 v0.51.4) 고속도로 모드 검사는 안내 줄 모양을 본다 — 퇴근 시간 실측으로는 경부를 안 타 검사가 시각에 따라 흔들렸다 · 길 고르기 품질 검사(179줄)처럼 실시간을 빼고 셈 */
+    var r9L = g.findRoute(s9[0], s9[1], t9[0], t9[1], Date.now() / 1000, null);   /* (v0.51.4 독립 검수 ④) 실시간 길로도 본다 — 실시간 없는 도시고속 메움(eV)을 지나는 관문 검사 */
+    ck('🎯 닿는 자리(실시간) — 신사역 → 예술의전당이 양재IC 로 돌지 않는다(9km 아래 · 우면산로·양재대로 아님)', !!r9L && r9L.dist < 9000 && !r9L.lims.some(function (q) { return q[2] === '우면산로' || q[2] === '양재대로'; }), r9L ? Math.round(r9L.dist) + 'm · ' + r9L.lims.map(function (q) { return q[2]; }).filter(function (v, i, A) { return v && v !== A[i - 1]; }).join('›') : '길 없음');
     ck('🎯 닿는 자리 — 신사역 → 예술의전당이 양재IC 로 돌지 않는다(9km 아래 · 우면산로로 들어가지 않음)', !!r9 && r9.dist < 9000 && !r9.lims.some(function (q) { return q[2] === '우면산로' || q[2] === '양재대로'; }), r9 ? Math.round(r9.dist) + 'm · ' + r9.lims.map(function (q) { return q[2]; }).filter(function (v, i, A) { return v && v !== A[i - 1]; }).join('›') : '길 없음');
     /* v0.16.0 음성 안내 — 말소리를 가로채 무엇을 말하는지 · 시작 때 도착 예정 · 회전 300m·곧 · 마지막 신호 뒤 회전(또는 목적지)도 말함(종전엔 앞에 신호가 없으면 말하지 않았다) */
     if (g.state().route && !g.state().guide && window.speechSynthesis) { var SAID = [], sp0 = speechSynthesis.speak, cn0 = speechSynthesis.cancel; speechSynthesis.speak = function (u) { SAID.push(u.text); }; speechSynthesis.cancel = function () {};

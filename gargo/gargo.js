@@ -109,7 +109,7 @@
   /* ---------- 신호 ---------- */
   /* v0.5.0 통행속도 값이 없는 길 — 종전엔 제한속도로 달린다고 쳐서, 값이 있는(느리게 찍힌) 큰길을 버리고 값 없는 길로 돌았다. 같은 등급 길에서 받은 「통행속도 ÷ 제한속도」의 가운데값을 곱해 어림한다(1 을 넘지 않는다 — 제한속도보다 빠르게 셈하지 않는다) */
   var LIVER = null;
-  function liveStat() { LIVER = null; if (!LIVE.m || !G) return; var by = {}, all = [], med = function (v) { v.sort(function (a, b) { return a - b; }); return v[v.length >> 1]; }; G.S.forEach(function (q) { var lim = q[3] || 30; for (var d = 13; d <= 14; d++) { var li = q[d]; if (li == null || li < 0) continue; var v = LIVE.m[G.j.links[li]]; if (!(v > 0)) continue; var r = Math.min(1, v / lim); (by[q[4]] || (by[q[4]] = [])).push(r); all.push(r); } });
+  function liveStat() { LIVER = null; FILL = null; if (!LIVE.m || !G) return;   /* v0.51.4 독립 검수 ① 일찍 끝나도 옛 그래프 번호의 메움 값이 남지 않게 */ var by = {}, all = [], med = function (v) { v.sort(function (a, b) { return a - b; }); return v[v.length >> 1]; }; G.S.forEach(function (q) { var lim = q[3] || 30; for (var d = 13; d <= 14; d++) { var li = q[d]; if (li == null || li < 0) continue; var v = LIVE.m[G.j.links[li]]; if (!(v > 0)) continue; var r = Math.min(1, v / lim); (by[q[4]] || (by[q[4]] = [])).push(r); all.push(r); } });
     if (all.length < 30) return; LIVER = { all: med(all) }; Object.keys(by).forEach(function (c) { if (by[c].length >= 20) LIVER[c] = med(by[c]); }); liveFill(); }
   /* v0.14.2 이웃 메움 — 실시간 값이 없는 줄(이름 있는 길 · 등급 5 까지)은 같은 이름으로 곧게(45° 안) 이어지는 앞뒤 줄을 700m·여섯 걸음까지 따라가 처음 만난 실시간 값을 거리 반비례로 쓴다 · 없으면 종전대로 등급 비율 */
   var FILL = null;
@@ -118,11 +118,11 @@
   function liveFill() { FILL = null; if (!LIVE.m || !G) return; var ne = G.ne, F = new Float32Array(ne), inH, inL, i, e, GID = G.j && G.j.gid, C0 = FILLC && FILLC.at === LIVE.at && GID ? FILLC.m : null, C1 = C0 || {};
     var cnt = new Int32Array(G.n + 1); for (e = 0; e < ne; e++) cnt[G.eB[e] + 1]++; for (i = 0; i < G.n; i++) cnt[i + 1] += cnt[i]; inH = cnt.slice(); inL = new Int32Array(ne); var pos = cnt.slice(); for (e = 0; e < ne; e++) inL[pos[G.eB[e]]++] = e;
     function nmOf(x) { return G.S[G.eS[x]][5]; }
-    function walk(e0, fwd) { var cur = e0, d = eLen(e0) * 0.5, nm = nmOf(e0); for (var k = 0; k < 6; k++) {   /* d = 메울 줄 가운데에서 잰 거리 — 긴 줄(우면산터널 1,964m)은 첫 걸음에 벌써 700m 를 넘어 메우지 않는다 */ var best = -1, ba = 46, a0, a1, j;
+    function walk(e0, fwd) { var cur = e0, d = eLen(e0) * 0.5, nm = nmOf(e0), hw = G.S[G.eS[e0]][4] <= 2, KM = hw ? 16 : 6, DM = hw ? 4000 : 700; for (var k = 0; k < KM; k++) {   /* v0.51.4 도시고속·고속(등급 1~2)은 4km·열여섯 걸음까지(값이 15일 내내 안 오는 2.3km 링크가 있다) */   /* d = 메울 줄 가운데에서 잰 거리 — 긴 줄(우면산터널 1,964m)은 첫 걸음에 벌써 700m 를 넘어 메우지 않는다 */ var best = -1, ba = 46, a0, a1, j;
         if (fwd) { a0 = G.oHead[G.eB[cur]]; a1 = G.oHead[G.eB[cur] + 1]; } else { a0 = inH[G.eA[cur]]; a1 = inH[G.eA[cur] + 1]; }
         for (j = a0; j < a1; j++) { var f = fwd ? G.oList[j] : inL[j]; if (G.eS[f] === G.eS[cur] || nmOf(f) !== nm) continue; var ad = Math.abs(fwd ? angDiff(eBrgIn(cur), eBrgOut(f)) : angDiff(eBrgIn(f), eBrgOut(cur))); if (ad < ba) { ba = ad; best = f; } }
-        if (best < 0 || d > 700) return null; var v = eLive(best); if (v) return [v, d + eLen(best) * 0.5]; d += eLen(best); cur = best; } return null; }
-    for (e = 0; e < ne; e++) { var q = G.S[G.eS[e]]; if (q[5] == null || q[5] < 0 || q[4] > 5 || eLive(e)) continue; var ck = GID ? GID[G.eS[e]] * 2 + G.eR[e] : -1; if (C0 && ck >= 0 && C0[ck] !== undefined) { F[e] = C0[ck]; continue; } var A = walk(e, true), B = walk(e, false); if (!A && !B) { if (ck >= 0) C1[ck] = 0; continue; } var w1 = A ? 1 / Math.max(50, A[1]) : 0, w2 = B ? 1 / Math.max(50, B[1]) : 0; F[e] = ((A ? A[0] * w1 : 0) + (B ? B[0] * w2 : 0)) / (w1 + w2); if (ck >= 0) C1[ck] = F[e]; }
+        if (best < 0 || d > DM || (hw && G.S[G.eS[best]][4] > 2)) return null;   /* 독립 검수 ② 도시고속에서 걷다가 같은 이름의 일반 길(신호)로 넘어가 그 막힘을 고속 구간에 퍼뜨리지 않게 */ var v = eLive(best); if (v) return [v, d + eLen(best) * 0.5]; d += eLen(best); cur = best; } return null; }
+    for (e = 0; e < ne; e++) { var q = G.S[G.eS[e]]; if (q[5] == null || q[5] < 0 || q[4] > 5 || eLive(e)) continue; var ck = GID ? GID[G.eS[e]] * 2 + G.eR[e] : -1; if (C0 && ck >= 0 && C0[ck] !== undefined) { F[e] = C0[ck]; continue; } var A = walk(e, true), B = walk(e, false); if (!A && !B) continue;   /* 독립 검수 ③ 못 찾음은 기억하지 않는다 — 골목·길 칸이 더 붙으면 다시 찾는다 */ var w1 = A ? 1 / Math.max(50, A[1]) : 0, w2 = B ? 1 / Math.max(50, B[1]) : 0; F[e] = ((A ? A[0] * w1 : 0) + (B ? B[0] * w2 : 0)) / (w1 + w2); if (ck >= 0) C1[ck] = F[e]; }
     FILL = F; if (GID) FILLC = { at: LIVE.at, m: C1 }; }
   var AREA_KO = PKA === 'seoul' ? '서울 25구' : '서초·강남·송파·동작·관악·용산';
   try { if (/[?&]pk=six(?![a-z])/.test(location.search)) localStorage.removeItem('tg_gargo_pk'); } catch (e) {}
@@ -250,7 +250,8 @@
   function gCalF() { var n = Date.now(); if (n - GCF.t > 60000) GCF = { t: n, f: window.TT && TT.calF ? TT.calF(n) : 1 }; return GCF.f; }
   /* 시간 셈에만 — 이웃 메움(FILL)을 쓴다 · 길 고르기(eV·eCost)에는 안 쓴다(막힘을 너무 멀리 퍼뜨려 고속터미널 → 방배역이 2.5배 돌았다 · 관문 「에움」) */
   function eVt(e) { var v = eLive(e), k = accK(e), base; if (!v && !lrnSpeed(e) && FILL && FILL[e] > 0) base = Math.max(4, Math.min(eSpd(e), FILL[e])); else base = eV(e); return Math.max(3, base / (k > 1 ? Math.min(k, 5) : 1)); }   /* 공사·통제는 시간도(차로 ×1.5 · 전면 ×5) */
-  function eV(e) { var lim = eSpd(e), v = eLive(e); if (v) return Math.max(4, Math.min(lim, v)); var lv8 = lrnSpeed(e); if (lv8) return Math.max(3, Math.min(lim, lv8)); if (LIVER) {   /* v0.23.0 다녀 본 길 — 실시간 다음 */ var k = LIVER[G.S[G.eS[e]][4]]; return Math.max(4, lim * (k != null ? k : LIVER.all)); } return Math.max(4, lim / gCalF()); }
+  function eV(e) { var lim = eSpd(e), v = eLive(e); if (v) return Math.max(4, Math.min(lim, v)); var lv8 = lrnSpeed(e); if (lv8) return Math.max(3, Math.min(lim, lv8)); if (LIVE.m && FILL && FILL[e] > 0 && G.S[G.eS[e]][4] <= 2) return Math.max(4, Math.min(lim, FILL[e]));   /* v0.51.4 (신호 세션 퇴근 시간 길 품질: 강남순환로 서쪽 값 없는 줄 41% 를 막히지 않은 것으로 쳐서 경부·양재대로·강남순환로 우회를 본 길로 골랐다) 실시간 없는 도시고속 줄은 같은 이름·같은 방향으로 곧게 이어진 앞뒤 실측(이웃 메움)을 길 고르기에도 쓴다 — 일반 길은 종전대로(막힘을 멀리 퍼뜨리면 에움이 는다) */
+    if (LIVER) {   /* v0.23.0 다녀 본 길 — 실시간 다음 */ var k = LIVER[G.S[G.eS[e]][4]]; return Math.max(4, lim * (k != null ? k : LIVER.all)); } return Math.max(4, lim / gCalF()); }
   /* 길 고르기에만 쓰는 무게(가정 — 시간 표시에는 안 넣는다): 골목(등급 6)은 2배 · 생활도로·진입로(7·8)는 3배 느리게 치고, 신호 없는 곳에서 꺾으면 좌 15초·우 6초를 얹는다.
      넣지 않으면 신호 한두 개를 피하려고 골목을 지그재그로 도는 길이 나온다(시험: 서초역 → 양재역이 열다섯 번 꺾였다) */
   /* ---------- v0.23.0 다녀 본 길 기억(이 기기 tg_gg_learn) ---------- */

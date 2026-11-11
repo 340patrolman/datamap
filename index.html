@@ -876,7 +876,7 @@
   #m2dPanel .prec > summary { cursor: pointer; font-weight: 700; color: var(--acc); }
   #m2dPanel .prec > div { padding: 3px 0; border-top: 1px dashed var(--line); color: var(--ink2); }
   #m2dPanel .prec .pk { height: 28px; padding: 0 9px; border-radius: 9px; border: 1px solid var(--acc); background: var(--panel); color: var(--acc); font-weight: 700; font-size: 12px; cursor: pointer; }
-  #m2dPanel .fold { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
+  #m2dPanel .fold { display: flex; flex-wrap: nowrap; gap: 6px; margin: 0 0 6px; overflow-x: auto; scrollbar-width: none; } #m2dPanel .fold button { flex: 0 0 auto; white-space: nowrap; }
   #m2dPanel .fold button { height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 12px; font-weight: 700; cursor: pointer; }
   #m2dPanel .fold button.on { background: #0e7490; border-color: #0e7490; color: #fff; }
   #m2dPanel .c2h .gc { border: 0 !important; background: none !important; color: var(--ink) !important; font-size: 14px; padding: 4px 2px !important; margin: 0 !important; height: auto !important; cursor: pointer; text-align: left; }
@@ -1131,7 +1131,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.321.0"></script>
+<script src="js/map2d.js?v=2.321.1"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>

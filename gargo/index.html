@@ -262,7 +262,7 @@
   #gBot .btns button:not(.go) { font-weight: 800; color: var(--ink); } #gBot .btns button:active { transform: scale(.98); }
   #gBtn.row { gap: 6px; } #gBtn.row button { width: 42px; height: 42px; font-size: calc(17px * var(--fz, 1)); } #gBtn.row #gIn, #gBtn.row #gOut { font-size: calc(22px * var(--fz, 1)); } #gBtn.row #gIn { margin-right: -6px; border-radius: 21px 0 0 21px; } #gBtn.row #gOut { border-radius: 0 21px 21px 0; }   /* 길 요약 때 판 위 가로 줄은 조금 작게(지도를 덜 가림) */
   body.guiding #gTop .arw { width: calc(46px * var(--fz, 1)); height: calc(46px * var(--fz, 1)); font-size: calc(30px * var(--fz, 1)); } body.guiding #gTop .arwc { max-width: calc(50px * var(--fz, 1)); } body.guiding #gTop .tx span { letter-spacing: -.3px; overflow-wrap: normal; }   /* 길 이름이 「남부순환/로」처럼 글자 가운데서 꺾이던 것 */
-  @media (max-width: 420px) { body.guiding #gBot .eta .here { display: none; } }
+  @media (max-width: 420px), (min-width: 760px) { body.guiding #gBot .eta .here { display: none; } }   /* 가로·펼친 화면 옆 판(380px)에서도 같은 까닭 — ☰ 단추가 판 밖으로 밀렸다 */
   /* v0.51.1 첫 화면 바로가기 칩 · 밤 화면 강조 글 */
   #gBot .qpl { display: flex; gap: 8px; overflow-x: auto; margin: 10px -2px 2px; padding: 2px; scrollbar-width: none; } #gBot .qpl::-webkit-scrollbar { display: none; }
   #gBot .qpl button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--solid); color: var(--ink); font-size: calc(14px * var(--fz, 1)); font-weight: 800; box-shadow: 0 1px 3px rgba(15,23,42,.08); max-width: 62vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -272,7 +272,13 @@
   #gBot .sub { position: relative; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; cursor: pointer; padding: 0; border: solid transparent; border-width: 8px 30px 8px 11px; }   /* 안쪽 여백 대신 투명 테 — 여백 칸에는 셋째 줄이 비쳐 보였다 */
   #gBot .hand button[data-alt] { height: auto; min-height: 40px; padding: 7px 12px; text-align: left; line-height: 1.35; }   /* 다른 길 글이 길면 두 줄(34px 에 잘렸다) */
   #gBot .sub::after { content: '▾'; position: absolute; right: -20px; top: 0; color: var(--dim); font-size: calc(13px * var(--fz, 1)); }
-  #gBot .sub.open { display: block; -webkit-line-clamp: unset; } #gBot .sub.open::after { content: '▴'; }   /* 폰 폭에서는 「지금 달리는 길」 칸이 20px 로 눌려 「반 서..」만 보였다 — 펼친 화면(폴드 안쪽 등)에서만 */
+  #gBot .sub.open { display: block; -webkit-line-clamp: unset; } #gBot .sub.open::after { content: '▴'; }
+  /* v0.51.3 아래 판 높이 — 폰은 62→54% 로 지도를 넓게(요약이 짧아져 「안내 시작」까지 그 안에 든다 · 나머지는 판 안에서 밀어 본다) · 가로·펼친 화면 옆 판은 위아래 거의 다 쓴다 */
+  #gBot { max-height: 54vh; }
+  @media (min-width: 760px) { #gBot { max-height: calc(100vh - 24px); } }
+  @media (min-width: 760px) { #gNote, #gMsg { left: 12px; transform: none; max-width: calc(100vw - 420px); } }   /* 가로·펼친 화면 — 알림은 지도 쪽에만(옆 판을 덮지 않게) */
+  @media (min-width: 760px) and (max-height: 520px) { body.guiding #gBtn { bottom: calc(92px + env(safe-area-inset-bottom)); } }   /* 가로 폰 안내 중 — 단추 기둥 맨 위가 화면 밖으로 나갔다 */
+  @media (min-width: 760px) and (max-height: 520px) { #gBtn { gap: 5px; } #gBtn button { width: 40px; height: 40px; font-size: calc(17px * var(--fz, 1)); } #gBtn #gIn { margin-bottom: -5px; border-radius: 20px 20px 0 0; } #gBtn #gOut { border-radius: 0 0 20px 20px; } }   /* 가로 폰(높이 375 등) — 여섯 단추 기둥 맨 위가 찾기 칸 밑에 깔렸다 */   /* 폰 폭에서는 「지금 달리는 길」 칸이 20px 로 눌려 「반 서..」만 보였다 — 펼친 화면(폴드 안쪽 등)에서만 */
 </style>
 </head>
 <body>
@@ -315,7 +321,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.51.2"></script>
+<script src="gargo.js?v=0.51.3"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

@@ -576,6 +576,11 @@
   #m2dPanel .pact button { border-color: var(--acc) !important; color: var(--acc) !important; background: transparent !important; font-weight: 700; }
   #m2dPanel .pst { margin-top: 10px; padding-top: 4px; border-top: 1px solid var(--line); }
   #m2dPanel .psec { font-size: 12.5px; font-weight: 800; color: var(--ink2); margin: 8px 0 0; }
+  /* v2.319.0 상황 묶음 — 레이어 판 맨 위 한 줄(다섯 칸 · 좁으면 줄바꿈) */
+  #m2dSit { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0 2px; }
+  #m2dSit button { flex: 1 1 auto; min-height: 40px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--acc); background: var(--panel); color: var(--acc); font-size: 14px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+  #m2dSit button.on { background: var(--acc); color: #fff; }
+  #m2dSit .sitn { flex: 1 0 100%; margin: 0; font-size: 12px; color: var(--ink2); }
   #m2dPanel #m2dSum { white-space: normal; }
   #m2dMore, #m2dLayers, #m2dFoldX { display: none !important; }
   #m2dCross { display: none; position: fixed; z-index: 3; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; }
@@ -1120,7 +1125,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.318.0"></script>
+<script src="js/map2d.js?v=2.319.0"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>

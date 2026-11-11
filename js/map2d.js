@@ -2134,8 +2134,16 @@
     ['kids', '🧒 어린이', ['sz', 'szh', 'school', 'kids', 'pg']],
     ['gov', '🏛 관공서', ['govr']],
     ['acc', '🚑 사고·응급', ['acc', 'fatal', 'hot10', 'er', 'ger', 'aed', 'pol', 'fire', 'cam', 'tow']],
-    ['estate', '🏢 부동산·상권', ['home', 'rtc', 'rone', 'b100g', 'wagep', 'live250', 'rent', 'trd', 'szone', 'sub']]
+    ['estate', '🏢 부동산·상권', ['home', 'rtc', 'rone', 'b100g', 'wagep', 'live250', 'rent', 'trd', 'szone', 'sub']],
+    ['rain', '🌧 큰비', ['fldl', 'flr', 'flt', 'und', 'jur']]
   ];
+  /* v2.319.0 (형님 2026-11-11 「상황 묶음을 선택으로 빼줘」) 상황 묶음 = 레이어 판 맨 위에 늘 보이는 한 줄(m2dSit) — 묶음을 누르면 그 레이어만 켜고, 켜진 묶음을 다시 누르면 누르기 전 레이어로 되돌린다(SITP = 누르기 전 on 사본 · 이 화면에서만) */
+  var SIT = [['traffic', '🚦 교통근무'], ['night', '🌙 야간'], ['crowd', '🎪 행사·집회'], ['rain', '🌧 큰비'], ['kids', '🏫 학교 둘레']], SITP = null;
+  function preAct(x) { return LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); }
+  function sitTap(id) { var P4 = PRESETS.filter(function (x) { return x[0] === id; })[0]; if (!P4) return; if (preAct(P4)) { if (SITP) { LAYERS.forEach(function (l) { on[l[0]] = !!SITP[l[0]]; }); SITP = null; unitKeep(); saveOn(); paintLayers(); paintPre(); sel = null; show(null); draw(); summary(); } else layersReset(); return; }
+    if (!SITP || !SIT.some(function (q) { var P5 = PRESETS.filter(function (x) { return x[0] === q[0]; })[0]; return P5 && preAct(P5); })) { SITP = {}; LAYERS.forEach(function (l) { SITP[l[0]] = !!on[l[0]]; }); } preset(id); }
+  function paintSit() { var el = $('m2dSit'); if (!el) return; var any = false, h = SIT.map(function (q) { var P6 = PRESETS.filter(function (x) { return x[0] === q[0]; })[0]; if (!P6) return ''; var a = preAct(P6); if (a) any = true; return '<button data-s="' + q[0] + '" class="' + (a ? 'on' : '') + '" title="' + esc(P6[2].filter(hasL).map(lname).join(' · ')) + '">' + q[1] + '</button>'; }).join('');
+    el.innerHTML = h + '<p class="sitn">' + (any ? '켜진 묶음을 다시 누르면 ' + (SITP ? '누르기 전 레이어로' : '처음 레이어로') + ' 돌아간다' : '상황을 고르면 그때 볼 레이어만 켠다 · 다시 누르면 되돌린다') + '</p>'; }
   var KEEP = ['dong', 'road', 'base', 'bld', 'sub'];
   function preset(id) {
     var P3 = PRESETS.filter(function (x) { return x[0] === id; })[0]; if (!P3) return;
@@ -2147,7 +2155,7 @@
     el.innerHTML = '<button data-x="none" class="ctl">모두 끄기</button><button data-x="reset" class="ctl">처음대로</button>' + (MY || []).map(function (m, i) { return '<button data-my="' + i + '" class="my' + (myAct(m) ? ' on' : '') + '" title="' + esc(m.ly.length + '개 레이어' + (m.v ? ' · 자리 포함' : '')) + '">' + (i === MYST ? '🏠 ' : '⭐ ') + esc(m.n) + '</button>'; }).join('') + '<button data-x="mysave" class="ctl my">＋ 지금 보기 저장</button>' + (MY && MY.length ? '<button data-x="mymgr" class="ctl">⚙ 내 보기</button>' : '') + '<button data-x="biz" class="ctl biz">🏪 창업 자리 찾기</button><button data-x="rad" class="ctl biz">📐 반경 분석</button><button data-x="prd" class="ctl biz">🚨 신고 차량 예측</button><button data-x="gdr" class="ctl biz">🍺 음주운전 흐름</button>' + PRESETS.map(function (x) { var act = LAYERS.every(function (l) { return KEEP.indexOf(l[0]) >= 0 || on[l[0]] === (x[2].indexOf(l[0]) >= 0); }); return '<button data-p="' + x[0] + '" class="' + (act ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') +
       '';
     var pc = $('m2dPreC'); if (pc) pc.innerHTML = '<details id="m2dPreCD" class="prec"' + (PRECO ? ' open' : '') + '><summary>📋 묶음마다 켜는 레이어 — 어떻게 짜였나</summary>' + PRESETS.map(function (x) { return '<div><button data-p="' + x[0] + '" class="pk">' + x[1] + '</button> → ' + x[2].filter(hasL).map(function (k) { return esc(lname(k)); }).join(' · ') + (PRENOTE[x[0]] ? '<br><small>' + PRENOTE[x[0]] + '</small>' : '') + '</div>'; }).join('') + '<p class="lhn">묶음을 누르면 행정동·도로·바탕만 남기고 나머지는 끈 뒤 이 레이어들을 켠다 · 「처음대로」 = 레이어마다 처음 값 · 「모두 끄기」 = 바탕만</p></details>';
-    preFit();
+    preFit(); paintSit();
   }
   // v0.10.92 소유자 「모두 끄기·처음대로는 왼쪽 맨 앞 · 화면을 넘으면 두 줄로」 — 한 줄에 다 들면 한 줄, 넘치면 두 줄(그래도 넘치면 옆으로 민다)
   function preFit() { var el = $('m2dPre'); if (!el) return; el.classList.remove('two'); if (el.scrollWidth > el.clientWidth + 2) el.classList.add('two'); }
@@ -10300,8 +10308,8 @@
   function gclSave() { try { localStorage.setItem('tg_map2d_gcl', JSON.stringify(GCL)); if (GCNEW) localStorage.setItem('tg_map2d_gcv', '2'); } catch (e) {} }
   function catPaint(pn, nOn) {   // v2.20.0 탭으로 가리지 않고 모두 펼친다 · v2.25.0 보기 셋 · v2.29.0 근무별 묶음을 위로 · 하나씩/모두 접기
     if (!CATS) return;
-    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanH"></div><button class="pguide" data-pguide="1">📖 사용설명서 — 레이어마다 무엇을 보여 주고 무엇을 알 수 있나 · 할 수 있는 일 한눈에 ›</button><details class="pst ptop" id="m2dPstD"' + (PSTO ? ' open' : '') + '><summary class="psec">⚡ 근무별 한 번에 <small>— 누르면 그 근무에 맞는 레이어 묶음만 켠다</small></summary><div id="m2dPreC"></div></details><div id="m2dPanB"></div><div class="pst" id="m2dPst2"></div>';
-      var pd = $('m2dPstD'); if ($('m2dPre')) pd.insertBefore($('m2dPre'), $('m2dPreC')); pd.addEventListener('toggle', function () { PSTO = pd.open; try { localStorage.setItem('tg_map2d_pst', PSTO ? '1' : '0'); } catch (e) {} });
+    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanH"></div><div class="psec sith">🎯 상황 묶음 <small>— 지금 상황을 고른다</small></div><div id="m2dSit"></div><button class="pguide" data-pguide="1">📖 사용설명서 — 레이어마다 무엇을 보여 주고 무엇을 알 수 있나 · 할 수 있는 일 한눈에 ›</button><details class="pst ptop" id="m2dPstD"' + (PSTO ? ' open' : '') + '><summary class="psec">⚡ 근무별 한 번에 <small>— 누르면 그 근무에 맞는 레이어 묶음만 켠다</small></summary><div id="m2dPreC"></div></details><div id="m2dPanB"></div><div class="pst" id="m2dPst2"></div>';
+      var pd = $('m2dPstD'); if ($('m2dPre')) pd.insertBefore($('m2dPre'), $('m2dPreC')); $('m2dSit').addEventListener('click', function (e) { var b9 = e.target.closest('button[data-s]'); if (b9) sitTap(b9.getAttribute('data-s')); }); paintSit(); pd.addEventListener('toggle', function () { PSTO = pd.open; try { localStorage.setItem('tg_map2d_pst', PSTO ? '1' : '0'); } catch (e) {} });
       var st = $('m2dPst2'), t2 = document.createElement('div'); t2.className = 'psec'; t2.textContent = '🕒 이 시각 한눈에'; st.appendChild(t2); if ($('m2dSum')) st.appendChild($('m2dSum'));
       var ft = document.createElement('div'); ft.className = 'pg pft'; ft.innerHTML = '<button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button><button data-onb="1">❔ 처음 안내 다시</button>'; st.appendChild(ft);
       $('m2dPanH').innerHTML = '<div class="ph"><b>🗂 레이어 <small id="m2dPanN"></small></b><button class="x" data-close="1">닫기</button></div><div class="lvs"><button data-lv="cat">🗂 묶음별</button><button data-lv="all">📋 전체 목록</button><button data-lv="on">✅ 켜진 것</button></div>' +

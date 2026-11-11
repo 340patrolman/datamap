@@ -8,6 +8,7 @@
 ## ⏳ 2026-11-10 저장소 크기 — 묶음 약 900MB 가 되면 안 짜기(형님 「권고대로 진행」)
 11-10 실측: 저장소 묶음 534MB · 하루 약 20MB 늚(신호 칸 c/ 5.1 · live-spd-six 3.9 · cl/ 3.2 · sigdir-seoul 하루 한 번 2.5 · live-spd-seocho 1.2MB) · 공개 사이트 파일 653MB(Pages 한도 1GB 는 지금 파일만 셈 — 기록은 안 셈 · 가장 큰 것 data/school-raw 251MB).
 GitHub 권고 1GB 아래(강하게 5GB) — 이대로면 1GB 는 12월 초 어림. sigdir-seoul.json 은 11-09 부터 하루 한 번만 올린다(spat-bake publish · 7572777a3 — 하루 6.9→2.5MB).
+11-11 실측: 묶음 561MB(하루 사이 +27MB) — 이 빠르기면 약 900MB 는 11월 하순(어림).
 ➡ 재기: `git count-objects -vH`(size-pack) · 하루 증가 = `git pack-objects --revs --stdout -q` 에 「origin/main」과 「^(24시간 전 커밋)」 두 줄을 넣고 바이트를 센다(11-10 = 23.4MB). 약 900MB 가 되면 15분마다 갱신되는 파일(data/sigdir · live-*)을 기록을 비울 수 있는 따로 두는 곳으로 옮기는 안을 짠다 — 강제 푸시·저장소 새로 만들기 등 되돌릴 수 없는 일은 형님께 묻는다.
 
 ## ✅ 2026-11-09 막힘 고리 후보 넷 — 형님 답 「① 서초 반포역만」 · 올리지 않음

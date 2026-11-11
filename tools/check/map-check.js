@@ -60,6 +60,9 @@
     function fin() {
     /* 레이어 판 — 새 기기에서는 켜진 것이 없는 묶음이 접혀 있다 */
     try { document.getElementById('m2dFold').click(); var gs = [].map.call(document.querySelectorAll('#m2dPanel .gc'), function (b) { return b.getAttribute('aria-expanded'); }), nOpen = gs.filter(function (x) { return x === 'true'; }).length; ck('레이어 판 묶음이 접힌 채로 열린다(켜진 것이 든 묶음만 펼침)', gs.length > 8 && nOpen < gs.length, '묶음 ' + gs.length + ' · 펼침 ' + nOpen + ' · 판 높이 ' + document.getElementById('m2dPanel').scrollHeight + 'px'); } catch (e) { ck('레이어 판이 열린다', false, e.message); }
+    /* v2.319.0·v2.320.0 🎯 상황 묶음 — 판 맨 위 한 줄 다섯 · 카드 아래 「이 자리에서 볼 것」을 누르면 그 묶음만 켜고 카드는 남고 · 다시 누르면 누르기 전 레이어 그대로 */
+    try { var onS = function () { var o9 = (JSON.parse(localStorage.getItem('tg_map2d') || '{}').on) || {}; return Object.keys(o9).filter(function (k) { return o9[k]; }).sort().join(','); }, nSit = document.querySelectorAll('#m2dSit button[data-s]').length, sb0 = document.querySelector('#m2dCard button[data-sit="traffic"]'), s0 = onS(); if (sb0) sb0.click(); var s1 = onS(), sb1 = document.querySelector('#m2dCard button[data-sit="traffic"]'), on1 = !!(sb1 && sb1.classList.contains('on')), cardOn = document.getElementById('m2dCard').classList.contains('on'); if (sb1) sb1.click(); var s2 = onS();
+      ck('🎯 상황 묶음 — 판 맨 위 다섯 · 카드 단추로 교통근무만 켜짐(카드 남음) · 다시 누르면 누르기 전 그대로 (v2.320.0)', nSit === 5 && !!sb0 && on1 && cardOn && /(^|,)vol(,|$)/.test(s1) && s1 !== s0 && s2 === s0, '줄 ' + nSit + ' · 켜짐 ' + on1 + ' · 카드 ' + cardOn + ' · 되돌림 ' + (s2 === s0)); } catch (e) { ck('상황 묶음 검사', false, e.message); }
     /* v2.222.0 🧩 교차로 관계(온톨로지 코어 v1 · Phase 2) — 서초역 카드의 「이 자리의 관계」 안 단추를 누르면 서초역사거리의 사고·주 위반·과거 조치가 펼쳐진다 · 누르기 전에는 코어를 받지 않는다 */
     var ob = document.querySelector('#m2dCard [data-onto]'); ck('카드에 「🧩 교차로 관계 보기」 단추(서초)', !!ob, ob ? '' : '없음'); ck('누르기 전에는 온톨로지 코어를 받지 않는다', !m.onto());
     if (ob) { var det = ob.closest('details'); if (det) det.open = true; ob.click(); }

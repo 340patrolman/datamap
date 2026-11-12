@@ -46,6 +46,8 @@
   #m2dDate { width: 138px; }
   #m2dFindMsg { font-size: 12px; color: var(--ink2); min-height: 0; }
   #m2dFindMsg:empty { display: none; }
+  /* v2.322.0 찾은 곳 고르는 줄 — 옆으로 밀어 고른다 */
+  #m2dFindMsg:has(button[data-fpk]) { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; align-items: center; padding: 6px 0 2px; } #m2dFindMsg .fdn { flex: 0 0 auto; font-weight: 800; } #m2dFindMsg button[data-fpk] { flex: 0 0 auto; white-space: nowrap; height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 13px; font-weight: 700; } #m2dFindMsg button[data-fpk] small { font-weight: 500; color: var(--ink2); font-size: 11px; } #m2dFindMsg button[data-fpk].on { background: var(--acc); border-color: var(--acc); color: #fff; } #m2dFindMsg button[data-fpk].on small { color: rgba(255,255,255,.85); }
   /* v0.10.100 동 현황 — 남녀 피라미드 · 상권변화지표 띠 · 상권 목록 */
   /* v2.91.0 🧭 유력·쇠퇴 업종 종합 */
   .olkb .simc { margin: 8px 0; padding: 6px 8px; border: 1px solid var(--line); border-radius: 12px; }
@@ -1131,7 +1133,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.321.2"></script>
+<script src="js/map2d.js?v=2.322.0"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>

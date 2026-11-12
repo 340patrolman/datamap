@@ -281,6 +281,9 @@
           });
         }).catch(function (e7) { ck('🚧 도로 위 일', false, String(e7)); });
       }).then(function () {
+      /* v2.322.0 🔍 찾은 곳이 여럿이면 고르는 줄 — 이름이 낱말로 시작하는 곳이 먼저 · 둘째를 누르면 그리로 */
+      try { var fi = document.getElementById('m2dFind'); fi.value = '강남'; fi.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); var fb = document.querySelectorAll('#m2dFindMsg button[data-fpk]'), fn0 = fb[0] ? fb[0].firstChild.textContent.trim() : '', on0 = fb[0] && fb[0].classList.contains('on'); if (fb[1]) fb[1].click(); var fb2 = document.querySelectorAll('#m2dFindMsg button[data-fpk]'), on2 = fb2[1] && fb2[1].classList.contains('on') && !fb2[0].classList.contains('on');
+        ck('🔍 찾기 「강남」 — 고르는 줄이 뜨고 맨 앞은 이름이 「강남」으로 시작 · 둘째를 누르면 그리로 (v2.322.0)', fb.length >= 2 && fn0.indexOf('강남') === 0 && on0 && on2, '줄 ' + fb.length + ' · 맨 앞 ' + fn0 + ' · 둘째 고름 ' + on2); fi.value = ''; document.getElementById('m2dFindMsg').textContent = ''; } catch (e) { ck('찾기 고르는 줄 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       setTimeout(send, 80); }); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }

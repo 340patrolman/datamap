@@ -7885,12 +7885,24 @@
       JIDX.r.filter(function (t) { return t[0] === q || (qn.length >= 2 && t[0].indexOf(qn) === 0) || (t[5] && (t[5] === q || (qn.length >= 2 && t[5].indexOf(qn) === 0))); }).sort(function (a, b) { return (a[0] === q ? 0 : 1) - (b[0] === q ? 0 : 1) || a[0].length - b[0].length; }).slice(0, 10).forEach(function (t) { var g = rIdx().filter(function (x) { return x.gu === t[3]; })[0]; c.push({ p: P(t[1], t[2]), it: { kind: 'rdnm', t: [t[0], t[1], t[2], 0, t[4] || 0, t[5], t[6]], g: g ? g.name : '' }, k: 'jcnm' }); }); }
     else if (!c.length) { var self = this; $('m2dFindMsg').textContent = '교차로·도로 이름 목록을 받는 중…'; jidxLoad().then(function (j) { if (j) self.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); else $('m2dFindMsg').textContent = '「' + q + '」 — 이 지도 자료에 없다'; }); return; }
     else jidxLoad();
-    if (c.length && c[0].k && !on[c[0].k]) { on[c[0].k] = true; saveOn(); paintLayers(); }
     if (!c.length) { $('m2dFindMsg').textContent = '「' + q + '」 — 이 지도 자료에 없다'; return; }
-    $('m2dFindMsg').textContent = c.length > 1 ? c.length + '곳 중 첫째' : '';
-    view.cx = c[0].p[0]; view.cy = c[0].p[1]; view.s = Math.max(view.s, 0.35); draw();
-    var s = S(c[0].p); sel = { x: s[0], y: s[1], r: 8, it: c[0].it }; show(c[0].it); draw();
+    /* v2.322.0 찾은 곳 차례 = 이름이 낱말과 같은 곳 → 이름이 낱말로 시작하는 곳 → 이름에 든 곳 → 구 이름으로만 걸린 곳(「강남」이 강남구 신사동보다 강남역 먼저) · 같은 칸 안은 종전 차례 */
+    c.forEach(function (x, i) { var nm = findNm(x); x._n = nm; x._o = i; x._s = nm === q ? 0 : nm.indexOf(q) === 0 ? 1 : nm.indexOf(q) >= 0 ? 2 : 3; }); c.sort(function (a, b) { return a._s - b._s || a._o - b._o; });
+    if (c[0].k && !on[c[0].k]) { on[c[0].k] = true; saveOn(); paintLayers(); }
+    FINDC = c; findGo(0);
   });
+  /* v2.322.0 찾은 곳이 여럿이면 고르는 줄(앞 8곳) — 종전엔 「N곳 중 첫째」만 보이고 나머지로 갈 길이 없었다 */
+  var FINDC = [], FKO = { dong: '동', rgo: '동', near: '동', node: '교차로', jcnm: '교차로', tgis: '교차로', sig: '신호', sgd: '신호', osmroad: '도로', rdnm: '도로', her: '유산', ggbrt: '버스', lore: '이야기', spot: '사고 지점', trd: '상권', ggt: '상권', szone: '보호구역', safe: '시설', crowd: '인파 장소', pub: '시설' };
+  function findNm(x) { var it = x.it || {}, v = it.n ? it.n.name : it.d ? it.d.name : it.kind === 'rgo' ? it.name : it.h ? it.h.name : it.kind === 'ggbrt' ? it.s[1] : it.kind === 'sig' ? it.s.name : it.kind === 'sgd' ? (it.q && it.q[2]) || it.no : it.t && it.t.name ? it.t.name : it.kind === 'spot' ? it.q.name : it.x && it.x.t ? (it.x.t.name || it.x.t.n) : it.L && it.L.o ? it.L.o.name : it.r ? it.r.name : it.kind === 'pub' ? it.q.name : (it.kind === 'jcnm' || it.kind === 'rdnm') ? it.t[0] : it.kind === 'safe' && it.q && it.q.r ? (it.q.r[2] || it.q.r[3]) : ''; return String(v || ''); }
+  var FPUB = { er: '응급실', hosp: '병원', phar: '약국', heat: '무더위쉼터', cold: '한파쉼터', bus: '정류장', subr: '역', bike: '자전거', sigx: '신호', drunk: '음주 단속' };
+  function findKo(it) { var k = it.kind === 'pub' ? (FPUB[it.layer] || '시설') : (FKO[it.kind] || ''), g = it.d && it.d.gu ? it.d.gu : (it.kind === 'rgo' || it.kind === 'rdnm') ? it.g : it.kind === 'dong' && it.d && !it.d.gu ? '서초구' : ''; return k + (g ? ' · ' + g : ''); }
+  function findGo(i) { var c = FINDC, x = c[i]; if (!x) return; var m = $('m2dFindMsg');
+    if (c.length > 1) { var h = '<span class="fdn">' + c.length + '곳' + (c.length > 8 ? ' · 앞 8곳' : '') + '</span>'; c.slice(0, 8).forEach(function (y, j) { h += '<button type="button" data-fpk="' + j + '"' + (j === i ? ' class="on" aria-current="true"' : '') + '>' + esc(y._n || '(이름 없음)') + ' <small>' + esc(findKo(y.it)) + '</small></button>'; }); m.innerHTML = h; } else m.textContent = '';
+    if (x.k && !on[x.k]) { on[x.k] = true; saveOn(); paintLayers(); }
+    TAPM = x.p;   /* 카드 위 자리 줄(지점 › 칸 › 동 › 서)도 찾은 곳으로 — 종전엔 앞서 누른 자리의 동·서가 남았다 */
+    view.cx = x.p[0]; view.cy = x.p[1]; view.s = Math.max(view.s, 0.35); draw();
+    var s = S(x.p); sel = { x: s[0], y: s[1], r: 8, it: x.it }; show(x.it); draw(); }
+  $('m2dFindMsg').addEventListener('click', function (e) { var b = e.target.closest('button[data-fpk]'); if (!b) return; findGo(+b.getAttribute('data-fpk')); });
   // ---------- 🏪 창업 자리 찾기(v0.10.92 · 소유자 「상권분석은 그 부분만 따로 써도 어떤 업종을 어디에 열어 할 수 있을 만큼 제대로」) ----------
   //  고른 업종을 서울 상권 1,650곳(또는 고른 구 · 지금 화면)에서 견준다. 점수 = 항목마다 「그 업종이 있는 상권 안 백분위」의 가중 합(가중은 고르는 목적마다 — 설계값).
   //  지표는 전부 서울시 상권분석서비스 값이다(카드 추정 매출 · 점포 · 개업/폐업 · 1년 전 같은 분기 · 유동·직장·상주인구 · 상권변화지표). 임대료·권리금·공실·동선은 이 자료에 없다.

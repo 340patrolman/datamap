@@ -1249,7 +1249,10 @@
   var SHOWIT = null, SHOWAT = 0, SHOWTM = 0;
   function show(it) { if (!window.event && it === SHOWIT && performance.now() - SHOWAT < 30) { BOOTT.nskip = (BOOTT.nskip || 0) + 1;
       if (!SHOWTM) SHOWTM = setTimeout(function () { SHOWTM = 0; SHOWAT = 0; if (sel && sel.it === SHOWIT && $('m2dCard').classList.contains('on')) show(SHOWIT); }, 40); return; }
-    BOOTT.nshow = (BOOTT.nshow || 0) + 1; SHOWIT = it; try { show0(it); } finally { SHOWAT = performance.now(); } }
+    BOOTT.nshow = (BOOTT.nshow || 0) + 1; SHOWIT = it; var sk9 = showKey(it), rs9 = sk9 !== SHOWK; SHOWK = sk9; try { show0(it); } finally { SHOWAT = performance.now(); } if (rs9) { var cd9 = $('m2dCard'); if (cd9) cd9.scrollTop = 0; } }
+  /* v2.321.2 다른 대상의 카드를 열면 맨 위부터 — 앞 카드를 끝까지 내린 채 지도를 누르면 새 카드가 내려간 자리(차트 가운데)에서 열렸다. 같은 대상 다시 그리기(실시간 갱신)는 자리 그대로 */
+  var SHOWK = '';
+  function showKey(it) { if (!it) return ''; var o = [], ks = Object.keys(it).sort(); for (var i = 0; i < ks.length; i++) { var v = it[ks[i]]; if (typeof v === 'string') o.push(ks[i] + '=' + v); else if (typeof v === 'number') o.push(ks[i] + '=' + Math.round(v * 10)); } return o.join('&'); }
   function show0(it) {
     if (PRD.set === 'v' && (!it || it.kind !== 'prd')) { VIPM.cp = []; VIPM.res = null; VIPM.pick = false; VIPM.goal = null; VIPM.fast = null; VIPM.base = 0; PRD.set = 'n'; PRD.sig = 1; PRD.k = 1; }   /* 🔒 카드를 닫거나 다른 카드로 가면 업무를 지운다 */
     if (PRD.set !== 'v' && PRD.p && (!it || it.kind !== 'prd')) { PRD.p = null; PRD.res = null; PRD.pick = false; }   /* v2.241.0 소유자 「아까 찍었던 지점이 아직도 검은색으로 남아 있다」 — 신고 차량 예측 지점은 그 카드가 열린 동안만 */

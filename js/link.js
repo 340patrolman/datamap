@@ -475,7 +475,7 @@
   function fromHash() { var h = location.hash || ''; if (!/(^|[#&])lnk=1(?=&|$)/.test(h)) return; var im = /(^|[#&])id=([A-Z]+-[^&]+)(?=&|$)/.exec(h), lm = /(^|[#&])ll=(-?[\d.]+),(-?[\d.]+)(?=&|$)/.exec(h);
     open(im ? { id: decodeURIComponent(im[2]) } : lm ? { lat: +lm[2], lon: +lm[3] } : null);
     var rest = h.replace(/^#/, '').split('&').filter(function (x) { return x && !/^(lnk|id|ll)=/.test(x); }).join('&');
-    try { history.replaceState(null, '', location.pathname + location.search + (rest ? '#' + rest : '')); } catch (e) {} }
+    try { history.replaceState(history.state, '', location.pathname + location.search + (rest ? '#' + rest : '')); } catch (e) {} }
   window.addEventListener('hashchange', fromHash);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fromHash); else fromHash();
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });

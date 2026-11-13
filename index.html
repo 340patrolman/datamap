@@ -38,7 +38,7 @@
   #m2dFoldX { display: block; width: 100%; height: 40px; margin-top: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--chip); color: var(--ink); font-size: 13.5px; font-weight: 700; cursor: pointer; }
   .row2 #m2dNow { flex: 0 0 auto; align-self: center; }
   .row1 h1 { font-size: 16px; margin: 0; white-space: nowrap; }
-  .row1 .back { color: var(--acc); text-decoration: none; font-weight: 700; white-space: nowrap; min-height: 36px; display: inline-flex; align-items: center; }
+  .row1 .back { border: 0; background: transparent; cursor: pointer; color: var(--acc); text-decoration: none; font-weight: 700; white-space: nowrap; min-height: 36px; display: inline-flex; align-items: center; }
   .row1 #m2dNow { margin-left: auto; color: var(--ink2); font-size: 12.5px; white-space: nowrap; }
   .row2 { display: flex; gap: 6px; margin-top: 6px; }
   .row2 input { min-width: 0; height: 36px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); padding: 0 10px; font-size: 14px; }
@@ -807,8 +807,8 @@
     #m2dCard h3 { margin-top: 2px !important; }
     #m2dTop { padding: calc(5px + env(safe-area-inset-top)) 8px 5px !important; }
     #m2dTop .row1 { gap: 5px; }
-    #m2dRegB, #m2dFindB, #m2dDN, #m2dFold { height: 36px !important; }
-    #m2dFindB, #m2dDN { width: 36px !important; }
+    #m2dRegB, #m2dFindB, #m2dHomeB2, #m2dDN, #m2dFold { height: 36px !important; }
+    #m2dFindB, #m2dHomeB2, #m2dDN { width: 36px !important; }
     #m2dChips { margin-top: 5px !important; }
     #m2dChips > button, #m2dQC button { height: 32px !important; padding: 0 10px !important; font-size: 12.5px !important; }
     body.cardon.cardtall #m2dChips, body.cardon.cardtall #m2dTop #m2dTime, body.cardon.cardtall #m2dFindRow { display: none !important; }
@@ -1025,6 +1025,45 @@
   /* v2.253.0 경찰 통계 모음 단위 띠 */
   .ps-lv { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; margin-right: 4px; vertical-align: 1px; } .ps-nat { background: #dbeafe; color: #1e3a8a; } .ps-sdc { background: #dcfce7; color: #14532d; } .ps-st { background: #fef3c7; color: #78350f; } .ps-press { background: #f1f5f9; color: #475569; border: 1px dashed #94a3b8; }
   .ps-sec { margin: 14px 0 4px; padding: 6px 10px; border-radius: 10px; background: var(--ink); color: var(--panel); font-weight: 800; font-size: 14px; } table.pix tr.pix-nat td { background: rgba(37,99,235,.08); font-weight: 700; }
+  /* v2.323.0 🏠 홈 · ⚙ 설정 */
+  #m2dHome { display: none; position: fixed; inset: 0; z-index: 2700; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+  #m2dHome.on { display: block; }
+  #m2dHome .hh { background: linear-gradient(135deg, #1d4ed8, #0f766e); color: #fff; padding: calc(16px + env(safe-area-inset-top)) 16px 14px; }
+  #m2dHome .ht { display: flex; align-items: center; gap: 8px; } #m2dHome .ht b { font-size: 20px; } #m2dHome .hi { font-size: 22px; }
+  #m2dHome .hg { margin-left: auto; width: 44px; height: 44px; border-radius: 12px; border: 0; background: rgba(255,255,255,.2); color: #fff; font-size: 21px; cursor: pointer; }
+  #m2dHome .hs { font-size: 13px; opacity: .92; margin-top: 4px; }
+  #m2dHome .hgo { margin: 12px 12px 0; background: var(--panel); border-radius: 16px; padding: 12px; box-shadow: var(--sh); }
+  #m2dHome .hbig { width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: var(--acc); color: #fff; border-radius: 14px; padding: 14px; font-weight: 800; font-size: 17px; cursor: pointer; text-align: left; }
+  :root.dark #m2dHome .hbig { background: #2563eb; }
+  #m2dHome .hbig i { font-style: normal; margin-left: auto; font-size: 13px; font-weight: 600; opacity: .92; white-space: nowrap; }
+  #m2dHome .hly { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; } #m2dHome .hly span { font-size: 12px; background: var(--chip); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; }
+  #m2dHome .hsec { margin: 14px 12px 0; } #m2dHome .hsec h4 { margin: 0 0 8px 4px; font-size: 14px; color: var(--ink2); }
+  #m2dHome .hg5 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  #m2dHome .hg5 button { min-height: 62px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 8px 4px; font-weight: 800; font-size: 14px; cursor: pointer; }
+  #m2dHome .hg5 button small { display: block; font-weight: 500; font-size: 11px; color: var(--ink2); margin-top: 3px; } #m2dHome .hg5 .hdash { border-style: dashed; }
+  #m2dHome .hlst { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  #m2dHome .hlst button { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border: 0; border-top: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 14.5px; text-align: left; cursor: pointer; }
+  #m2dHome .hlst button:first-child { border-top: 0; } #m2dHome .hlst button i { font-style: normal; margin-left: auto; color: var(--ink2); font-size: 12px; white-space: nowrap; }
+  #m2dHome .hpol .hlst { border-color: #1d4ed8; border-width: 1.5px; } #m2dHome .hpol h4 { color: #1d4ed8; } :root.dark #m2dHome .hpol h4 { color: #93c5fd; } #m2dHome .hsec h4 small { font-weight: 500; font-size: 11.5px; color: var(--ink2); margin-left: 4px; }
+  #m2dHome .hrow { display: flex; gap: 8px; } #m2dHome .hrow a { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 46px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; font-size: 13.5px; font-weight: 700; color: var(--ink); text-decoration: none; text-align: center; padding: 0 4px; }
+  #m2dHome .hfoot { display: flex; gap: 8px; } #m2dHome .hfoot button { flex: 1; min-height: 46px; border-radius: 14px; border: 1px solid var(--acc); background: transparent; color: var(--acc); font-weight: 800; font-size: 14px; cursor: pointer; }
+  #m2dSet { display: none; position: fixed; left: 0; right: 0; bottom: 0; top: calc(56px + env(safe-area-inset-top)); z-index: 2710; background: var(--panel); color: var(--ink); border-radius: 22px 22px 0 0; box-shadow: var(--sh2); overflow-y: auto; padding: 14px 14px calc(20px + env(safe-area-inset-bottom)); }
+  #m2dSet.on { display: block; }
+  @media (min-width: 760px) { #m2dSet { left: auto; width: 440px; top: 12px; bottom: 12px; right: 12px; border-radius: 18px; } }
+  #m2dSet .sh { display: flex; align-items: center; font-size: 18px; } #m2dSet .sx { margin-left: auto; border: 0; background: #dc2626; color: #fff; border-radius: 16px; padding: 7px 13px; font-weight: 800; font-size: 14px; cursor: pointer; }
+  #m2dSet .sd { margin: 4px 0 0; font-size: 12.5px; color: var(--ink2); }
+  #m2dSet .sg { margin-top: 14px; } #m2dSet .sg > b { display: block; font-size: 13px; color: var(--ink2); margin: 0 0 4px 2px; }
+  #m2dSet .si { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 9px 2px; border-top: 1px solid var(--line); font-size: 14px; }
+  #m2dSet .si small { color: var(--ink2); font-size: 12px; }
+  #m2dSet .sv { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  #m2dSet .sv button, #m2dSet .sl { min-height: 36px; font-size: 13px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 0 11px; cursor: pointer; display: inline-flex; align-items: center; }
+  #m2dSet .sv button.on { background: var(--chipOn); color: var(--chipOnInk); border-color: var(--chipOn); font-weight: 700; }
+  #m2dSet .sb { margin-left: auto; min-height: 36px; font-size: 13px; border: 1px solid var(--acc); color: var(--acc); background: transparent; border-radius: 10px; padding: 0 11px; font-weight: 700; cursor: pointer; }
+  #m2dSet .sn { margin: 2px 2px 6px; font-size: 12px; color: var(--ink2); }
+  body.homeon #m2dTool { display: none !important; }
+  #m2dToast { z-index: 2800; }   /* 홈·설정(2700·2710 — 시뮬 판 2600 위) 위에서도 알림이 보이게 */
+  @media (max-width: 430px) { #m2dGuideB .sm { display: none; } #m2dGuideB { padding: 0 9px !important; flex-shrink: 0; } #m2dTop .row1 { gap: 4px !important; } #m2dFold .lg { display: none; } }   /* 🏠 가 들어간 만큼 — 「안내」 글은 그림(📖)만 · 이용방법은 홈·도구에도 있다 */
+  #m2dHomeB2 { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 20px; border: 0; background: var(--chip); font-size: 17px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -1032,9 +1071,10 @@
 <div id="m2dTop">
   <!-- v2.18.0 네이버·카카오 지도처럼 — 맨 위 찾기 칸 · 밤낮 · 레이어 단추 / 그 아래 날짜·시각·빠른 칩 한 줄(옆으로 민다) / 시각 칩을 누르면 시각 막대 -->
   <div class="row1">
-    <a class="back" href="https://340patrolman.github.io/traffic-game/" aria-label="교통경찰 게임으로">←</a>
+    <button class="back" id="m2dHomeB" type="button" aria-label="데이터지도 홈">←</button>
     <button id="m2dRegB" aria-expanded="false" aria-controls="m2dReg" aria-label="지역 고르기">📍 지역<span class="lg"> 고르기</span></button>
     <button id="m2dFindB" aria-expanded="false" aria-label="찾기 — 동·교차로·길·역·정류장">🔍</button>
+    <button id="m2dHomeB2" type="button" aria-label="데이터지도 홈">🏠</button>
     <span class="sp"></span>
     <button id="m2dDN" aria-label="화면 밝기">🌓</button>
     <button id="m2dFold" aria-expanded="false" aria-controls="m2dPanel" aria-label="레이어 고르기">🗂<span class="lg"> 레이어</span> <b id="m2dLayN">0</b></button>
@@ -1133,14 +1173,14 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.322.2"></script>
+<script src="js/map2d.js?v=2.323.0"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>
 <script src="js/sim-merge.js?v=3" defer></script>
 <script src="js/nowcast.js?v=1" defer></script>
-<script src="js/decide.js?v=7"></script>
-<script src="js/link.js?v=24"></script>
+<script src="js/decide.js?v=8"></script>
+<script src="js/link.js?v=25"></script>
 <script>
   (function () {   // 확인코드 관문 — 맞으면 이 기기에 기억(tg_map2d_gate) · 다음부터 안 묻는다
     var f = document.getElementById('m2dGateF'); if (!f) return;

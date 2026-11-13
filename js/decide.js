@@ -194,9 +194,14 @@
   function close() { var el = $('m2dDec'); if (el) el.classList.remove('on'); }
   window.tgDecide = { open: open, close: close };
   function fromHash() { var h = location.hash || '', dm = /(^|[#&])dec=(1|d[1-5])(?=&|$)/.exec(h); if (!dm) return; var im = /(^|[#&])int=(INT-\d+)(?=&|$)/.exec(h), lm = /(^|[#&])ll=(-?[\d.]+),(-?[\d.]+)(?=&|$)/.exec(h);
+    /* v8 날짜·시각을 주소로 받는다(T-Book 음주 화면 → #dec=d2&dt=2026-11-14&h=22) — dt = 날(오늘 앞뒤 370일 안만) · h = 0~23시 → 6시간 칸·2시간 칸 */
+    var tm = /(^|[#&])dt=(\d{4}-\d{2}-\d{2})(?=&|$)/.exec(h), hm = /(^|[#&])h=(\d{1,2})(?=&|$)/.exec(h);
+    if (tm) { var t9 = new Date(tm[2] + 'T12:00:00'); if (!isNaN(t9) && Math.abs(t9 - Date.now()) < 370 * 864e5) ST.date = tm[2]; }
+    if (hm && +hm[2] < 24) { if (!ST.date) ST.date = today(); ST.slot = slotOfHour(+hm[2]); var h2 = Math.floor(+hm[2] / 2) * 2; ST.slot2 = ('0' + h2).slice(-2) + '-' + ('0' + (h2 + 2)).slice(-2); }
+    var gm = /(^|[#&])gu=(\d{5})(?=&|$)/.exec(h); if (gm && gm[2] !== ST.gu) { ST.gu = gm[2]; DATA = null; }   /* gu = 구 코드(없는 구면 load 가 서초로) */
     open(dm[2] === '1' ? null : dm[2], im ? { int: im[2] } : lm ? { lat: +lm[2], lon: +lm[3] } : null);
-    var rest = h.replace(/^#/, '').split('&').filter(function (x) { return x && !/^(dec|int|ll)=/.test(x); }).join('&');
-    try { history.replaceState(null, '', location.pathname + location.search + (rest ? '#' + rest : '')); } catch (e) {} }
+    var rest = h.replace(/^#/, '').split('&').filter(function (x) { return x && !/^(dec|int|ll|dt|h|gu)=/.test(x); }).join('&');
+    try { history.replaceState(history.state, '', location.pathname + location.search + (rest ? '#' + rest : '')); } catch (e) {} }
   window.addEventListener('hashchange', fromHash);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fromHash); else fromHash();
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });

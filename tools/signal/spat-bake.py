@@ -1296,7 +1296,10 @@ def build():
                         b8 = max(cm, key=lambda k2: qv[k2]['g']); sh8 = (hv[b8]['o'] - qv[b8]['o']) % c8
                         if all(min(((qv[k2]['o'] + sh8) - hv[k2]['o']) % c8, (hv[k2]['o'] - (qv[k2]['o'] + sh8)) % c8) <= 3 for k2 in cm):
                             r = dict(r, pd=[dict(z, o=(int(round((z['o'] + sh8) % c8)) if z.get('o') is not None else None)) for z in q9['pd']])
-                keep[kk] = r                                    # (요일 갈래, 주기)마다 나중 것 한 장
+                if (r.get('fz') or {}).get('cm') and keep.get(kk) and not (keep[kk].get('fz') or {}).get('cm'):
+                    pass                                        # (2026-11-12 독립 검수) 두 닻으로 주기를 잰 기록(길이는 어림)이 같은 주기의 실측 기록을 덮지 않는다 — 닻·시각대 표(pl)에만 쓴다
+                else:
+                    keep[kk] = r                                # (요일 갈래, 주기)마다 나중 것 한 장
             if r.get('a'):
                 hh = datetime.datetime.fromtimestamp(r['a']).hour
                 sod = (r['a'] + 9 * 3600) % 86400               # 한국 시각 하루 초
@@ -1660,6 +1663,88 @@ def fz_anchor(itst, row):
     return None
 
 
+def fz_state(row, an):
+    """그 닻의 기준 이동류(녹색 시작 자리 o = 0)만으로 본 그 줄의 상태와 닻 — ('g'|'r', 닻) · 모르면 (None, None).
+    녹색 = 보낸 시각 + 남은 초 − 빌린 녹색 · 적색 = 보낸 시각 + 남은 초(다음 녹색 시작) − 빌린 주기.
+    (fz_anchor 는 여러 이동류를 빌린 주기로 접어 평균을 내는데, 진짜 주기가 다르면 녹색·적색 이동류의 닻이 Δ 만큼 갈라져 평균이 반쯤 치우친다 — 주기를 잴 때는 기준 이동류만 쓴다)"""
+    if not an or not row:
+        return None, None
+    T = (row.get('trsmUtcTime') or 0) / 1000.0; Cb = float(an.get('ci') or an['cyc'])
+    G9, R9 = [], []
+    for x in an.get('mv', []):
+        if x.get('o') != 0 or x.get('g') is None:
+            continue
+        st, rm = row.get('%s%ssgStatNm' % (x['d'], x['m'])), row.get('%s%ssgRmdrCs' % (x['d'], x['m']))
+        if rm is None or not (0 <= rm < 36000):
+            continue
+        if st in FZ_GREEN:
+            G9.append(T + rm / 10.0 - x['g'])
+        elif st in FZ_RED:
+            R9.append(T + rm / 10.0 - Cb)
+    if G9 and not R9:
+        return 'g', sum(G9) / len(G9)
+    if R9 and not G9:
+        return 'r', sum(R9) / len(R9)
+    return None, None
+
+
+def fz_cycle(an1, b1, an2, b2):
+    """(2026-11-12 형님 사당동우체국앞 동영상 — 방배경찰서(연등) 23251 평일 16시) Fusion 닻은 주기·녹색 길이를 다른 시각대 기록에서 빌린다.
+    역사 API 가 못 닿는 시각대(6시간 묶음의 넷째~여섯째 시간)는 빌린 주기가 틀리면 계속 틀린다(빌린 211초 · 이웃 교차로 같은 시각 220초).
+    같은 교차로를 한 주기쯤 뒤에 다시 읽은 두 닻의 간격으로 주기를 잰다 — 두 줄 모두 같은 상태(녹-녹 · 적-적)일 때만:
+      녹색이면 닻 = 보낸 시각 + 남은 초 − 빌린 녹색 길이라 빌린 길이의 오차가 두 닻에 똑같이 들어가 간격에서 지워진다 · 적색이면 다음 녹색 시작 = 보낸 시각 + 남은 초라 오차가 없다.
+    주기 C = 간격 ÷ k(빌린 주기에 가장 가까운 정수배 · 빌린 주기와 35% 넘게 다르면 버림) · 정수 초로.
+    늘거나 준 몫(Δ = C − 빌린 주기)은 **주 녹색(기준 이동류 · 자리 0)이 가져간다고 본다(어림)** — 23251 기록들(주기 160~233)에서 주기 − 남북 직진 녹색이 46~50초로 거의 같았다:
+      자리 0 이동류 = 녹색 +Δ · 그 밖 이동류·보행 = 자리 +Δ · 적색 +Δ · 닻 = 둘째 닻 − Δ(녹색 줄은 진짜 녹색이 Δ 길고 · 적색 줄은 앞 녹색을 빌린 주기만큼 물려 잡았으니 둘 다 Δ 늦다).
+    돌려줌: 고친 기록(dict) · 'again'(상태가 달라 다시 읽을 것) · None(못 씀)"""
+    (st1, x1), (st2, x2) = b1 or (None, None), b2 or (None, None)
+    if not an1 or not an2:
+        return None
+    if st1 is None or st2 is None:
+        return 'again'   # (독립 검수) 황색이거나 기준 이동류끼리 녹·적이 섞인 줄 — 버리지 않고 다시 읽는다
+    hr = lambda t: datetime.datetime.fromtimestamp((t or 0) + 9 * 3600, datetime.timezone.utc).hour
+    if hr(an1.get('end')) != hr(an2.get('end')):
+        return None      # (독립 검수) 정시를 걸친 두 줄 — 서로 다른 계획일 수 있다
+    if st1 != st2 or (an1.get('fz') or {}).get('base') != (an2.get('fz') or {}).get('base') or abs(float(an1.get('ci') or an1['cyc']) - float(an2.get('ci') or an2['cyc'])) > 0.05:
+        return 'again'   # 상태가 다르거나 두 닻이 빌린 기록이 다르다(진짜 녹색이 더 길면 녹색 초반 줄은 그 기록으로 닻이 안 잡혀 다른 기록으로 넘어간다) — 다시 읽는다
+    Cb = float(an2.get('ci') or an2['cyc']); d = x2 - x1
+    k = int(round(d / Cb)) if Cb > 0 else 0
+    if k < 1:
+        return 'again'
+    C = d / k
+    if abs(C - Cb) > 0.2 * Cb or C < 40:   # (독립 검수) 35% 면 진짜가 25% 넘게 길 때 k 를 3 으로 잘못 잡은 값이 통과한다 — 20%
+        return None
+    C = int(round(C)); D = C - Cb
+    # (독립 검수) 주 녹색이 끝(녹+황)에서 늘어난다고 보므로 그 뒤에 켜지는 것만 자리를 옮긴다 — 주 녹색 도중에 켜지는 이동류·보행(65 보행 o=3 · 3993 동 직진 o=19 등)은 자리 그대로
+    bend = max([x['g'] + (x.get('y') or 0) for x in an2['mv'] if x.get('o') == 0 and x.get('g') is not None] or [0])
+    mv = []
+    for x in an2['mv']:
+        x = dict(x)
+        if x.get('g') is not None and x.get('o') is not None:
+            if x['o'] == 0:
+                x['g'] = round(x['g'] + D, 1)
+            elif x['o'] >= bend - 0.5:
+                x['o'] = round(x['o'] + D, 1); x['r'] = round(x['r'] + D, 1)
+            else:
+                x['r'] = round(x['r'] + D, 1)
+            if x['g'] <= 0 or x['r'] < 0 or x['o'] < 0 or x['o'] >= C:
+                return None   # 짧아진 주기에서 음수 자리·적색이 생긴다 — 어림이 안 맞는 꼴이라 쓰지 않는다
+        mv.append(x)
+    pd = []
+    for q in an2.get('pd') or []:
+        q = dict(q)
+        if q.get('g') is not None and q.get('o') is not None:
+            if q['o'] >= bend - 0.5:
+                q['o'] = round(q['o'] + D, 1)
+            q['r'] = round(q['r'] + D, 1)
+            if q['r'] < 0 or q['o'] < 0 or q['o'] >= C:
+                return None
+        pd.append(q)
+    a = x2 - D   # 녹색 줄 = 보낸 시각 + 남은 초 − 빌린 녹색(진짜 녹색이 Δ 길다) · 적색 줄 = 다음 녹색 시작 − 빌린 주기(진짜 주기가 Δ 길다) — 둘 다 Δ 만큼 늦게 잡혀 있다
+    fz = dict(an2.get('fz') or {}, cm={'c': C, 'from': Cb, 'gap': round(d, 1), 'k': k, 'st': st2, 't1': an1.get('end'), 't2': an2.get('end')})
+    return dict(an2, cyc=float(C), ci=C, mv=mv, pd=pd, a=round(a, 1), fz=fz)
+
+
 def fusion(sample=False, ids=None):
     """지금 한 줄(FusionCurrentInfo) 수집 — 교차로(itstId)마다 최신 잔여 초 + 방향별 상태 이름. 원자료는 섞지 않고
     ../07_API키/out/tdata/fusion/<날짜>.jsonl.gz 에 교차로 한 번 = 한 줄({at, id, key, rows}) · sigdir 에는 넣지 않는다.
@@ -1706,6 +1791,7 @@ def fusion(sample=False, ids=None):
     except Exception:
         FS = {}
     onaxis = lambda k: any(len(x) > 1 and x[1] in AXIS for x in FS.get(k, {}).get('in', []))
+    RE = {}   # (2026-11-12) 주기를 재려고 다시 읽을 교차로 {번호: {due, an, st, n}} — fz_cycle
     while True:
         sd = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))
         its = sd.get('its', {})
@@ -1733,7 +1819,18 @@ def fusion(sample=False, ids=None):
                                      max([r.get('a') or 0 for r in its.get(k, [])] or [0])))
         if not ids: L = [k for k in PRIO_IDS if NONE.get(k) != tday] + [k for k in L if k not in PRIO_IDS]   # 소유자가 짚은 교차로 먼저
         nok = nanc = 0
-        for itst in L:
+        def seq():
+            for k9 in L:
+                for d9 in [q for q, v in list(RE.items()) if v['due'] <= time.time()]:
+                    v9 = RE.get(d9)
+                    if not v9:
+                        continue
+                    if v9.get('tries', 0) >= 3 or time.time() > v9['due'] + 3 * float(v9['an'].get('ci') or v9['an']['cyc']):
+                        RE.pop(d9, None); continue   # (독립 검수) 다시 읽기가 응답 없음·묵은 줄·예외로 끝나도 항목이 남아 그 교차로만 계속 부르던 것 — 세 번 또는 기한 + 3주기에서 지운다
+                    v9['tries'] = v9.get('tries', 0) + 1
+                    yield d9
+                yield k9
+        for itst in seq():
             P.refresh(); kl, w = P.pick()
             if P.capped(kl):
                 print(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'), '[fusion] 오늘 몫을 다 씀(열쇠마다 %d · 역사 훑기 몫 남김) — %d분 쉰다' % (KEYCAP, w // 60), flush=True)
@@ -1758,6 +1855,27 @@ def fusion(sample=False, ids=None):
                         g.write(json.dumps({'at': stamp, 'id': itst, 'key': kl, 'rows': J}, ensure_ascii=False) + chr(10))
                     nok += 1
                     an = fz_anchor(itst, J[0]) if J else None
+                    st9 = fz_state(J[0], an) if an else (None, None)
+                    if an and itst in RE and RE[itst]['due'] <= time.time():
+                        # (2026-11-12) 다시 읽은 줄 — 두 닻으로 주기를 잰다(fz_cycle)
+                        r9 = RE[itst]; cm9 = fz_cycle(r9['an'], r9['st'], an, st9)
+                        if isinstance(cm9, dict):
+                            an = cm9; RE.pop(itst, None)
+                            print(stamp, '[fusion] 주기 잼', itst, '빌린 %s → %d초 · 간격 %.1f초 ÷ %d · %s' % (cm9['fz']['cm']['from'], cm9['ci'], cm9['fz']['cm']['gap'], cm9['fz']['cm']['k'], '녹-녹' if st9[0] == 'g' else '적-적'), flush=True)
+                        elif cm9 == 'again' and r9['n'] < 2:
+                            r9.update(due=time.time() + 0.6 * float(an.get('ci') or an['cyc']), n=r9['n'] + 1, an=an, st=st9)
+                        else:
+                            RE.pop(itst, None)
+                    elif an and itst in PRIO_IDS and itst not in RE and st9[0]:
+                        b9 = (an.get('fz') or {}).get('base') or ''
+                        nh9 = datetime.datetime.fromtimestamp(an['end'] + 9 * 3600, datetime.timezone.utc)
+                        try:
+                            bd9 = datetime.datetime.strptime(b9, '%Y-%m-%d %H:%M')
+                            same9 = int(b9[11:13]) == nh9.hour and cls_of((bd9.weekday() + 1) % 7, b9[:10]) == cls_of((nh9.weekday() + 1) % 7, nh9.strftime('%Y-%m-%d'))
+                        except Exception:
+                            same9 = False
+                        if not same9:
+                            RE[itst] = {'due': an['end'] + 1.5 * float(an.get('ci') or an['cyc']), 'an': an, 'st': st9, 'n': 0}   # 빌린 기록이 다른 시각대 — 1.5주기 뒤 다시 읽어 잰다
                     if an:
                         json.dump(an, open(os.path.join(RAW, 'red', '%s_%sf.json' % (itst, stamp)), 'w', encoding='utf-8'), ensure_ascii=False); nanc += 1
                 except Exception as e:

@@ -1276,6 +1276,9 @@ def build():
                     r['a'] = None   # 다시 잰 주기가 계획 주기와 2.5초 넘게 다르면(계획이 바뀌는 중 등) 이어 세지 않는다 — 길이만 보인다
                 elif abs(r['ci'] - round(r['ci'])) > 0.05:
                     r['a'] = None   # 주기가 정수 초로 안 떨어지면(149.5 · 169.6 …) 바뀌는 사이의 값이거나 덜 읽힌 것 — 닻으로 쓰지 않는다(2026-10-11)
+        for r in v:
+            if r.get('a') and fz_half(r, v):
+                r['a'] = None       # (2026-11-14) 반주기 의심(fz_half) — 닻을 지워 시각대 표(pl)·지도·가르고가 이어 세지 않게(길이만 남는다 · 이수역 토 09시 85초 ↔ 상태 기록 185초)
         keep, plan, pinfo = {}, {}, {}
         for r in v:
             ci0 = r.get('ci') or int(round(r['cyc']))
@@ -1603,6 +1606,65 @@ def build():
     print('교차로', len(its), '· 닻', sum(1 for L in its.values() if L[-1].get('a')), '· 검증됨', nver, '· 안 맞음', nbad, '->', p, os.path.getsize(p), 'B')
 
 
+def fz_pref(recs, cl, hh):
+    """같은 (요일 갈래, 시) 칸의 신호 상태(src p) 기록 주기 — 그 기록 안에서 녹+황+적 = 주기(±3.5초)인 이동류가 있고 주기 40~300초인 것만 ·
+    둘 이상이면 서로 10% 안으로 맞을 때만(1211 처럼 256·765·441초로 흔들리는 교차로는 기준으로 안 쓴다) · 가운데값(짝수면 가운데 둘 평균) · 없으면 None"""
+    P9 = []
+    for q in recs:
+        try:
+            if q.get('src') != 'p' or cls_of(q['dow'], q['day']) != cl or int(q['from'][:2]) != hh:
+                continue
+            c = float(q['cyc'])
+            if 40 <= c <= 300 and any(x.get('g') is not None and abs(x['g'] + (x.get('y') or 0) + (x.get('r') or 0) - c) <= 3.5 for x in q.get('mv') or []):
+                P9.append(c)
+        except Exception:
+            continue
+    if not P9 or max(P9) > 1.1 * min(P9):
+        return None
+    if len(P9) == 1:   # (독립 검수) 한 장뿐이면 그 교차로의 상태 기록이 대체로 멀쩡할 때만 — 1211 은 256·765·441·560초로 망가져 297초 한 장으로 129초를 잡았다
+        ok9 = n9 = 0
+        for q in recs:
+            if q.get('src') != 'p':
+                continue
+            n9 += 1
+            try:
+                c9 = float(q['cyc'])
+                ok9 += 40 <= c9 <= 300 and any(x.get('g') is not None and abs(x['g'] + (x.get('y') or 0) + (x.get('r') or 0) - c9) <= 3.5 for x in q.get('mv') or [])
+            except Exception:
+                pass
+        if n9 == 0 or ok9 < 0.8 * n9:
+            return None
+    P9.sort(); m = len(P9) // 2
+    return P9[m] if len(P9) % 2 else (P9[m - 1] + P9[m]) / 2
+
+
+def fz_half(r, recs, cl=None, hh=None, _deep=False):
+    """(2026-11-14) 반주기 의심 — 잔여시간 파서는 여러 현시에 걸친 긴 주도로 녹색을 두 주기로 읽을 때가 있다(남은 초가 현시 경계에서 다시 뛴다):
+    이수역 21552 토 07~09시 85~89초 · 같은 날 같은 시 신호 상태 기록 185~225초 · 4993 월 08시 북서 직진 녹 48·주기 71 ↔ 상태 기록 녹 127.5·주기 150.5.
+    이런 기록을 빌려 두 닻으로 주기를 재면 진짜의 절반(간격 ÷ 2)이 20% 안으로 통과한다 → 그 기록의 칸(그리고 cl·hh 를 주면 그 칸도)의 상태 기록 주기의 0.4~0.62 배면 참.
+    같은 시 상태 기록만 본다(앞뒤 시간은 다른 계획일 수 있다 — 독립 검수) · 두 닻으로 잰 기록(fz.cm)은 의심하지 않는다 · 지운 것이 아니라 빌리지도, 칸을 믿는 근거로 삼지도 않는 것"""
+    try:
+        if r.get('src') == 'p' or (r.get('fz') or {}).get('cm'):
+            return False
+        c = float(r.get('ci') or r.get('cyc') or 0)
+        if not c:
+            return False
+        for cl9, hh9 in {(cls_of(r['dow'], r['day']), int(r['from'][:2])), (cl, hh)}:
+            if cl9 is None:
+                continue
+            ref = fz_pref(recs, cl9, hh9)
+            if ref and 0.4 <= c / ref <= 0.62:
+                return True
+        b9 = (r.get('fz') or {}).get('base')
+        if r.get('src') == 'f' and b9 and not _deep:   # Fusion 닻은 길이·주기를 빌린 기록(fz.base)이 반주기 의심이면 같이 의심 — 상태 기록이 없는 칸(이수역 토 05시)에서도 빌린 89초가 닻으로 남았다
+            for q in recs:
+                if q.get('src') != 'f' and q.get('day', '') + ' ' + q.get('from', '') == b9 and abs(float(q.get('ci') or q.get('cyc') or 0) - c) < 1 and fz_half(q, recs, _deep=True):
+                    return True
+    except Exception:
+        return False
+    return False
+
+
 FZ_GREEN = ('protected-Movement-Allowed', 'permissive-Movement-Allowed')
 FZ_RED = ('stop-And-Remain', 'stop-Then-Proceed')
 
@@ -1625,14 +1687,15 @@ def fz_anchor(itst, row):
     if len(obs) < 2:
         return None
     now = datetime.datetime.fromtimestamp(T + 9 * 3600, datetime.timezone.utc); dow = (now.weekday() + 1) % 7; day = now.strftime('%Y-%m-%d'); cl = cls_of(dow, day)
-    cands = []
+    cands, RR = [], []
     for f in glob.glob(os.path.join(RAW, 'red', '%s_*.json' % itst)):
         try:
-            r = json.load(open(f, encoding='utf-8'))
+            RR.append(json.load(open(f, encoding='utf-8')))
         except Exception:
             continue
+    for r in RR:
         ci9 = plan_ci(r['cyc'], r['ci']) if r.get('ci') and r.get('cyc') else None
-        if ci9 and abs(ci9 - r['cyc']) <= 2.5 and abs(ci9 - round(ci9)) <= 0.05 and not r.get('dq') and r.get('src') != 'f':   # build 가 닻으로 쓰는 기록만(주기가 계획과 맞고 정수 초)
+        if ci9 and abs(ci9 - r['cyc']) <= 2.5 and abs(ci9 - round(ci9)) <= 0.05 and not r.get('dq') and r.get('src') != 'f' and not fz_half(r, RR, cl, now.hour):   # build 가 닻으로 쓰는 기록만(주기가 계획과 맞고 정수 초 · 반주기 의심 — 제 칸 또는 지금 칸의 상태 기록의 절반쯤 — 빼고)
             r = dict(r, ci=ci9)
             same = (cls_of(r['dow'], r['day']) == cl) * 2 + (int(r['from'][:2]) == now.hour)
             cands.append((same, r['day'] + r['to'], r))
@@ -1760,10 +1823,15 @@ def fz_slot_ok(itst, now=None):
     (한 바퀴가 일고여덟 시간이라 맨 앞 교차로도 하루 서너 번만 읽혔다 — 형님 사당동우체국앞 평일 16시 칸이 채워질지는 운이었다)"""
     T = now or time.time()
     nk = datetime.datetime.fromtimestamp(T + 9 * 3600, datetime.timezone.utc); day = nk.strftime('%Y-%m-%d'); cl = cls_of((nk.weekday() + 1) % 7, day)
+    RR = []
     for f in glob.glob(os.path.join(RAW, 'red', '%s_*.json' % itst)):
         try:
-            r = json.load(open(f, encoding='utf-8'))
-            if cls_of(r['dow'], r['day']) != cl or int(r['from'][:2]) != nk.hour:
+            RR.append(json.load(open(f, encoding='utf-8')))
+        except Exception:
+            continue
+    for r in RR:
+        try:
+            if cls_of(r['dow'], r['day']) != cl or int(r['from'][:2]) != nk.hour or fz_half(r, RR):
                 continue
             if r.get('src') != 'f':
                 ci9 = plan_ci(r['cyc'], r['ci']) if r.get('ci') and r.get('cyc') else None

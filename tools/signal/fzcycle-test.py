@@ -8,7 +8,18 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 ID = sys.argv[1] if len(sys.argv) > 1 else '23251'
 sp = importlib.util.spec_from_file_location('sb', os.path.join(ROOT, 'tools', 'signal', 'spat-bake.py')); SB = importlib.util.module_from_spec(sp)
 sys.argv = ['x']; sp.loader.exec_module(SB)
-now = time.time()
+now = (time.time() // 3600) * 3600 - 3600 + 40 * 60   # 지난 시(時)의 40분 — 두 줄이 정각 뒤 FZ_SETTLE(15분) 밖·같은 시 안에 들게(주기 재기는 정각 직후를 받지 않는다)
+
+
+class _FakeTime:   # fz_anchor 는 10분 넘게 묵은 줄을 버린다 — 시험 동안만 수집기의 시계를 now 로 묶는다
+    def __getattr__(self, k):
+        return getattr(time, k)
+
+    def time(self):
+        return now
+
+
+SB.time = _FakeTime()
 G = 'protected-Movement-Allowed'; R = 'stop-And-Remain'
 def mkrow(T, MV, G0, Ct, D):
     r = {'trsmUtcTime': int(T * 1000)}

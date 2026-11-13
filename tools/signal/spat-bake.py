@@ -1688,6 +1688,9 @@ def fz_state(row, an):
     return None, None
 
 
+FZ_SETTLE = 15   # 정각 뒤 이 분(分)까지는 주기를 재지 않는다 — 계획이 바뀌는 동안은 주기·옵셋이 몇 주기에 걸쳐 옮겨 간다(3251 금 16:03~16:16 녹색 끝 간격 338·435초)
+
+
 def fz_cycle(an1, b1, an2, b2):
     """(2026-11-12 형님 사당동우체국앞 동영상 — 방배경찰서(연등) 23251 평일 16시) Fusion 닻은 주기·녹색 길이를 다른 시각대 기록에서 빌린다.
     역사 API 가 못 닿는 시각대(6시간 묶음의 넷째~여섯째 시간)는 빌린 주기가 틀리면 계속 틀린다(빌린 211초 · 이웃 교차로 같은 시각 220초).
@@ -1705,6 +1708,9 @@ def fz_cycle(an1, b1, an2, b2):
     hr = lambda t: datetime.datetime.fromtimestamp((t or 0) + 9 * 3600, datetime.timezone.utc).hour
     if hr(an1.get('end')) != hr(an2.get('end')):
         return None      # (독립 검수) 정시를 걸친 두 줄 — 서로 다른 계획일 수 있다
+    mn = lambda t: datetime.datetime.fromtimestamp((t or 0) + 9 * 3600, datetime.timezone.utc).minute
+    if mn(an1.get('end')) < FZ_SETTLE or mn(an2.get('end')) < FZ_SETTLE:
+        return None      # (2026-11-13) 정각 뒤 FZ_SETTLE 분은 계획이 바뀌는 사이 — 23251 금 16시: 녹색 끝 16:08:53 → 16:12:09 = 196초로 「쟀지만」 그 줄(3251·1552·21552)은 16:34 뒤 220초로 돌았다
     if st1 != st2 or (an1.get('fz') or {}).get('base') != (an2.get('fz') or {}).get('base') or abs(float(an1.get('ci') or an1['cyc']) - float(an2.get('ci') or an2['cyc'])) > 0.05:
         return 'again'   # 상태가 다르거나 두 닻이 빌린 기록이 다르다(진짜 녹색이 더 길면 녹색 초반 줄은 그 기록으로 닻이 안 잡혀 다른 기록으로 넘어간다) — 다시 읽는다
     Cb = float(an2.get('ci') or an2['cyc']); d = x2 - x1
@@ -1859,7 +1865,7 @@ def fusion(sample=False, ids=None):
                     v9['tries'] = v9.get('tries', 0) + 1
                     yield d9
                 nk9 = datetime.datetime.fromtimestamp(time.time() + 9 * 3600, datetime.timezone.utc); hk9 = nk9.strftime('%Y%m%d%H')
-                if not ids and nk9.minute >= 10:   # 정각 뒤 10분은 계획이 바뀌는 사이일 수 있어 재지 않는다(독립 검수)
+                if not ids and nk9.minute >= FZ_SETTLE:   # 정각 뒤 FZ_SETTLE 분은 계획이 바뀌는 사이일 수 있어 재지 않는다(독립 검수 · 11-13 저녁 10 → 15분)
                     ck9 = cls_of((nk9.weekday() + 1) % 7, nk9.strftime('%Y-%m-%d'))
                     for p9 in PRIO_IDS:   # 시(時)마다 한 번 — 지금 칸을 못 믿는 맨 앞 교차로만 따로 읽는다(믿는 칸이면 부르지 않는다 · 한 시간에 많아야 교차로마다 한 번 + 다시 읽기)
                         if (PH.get(p9) or [''])[0] == hk9 or NONE.get(p9) == tday:
@@ -1923,7 +1929,7 @@ def fusion(sample=False, ids=None):
                             same9 = int(b9[11:13]) == nh9.hour and cls_of((bd9.weekday() + 1) % 7, b9[:10]) == cls_of((nh9.weekday() + 1) % 7, nh9.strftime('%Y-%m-%d'))
                         except Exception:
                             same9 = False
-                        if not same9:
+                        if not same9 and nh9.minute >= FZ_SETTLE:   # 한 바퀴 차례로 읽은 것도 정각 뒤 FZ_SETTLE 분 안이면 다시 읽기를 걸지 않는다(그 뒤 시(時)별 확인이 맡는다)
                             RE[itst] = {'due': an['end'] + 1.5 * float(an.get('ci') or an['cyc']), 'an': an, 'st': st9, 'n': 0}   # 빌린 기록이 다른 시각대 — 1.5주기 뒤 다시 읽어 잰다
                     if an:
                         json.dump(an, open(os.path.join(RAW, 'red', '%s_%sf.json' % (itst, stamp)), 'w', encoding='utf-8'), ensure_ascii=False); nanc += 1

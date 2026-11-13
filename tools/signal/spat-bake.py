@@ -1712,6 +1712,9 @@ def fz_cycle(an1, b1, an2, b2):
     if k < 1:
         return 'again'
     C = d / k
+    if k >= 3 or abs(C - Cb) > 0.4 * Cb / k:
+        return 'again'   # (2026-11-13 독립 검수) 간격이 길면 주기 후보(간격 ÷ k·k±1)가 서로 가까워 헷갈린다 — 빌린 220 · 진짜 190 · 간격 760(네 주기)이면 k=3 → 253초가 통과했다.
+                         #  후보 사이 폭(빌린 주기 ÷ k)의 0.4 배 안일 때만 받고, 세 주기 넘게 벌어졌으면 간격을 줄여 다시 읽는다(둘째 줄을 첫 줄로 삼아 0.6주기 뒤)
     if abs(C - Cb) > 0.2 * Cb or C < 40:   # (독립 검수) 35% 면 진짜가 25% 넘게 길 때 k 를 3 으로 잘못 잡은 값이 통과한다 — 20%
         return None
     C = int(round(C)); D = C - Cb
@@ -1743,6 +1746,30 @@ def fz_cycle(an1, b1, an2, b2):
     a = x2 - D   # 녹색 줄 = 보낸 시각 + 남은 초 − 빌린 녹색(진짜 녹색이 Δ 길다) · 적색 줄 = 다음 녹색 시작 − 빌린 주기(진짜 주기가 Δ 길다) — 둘 다 Δ 만큼 늦게 잡혀 있다
     fz = dict(an2.get('fz') or {}, cm={'c': C, 'from': Cb, 'gap': round(d, 1), 'k': k, 'st': st2, 't1': an1.get('end'), 't2': an2.get('end')})
     return dict(an2, cyc=float(C), ci=C, mv=mv, pd=pd, a=round(a, 1), fz=fz)
+
+
+def fz_slot_ok(itst, now=None):
+    """(2026-11-13) 그 교차로의 지금 (요일 갈래, 시) 칸을 믿을 수 있나 — 그 칸에서 받은 실측 기록(역사 API · src f 아님 · fz_anchor 가 빌리는 기록과 같은 조건)이 있거나,
+    두 닻으로 주기를 잰 기록(fz.cm)이 14일 안에 있으면 참. 거짓이면 맨 앞 교차로(PRIO_IDS)를 그 시(時)에 한 번 따로 읽어 잰다
+    (한 바퀴가 일고여덟 시간이라 맨 앞 교차로도 하루 서너 번만 읽혔다 — 형님 사당동우체국앞 평일 16시 칸이 채워질지는 운이었다)"""
+    T = now or time.time()
+    nk = datetime.datetime.fromtimestamp(T + 9 * 3600, datetime.timezone.utc); day = nk.strftime('%Y-%m-%d'); cl = cls_of((nk.weekday() + 1) % 7, day)
+    for f in glob.glob(os.path.join(RAW, 'red', '%s_*.json' % itst)):
+        try:
+            r = json.load(open(f, encoding='utf-8'))
+            if cls_of(r['dow'], r['day']) != cl or int(r['from'][:2]) != nk.hour:
+                continue
+            if r.get('src') != 'f':
+                ci9 = plan_ci(r['cyc'], r['ci']) if r.get('ci') and r.get('cyc') else None
+                if ci9 and abs(ci9 - r['cyc']) <= 2.5 and abs(ci9 - round(ci9)) <= 0.05 and not r.get('dq'):
+                    return True
+            elif (r.get('fz') or {}).get('cm'):
+                d9 = (nk.replace(tzinfo=None) - datetime.datetime.strptime(r['day'], '%Y-%m-%d')).days
+                if 0 <= d9 <= 14:
+                    return True
+        except Exception:
+            continue
+    return False
 
 
 def fusion(sample=False, ids=None):
@@ -1792,6 +1819,8 @@ def fusion(sample=False, ids=None):
         FS = {}
     onaxis = lambda k: any(len(x) > 1 and x[1] in AXIS for x in FS.get(k, {}).get('in', []))
     RE = {}   # (2026-11-12) 주기를 재려고 다시 읽을 교차로 {번호: {due, an, st, n}} — fz_cycle
+    PH = {}   # (2026-11-13) 맨 앞 교차로를 그 시(時)에 살폈나 {번호: [날짜시, 따로 읽었나]} — fz_slot_ok
+    PF = {}   # 그 칸을 따로 읽고도 못 믿게 남은 횟수 {(번호, 요일 갈래, 시): [횟수, 마지막 때]} — 세 번이면 이레 쉰다(닻이 안 잡히거나 주기가 20% 넘게 달라 끝내 못 재는 칸을 매시 부르지 않게)
     while True:
         sd = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))
         its = sd.get('its', {})
@@ -1829,6 +1858,26 @@ def fusion(sample=False, ids=None):
                         RE.pop(d9, None); continue   # (독립 검수) 다시 읽기가 응답 없음·묵은 줄·예외로 끝나도 항목이 남아 그 교차로만 계속 부르던 것 — 세 번 또는 기한 + 3주기에서 지운다
                     v9['tries'] = v9.get('tries', 0) + 1
                     yield d9
+                nk9 = datetime.datetime.fromtimestamp(time.time() + 9 * 3600, datetime.timezone.utc); hk9 = nk9.strftime('%Y%m%d%H')
+                if not ids and nk9.minute >= 10:   # 정각 뒤 10분은 계획이 바뀌는 사이일 수 있어 재지 않는다(독립 검수)
+                    ck9 = cls_of((nk9.weekday() + 1) % 7, nk9.strftime('%Y-%m-%d'))
+                    for p9 in PRIO_IDS:   # 시(時)마다 한 번 — 지금 칸을 못 믿는 맨 앞 교차로만 따로 읽는다(믿는 칸이면 부르지 않는다 · 한 시간에 많아야 교차로마다 한 번 + 다시 읽기)
+                        if (PH.get(p9) or [''])[0] == hk9 or NONE.get(p9) == tday:
+                            continue
+                        if p9 in RE:
+                            PH[p9] = [hk9, False]; continue   # 한 바퀴 차례에서 이미 읽어 다시 읽기를 걸어 둠 — 이 시(時)는 그것으로 한다(실패해도 같은 시에 또 걸지 않는다)
+                        PH[p9] = [hk9, False]
+                        f9 = PF.get((p9, ck9, nk9.hour))
+                        if fz_slot_ok(p9):
+                            PF.pop((p9, ck9, nk9.hour), None); continue
+                        if f9 and f9[0] >= 3 and time.time() - f9[1] < 7 * 86400:
+                            continue
+                        PF[(p9, ck9, nk9.hour)] = [((f9[0] if f9 and f9[0] < 3 else 0) + 1), time.time()]
+                        PH[p9][1] = True
+                        yield p9
+                        break   # (독립 검수) 한 차례에 한 곳만 — 열 곳을 연달아 읽으면 다시 읽기(1.5주기 뒤)가 서너 주기 뒤로 밀려 주기를 잘못 잰다 · 나머지는 다음 차례에 이어서
+                if k9 in PRIO_IDS and (PH.get(k9) or ['', False]) == [hk9, True]:
+                    continue   # 방금 따로 읽었다 — 한 바퀴 차례에서 또 부르지 않는다
                 yield k9
         for itst in seq():
             P.refresh(); kl, w = P.pick()

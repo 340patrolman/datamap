@@ -2090,7 +2090,7 @@
     if (it.kind === 'hot10') { var g = it.g; return '<h3>🗂 ' + esc(g.n) + '</h3>' + row('뽑힌 횟수', g.rec.length + '회(' + g.rec.map(function (r) { return r[1]; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(' · ') + ')') +
       g.rec.map(function (r) { return row(r[1] + ' ' + r[0], r[2] + '건 · 사상 ' + r[3] + ' (사망 ' + r[4] + ' · 중상 ' + r[5] + ' · 경상 ' + r[6] + ')'); }).join('') + '<p class="desc">' + esc((g.m || D.hot10).note) + '</p>' + src((g.m || D.hot10).source); }
     var h = '', L = D.livep || {};
-    if (it.kind === 'osmroad') { var r = it.r; return '<h3>🛣 ' + esc(r.name) + '</h3>' + row('종류', esc(RCLS[r.c] || r.c)) + row('구간', r.n + '개(OSM 길 조각)') + src(D.osm.source); }
+    if (it.kind === 'osmroad') { var r = it.r; return '<h3>🛣 ' + esc(r.name) + '</h3>' + row('종류', esc(RCLS[r.c] || r.c)) + row('구간', r.n + '개(OSM 길 조각)') + src((D.osm && D.osm.source) || (D.ov && D.ov.source) || '© OpenStreetMap 기여자 · ODbL(바탕 길 조각)'); }   /* v2.322.1 D.osm 은 이제 안 받는다(바탕은 ov·조각) — 읽다가 멈춰 찾기로 도로를 고르면 카드가 안 열렸다 */
     if (it.kind === 'link') { var k = it.k; return '<h3>🚥 ' + esc(k.name || '도로') + '</h3>' + row('소통', '<b style="color:' + (IDXC[k.idx] || '#64748b') + '">' + esc(k.idx) + '</b> · ' + k.spd + 'km/h') + row('받은 때', esc(k.t || '-') + ' <em>(지금 소통이 아니다)</em>') + row('장소', esc(k.place)) + src(L.source || ''); }
     var o = it.L.o, cw = crowdAt(it.L), p = o.pop || {}, c = o.card;
     h = '<h3>📡 ' + esc(o.name) + ' <small style="font-weight:400;color:var(--ink2)">' + esc(o.cat) + '</small></h3>' + orcBtn('crowd', o.name, '엮어서 답 찾기 — 몇 시까지 붐비나');

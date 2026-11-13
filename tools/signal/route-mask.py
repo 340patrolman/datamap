@@ -88,6 +88,11 @@ def main():
                     l0 = "LIVER = { all: med(all) }; Object.keys(by).forEach(function (c) { if (by[c].length >= 20) LIVER[c] = med(by[c]); });"
                     if src.count(m0) == 1 and src.count(l0) == 1:
                         src = src.replace(m0, m0 + " var har = function (v) { var s9 = 0; v.forEach(function (x) { s9 += 1 / Math.max(0.03, x); }); return v.length / s9; };").replace(l0, l0.replace('med(', 'har('))
+                if VAR == 'fillall':   # 길 고르기(eV)도 화면 시간(eVt)처럼 이웃 실측 메움을 모든 등급에 — 고르는 속도와 보이는 속도를 같게
+                    e0 = "FILL[e] > 0 && G.S[G.eS[e]][4] <= 2) return Math.max(4, Math.min(lim, FILL[e]));"
+                    if src.count(e0) != 1:
+                        self.send_error(500); return
+                    src = src.replace(e0, "FILL[e] > 0) return Math.max(4, Math.min(lim, FILL[e]));")
                 if VAR == 'both':
                     f0 = "F[e] = ((A ? A[0] * w1 : 0) + (B ? B[0] * w2 : 0)) / (w1 + w2);"
                     if src.count(f0) == 1:
@@ -143,8 +148,8 @@ def main():
                             if K == KS[0]:
                                 HID.append((si, ln, lim, g, tv, pv, max(3.0, vt)))
                         else:
-                            tv = pv
-                        tt += ln / tv; tp += ln / pv
+                            tv = max(3.0, vt)   # 가리지 않은 줄 = 화면 시간에 쓰는 속도(실측이면 실측 · 없으면 이웃 메움·등급 비율) — 메움 방식을 바꿔 견줄 때 같은 잣대가 되게
+                        tt += ln / tv; tp += ln / max(3.0, vt)
                         if not lv:
                             nl += ln
                     ROWS[K].append({'p': a + '→' + b, 'tm': S['tm'], 'tt': tt, 'tp': tp, 'ht': ht, 'hp': hp, 'd': r['d'], 'nl': nl, 'hl': hl})
@@ -153,7 +158,7 @@ def main():
         c.close(); srv.shutdown()
     base = {(x['p'], x['tm']): x for x in ROWS[KS[0]]}
     print('가르고 실측 가리고 길 고르기 · %s · %s · 실측 링크 %d%% 가림 · 짝 %d · 메움 %s' % (day, ' '.join(s['tm'] for s in snaps), hide, len(pairs), VAR))
-    print('고른 길 진짜 시간 합 %.1f시간 · 화면 시간 합 %.1f시간' % (sum(x['tt'] for x in ROWS[KS[0]]) / 3600 * 3.6, sum(x['tp'] for x in ROWS[KS[0]]) / 3600 * 3.6))
+    print('고른 길 거리 합 %.0fkm · ' % (sum(x['d'] for x in ROWS[KS[0]]) / 1000) + '진짜 시간 합 %.1f시간 · 화면 시간 합 %.1f시간' % (sum(x['tt'] for x in ROWS[KS[0]]) / 3600 * 3.6, sum(x['tp'] for x in ROWS[KS[0]]) / 3600 * 3.6))
     print('%-5s %10s %12s %12s %10s %10s %8s' % ('K', '가린 줄 낙관', '진짜 시간/K=1', '(나빠진 길)', '거리/K=1', '실측 아닌 몫', '가린 몫'))
     for K in KS:
         X = ROWS[K]

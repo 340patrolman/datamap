@@ -291,6 +291,31 @@
     body.tilt { background: linear-gradient(#bcd7f5 0, #dfe9f5 24%, #eef2f6 34%); } :root.dark body.tilt { background: linear-gradient(#0a101c 0, #121a2c 24%, #162036 34%); }
     body.tilt #gMap { inset: auto; top: auto; left: -40vw; bottom: 0; width: 180vw; height: 185vh; transform-origin: 50% 100%; transform: perspective(1400px) rotateX(42deg); will-change: transform; }
   }
+  /* v0.53.1 안내 화면 다시 짜기(폰 폭) — 위 배너 한 판(꺾는 곳 + 바로 밑 신호 줄) · 아래 한 줄(걸리는 시간 먼저) · 단추는 소리·내 자리 둘(나머지는 ☰ 를 누르면) */
+  @media (max-width: 759px) {
+    body.guiding #gTop { left: 8px !important; right: 8px !important; width: auto !important; max-width: none !important; background: #1553d4; box-shadow: 0 8px 22px rgba(13,43,120,.34); border-radius: 18px; padding: 9px 14px 9px 10px; gap: 12px; }
+    body.guiding #gTop .arw { background: rgba(255,255,255,.16); box-shadow: none; }
+    body.guiding #gTop .tx { flex: 1 1 0; min-width: 0; } body.guiding #gTop .tx b { font-size: calc(33px * var(--fz, 1)); letter-spacing: -1px; } body.guiding #gTop .tx span { font-size: calc(16.5px * var(--fz, 1)); font-weight: 800; }
+    body.guiding #gTop .lnrow .lanes { justify-content: flex-start; } body.guiding #gTop .lanes i.on { color: #1553d4; }
+    body.guiding:has(#gSig.cp[style*="block"]) #gTop { border-radius: 18px 18px 0 0; box-shadow: none; }
+    body.guiding #gSig.cp { left: 8px; right: 8px; width: auto; transform: translateY(-6px); border-left: 0; border-radius: 0 0 18px 18px; background: #0f3fa8; color: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 10px 22px rgba(13,43,120,.34); padding: 7px 14px 8px; z-index: 5; }
+    body.guiding #gSig.cp { max-width: none !important; } body.guiding #gSig.cp .c1 { flex-wrap: nowrap; column-gap: 9px; align-items: center; } body.guiding #gSig.cp .ar { display: none; }
+    body.guiding #gSig.cp .now b { line-height: 1; } body.guiding #gSig.cp .now i { width: 16px; height: 16px; }   /* 남은 초 크기는 ⚙ 설정(--sz) 그대로 */
+    body.guiding #gSig.cp .nm { order: 0; flex: 1 1 0; min-width: 0; margin-left: 4px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } body.guiding #gSig.cp .nm b, body.guiding #gSig.cp .nm span { white-space: nowrap !important; } body.guiding #gSig.cp .nm b { font-size: calc(14px * var(--fz, 1)); } body.guiding #gSig.cp .nm span { font-size: calc(12.5px * var(--fz, 1)); }
+    body.guiding #gSig.cp .tx1 { flex: 0 1 auto; white-space: nowrap; font-size: calc(14.5px * var(--fz, 1)); }
+    body.guiding #gSig.cp .now b { color: #fff; } body.guiding #gSig.cp.grn .now b { color: #b9f7c9; } body.guiding #gSig.cp.red .now b { color: #ffd0d0; }
+    body.guiding #gSig.cp .now i { box-shadow: 0 0 0 2px rgba(255,255,255,.85); } body.guiding #gSig.cp .now span, body.guiding #gSig.cp .nm span, body.guiding #gSig.cp .src, body.guiding #gSig.cp .ln em { color: rgba(255,255,255,.82); }
+    body.guiding #gSig.cp .ln b.g { color: #b9f7c9; } body.guiding #gSig.cp .ln b.r { color: #ffd0d0; } body.guiding #gSig.cp .adv { background: rgba(255,255,255,.14); }
+    body.mode-e.guiding #gTop { background: #c81e1e; } body.mode-e.guiding #gSig.cp { background: #991b1b; } body.mode-e.guiding #gTop .lanes i.on { color: #c81e1e; }
+    body.mode-e.em-2.guiding #gTop { background: #b45309; } body.mode-e.em-2.guiding #gSig.cp { background: #92400e; }
+    body.mode-v.guiding #gTop { background: #6d28d9; } body.mode-v.guiding #gSig.cp { background: #5b21b6; }
+    body.guiding #gBtn { bottom: calc(118px + env(safe-area-inset-bottom)) !important; }
+    body.guiding #gBtn #gIn, body.guiding #gBtn #gOut, body.guiding #gBtn #gDark, body.guiding #gBtn #gCfgB { display: none; }
+    body.guiding:has(#gMpop.on) #gBtn #gIn, body.guiding:has(#gMpop.on) #gBtn #gOut, body.guiding:has(#gMpop.on) #gBtn #gDark, body.guiding:has(#gMpop.on) #gBtn #gCfgB { display: block; }
+    body.guiding #gBot .eta .rp { display: none; }
+    body.guiding #gBot .eta:not(.vipe) > div:nth-of-type(2) { order: -1; } body.guiding #gBot .eta:not(.vipe) > div:nth-of-type(2) b { font-size: calc(25px * var(--fz, 1)) !important; color: var(--acc); letter-spacing: -.6px; }
+    body.mode-e.guiding #gBot .eta:not(.vipe) > div:nth-of-type(2) b { color: #dc2626; }
+  }
 </style>
 </head>
 <body>
@@ -334,7 +359,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.53.0"></script>
+<script src="gargo.js?v=0.53.1"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

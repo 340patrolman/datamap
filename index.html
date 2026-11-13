@@ -892,7 +892,7 @@
   /* v2.32.0 닫기 = 사다리 줄 끝(내용을 가리지 않게) · PC 카드 35% */
   #m2dCard.haslad > .x { display: none !important; }
   #m2dCard .lad1 > * { flex: 0 0 auto; }
-  #m2dCard .lad1 .ladx { position: sticky; right: 0; }
+  #m2dCard .lad1 .ladx { position: sticky; right: 0; box-shadow: -12px 0 10px 8px var(--panel); }   /* v2.322.2 붙박이 「닫기」 왼쪽을 판 색으로 흐리게 — 밑으로 지나가는 칩이 잘린 듯 겹쳐 보였다 */
   #m2dCard .ladx { margin-left: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font-weight: 700; cursor: pointer; min-height: 26px; }
   /* v2.33.0 레이어 판 한 화면 — 설명은 평소 접힘 · 📎 범위·출처는 한 번 더 눌러야 · 전체 목록 단추 촘촘히 */
   #m2dPanel .lmd { margin-top: 2px; } #m2dPanel .lmd > summary { cursor: pointer; font-size: 11px; color: var(--acc); font-weight: 700; list-style: none; } #m2dPanel .lmd > summary::-webkit-details-marker { display: none; }
@@ -1133,7 +1133,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.322.1"></script>
+<script src="js/map2d.js?v=2.322.2"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>

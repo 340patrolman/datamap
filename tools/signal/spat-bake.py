@@ -1829,14 +1829,24 @@ def fz_slot_ok(itst, now=None):
             RR.append(json.load(open(f, encoding='utf-8')))
         except Exception:
             continue
+    SL = []
     for r in RR:
         try:
-            if cls_of(r['dow'], r['day']) != cl or int(r['from'][:2]) != nk.hour or fz_half(r, RR):
-                continue
+            if cls_of(r['dow'], r['day']) == cl and int(r['from'][:2]) == nk.hour and not fz_half(r, RR):
+                SL.append(r)
+        except Exception:
+            continue
+    for r in SL:
+        try:
             if r.get('src') != 'f':
                 ci9 = plan_ci(r['cyc'], r['ci']) if r.get('ci') and r.get('cyc') else None
                 if ci9 and abs(ci9 - r['cyc']) <= 2.5 and abs(ci9 - round(ci9)) <= 0.05 and not r.get('dq'):
-                    return True
+                    if r.get('src') == 'p' or sum(1 for x in r.get('mv') or [] if x.get('g') is not None) >= 3:
+                        return True
+                    # (2026-11-14) 읽힌 이동류가 둘 이하인 잔여시간 기록(이수역 21552 은 늘 동·서 직진 둘뿐 — 두 이동류가 같은 현시라 서로 확인이 안 된다)은
+                    #  다른 날 같은 칸 기록이나 상태·두 닻 기록과 주기가 맞을(±5%) 때만 믿는다 — 토 21시 143초는 10-17 하루치뿐이었고 이웃 사당·방배 줄은 그 시각 180~200초
+                    if any(q is not r and q.get('day') != r['day'] and abs(float(q.get('ci') or q.get('cyc') or 0) - ci9) <= 0.05 * ci9 and (q.get('src') != 'f' or (q.get('fz') or {}).get('cm')) for q in SL):
+                        return True
             elif (r.get('fz') or {}).get('cm'):
                 d9 = (nk.replace(tzinfo=None) - datetime.datetime.strptime(r['day'], '%Y-%m-%d')).days
                 if 0 <= d9 <= 14:

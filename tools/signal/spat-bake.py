@@ -1638,6 +1638,26 @@ def fz_pref(recs, cl, hh):
     return P9[m] if len(P9) % 2 else (P9[m - 1] + P9[m]) / 2
 
 
+def fz_redok(r, recs, cl, hh):
+    """짧게 읽힌 기록은 녹색만 짧고 적색은 상태 기록과 같다(20063 북 직진 녹 14·적 27 ↔ 상태 녹 130·적 27 · 21552 적 46 ↔ 46 · 446 61.8 ↔ 62) —
+    같은 칸 상태 기록과 함께 읽힌 이동류가 있으면 그중 하나라도 적색이 ±3초로 맞아야 참(다른 계획인데 주기만 짧은 것을 잡지 않게) · 함께 읽힌 이동류가 없으면 참(주기 비율만으로)"""
+    mine = {(x.get('d'), x.get('m')): x.get('r') for x in r.get('mv') or [] if x.get('g') is not None and x.get('r') is not None}
+    com = False
+    for q in recs:
+        try:
+            if q.get('src') != 'p' or cls_of(q['dow'], q['day']) != cl or int(q['from'][:2]) != hh:
+                continue
+            for x in q.get('mv') or []:
+                k = (x.get('d'), x.get('m'))
+                if k in mine and x.get('g') is not None and x.get('r') is not None:
+                    com = True
+                    if abs(x['r'] - mine[k]) <= 3:
+                        return True
+        except Exception:
+            continue
+    return not com
+
+
 def fz_half(r, recs, cl=None, hh=None, _deep=False):
     """(2026-11-14) 반주기 의심 — 잔여시간 파서는 여러 현시에 걸친 긴 주도로 녹색을 두 주기로 읽을 때가 있다(남은 초가 현시 경계에서 다시 뛴다):
     이수역 21552 토 07~09시 85~89초 · 같은 날 같은 시 신호 상태 기록 185~225초 · 4993 월 08시 북서 직진 녹 48·주기 71 ↔ 상태 기록 녹 127.5·주기 150.5.
@@ -1653,7 +1673,7 @@ def fz_half(r, recs, cl=None, hh=None, _deep=False):
             if cl9 is None:
                 continue
             ref = fz_pref(recs, cl9, hh9)
-            if ref and 0.4 <= c / ref <= 0.62:
+            if ref and (0.4 <= c / ref <= 0.62 or (0.15 <= c / ref < 0.4 and fz_redok(r, recs, cl9, hh9))):   # 절반쯤은 비율만 · 그보다 짧은 꼴(긴 녹색의 마지막 조각만 읽힘)은 적색까지 맞아야
                 return True
         b9 = (r.get('fz') or {}).get('base')
         if r.get('src') == 'f' and b9 and not _deep:   # Fusion 닻은 길이·주기를 빌린 기록(fz.base)이 반주기 의심이면 같이 의심 — 상태 기록이 없는 칸(이수역 토 05시)에서도 빌린 89초가 닻으로 남았다

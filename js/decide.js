@@ -114,7 +114,7 @@
       var rank = 1 + all.filter(function (c) { return c > v; }).length, mx = Math.max.apply(null, G[w]);
       h += '<div class="cd"><div class="t"><b>' + esc(s.replace('서울', '')) + '</b><span class="s">' + WD.charAt(w) + ' ' + ST.slot2 + '시</span><span class="k">' + fmt(v) + '</span></div><div class="s">한 주 84칸 중 ' + rank + '번째 · 전체 ' + fmt(tot) + '건의 ' + (tot ? (100 * v / tot).toFixed(1) : 0) + '%</div>';
       h += '<div class="hb">' + G[w].map(function (c, j) { return '<i class="' + (j === k ? 'n' : '') + '" style="height:' + Math.max(2, Math.round(40 * c / (mx || 1))) + 'px" title="' + (2 * j) + '~' + (2 * j + 2) + '시 ' + c + '건"></i>'; }).join('') + '</div><div class="hl">' + G[w].map(function (c, j) { return '<span>' + (j % 3 ? '' : 2 * j) + '</span>'; }).join('') + '</div></div>'; });
-    var di = late ? 4 : 3; h += '<div class="rule">동 순위 잣대: <b>' + (late ? '0~6시 사고' : '밤 20~6시 사고') + '(10년)</b> · 주점·결제는 곁들임 · 어느 동에서 걸렸는지는 공개 자료에 없다</div>';
+    var di = late ? 4 : 3; h += '<div class="btns"><a href="https://340patrolman.github.io/traffic-app/#drunk" target="_blank" rel="noopener">🍺 T-Book 음주 단속 절차·서식 ›</a></div>';   /* v9 T-Book 으로 돌아가는 길 */ h += '<div class="rule">동 순위 잣대: <b>' + (late ? '0~6시 사고' : '밤 20~6시 사고') + '(10년)</b> · 주점·결제는 곁들임 · 어느 동에서 걸렸는지는 공개 자료에 없다</div>';
     DATA.d2.dong.slice().sort(function (a, b) { return (b[di] || 0) - (a[di] || 0); }).slice(0, 4).forEach(function (r, n) {
       var ins = Object.keys(DATA.int).filter(function (i) { return DATA.int[i][3] === r[1]; }).sort(function (a, b) { return DATA.int[b][6] - DATA.int[a][6]; }).slice(0, 2);
       h += '<div class="cd"><div class="t"><span>' + (n + 1) + '</span><b>' + esc(r[1]) + '</b><span class="s">' + esc((r[2] || []).join('/').replace(/서울|경찰서/g, '')) + '</span><span class="k">' + fmt(r[di]) + '</span></div><div class="s">밤 사고 ' + fmt(r[3]) + ' · 0~6시 ' + fmt(r[4]) + ' · 주점 ' + fmt(r[5]) + '곳 · 호프 0~6시 결제 ' + fmt(r[6]) + '건(서울 동 백분위 ' + (r[8][2] == null ? '—' : r[8][2]) + ')</div><ul class="ev">' +
@@ -140,7 +140,7 @@
     return out.sort(function (a, b) { return a[0] - b[0]; }).map(function (x) { return x[1]; }); }
 
   /* ---------- D4 큰비 ---------- */
-  function d4() { var D4 = DATA.d4, h = '<div class="warn">비 예보는 지도의 날씨 층·기상청 특보로 볼 것 — 여기는 「비가 오면 어디부터」만</div><div class="rule">잣대: <b>잠긴 해 수</b>(그 길 30m 안 건물·필지가 잠긴 해 — 길 통제 기록 아님) · 지하차도는 얕은 침수에도 통제라 따로 맨 앞</div>';
+  function d4() { var D4 = DATA.d4, h = '<div class="btns"><a href="https://340patrolman.github.io/traffic-app/#sop_daily" target="_blank" rel="noopener">🌧 T-Book 풍수해 교통안전관리 요령 ›</a></div><div class="warn">비 예보는 지도의 날씨 층·기상청 특보로 볼 것 — 여기는 「비가 오면 어디부터」만</div><div class="rule">잣대: <b>잠긴 해 수</b>(그 길 30m 안 건물·필지가 잠긴 해 — 길 통제 기록 아님) · 지하차도는 얕은 침수에도 통제라 따로 맨 앞</div>';
     var under = D4.seg.filter(function (s) { return s[2] === '002'; }), rest = D4.seg.filter(function (s) { return s[2] !== '002'; });
     function segCard(s, n) { var near = null, dmin = 151; Object.keys(DATA.int).forEach(function (i) { var d = m(s[9], s[10], DATA.int[i][1], DATA.int[i][2]); if (d < dmin) { dmin = d; near = i; } });
       var up = near ? upstream((function () { var a = {}; a[near] = 1; return a; })(), 2) : [];

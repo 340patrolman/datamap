@@ -316,6 +316,8 @@
     body.guiding #gBot .eta:not(.vipe) > div:nth-of-type(2) { order: -1; } body.guiding #gBot .eta:not(.vipe) > div:nth-of-type(2) b { font-size: calc(25px * var(--fz, 1)) !important; color: var(--acc); letter-spacing: -.6px; }
     body.mode-e.guiding #gBot .eta:not(.vipe) > div:nth-of-type(2) b { color: #dc2626; }
   }
+  /* v0.53.3 신호 판 「그 다음」 한 줄 — 접힌 채로도 보인다 */
+  #gSig.cp .ln.nx2, body.guiding #gSig.cp:not(.open) .ln.nx2 { display: block !important; font-size: calc(13.5px * var(--fz, 1)); font-weight: 700; margin-top: 3px; padding-top: 3px; border-top: 1px solid rgba(128,128,128,.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
 <body>
@@ -359,7 +361,7 @@
 </script>
 <script src="../js/travel-time.js?v=5"></script>
 <script src="../js/station-reach.js?v=3"></script>
-<script src="gargo.js?v=0.53.2"></script>
+<script src="gargo.js?v=0.53.3"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

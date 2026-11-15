@@ -982,9 +982,8 @@ def reduce_phase(itst, J):
         x.pop('gs', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
     k9 = [i for i, q in enumerate(iv) if 0.6 * cyc <= q <= 1.6 * cyc]
-    var = var_of([rs[i] for i in k9], [iv[i] for i in k9], t0)
-    if var == 'un':
-        var = None   # 상태 기록은 녹색이 쪼개져 읽히지 않는다 — 견줄 주기가 모자라면 종전대로(닻 규칙이 따로 본다)   # (2026-11-14) 주기가 주기마다 다르다(감응·가변 — 이수역 토 07시 188·251·235초) — 닻을 안 잡는다
+    var = None   # (2026-11-16) 상태 기록의 가변 판정은 끈다 — 반영 첫날 144장 가운데 49장이 같은 시 다른 날 같은 정수 주기 닻이 있는 고정 신호(200 = 180초 열세 번인데 [178, 182] · 1619 07시 170초인데 정각 뒤 오프셋 옮김 218초)였다.
+                 #  확인된 감응 꼴은 잔여시간의 「일찍 끊긴 녹색 조각」(full_cycles)뿐이다 · var_of 는 그쪽만 쓴다   # (2026-11-14) 주기가 주기마다 다르다(감응·가변 — 이수역 토 07시 188·251·235초) — 닻을 안 잡는다
     out = {'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows),
            'cyc': cyc, 'mv': mv, 'ped': [{'d': q['d'], 'seg': [], 'n': q['n']} for q in pd], 'pd': pd, 'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 and not var else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy, 'src': 'p'}
     if var:

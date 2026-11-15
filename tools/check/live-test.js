@@ -29,11 +29,11 @@ var c = E.buyCosts(T, TE, a, b.price); tr('부대비용 = 취득세+중개+등�
 var tight = E.affordBuy(L, T, TE, { cash: 3e8, incomeYr: 3e7, adj: true, metro: true, noHome: true });
 tr('소득이 낮으면 DSR 이 묶는다 (' + tight.loan.why + ')', /DSR/.test(tight.loan.why));
 
-/* 4. 전세 — 가진 돈 1억 · 28세 · 소득 4천 · 무주택 → 청년 전용: D − min(2억, 0.8D) + 중개(0.3%) ≤ 1억
-      D ≈ 3억 근처에서 0.8D = 2.4억 > 2억 → 한도 2억이 묶음 → D = 3억 ÷ 1.003 ≈ 2.991억 (이분법 허용 10만 원) */
+/* 4. 전세 — 가진 돈 1억 · 28세 · 소득 4천 · 무주택
+      청년 전용(한도 1.5억 · A 2026-11-16): D − 1.5억 + 0.3%D ≤ 1억 → 2.49억 / 은행(보증 한도 2억): D − 2억 + 0.3%D ≤ 1억 → 2.991억 → 은행 쪽이 큼 (이분법 허용 10만 원) */
 var j = E.affordJeonse(L, { cash: 1e8, incomeYr: 4e7, age: 28, noHome: true });
-eq('전세 최대(만 원) — 청년 한도 2억이 묶음: D − 2억 + 0.3%D ≤ 1억', Math.round(j.deposit / 1e4), Math.round(3e8 / 1.003 / 1e4), 12);
-tr('3억은 청년 전용으로(이자 2.5%)', j.youth === true);
+eq('전세 최대(만 원) — 은행 보증 한도 2억이 묶음: D − 2억 + 0.3%D ≤ 1억', Math.round(j.deposit / 1e4), Math.round(3e8 / 1.003 / 1e4), 12);
+tr('청년 한도 1.5억 < 은행 2억 → 보증금이 더 큰 은행 쪽', j.youth === false);
 var j2 = E.affordJeonse(L, { cash: 1e8, incomeYr: 4e7, age: 40, noHome: true });
 eq('40세 은행 전세 최대(만 원) — D − 2억 + 0.3%D ≤ 1억', Math.round(j2.deposit / 1e4), Math.round(3e8 / 1.003 / 1e4), 12);
 var dd = E.affordBuy(L, T, TE, { cash: 1.5e8, incomeYr: 5e7, adj: true, metro: true, noHome: true, didim: true, first: true, age: 33 });
@@ -41,6 +41,11 @@ tr('디딤돌을 켜면 은행만보다 작지 않다', dd.price >= E.affordBuy(
 tr('디딤돌 집값 상한 5억 안', !/디딤돌/.test(dd.loan.why) || dd.price <= 5e8);
 tr('전세 내 돈 ≤ 1억', j.need <= 1e8);
 
+/* 4-1. 수도권·규제 주담대 한도 구간(B) — 시가 20억 → 4억 · 10억 → 6억 */
+var hi = E.loanBuy(L, { incomeYr: 1e9, adj: true, metro: true }, 2e9, []); eq('20억 집 한도 4억', hi.amt, 4e8);
+var mid = E.loanBuy(L, { incomeYr: 1e9, adj: true, metro: true }, 1e9, []); eq('10억 집 = LTV 40% 4억 < 6억', mid.amt, 4e8);
+/* 4-2. GTX — 직선 20km → 길 26km → 3,200 + ⌈16/5⌉×250 = 4,200 · 정액은 플러스형 10만 */
+var gx = E.commute(L, { km: 20, gtx: true, age: 40 }); eq('GTX 26km 요금', gx.fare, 4200); eq('GTX 정액 플러스형 한도', gx.flat, 100000);
 /* 5. 청년 자격 */
 var y = E.youth(L, { age: 28, noHome: true, incomeYr: 4e7, median60: 'y' });
 tr('28세 버팀목 청년 후보', y.list[0].ok === true); tr('28세 청년월세 후보', y.list[1].ok === true); tr('공공임대 = 공고 확인(null)', y.list[2].ok === null);

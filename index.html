@@ -1064,6 +1064,216 @@
   #m2dToast { z-index: 2800; }   /* 홈·설정(2700·2710 — 시뮬 판 2600 위) 위에서도 알림이 보이게 */
   @media (max-width: 430px) { #m2dGuideB .sm { display: none; } #m2dGuideB { padding: 0 9px !important; flex-shrink: 0; } #m2dTop .row1 { gap: 4px !important; } #m2dFold .lg { display: none; } }   /* 🏠 가 들어간 만큼 — 「안내」 글은 그림(📖)만 · 이용방법은 홈·도구에도 있다 */
   #m2dHomeB2 { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 20px; border: 0; background: var(--chip); font-size: 17px; cursor: pointer; }
+  /* v2.324.0 밤 화면 글자 대비 — 낮 화면용 짙은 인라인 색(33가지)을 밤에는 밝은 같은 빛깔로(스스로 바탕색을 가진 칸은 그대로) · tools 없이 scratchpad map_darkfix.py 가 만든 줄 */
+  :root.dark [style*="color:#0369A1"]:not([style*="background"]), :root.dark [style*="color: #0369A1"]:not([style*="background"]), :root.dark [style*="color:#0369a1"]:not([style*="background"]), :root.dark [style*="color: #0369a1"]:not([style*="background"]) { color: #20acf9 !important; }
+  :root.dark [style*="color:#0E7490"]:not([style*="background"]), :root.dark [style*="color: #0E7490"]:not([style*="background"]), :root.dark [style*="color:#0e7490"]:not([style*="background"]), :root.dark [style*="color: #0e7490"]:not([style*="background"]) { color: #16b4df !important; }
+  :root.dark [style*="color:#111"]:not([style*="background"]), :root.dark [style*="color: #111"]:not([style*="background"]) { color: #a5a5a5 !important; }
+  :root.dark [style*="color:#14532D"]:not([style*="background"]), :root.dark [style*="color: #14532D"]:not([style*="background"]), :root.dark [style*="color:#14532d"]:not([style*="background"]), :root.dark [style*="color: #14532d"]:not([style*="background"]) { color: #2ebe67 !important; }
+  :root.dark [style*="color:#15803D"]:not([style*="background"]), :root.dark [style*="color: #15803D"]:not([style*="background"]), :root.dark [style*="color:#15803d"]:not([style*="background"]), :root.dark [style*="color: #15803d"]:not([style*="background"]) { color: #1fbd5a !important; }
+  :root.dark [style*="color:#166534"]:not([style*="background"]), :root.dark [style*="color: #166534"]:not([style*="background"]) { color: #29bd61 !important; }
+  :root.dark [style*="color:#16A34A"]:not([style*="background"]), :root.dark [style*="color: #16A34A"]:not([style*="background"]), :root.dark [style*="color:#16a34a"]:not([style*="background"]), :root.dark [style*="color: #16a34a"]:not([style*="background"]) { color: #1abe56 !important; }
+  :root.dark [style*="color:#1B54D6"]:not([style*="background"]), :root.dark [style*="color: #1B54D6"]:not([style*="background"]), :root.dark [style*="color:#1b54d6"]:not([style*="background"]), :root.dark [style*="color: #1b54d6"]:not([style*="background"]) { color: #81a3ef !important; }
+  :root.dark [style*="color:#1D4ED8"]:not([style*="background"]), :root.dark [style*="color: #1D4ED8"]:not([style*="background"]), :root.dark [style*="color:#1d4ed8"]:not([style*="background"]), :root.dark [style*="color: #1d4ed8"]:not([style*="background"]) { color: #86a1ef !important; }
+  :root.dark [style*="color:#1E3A8A"]:not([style*="background"]), :root.dark [style*="color: #1E3A8A"]:not([style*="background"]), :root.dark [style*="color:#1e3a8a"]:not([style*="background"]), :root.dark [style*="color: #1e3a8a"]:not([style*="background"]) { color: #8ea5e6 !important; }
+  :root.dark [style*="color:#1E40AF"]:not([style*="background"]), :root.dark [style*="color: #1E40AF"]:not([style*="background"]), :root.dark [style*="color:#1e40af"]:not([style*="background"]), :root.dark [style*="color: #1e40af"]:not([style*="background"]) { color: #8aa1eb !important; }
+  :root.dark [style*="color:#2563EB"]:not([style*="background"]), :root.dark [style*="color: #2563EB"]:not([style*="background"]), :root.dark [style*="color:#2563eb"]:not([style*="background"]), :root.dark [style*="color: #2563eb"]:not([style*="background"]) { color: #7ea3f3 !important; }
+  :root.dark [style*="color:#3730A3"]:not([style*="background"]), :root.dark [style*="color: #3730A3"]:not([style*="background"]), :root.dark [style*="color:#3730a3"]:not([style*="background"]), :root.dark [style*="color: #3730a3"]:not([style*="background"]) { color: #a29ee2 !important; }
+  :root.dark [style*="color:#3B82F6"]:not([style*="background"]), :root.dark [style*="color: #3B82F6"]:not([style*="background"]), :root.dark [style*="color:#3b82f6"]:not([style*="background"]), :root.dark [style*="color: #3b82f6"]:not([style*="background"]) { color: #71a4f8 !important; }
+  :root.dark [style*="color:#4338CA"]:not([style*="background"]), :root.dark [style*="color: #4338CA"]:not([style*="background"]), :root.dark [style*="color:#4338ca"]:not([style*="background"]), :root.dark [style*="color: #4338ca"]:not([style*="background"]) { color: #a29de5 !important; }
+  :root.dark [style*="color:#475569"]:not([style*="background"]), :root.dark [style*="color: #475569"]:not([style*="background"]) { color: #99a7ba !important; }
+  :root.dark [style*="color:#4C1D95"]:not([style*="background"]), :root.dark [style*="color: #4C1D95"]:not([style*="background"]), :root.dark [style*="color:#4c1d95"]:not([style*="background"]), :root.dark [style*="color: #4c1d95"]:not([style*="background"]) { color: #b694ea !important; }
+  :root.dark [style*="color:#555"]:not([style*="background"]), :root.dark [style*="color: #555"]:not([style*="background"]) { color: #a4a4a4 !important; }
+  :root.dark [style*="color:#5B21B6"]:not([style*="background"]), :root.dark [style*="color: #5B21B6"]:not([style*="background"]), :root.dark [style*="color:#5b21b6"]:not([style*="background"]), :root.dark [style*="color: #5b21b6"]:not([style*="background"]) { color: #b694ec !important; }
+  :root.dark [style*="color:#64748B"]:not([style*="background"]), :root.dark [style*="color: #64748B"]:not([style*="background"]), :root.dark [style*="color:#64748b"]:not([style*="background"]), :root.dark [style*="color: #64748b"]:not([style*="background"]) { color: #9aa5b6 !important; }
+  :root.dark [style*="color:#6B7280"]:not([style*="background"]), :root.dark [style*="color: #6B7280"]:not([style*="background"]), :root.dark [style*="color:#6b7280"]:not([style*="background"]), :root.dark [style*="color: #6b7280"]:not([style*="background"]) { color: #a1a6b0 !important; }
+  :root.dark [style*="color:#78350F"]:not([style*="background"]), :root.dark [style*="color: #78350F"]:not([style*="background"]), :root.dark [style*="color:#78350f"]:not([style*="background"]), :root.dark [style*="color: #78350f"]:not([style*="background"]) { color: #ea8e59 !important; }
+  :root.dark [style*="color:#7C3AED"]:not([style*="background"]), :root.dark [style*="color: #7C3AED"]:not([style*="background"]), :root.dark [style*="color:#7c3aed"]:not([style*="background"]), :root.dark [style*="color: #7c3aed"]:not([style*="background"]) { color: #b793f5 !important; }
+  :root.dark [style*="color:#854D0E"]:not([style*="background"]), :root.dark [style*="color: #854D0E"]:not([style*="background"]), :root.dark [style*="color:#854d0e"]:not([style*="background"]), :root.dark [style*="color: #854d0e"]:not([style*="background"]) { color: #e98f2a !important; }
+  :root.dark [style*="color:#92400E"]:not([style*="background"]), :root.dark [style*="color: #92400E"]:not([style*="background"]), :root.dark [style*="color:#92400e"]:not([style*="background"]), :root.dark [style*="color: #92400e"]:not([style*="background"]) { color: #ee8c50 !important; }
+  :root.dark [style*="color:#991B1B"]:not([style*="background"]), :root.dark [style*="color: #991B1B"]:not([style*="background"]), :root.dark [style*="color:#991b1b"]:not([style*="background"]), :root.dark [style*="color: #991b1b"]:not([style*="background"]) { color: #eb8b8b !important; }
+  :root.dark [style*="color:#A16207"]:not([style*="background"]), :root.dark [style*="color: #A16207"]:not([style*="background"]), :root.dark [style*="color:#a16207"]:not([style*="background"]), :root.dark [style*="color: #a16207"]:not([style*="background"]) { color: #ea8f0a !important; }
+  :root.dark [style*="color:#B45309"]:not([style*="background"]), :root.dark [style*="color: #B45309"]:not([style*="background"]), :root.dark [style*="color:#b45309"]:not([style*="background"]), :root.dark [style*="color: #b45309"]:not([style*="background"]) { color: #f58733 !important; }
+  :root.dark [style*="color:#B91C1C"]:not([style*="background"]), :root.dark [style*="color: #B91C1C"]:not([style*="background"]), :root.dark [style*="color:#b91c1c"]:not([style*="background"]), :root.dark [style*="color: #b91c1c"]:not([style*="background"]) { color: #ed8686 !important; }
+  :root.dark [style*="color:#BE185D"]:not([style*="background"]), :root.dark [style*="color: #BE185D"]:not([style*="background"]), :root.dark [style*="color:#be185d"]:not([style*="background"]), :root.dark [style*="color: #be185d"]:not([style*="background"]) { color: #ef80ae !important; }
+  :root.dark [style*="color:#DB2777"]:not([style*="background"]), :root.dark [style*="color: #DB2777"]:not([style*="background"]), :root.dark [style*="color:#db2777"]:not([style*="background"]), :root.dark [style*="color: #db2777"]:not([style*="background"]) { color: #ea83b1 !important; }
+  :root.dark [style*="color:#DC2626"]:not([style*="background"]), :root.dark [style*="color: #DC2626"]:not([style*="background"]), :root.dark [style*="color:#dc2626"]:not([style*="background"]), :root.dark [style*="color: #dc2626"]:not([style*="background"]) { color: #ec8787 !important; }
+  :root.dark [style*="color:#EA580C"]:not([style*="background"]), :root.dark [style*="color: #EA580C"]:not([style*="background"]), :root.dark [style*="color:#ea580c"]:not([style*="background"]), :root.dark [style*="color: #ea580c"]:not([style*="background"]) { color: #f6874d !important; }
+  /* 같은 일 — 스타일시트에서 글자색만 짙게 준 규칙 60개 */
+  :root.dark #m2dDateB.we { color: #ec8787; }
+  :root.dark .jps u { color: #f58733; }
+  :root.dark .orcr > i { color: #b793f5; }
+  :root.dark .orcg2 > b { color: #b694ea; }
+  :root.dark .pyr .hd .l { color: #7ea3f3; }
+  :root.dark .pyr .hd .r { color: #ea83b1; }
+  :root.dark .lst .up { color: #1abe56; }
+  :root.dark .lst .dn { color: #ec8787; }
+  :root.dark #m2dCard em { color: #f58733; }
+  :root.dark details.fi > summary { color: #86a1ef; }
+  :root.dark .fib .fia a { color: #86a1ef; }
+  :root.dark #m2dCard .sdl em.phd { color: #1fbd5a; }
+  :root.dark #m2dCard .sdg .c em { color: #f58733; }
+  :root.dark #m2dCard .sd .ln em { color: #1fbd5a; }
+  :root.dark #m2dCard .vx span.mx { color: #ed8686; }
+  :root.dark #m2dRad .vx span.mx { color: #ed8686; }
+  :root.dark #m2dPnl .vx span.mx { color: #ed8686; }
+  :root.dark #m2dCard .hx span.b { color: #ec8787; }
+  :root.dark #m2dRad .hx span.b { color: #ec8787; }
+  :root.dark #m2dPnl .hx span.b { color: #ec8787; }
+  :root.dark #m2dCard .hk b { color: #ec8787; }
+  :root.dark #m2dRad .hk b { color: #ec8787; }
+  :root.dark #m2dPnl .hk b { color: #ec8787; }
+  :root.dark #m2dCard .bizwhy button { color: #b793f5; }
+  :root.dark #m2dRad .bizwhy button { color: #b793f5; }
+  :root.dark #m2dPnl .bizwhy button { color: #b793f5; }
+  :root.dark #m2dPre button.biz { color: #b793f5; }
+  :root.dark #m2dPre button.my { color: #ea8f0a; }
+  :root.dark #m2dRad em { color: #f58733; }
+  :root.dark #m2dPnl em { color: #f58733; }
+  :root.dark #m2dPnl table.it tr.bar td { color: #ed8686; }
+  :root.dark .talk em { color: #f58733; }
+  :root.dark #m2dCard table.it tr.bar td:first-child { color: #f58733; }
+  :root.dark #m2dRad table.it tr.bar td:first-child { color: #f58733; }
+  :root.dark #m2dPnl table.it tr.bar td:first-child { color: #f58733; }
+  :root.dark .tkpi i.up { color: #ec8787; }
+  :root.dark .tkpi i.dn { color: #7ea3f3; }
+  :root.dark #m2dTr .vx span.mx { color: #ed8686; }
+  :root.dark #m2dTr .hx span.b { color: #ec8787; }
+  :root.dark #m2dTr .hk b { color: #ec8787; }
+  :root.dark #m2dTr .bizwhy button { color: #b793f5; }
+  :root.dark #m2dTr em { color: #f58733; }
+  :root.dark #m2dTr table.it tr.bar td:first-child { color: #f58733; }
+  :root.dark #m2dTr .trc i { color: #7ea3f3; }
+  :root.dark #m2dTr .trc.soon i { color: #ec8787; }
+  :root.dark .tchips b { color: #ec8787; }
+  :root.dark .pflow li.s-g .pv { color: #1fbd5a; }
+  :root.dark .pflow li.s-y .pv { color: #f58733; }
+  :root.dark .pflow li.s-r .pv { color: #ed8686; }
+  :root.dark #m2dGate .bad { color: #ec8787; }
+  :root.dark .lwarn { color: #ee8c50; }
+  :root.dark #m2dPanel .lyw .lfv { color: #f58733; }
+  :root.dark #m2dQC button.qfav { color: #f58733; }
+  :root.dark .glance .gt.up small { color: #ec8787; }
+  :root.dark .glance .gt.dn small { color: #7ea3f3; }
+  :root.dark #m2dEst button { color: #ea8f0a; }
+  :root.dark #m2dQC button.qtax { color: #1fbd5a !important; }
+  :root.dark #m2dGuideB { color: #86a1ef; }
+  :root.dark #m2dTimeB.we:not(.set) { color: #ec8787; }
+  :root.dark #m2dHome .hpol h4 { color: #86a1ef; }
+  /* 밤 화면 — 카드 그림(SVG) 안 글자의 짙은 채움색 107가지도 밝게 */
+  :root.dark #m2dCard svg text[fill="#0052a4" i], :root.dark #m2dPnl svg text[fill="#0052a4" i], :root.dark #m2dRad svg text[fill="#0052a4" i] { fill: #57a9fb; }
+  :root.dark #m2dCard svg text[fill="#0090d2" i], :root.dark #m2dPnl svg text[fill="#0090d2" i], :root.dark #m2dRad svg text[fill="#0090d2" i] { fill: #07adf9; }
+  :root.dark #m2dCard svg text[fill="#0284c7" i], :root.dark #m2dPnl svg text[fill="#0284c7" i], :root.dark #m2dRad svg text[fill="#0284c7" i] { fill: #1caef9; }
+  :root.dark #m2dCard svg text[fill="#0369a1" i], :root.dark #m2dPnl svg text[fill="#0369a1" i], :root.dark #m2dRad svg text[fill="#0369a1" i] { fill: #20acf9; }
+  :root.dark #m2dCard svg text[fill="#059669" i], :root.dark #m2dPnl svg text[fill="#059669" i], :root.dark #m2dRad svg text[fill="#059669" i] { fill: #06bd85; }
+  :root.dark #m2dCard svg text[fill="#065f46" i], :root.dark #m2dPnl svg text[fill="#065f46" i], :root.dark #m2dRad svg text[fill="#065f46" i] { fill: #0cba89; }
+  :root.dark #m2dCard svg text[fill="#075985" i], :root.dark #m2dPnl svg text[fill="#075985" i], :root.dark #m2dRad svg text[fill="#075985" i] { fill: #2caef4; }
+  :root.dark #m2dCard svg text[fill="#0891b2" i], :root.dark #m2dPnl svg text[fill="#0891b2" i], :root.dark #m2dRad svg text[fill="#0891b2" i] { fill: #0ab5de; }
+  :root.dark #m2dCard svg text[fill="#0b1220" i], :root.dark #m2dPnl svg text[fill="#0b1220" i], :root.dark #m2dRad svg text[fill="#0b1220" i] { fill: #8ba4d7; }
+  :root.dark #m2dCard svg text[fill="#0c4a6e" i], :root.dark #m2dPnl svg text[fill="#0c4a6e" i], :root.dark #m2dRad svg text[fill="#0c4a6e" i] { fill: #42adea; }
+  :root.dark #m2dCard svg text[fill="#0d9488" i], :root.dark #m2dPnl svg text[fill="#0d9488" i], :root.dark #m2dRad svg text[fill="#0d9488" i] { fill: #10baaa; }
+  :root.dark #m2dCard svg text[fill="#0e7490" i], :root.dark #m2dPnl svg text[fill="#0e7490" i], :root.dark #m2dRad svg text[fill="#0e7490" i] { fill: #16b4df; }
+  :root.dark #m2dCard svg text[fill="#0f1624" i], :root.dark #m2dPnl svg text[fill="#0f1624" i], :root.dark #m2dRad svg text[fill="#0f1624" i] { fill: #8fa5d1; }
+  :root.dark #m2dCard svg text[fill="#0f172a" i], :root.dark #m2dPnl svg text[fill="#0f172a" i], :root.dark #m2dRad svg text[fill="#0f172a" i] { fill: #8fa4d7; }
+  :root.dark #m2dCard svg text[fill="#0f2f24" i], :root.dark #m2dPnl svg text[fill="#0f2f24" i], :root.dark #m2dRad svg text[fill="#0f2f24" i] { fill: #3bba8f; }
+  :root.dark #m2dCard svg text[fill="#0f766e" i], :root.dark #m2dPnl svg text[fill="#0f766e" i], :root.dark #m2dRad svg text[fill="#0f766e" i] { fill: #18baad; }
+  :root.dark #m2dCard svg text[fill="#111827" i], :root.dark #m2dPnl svg text[fill="#111827" i], :root.dark #m2dRad svg text[fill="#111827" i] { fill: #91a5cf; }
+  :root.dark #m2dCard svg text[fill="#115e59" i], :root.dark #m2dPnl svg text[fill="#115e59" i], :root.dark #m2dRad svg text[fill="#115e59" i] { fill: #21b9af; }
+  :root.dark #m2dCard svg text[fill="#134e4a" i], :root.dark #m2dPnl svg text[fill="#134e4a" i], :root.dark #m2dRad svg text[fill="#134e4a" i] { fill: #2db9af; }
+  :root.dark #m2dCard svg text[fill="#14532d" i], :root.dark #m2dPnl svg text[fill="#14532d" i], :root.dark #m2dRad svg text[fill="#14532d" i] { fill: #2ebe67; }
+  :root.dark #m2dCard svg text[fill="#15803d" i], :root.dark #m2dPnl svg text[fill="#15803d" i], :root.dark #m2dRad svg text[fill="#15803d" i] { fill: #1fbd5a; }
+  :root.dark #m2dCard svg text[fill="#166534" i], :root.dark #m2dPnl svg text[fill="#166534" i], :root.dark #m2dRad svg text[fill="#166534" i] { fill: #29bd61; }
+  :root.dark #m2dCard svg text[fill="#16a34a" i], :root.dark #m2dPnl svg text[fill="#16a34a" i], :root.dark #m2dRad svg text[fill="#16a34a" i] { fill: #1abe56; }
+  :root.dark #m2dCard svg text[fill="#18233a" i], :root.dark #m2dPnl svg text[fill="#18233a" i], :root.dark #m2dRad svg text[fill="#18233a" i] { fill: #8fa5d1; }
+  :root.dark #m2dCard svg text[fill="#1b54d6" i], :root.dark #m2dPnl svg text[fill="#1b54d6" i], :root.dark #m2dRad svg text[fill="#1b54d6" i] { fill: #81a3ef; }
+  :root.dark #m2dCard svg text[fill="#1c1917" i], :root.dark #m2dPnl svg text[fill="#1c1917" i], :root.dark #m2dRad svg text[fill="#1c1917" i] { fill: #afa49d; }
+  :root.dark #m2dCard svg text[fill="#1c3b5e" i], :root.dark #m2dPnl svg text[fill="#1c3b5e" i], :root.dark #m2dRad svg text[fill="#1c3b5e" i] { fill: #7da8d8; }
+  :root.dark #m2dCard svg text[fill="#1d4ed8" i], :root.dark #m2dPnl svg text[fill="#1d4ed8" i], :root.dark #m2dRad svg text[fill="#1d4ed8" i] { fill: #86a1ef; }
+  :root.dark #m2dCard svg text[fill="#1d5f99" i], :root.dark #m2dPnl svg text[fill="#1d5f99" i], :root.dark #m2dRad svg text[fill="#1d5f99" i] { fill: #68a9e2; }
+  :root.dark #m2dCard svg text[fill="#1e1b4b" i], :root.dark #m2dPnl svg text[fill="#1e1b4b" i], :root.dark #m2dRad svg text[fill="#1e1b4b" i] { fill: #a19edc; }
+  :root.dark #m2dCard svg text[fill="#1e293b" i], :root.dark #m2dPnl svg text[fill="#1e293b" i], :root.dark #m2dRad svg text[fill="#1e293b" i] { fill: #91a5c7; }
+  :root.dark #m2dCard svg text[fill="#1e3a8a" i], :root.dark #m2dPnl svg text[fill="#1e3a8a" i], :root.dark #m2dRad svg text[fill="#1e3a8a" i] { fill: #8ea5e6; }
+  :root.dark #m2dCard svg text[fill="#1e40af" i], :root.dark #m2dPnl svg text[fill="#1e40af" i], :root.dark #m2dRad svg text[fill="#1e40af" i] { fill: #8aa1eb; }
+  :root.dark #m2dCard svg text[fill="#1f2937" i], :root.dark #m2dPnl svg text[fill="#1f2937" i], :root.dark #m2dRad svg text[fill="#1f2937" i] { fill: #93a7c2; }
+  :root.dark #m2dCard svg text[fill="#22a35a" i], :root.dark #m2dPnl svg text[fill="#22a35a" i], :root.dark #m2dRad svg text[fill="#22a35a" i] { fill: #27bc68; }
+  :root.dark #m2dCard svg text[fill="#252e3d" i], :root.dark #m2dPnl svg text[fill="#252e3d" i], :root.dark #m2dRad svg text[fill="#252e3d" i] { fill: #97a6c0; }
+  :root.dark #m2dCard svg text[fill="#2563eb" i], :root.dark #m2dPnl svg text[fill="#2563eb" i], :root.dark #m2dRad svg text[fill="#2563eb" i] { fill: #7ea3f3; }
+  :root.dark #m2dCard svg text[fill="#27303f" i], :root.dark #m2dPnl svg text[fill="#27303f" i], :root.dark #m2dRad svg text[fill="#27303f" i] { fill: #97a6bf; }
+  :root.dark #m2dCard svg text[fill="#2b5a8a" i], :root.dark #m2dPnl svg text[fill="#2b5a8a" i], :root.dark #m2dRad svg text[fill="#2b5a8a" i] { fill: #7da9d6; }
+  :root.dark #m2dCard svg text[fill="#2d3748" i], :root.dark #m2dPnl svg text[fill="#2d3748" i], :root.dark #m2dRad svg text[fill="#2d3748" i] { fill: #97a6be; }
+  :root.dark #m2dCard svg text[fill="#334155" i], :root.dark #m2dPnl svg text[fill="#334155" i], :root.dark #m2dRad svg text[fill="#334155" i] { fill: #95a6bf; }
+  :root.dark #m2dCard svg text[fill="#344055" i], :root.dark #m2dPnl svg text[fill="#344055" i], :root.dark #m2dRad svg text[fill="#344055" i] { fill: #96a5bf; }
+  :root.dark #m2dCard svg text[fill="#365314" i], :root.dark #m2dPnl svg text[fill="#365314" i], :root.dark #m2dRad svg text[fill="#365314" i] { fill: #76b62c; }
+  :root.dark #m2dCard svg text[fill="#374151" i], :root.dark #m2dPnl svg text[fill="#374151" i], :root.dark #m2dRad svg text[fill="#374151" i] { fill: #9aa6ba; }
+  :root.dark #m2dCard svg text[fill="#3b0764" i], :root.dark #m2dPnl svg text[fill="#3b0764" i], :root.dark #m2dRad svg text[fill="#3b0764" i] { fill: #c88df7; }
+  :root.dark #m2dCard svg text[fill="#3b2a12" i], :root.dark #m2dPnl svg text[fill="#3b2a12" i], :root.dark #m2dRad svg text[fill="#3b2a12" i] { fill: #cc9c57; }
+  :root.dark #m2dCard svg text[fill="#3b4a63" i], :root.dark #m2dPnl svg text[fill="#3b4a63" i], :root.dark #m2dRad svg text[fill="#3b4a63" i] { fill: #95a5c0; }
+  :root.dark #m2dCard svg text[fill="#3b82f6" i], :root.dark #m2dPnl svg text[fill="#3b82f6" i], :root.dark #m2dRad svg text[fill="#3b82f6" i] { fill: #71a4f8; }
+  :root.dark #m2dCard svg text[fill="#3d4a5e" i], :root.dark #m2dPnl svg text[fill="#3d4a5e" i], :root.dark #m2dRad svg text[fill="#3d4a5e" i] { fill: #97a5bc; }
+  :root.dark #m2dCard svg text[fill="#422006" i], :root.dark #m2dPnl svg text[fill="#422006" i], :root.dark #m2dRad svg text[fill="#422006" i] { fill: #ee8b40; }
+  :root.dark #m2dCard svg text[fill="#4338ca" i], :root.dark #m2dPnl svg text[fill="#4338ca" i], :root.dark #m2dRad svg text[fill="#4338ca" i] { fill: #a29de5; }
+  :root.dark #m2dCard svg text[fill="#475569" i], :root.dark #m2dPnl svg text[fill="#475569" i], :root.dark #m2dRad svg text[fill="#475569" i] { fill: #99a7ba; }
+  :root.dark #m2dCard svg text[fill="#4a5568" i], :root.dark #m2dPnl svg text[fill="#4a5568" i], :root.dark #m2dRad svg text[fill="#4a5568" i] { fill: #99a4b7; }
+  :root.dark #m2dCard svg text[fill="#4b4533" i], :root.dark #m2dPnl svg text[fill="#4b4533" i], :root.dark #m2dRad svg text[fill="#4b4533" i] { fill: #aea488; }
+  :root.dark #m2dCard svg text[fill="#4c1d95" i], :root.dark #m2dPnl svg text[fill="#4c1d95" i], :root.dark #m2dRad svg text[fill="#4c1d95" i] { fill: #b694ea; }
+  :root.dark #m2dCard svg text[fill="#4d7c0f" i], :root.dark #m2dPnl svg text[fill="#4d7c0f" i], :root.dark #m2dRad svg text[fill="#4d7c0f" i] { fill: #72b716; }
+  :root.dark #m2dCard svg text[fill="#57534e" i], :root.dark #m2dPnl svg text[fill="#57534e" i], :root.dark #m2dRad svg text[fill="#57534e" i] { fill: #a9a59f; }
+  :root.dark #m2dCard svg text[fill="#5b21b6" i], :root.dark #m2dPnl svg text[fill="#5b21b6" i], :root.dark #m2dRad svg text[fill="#5b21b6" i] { fill: #b694ec; }
+  :root.dark #m2dCard svg text[fill="#5b6472" i], :root.dark #m2dPnl svg text[fill="#5b6472" i], :root.dark #m2dRad svg text[fill="#5b6472" i] { fill: #9ca4b0; }
+  :root.dark #m2dCard svg text[fill="#64748b" i], :root.dark #m2dPnl svg text[fill="#64748b" i], :root.dark #m2dRad svg text[fill="#64748b" i] { fill: #9aa5b6; }
+  :root.dark #m2dCard svg text[fill="#6b21a8" i], :root.dark #m2dPnl svg text[fill="#6b21a8" i], :root.dark #m2dRad svg text[fill="#6b21a8" i] { fill: #c292ea; }
+  :root.dark #m2dCard svg text[fill="#6b5420" i], :root.dark #m2dPnl svg text[fill="#6b5420" i], :root.dark #m2dRad svg text[fill="#6b5420" i] { fill: #c79f44; }
+  :root.dark #m2dCard svg text[fill="#6b7280" i], :root.dark #m2dPnl svg text[fill="#6b7280" i], :root.dark #m2dRad svg text[fill="#6b7280" i] { fill: #a1a6b0; }
+  :root.dark #m2dCard svg text[fill="#6b7686" i], :root.dark #m2dPnl svg text[fill="#6b7686" i], :root.dark #m2dRad svg text[fill="#6b7686" i] { fill: #9ca5b0; }
+  :root.dark #m2dCard svg text[fill="#6d28d9" i], :root.dark #m2dPnl svg text[fill="#6d28d9" i], :root.dark #m2dRad svg text[fill="#6d28d9" i] { fill: #b794ec; }
+  :root.dark #m2dCard svg text[fill="#6d6447" i], :root.dark #m2dPnl svg text[fill="#6d6447" i], :root.dark #m2dRad svg text[fill="#6d6447" i] { fill: #ada381; }
+  :root.dark #m2dCard svg text[fill="#713f12" i], :root.dark #m2dPnl svg text[fill="#713f12" i], :root.dark #m2dRad svg text[fill="#713f12" i] { fill: #e29249; }
+  :root.dark #m2dCard svg text[fill="#747f00" i], :root.dark #m2dPnl svg text[fill="#747f00" i], :root.dark #m2dRad svg text[fill="#747f00" i] { fill: #9fae04; }
+  :root.dark #m2dCard svg text[fill="#78350f" i], :root.dark #m2dPnl svg text[fill="#78350f" i], :root.dark #m2dRad svg text[fill="#78350f" i] { fill: #ea8e59; }
+  :root.dark #m2dCard svg text[fill="#7a6a3e" i], :root.dark #m2dPnl svg text[fill="#7a6a3e" i], :root.dark #m2dRad svg text[fill="#7a6a3e" i] { fill: #b5a26e; }
+  :root.dark #m2dCard svg text[fill="#7c2d12" i], :root.dark #m2dPnl svg text[fill="#7c2d12" i], :root.dark #m2dRad svg text[fill="#7c2d12" i] { fill: #ea8b6b; }
+  :root.dark #m2dCard svg text[fill="#7c3aed" i], :root.dark #m2dPnl svg text[fill="#7c3aed" i], :root.dark #m2dRad svg text[fill="#7c3aed" i] { fill: #b793f5; }
+  :root.dark #m2dCard svg text[fill="#7c5212" i], :root.dark #m2dPnl svg text[fill="#7c5212" i], :root.dark #m2dRad svg text[fill="#7c5212" i] { fill: #df9524; }
+  :root.dark #m2dCard svg text[fill="#7e22ce" i], :root.dark #m2dPnl svg text[fill="#7e22ce" i], :root.dark #m2dRad svg text[fill="#7e22ce" i] { fill: #c392ed; }
+  :root.dark #m2dCard svg text[fill="#7f1d1d" i], :root.dark #m2dPnl svg text[fill="#7f1d1d" i], :root.dark #m2dRad svg text[fill="#7f1d1d" i] { fill: #e58d8d; }
+  :root.dark #m2dCard svg text[fill="#854d0e" i], :root.dark #m2dPnl svg text[fill="#854d0e" i], :root.dark #m2dRad svg text[fill="#854d0e" i] { fill: #e98f2a; }
+  :root.dark #m2dCard svg text[fill="#86198f" i], :root.dark #m2dPnl svg text[fill="#86198f" i], :root.dark #m2dRad svg text[fill="#86198f" i] { fill: #e181e9; }
+  :root.dark #m2dCard svg text[fill="#8b5cf6" i], :root.dark #m2dPnl svg text[fill="#8b5cf6" i], :root.dark #m2dRad svg text[fill="#8b5cf6" i] { fill: #b496f9; }
+  :root.dark #m2dCard svg text[fill="#92400e" i], :root.dark #m2dPnl svg text[fill="#92400e" i], :root.dark #m2dRad svg text[fill="#92400e" i] { fill: #ee8c50; }
+  :root.dark #m2dCard svg text[fill="#9333ea" i], :root.dark #m2dPnl svg text[fill="#9333ea" i], :root.dark #m2dRad svg text[fill="#9333ea" i] { fill: #c48ff4; }
+  :root.dark #m2dCard svg text[fill="#991b1b" i], :root.dark #m2dPnl svg text[fill="#991b1b" i], :root.dark #m2dRad svg text[fill="#991b1b" i] { fill: #eb8b8b; }
+  :root.dark #m2dCard svg text[fill="#996cac" i], :root.dark #m2dPnl svg text[fill="#996cac" i], :root.dark #m2dRad svg text[fill="#996cac" i] { fill: #b99ac6; }
+  :root.dark #m2dCard svg text[fill="#9a3412" i], :root.dark #m2dPnl svg text[fill="#9a3412" i], :root.dark #m2dRad svg text[fill="#9a3412" i] { fill: #ed8967; }
+  :root.dark #m2dCard svg text[fill="#9a7b2c" i], :root.dark #m2dPnl svg text[fill="#9a7b2c" i], :root.dark #m2dRad svg text[fill="#9a7b2c" i] { fill: #c69e38; }
+  :root.dark #m2dCard svg text[fill="#9f1239" i], :root.dark #m2dPnl svg text[fill="#9f1239" i], :root.dark #m2dRad svg text[fill="#9f1239" i] { fill: #f182a1; }
+  :root.dark #m2dCard svg text[fill="#a16207" i], :root.dark #m2dPnl svg text[fill="#a16207" i], :root.dark #m2dRad svg text[fill="#a16207" i] { fill: #ea8f0a; }
+  :root.dark #m2dCard svg text[fill="#a21caf" i], :root.dark #m2dPnl svg text[fill="#a21caf" i], :root.dark #m2dRad svg text[fill="#a21caf" i] { fill: #e17fea; }
+  :root.dark #m2dCard svg text[fill="#a855f7" i], :root.dark #m2dPnl svg text[fill="#a855f7" i], :root.dark #m2dRad svg text[fill="#a855f7" i] { fill: #c38bfa; }
+  :root.dark #m2dCard svg text[fill="#b45309" i], :root.dark #m2dPnl svg text[fill="#b45309" i], :root.dark #m2dRad svg text[fill="#b45309" i] { fill: #f58733; }
+  :root.dark #m2dCard svg text[fill="#b7791f" i], :root.dark #m2dPnl svg text[fill="#b7791f" i], :root.dark #m2dRad svg text[fill="#b7791f" i] { fill: #dc952d; }
+  :root.dark #m2dCard svg text[fill="#b91c1c" i], :root.dark #m2dPnl svg text[fill="#b91c1c" i], :root.dark #m2dRad svg text[fill="#b91c1c" i] { fill: #ed8686; }
+  :root.dark #m2dCard svg text[fill="#be123c" i], :root.dark #m2dPnl svg text[fill="#be123c" i], :root.dark #m2dRad svg text[fill="#be123c" i] { fill: #f3809c; }
+  :root.dark #m2dCard svg text[fill="#be185d" i], :root.dark #m2dPnl svg text[fill="#be185d" i], :root.dark #m2dRad svg text[fill="#be185d" i] { fill: #ef80ae; }
+  :root.dark #m2dCard svg text[fill="#c026d3" i], :root.dark #m2dPnl svg text[fill="#c026d3" i], :root.dark #m2dRad svg text[fill="#c026d3" i] { fill: #dd81e8; }
+  :root.dark #m2dCard svg text[fill="#c2410c" i], :root.dark #m2dPnl svg text[fill="#c2410c" i], :root.dark #m2dRad svg text[fill="#c2410c" i] { fill: #f58659; }
+  :root.dark #m2dCard svg text[fill="#c9801c" i], :root.dark #m2dPnl svg text[fill="#c9801c" i], :root.dark #m2dRad svg text[fill="#c9801c" i] { fill: #e19328; }
+  :root.dark #m2dCard svg text[fill="#cd7c2f" i], :root.dark #m2dPnl svg text[fill="#cd7c2f" i], :root.dark #m2dRad svg text[fill="#cd7c2f" i] { fill: #d89657; }
+  :root.dark #m2dCard svg text[fill="#d4003b" i], :root.dark #m2dPnl svg text[fill="#d4003b" i], :root.dark #m2dRad svg text[fill="#d4003b" i] { fill: #fc7c9f; }
+  :root.dark #m2dCard svg text[fill="#d97706" i], :root.dark #m2dPnl svg text[fill="#d97706" i], :root.dark #m2dRad svg text[fill="#d97706" i] { fill: #f78707; }
+  :root.dark #m2dCard svg text[fill="#db2777" i], :root.dark #m2dPnl svg text[fill="#db2777" i], :root.dark #m2dRad svg text[fill="#db2777" i] { fill: #ea83b1; }
+  :root.dark #m2dCard svg text[fill="#dc2626" i], :root.dark #m2dPnl svg text[fill="#dc2626" i], :root.dark #m2dRad svg text[fill="#dc2626" i] { fill: #ec8787; }
+  :root.dark #m2dCard svg text[fill="#e11d48" i], :root.dark #m2dPnl svg text[fill="#e11d48" i], :root.dark #m2dRad svg text[fill="#e11d48" i] { fill: #ef849c; }
+  :root.dark #m2dCard svg text[fill="#e6186c" i], :root.dark #m2dPnl svg text[fill="#e6186c" i], :root.dark #m2dRad svg text[fill="#e6186c" i] { fill: #f281af; }
+  :root.dark #m2dCard svg text[fill="#ea580c" i], :root.dark #m2dPnl svg text[fill="#ea580c" i], :root.dark #m2dRad svg text[fill="#ea580c" i] { fill: #f6874d; }
+  :root.dark #m2dCard svg text[fill="#ec4899" i], :root.dark #m2dPnl svg text[fill="#ec4899" i], :root.dark #m2dRad svg text[fill="#ec4899" i] { fill: #f27fb8; }
+  :root.dark #m2dCard svg text[fill="#ef4444" i], :root.dark #m2dPnl svg text[fill="#ef4444" i], :root.dark #m2dRad svg text[fill="#ef4444" i] { fill: #f58686; }
+  :root.dark #m2dCard svg text[fill="#f43f5e" i], :root.dark #m2dPnl svg text[fill="#f43f5e" i], :root.dark #m2dRad svg text[fill="#f43f5e" i] { fill: #f87e93; }
+  /* 밤 화면 — 색을 따로 안 준 단추는 브라우저 기본 검정 글씨였다(카드 안 「🏘 서초3동」 등) → 본문 색 · 번호 배지 흰 바탕(--card 없음) → 패널색 · 레이어 수 배지는 짙은 글씨 */
+  :where(:root.dark) button { color: var(--ink); }
+  :root.dark #m2dCard .sd .sdph .pic i { background: var(--panel); color: var(--ink); }
+  :root.dark #m2dPanel .c2h .gc i { color: #0b1220; }
+  :root.dark #m2dCard .hx span.b.n, :root.dark #m2dRad .hx span.b.n, :root.dark #m2dPnl .hx span.b.n { color: #b91c1c; }
+  @keyframes m2dBreatheD { 0%, 100% { background-color: #172033; box-shadow: 0 0 0 2px rgba(250,204,21,.35), 0 4px 14px rgba(0,0,0,.4); } 50% { background-color: #4a3b0c; box-shadow: 0 0 0 4px rgba(250,204,21,.95), 0 4px 18px rgba(234,179,8,.45); } }
+  :root.dark body.m2d-nudge #m2dToolB, :root.dark body.m2d-nudge #m2dLegB { animation-name: m2dBreatheD; }
 </style>
 </head>
 <body>
@@ -1173,7 +1383,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.323.1"></script>
+<script src="js/map2d.js?v=2.324.0"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>

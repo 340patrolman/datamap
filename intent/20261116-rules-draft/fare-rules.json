@@ -1,0 +1,75 @@
+{
+ "schema": "tg-farerules/1",
+ "checked": "2026-11-16",
+ "subwayCapital": [
+  {
+   "card": 1550,
+   "teen": 900,
+   "child": 550,
+   "cash": 1650
+  },
+  "2025-06-28~ · 추가 인상 확정 없음 · B"
+ ],
+ "incheon": [
+  {
+   "city": 1500,
+   "express": 3000,
+   "expressEarly": 2400,
+   "m": 3200,
+   "mEarly": 2800
+  },
+  "incheon.go.kr 요금표 · A"
+ ],
+ "ggM": [
+  null,
+  "2025-10 400원 인상 · 금액 미확인(경기도 고시)"
+ ],
+ "gtxA": [
+  {
+   "base": 3200,
+   "baseKm": 10,
+   "per5km": 250
+  },
+  "B · 수서~동탄 4,450"
+ ],
+ "gtxSeoulFlat": [
+  62000,
+  "서울 구간 정액 발표 · 시행일 미확인"
+ ],
+ "climateCard": [
+  "30일권 2026-09-30 종료 · 단기권 유지 · 2026-09-01 기후동행패스",
+  "서울시 · A"
+ ],
+ "moduCard": {
+  "rate": [
+   {
+    "general": 0.2,
+    "youth": 0.3,
+    "senior65": 0.3,
+    "kids2": 0.3,
+    "kids3": 0.5,
+    "lowIncome": 0.533
+   },
+   "B"
+  ],
+  "flatCapital": [
+   {
+    "general": 62000,
+    "youth": 55000,
+    "plus": 100000
+   },
+   "초과분 전액 환급 · 플러스형=광역버스·GTX · B"
+  ],
+  "seoulYouthAge": [
+   [
+    19,
+    39
+   ],
+   "서울 기후동행패스 · A"
+  ],
+  "temp": [
+   "반값 기준 2026-09 이용분 종료 · 시차 +30%p 종료일 미확인",
+   "미확인"
+  ]
+ }
+}

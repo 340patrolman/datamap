@@ -2,11 +2,15 @@
 짝 문서: `20261115-live-cost-qa.md`(전체 의도) · `20261115-realty-afford.md` + `-prep.md`(집 부분 — 대출·세금 확인표는 거기)
 만든 곳: 클라우드 세션 2026-11-15(폰) · 코드는 아직 안 고침 · **아래 요금·세율은 전부 웹 2차 자료 = 미확인**
 
+## 0-1. 지금 상태 (2026-11-15 저녁 · 클라우드)
+v1 이미 만듦(v2.325.0 · 이 브랜치) — 문답 8단계 · 매매/전세/월세 나란히 · 청년 셋 · 출퇴근 근사 · 자동차. 남은 것 = ① data/live-rules.json 값 1차 대조(아래 4장 + realty-afford-prep 3장) → `checked` 날짜 · 근거 글 「미확인」 지우기 · 시험 `node tools/check/live-test.js` 기대값 같이 ② `python tools/region/ai-guide-bake.py`(data/r 필요 — 집 PC) ③ 관문(pagecheck) 통과 뒤 main 병합 ④ 3판(거리표·실거래 견주기)부터.
+
 ## 0. 집에서 첫 지시 (그대로 붙여 넣기)
 > intent/realty-afford 브랜치의 intent 네 장(live-cost-qa · live-cost-prep · realty-afford · realty-afford-prep)을 읽어라.
 > 1단계: 두 prep 의 「확인할 값」 표를 1차 출처에서 모두 대조해 규칙 파일에 근거·확인일과 함께 넣어라.
-> 2단계: live-cost-prep 6장 판 순서대로 진행하라. 판마다 커밋·보고.
-> 미결 답: (형님이 여기 적기)
+> 2단계: 시험·관문 통과 뒤 main 병합 · ai-guide-bake 다시.
+> 3단계: live-cost-prep 6장 3판(출퇴근·거리표)부터 이어서. 판마다 커밋·보고.
+> 미결 답: 청년임대 셋 다 · 나머지 권고대로(2026-11-15 형님)
 
 ## 1. 문답 흐름 (한 화면 한 질문 · 건너뛰기 가능 · 뒤로 가기)
 1. 일하는 곳 — 지도에서 찍기 / 지금 보는 자리 / 건너뛰기

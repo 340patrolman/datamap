@@ -59,7 +59,16 @@ eq('요금 13km', m.fare, 1650); eq('월 교통비(K-패스)', m.transitMo, 5544
 /* 7. 자동차 — 신차 3천만 · 1,999cc → 취득세 210만 · 자동차세 1,999 × 200 × 1.3 = 519,740 */
 var k = E.car(L, { buy: 'new', price: 3e7, cc: 1999, kmMo: 1000, kmL: 12, unit: 1700, ins: 1200000, park: 100000 });
 eq('신차 처음', k.first, 3e7 + 2100000); eq('자동차세 해', k.yearly, 519740);
-eq('달 유지', k.monthly, Math.round(1000 / 12 * 1700 + 100000 + 100000 + 519740 / 12));
+eq('달 유지(자동차세는 해마다에만 — 달에 또 넣지 않는다)', k.monthly, Math.round(1000 / 12 * 1700 + 100000 + 100000));
+
+/* 7-1. 독립 검수(2026-11-16) 지적 — 손계산
+   집 있음 → 추가 주택 대출 0 · 수도권 비규제도 시가 구간 한도(12억 집 → 6억) · 디딤돌 생애최초 수도권 LTV 70%(3억 집 → 2.1억: 한도 2.4억·DSR 여력보다 작다)
+   월세 상한 = 연 3,600만 ÷ 12 × 30% = 90만(청년월세 지원 20만은 더하지 않는다) · 전기차 5년차 자동차세 = 10만 × 1.3 = 13만(차령 경감 없음) */
+tr('집 있음 → 대출 0', E.affordBuy(L, T, TE, { cash: 3e8, incomeYr: 8e7, adj: true, metro: true, noHome: false, age: 45 }).loan.amt === 0);
+tr('수도권 비규제 12억 집 → 6억 넘지 않음', E.loanBuy(L, { incomeYr: 3e8, adj: false, metro: true, noHome: true }, 12e8, []).amt <= 6e8);
+eq('디딤돌 생애최초 수도권 3억 집', E.didim(L, { noHome: true, first: true, incomeYr: 6e7, metro: true, cash: 1e8 }, 3e8, []).amt, 2.1e8);
+eq('월세 상한(지원 안 더함)', E.affordRent(L, { cash: 2e7, incomeYr: 3.6e7, age: 25, noHome: true, median60: 'y' }).monthlyMax, 900000);
+eq('전기차 5년차 자동차세', E.car(L, { buy: 'used', price: 1e7, ev: true, age: 5 }).yearly, 130000);
 var ev = E.car(L, { buy: 'new', price: 5e7, ev: true }); eq('전기차 취득세 감면', ev.first, 5e7 + 3500000 - 1400000);
 
 /* 8. 한 장 */

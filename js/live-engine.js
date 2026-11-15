@@ -7,7 +7,7 @@
   var won = function (x) { return Math.round(x); };
   function V(x) { return Array.isArray(x) ? x[0] : x; }
   function S(x) { return Array.isArray(x) ? x[1] : ''; }
-  function W(warn, x) { var s = S(x); if (s && /미확인|설계값|일반적 견해|가정/.test(s) && warn.indexOf(s) < 0) warn.push(s); return V(x); }
+  function W(warn, x) { var s = S(x); if (s && /미확인|설계값|일반적 견해|가정|— B/.test(s) && warn.indexOf(s) < 0) warn.push(s); return V(x); }
 
   /* 원리금 균등 — 달마다 내는 돈 */
   function pmt(P, r, years) { var n = years * 12, i = r / 12; if (P <= 0) return 0; if (i === 0) return P / n; return P * i / (1 - Math.pow(1 + i, -n)); }
@@ -40,7 +40,7 @@
     var r = a.rate || W(warn, B.rateBuy), yrs = a.years || W(warn, B.years), st = a.metro !== false ? W(warn, B.stress.metro) : W(warn, B.stress.other);
     var room = (a.incomeYr || 0) * W(warn, B.dsr) / 12 - (a.debtMo || 0);
     lim.push(['DSR ' + Math.round(W(warn, B.dsr) * 100) + '% (스트레스 +' + (st * 100).toFixed(2) + '%p)', principal(room, r + st, yrs)]);
-    if (a.metro !== false) lim.push(['수도권 한도', W(warn, B.capMetro)]);
+    if (a.metro !== false && a.adj) { var ct = W(warn, B.capTiers).filter(function (x) { return x[0] === null || P <= x[0]; })[0]; lim.push(['수도권·규제 한도(시가 구간)', ct[1]]); }
     var best = lim.reduce(function (p, q) { return q[1] < p[1] ? q : p; });
     return { amt: Math.max(0, won(best[1])), why: best[0], lim: lim.map(function (q) { return [q[0], Math.max(0, won(q[1]))]; }), rate: r };
   }
@@ -53,7 +53,7 @@
     if (P > W(warn, D.priceCap)) return { ok: false, why: '집값 기준 넘음' };
     var max = a.first ? W(warn, D.maxFirst) : W(warn, D.max), r = W(warn, D.rate), yrs = W(warn, D.years);
     var room = (a.incomeYr || 0) * W(warn, L.loan.dsr) / 12 - (a.debtMo || 0);
-    var ltv = P * 0.7, dsr = principal(room, r, yrs), lim = [['상품 한도', max], ['LTV 70%(가정)', ltv], ['원리금 여력(DSR 40% 가정)', dsr]];
+    var lr = a.first ? W(warn, D.ltvFirst) : W(warn, D.ltv), ltv = P * lr, dsr = principal(room, r, yrs), lim = [['상품 한도', max], ['LTV ' + Math.round(lr * 100) + '%', ltv], ['원리금 여력(DSR 40% 가정)', dsr]];
     warn.push('디딤돌 LTV·DSR 적용 방식 — 미확인(정책대출은 은행 DSR 과 다르게 셀 수 있음)');
     var best = lim.reduce(function (p, q) { return q[1] < p[1] ? q : p; });
     return { ok: true, amt: Math.max(0, won(best[1])), why: best[0], rate: r, lim: lim };
@@ -101,7 +101,7 @@
     out.push({ k: 'jeonse', name: '버팀목 청년 전용 전세대출', ok: !!ok1, why: ok1 ? '나이·소득·무주택 맞음 — 보증금 ' + (W(warn, jn.deposit) / 1e8) + '억 이하 집' : (age < min || age > W(warn, jn.ageMax) ? '나이 범위 밖' : !a.noHome ? '무주택 아님' : '소득 기준 넘음') });
     var ra = Y.rentAid, ok2 = age >= min && age <= W(warn, ra.ageMax) && a.noHome && a.median60 === 'y';
     out.push({ k: 'rentAid', name: '청년월세 지원(월 최대 ' + (W(warn, ra.monthly) / 1e4) + '만 원 · ' + W(warn, ra.months) + '개월)', ok: ok2 ? true : (a.median60 === 'u' && age >= min && age <= W(warn, ra.ageMax) && a.noHome ? null : false), why: ok2 ? '나이·무주택·소득(중위 60% 이하라고 답함) 맞음' : a.median60 === 'u' ? '소득이 중위 60% 이하인지 복지로에서 확인' : (age < min || age > W(warn, ra.ageMax) ? '나이 범위 밖' : !a.noHome ? '무주택 아님' : '소득 기준 밖이라고 답함') });
-    W(warn, ra.rule);
+    W(warn, ra.rule); if (ok2 || out[1].ok === null) out[1].why += ' · 2026 신청기간(3-30~5-29) 끝남 — 다음 정기 신청 대기';
     var pr = Y.publicRent, ok3 = age >= min && age <= W(warn, pr.ageMax) && a.noHome;
     out.push({ k: 'publicRent', name: '청년 공공임대(행복주택·매입임대 등)', ok: ok3 ? null : false, why: ok3 ? '나이·무주택 맞음 — 소득·자산·임대료는 모집 공고(마이홈)에서' : '나이 범위 밖이거나 무주택 아님' });
     W(warn, pr.rule);
@@ -114,7 +114,7 @@
     function solve(isYouth, cap) {
       var lo = 0, hi = cap, best = null;
       for (var k = 0; k < 60; k++) {
-        var D = (lo + hi) / 2, lim = isYouth ? [['청년 전용 한도', W(warn, Y.max)], ['보증금의 ' + Math.round(W(warn, Y.ratio) * 100) + '%', D * W(warn, Y.ratio)]] : [['은행 전세 보증 한도', W(warn, B.jeonseCap)], ['보증금의 ' + Math.round(W(warn, B.jeonseGuar) * 100) + '%', D * W(warn, B.jeonseGuar)]];
+        var D = (lo + hi) / 2, ym = a.age < 25 && a.single ? W(warn, Y.maxU25) : W(warn, Y.max), lim = isYouth ? [['청년 전용 한도', ym], ['보증금의 ' + Math.round(W(warn, Y.ratio) * 100) + '%', D * W(warn, Y.ratio)]] : [['은행 전세 보증 한도', W(warn, B.jeonseCap)], ['보증금의 ' + Math.round(W(warn, B.jeonseGuar) * 100) + '%', D * W(warn, B.jeonseGuar)]];
         var bq = lim.reduce(function (p, q) { return q[1] < p[1] ? q : p; }), br = brokerLease(L, { deposit: D }, warn), need = D - bq[1] + br.fee + (a.moving || 0);
         if (need <= (a.cash || 0)) { lo = D; best = { deposit: won(D), loan: won(bq[1]), why: (isYouth ? '청년 전용 · ' : '') + bq[0], broker: br.fee, need: won(need), youth: isYouth }; } else hi = D;
         if (hi - lo < 1e5) break;
@@ -148,11 +148,11 @@
     var walk = W(warn, D.walkMin) * 2, wait = W(warn, D.waitMin), ride = km / W(warn, D.transitKmh) * 60;
     out.transitMin = Math.round(walk + wait + ride);
     var fare;
-    if (a.gtx) fare = W(warn, F.gtxBase);
-    else if (a.red) fare = W(warn, F.red);
+    if (a.gtx) { var g = W(warn, F.gtx); fare = g[0] + (km > g[1] ? Math.ceil((km - g[1]) / g[2]) * g[3] : 0); }
+    else if (a.red) fare = a.mbus ? W(warn, F.mbus) : W(warn, F.red);
     else { fare = W(warn, F.subway); W(warn, F.subwayAdd).forEach(function (z) { var from = z[0], to = z[1] == null ? 1e9 : z[1]; if (km > from) fare += Math.ceil((Math.min(km, to) - from) / z[2]) * z[3]; }); }
     var days = W(warn, D.workDays), mo = fare * 2 * days, yth = a.age >= 19 && a.age <= 34;
-    var kp = mo * (1 - (yth ? W(warn, F.kpassYouth) : W(warn, F.kpass))), flat = Math.min(mo, yth ? W(warn, F.flatYouth) : W(warn, F.flat));
+    var kp = mo * (1 - (yth ? W(warn, F.kpassYouth) : W(warn, F.kpass))), flat = Math.min(mo, a.gtx || a.red ? W(warn, F.flatPlus) : yth ? W(warn, F.flatYouth) : W(warn, F.flat));
     var best = Math.min(mo, 2 * days >= W(warn, F.minTrips) ? Math.min(kp, flat) : mo);
     out.fare = fare; out.transitMo = won(best); out.transitRaw = won(mo); out.kpass = won(kp); out.flat = won(flat);
     out.carMin = Math.round(km / W(warn, D.carKmh) * 60); out.roadKm = Math.round(km * 10) / 10; out.days = days;

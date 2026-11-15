@@ -3,7 +3,7 @@
 만든 곳: 클라우드 세션 2026-11-15(폰) · 코드는 아직 안 고침 · **아래 요금·세율은 전부 웹 2차 자료 = 미확인**
 
 ## 0-1. 지금 상태 (2026-11-15 저녁 · 클라우드)
-v1 이미 만듦(v2.325.0 · 이 브랜치) — 문답 8단계 · 매매/전세/월세 나란히 · 청년 셋 · 출퇴근 근사 · 자동차. 남은 것 = ① data/live-rules.json 값 1차 대조(아래 4장 + realty-afford-prep 3장) → `checked` 날짜 · 근거 글 「미확인」 지우기 · 시험 `node tools/check/live-test.js` 기대값 같이 ② `python tools/region/ai-guide-bake.py`(data/r 필요 — 집 PC) ③ 관문(pagecheck) 통과 뒤 main 병합 ④ 3판(거리표·실거래 견주기)부터.
+v1 이미 만듦(v2.325.0 · 이 브랜치 · 2026-11-16 대조표 A·B 값 반영 — 청년 버팀목 한도 1.5억 · 수도권 한도 시가 구간 6/4/2억 · GTX 거리비례 · 정액 플러스형 · 차 살 때 교육세 없음 · 연납 5%) — 문답 8단계 · 매매/전세/월세 나란히 · 청년 셋 · 출퇴근 근사 · 자동차. ⚠ **규칙 정본이 둘**: 앱이 읽는 `data/live-rules.json`(한 파일) vs 다른 세션 초안 `intent/20261116-rules-draft/*.json`(네 파일) — 값은 맞춰 놓았다. 형님이 하나로 정할 것(권고: 앱이 이미 읽는 live-rules.json 하나 · 초안은 대조 기록으로 남김). 남은 것 = ① rules-checked 6장 「남은 확인」 대조(아래 4장 + realty-afford-prep 3장) → `checked` 날짜 · 근거 글 「미확인」 지우기 · 시험 `node tools/check/live-test.js` 기대값 같이 ② `python tools/region/ai-guide-bake.py`(data/r 필요 — 집 PC) ③ 관문(pagecheck) 통과 뒤 main 병합 ④ 3판(거리표·실거래 견주기)부터.
 
 ## 0. 집에서 첫 지시 (그대로 붙여 넣기)
 > intent/realty-afford 브랜치의 intent 네 장(live-cost-qa · live-cost-prep · realty-afford · realty-afford-prep)을 읽어라.

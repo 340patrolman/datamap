@@ -1,6 +1,6 @@
 /* 데이터 압축지도 — 🏡 여기 살면 얼마 (문답식 · v1 2026-11-15)
    의도 = intent/20261115-live-cost-qa.md · 계산 = js/live-engine.js(LiveEngine) + js/tax-engine.js(TaxEngine) · 규칙 = data/live-rules.json + data/tax-rules.json
-   개인 입력(돈·나이·소득)은 이 창 안 변수에만 — localStorage 에도 쓰지 않고 어디로도 보내지 않는다(창을 닫으면 사라짐)
+   개인 입력(돈·나이·소득)은 이 창 안 변수에만 — localStorage 에도 쓰지 않고 어디로도 보내지 않습니다(창을 닫으면 사라짐)
    열기: 도구 모음 「🏡 여기 살면 얼마」 · 주소 #live=1 · window.tgLive.open() */
 (function () {
   'use strict';
@@ -16,7 +16,7 @@
     if (LOADING) return LOADING;
     function js(src, has) { return new Promise(function (ok, no) { if (has()) return ok(); var s = document.createElement('script'); s.src = src; s.onload = function () { ok(); }; s.onerror = function () { no(new Error(src)); }; document.head.appendChild(s); }); }
     function get(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }); }
-    LOADING = Promise.all([get('data/live-rules.json?v=1'), get('data/tax-rules.json'), js('js/tax-engine.js?v=2.90.0', function () { return !!window.TaxEngine; }), js('js/live-engine.js?v=1', function () { return !!window.LiveEngine; })])
+    LOADING = Promise.all([get('data/live-rules.json?v=1'), get('data/tax-rules.json'), js('js/tax-engine.js?v=2.90.0', function () { return !!window.TaxEngine; }), js('js/live-engine.js?v=2', function () { return !!window.LiveEngine; })])
       .then(function (r) { L = r[0]; T = r[1]; }).catch(function (e) { LOADING = null; throw e; });
     return LOADING;
   }
@@ -87,12 +87,12 @@
   function result() {
     var modes = A.mode === 'all' ? ['buy', 'jeonse', 'rent'] : [A.mode], name = { buy: '🏠 매매', jeonse: '🔑 전세', rent: '📅 월세' }, h = '<p class="q">결과 — 같은 답으로 견줘 봄</p>', warn = [], E = window.LiveEngine, last;
     modes.forEach(function (m) { var s = E.sheet(L, T, window.TaxEngine, args(m)); last = s; h += card(name[m], s); warn = warn.concat(s.warn); });
-    var y = last.youth.list; h += '<div class="cd"><h4>🎓 청년 지원 후보</h4>' + y.map(function (x) { return '<p class="yo"><b class="' + (x.ok === true ? 'y' : x.ok === false ? 'n' : 'u') + '">' + (x.ok === true ? '✓ 후보' : x.ok === false ? '— 아님' : '? 확인') + '</b> ' + esc(x.name) + '<br><span class="s">' + esc(x.why) + '</span></p>'; }).join('') + '<p class="s">최종 자격은 주택도시기금·복지로·마이홈 공고가 정한다</p></div>';
+    var y = last.youth.list; h += '<div class="cd"><h4>🎓 청년 지원 후보</h4>' + y.map(function (x) { return '<p class="yo"><b class="' + (x.ok === true ? 'y' : x.ok === false ? 'n' : 'u') + '">' + (x.ok === true ? '✓ 후보' : x.ok === false ? '— 아님' : '? 확인') + '</b> ' + esc(x.name) + '<br><span class="s">' + esc(x.why) + '</span></p>'; }).join('') + '<p class="s">최종 자격은 주택도시기금·복지로·마이홈 공고가 정합니다</p></div>';
     var c = last.commute; if (c) h += '<div class="cd"><h4>🚇 출퇴근(근사)</h4><div>길 ' + c.roadKm + 'km · 대중교통 약 <b>' + c.transitMin + '분</b> · 차 약 <b>' + c.carMin + '분</b>(편도)</div><div class="s">요금 ' + c.fare.toLocaleString() + '원 × 왕복 × ' + c.days + '일 = ' + man(c.transitRaw) + '원 → K-패스 ' + man(c.kpass) + '원 · 정액형 ' + man(c.flat) + '원 → <b>' + man(c.transitMo) + '원/달</b>' + (A.cm === 'car' ? ' (차로 다니면 매달에 안 더함)' : '') + '</div></div>';
     if (last.car) h += '<div class="cd"><h4>🚗 자동차</h4><div class="big"><div><small>처음</small><b>' + man(last.car.first) + '</b></div><div><small>매달</small><b>' + man(last.car.monthly) + '</b></div><div><small>해마다(세금)</small><b>' + man(last.car.yearly) + '</b></div></div><details><summary>계산 과정</summary>' + steps(last.car.steps) + '</details></div>';
     warn = warn.filter(function (w, i, a) { return a.indexOf(w) === i; });
     h += '<details><summary class="warn">⚠ 확인 안 된 규칙·가정 ' + warn.length + '개 — 펼쳐 보기</summary><ul class="warn">' + warn.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul></details>';
-    h += '<p class="s">상담·심사가 아니다 — 실제 한도·금리·자격은 은행·기금·보증기관 심사와 공고가 정한다. 규칙 기준일: ' + esc(L.made) + (L.checked ? ' · 1차 확인 ' + esc(L.checked) : ' · <b class="warn">1차 출처 대조 전</b>') + '</p>';
+    h += '<p class="s">상담·심사가 아닙니다 — 실제 한도·금리·자격은 은행·기금·보증기관 심사와 공고가 정합니다. 규칙 기준일: ' + esc(L.made) + (L.checked ? ' · 1차 확인 ' + esc(L.checked) : ' · <b class="warn">1차 출처 대조 전</b>') + '</p>';
     h += '<div class="nav"><button data-go="redo">답 고치기</button><button data-go="reset">처음부터</button></div>';
     return h;
   }
@@ -101,11 +101,11 @@
     el.classList.toggle('pick', !!PICK);
     if (PICK) { el.innerHTML = '<div><b>🗺 지도에서 ' + (PICK === 'work' ? '직장' : '살 곳') + ' 자리를 누르세요</b></div><div class="ch"><button class="go" data-go="pickok">✓ 누른 자리로</button><button data-go="pickno">취소</button></div><p class="s" id="m2dLiveSay"></p>'; return; }
     if (!L) { el.innerHTML = h + '<p class="s">규칙을 받는 중…</p>'; return; }
-    if (STEP >= N) { try { el.innerHTML = h + result(); } catch (e) { el.innerHTML = h + '<p class="warn">계산하다 멈췄다: ' + esc(e.message) + '</p><div class="nav"><button data-go="redo">답 고치기</button></div>'; } return; }
-    h += '<div class="bar"><i style="width:' + Math.round(STEP / N * 100) + '%"></i></div>' + STEPS[STEP]() + '<p class="s" id="m2dLiveSay"></p><div class="nav">' + (STEP ? '<button data-go="back">← 앞</button>' : '') + '<button class="go" data-go="next">' + (STEP === N - 1 ? '결과 보기' : '다음 →') + '</button></div><p class="s">입력은 이 창 안에서만 쓰고 저장·전송하지 않는다</p>';
+    if (STEP >= N) { try { el.innerHTML = h + result(); } catch (e) { el.innerHTML = h + '<p class="warn">계산하다 멈췄습니다: ' + esc(e.message) + '</p><div class="nav"><button data-go="redo">답 고치기</button></div>'; } return; }
+    h += '<div class="bar"><i style="width:' + Math.round(STEP / N * 100) + '%"></i></div>' + STEPS[STEP]() + '<p class="s" id="m2dLiveSay"></p><div class="nav">' + (STEP ? '<button data-go="back">← 앞</button>' : '') + '<button class="go" data-go="next">' + (STEP === N - 1 ? '결과 보기' : '다음 →') + '</button></div><p class="s">입력은 이 창 안에서만 쓰고 저장·전송하지 않습니다</p>';
     el.innerHTML = h;
   }
-  function open() { css(); if (!A) A = fresh(); var el = box(), cd = $('m2dCard'); if (cd) cd.classList.remove('on'); el.classList.add('on'); paint(); load().then(paint).catch(function (e) { el.innerHTML = '<button class="x">닫기</button><h3>🏡 여기 살면 얼마</h3><p class="warn">규칙 파일을 못 받았다(' + esc(e.message) + ') — 통신을 확인하고 다시</p>'; }); }
+  function open() { css(); if (!A) A = fresh(); var el = box(), cd = $('m2dCard'); if (cd) cd.classList.remove('on'); el.classList.add('on'); paint(); load().then(paint).catch(function (e) { el.innerHTML = '<button class="x">닫기</button><h3>🏡 여기 살면 얼마</h3><p class="warn">규칙 파일을 못 받았습니다(' + esc(e.message) + ') — 통신을 확인하고 다시</p>'; }); }
   function close() { var el = $('m2dLive'); if (el) el.classList.remove('on'); }
   if (/[#&]live=1(?!\d)/.test(location.hash)) setTimeout(open, 600);
   window.tgLive = { open: open, close: close };

@@ -35,7 +35,7 @@
   /* 매매 대출 가능액 — 제한 중 가장 작은 값 · a = {incomeYr, debtMo, adj, first, rate, years, metro, didim(bool), age} */
   function loanBuy(L, a, P, warn) {
     var B = L.loan, lim = [];
-    if (a.noHome === false) { var w0 = '집이 있는 사람의 추가 주택 대출은 셈하지 않았다(대출 0원으로 봄) — 수도권·규제지역은 추가 주택 구입 대출이 막히거나 기존 집 처분 조건이 붙는다 · 미확인(은행 상담)'; if (warn.indexOf(w0) < 0) warn.push(w0); return { amt: 0, why: '집 있음 — 추가 주택 대출 셈 안 함', lim: [], rate: a.rate || V(B.rateBuy) }; }
+    if (a.noHome === false) { var w0 = '집이 있는 사람의 추가 주택 대출은 셈하지 않았습니다(대출 0원으로 봄) — 수도권·규제지역은 추가 주택 구입 대출이 막히거나 기존 집 처분 조건이 붙습니다 · 미확인(은행 상담)'; if (warn.indexOf(w0) < 0) warn.push(w0); return { amt: 0, why: '집 있음 — 추가 주택 대출 셈 안 함', lim: [], rate: a.rate || V(B.rateBuy) }; }
     var ltvR = a.adj ? (a.first ? W(warn, B.ltv.adjFirst) : W(warn, B.ltv.adj)) : (a.first ? W(warn, B.ltv.nonFirst) : W(warn, B.ltv.non));
     lim.push(['LTV ' + Math.round(ltvR * 100) + '%', P * ltvR]);
     var r = a.rate || W(warn, B.rateBuy), yrs = a.years || W(warn, B.years), st = a.metro !== false ? W(warn, B.stress.metro) : W(warn, B.stress.other);
@@ -53,11 +53,11 @@
     if ((a.incomeYr || 0) > inc) return { ok: false, why: '소득 기준 넘음(' + (inc / 1e4).toLocaleString() + '만 원)' };
     if (P > W(warn, D.priceCap)) return { ok: false, why: '집값 기준 넘음' };
     if ((a.cash || 0) > W(warn, D.asset)) return { ok: false, why: '순자산 기준 넘음(가진 돈만으로 ' + (V(D.asset) / 1e8) + '억 초과)' };
-    var wA = '디딤돌 순자산 ' + (V(D.asset) / 1e8) + '억 이하 · DTI 60% 는 묻지 않았다 — 가진 돈 말고 다른 재산·빚이 있으면 달라진다(가정)'; if (warn.indexOf(wA) < 0) warn.push(wA);
+    var wA = '디딤돌 순자산 ' + (V(D.asset) / 1e8) + '억 이하 · DTI 60% 는 묻지 않았습니다 — 가진 돈 말고 다른 재산·빚이 있으면 달라집니다(가정)'; if (warn.indexOf(wA) < 0) warn.push(wA);
     var max = a.first ? W(warn, D.maxFirst) : W(warn, D.max), r = W(warn, D.rate), yrs = W(warn, D.years);
     var room = (a.incomeYr || 0) * W(warn, L.loan.dsr) / 12 - (a.debtMo || 0);
     var lr = a.first && a.metro === false && !a.adj ? W(warn, D.ltvFirst) : W(warn, D.ltv), ltv = P * lr, dsr = principal(room, r, yrs), lim = [['상품 한도', max], ['LTV ' + Math.round(lr * 100) + '%', ltv], ['원리금 여력(DSR 40% 가정)', dsr]];
-    warn.push('디딤돌 LTV·DSR 적용 방식 — 미확인(정책대출은 은행 DSR 과 다르게 셀 수 있음)');
+    warn.push('디딤돌 LTV·DSR 적용 방식 — 미확인(정책대출은 은행 DSR 과 다르게 셀 수 있습니다)');
     var best = lim.reduce(function (p, q) { return q[1] < p[1] ? q : p; });
     return { ok: true, amt: Math.max(0, won(best[1])), why: best[0], rate: r, lim: lim };
   }
@@ -101,7 +101,7 @@
   function youth(L, a) {
     var Y = L.youth, warn = [], age = a.age || 0, min = W(warn, Y.ageMin), out = [];
     var jn = Y.jeonse, rich = (a.cash || 0) > V(jn.asset), ok1 = age >= min && age <= W(warn, jn.ageMax) && a.noHome && (a.incomeYr || 0) <= W(warn, jn.income) && !rich;
-    if (ok1) warn.push('청년 전용 버팀목 순자산 ' + (V(jn.asset) / 1e8) + '억 이하 — 가진 돈만 보고 셈했다 · 다른 재산이 있으면 달라진다(가정) · 만 25세 미만은 단독세대주 한도(낮은 쪽)로 셈');
+    if (ok1) warn.push('청년 전용 버팀목 순자산 ' + (V(jn.asset) / 1e8) + '억 이하 — 가진 돈만 보고 셈했습니다 · 다른 재산이 있으면 달라집니다(가정) · 만 25세 미만은 단독세대주 한도(낮은 쪽)로 셈');
     out.push({ k: 'jeonse', name: '버팀목 청년 전용 전세대출', ok: !!ok1, why: ok1 ? '나이·소득·무주택 맞음 — 보증금 ' + (W(warn, jn.deposit) / 1e8) + '억 이하 집' : (age < min || age > W(warn, jn.ageMax) ? '나이 범위 밖' : !a.noHome ? '무주택 아님' : rich ? '순자산 기준 넘음(가진 돈만으로)' : '소득 기준 넘음') });
     var ra = Y.rentAid, ok2 = age >= min && age <= W(warn, ra.ageMax) && a.noHome && a.median60 === 'y';
     out.push({ k: 'rentAid', name: '청년월세 지원(월 최대 ' + (W(warn, ra.monthly) / 1e4) + '만 원 · ' + W(warn, ra.months) + '개월)', ok: ok2 ? true : (a.median60 === 'u' && age >= min && age <= W(warn, ra.ageMax) && a.noHome ? null : false), why: ok2 ? '나이·무주택·소득(중위 60% 이하라고 답함) 맞음' : a.median60 === 'u' ? '소득이 중위 60% 이하인지 복지로에서 확인' : (age < min || age > W(warn, ra.ageMax) ? '나이 범위 밖' : !a.noHome ? '무주택 아님' : '소득 기준 밖이라고 답함') });
@@ -132,7 +132,7 @@
     var r = best.youth ? W(warn, Y.rate) : (a.rateJ || W(warn, B.rateJeonse));
     best.monthly = won(best.loan * r / 12);
     best.steps = [['보증금(최대)', best.deposit], ['전세대출(' + best.why + ')', best.loan], ['중개보수(상한)', best.broker], ['이사(입력)', a.moving || 0], ['내 돈 쓰는 것', best.need], ['달마다 이자(만기 일시 · 금리 ' + (r * 100).toFixed(1) + '%)', best.monthly]];
-    best.warn = warn.concat(['전세대출 소득·DSR 심사 · 1주택자 제한 등은 넣지 않았다 — 미확인']);
+    best.warn = warn.concat(['전세대출 소득·DSR 심사 · 1주택자 제한 등은 넣지 않았습니다 — 미확인']);
     return best;
   }
 
@@ -142,7 +142,7 @@
     var dep = Math.max(0, a.rentDeposit != null ? a.rentDeposit : (a.cash || 0) * 0.5);
     var yo = youth(L, a), aid = yo.list[1].ok ? W(warn, L.youth.rentAid.monthly) : 0;
     var mMax = inc * burden, br = brokerLease(L, { deposit: dep, monthly: mMax }, warn);
-    if (dep + br.fee + (a.moving || 0) > (a.cash || 0)) warn.push('넣은 보증금·중개보수·이사비가 가진 돈보다 많다 — 모자란 돈을 빌리는 것은 셈하지 않았다(가정)');
+    if (dep + br.fee + (a.moving || 0) > (a.cash || 0)) warn.push('넣은 보증금·중개보수·이사비가 가진 돈보다 많습니다 — 모자란 돈을 빌리는 것은 셈하지 않았습니다(가정)');
     return { deposit: won(dep), monthlyMax: won(mMax), aid: aid, broker: br.fee, need: won(dep + br.fee + (a.moving || 0)),
       steps: [['보증금(넣은 값 · 없으면 가진 돈의 절반)', won(dep)], ['월소득 × ' + Math.round(burden * 100) + '%', won(inc * burden)], ['월세 상한(지원은 안 더함)', won(mMax)], ['청년월세 지원(후보면 · 따로 · 올해 신청 끝남)', aid], ['중개보수(상한 · 환산보증금)', br.fee], ['내 돈 쓰는 것', won(dep + br.fee + (a.moving || 0))]], warn: warn };
   }
@@ -161,7 +161,7 @@
     var best = Math.min(mo, 2 * days >= W(warn, F.minTrips) ? Math.min(kp, flat) : mo);
     out.fare = fare; out.transitMo = won(best); out.transitRaw = won(mo); out.kpass = won(kp); out.flat = won(flat);
     out.carMin = Math.round(km / W(warn, D.carKmh) * 60); out.roadKm = Math.round(km * 10) / 10; out.days = days;
-    out.warn = warn.concat(['출퇴근 시간은 직선 거리로 낸 근사다 — 실제 길찾기와 다를 수 있다(설계값)']);
+    out.warn = warn.concat(['출퇴근 시간은 직선 거리로 낸 근사입니다 — 실제 길찾기와 다를 수 있습니다(설계값)']);
     return out;
   }
 
@@ -182,7 +182,7 @@
       else { var tb = W(warn, C.taxPerCc), cc = a.cc || 0, row = tb.filter(function (x) { return x[0] === null || cc <= x[0]; })[0]; tax = cc * row[1]; }
       var ar = W(warn, C.ageRelief), yrs = a.buy === 'new' ? 1 : (a.age || 1);
       if (!a.ev && yrs >= ar[1]) tax *= 1 - Math.min(ar[2], (yrs - ar[1] + 1) * ar[0]);
-      if (!a.ev && !(a.cc > 0)) warn.push('배기량을 넣지 않아 자동차세를 0원으로 셈했다(가정)');
+      if (!a.ev && !(a.cc > 0)) warn.push('배기량을 넣지 않아 자동차세를 0원으로 셈했습니다(가정)');
       tax *= 1 + W(warn, C.eduTax);
       st.push(['자동차세+지방교육세(해마다)', won(tax)]);
     }

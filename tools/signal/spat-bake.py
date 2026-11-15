@@ -852,6 +852,51 @@ def segments(rows, k, tail=False):
     return res
 
 
+def full_cycles(sg):
+    """(2026-11-14 이수역 21552 원자료) 한 이동류의 구간 목록에서 「황색 — 적색 — 녹색 조각들 — 황색」이 끊김 없이 이어진 온전한 주기들 [(녹색 시작, 녹색, 황색, 적색, 주기, 녹색 조각 수)].
+    남은 초는 녹색 도중에 다시 뛸 수 있다(감응·가변 운영 — 이수역 토 07시 동 직진: 녹 [95초(시작 때 124.6) + 42초(33.6)] · 황 4 · 적 47 = 주기 188 · 다음 주기 251 · 235).
+    구간 길이 ≈ 시작 때 잔여 거르기(reduce_one)는 이런 조각을 버려 마지막 조각(33~40초)만 녹색으로 읽었다 → 주기 88초(진짜의 절반 아래).
+    적색은 한 조각이고 시작 때 잔여대로 끝났을 때(±3.5초)만 — 그래야 그 뒤가 녹색이다(적색이 쪼개진 곳에서 적색 조각을 녹색으로 세지 않게)"""
+    isy = lambda i: 0 < i < len(sg) - 1 and 2.5 <= sg[i][1] <= 6.5 and sg[i - 1][1] > 6.5 and sg[i + 1][1] > 6.5
+    tie = lambda a, b: abs(sg[a][0] + sg[a][1] - sg[b][0]) < 2
+    ys = [i for i in range(len(sg)) if isy(i)]
+    out = []
+    for a, b in zip(ys, ys[1:]):
+        if b - a < 3 or not all(tie(k, k + 1) for k in range(a, b)):
+            continue
+        r9 = sg[a + 1]
+        if abs(r9[1] - r9[2]) > 3.5:
+            continue
+        P9 = [sg[k] for k in range(a + 2, b)]
+        if any(q[1] <= 6.5 for q in P9):
+            continue   # 짧은 조각 = 읽히지 않은 황색일 수 있다(3초 황색이 2.5초 아래로 읽힘) — 두 주기를 하나로 더하지 않게
+        if len(P9) > 1 and any(abs(q[1] - q[2]) <= 3.5 and abs(q[1] - r9[1]) <= 3 for q in P9):
+            continue
+        if len(P9) > 1 and not any(q[1] < q[2] - 3.5 for q in P9[:-1]):
+            continue   # (독립 검수 2판) 앞 조각이 모두 알린 대로 끝났다 = 감응으로 끊긴 녹색이 아니라 적색이 여러 조각으로 알려진 고정 신호일 수 있다
+                       #  (446 남서 직진 황 4 · 50 · 63 · 10 · 63 · 황 4 — 상태 기록은 녹 73 · 적 113 = 앞 63 은 적색 둘째 조각) · 진짜 감응은 앞 조각이 알린 것보다 일찍 끊긴다(21552 124.6→95 · 195.7→160 · 179.5→150)   # 사이 조각 하나가 그 주기 적색과 같은 길이로 알린 대로 끝났다 = 황색을 놓친 다음 주기의 적색 (4036 서 좌회전 [150, 300] 꼴)
+        G = sum(q[1] for q in P9)
+        out.append((sg[a + 2][0], round(G, 1), sg[b][1], r9[1], round(sg[b][0] - sg[a][0], 1), b - a - 2))
+    if out:
+        c0 = min(c[4] for c in out)
+        out = [c for c in out if c[4] < 1.8 * c0]   # 다른 주기의 거의 두 배 = 황색 하나를 놓친 두 주기
+    return out
+
+
+def var_of(starts, intervals, t0):
+    """주기마다 다른가(감응·가변) — [가장 짧은, 가장 긴] 또는 None. 정각 직후 6분 안에 시작한 주기는 빼고(계획이 바뀌는 사이 — 내방역 194·170·170 · 독립 검수 결함 2)
+    남은 주기가 둘 이상 · 4초 넘게 다르고 · 마지막 두 주기가 ±1.5초로 같지 않을 때만(끝이 안정되면 고정 계획으로 본다 — 닻 규칙과 같은 기준)"""
+    h0 = (t0 + 9 * 3600) % 3600
+    C = list(intervals)
+    if C and h0 <= 300 and starts and starts[0] < t0 - h0 + 300:
+        C = C[1:]   # 정각 직후 5분 안에 시작한 첫 주기만 뺀다(계획이 바뀌는 사이)
+    if len(C) < 2:
+        return 'un'   # 견줄 주기가 모자라 고정·가변을 못 가린다
+    if max(C) - min(C) <= 4 or abs(C[-1] - C[-2]) <= 1.5:
+        return None
+    return [round(min(C), 1), round(max(C), 1)]
+
+
 def med(a):
     return round(statistics.median(a), 1) if a else None
 
@@ -936,8 +981,15 @@ def reduce_phase(itst, J):
     for x in mv + pd:
         x.pop('gs', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
-    return {'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows),
-            'cyc': cyc, 'mv': mv, 'ped': [{'d': q['d'], 'seg': [], 'n': q['n']} for q in pd], 'pd': pd, 'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy, 'src': 'p'}
+    k9 = [i for i, q in enumerate(iv) if 0.6 * cyc <= q <= 1.6 * cyc]
+    var = var_of([rs[i] for i in k9], [iv[i] for i in k9], t0)
+    if var == 'un':
+        var = None   # 상태 기록은 녹색이 쪼개져 읽히지 않는다 — 견줄 주기가 모자라면 종전대로(닻 규칙이 따로 본다)   # (2026-11-14) 주기가 주기마다 다르다(감응·가변 — 이수역 토 07시 188·251·235초) — 닻을 안 잡는다
+    out = {'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows),
+           'cyc': cyc, 'mv': mv, 'ped': [{'d': q['d'], 'seg': [], 'n': q['n']} for q in pd], 'pd': pd, 'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 and not var else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy, 'src': 'p'}
+    if var:
+        out['var'] = var
+    return out
 
 
 # 방위 바로잡기(소유자 현장 판단) — 원자료 방위 이름이 실제와 다른 교차로 · {교차로 번호: {원자료 방위: 실제 방위}} · build 끝에서 its(mv·ped·pd)·pl 기준 이동류에 같이 적용 · 기록에 fix='dir'
@@ -1010,7 +1062,20 @@ def reduce_one(itst, J):
             if not any(r.get(k) is not None for r in rows):
                 continue
             sg = segments(rows, k, tail=True)
+            FC = full_cycles(sg) if m != 'Pd' else []
             sg = [s for s in sg if abs(s[1] - s[2]) <= 3.5]   # 구간 길이 ≈ 시작 때 잔여(끊김·튐 거르기)
+            if any(c[5] > 1 for c in FC):
+                # (2026-11-14) 녹색이 여러 조각으로 읽힌 이동류 — 이어 붙인 온전한 주기로 읽는다 · 주기가 주기마다 4초 넘게 다르면 가변(vx = [가장 짧은, 가장 긴 주기]) → 닻을 안 잡는다(build · 지도·가르고가 초를 세지 않게)
+                C9 = [c[4] for c in FC]
+                x9 = {'d': d, 'm': m, 'g': med([c[1] for c in FC]), 'y': med([c[2] for c in FC]), 'r': med([c[3] for c in FC]), 'n': len(FC), 'gs': [c[0] for c in FC], 'pc': max(c[5] for c in FC), '_fc': C9}
+                v9 = var_of([c[0] for c in FC], C9, t0)
+                if v9 == 'un':
+                    x9['un'] = 1   # 조각으로 읽힌 녹색인데 견줄 온전한 주기가 하나뿐 — 고정인지 가변인지 모른다 → 닻 없음(이수역 5~7분 창 188초가 닻으로 섰다 · 독립 검수 결함 3)
+                elif v9:
+                    x9['vx'] = v9
+                mv.append(x9)
+                cyc_all.append(x9['g'] + x9['y'] + x9['r'])
+                continue
             if m == 'Pd':
                 ped.append({'d': d, 'seg': [round(s[1]) for s in sg[:12]], 'n': len(sg), '_sg': sg})
                 continue
@@ -1027,6 +1092,11 @@ def reduce_one(itst, J):
     if not mv and not ped:
         return None
     cyc = med(cyc_all)
+    FCC = [c for x in mv if x.get('_fc') and not x.get('vx') and not x.get('un') for c in x['_fc']]
+    if len(FCC) >= 2 and max(FCC) - min(FCC) <= 3:
+        # (2026-11-14 446 원자료) 이어 붙인 주기가 고르면(고정 계획 · 남서 직진 녹 63+10+63 = 136 · 주기 190 여섯 번) 그것이 주기다 —
+        #  한 주기에 두 번 켜지는 이동류(북동 좌회전 녹 19 · 황 4 · 적 14 또는 63)가 섞여 가운데값이 113.5 로 틀어졌다
+        cyc = med(FCC)   # 다른 이동류의 녹+황+적은 그대로 둔다 — 446 북동 좌회전은 한 주기(190)에 두 번(90·100초 간격) 켜진다(mvrow 가 「두 번」으로 싣는다)
     # (2026-10-11 소유자 「이수역 … 중간에 붕 뜬다 올레드 … 40초가 넘는다」) 적색 구간이 걸러진 이동류 살리기 —
     #  이수역(1552) 일 14시: 동쪽 직진 구간이 [46, 4, 46, 4 …] · 서쪽 [55, 4, 55, 4 …] = 녹색·황색은 읽혔는데 적색의 잔여시간이 모름 값이라 적색 구간이 통째로 빠져
     #  「긴 구간 — 황색 — 긴 구간」 규칙에 못 들었다(그 59초가 지도에서 올레드처럼 비었다). 다른 이동류로 주기를 알면:
@@ -1150,9 +1220,12 @@ def reduce_one(itst, J):
         iv = [rs[i + 1] - rs[i] for i in range(len(rs) - 1)]
         if len(iv) >= 2 and all(abs(q - cyc) <= 1.5 for q in iv[-2:]) and abs(cyc - round(cyc)) <= 0.3:
             ci = plan_ci(cyc, int(round(cyc)))
-        anchor = {'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy}
+        vx9 = [x['vx'] for x in mv if x.get('vx')]
+        anchor = {'a': (round(rs[-1], 1) if abs(ci - cyc) <= 2 and not vx9 and not any(x.get('un') for x in mv) else None), 'ci': ci, 'end': round(t1, 1), 'ncy': ncy}
+        if vx9:
+            anchor['var'] = [min(v[0] for v in vx9), max(v[1] for v in vx9)]   # (2026-11-14) 주기가 주기마다 다르다(감응·가변) — 닻 없음 · 지도 카드가 「가변」으로
     for x in mv:
-        x.pop('gs', None); x.pop('_sg', None)
+        x.pop('gs', None); x.pop('_sg', None); x.pop('_fc', None)
     hh = lambda t: datetime.datetime.fromtimestamp(t).strftime('%H:%M')
     if anchor:
         return dict({'id': str(itst), 'day': datetime.datetime.fromtimestamp(t0).strftime('%Y-%m-%d'), 'dow': datetime.datetime.fromtimestamp(t0).isoweekday() % 7, 'from': hh(t0), 'to': hh(t1), 'rows': len(rows), 'cyc': cyc, 'mv': mv, 'ped': ped}, **anchor)
@@ -1303,6 +1376,9 @@ def build():
                     pass                                        # (2026-11-12 독립 검수) 두 닻으로 주기를 잰 기록(길이는 어림)이 같은 주기의 실측 기록을 덮지 않는다 — 닻·시각대 표(pl)에만 쓴다
                 else:
                     keep[kk] = r                                # (요일 갈래, 주기)마다 나중 것 한 장
+            if r.get('var') and r.get('src') != 'f' and time.time() - datetime.datetime.strptime(r['day'], '%Y-%m-%d').timestamp() <= 21 * 86400:
+                plan.pop((cls_of(r['dow'], r['day']), int(r['from'][:2])), None)   # (2026-11-14) 가변(감응) 칸 — 앞서 받은 고정 주기 줄을 지운다(나중에 고정으로 받으면 다시 생긴다)
+                pinfo.pop((cls_of(r['dow'], r['day']), int(r['from'][:2])), None)
             if r.get('a'):
                 hh = datetime.datetime.fromtimestamp(r['a']).hour
                 sod = (r['a'] + 9 * 3600) % 86400               # 한국 시각 하루 초
@@ -1551,6 +1627,8 @@ def build():
                 o['src'] = 'f'   # (2026-10-14) Fusion 지금 한 줄로 잡은 새 닻 — 녹색 길이·자리는 같은 교차로의 다른 기록(fz.base)에서 빌렸다
                 if (r.get('fz') or {}).get('base'):
                     o['fb'] = r['fz']['base']   # (2026-10-24) 길이를 빌린 기록 「YYYY-MM-DD HH:MM」 — 지도 카드가 「현시 길이는 ○시 기록에서 빌림」으로 적는다(밤엔 주기가 달라 지금 값처럼 보이면 안 된다)
+            if r.get('var'):
+                o['var'] = r['var']   # (2026-11-14) 주기가 주기마다 다르다(감응·가변) [가장 짧은, 가장 긴 주기 초] — 닻 없음
             if r.get('pd'):
                 o['pd'] = [[q['d'], q.get('g'), q.get('y'), q.get('r'), q.get('o'), q['n']] + ([q['cx']] if q.get('cx') else []) for q in r['pd'] if q.get('g') is not None and abs(q['g'] + q['y'] + q['r'] - r['cyc']) <= 3.5]   # 보행 신호 [방위, 녹색, 점멸, 적색, 녹색 시작, 본 횟수] — 주기와 맞는 것만
             if r.get('a'):
@@ -1713,7 +1791,15 @@ def fz_anchor(itst, row):
             RR.append(json.load(open(f, encoding='utf-8')))
         except Exception:
             continue
+    try:
+        L9 = sorted((q for q in RR if q.get('src') != 'f' and cls_of(q['dow'], q['day']) == cl and int(q['from'][:2]) == now.hour), key=lambda q: (q['day'], q['to']))
+        if L9 and L9[-1].get('var') and (now.replace(tzinfo=None) - datetime.datetime.strptime(L9[-1]['day'], '%Y-%m-%d')).days <= 21:
+            return None                                     # (2026-11-14) 이 칸은 가장 새로 받은 실측이 가변(감응) — 빌린 길이로 초를 세면 틀린다
+    except Exception:
+        pass
     for r in RR:
+        if r.get('var'):
+            continue
         ci9 = plan_ci(r['cyc'], r['ci']) if r.get('ci') and r.get('cyc') else None
         if ci9 and abs(ci9 - r['cyc']) <= 2.5 and abs(ci9 - round(ci9)) <= 0.05 and not r.get('dq') and r.get('src') != 'f' and not fz_half(r, RR, cl, now.hour):   # build 가 닻으로 쓰는 기록만(주기가 계획과 맞고 정수 초 · 반주기 의심 — 제 칸 또는 지금 칸의 상태 기록의 절반쯤 — 빼고)
             r = dict(r, ci=ci9)
@@ -1858,6 +1944,10 @@ def fz_slot_ok(itst, now=None):
             continue
     for r in SL:
         try:
+            if r.get('src') != 'f' and r.get('var'):
+                if (nk.replace(tzinfo=None) - datetime.datetime.strptime(r['day'], '%Y-%m-%d')).days <= 21:
+                    return True
+                continue                                    # 21일 넘은 가변 기록은 칸을 믿는 근거도 아니다 — 다시 잰다                                 # (2026-11-14) 가변(감응) 칸 — 두 닻으로 잴 주기가 없다
             if r.get('src') != 'f':
                 ci9 = plan_ci(r['cyc'], r['ci']) if r.get('ci') and r.get('cyc') else None
                 if ci9 and abs(ci9 - r['cyc']) <= 2.5 and abs(ci9 - round(ci9)) <= 0.05 and not r.get('dq'):
@@ -1865,7 +1955,7 @@ def fz_slot_ok(itst, now=None):
                         return True
                     # (2026-11-14) 읽힌 이동류가 둘 이하인 잔여시간 기록(이수역 21552 은 늘 동·서 직진 둘뿐 — 두 이동류가 같은 현시라 서로 확인이 안 된다)은
                     #  다른 날 같은 칸 기록이나 상태·두 닻 기록과 주기가 맞을(±5%) 때만 믿는다 — 토 21시 143초는 10-17 하루치뿐이었고 이웃 사당·방배 줄은 그 시각 180~200초
-                    if any(q is not r and q.get('day') != r['day'] and abs(float(q.get('ci') or q.get('cyc') or 0) - ci9) <= 0.05 * ci9 and (q.get('src') != 'f' or (q.get('fz') or {}).get('cm')) for q in SL):
+                    if any(q is not r and not q.get('var') and q.get('day') != r['day'] and abs(float(q.get('ci') or q.get('cyc') or 0) - ci9) <= 0.05 * ci9 and (q.get('src') != 'f' or (q.get('fz') or {}).get('cm')) for q in SL):
                         return True
             elif (r.get('fz') or {}).get('cm'):
                 d9 = (nk.replace(tzinfo=None) - datetime.datetime.strptime(r['day'], '%Y-%m-%d')).days

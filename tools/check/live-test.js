@@ -76,6 +76,20 @@ var s = E.sheet(L, T, TE, { mode: 'jeonse', cash: 1e8, incomeYr: 4e7, age: 28, n
 tr('한 장 매달 = 이자 + 교통비', s.monthly === s.house.monthly + s.commute.transitMo);
 tr('미확인 경고가 붙는다', s.warn.some(function (w) { return /미확인/.test(w); }));
 
+/* 8-1. 금융비용 — 융자비율·금리 눈금·부담 눈금 */
+var sb = E.sheet(L, T, TE, { mode: 'buy', cash: 3e8, incomeYr: 8e7, age: 35, noHome: true, first: false, adj: true, metro: true, car: { buy: 'none' } }), bb = sb.burden;
+tr('융자비율 = 대출 ÷ 집값', Math.abs(bb.ratio - sb.house.loan.amt / sb.house.price) < 1e-9 && bb.ratio > 0 && bb.ratio <= 0.4 + 1e-6);
+eq('달마다 = 원리금 균등', bb.pay, Math.round(E.pmt(sb.house.loan.amt, bb.rate, bb.years)));
+tr('소득 몫 = 달마다 ÷ 월소득', Math.abs(bb.share - E.pmt(sb.house.loan.amt, bb.rate, bb.years) / (8e7 / 12)) < 1e-9);
+tr('금리 눈금 넷 · 오르면 더 냄', bb.rates.length === 4 && bb.rates[0].pay < bb.rates[1].pay && bb.rates[1].diff === 0 && bb.rates[2].pay < bb.rates[3].pay);
+eq('금리 +1%p 달마다', bb.rates[2].pay, Math.round(E.pmt(sb.house.loan.amt, bb.rate + 0.01, bb.years)));
+tr('부담 눈금 — 몫이 낮을수록 집값이 같거나 낮음', bb.caps.length === 3 && bb.caps[0].price <= bb.caps[1].price && bb.caps[1].price <= bb.caps[2].price && bb.caps[2].price <= sb.house.price);
+tr('부담 눈금 — 묶은 몫을 넘지 않음', bb.caps.every(function (q) { return q.pay <= 8e7 / 12 * q.share + 1; }));
+tr('부담 눈금 — 내 돈은 가진 돈 안', bb.caps.every(function (q) { return q.price >= 0 && q.loan <= sb.house.loan.amt; }));
+var sj = E.sheet(L, T, TE, { mode: 'jeonse', cash: 1e8, incomeYr: 4e7, age: 40, noHome: true, car: { buy: 'none' } });
+eq('전세 금리 +1%p = 대출 × 1% ÷ 12', sj.burden.rates[2].diff, Math.round(sj.house.loan * 0.01 / 12));
+tr('집 있는 사람 — 대출 0 · 눈금 없음', E.sheet(L, T, TE, { mode: 'buy', cash: 3e8, incomeYr: 8e7, noHome: false, adj: true, car: { buy: 'none' } }).burden.caps === null);
+
 /* 9. 기존 세금 계산 그대로 — 6억 아파트 1주택 취득세 1% + 교육세 0.1% = 660만(85㎡ 이하 농특세 없음) */
 eq('기존 취득세 6억', TE.acq(T, { cat: 'apt', cause: 'buy', price: 6e8, homesAfter: 1, area: 84 }).total, 6600000);
 

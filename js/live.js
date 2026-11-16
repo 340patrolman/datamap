@@ -16,7 +16,7 @@
     if (LOADING) return LOADING;
     function js(src, has) { return new Promise(function (ok, no) { if (has()) return ok(); var s = document.createElement('script'); s.src = src; s.onload = function () { ok(); }; s.onerror = function () { no(new Error(src)); }; document.head.appendChild(s); }); }
     function get(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }); }
-    LOADING = Promise.all([get('data/live-rules.json?v=1'), get('data/tax-rules.json'), js('js/tax-engine.js?v=2.90.0', function () { return !!window.TaxEngine; }), js('js/live-engine.js?v=2', function () { return !!window.LiveEngine; })])
+    LOADING = Promise.all([get('data/live-rules.json?v=2'), get('data/tax-rules.json'), js('js/tax-engine.js?v=2.90.0', function () { return !!window.TaxEngine; }), js('js/live-engine.js?v=3', function () { return !!window.LiveEngine; })])
       .then(function (r) { L = r[0]; T = r[1]; }).catch(function (e) { LOADING = null; throw e; });
     return LOADING;
   }
@@ -32,6 +32,7 @@
       '#m2dLive .nav{display:flex;gap:6px;margin-top:10px}#m2dLive .nav button{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--line,#ddd);background:var(--chip,#f3f4f6);color:inherit;font-weight:700}#m2dLive .nav .go{background:var(--acc,#2563eb);color:#fff;border-color:transparent}' +
       '#m2dLive .cd{border:1px solid var(--line,#ddd);border-radius:12px;padding:8px 10px;margin:8px 0}#m2dLive .cd h4{margin:0 0 4px;font-size:14.5px}#m2dLive .big{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:4px 0}#m2dLive .big div{background:var(--chip,#f3f4f6);border-radius:8px;padding:4px 6px;text-align:center}#m2dLive .big small{display:block;font-size:11px;color:var(--ink2,#555)}#m2dLive .big b{font-size:15px}' +
       '#m2dLive table{width:100%;border-collapse:collapse;font-size:12.5px}#m2dLive td{padding:2px 0;border-top:1px dashed var(--line,#ddd)}#m2dLive td:last-child{text-align:right;white-space:nowrap}#m2dLive details summary{cursor:pointer;font-size:12.5px;color:var(--acc,#2563eb);margin-top:4px}' +
+      '#m2dLive .bd{border-top:1px solid var(--line,#ddd);margin-top:6px;padding-top:6px}#m2dLive .bd table{margin:6px 0 2px}#m2dLive .bd td{text-align:right;white-space:nowrap}#m2dLive .bd td:first-child{text-align:left;white-space:normal}#m2dLive .bd tr.nw td{font-weight:700}#m2dLive .mt{height:8px;background:var(--chip,#eef0f3);border-radius:4px;margin:3px 0 5px;overflow:hidden}#m2dLive .mt i{display:block;height:8px;background:var(--acc,#2563eb)}#m2dLive .mt.k i{background:#d97706}' +
       '#m2dLive .warn{font-size:12px;color:#b45309}:root.dark #m2dLive .warn{color:#fbbf24}#m2dLive .yo{font-size:13px;margin:2px 0}#m2dLive .yo b.y{color:#15803d}#m2dLive .yo b.n{color:#94a3b8}#m2dLive .yo b.u{color:#b45309}';
     document.head.appendChild(s);
   }
@@ -74,11 +75,26 @@
     return { mode: mode, age: n('age'), noHome: A.noHome === 'y', first: A.first === 'y', median60: A.median60, cash: n('cash', 1e4), incomeYr: n('income', 1e4), debtMo: n('debt', 1e4), adj: A.adj === 'y', metro: true, didim: A.didim === 'y', rentDeposit: A.rentDep === '' ? null : n('rentDep', 1e4), km: d, commuteMode: A.cm, gtx: A.gtx === 'y', red: A.red === 'y', car: A.car === 'none' ? { buy: 'none' } : c, mgmt: n('mgmt', 1e4), moving: n('moving', 1e4), legal: n('legal', 1e4) };
   }
   function steps(st) { return '<table>' + st.map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + (typeof r[1] === 'number' ? man(r[1]) + '원' : esc(r[1])) + '</td></tr>'; }).join('') + '</table>'; }
+  function pct(x) { return x == null ? '—' : (x * 100).toFixed(x < 0.1 ? 1 : 0) + '%'; }
+  function burdenBox(s) {
+    var b = s.burden; if (!b || !b.loan) return b ? '<div class="bd"><b>대출 없음</b> — 달마다 금융비용 0원</div>' : '';
+    var buy = s.mode === 'buy', w = Math.min(100, Math.round(b.ratio * 100)), sh = b.share == null ? null : Math.min(100, Math.round(b.share * 100));
+    var h = '<div class="bd"><div><b>💳 빌리는 돈과 달마다 금융비용</b></div>';
+    h += '<div class="s">융자비율(' + (buy ? '집값' : '보증금') + ' 중 대출) <b>' + pct(b.ratio) + '</b> · 대출 ' + man(b.loan) + '원 · 금리 ' + (b.rate * 100).toFixed(1) + '%' + (buy ? ' · ' + b.years + '년 원리금 균등' : ' · 이자만(만기 일시)') + '</div><div class="mt"><i style="width:' + w + '%"></i></div>';
+    h += '<div class="s">달마다 <b>' + man(b.pay) + '원</b>' + (buy ? '(첫 달 이자 ' + man(b.interest1) + '원)' : '') + (b.share == null ? ' · 소득을 넣으면 소득에서 차지하는 몫을 보여 드립니다' : ' = 세전 월소득 ' + man(b.incMo) + '원의 <b>' + pct(b.share) + '</b>' + (b.debtMo ? ' · 기존 빚까지 ' + pct(b.shareAll) : '')) + '</div>';
+    if (sh != null) h += '<div class="mt k"><i style="width:' + sh + '%"></i></div><div class="s">금융비용을 내고 남는 돈(세전) <b>' + man(b.left) + '원/달</b> — 여기서 세금·보험료·생활비·저축이 나갑니다</div>';
+    if (buy && b.totalInterest != null) h += '<div class="s">' + b.years + '년 동안 이자 합계 약 ' + man(b.totalInterest) + '원(금리가 그대로일 때)</div>';
+    h += '<table><tr><td><b>금리가 바뀌면</b></td><td>달마다</td><td>차이</td><td>소득 몫</td></tr>' + b.rates.map(function (q) { return '<tr' + (q.d === 0 ? ' class="nw"' : '') + '><td>' + (q.rate * 100).toFixed(1) + '%' + (q.d === 0 ? ' (지금 가정)' : '') + '</td><td>' + man(q.pay) + '원</td><td>' + (q.d === 0 ? '—' : (q.diff > 0 ? '+' : '−') + man(Math.abs(q.diff)) + '원') + '</td><td>' + pct(q.share) + '</td></tr>'; }).join('') + '</table>';
+    if (b.caps) h += '<table><tr><td><b>부담을 이만큼으로 묶으면</b></td><td>대출</td><td>집값</td><td>달마다</td></tr>' + b.caps.map(function (q) { return '<tr><td>소득의 ' + Math.round(q.share * 100) + '%' + (q.tight ? ' (한도가 먼저 걸림)' : '') + '</td><td>' + man(q.loan) + '원</td><td>' + man(q.price) + '원</td><td>' + man(q.pay) + '원</td></tr>'; }).join('') + '</table>';
+    h += '<div class="s">금리 눈금·부담 눈금은 견줘 보려고 둔 설계값입니다(전망·권고 기준이 아닙니다). 소득은 세전이라 실제로 손에 남는 돈은 더 적습니다. 변동금리면 달마다 내는 돈이 위 표처럼 움직입니다.</div></div>';
+    return h;
+  }
   function card(title, s) {
     var h = '<div class="cd"><h4>' + esc(title) + '</h4>';
     var hd = s.mode === 'buy' ? '집값 최대 <b>' + man(s.house.price) + '원</b>' : s.mode === 'jeonse' ? '보증금 최대 <b>' + man(s.house.deposit) + '원</b>' : '보증금 ' + man(s.house.deposit) + '원 · 월세 최대 <b>' + man(s.house.monthlyMax) + '원</b>';
     h += '<div>' + hd + '</div><div class="big"><div><small>처음</small><b>' + man(s.first) + '</b></div><div><small>매달</small><b>' + man(s.monthly) + '</b></div><div><small>해마다</small><b>' + man(s.yearly) + '</b></div></div>';
     if (s.house.loan && s.house.loan.why) h += '<div class="s">대출을 묶은 조건: <b>' + esc(s.house.loan.why) + '</b></div>'; else if (s.house.why) h += '<div class="s">대출을 묶은 조건: <b>' + esc(s.house.why) + '</b></div>';
+    h += burdenBox(s);
     h += '<details><summary>계산 과정</summary>' + steps(s.house.steps || []);
     if (s.mode === 'buy' && s.house.loan.lim) h += '<p class="s">한도 후보: ' + s.house.loan.lim.map(function (q) { return esc(q[0]) + ' ' + man(q[1]) + '원'; }).join(' · ') + '</p>';
     if (s.mode === 'buy' && s.house.yearly) h += '<p class="s">해마다 = 재산세 ' + man(s.house.yearly.prop) + '원 + 종부세 ' + man(s.house.yearly.jbs) + '원(공시가격 = 집값 × 0.7 가정)</p>';

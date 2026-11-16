@@ -71,6 +71,7 @@
         var P = (lo + hi) / 2, loan;
         if (useDidim) { var dd = didim(L, a, P, warn); if (!dd.ok) { hi = P; continue; } loan = { amt: dd.amt, why: '디딤돌 · ' + dd.why, rate: dd.rate, lim: dd.lim }; }
         else loan = loanBuy(L, a, P, warn);
+        if (a.loanCap != null && loan.amt > a.loanCap) loan = { amt: won(a.loanCap), why: '내가 정한 부담 눈금', rate: loan.rate, lim: loan.lim };
         var c = buyCosts(T, TE, a, P), need = P - loan.amt + c.total;
         if (need <= (a.cash || 0)) { lo = P; best = { price: won(P), loan: loan, costs: c, need: won(need) }; } else hi = P;
         if (hi - lo < 1e5) break;
@@ -82,11 +83,28 @@
     if (bd && (!best || bd.price > best.price)) best = bd;
     if (!best) { var c0 = buyCosts(T, TE, a, 0); best = { price: 0, loan: { amt: 0, why: '가진 돈이 부대비용보다 적음', lim: [] }, costs: c0, need: 0 }; }
     var yrs = a.years || W(warn, L.loan.years), mo = pmt(best.loan.amt, best.loan.rate || a.rate || W(warn, L.loan.rateBuy), yrs);
-    best.monthly = won(mo);
+    best.monthly = won(mo); best.rate = best.loan.rate || a.rate || V(L.loan.rateBuy); best.years = yrs;
     best.yearly = yearlyHold(T, TE, best.price, a);
     best.warn = warn.concat(best.costs.warn || []);
     best.steps = [['살 수 있는 집값(최대)', best.price], ['대출(' + best.loan.why + ')', best.loan.amt], ['취득세·교육세·농특세', best.costs.acq], ['중개보수(상한)', best.costs.broker], ['인지세(국민주택채권 할인 비용은 안 넣음)', best.costs.reg], ['법무사·이사(입력)', best.costs.legal + best.costs.moving], ['내 돈 쓰는 것', best.need], ['달마다 원리금(' + yrs + '년 균등)', best.monthly]];
     return best;
+  }
+
+  /* 금융비용 — 융자비율 · 달마다 내는 돈이 소득에서 차지하는 몫 · 금리가 바뀌면 · 부담 눈금으로 묶으면 집값 얼마
+     눈금(금리 걸음·부담 몫)은 live-rules design.burden = 견줘 보는 설계값이지 기준·권고가 아니다 · 소득은 세전 */
+  function burden(L, T, TE, a, h, mode) {
+    var buy = mode === 'buy', loan = buy ? h.loan.amt : (h.loan || 0), base = buy ? h.price : h.deposit, r = h.rate, yrs = buy ? h.years : 0, inc = (a.incomeYr || 0) / 12, debt = a.debtMo || 0, D = L.design.burden;
+    function pay(rr) { return buy ? pmt(loan, rr, yrs) : loan * rr / 12; }
+    var now = pay(r);
+    var o = { loan: won(loan), base: won(base), ratio: base ? loan / base : 0, rate: r, years: yrs, pay: won(now), interest1: won(loan * r / 12), totalInterest: buy ? won(now * yrs * 12 - loan) : null,
+      incMo: won(inc), debtMo: won(debt), share: inc > 0 ? now / inc : null, shareAll: inc > 0 ? (now + debt) / inc : null, left: inc > 0 ? won(inc - now - debt) : null,
+      rates: V(D.rateSteps).map(function (d) { var rr = Math.max(0, r + d), p = pay(rr); return { d: d, rate: rr, pay: won(p), diff: won(p - now), share: inc > 0 ? p / inc : null }; }), caps: null, note: [S(D.rateSteps), S(D.shares)] };
+    if (buy && inc > 0 && a.noHome !== false && loan > 0) o.caps = V(D.shares).map(function (sh) {
+      var cap = Math.max(0, principal(inc * sh - debt, r, yrs)), a2 = {}, k; for (k in a) a2[k] = a[k]; a2.loanCap = cap;
+      var b = affordBuy(L, T, TE, a2);
+      return { share: sh, loan: b.loan.amt, price: b.price, pay: b.monthly, ratio: b.price ? b.loan.amt / b.price : 0, tight: b.loan.amt < cap - 1e5 };
+    });
+    return o;
   }
 
   /* 해마다 보유세 — 공시가격 = 집값 × 비율(입력 · 기본 0.7 가정) */
@@ -130,7 +148,7 @@
     if (by && (!best || by.deposit >= best.deposit)) best = by;
     if (!best) best = { deposit: 0, loan: 0, why: '가진 돈이 부족', broker: 0, need: 0, youth: false };
     var r = best.youth ? W(warn, Y.rate) : (a.rateJ || W(warn, B.rateJeonse));
-    best.monthly = won(best.loan * r / 12);
+    best.monthly = won(best.loan * r / 12); best.rate = r;
     best.steps = [['보증금(최대)', best.deposit], ['전세대출(' + best.why + ')', best.loan], ['중개보수(상한)', best.broker], ['이사(입력)', a.moving || 0], ['내 돈 쓰는 것', best.need], ['달마다 이자(만기 일시 · 금리 ' + (r * 100).toFixed(1) + '%)', best.monthly]];
     best.warn = warn.concat(['전세대출 소득·DSR 심사 · 1주택자 제한 등은 넣지 않았습니다 — 미확인']);
     return best;
@@ -194,8 +212,8 @@
   /* 한 장으로 — 처음 / 매달 / 해마다 */
   function sheet(L, T, TE, a) {
     var out = { mode: a.mode, warn: [] }, h;
-    if (a.mode === 'buy') { h = affordBuy(L, T, TE, a); out.house = h; out.first = h.need; out.monthly = h.monthly; out.yearly = h.yearly.total; }
-    else if (a.mode === 'jeonse') { h = affordJeonse(L, a); out.house = h; out.first = h.need; out.monthly = h.monthly; out.yearly = 0; }
+    if (a.mode === 'buy') { h = affordBuy(L, T, TE, a); out.house = h; out.first = h.need; out.monthly = h.monthly; out.yearly = h.yearly.total; out.burden = burden(L, T, TE, a, h, 'buy'); }
+    else if (a.mode === 'jeonse') { h = affordJeonse(L, a); out.house = h; out.first = h.need; out.monthly = h.monthly; out.yearly = 0; out.burden = burden(L, T, TE, a, h, 'jeonse'); }
     else { h = affordRent(L, a); out.house = h; out.first = h.need; out.monthly = h.monthlyMax; out.yearly = 0; }
     out.warn = out.warn.concat(h.warn || []);
     out.youth = youth(L, a); out.warn = out.warn.concat(out.youth.warn);
@@ -207,6 +225,6 @@
     return out;
   }
 
-  root.LiveEngine = { pmt: pmt, principal: principal, brokerLease: brokerLease, buyCosts: buyCosts, loanBuy: loanBuy, didim: didim, affordBuy: affordBuy, affordJeonse: affordJeonse, affordRent: affordRent, youth: youth, commute: commute, car: car, sheet: sheet };
+  root.LiveEngine = { pmt: pmt, principal: principal, brokerLease: brokerLease, buyCosts: buyCosts, loanBuy: loanBuy, didim: didim, affordBuy: affordBuy, burden: burden, affordJeonse: affordJeonse, affordRent: affordRent, youth: youth, commute: commute, car: car, sheet: sheet };
   if (typeof module !== 'undefined') module.exports = root.LiveEngine;
 })(typeof window !== 'undefined' ? window : this);

@@ -1274,6 +1274,13 @@
   :root.dark #m2dCard .hx span.b.n, :root.dark #m2dRad .hx span.b.n, :root.dark #m2dPnl .hx span.b.n { color: #b91c1c; }
   @keyframes m2dBreatheD { 0%, 100% { background-color: #172033; box-shadow: 0 0 0 2px rgba(250,204,21,.35), 0 4px 14px rgba(0,0,0,.4); } 50% { background-color: #4a3b0c; box-shadow: 0 0 0 4px rgba(250,204,21,.95), 0 4px 18px rgba(234,179,8,.45); } }
   :root.dark body.m2d-nudge #m2dToolB, :root.dark body.m2d-nudge #m2dLegB { animation-name: m2dBreatheD; }
+  /* v2.327.0 화면 손질(색 역할 정리) — 파랑 = 주 동작 · 보라 = 분석 도구(테두리로만) · 빨강 = 닫기·위험 · 호박 = 저장
+     ① 시뮬 단추: 보라 덩어리 두 줄 → 한 줄 테두리 알약(지도를 덜 가린다) ② 닫기 규칙(v2.46.1 빨간 바탕)을 도구 판·「여기 살면」에도 ③ 출처 줄: 지도 글자와 겹쳐 안 읽혀 판 색 바탕 */
+  #m2dSimChip, #m2dSimAChip { background: var(--panel) !important; color: #6d28d9 !important; border: 1.5px solid #7c3aed !important; padding: 7px 14px !important; font-size: 13px !important; max-width: 72vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: var(--sh) !important; }
+  :root.dark #m2dSimChip, :root.dark #m2dSimAChip { color: #c4b5fd !important; border-color: #a78bfa !important; }
+  [data-tool="x"], #m2dLive .x { background: #dc2626 !important; border: 0 !important; color: #fff !important; font-weight: 800 !important; border-radius: 10px; min-height: 34px; padding: 0 12px; box-shadow: 0 2px 6px rgba(220,38,38,.35); cursor: pointer; }
+  [data-tool="x"]::before, #m2dLive .x::before { content: "✕ "; font-weight: 900; }
+  #m2dFoot { background: var(--bg) !important; opacity: .94; border-top: 1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -1383,7 +1390,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.326.0"></script>
+<script src="js/map2d.js?v=2.327.0"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>

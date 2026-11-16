@@ -10,6 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KB = os.path.dirname(ROOT)
 # [파일, 주기(일), 다시 굽는 법(auto = 키만 있으면 혼자 돈다 / hand = 사람·브라우저 단계가 있다), 명령·절차]
 SETS = [
+    ['data/ltrade-progress.json', 1, 'auto', '🏷 토지·공장창고 실거래 전국 이어 받기(소유자 2026-11-16 「서울 경기 인천 순으로 전국」 · 하루 한도 429 까지) — `py -3.12 -X utf8 tools/region/ltrade-run.py`(10~20분 · 백그라운드 · 429 로 멈추면 정상 — 다시 돌리지 않는다 · 다 받은 시도는 스스로 굽고 publish-data push) → 바뀐 data/ltrade-progress.json·data/regions.json 만 `git commit -- <경로>` · 모든 시도가 올림(끝 칸 1)이면 이 줄의 주기를 31 로 바꾸고 ltrade-bake.py END 를 새 달로 올려 다달이 갱신'],
     ['data/nowcast.json', 7, 'auto', '🔮 30분 뒤 막힘 어림(지도 보라 점선) — 쌓인 ITS 실측(07_API키/out/livespd)이 늘면 `py -3.12 -X utf8 tools/sim/nowcast.py`(성적 nowcast-score.json · 짝수 날 판정이 「그대로」보다 나은지 먼저 확인) → `py -3.12 -X utf8 tools/sim/nowcast.py --bake`(지도 자료) → pagecheck map 「🔮」 → 두 파일 함께 커밋'],
     ['data/rally-hist-seoul.json', 31, 'auto', '서울 주요 집회 달마다(2021~) — `py -3.12 -X utf8 tools/region/rallyhist-bake.py`(새 글만 받고 다시 묶음)'],
     ['data/rally-sdc.json', 365, 'auto', '집회 전국·청 해마다 — 공공데이터포털 파일 새 해(대개 봄)면 07_API키/out/dg/<번호> 를 지우고 dgfile.py 로 다시 받은 뒤 `py -3.12 -X utf8 tools/region/rallysdc-bake.py`'],

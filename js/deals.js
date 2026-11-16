@@ -6,8 +6,8 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  var ONGH = /github\.io$/.test(location.hostname), REG = null, IDX = null, CACHE = {}, ST = { gu: null, umd: null, pur: 'farm', more: 0 }, PY = 3.3058;
-  var PUR = [['farm', '🌾', '농지', '전·답·과수원·목장용지'], ['forest', '🌲', '임야', '산'], ['lot', '🏗', '대지·공장·잡종지', '집·공장을 지을 수 있는 땅 등'], ['etc', '🛤', '그 밖의 땅', '도로·구거·묘지 등(지분 거래가 많다)'], ['ind', '🏭', '공장·창고', '공장·창고 건물 매매 · 평당은 건물면적 기준'], ['shop', '🏢', '상가·업무', '근린생활·업무·판매·숙박 건물 매매 · 평당은 건물면적 기준'], ['house', '🏡', '단독·다가구', '매매 · 평당은 연면적 기준'], ['apt', '🏬', '아파트·연립·오피스텔', '매매 · 평당은 전용면적 기준'], ['rent', '🔑', '전세·월세', '주택 임대 — 단지·법정동 묶은 값']];
+  var ONGH = /github\.io$/.test(location.hostname), REG = null, IDX = null, CACHE = {}, ST = { gu: null, umd: null, pur: 'all', more: 0 }, PY = 3.3058;
+  var PUR = [['all', '🕒', '전체', '땅·공장·상가·주택 매매를 한 줄로 — 최근 것부터(종류가 섞여 평당 가운데값은 내지 않습니다)'], ['farm', '🌾', '농지', '전·답·과수원·목장용지'], ['forest', '🌲', '임야', '산'], ['lot', '🏗', '대지·공장·잡종지', '집·공장을 지을 수 있는 땅 등'], ['etc', '🛤', '그 밖의 땅', '도로·구거·묘지 등(지분 거래가 많다)'], ['ind', '🏭', '공장·창고', '공장·창고 건물 매매 · 평당은 건물면적 기준'], ['shop', '🏢', '상가·업무', '근린생활·업무·판매·숙박 건물 매매 · 평당은 건물면적 기준'], ['house', '🏡', '단독·다가구', '매매 · 평당은 연면적 기준'], ['apt', '🏬', '아파트·연립·오피스텔', '매매 · 평당은 전용면적 기준'], ['rent', '🔑', '전세·월세', '주택 임대 — 단지·법정동 묶은 값']];
   var JG = { farm: ['전', '답', '과수원', '목장용지'], forest: ['임야'], lot: ['대', '공장용지', '창고용지', '잡종지', '주유소용지', '주차장'] };
   function get(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); }); }
   function boot() { if (REG) return Promise.resolve(); return Promise.all([get('data/regions.json'), ONGH ? null : get('data/r/index.json').catch(function () { return null; })]).then(function (r) { REG = {}; r[0].regions.forEach(function (g) { REG[g.sido] = g.repo; }); IDX = r[1]; }); }
@@ -22,6 +22,7 @@
   /* 한 구의 거래를 목적별 한 꼴로 — {ym, umd, what, area(㎡), amt(만 원), part(지분), per(㎡당 만 원 · 견줄 수 있을 때만)} */
   function rows(D, pur) {
     var o = [], i, x;
+    if (pur === 'all') { var any = false; PUR.forEach(function (p) { if (p[0] === 'all' || p[0] === 'rent') return; var r = rows(D, p[0]); if (!r) return; any = true; r.forEach(function (q) { q.what = p[1] + ' ' + q.what; q.per0 = q.per; q.per = null; o.push(q); }); }); if (!any) return null; o.sort(function (a, b) { return b.ym - a.ym || b.amt - a.amt; }); return o; }
     if (pur === 'farm' || pur === 'forest' || pur === 'lot' || pur === 'etc') { if (!D.lt || D.lt.lok === false) return null; var J = D.lt.jimok, all = JG.farm.concat(JG.forest, JG.lot);
       for (i = 0; i < D.lt.items.length; i++) { x = D.lt.items[i]; var jm = J[x[2]]; if (pur === 'etc' ? all.indexOf(jm) >= 0 : JG[pur].indexOf(jm) < 0) continue;
         o.push({ ym: 200000 + x[0], umd: D.lt.umds[x[1]], what: jm + ' · ' + D.lt.uses[x[3]], area: x[4], amt: x[5], part: !!x[6], per: x[5] / x[4], tag: (x[6] ? '지분' : '') + (x[7] ? (x[6] ? '·' : '') + '직거래' : '') }); } }
@@ -52,8 +53,8 @@
     return el; }
   function go(u) { var D = ST.D, i = D && D.lt ? D.lt.umds.indexOf(u) : -1, p = i >= 0 && D.lt.pos[i]; if (!p || !window.TGMap2D || !TGMap2D.applyHash) return; try { history.replaceState(null, '', '#lat=' + p[1] + '&lon=' + p[0]); TGMap2D.applyHash(); } catch (e) {} }
 
-  function tbl(R, n) { return '<table>' + R.slice(0, n).map(function (r) { return '<tr><td>' + ymS(r.ym) + '</td><td>' + esc(r.what) + (r.tag ? '<span class="tg">' + esc(r.tag) + '</span>' : '') + '<small>' + esc(r.umd) + ' · ' + (r.area ? (+r.area).toLocaleString() + '㎡(' + Math.round(r.area / PY).toLocaleString() + '평)' : '') + (r.land ? ' · 대지 ' + (+r.land).toLocaleString() + '㎡' : '') + '</small></td><td class="r"><b>' + man(r.amt) + '</b><small>' + (r.per ? '평당 ' + man(r.per * PY) : '') + '</small></td></tr>'; }).join('') + '</table>'; }
-  function sum(R) { var v = R.filter(function (r) { return !r.part && r.per; }).map(function (r) { return r.per; }), m = med(v); return '<div class="sm"><div><small>거래</small><b>' + R.length + '건</b></div><div><small>평당 가운데값' + (R.length !== v.length ? '(지분 뺌)' : '') + '</small><b>' + (m ? man(m * PY) : '—') + '</b></div><div><small>가장 최근</small><b>' + (R.length ? ymS(R[0].ym) : '—') + '</b></div></div>'; }
+  function tbl(R, n) { return '<table>' + R.slice(0, n).map(function (r) { return '<tr><td>' + ymS(r.ym) + '</td><td>' + esc(r.what) + (r.tag ? '<span class="tg">' + esc(r.tag) + '</span>' : '') + '<small>' + esc(r.umd) + ' · ' + (r.area ? (+r.area).toLocaleString() + '㎡(' + Math.round(r.area / PY).toLocaleString() + '평)' : '') + (r.land ? ' · 대지 ' + (+r.land).toLocaleString() + '㎡' : '') + '</small></td><td class="r"><b>' + man(r.amt) + '</b><small>' + (r.per || r.per0 ? '평당 ' + man((r.per || r.per0) * PY) : '') + '</small></td></tr>'; }).join('') + '</table>'; }
+  function sum(R) { var v = R.filter(function (r) { return !r.part && r.per; }).map(function (r) { return r.per; }), m = med(v); return '<div class="sm"><div><small>거래</small><b>' + R.length + '건</b></div><div><small>평당 가운데값' + (R.length !== v.length ? '(지분 뺌)' : '') + '</small><b>' + (m ? man(m * PY) : ST.pur === 'all' ? '종류별로' : '—') + '</b></div><div><small>가장 최근</small><b>' + (R.length ? ymS(R[0].ym) : '—') + '</b></div></div>'; }
   function paint() {
     var el = box(), D = ST.D, h = '<button class="x">✕ 닫기</button><h3>🏷 최근 거래 찾기</h3>';
     if (!D) { el.innerHTML = h + '<p class="s">' + esc(ST.msg || '자료를 받는 중…') + '</p>'; return; }
@@ -73,8 +74,8 @@
       if (r0.length < 5 && (!e || r1.length < 5)) h += '<h4>' + esc(D.nm) + ' 전체(넓혀 봄)</h4>' + sum(R) + tbl(R, 8);
       var by = {}; R.forEach(function (r) { (by[r.umd] = by[r.umd] || []).push(r); });
       var top = Object.keys(by).map(function (u) { var v = by[u].filter(function (r) { return !r.part && r.per; }).map(function (r) { return r.per; }); return [u, by[u].length, med(v), by[u][0].ym]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 8);
-      if (top.length > 1) h += '<h4>🧭 이 목적의 거래가 잦은 곳(' + esc(D.nm) + ')</h4>' + top.map(function (t) { return '<button class="lk" data-umd="' + esc(t[0]) + '"><b>' + esc(t[0]) + '</b> · ' + t[1] + '건' + (t[2] ? ' · 평당 ' + man(t[2] * PY) : '') + ' · 최근 ' + ymS(t[3]) + ' ›</button>'; }).join('') + '<p class="s">누르면 그곳으로 갑니다. 건수 순서일 뿐 좋고 나쁨이 아닙니다.</p>'; }
-    var src = ST.pur === 'shop' ? D.rt : ST.pur === 'house' ? D.sh : ST.pur === 'apt' ? D.de : isRent ? D.ho : D.lt;
+      if (top.length > 1) h += '<h4>🧭 이 목적의 거래가 잦은 곳(' + esc(D.nm) + ')</h4>' + top.map(function (t) { return '<button class="lk" data-umd="' + esc(t[0]) + '"><b>' + esc(t[0]) + '</b> · ' + t[1] + '건' + (t[2] && ST.pur !== 'all' ? ' · 평당 ' + man(t[2] * PY) : '') + ' · 최근 ' + ymS(t[3]) + ' ›</button>'; }).join('') + '<p class="s">누르면 그곳으로 갑니다. 건수 순서일 뿐 좋고 나쁨이 아닙니다.</p>'; }
+    var src = ST.pur === 'all' ? { source: '국토교통부 실거래가(공공데이터포털) — 토지·공장 및 창고·상업업무용·단독다가구·아파트·연립·오피스텔 매매' } : ST.pur === 'shop' ? D.rt : ST.pur === 'house' ? D.sh : ST.pur === 'apt' ? D.de : isRent ? D.ho : D.lt;
     h += '<p class="s">출처: ' + esc(src && src.source || '국토교통부 실거래가') + '. 해제된 거래는 뺐습니다. 땅·단독·건물 통째 거래는 국토부가 지번을 가려 리·법정동까지만 압니다. 지분 거래는 한 필지의 일부라 단가가 튀어 가운데값에서 뺐습니다. 마지막 달은 신고 기한이 안 지나 덜 찼을 수 있습니다. 시세 감정이 아니라 신고된 거래 기록입니다.</p>';
     el.innerHTML = h; }
   function pick(D, p) { if (!D.lt) return D.ho ? D.ho.umds[0] : null; var best = null, bd = 1e9; D.lt.pos.forEach(function (q, i) { if (!q) return; var d = Math.pow((q[0] - p.lon) * 0.8, 2) + Math.pow(q[1] - p.lat, 2); if (d < bd) { bd = d; best = D.lt.umds[i]; } }); return [best, bd]; }

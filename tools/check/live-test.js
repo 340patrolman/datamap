@@ -90,6 +90,13 @@ var sj = E.sheet(L, T, TE, { mode: 'jeonse', cash: 1e8, incomeYr: 4e7, age: 40, 
 eq('전세 금리 +1%p = 대출 × 1% ÷ 12', sj.burden.rates[2].diff, Math.round(sj.house.loan * 0.01 / 12));
 tr('집 있는 사람 — 대출 0 · 눈금 없음', E.sheet(L, T, TE, { mode: 'buy', cash: 3e8, incomeYr: 8e7, noHome: false, adj: true, car: { buy: 'none' } }).burden.caps === null);
 
+/* 8-2. 금리·만기를 직접 넣으면 */
+var sr = E.sheet(L, T, TE, { mode: 'buy', cash: 3e8, incomeYr: 8e7, age: 35, noHome: true, adj: true, metro: true, rate: 0.055, years: 20, car: { buy: 'none' } });
+tr('넣은 금리·만기를 쓴다', sr.burden.rate === 0.055 && sr.burden.years === 20);
+eq('넣은 금리·만기의 달마다', sr.burden.pay, Math.round(E.pmt(sr.house.loan.amt, 0.055, 20)));
+var sq = E.sheet(L, T, TE, { mode: 'jeonse', cash: 1e8, incomeYr: 4e7, age: 40, noHome: true, rateJ: 0.05, car: { buy: 'none' } });
+eq('전세 넣은 금리', sq.house.monthly, Math.round(sq.house.loan * 0.05 / 12));
+
 /* 9. 기존 세금 계산 그대로 — 6억 아파트 1주택 취득세 1% + 교육세 0.1% = 660만(85㎡ 이하 농특세 없음) */
 eq('기존 취득세 6억', TE.acq(T, { cat: 'apt', cause: 'buy', price: 6e8, homesAfter: 1, area: 84 }).total, 6600000);
 

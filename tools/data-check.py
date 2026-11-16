@@ -4,13 +4,13 @@
 # 하는 일: 데이터 압축지도 자료 파일마다 마지막 커밋 날짜를 보고, 다시 굽는 주기를 넘긴 것을 목록으로 낸다.
 #          이 출력은 세션 문맥에 들어가고, 그 세션의 Claude 가 목록대로 다시 굽고 검증해 커밋한다(MAP2D.md §6·§8).
 # 키·자료 값은 읽지 않는다(파일 날짜만 본다).
-import datetime, os, subprocess, sys
+import datetime, json, os, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KB = os.path.dirname(ROOT)
 # [파일, 주기(일), 다시 굽는 법(auto = 키만 있으면 혼자 돈다 / hand = 사람·브라우저 단계가 있다), 명령·절차]
 SETS = [
-    ['data/ltrade-progress.json', 1, 'auto', '🏷 토지·공장창고 실거래 전국 이어 받기(소유자 2026-11-16 「서울 경기 인천 순으로 전국」 · 하루 한도 429 까지) — `py -3.12 -X utf8 tools/region/ltrade-run.py`(10~20분 · 백그라운드 · 429 로 멈추면 정상 — 다시 돌리지 않는다 · 다 받은 시도는 스스로 굽고 publish-data push) → 바뀐 data/ltrade-progress.json·data/regions.json 만 `git commit -- <경로>` · 모든 시도가 올림(끝 칸 1)이면 이 줄의 주기를 31 로 바꾸고 ltrade-bake.py END 를 새 달로 올려 다달이 갱신'],
+    ['data/ltrade-progress.json', 1, 'auto', '🏷 토지·공장창고 실거래 전국 이어 받기(소유자 2026-11-16 「서울 경기 인천 순으로 전국」) — **받기는 PC 예약 작업 datamap_ltrade(매일 06:20 · 07_API키/RUN_ltrade.bat · 기록 07_API키/out/ltrade/_run.log)가 한다 · 세션은 또 돌리지 않는다**: `py -3.12 -X utf8 tools/region/ltrade-run.py prog`(진행표만 다시 씀 · 1초) → 바뀐 data/ltrade-progress.json·data/regions.json 만 `git commit -- <경로>` · _run.log 가 이틀 넘게 조용할 때만 `ltrade-run.py` 를 직접(429 로 멈추면 정상) · 마감 = 07_API키/jobs/jobs.json 의 ltrade end(지나면 이 줄은 저절로 안 뜬다)'],
     ['data/nowcast.json', 7, 'auto', '🔮 30분 뒤 막힘 어림(지도 보라 점선) — 쌓인 ITS 실측(07_API키/out/livespd)이 늘면 `py -3.12 -X utf8 tools/sim/nowcast.py`(성적 nowcast-score.json · 짝수 날 판정이 「그대로」보다 나은지 먼저 확인) → `py -3.12 -X utf8 tools/sim/nowcast.py --bake`(지도 자료) → pagecheck map 「🔮」 → 두 파일 함께 커밋'],
     ['data/rally-hist-seoul.json', 31, 'auto', '서울 주요 집회 달마다(2021~) — `py -3.12 -X utf8 tools/region/rallyhist-bake.py`(새 글만 받고 다시 묶음)'],
     ['data/rally-sdc.json', 365, 'auto', '집회 전국·청 해마다 — 공공데이터포털 파일 새 해(대개 봄)면 07_API키/out/dg/<번호> 를 지우고 dgfile.py 로 다시 받은 뒤 `py -3.12 -X utf8 tools/region/rallysdc-bake.py`'],
@@ -106,6 +106,17 @@ SETS = [
     ['data/r/index.json', 92, 'auto', '서울 25개 구 행정동(주민 연령 매월 · 상권 매출 분기 · 생활인구 월 파일) — 07_API키/out/region 의 받은 것을 지우거나 JUMIN_YM·LOCAL_PEOPLE 달을 올리고 `py -3.12 -X utf8 tools/region/dong-bake.py fetch` → `build`'],
 ]
 
+# 작업 대장(07_API키/jobs/jobs.json · 2026-11-16 형님 「수집 작업을 한곳에서 · 마감일이 되면 스스로 정리」) — 마감이 지난 작업의 점검 줄은 띄우지 않는다(세션이 다시 켜지 않게)
+JOBOF = {'data/ltrade-progress.json': 'ltrade'}
+def job_ended(path):
+    try:
+        jid = JOBOF.get(path)
+        if not jid: return False
+        jobs = json.load(open(os.path.join(KB, '07_API키', 'jobs', 'jobs.json'), encoding='utf-8-sig'))['jobs']
+        end = [j.get('end') for j in jobs if j.get('id') == jid]
+        return bool(end and end[0] and datetime.date.today().isoformat() > end[0])
+    except Exception: return False
+
 def last_commit(path):
     try:
         # 지금 git 이 안 들고 있는 파일(data/r/ 는 v2.6.0 부터 권역 저장소로 나가 git 밖)은 옛 커밋 날짜가 아니라 구운 시각(파일 시각)으로 본다
@@ -135,6 +146,7 @@ def main():
         if left <= DUE_SOON: print('⏰ ' + ('기한 지남 ' + str(-left) + '일' if left < 0 else str(left) + '일 남음') + ' [' + who + '] ' + what)
     stale, missing = [], []
     for f, days, kind, how in SETS:
+        if job_ended(f): continue
         t = last_commit(f)
         if t is None: missing.append(f); continue
         age = (now - t).total_seconds() / 86400

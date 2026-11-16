@@ -1802,7 +1802,8 @@ def fz_anchor(itst, row):
         ci9 = plan_ci(r['cyc'], r['ci']) if r.get('ci') and r.get('cyc') else None
         if ci9 and abs(ci9 - r['cyc']) <= 2.5 and abs(ci9 - round(ci9)) <= 0.05 and not r.get('dq') and r.get('src') != 'f' and not fz_half(r, RR, cl, now.hour):   # build 가 닻으로 쓰는 기록만(주기가 계획과 맞고 정수 초 · 반주기 의심 — 제 칸 또는 지금 칸의 상태 기록의 절반쯤 — 빼고)
             r = dict(r, ci=ci9)
-            same = (cls_of(r['dow'], r['day']) == cl) * 2 + (int(r['from'][:2]) == now.hour)
+            h9 = abs(int(r['from'][:2]) - now.hour); h9 = min(h9, 24 - h9)
+            same = (cls_of(r['dow'], r['day']) == cl, -h9)   # (2026-11-16) 같은 요일 갈래 → 시각이 가까운 기록 → 새 기록 차례. 전에는 같은 갈래면 시각 거리와 상관없이 새 기록이라 역사 API 가 못 닿는 시각대(11·12시)의 첫 줄이 새벽 03시 160초·저녁 19시 220초 길이를 번갈아 빌렸다(3251·23251 · 진짜 190). 두 닻으로 잰 194번 되감기 맞음 114 → 146 · 역사 기록이 나중에 온 198칸 156 → 166(독립 검수 — 같은 시 기록이 있는 칸은 그대로 맨 위). 두 닻 기록(cm)을 후보로 넣는 안(153)은 검수 결함(어림 길이가 표 없이 실측을 덮음 등)으로 뺐다
             cands.append((same, r['day'] + r['to'], r))
     for _, _, r in sorted(cands, key=lambda z: (z[0], z[1]), reverse=True)[:6]:
         ci = float(r['ci']); S = []

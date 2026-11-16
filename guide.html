@@ -47,7 +47,7 @@
 <header>
   <div class="hd"><h1>📖 데이터 압축지도 사용설명서</h1><a href="./">← 지도로</a></div>
   <div class="sr"><input id="q" type="search" placeholder="찾기 — 예: 신호, 사고, 관할, 반려동물, 침수, 매출" autocomplete="off"></div>
-  <nav><a href="#over">📦 자료 한눈에</a><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#police">👮 경찰 통계</a><a href="#onto">🧩 엮어서 답 찾기</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
+  <nav><a href="#over">📦 자료 한눈에</a><a href="#about">🌟 이 지도는</a><a href="#how">🚀 쓰는 법</a><a href="#life">🏡 내 생활에 보탬</a><a href="#hidden">🔦 숨은 기능</a><a href="#police">👮 경찰 통계</a><a href="#onto">🧩 엮어서 답 찾기</a><a href="#infer">🔎 알아낼 수 있는 것</a><a href="#task">🧭 할 수 있는 일</a><a href="#layer">🗂 레이어 사전</a><a href="#data">📦 자료 목록</a><a href="#spec">📋 제원</a><a href="#make">🛠 어떻게 만들었나</a></nav>
 </header>
 <main id="main"><p class="empty">설명서를 읽는 중…</p></main>
 <script>
@@ -94,6 +94,10 @@
         + (ex ? '<p class="lg-n"><b>예: ' + esc(ex.obj) + '</b> — ' + ex.chain.map(function (c) { return esc(c[0]) + ' ' + esc(c[1]); }).join(' / ') + '</p>' : '') + '</div>'; }).join('');
       if (!w) oh += '<h3>④ 해 보고 적기</h3><p>사슬 카드 맨 아래에 날짜·한 일·결과를 적으면 <b>이 기기에만</b> 남는다(서버로 안 감). 사람이 아니라 상황을 적는다 — 이름·차량번호·전화·주민번호 꼴이 있으면 적지 않는다. 다음에 같은 대상을 열면 지난 기록이 같이 나온다.</p><ul>' + O.note.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
       if (oh) h += '<section id="onto"><h2>🧩 엮어서 답 찾기 — 네 걸음</h2>' + oh + '</section>'; }
+    /* v2.329.0 생활 장면 · 숨은 기능 */
+    var cd4 = function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p>' + path(t[3]) + '</div>'; };
+    if (G.life) { var LF = G.life.filter(function (t) { return hit(t.join(' '), w); }); if (LF.length) h += '<section id="life"><h2>🏡 내 생활에 이렇게 보탬이 된다</h2><p class="lead">경찰 업무용으로 모은 공공데이터지만 사는 데도 쓸모가 있다 — 장면마다 무엇을 알게 되고 어디를 누르면 되는지. 모두 어림·참고이고 결정은 본인이 한다.</p><div class="grid">' + LF.map(cd4).join('') + '</div></section>'; }
+    if (G.hidden) { var HD = G.hidden.filter(function (t) { return hit(t.join(' '), w); }); if (HD.length) h += '<section id="hidden"><h2>🔦 숨은 기능</h2><p class="lead">눈에 잘 안 띄지만 알면 편한 것.</p><div class="grid">' + HD.map(cd4).join('') + '</div></section>'; }
     if (G.infer) { var I = G.infer.filter(function (t) { return hit(t.join(' '), w); }); if (I.length) h += '<section id="infer"><h2>🔎 이 지도로 알아낼 수 있는 것</h2><p class="lead">자료를 겹쳐 보면 숫자 하나로는 안 보이는 것을 어림할 수 있다 — 근거는 카드에 함께 나오고, 판단은 사람이 한다.</p><div class="grid">' + I.map(function (t) { return '<div class="card"><h3><span class="ic">' + t[0] + '</span>' + esc(t[1]) + '</h3><p>' + esc(t[2]) + '</p></div>'; }).join('') + '</div></section>'; }
     /* 1 할 수 있는 일 */
     var T = G.tasks.filter(function (t) { return hit(t.join(' '), w); });

@@ -54,6 +54,7 @@
     sat: '<path d="m7 7 4 4M5 9l4-4 4 4-4 4zM15 11l4 4-4 4-4-4z"/><path d="M11 13l2-2M16 5a4 4 0 0 1 3 3"/>',
     kids: '<circle cx="8" cy="5.5" r="2"/><circle cx="16" cy="7.5" r="1.8"/><path d="M8 8.5v6l-2 6M8 14.5l2 6M5 11h6M16 10.5v5l-1.5 5M16 15.5l1.5 5M13.5 12.5h5"/>',
     truck: '<path d="M3 17.5V8h11v9.5M14 11h4l3 3.5v3"/><path d="M3 17.5h18"/><circle cx="7" cy="18" r="1.7"/><circle cx="17" cy="18" r="1.7"/><path d="M6 11h5"/>',
+    plane: '<path d="M10.5 21.5l1.5-1 1.5 1v-2.5l-1-1V13l8 3v-2l-8-5V4a1 1 0 0 0-2 0v5l-8 5v2l8-3v4.5l-1 1z"/>',
     play: '<path d="M7 4.5v15l12-7.5z" class="f"/>',
     stop: '<rect x="6" y="6" width="12" height="12" rx="2" class="f"/>',
     dotY: '<circle cx="12" cy="12" r="7" class="f" style="fill:#f59e0b;stroke:none"/>',
@@ -65,7 +66,7 @@
     '📡': 'radar', '🛣': 'road', '🚪': 'door', '🏢': 'bldg', '🌳': 'tree', '✚': 'hosp', '📤': 'share', '⏱': 'timer', '🚧': 'cone', '⛔': 'noent',
     '🏁': 'flag', '🗺': 'map', '🔎': 'srch', '✅': 'ok', '✓': 'tick', '🕘': 'clock', '📢': 'mega', '🏫': 'school', '⚡': 'bolt', '📋': 'clip',
     '⚖': 'scale', '📐': 'ruler', '📻': 'radio', '☕': 'cup', '🧩': 'puzzle', '🎭': 'mask', '🧠': 'brain', '🛰': 'sat', '🚸': 'kids', '🚒': 'truck',
-    '▶': 'play', '⏹': 'stop', '🟡': 'dotY', '🟢': 'dotG'
+    '✈': 'plane', '▶': 'play', '⏹': 'stop', '🟡': 'dotY', '🟢': 'dotG'
   };
   function svg(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + P[n] + '</svg>'; }
   window.gi = function (n) { return P[n] ? '<i class="gi gi-' + n + '">' + svg(n) + '</i>' : ''; };

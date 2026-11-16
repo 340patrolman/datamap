@@ -7810,12 +7810,13 @@
   function estPaint() { var el = $('m2dEst'); if (!el) { el = document.createElement('div'); el.id = 'm2dEst'; document.body.appendChild(el);
       el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var a = b.getAttribute('data-est');
         if (a === 'tax') { TX.pick = 'own'; taxOpen({ kind: 'land', cat: 'apt', name: '직접 넣기' }); }
+        else if (a === 'deal') { if (window.tgDeal) window.tgDeal.open(); else toast('최근 거래 찾기를 아직 못 읽었다 — 잠시 뒤 다시'); }   /* v2.335.0 형님 「부동산에 최근 거래 내역이 전혀 안 보인다」 — 보고 있는 자리(누른 자리 · 없으면 화면 가운데)의 리·법정동 거래 */
         else if (a === 'jiga') { on.jiga = !on.jiga; if (on.jiga) on.home = false; saveOn(); paintLayers(); draw(); }
         else if (a === 'home') { on.home = !on.home; if (on.home) on.jiga = false; saveOn(); paintLayers(); draw(); }
         else if (a === 'x') { el.classList.add('hide'); } }); }
     var any = on.home || on.jiga || on.land || on.rtc; el.style.display = any && !el.classList.contains('hide') ? 'block' : 'none'; if (!any) { el.classList.remove('hide'); return; }
-    el.innerHTML = '<b>🏠 부동산</b> <button data-est="home" class="' + (on.home ? 'on' : '') + '">실거래 평당가</button><button data-est="jiga" class="' + (on.jiga ? 'on' : '') + '">공시지가</button><button data-est="tax" class="tax">🧾 세금 계산</button><button data-est="x" aria-label="안내 닫기">✕</button>' +
-      (on.home ? '<div id="m2dEstSc">' + hmScale() + '</div>' : on.jiga ? jgScale() : '') + '<small>' + (on.home ? '<b>● 단지 점</b>을 누르면 그 단지로 세금 계산' : on.jiga ? '칸을 누르면 땅 쓰임·공시지가' : '') + (on.land ? (VWKEY ? ' · 확대해 <b>땅(필지)</b>을 누르면 공시지가·기준시가로 세금 계산' : ' · <b>📐 필지는 브이월드 키를 넣어야 보인다</b>(범례 🔑)') : '') + '</small>'; }
+    el.innerHTML = '<b>🏠 부동산</b> <button data-est="home" class="' + (on.home ? 'on' : '') + '">실거래 평당가</button><button data-est="jiga" class="' + (on.jiga ? 'on' : '') + '">공시지가</button><button data-est="deal" class="deal">🏷 최근 거래</button><button data-est="tax" class="tax">🧾 세금 계산</button><button data-est="x" aria-label="안내 닫기">✕</button>' +
+      (on.home ? '<div id="m2dEstSc">' + hmScale() + '</div>' : on.jiga ? jgScale() : '') + '<small>' + '<b>🏷 최근 거래</b> = 화면 가운데(누른 자리) 둘레의 땅·공장·상가·주택 거래 목록 · ' + (on.home ? '<b>● 단지 점</b>을 누르면 그 단지로 세금 계산' : on.jiga ? '칸을 누르면 땅 쓰임·공시지가' : '') + (on.land ? (VWKEY ? ' · 확대해 <b>땅(필지)</b>을 누르면 공시지가·기준시가로 세금 계산' : ' · <b>📐 필지는 브이월드 키를 넣어야 보인다</b>(범례 🔑)') : '') + '</small>'; }
 
   function paintLayers() {
     var nOn = LAYERS.filter(function (l) { return on[l[0]]; }).length; if ($('m2dLayN')) $('m2dLayN').textContent = nOn;

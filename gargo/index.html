@@ -170,7 +170,7 @@
   #gBar .fl { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); font-size: 16px; }
   #gBar .me { position: absolute; left: 50%; bottom: -9px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 0 3px #fff, 0 2px 6px rgba(15,23,42,.35); }
   #gTop .tx small.ln2 { font-size: calc(14px * var(--fz, 1)); opacity: 1; background: rgba(255,255,255,.16); border-radius: var(--r1); padding: 2px 8px; align-self: flex-start; margin-top: 3px; } #gTop .tx small.ln2 em { font-style: normal; opacity: .8; }
-  #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: var(--r2); border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: calc(14.5px * var(--fz, 1)); font-weight: 700; white-space: nowrap; }
+  #gBot .btns { display: flex; gap: 8px; } #gBot .btns button { height: 48px; border-radius: var(--r2); border: 1px solid var(--line); background: transparent; padding: 0 14px; font-size: calc(14.5px * var(--fz, 1)); font-weight: 700; white-space: nowrap; } @media (max-width: 360px) { #gBot .btns { gap: 6px; } #gBot .btns button { padding: 0 8px; font-size: calc(13.5px * var(--fz, 1)); } #gBot .btns button.go { font-size: calc(15px * var(--fz, 1)); } }   /* 2026-11-16 320 폭에서 「지우기」가 판 밖으로 잘렸다 */
   #gBot .hand { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: calc(13px * var(--fz, 1)); color: var(--dim, #64748b); } #gBot .hand span { flex: 1 0 100%; } #gBot .hand button { height: 34px; border-radius: var(--r2); border: 1px solid var(--line); background: transparent; padding: 0 10px; font-size: calc(13px * var(--fz, 1)); font-weight: 700; color: inherit; }
   #gBot .btns #gCruise { height: auto; min-height: 48px; line-height: 1.2; padding: 6px 10px; word-break: keep-all; } #gBot .btns #gCruise small { display: block; font-size: .72em; font-weight: 700; opacity: .9; margin-top: 1px; }   /* v0.37.3 375 폭에서 두 줄로 꺾인 글이 48px 단추 밑으로 잘렸다 */
   #gBot .btns .go { flex: 1; background: linear-gradient(135deg, var(--acc), var(--acc2)); color: #fff; border: 0; font-size: calc(17px * var(--fz, 1)); font-weight: 900; box-shadow: 0 6px 16px rgba(47,107,255,.35); }
@@ -369,7 +369,7 @@
 <script src="icons.js?v=2"></script>
 <script src="gargo.js?v=0.53.5"></script>
 <script src="speedo.js?v=3"></script>
-<script src="sigladder.js?v=3"></script>
+<script src="sigladder.js?v=4"></script>
 <script>/* v0.9.0 끊김 대비 — 지도 서비스워커(같은 사이트 파일을 받아 둔다 · 망이 안 되면 받아 둔 것)를 가르고에서도 등록 */ if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("../sw.js").catch(function () {});</script>
 </body>
 </html>

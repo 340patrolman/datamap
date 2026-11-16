@@ -16,7 +16,7 @@
     if (LOADING) return LOADING;
     function js(src, has) { return new Promise(function (ok, no) { if (has()) return ok(); var s = document.createElement('script'); s.src = src; s.onload = function () { ok(); }; s.onerror = function () { no(new Error(src)); }; document.head.appendChild(s); }); }
     function get(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }); }
-    LOADING = Promise.all([get('data/live-rules.json?v=2'), get('data/tax-rules.json'), js('js/tax-engine.js?v=2.90.0', function () { return !!window.TaxEngine; }), js('js/live-engine.js?v=3', function () { return !!window.LiveEngine; })])
+    LOADING = Promise.all([get('data/live-rules.json?v=3'), get('data/tax-rules.json'), js('js/tax-engine.js?v=2.90.0', function () { return !!window.TaxEngine; }), js('js/live-engine.js?v=4', function () { return !!window.LiveEngine; })])
       .then(function (r) { L = r[0]; T = r[1]; }).catch(function (e) { LOADING = null; throw e; });
     return LOADING;
   }
@@ -90,12 +90,22 @@
     h += '<div class="s">금리 눈금·부담 눈금은 견줘 보려고 둔 설계값입니다(전망·권고 기준이 아닙니다). 소득은 세전이라 실제로 손에 남는 돈은 더 적습니다. 변동금리면 달마다 내는 돈이 위 표처럼 움직입니다.</div></div>';
     return h;
   }
+  function cmpBox(s) {
+    var c = s.compare; if (!c) return '';
+    var buy = c.mode === 'buy', mine = buy ? c.pir : c.rir, r = c.ref, f = function (x) { return buy ? x.toFixed(1) + '배' : x.toFixed(1) + '%'; }, mx = Math.max(mine, r.metro, r.all, r.old) * 1.08;
+    var row = function (lab, v, me) { return '<tr' + (me ? ' class="nw"' : '') + '><td>' + lab + '</td><td style="width:46%"><div class="mt' + (me ? ' k' : '') + '" style="margin:5px 0"><i style="width:' + Math.min(100, Math.round(v / mx * 100)) + '%"></i></div></td><td>' + f(v) + '</td></tr>'; };
+    var h = '<div class="bd"><div><b>📊 다른 가구와 견주기</b></div><div class="s">' + (buy ? '집값 ÷ 연소득(몇 해치 소득인가)' : '월세 ÷ 월소득') + ' — 세전 소득 기준</div><table>' + row('내 계산', mine, 1) + row(buy ? '자가 가구 전국' : '임차 가구 전국', r.all) + row('수도권', r.metro) + row('광역시 등', r.city) + row('도 지역', r.prov) + row('청년 가구', r.youth) + row('신혼부부', r.newly) + '</table>';
+    if (buy) h += '<div class="s">생애 첫 집을 마련하기까지 걸린 햇수: 평균 ' + c.years + '년</div>';
+    if (c.inc) h += '<div class="s">내 연소득 ' + man(c.inc) + '원 · 가구 평균 소득 ' + man(c.incAvg) + '원(처분가능소득 ' + man(c.dispAvg) + '원 · 2024년)</div>';
+    h += '<div class="s">조사 값은 가운데값(중위수)입니다 — 국토교통부 2024년도 주거실태조사(6.1만 가구), 국가데이터처 2025년 가계금융복지조사. ' + (buy ? '자가 가구 값은 이미 집을 가진 가구의 것이라, 지금 사려는 사람의 부담과는 다릅니다. 내 계산은 「살 수 있는 최대 집값」 기준입니다.' : '조사는 보증금을 월세로 바꿔 넣는 방식을 보도자료에 밝히지 않았고, 내 계산은 월세만 넣었습니다(보증금 뺌).') + ' 높고 낮음이 좋고 나쁨을 뜻하지 않습니다.</div></div>';
+    return h;
+  }
   function card(title, s) {
     var h = '<div class="cd"><h4>' + esc(title) + '</h4>';
     var hd = s.mode === 'buy' ? '집값 최대 <b>' + man(s.house.price) + '원</b>' : s.mode === 'jeonse' ? '보증금 최대 <b>' + man(s.house.deposit) + '원</b>' : '보증금 ' + man(s.house.deposit) + '원 · 월세 최대 <b>' + man(s.house.monthlyMax) + '원</b>';
     h += '<div>' + hd + '</div><div class="big"><div><small>처음</small><b>' + man(s.first) + '</b></div><div><small>매달</small><b>' + man(s.monthly) + '</b></div><div><small>해마다</small><b>' + man(s.yearly) + '</b></div></div>';
     if (s.house.loan && s.house.loan.why) h += '<div class="s">대출을 묶은 조건: <b>' + esc(s.house.loan.why) + '</b></div>'; else if (s.house.why) h += '<div class="s">대출을 묶은 조건: <b>' + esc(s.house.why) + '</b></div>';
-    h += burdenBox(s);
+    h += burdenBox(s) + cmpBox(s);
     h += '<details><summary>계산 과정</summary>' + steps(s.house.steps || []);
     if (s.mode === 'buy' && s.house.loan.lim) h += '<p class="s">한도 후보: ' + s.house.loan.lim.map(function (q) { return esc(q[0]) + ' ' + man(q[1]) + '원'; }).join(' · ') + '</p>';
     if (s.mode === 'buy' && s.house.yearly) h += '<p class="s">해마다 = 재산세 ' + man(s.house.yearly.prop) + '원 + 종부세 ' + man(s.house.yearly.jbs) + '원(공시가격 = 집값 × 0.7 가정)</p>';

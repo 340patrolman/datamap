@@ -107,6 +107,15 @@
     return o;
   }
 
+  /* 평균치와 견주기 — 조사 값(L.stats · 원문 확인)과 내 값을 나란히 · 좋다·나쁘다를 말하지 않는다 */
+  function compare(L, a, h, mode) {
+    var T = L.stats; if (!T) return null; var inc = a.incomeYr || 0, o = { mode: mode, inc: inc, incAvg: V(T.incomeYr), dispAvg: V(T.dispYr), src: [] };
+    if (mode === 'buy' && inc > 0 && h.price > 0) { o.pir = h.price / inc; o.ref = V(T.pir); o.years = V(T.firstYears); o.src = [S(T.pir), S(T.firstYears)]; }
+    else if (mode === 'rent' && inc > 0 && h.monthlyMax > 0) { o.rir = h.monthlyMax / (inc / 12) * 100; o.ref = V(T.rir); o.src = [S(T.rir)]; }
+    else return null;
+    o.src.push(S(T.incomeYr)); return o;
+  }
+
   /* 해마다 보유세 — 공시가격 = 집값 × 비율(입력 · 기본 0.7 가정) */
   function yearlyHold(T, TE, P, a) {
     if (!P) return { total: 0 };
@@ -212,9 +221,9 @@
   /* 한 장으로 — 처음 / 매달 / 해마다 */
   function sheet(L, T, TE, a) {
     var out = { mode: a.mode, warn: [] }, h;
-    if (a.mode === 'buy') { h = affordBuy(L, T, TE, a); out.house = h; out.first = h.need; out.monthly = h.monthly; out.yearly = h.yearly.total; out.burden = burden(L, T, TE, a, h, 'buy'); }
+    if (a.mode === 'buy') { h = affordBuy(L, T, TE, a); out.house = h; out.first = h.need; out.monthly = h.monthly; out.yearly = h.yearly.total; out.burden = burden(L, T, TE, a, h, 'buy'); out.compare = compare(L, a, h, 'buy'); }
     else if (a.mode === 'jeonse') { h = affordJeonse(L, a); out.house = h; out.first = h.need; out.monthly = h.monthly; out.yearly = 0; out.burden = burden(L, T, TE, a, h, 'jeonse'); }
-    else { h = affordRent(L, a); out.house = h; out.first = h.need; out.monthly = h.monthlyMax; out.yearly = 0; }
+    else { h = affordRent(L, a); out.house = h; out.first = h.need; out.monthly = h.monthlyMax; out.yearly = 0; out.compare = compare(L, a, h, 'rent'); }
     out.warn = out.warn.concat(h.warn || []);
     out.youth = youth(L, a); out.warn = out.warn.concat(out.youth.warn);
     if (a.km) { out.commute = commute(L, a); out.warn = out.warn.concat(out.commute.warn); if (a.commuteMode !== 'car') out.monthly += out.commute.transitMo; }
@@ -225,6 +234,6 @@
     return out;
   }
 
-  root.LiveEngine = { pmt: pmt, principal: principal, brokerLease: brokerLease, buyCosts: buyCosts, loanBuy: loanBuy, didim: didim, affordBuy: affordBuy, burden: burden, affordJeonse: affordJeonse, affordRent: affordRent, youth: youth, commute: commute, car: car, sheet: sheet };
+  root.LiveEngine = { pmt: pmt, principal: principal, brokerLease: brokerLease, buyCosts: buyCosts, loanBuy: loanBuy, didim: didim, affordBuy: affordBuy, burden: burden, compare: compare, affordJeonse: affordJeonse, affordRent: affordRent, youth: youth, commute: commute, car: car, sheet: sheet };
   if (typeof module !== 'undefined') module.exports = root.LiveEngine;
 })(typeof window !== 'undefined' ? window : this);

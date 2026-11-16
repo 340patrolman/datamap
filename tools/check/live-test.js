@@ -97,6 +97,14 @@ eq('넣은 금리·만기의 달마다', sr.burden.pay, Math.round(E.pmt(sr.hous
 var sq = E.sheet(L, T, TE, { mode: 'jeonse', cash: 1e8, incomeYr: 4e7, age: 40, noHome: true, rateJ: 0.05, car: { buy: 'none' } });
 eq('전세 넣은 금리', sq.house.monthly, Math.round(sq.house.loan * 0.05 / 12));
 
+/* 8-3. 평균치 견주기 — 조사 값은 규칙 파일 그대로 · 내 값 = 집값 ÷ 연소득 · 월세 ÷ 월소득 */
+tr('PIR = 집값 ÷ 연소득', Math.abs(sb.compare.pir - sb.house.price / 8e7) < 1e-9);
+tr('조사 값 그대로(전국 6.3 · 수도권 8.7 · 7.9년)', sb.compare.ref.all === 6.3 && sb.compare.ref.metro === 8.7 && sb.compare.years === 7.9);
+var sc = E.sheet(L, T, TE, { mode: 'rent', cash: 2e7, incomeYr: 3.6e7, age: 25, noHome: true, median60: 'n', car: { buy: 'none' } });
+tr('RIR = 월세 ÷ 월소득', Math.abs(sc.compare.rir - sc.house.monthlyMax / 3e6 * 100) < 1e-9 && sc.compare.ref.all === 15.8 && sc.compare.ref.metro === 18.4);
+tr('소득을 안 넣으면 견주지 않는다', E.sheet(L, T, TE, { mode: 'buy', cash: 3e8, noHome: true, car: { buy: 'none' } }).compare === null);
+tr('전세는 견주지 않는다', sj.compare === undefined);
+
 /* 9. 기존 세금 계산 그대로 — 6억 아파트 1주택 취득세 1% + 교육세 0.1% = 660만(85㎡ 이하 농특세 없음) */
 eq('기존 취득세 6억', TE.acq(T, { cat: 'apt', cause: 'buy', price: 6e8, homesAfter: 1, area: 84 }).total, 6600000);
 

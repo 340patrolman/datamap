@@ -59,7 +59,7 @@
     if (!first.st) return '앞 신호 자료 없음 — <em>눈으로 확인</em>';
     if (first.stop && !first.st.green) return '정지 중 — 녹색까지 <b>' + Math.ceil(first.st.wait) + '초</b> <em>· 급출발 없이 천천히 출발하면 연료가 가장 덜 든다</em>';
     if (!first.st.green) return first.dd < 500 ? '앞 신호 <b class="r">적색</b>에 닿음 — <b>지금 발 떼고 굴러가기</b> <em>· 급제동 없이 연료·타이어·안전</em>' : '앞 신호 <b class="r">적색</b>에 닿을 예정 — <b>서두를 것 없음</b> <em>· 일정한 속도로</em>';
-    for (var i = 1; i < ks.length; i++) if (ks[i].st && !ks[i].st.green) return '앞은 <b>녹색 통과</b>, ' + ['', '그다음', '셋째'][i] + '(' + (ks[i].dd >= 1000 ? (ks[i].dd / 1000).toFixed(1) + 'km' : Math.round(ks[i].dd / 10) * 10 + 'm') + ')은 <b class="r">적색</b> — <b>속도를 올릴 필요 없음</b> <em>· 거기서는 미리 발 떼기</em>';
+    for (var i = 1; i < ks.length; i++) if (ks[i].st && !ks[i].st.green) return '앞은 <b>녹색 통과</b>, ' + ['', '그다음', '셋째'][i] + '(' + (ks[i].dd >= 1000 ? (ks[i].dd / 1000).toFixed(1) + 'km' : Math.round(ks[i].dd / 10) * 10 + 'm') + ')' + ['', '은', '는'][i] + ' <b class="r">적색</b> — <b>속도를 올릴 필요 없음</b> <em>· 거기서는 미리 발 떼기</em>';
     if (first.st.remain < 4) return '앞 녹색이 곧 끝남 — <b>무리하게 지나지 않기</b>';
     return '<b>이대로</b> 가면 앞 ' + gn + '곳 녹색' + (un ? ' · 자료 없음 ' + un + '곳' : '') + ' <em>· 일정한 속도가 가장 경제적</em>';
   }

@@ -564,7 +564,7 @@
   var SNAP = null, SNAPON = 0, LASTV = null;
   function snapTake() { try { if (!LASTV || !cv.width) return; var c = SNAP && SNAP.c || document.createElement('canvas'); if (c.width !== cv.width || c.height !== cv.height) { c.width = cv.width; c.height = cv.height; } c.getContext('2d').drawImage(cv, 0, 0); SNAP = { c: c, cx: LASTV.cx, cy: LASTV.cy, s: LASTV.s, w: cv.clientWidth, h: cv.clientHeight }; } catch (e) { SNAP = null; } }
   function snapDraw() { if (!SNAP || SNAP.w !== cv.clientWidth || SNAP.h !== cv.clientHeight) return false; var k = view.s / SNAP.s; if (!(k <= 4 && k >= 0.25)) return false; var W = cv.clientWidth, H = cv.clientHeight, dark = document.documentElement.classList.contains('dark');
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = dark ? '#0f1624' : (on.base && OSM ? '#f2efe8' : '#eef2f6'); ctx.fillRect(0, 0, W, H); ctx.save(); ctx.translate(W / 2 + (SNAP.cx - view.cx) * view.s, H / 2 + (SNAP.cy - view.cy) * view.s); ctx.scale(k, k); ctx.drawImage(SNAP.c, -W / 2, -H / 2, W, H); ctx.restore(); return true; }
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = dark ? '#0f1624' : (on.base && OSM ? '#f3f4f1' : '#eef2f6'); ctx.fillRect(0, 0, W, H); ctx.save(); ctx.translate(W / 2 + (SNAP.cx - view.cx) * view.s, H / 2 + (SNAP.cy - view.cy) * view.s); ctx.scale(k, k); ctx.drawImage(SNAP.c, -W / 2, -H / 2, W, H); ctx.restore(); return true; }
   function drawSoon() { if (DRAWQ) return; DRAWQ = 1; var done = 0, go = function () { if (done) return; done = 1; DRAWQ = 0; if (MOVING) { if (!SNAPON) { snapTake(); SNAPON = 1; } if (snapDraw()) return; } else SNAPON = 0; draw(); }; requestAnimationFrame(go); setTimeout(go, 120); }   /* 가려진 화면에서는 rAF 가 안 돈다 — 120ms 뒤 타이머가 대신 그린다 */
   function ringAdd(r, k, ox, oy) { var n = r.length, lx = 0, ly = 0; for (var i = 0; i < n; i++) { var x = r[i][0] * k + ox, y = r[i][1] * k + oy; if (!i) { ctx.moveTo(x, y); lx = x; ly = y; } else if (i === n - 1 || Math.abs(x - lx) + Math.abs(y - ly) >= 0.7) { ctx.lineTo(x, y); lx = x; ly = y; } } ctx.closePath(); }
   function ringsPath(Pg) { var k = view.s, ox = cv.clientWidth / 2 - view.cx * k, oy = cv.clientHeight / 2 - view.cy * k; ctx.beginPath(); for (var a = 0; a < Pg.length; a++) ringAdd(Pg[a], k, ox, oy); }
@@ -1064,7 +1064,7 @@
     if (cv.width !== needW || cv.height !== needH) { cv.width = needW; cv.height = needH; }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0); hit = []; LOCC = []; viewWatch(); LASTV = { cx: view.cx, cy: view.cy, s: view.s }; if (MOVING) SNAPON = 0;   /* 움직이는 중에 제대로 다시 그렸으면 다음 프레임에 새로 뜬다 */
     var W = cv.clientWidth, H = cv.clientHeight, dark = document.documentElement.classList.contains('dark');
-    var BASE = on.base && OSM; ctx.fillStyle = dark ? '#0f1624' : (BASE ? '#f2efe8' : '#eef2f6'); ctx.fillRect(0, 0, W, H);
+    var BASE = on.base && OSM; ctx.fillStyle = dark ? '#0f1624' : (BASE ? '#f3f4f1' : '#eef2f6');   /* v2.329.0 디자인 — 바탕은 물러서고 자료가 앞으로: 바탕·녹지·물·건물·큰길의 채도를 낮춤(밤 화면은 그대로) */ ctx.fillRect(0, 0, W, H);
     var VW = drawVw();
     var ymd = pickDate(), RVIS = RDONG.filter(inViewBox);
     // 이웃 구의 동(회색 · 점선 경계) — 그 구의 지역 자료를 받았으면 그쪽이 그린다
@@ -1093,7 +1093,7 @@
     drawUnits(dark); drawJrs(dark); drawRone(dark); drawTaxL(dark); drawRunw(dark); drawAccr(dark); drawAcad(dark); drawMed(dark); drawLpop(dark); drawFdong(dark); drawRnet(dark); drawSgg(dark); drawVols(dark); drawExv(dark); drawMsub(dark); drawBusd(dark); drawFlodge(dark); drawMinbak(dark); drawStay(dark); drawRpost(dark); drawJiga(dark); drawLand(dark);   // v0.10.90 시·군·구 경계(서울·경기·인천)
     // 건물
     if (on.bld && BLD.length && view.s > 0.12) { var k9 = view.s, ox9 = W / 2 - view.cx * k9, oy9 = H / 2 - view.cy * k9, cnt9 = 0, edg9 = BASE && !dark && view.s > 0.5 && !MOVING;   /* v2.208.0 화면에 걸친 건물만 · 16채씩 묶어 칠한다(1px 안 되는 건물은 뺀다). 한 길에 다 넣으면 오히려 느리다 — 4,336채 한 길 65ms · 16채씩 1.3ms(실측) */
-      ctx.fillStyle = dark ? 'rgba(200,210,225,.28)' : (BASE ? 'rgba(186,176,164,.85)' : 'rgba(90,100,115,.30)'); ctx.lineWidth = 0.6; ctx.strokeStyle = 'rgba(120,110,100,.7)'; ctx.beginPath();
+      ctx.fillStyle = dark ? 'rgba(200,210,225,.28)' : (BASE ? 'rgba(206,209,215,.92)' : 'rgba(90,100,115,.30)'); ctx.lineWidth = 0.6; ctx.strokeStyle = 'rgba(148,155,166,.6)'; ctx.beginPath();
       for (var i9 = 0; i9 < BLD.length; i9++) { var b9 = BLD[i9], x9 = b9.bx; if (x9[1] < vA[0] || x9[0] > vB[0] || x9[3] < vA[1] || x9[2] > vB[1] || (x9[1] - x9[0] + x9[3] - x9[2]) * k9 < 1.2) continue; ringAdd(b9.p, k9, ox9, oy9); if (++cnt9 >= 16) { ctx.fill(); if (edg9) ctx.stroke(); ctx.beginPath(); cnt9 = 0; } }
       if (cnt9) { ctx.fill(); if (edg9) ctx.stroke(); } }
     if ((on.road || on.jcnm) && OSM) drawBaseLabels(dark);
@@ -1776,8 +1776,8 @@
   var OSM = null, OSMN = [], OSMLAB = [], WLAB = [], JLAB = [], OSMBN = {}, PACKS = [], OVP = null, TILES = {}, TLOAD = {}, BIDX = null, BSET = {}, TILE_S = 0.045, TMAX = 64, TBAKE = '';
   var RCLS = { m: '고속·도시고속', p: '주간선', s: '보조간선', t: '집산', r: '국지·주거', l: '연결로', v: '단지·서비스', f: '보행', c: '자전거' };
   var RSTY = {   // 종류: 실제 폭(m) · 최소 px · 보이기 시작하는 배율 · [채움, 테두리] 낮 · 밤
-    m: [24, 3.2, 0, ['#f9c56b', '#c9801c'], ['#b7791f', '#7c5212']], p: [21, 2.8, 0, ['#ffe08a', '#d4a12a'], ['#9a7b2c', '#6b5420']],
-    s: [16, 2.3, 0, ['#fff2c2', '#cdb06a'], ['#6d6447', '#4b4533']], l: [8, 1.6, 0.05, ['#ffe7a3', '#cdb06a'], ['#7a6a3e', '#4b4533']],
+    m: [24, 3.2, 0, ['#fbe2b0', '#d2a964'], ['#b7791f', '#7c5212']], p: [21, 2.8, 0, ['#fdf0d2', '#d5bf8a'], ['#9a7b2c', '#6b5420']],
+    s: [16, 2.3, 0, ['#ffffff', '#c6cbd3'], ['#6d6447', '#4b4533']], l: [8, 1.6, 0.05, ['#ffffff', '#cbd0d8'], ['#7a6a3e', '#4b4533']],
     t: [12, 1.9, 0.04, ['#ffffff', '#b9c1cc'], ['#4a5568', '#2d3748']], r: [7, 1.2, 0.07, ['#ffffff', '#c7cdd6'], ['#3d4a5e', '#27303f']],
     v: [4.5, 0.8, 0.2, ['#ffffff', '#d6dbe2'], ['#344055', '#252e3d']], c: [2, 0.9, 0.3, ['#22a35a', null], ['#3fbf78', null]], f: [1.6, 0.8, 0.35, ['#a0a9b6', null], ['#64748b', null]]
   };
@@ -1915,13 +1915,13 @@
     needTiles(); PACKS = basePacks(); if (!PACKS.length) return; worldT();
     function each(f) { PACKS.forEach(f); }
     var va = M(0, 0), vb = M(cv.clientWidth, cv.clientHeight);   /* v2.209.0 화면에 걸친 묶음만 칠한다 */
-    ctx.fillStyle = dark ? 'rgba(34,84,52,.55)' : '#cfe6bd'; each(function (K) { plFill(K.green.park, va, vb); });
-    ctx.fillStyle = dark ? 'rgba(28,74,44,.75)' : '#b9dba3'; each(function (K) { plFill(K.green.wood, va, vb); });
-    ctx.fillStyle = dark ? 'rgba(52,96,60,.6)' : '#bfe0b0'; each(function (K) { plFill(K.green.pitch, va, vb); });
-    ctx.fillStyle = dark ? 'rgba(60,80,64,.5)' : '#d6e3cf'; each(function (K) { plFill(K.green.cem, va, vb); });
+    ctx.fillStyle = dark ? 'rgba(34,84,52,.55)' : '#d9e8d0'; each(function (K) { plFill(K.green.park, va, vb); });
+    ctx.fillStyle = dark ? 'rgba(28,74,44,.75)' : '#cadfbe'; each(function (K) { plFill(K.green.wood, va, vb); });
+    ctx.fillStyle = dark ? 'rgba(52,96,60,.6)' : '#d3e6c9'; each(function (K) { plFill(K.green.pitch, va, vb); });
+    ctx.fillStyle = dark ? 'rgba(60,80,64,.5)' : '#dfe6db'; each(function (K) { plFill(K.green.cem, va, vb); });
     if (view.s > 0.25) { ctx.fillStyle = dark ? 'rgba(80,92,110,.35)' : 'rgba(205,210,218,.75)'; each(function (K) { plFill(K.pk, va, vb); }); }
-    ctx.fillStyle = dark ? '#1c3b5e' : '#a8d0f0'; each(function (K) { plFill(K.water, va, vb); });
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = dark ? '#2b5a8a' : '#8cc0ea';
+    ctx.fillStyle = dark ? '#1c3b5e' : '#bdd8ef'; each(function (K) { plFill(K.water, va, vb); });
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = dark ? '#2b5a8a' : '#a3c7e8';
     ctx.lineWidth = Math.max(1.6 / view.s, 9); each(function (K) { ctx.stroke(K.ww[1]); }); ctx.lineWidth = Math.max(1.2 / view.s, 4); each(function (K) { ctx.stroke(K.ww[0]); });
     ctx.setLineDash([4 / view.s, 3 / view.s]); ctx.lineWidth = Math.max(1 / view.s, 3); ctx.globalAlpha = 0.6; each(function (K) { ctx.stroke(K.wwT); }); ctx.globalAlpha = 1; ctx.setLineDash([]);
     screenT();
@@ -2952,8 +2952,8 @@
     var el = $('m2dLeg'); if (!el) return; var g = [], hh = nowH();
     function G(t, body) { g.push('<div class="lg"><b>' + t + '</b><div>' + body + '</div></div>'); }
     if (on.jcnm) G('🏷 교차로·도로 이름', li('#7c2d12', '큰길 교차로', 'dot') + li('#334155', '그 밖 교차로', 'dot') + li('#0f766e', 'IC·연결로', 'dot') + li('#6b21a8', '교량·터널 끝', 'dot') + li('#1e3a8a', '도로 이름(글자)', 'line') + '<small class="lg-n">국가교통정보센터 전국 표준노드링크(2026-09-14판) · 서울·경기 교차로 2.5만 곳 · 확대할수록 작은 교차로·길 이름까지 · 「찾기」에 교차로·도로 이름을 넣어도 된다</small>');
-    if (on.road && OSM) G('🛣 도로', li('#f9c56b', '고속·도시고속', 'line') + li('#ffe08a', '주간선', 'line') + li('#fff2c2', '보조간선', 'line') + li('#ffffff', '집산·국지', 'line') + li('#a0a9b6', '보행', 'dash') + li('#22a35a', '자전거', 'dash') + li('#8b95a3', '지하차도(점선)', 'dash') + li('#334155', '교차로 이름(점)'));
-    if (on.base && OSM) G('🗺 바탕', li('#a8d0f0', '물', 'box') + li('#cfe6bd', '공원·녹지', 'box') + li('#b9dba3', '숲', 'box') + li('#8b95a3', '철도', 'line') + li('#bab0a4', '건물', 'box'));
+    if (on.road && OSM) G('🛣 도로', li('#e8c27f', '고속·도시고속', 'line') + li('#e9d6a8', '주간선', 'line') + li('#c6cbd3', '보조간선', 'line') + li('#ffffff', '집산·국지', 'line') + li('#a0a9b6', '보행', 'dash') + li('#22a35a', '자전거', 'dash') + li('#8b95a3', '지하차도(점선)', 'dash') + li('#334155', '교차로 이름(점)'));
+    if (on.base && OSM) G('🗺 바탕', li('#bdd8ef', '물', 'box') + li('#d9e8d0', '공원·녹지', 'box') + li('#cadfbe', '숲', 'box') + li('#8b95a3', '철도', 'line') + li('#ced1d7', '건물', 'box'));
     if (on.jiga) G('🟧 공시지가·지목', '<div class="lg-btns">' + Object.keys(JGMS).map(function (k) { return '<button data-jgm="' + k + '" class="' + (k === JGM ? 'on' : '') + '">' + JGMS[k][0] + '</button>'; }).join('') + '</div>' + (JGM !== 'p' ? li(hexA(JGMS[JGM][2], 0.7), '진할수록 ' + JGMS[JGM][0].replace(/^\S+ /, '') + ' 높음(0→100%)', 'box') + '<small class="lg-n">지목 넓이 비율 — 필지를 대표점이 든 칸·동에 통째로 넣은 근사 · 지목 이름은 측량·지적법 그대로</small>' : JGC.map(function (c, i) { return li(hexA(c, 0.75), JGL[i], 'box'); }).join('') + '<small class="lg-n">가까이 = 250m 칸 · 멀리 = 행정동 · ' + esc(jgYear() || '') + '년 1월 1일 · 세금·보상 기준값이지 시세가 아니다 · 받은 시군구 ' + Object.keys(JIGA).length + '</small>'));
     if (on.fdong) G('🌏 외국인 현황(시군구 · 읍면동)', fdLegend());
     if (on.stay) G('🛏 숙박시설', '<div class="lg-btns">' + STY.map(function (t, i) { return '<button data-sty="' + i + '" class="' + (STYON[i] ? 'on' : '') + '"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + t[2] + ';margin-right:4px"></i>' + t[1] + '</button>'; }).join('') + '</div><small class="lg-n">회색 = 휴업 · 영문 상호가 있는 곳은 테가 굵다 · 행정안전부 지방행정인허가(2025-11-27) · 투숙 인원·국적·등록 안 한 숙소는 공개되지 않는다</small>');

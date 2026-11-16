@@ -946,7 +946,7 @@
   /* v2.49.2 색 눈금 */
   .hsc { margin: 4px 0; } .hsb { height: 12px; border-radius: 6px; border: 1px solid var(--line); } .hst { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
   .jgs { display: flex; flex-wrap: wrap; gap: 3px 8px; font-size: 11px; } .jgs i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
-  #m2dQC button.qtax { border-color: #16a34a !important; color: #15803d !important; font-weight: 800; }
+  #m2dQC button.qtax { border-color: #7c3aed !important; color: #6d28d9 !important; font-weight: 800; }   /* v2.329.0 색 역할 — 세금은 계산 도구라 분석 도구와 같은 보라 테두리(초록은 신호·소통 원활 뜻으로만) */
   /* v2.49.3 가격 말풍선 */
   #m2dTip { display: none; position: fixed; z-index: 30; pointer-events: none; max-width: 280px; background: rgba(15,23,42,.94); color: #f8fafc; border-radius: 10px; padding: 7px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
   #m2dTip i { font-style: normal; color: #fcd34d; font-weight: 700; } #m2dTip small { color: #cbd5e1; } #m2dTip b { color: #fff; }
@@ -1155,7 +1155,7 @@
   :root.dark .glance .gt.up small { color: #ec8787; }
   :root.dark .glance .gt.dn small { color: #7ea3f3; }
   :root.dark #m2dEst button { color: #ea8f0a; }
-  :root.dark #m2dQC button.qtax { color: #1fbd5a !important; }
+  :root.dark #m2dQC button.qtax { color: #c4b5fd !important; border-color: #a78bfa !important; }
   :root.dark #m2dGuideB { color: #86a1ef; }
   :root.dark #m2dTimeB.we:not(.set) { color: #ec8787; }
   :root.dark #m2dHome .hpol h4 { color: #86a1ef; }
@@ -1390,7 +1390,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.328.0"></script>
+<script src="js/map2d.js?v=2.329.0"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>
@@ -1434,8 +1434,10 @@
     var ct = document.getElementById('m2dChipT');
     function chipFold(f) { var b = document.body; if (b.classList.contains('chipfold') === f) return; b.classList.toggle('chipfold', f); if (ct) { ct.textContent = f ? '☰ 메뉴 ▾' : '접기 ▴'; ct.setAttribute('aria-expanded', f ? 'false' : 'true'); } }
     if (ct) ct.onclick = function () { chipFold(!document.body.classList.contains('chipfold')); };
+    if (window.innerWidth < 900 && !document.body.classList.contains('top1') && uiMode("chips") !== "fix") chipFold(true);   /* v2.329.0 디자인 — 폰은 처음부터 접힌 채(위 막대 네 줄 → 두 줄 · 지도가 화면의 20% 더) · 지도를 만지면 접히던 것과 같은 모양을 처음부터 · 「☰ 메뉴」로 펼침 · 설정에서 「고정」이면 펼친 채 */
     window.TGUi = { mode: uiMode, apply: function () { if (uiMode("chips") === "fix") chipFold(false); } };
-    document.addEventListener('pointerdown', function (e) { if (uiMode("chips") === "fix" || document.body.classList.contains('top1') || !e.target.closest || e.target.closest('#m2dChips') || e.target.closest('#m2dTime')) return; chipFold(true); }, true);
+    /* v2.329.0 형님 「PC 에서는 접기를 눌러야만 접히게」 — 넓은 화면(900px~)은 지도를 만져도 위 메뉴를 접지 않는다 · 폰은 종전 그대로 */
+    document.addEventListener('pointerdown', function (e) { if (window.innerWidth >= 900 || uiMode("chips") === "fix" || document.body.classList.contains('top1') || !e.target.closest || e.target.closest('#m2dChips') || e.target.closest('#m2dTime')) return; chipFold(true); }, true);
     window.addEventListener("resize", fitTop); fitTop();
     // v0.10.92 소유자 「스마트폰에서는 열면 자동으로 전체화면」 — 브라우저는 손가락이 닿아야 전체화면을 허락한다 → 첫 터치 때 한 번(아이폰 사파리는 이 기능이 없다 — 홈 화면에 추가하면 주소창 없이 열린다)
     var phone = window.matchMedia && matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820, de = document.documentElement;

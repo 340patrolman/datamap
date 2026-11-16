@@ -3119,7 +3119,7 @@
   var WINS = [['m2dCard', '정보'], ['m2dPanel', '레이어'], ['m2dLeg', '범례'], ['m2dRad', '반경 분석'], ['m2dBiz', '창업 자리'], ['m2dPnl', '손익 계산'], ['m2dTr', '대중교통'], ['m2dGetP', '지역 받기'], ['m2dEst', '어림'], ['m2dTool', '도구'], ['m2dDec', '오늘의 결정']], WORD = [], WINT = 0;
   function winVis(el) { if (!el) return false; var cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden' && el.offsetWidth > 40 && el.offsetHeight > 40; }
   function winName(w) { if (w[0] === 'm2dCard') { var t = $('m2dCard').querySelector('h3'), n = t ? String(t.textContent || '').replace(/^[^가-힣A-Za-z0-9]+/, '').replace(/\s+/g, ' ').trim() : ''; return n ? (n.length > 9 ? n.slice(0, 9) + '…' : n) : w[1]; } return w[1]; }
-  function winSync() { WINT = 0; var vis = WINS.filter(function (w) { return winVis($(w[0])); }).map(function (w) { return w[0]; });
+  function winSync() { WINT = 0; wObs(); var vis = WINS.filter(function (w) { return winVis($(w[0])); }).map(function (w) { return w[0]; });
     WORD = WORD.filter(function (id) { return vis.indexOf(id) >= 0; }); vis.forEach(function (id) { if (WORD.indexOf(id) < 0) WORD.push(id); });   /* 새로 보인 창은 맨 뒤 = 맨 위 */
     WINS.forEach(function (w) { var el = $(w[0]); if (!el) return; var i = WORD.indexOf(w[0]), z = i < 0 ? '' : String(10 + i); if (el.style.zIndex !== z) el.style.zIndex = z; });
     var bar = $('m2dWin'); if (!bar) return; var R = {}, hit = {}; WORD.forEach(function (id) { R[id] = $(id).getBoundingClientRect(); });
@@ -3131,7 +3131,8 @@
     var tp = $('m2dTop'), minY = (tp ? tp.getBoundingClientRect().bottom : 90) + 6, tr = R[topId], bh = bar.offsetHeight || 46, bw = bar.offsetWidth || 200, ty = Math.max(minY, tr.top - bh - 6) + 'px', lx = Math.max(8, Math.min(tr.left, window.innerWidth - bw - 8)) + 'px'; if (bar.style.top !== ty) bar.style.top = ty; if (bar.style.left !== lx) bar.style.left = lx; }
   function winSoon() { if (!WINT) WINT = setTimeout(winSync, 60); }
   function winRaise(id) { var i = WORD.indexOf(id); if (i < 0 || i === WORD.length - 1) return; WORD.splice(i, 1); WORD.push(id); winSync(); }
-  if ($('m2dWin') && window.MutationObserver) { var wmo = new MutationObserver(winSoon); WINS.forEach(function (w) { var el = $(w[0]); if (el) wmo.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] }); }); wmo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  function wObs() { if (!wmo) return; WINS.forEach(function (w) { var el = $(w[0]); if (el && !el.__wo) { el.__wo = 1; wmo.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] }); } }); }   /* v2.331.0 레이어 판(m2dPanel)은 이 줄보다 뒤(paintLayers 앞)에서 만들어져 지켜보기에서 빠져 있었다 — 카드가 열린 채 레이어 판을 열면 카드가 판 아래 절반을 덮었다(폰 375 실측 · z 8 그대로) · 창을 맞출 때마다 새로 생긴 창을 붙인다 */
+  var wmo = null; if ($('m2dWin') && window.MutationObserver) { wmo = new MutationObserver(winSoon); wObs(); wmo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     window.addEventListener('resize', winSoon);
     document.addEventListener('pointerdown', function (e) { var t = e.target, b = t.closest && t.closest('#m2dWin [data-win]'); if (b) { winRaise(b.getAttribute('data-win')); return; } for (var i = 0; i < WINS.length; i++) { var el = $(WINS[i][0]); if (el && el.contains(t)) { winRaise(WINS[i][0]); return; } } }, true);
     $('m2dWin').addEventListener('click', function (e) { e.stopPropagation(); }); winSoon(); }
@@ -10318,7 +10319,7 @@
   // v2.29.0 소유자 「근무별 한 번에 메뉴를 전체 목록 밑에 — 어떻게 구성되고 진행되는지 알 수 있게 · 설명(건물·단속카메라 등)은 지금 전부 펼쳐져 있다 → 그 부분만도, 전체로도 접고 펼치게」
   var LHK = {}, GCL = {}, PRECO = false, PSTO = true;
   var GCNEW = true, LYUSE = {};
-  try { GCNEW = localStorage.getItem('tg_map2d_gcl') == null || localStorage.getItem('tg_map2d_gcv') === '2'; GCL = JSON.parse(localStorage.getItem('tg_map2d_gcl') || '{}') || {}; PSTO = localStorage.getItem('tg_map2d_pst') !== '0'; LYUSE = JSON.parse(localStorage.getItem('tg_map2d_lyuse') || '{}') || {}; } catch (e) {}
+  try { GCNEW = localStorage.getItem('tg_map2d_gcl') == null || localStorage.getItem('tg_map2d_gcv') === '2'; GCL = JSON.parse(localStorage.getItem('tg_map2d_gcl') || '{}') || {}; PSTO = localStorage.getItem('tg_map2d_pst') === '1';   /* v2.331.0 「근무별 한 번에」는 접힌 채 시작(상황 묶음이 앞에서 같은 일을 한다 · 레이어 목록이 첫 화면에 보이게) — 펼쳐 둔 기기는 그대로 */ LYUSE = JSON.parse(localStorage.getItem('tg_map2d_lyuse') || '{}') || {}; } catch (e) {}
   /* v2.219.0 접힘 판정 — 1 = 접음 · 0 = 펼침(새 방식에서 사용자가 펼친 것) · 없음 = 새 방식이면 「켜진 것이 없으면 접힘」, 옛 방식이면 펼침 */
   function gcClosed(id, nOn) { var v = GCL[id]; if (v === 1 || v === true) return true; if (v === 0) return false; return GCNEW ? !nOn : false; }
   /* 자주 쓰는 레이어 — 켠 횟수를 이 기기에만 센다(레이어 이름과 횟수뿐) */
@@ -10330,7 +10331,7 @@
   function gclSave() { try { localStorage.setItem('tg_map2d_gcl', JSON.stringify(GCL)); if (GCNEW) localStorage.setItem('tg_map2d_gcv', '2'); } catch (e) {} }
   function catPaint(pn, nOn) {   // v2.20.0 탭으로 가리지 않고 모두 펼친다 · v2.25.0 보기 셋 · v2.29.0 근무별 묶음을 위로 · 하나씩/모두 접기
     if (!CATS) return;
-    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanH"></div><div class="psec sith">🎯 상황 묶음 <small>— 지금 상황을 고른다</small></div><div id="m2dSit"></div><button class="pguide" data-pguide="1">📖 사용설명서 — 레이어마다 무엇을 보여 주고 무엇을 알 수 있나 · 할 수 있는 일 한눈에 ›</button><details class="pst ptop" id="m2dPstD"' + (PSTO ? ' open' : '') + '><summary class="psec">⚡ 근무별 한 번에 <small>— 누르면 그 근무에 맞는 레이어 묶음만 켠다</small></summary><div id="m2dPreC"></div></details><div id="m2dPanB"></div><div class="pst" id="m2dPst2"></div>';
+    if (!$('m2dPanB')) { pn.innerHTML = '<div id="m2dPanH"></div><div class="psec sith">🎯 상황 묶음 <small>— 누르면 그 레이어만 · 다시 누르면 되돌림</small></div><div id="m2dSit"></div><button class="pguide" data-pguide="1">📖 사용설명서 — 레이어마다 무엇을 알 수 있나 ›</button><details class="pst ptop" id="m2dPstD"' + (PSTO ? ' open' : '') + '><summary class="psec">⚡ 근무별 한 번에 <small>— 누르면 그 근무에 맞는 레이어 묶음만 켠다</small></summary><div id="m2dPreC"></div></details><div id="m2dPanB"></div><div class="pst" id="m2dPst2"></div>';
       var pd = $('m2dPstD'); if ($('m2dPre')) pd.insertBefore($('m2dPre'), $('m2dPreC')); $('m2dSit').addEventListener('click', function (e) { var b9 = e.target.closest('button[data-s]'); if (b9) sitTap(b9.getAttribute('data-s')); }); paintSit(); pd.addEventListener('toggle', function () { PSTO = pd.open; try { localStorage.setItem('tg_map2d_pst', PSTO ? '1' : '0'); } catch (e) {} });
       var st = $('m2dPst2'), t2 = document.createElement('div'); t2.className = 'psec'; t2.textContent = '🕒 이 시각 한눈에'; st.appendChild(t2); if ($('m2dSum')) st.appendChild($('m2dSum'));
       var ft = document.createElement('div'); ft.className = 'pg pft'; ft.innerHTML = '<button data-none="1">모두 끄기</button><button data-reset="1">처음대로</button><button data-onb="1">❔ 처음 안내 다시</button>'; st.appendChild(ft);

@@ -946,6 +946,10 @@
   /* v2.49.2 색 눈금 */
   .hsc { margin: 4px 0; } .hsb { height: 12px; border-radius: 6px; border: 1px solid var(--line); } .hst { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
   .jgs { display: flex; flex-wrap: wrap; gap: 3px 8px; font-size: 11px; } .jgs i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
+  /* v2.331.0 디자인 — 레이어 판 머리를 줄여 목록이 첫 화면에 보이게(375px: 목록 시작 614px/판 721px) · 상황 묶음 = 한 줄 가로 밀기 · 사용설명서 안내 = 한 줄 */
+  #m2dSit { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 4px 0 2px; } #m2dSit::-webkit-scrollbar { display: none; }
+  #m2dSit button { flex: 0 0 auto; min-height: 36px; padding: 0 14px; font-size: 13.5px; border-width: 1.5px; } #m2dSit .sitn { display: none; }
+  #m2dPanel .pguide { margin: 4px 0 6px; padding: 6px 10px; border-width: 1px; font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #m2dQC button.qtax { border-color: #7c3aed !important; color: #6d28d9 !important; font-weight: 800; }   /* v2.329.0 색 역할 — 세금은 계산 도구라 분석 도구와 같은 보라 테두리(초록은 신호·소통 원활 뜻으로만) */
   /* v2.49.3 가격 말풍선 */
   #m2dTip { display: none; position: fixed; z-index: 30; pointer-events: none; max-width: 280px; background: rgba(15,23,42,.94); color: #f8fafc; border-radius: 10px; padding: 7px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
@@ -1390,7 +1394,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.330.0"></script>
+<script src="js/map2d.js?v=2.331.0"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>

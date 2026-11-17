@@ -69,8 +69,12 @@
       var nL1 = g.lrnCount();
       var eL = null; for (var k8 = 0; k8 < rl.es.length; k8++) { var qL = Gl.S[Gl.eS[rl.es[k8]]]; if (qL[2] > 120 && qL[4] <= 4) { eL = rl.es[k8]; break; } }
       var lenL = Gl.S[Gl.eS[eL]][2]; g.lrnAdd(eL, lenL / (15 / 3.6)); g.lrnAdd(eL, lenL / (15 / 3.6)); var fRl = function () { return g.findRoute(sl[0], sl[1], tl[0], tl[1], Date.now() / 1000, null); }, fNl = function () { return g.noLive ? g.noLive(fRl) || fRl() : fRl(); };   /* 2026-11-08 다녀 본 길은 실시간 다음 차례(eV) — 그 줄에 실시간 속도가 있으면 기억이 안 쓰여 일요일 낮에 걸렸다 → 실시간을 뺀 길로 본다 */
-      var vL = g.lrnSpeed(eL), rl2 = fNl(); g.lrnReset(); g.lrnAdd(eL, lenL / (40 / 3.6)); g.lrnAdd(eL, lenL / (40 / 3.6)); var rl3 = fNl(), vL3 = g.lrnSpeed(eL);   /* 시간대와 무관하게 — 15km/h 로 기억했을 때가 40km/h 로 기억했을 때보다 피하거나 느리다 */
-      ck('🧠 다녀 본 길 — 길 따라 움직이면 지난 줄을 모은다 · 같은 줄 두 번이면 그 속도(15km/h)를 쓴다 · 느리게(15) 기억하면 빠르게(40) 기억했을 때보다 피하거나 시간이 는다', nL1 > 0 && Math.abs(vL - 15) < 1 && (rl2.es.indexOf(eL) < 0 || rl2.time > rl3.time + 3), '모은 줄 ' + nL1 + ' · 속도 ' + vL.toFixed(1) + '/' + vL3.toFixed(1) + ' · 길이 ' + Math.round(lenL) + ' · 제한 ' + Gl.S[Gl.eS[eL]][3] + ' · ' + (rl2.es.indexOf(eL) < 0 ? '피함' : Math.round(rl3.time) + '(40) → ' + Math.round(rl2.time) + '초(15)'));
+      var vL = g.lrnSpeed(eL), TL0 = Date.now() / 1000, dLx = -1e9, avL = false, dLs = [], rl2, rl3, vL3;
+      /* 2026-11-17 길 시간에는 신호 기다림이 들어 있어 그 줄을 늦게 지나도 앞 적색에서 덜 기다리면 합이 같다(실측 — 출발을 23초씩 미루면 8번 중 7번 차이 0 · 1번 120초) → 출발 시각 여섯을 맞대 한 번이라도 피하거나 3초 넘게 늘면 기억이 쓰인 것 */
+      for (var jL = 0; jL < 6; jL++) { var TjL = TL0 + jL * 23, fRj = function () { return g.findRoute(sl[0], sl[1], tl[0], tl[1], TjL, null); }, fNj = function () { return g.noLive ? g.noLive(fRj) || fRj() : fRj(); };
+        g.lrnReset(); g.lrnAdd(eL, lenL / (15 / 3.6)); g.lrnAdd(eL, lenL / (15 / 3.6)); rl2 = fNj(); if (jL === 0) vL = g.lrnSpeed(eL); g.lrnReset(); g.lrnAdd(eL, lenL / (40 / 3.6)); g.lrnAdd(eL, lenL / (40 / 3.6)); rl3 = fNj(); vL3 = g.lrnSpeed(eL);
+        if (rl2.es.indexOf(eL) < 0) avL = true; else { dLx = Math.max(dLx, rl2.time - rl3.time); dLs.push(Math.round(rl2.time - rl3.time)); } }   /* 시간대와 무관하게 — 15km/h 로 기억했을 때가 40km/h 로 기억했을 때보다 피하거나 느리다 */
+      ck('🧠 다녀 본 길 — 길 따라 움직이면 지난 줄을 모은다 · 같은 줄 두 번이면 그 속도(15km/h)를 쓴다 · 느리게(15) 기억하면 빠르게(40) 기억했을 때보다 피하거나 시간이 는다', nL1 > 0 && Math.abs(vL - 15) < 1 && (avL || dLx > 3), '모은 줄 ' + nL1 + ' · 속도 ' + vL.toFixed(1) + '/' + vL3.toFixed(1) + ' · 길이 ' + Math.round(lenL) + ' · 제한 ' + Gl.S[Gl.eS[eL]][3] + ' · ' + (avL ? '피함 · ' : '') + '출발 여섯 시각 차이(15-40) ' + dLs.join('/') + '초');
       g.lrnReset(); } catch (e) { ck('다녀 본 길 검사', false, e.message); try { g.lrnReset(); } catch (x) {} }
     /* v0.27.0 열차 안 신고 — 방배(2호선) 떠남 · 서초 쪽 → 후보 6역 · 확률 0~1 · 권고 또는 경합 · 문구 · 밖으로 나간 요청 0 · 남기는 것 없음 */
     try { var ls9 = Object.keys(localStorage).sort().join(','), nr8 = performance.getEntriesByType('resource').length; g.sr.load().then(function (SD) { try {

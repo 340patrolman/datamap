@@ -63,7 +63,7 @@
     if (first.st.remain < 4) return '앞 녹색이 곧 끝남 — <b>무리하게 지나지 않기</b>';
     return '<b>이대로</b> 가면 앞 ' + gn + '곳 녹색' + (un ? ' · 자료 없음 ' + un + '곳' : '') + ' <em>· 일정한 속도가 가장 경제적</em>';
   }
-  function place() { var b = 70; ['gTop', 'gSig'].forEach(function (id) { var e = $(id); if (!e) return; var cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden' || !e.offsetHeight) return; b = Math.max(b, e.getBoundingClientRect().bottom); }); EL.style.top = Math.round(b + 6) + 'px'; }   /* 위 판 + 신호 판 아래 */
+  function place() { var b = 70; ['gTop', 'gSig'].forEach(function (id) { var e = $(id); if (!e) return; var cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden' || !e.offsetHeight) return; b = Math.max(b, e.getBoundingClientRect().bottom); }); EL.style.top = Math.round(b + 6) + 'px'; var sg = $('gSig'); if (sg && sg.offsetHeight && getComputedStyle(sg).display !== 'none') { var R = sg.getBoundingClientRect(); EL.style.left = Math.round(R.left) + 'px'; EL.style.width = Math.round(R.width) + 'px'; EL.style.right = 'auto'; } else { EL.style.left = EL.style.width = EL.style.right = ''; } }   /* 2026-11-17 신호 판과 좌우 끝을 맞춘다(태블릿·가로에서 들쭉날쭉했다) */   /* 위 판 + 신호 판 아래 */
   function tick() {
     var S = window.GARGO && GARGO.state && GARGO.state(), on = !!(S && S.guide && S.route);
     if (!on) { if (EL.style.display !== 'none') { EL.style.display = 'none'; document.body.classList.remove('ladder'); } return; }

@@ -54,7 +54,7 @@ def fetch(args):
             if os.path.exists(cf): continue
             a = get('AptBasisInfoServiceV5/getAphusBassInfoV5?kaptCode=' + x['kaptCode'], key).get('item') or {}
             d = get('AptBasisInfoServiceV5/getAphusDtlInfoV5?kaptCode=' + x['kaptCode'], key).get('item') or {}
-            json.dump({'b': a, 'd': d}, open(cf, 'w', encoding='utf-8'), ensure_ascii=False); n += 1; m += 1; time.sleep(0.5)
+            json.dump({'b': a, 'd': d}, open(cf, 'w', encoding='utf-8'), ensure_ascii=False); n += 1; m += 1; time.sleep(2.5)
         print(g['gu'], g['name'], '단지', len(L), '새로 받음', m, flush=True)
     print('새로 받은 단지', n, flush=True)
 

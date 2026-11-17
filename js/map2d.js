@@ -5464,7 +5464,13 @@
   var HF = { p: 0, a: 0, y: 0 }, HFN = 0;
   var HFP = [['가격 전체'], ['10억 이하', 0, 100000], ['10~20억', 100000, 200000], ['20~30억', 200000, 300000], ['30억 넘음', 300000, 1e12]], HFA = [['면적 전체'], ['전용 60㎡ 이하', 0, 60], ['60~85㎡', 60, 85.5], ['85~135㎡', 85.5, 135], ['135㎡ 넘음', 135, 1e9]], HFY = [['준공 전체'], ['5년 안', 0, 5], ['10년 안', 0, 10], ['10~20년', 10, 20], ['20~30년', 20, 30], ['30년 넘음', 30, 999]];
   function hfOn() { return !!(HF.p || HF.a || HF.y); }
-  function hfOk(x) { if (!hfOn()) return true; var c = x.c, tr = c[8];
+  /* v2.341.0 평형별 거르기 — 가격·면적을 고르면 그 구의 건별 매매(deals.json)를 받아 단지의 「면적마다 가장 최근 매매가」로 본다(한 단지에 여러 평형 — 어느 하나라도 맞으면 남고 표지는 그 값) · 못 받으면 종전대로 가장 최근 1건 */
+  var HFD = {};
+  function hfDeals(gu) { if (HFD[gu] !== undefined) return; HFD[gu] = null; rGet(gu, 'deals.json').then(function (j) { var m = {}; j.d.slice().sort(function (a, b) { return b[1] - a[1]; }).forEach(function (d) { if (d[4]) return; var c = j.c[d[0]]; if (!c || c[4] == null) return; var g = (m[c[4]] = m[c[4]] || {}), a = Math.round(d[2] / 100); if (!(a in g)) g[a] = d[3]; }); HFD[gu] = m; draw(); }).catch(function () { HFD[gu] = false; }); }
+  function hfOk(x) { x.hf = null; if (!hfOn()) return true; var c = x.c, tr = c[8];
+    if (HF.y) { if (!c[7]) return false; var ag0 = new Date().getFullYear() - c[7]; if (!(ag0 >= HFY[HF.y][1] && ag0 <= HFY[HF.y][2])) return false; }
+    if ((HF.p || HF.a) && x.m && x.m.gu) { hfDeals(x.m.gu); var G9 = HFD[x.m.gu] && HFD[x.m.gu][x.k];
+      if (G9) { var best = null; Object.keys(G9).forEach(function (a) { var v = G9[a]; if (HF.p && !(v > HFP[HF.p][1] && v <= HFP[HF.p][2])) return; if (HF.a && !(+a > HFA[HF.a][1] && +a <= HFA[HF.a][2])) return; if (!best || v > best[1]) best = [+a, v]; }); if (!best) return false; x.hf = best; return true; } }
     if (HF.p) { if (!tr || !tr[0] || !tr[3] || !(tr[3] > HFP[HF.p][1] && tr[3] <= HFP[HF.p][2])) return false; }
     if (HF.a) { if (!tr || !tr[0] || !tr[4] || !(tr[4] > HFA[HF.a][1] && tr[4] <= HFA[HF.a][2])) return false; }
     if (HF.y) { if (!c[7]) return false; var ag = new Date().getFullYear() - c[7]; if (!(ag >= HFY[HF.y][1] && ag <= HFY[HF.y][2])) return false; }
@@ -5495,7 +5501,7 @@
     if ((view.s >= 0.3 || (hfOn() && view.s >= 0.12)) && (HM === 'apt' || HM === 'of' || HM === 'rh')) { var used = {}, lab = HCX.filter(function (x) { return x.p && x.c[8] && x.c[8][0] && x.c[8][3] && hfOk(x); }).sort(function (a, b) { return b.c[8][0] - a.c[8][0]; });
       ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       lab.forEach(function (x) { var s = S(x.p); if (s[0] < -30 || s[1] < 0 || s[0] > W0 + 30 || s[1] > H0 + 20) return; var k = Math.floor(s[0] / 58) + '_' + Math.floor((s[1] - 15) / 22); if (used[k]) return; used[k] = 1;
-        var v = x.c[8][3], t = v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1).replace(/\.0$/, '') + '억' : Math.round(v).toLocaleString() + '만', w = ctx.measureText(t).width + 12, y = s[1] - 15;
+        var v = x.hf ? x.hf[1] : x.c[8][3], t = v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1).replace(/\.0$/, '') + '억' : Math.round(v).toLocaleString() + '만', w = ctx.measureText(t).width + 12, y = s[1] - 15;
         ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s[0] - w / 2, y - 9, w, 18, 9); else ctx.rect(s[0] - w / 2, y - 9, w, 18); ctx.fillStyle = HTC[x.c[0]]; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
         ctx.fillStyle = '#fff'; ctx.fillText(t, s[0], y + 0.5); hit.push({ x: s[0], y: y, r: Math.max(12, w / 2), it: { kind: 'hmc', x: x } }); }); }
   }
@@ -7836,7 +7842,7 @@
       el.addEventListener('change', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-hf'); if (!k) return; HF[k] = +e.target.value; estPaint(); draw(); }); }
     var any = on.home || on.jiga || on.land || on.rtc; el.style.display = any && !el.classList.contains('hide') ? 'block' : 'none'; if (!any) { el.classList.remove('hide'); return; }
     el.innerHTML = '<b>🏠 부동산</b> <button data-est="home" class="' + (on.home ? 'on' : '') + '">실거래 평당가</button><button data-est="jiga" class="' + (on.jiga ? 'on' : '') + '">공시지가</button><button data-est="deal" class="deal">🏷 최근 거래</button><button data-est="tax" class="tax">🧾 세금 계산</button><button data-est="x" aria-label="안내 닫기">✕</button>' +
-      (on.home ? '<div class="hf">' + hfSel('p', HFP) + hfSel('a', HFA) + hfSel('y', HFY) + (hfOn() ? '<button data-est="hfx">거르기 풀기</button>' : '') + '<span id="m2dHfN"></span></div><div id="m2dEstSc">' + hmScale() + '</div>' : on.jiga ? jgScale() : '') + '<small>' + (on.home ? '거르기 = 단지의 가장 최근 매매가·그 면적·준공 연도 기준(칸 색은 그대로) · ' : '') + '<b>🏷 최근 거래</b> = 화면 가운데(누른 자리) 둘레의 땅·공장·상가·주택 거래 목록 · ' + (on.home ? '<b>● 단지 점</b>을 누르면 그 단지로 세금 계산' : on.jiga ? '칸을 누르면 땅 쓰임·공시지가' : '') + (on.land ? (VWKEY ? ' · 확대해 <b>땅(필지)</b>을 누르면 공시지가·기준시가로 세금 계산' : ' · <b>📐 필지는 브이월드 키를 넣어야 보인다</b>(범례 🔑)') : '') + '</small>'; }
+      (on.home ? '<div class="hf">' + hfSel('p', HFP) + hfSel('a', HFA) + hfSel('y', HFY) + (hfOn() ? '<button data-est="hfx">거르기 풀기</button>' : '') + '<span id="m2dHfN"></span></div><div id="m2dEstSc">' + hmScale() + '</div>' : on.jiga ? jgScale() : '') + '<small>' + (on.home ? '거르기 = 단지의 면적마다 가장 최근 매매가·준공 연도 기준(칸 색은 그대로) · ' : '') + '<b>🏷 최근 거래</b> = 화면 가운데(누른 자리) 둘레의 땅·공장·상가·주택 거래 목록 · ' + (on.home ? '<b>● 단지 점</b>을 누르면 그 단지로 세금 계산' : on.jiga ? '칸을 누르면 땅 쓰임·공시지가' : '') + (on.land ? (VWKEY ? ' · 확대해 <b>땅(필지)</b>을 누르면 공시지가·기준시가로 세금 계산' : ' · <b>📐 필지는 브이월드 키를 넣어야 보인다</b>(범례 🔑)') : '') + '</small>'; }
 
   function paintLayers() {
     var nOn = LAYERS.filter(function (l) { return on[l[0]]; }).length; if ($('m2dLayN')) $('m2dLayN').textContent = nOn;

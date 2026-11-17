@@ -10648,7 +10648,11 @@
   window.addEventListener('pagehide', hLastSave);
   var HASH0 = location.hash || '';   /* 다른 모듈(오늘의 결정·엮임 보기)이 주소에서 제 인자를 떼기 전의 주소 */
   function homeGo() { if (hSt().m2dm) { try { history.back(); return; } catch (e) {} } homeOpen(); }   /* ← · 🏠 — 지도 칸이면 뒤로(= 홈 칸), 아니면 덮어 연다 */
-  ['m2dHomeB', 'm2dHomeB2'].forEach(function (id) { var bb = $(id); if (bb) bb.onclick = homeGo; });
+  /* v2.338.0 형님 「홈 단추를 누르면 최초로 세팅된 화면이 다시 나오게」 — 🏠 = 처음 세팅 화면으로(자리·확대·레이어·시각을 처음대로 · 카드·판 닫음) · 「🏠 처음 보기」로 지정한 저장 보기가 있으면 그것 · 홈 칸(상황·도구 목록)은 ← 로 */
+  function homeFirst() { try { sel = null; show(null); } catch (e) {} var pn = $('m2dPanel'); if (pn) pn.classList.remove('on'); ['m2dDeal', 'm2dLive'].forEach(function (id) { var e = $(id); if (e) e.classList.remove('on'); }); document.body.classList.remove('dealon');
+    if (MYST >= 0 && MY[MYST]) { myApply(MYST, true); setHour(null); toast('🏠 처음 보기 「' + MY[MYST].n + '」로 돌아왔다'); return; }
+    layersReset(); view.s = 0.16; view.cx = 0; view.cy = 0; setHour(null); draw(); toast('🏠 처음 세팅 화면으로 — 자리·레이어·시각을 처음대로(홈 목록은 ←)'); }
+  if ($('m2dHomeB')) $('m2dHomeB').onclick = homeGo; if ($('m2dHomeB2')) $('m2dHomeB2').onclick = homeFirst;
   window.addEventListener('popstate', function (e) { var st = e.state || {};
     if (st.m2ds) { if (!HOME.on) homeOpen(); setPaint(); setEl().classList.add('on'); return; }
     setClose(true);

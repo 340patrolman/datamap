@@ -941,7 +941,7 @@
   /* v2.49.1 부동산 안내 띠 */
   #m2dEst { display: none; position: fixed; left: 10px; right: 64px; bottom: calc(108px + env(safe-area-inset-bottom)); z-index: 7; max-width: 560px; background: var(--card, #fff); color: var(--ink); border: 1px solid var(--line); border-left: 5px solid #ca8a04; border-radius: 12px; padding: 6px 8px; box-shadow: 0 4px 14px rgba(0,0,0,.18); font-size: 12.5px; }
   #m2dEst button { height: 30px; margin: 2px 3px 2px 0; padding: 0 9px; border-radius: 15px; border: 1px solid #ca8a04; background: transparent; color: #a16207; font-weight: 700; font-size: 12px; cursor: pointer; }
-  #m2dEst button.on { background: #ca8a04; color: #fff; } #m2dEst button.tax { background: #16a34a; border-color: #16a34a; color: #fff; } #m2dEst button.deal { background: #2563eb; border-color: #2563eb; color: #fff; } #m2dEst button[data-est="x"] { float: right; border: 0; color: var(--ink2); }
+  #m2dEst button.on { background: #ca8a04; color: #fff; } #m2dEst button.tax { background: #16a34a; border-color: #16a34a; color: #fff; } #m2dEst button.deal { background: #2563eb; border-color: #2563eb; color: #fff; } #m2dEst .hf { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 4px 0 2px; } #m2dEst .hf select { height: 30px; border-radius: 15px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 12px; padding: 0 6px; max-width: 32%; } #m2dEst .hf select.on { border: 1.5px solid var(--acc); color: var(--acc); font-weight: 700; } #m2dEst .hf span { font-size: 12px; color: var(--ink2); } @media (max-width: 560px) { #m2dEst > small, #m2dEst .hsc small.lg-n { display: none; } }   /* 폰에서는 긴 설명을 감춘다 — 상자가 지도를 가렸다(설명은 범례·사용설명서에) */ #m2dEst button[data-est="x"] { float: right; border: 0; color: var(--ink2); }
   #m2dEst small { display: block; margin-top: 3px; color: var(--ink2); line-height: 1.4; } #m2dCard.on ~ #m2dEst, body.cardon #m2dEst { display: none !important; }
   /* v2.49.2 색 눈금 */
   .hsc { margin: 4px 0; } .hsb { height: 12px; border-radius: 6px; border: 1px solid var(--line); } .hst { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
@@ -1394,7 +1394,7 @@
 </div>
 <div id="m2dLoad">지도 자료를 읽는 중…</div>
 <script src="js/travel-time.js?v=5"></script>
-<script src="js/map2d.js?v=2.339.0"></script>
+<script src="js/map2d.js?v=2.340.0"></script>
 <script src="js/sim-ui.js?v=32" defer></script>
 <script src="js/sim-area.js?v=19" defer></script>
 <script src="js/sim-pick.js?v=1" defer></script>

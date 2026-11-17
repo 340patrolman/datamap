@@ -1249,7 +1249,8 @@
      파일 하나가 오면 걸린 수만큼 다시 그리고, 그때마다 남은 파일에 또 걸려 두 배씩 는다(실측: 향남에서 파일 10여 개가 걸린 채 양감면 카드를 열자 3초에 696번 다시 그리고 멈췄다 · 종전부터 있던 문제).
      → 사람이 누른 것이 아닌 요청(window.event 없음 = 자료가 온 뒤의 요청)이 **같은 카드를 방금(30ms 안) 그린 뒤**에 또 오면 모아서 40ms 뒤 한 번만 그린다. 누른 것·다른 카드는 바로 */
   var SHOWIT = null, SHOWAT = 0, SHOWTM = 0;
-  function show(it) { if (!window.event && it === SHOWIT && performance.now() - SHOWAT < 30) { BOOTT.nskip = (BOOTT.nskip || 0) + 1;
+  function show(it) { if (it && it.kind === 'ltd') { if (window.tgDeal) window.tgDeal.open(it.o); return; }   /* v2.343.0 땅 거래 표지 → 최근 거래 찾기 */
+    if (!window.event && it === SHOWIT && performance.now() - SHOWAT < 30) { BOOTT.nskip = (BOOTT.nskip || 0) + 1;
       if (!SHOWTM) SHOWTM = setTimeout(function () { SHOWTM = 0; SHOWAT = 0; if (sel && sel.it === SHOWIT && $('m2dCard').classList.contains('on')) show(SHOWIT); }, 40); return; }
     BOOTT.nshow = (BOOTT.nshow || 0) + 1; SHOWIT = it; var sk9 = showKey(it), rs9 = sk9 !== SHOWK; SHOWK = sk9; try { show0(it); } finally { SHOWAT = performance.now(); } if (rs9) { var cd9 = $('m2dCard'); if (cd9) cd9.scrollTop = 0; } }
   /* v2.321.2 다른 대상의 카드를 열면 맨 위부터 — 앞 카드를 끝까지 내린 채 지도를 누르면 새 카드가 내려간 자리(차트 가운데)에서 열렸다. 같은 대상 다시 그리기(실시간 갱신)는 자리 그대로 */
@@ -5457,7 +5458,7 @@
   function themeKeys(id) { var t = THEMES.filter(function (x) { return x[0] === id; })[0]; return t && t[2] ? t[2].filter(function (k) { return LAYERS.some(function (l) { return l[0] === k; }); }) : null; }
 
   // ---------- v2.5.0 🏠 주택 실거래(국토부 · 아파트·오피스텔·연립다세대 · 250m 칸·단지) ----------
-  var HOMEG = {}, HCX = [], RLOADHM = {}, HOMED = {}, HM = 'apt';
+  var HOMEG = {}, HCX = [], RLOADHM = {}, HOMED = {}, HM = 'apt', LTD = [];   /* LTD = 리·법정동마다 토지·공장창고 거래 수(ltrade.json · v2.343.0) */
   var HMS = { apt: ['아파트 매매 평당', 'a', 1, '#b91c1c'], je: ['아파트 전세 평당', 'a', 3, '#1d4ed8'], jr: ['아파트 전세가율', 'a', 6, '#7c3aed'], wo: ['아파트 월세', 'a', 5, '#0f766e'], of: ['오피스텔 매매 평당', 'o', 1, '#9333ea'], rh: ['연립다세대 매매 평당', 'r', 1, '#92400e'] };
   var HTY = ['아파트', '오피스텔', '연립다세대'], HTC = ['#b91c1c', '#9333ea', '#92400e'];
   /* v2.340.0 단지 거르기(형님 「네이버 부동산급으로」 다음 차례) — 가장 최근 매매가·그 전용면적·준공 연도로 단지 점·가격 표지만 거른다(칸 색은 그대로 · 이 기기 이번 화면에서만 · 🏠 로 풀림) */
@@ -5480,7 +5481,9 @@
     if (RLOADHM[gu]) return RLOADHM[gu];
     RLOADHM[gu] = grLoad(gu).then(function () { return rGet(gu, 'home.json'); }).then(function (j) {
       HOMED[gu] = j; Object.keys(j.cx).forEach(function (k) { var c = j.cx[k]; HCX.push({ c: c, p: c[3] ? P(c[4], c[3]) : null, m: j, k: k }); });
-      Object.keys(j.grid).forEach(function (k) { HOMEG[k] = { v: j.grid[k], m: j }; }); draw(); }).catch(function () {}); return RLOADHM[gu];
+      Object.keys(j.grid).forEach(function (k) { HOMEG[k] = { v: j.grid[k], m: j }; }); draw(); }).catch(function () {});
+    rGet(gu, 'ltrade.json').then(function (j) { if (!j || j.lok === false) return; var n = {}; j.items.forEach(function (x) { n[x[1]] = (n[x[1]] || 0) + 1; }); (j.ind || []).forEach(function (x) { n[x[1]] = (n[x[1]] || 0) + 1; }); j.umds.forEach(function (u, i) { var q = j.pos[i]; if (q && n[i]) LTD.push({ p: P(q[0], q[1]), n: n[i], u: u, ll: q }); }); draw(); }).catch(function () {});
+    return RLOADHM[gu];
   }
   function hmVal(v) { var M3 = HMS[HM], x = v[M3[1]]; if (!x) return null; var n = M3[2] === 6 ? Math.min(x[0], x[2]) : x[M3[2] - 1]; if (!n || x[M3[2]] == null) return null; return x[M3[2]]; }
   function pyeong(v) { return v == null ? '-' : Math.round(v * 3.3058).toLocaleString() + '만'; }
@@ -5498,6 +5501,11 @@
     HFN = 0; if (view.s >= 0.12) HCX.forEach(function (x) { if (x.p && hfOk(x)) { var s9 = S(x.p); if (s9[0] >= 0 && s9[1] >= 0 && s9[0] <= W0 && s9[1] <= H0) HFN++; dot(x.p, hfOn() ? 5 : 3.4, HTC[x.c[0]], '#fff', { kind: 'hmc', x: x }); } });
     var hn = $('m2dHfN'); if (hn) hn.textContent = hfOn() ? (view.s >= 0.12 ? '조건에 맞는 단지 ' + HFN + '곳(화면 안)' : '더 가까이 보면 단지가 나온다') : '';
     /* v2.337.0 형님 「부동산을 누르면 네이버 부동산급으로」 — 가까이 보면 단지마다 「가장 최근 매매가」 표지(거래 많은 단지 먼저 · 겹치는 자리는 건너뜀 · 누르면 단지 카드) · 전세·월세 눈금에서는 안 그린다 */
+    /* v2.343.0 형님 「향남읍 수직리는 부동산에 보이는 게 없다」 — 땅·공장 거래는 지번이 가려져 점을 못 찍으니 리·법정동 한 점에 「땅 N건」(24개월) · 누르면 그 리의 최근 거래 · 거르기 중에는 안 그림 */
+    if (!hfOn() && view.s >= 0.025 && view.s < 0.9 && LTD.length) { var usedL = {}; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      LTD.slice().sort(function (a, b) { return b.n - a.n; }).forEach(function (x) { var s = S(x.p); if (s[0] < -30 || s[1] < 0 || s[0] > W0 + 30 || s[1] > H0 + 20) return; var k = Math.floor(s[0] / 72) + '_' + Math.floor(s[1] / 26); if (usedL[k]) return; usedL[k] = 1;
+        var t = '땅 ' + x.n + '건', w = ctx.measureText(t).width + 12; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s[0] - w / 2, s[1] - 9, w, 18, 9); else ctx.rect(s[0] - w / 2, s[1] - 9, w, 18); ctx.fillStyle = dark ? '#166534' : '#15803d'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.fillText(t, s[0], s[1] + 0.5);
+        hit.push({ x: s[0], y: s[1], r: Math.max(12, w / 2), it: { kind: 'ltd', o: { lat: x.ll[1], lon: x.ll[0], umd: x.u, pur: 'all' } } }); }); }
     if ((view.s >= 0.3 || (hfOn() && view.s >= 0.12)) && (HM === 'apt' || HM === 'of' || HM === 'rh')) { var used = {}, lab = HCX.filter(function (x) { return x.p && x.c[8] && x.c[8][0] && x.c[8][3] && hfOk(x); }).sort(function (a, b) { return b.c[8][0] - a.c[8][0]; });
       ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       lab.forEach(function (x) { var s = S(x.p); if (s[0] < -30 || s[1] < 0 || s[0] > W0 + 30 || s[1] > H0 + 20) return; var k = Math.floor(s[0] / 58) + '_' + Math.floor((s[1] - 15) / 22); if (used[k]) return; used[k] = 1;
@@ -5527,7 +5535,7 @@
     if (!on.home) return null;
     return ['🏠 주택 실거래(250m)', '<div class="lg-btns">' + Object.keys(HMS).map(function (k) { return '<button data-hm="' + k + '" class="' + (k === HM ? 'on' : '') + '">' + HMS[k][0] + '</button>'; }).join('') + '</div>' +
       '<div id="m2dHmLg">' + hmScale() + '</div>' + li(HTC[0], '아파트 단지') + li(HTC[1], '오피스텔') + li(HTC[2], '연립다세대') +
-      '<div class="lg-btns"><button data-taxfree="1">🧾 세무 — 직접 넣어 계산(살 때·보유·팔 때·증여·상속)</button></div><small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 칸 숫자 = 평당 매매가 가운데 값(전용면적 기준 · 만 원) · 가까이 보면 단지 위 알약 = 그 단지의 가장 최근 매매가(면적은 단지를 눌러 확인) · 단독·다가구는 지번이 가려져 칸에 없음 · 단지 점을 누르면 그 단지로 세무 계산</small>'];
+      '<div class="lg-btns"><button data-taxfree="1">🧾 세무 — 직접 넣어 계산(살 때·보유·팔 때·증여·상속)</button></div><small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 칸 숫자 = 평당 매매가 가운데 값(전용면적 기준 · 만 원) · 가까이 보면 단지 위 알약 = 그 단지의 가장 최근 매매가(면적은 단지를 눌러 확인) · 초록 「땅 N건」 = 그 리·법정동의 토지·공장창고 거래 수(24개월 · 지번이 가려져 리 한 점에 모음 · 누르면 목록) · 단독·다가구는 지번이 가려져 칸에 없음 · 단지 점을 누르면 그 단지로 세무 계산</small>'];
   }
   function homeDong(k8) { for (var gu in HOMED) { var d = HOMED[gu].dong[k8]; if (d) return { v: d, m: HOMED[gu] }; } return null; }
 

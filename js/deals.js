@@ -80,7 +80,7 @@
     el.innerHTML = h; }
   function pick(D, p) { if (!D.lt) return D.ho ? D.ho.umds[0] : null; var best = null, bd = 1e9; D.lt.pos.forEach(function (q, i) { if (!q) return; var d = Math.pow((q[0] - p.lon) * 0.8, 2) + Math.pow(q[1] - p.lat, 2); if (d < bd) { bd = d; best = D.lt.umds[i]; } }); return [best, bd]; }
   function open(o) {
-    css(); var el = box(), cd = $('m2dCard'); if (cd) cd.classList.remove('on'); el.classList.add('on'); document.body.classList.add('dealon'); ST.D = null; ST.msg = ''; ST.more = 0; if (o && o.pur) ST.pur = o.pur; paint();
+    css(); var el = box(), cd = $('m2dCard'); if (cd) cd.classList.remove('on'); el.classList.add('on'); document.body.classList.add('dealon'); ST.D = null; ST.msg = ''; ST.more = 0; if (o && o.pur) ST.pur = o.pur; ST.umd0 = o && o.umd; paint();
     boot().then(function () { var p = o && o.lat ? o : (window.TGMap2D && TGMap2D.here ? TGMap2D.here() : null); if (!p) throw new Error('자리를 모른다'); var G = gusAt(p); if (!G.length) throw new Error('이 자리의 시군구 자료가 없다');
       return Promise.all(G.map(function (g) { return load(g.gu).then(function (D) { D.nm = g.name; return D; }); })).then(function (Ds) { var best = null; Ds.forEach(function (D) { var k = pick(D, p); if (k && Array.isArray(k) && (!best || k[1] < best[1])) best = [D, k[1], k[0]]; }); if (!best) { best = [Ds[0], 0, Ds[0].ho ? Ds[0].ho.umds[0] : null]; } ST.D = best[0]; ST.umd = (o && o.umd) || best[2]; paint(); }); })
       .catch(function (e) { ST.msg = '열지 못했습니다: ' + e.message; paint(); });

@@ -5480,6 +5480,13 @@
         ctx.fillText(HM === 'jr' ? v + '%' : HM === 'wo' ? v + '만' : (Math.round(v * 3.3058 / 100) * 100).toLocaleString() + '만', r[0] + r[2] / 2, r[1] + r[3] / 2); }
       hit.push({ x: r[0] + r[2] / 2, y: r[1] + r[3] / 2, r: Math.max(6, r[2] * 0.71), it: { kind: 'hmg', c: k } }); });
     if (view.s >= 0.12) HCX.forEach(function (x) { if (x.p) dot(x.p, 3.4, HTC[x.c[0]], '#fff', { kind: 'hmc', x: x }); });
+    /* v2.337.0 형님 「부동산을 누르면 네이버 부동산급으로」 — 가까이 보면 단지마다 「가장 최근 매매가」 표지(거래 많은 단지 먼저 · 겹치는 자리는 건너뜀 · 누르면 단지 카드) · 전세·월세 눈금에서는 안 그린다 */
+    if (view.s >= 0.3 && (HM === 'apt' || HM === 'of' || HM === 'rh')) { var used = {}, lab = HCX.filter(function (x) { return x.p && x.c[8] && x.c[8][0] && x.c[8][3]; }).sort(function (a, b) { return b.c[8][0] - a.c[8][0]; });
+      ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      lab.forEach(function (x) { var s = S(x.p); if (s[0] < -30 || s[1] < 0 || s[0] > W0 + 30 || s[1] > H0 + 20) return; var k = Math.floor(s[0] / 58) + '_' + Math.floor((s[1] - 15) / 22); if (used[k]) return; used[k] = 1;
+        var v = x.c[8][3], t = v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1).replace(/\.0$/, '') + '억' : Math.round(v).toLocaleString() + '만', w = ctx.measureText(t).width + 12, y = s[1] - 15;
+        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(s[0] - w / 2, y - 9, w, 18, 9); else ctx.rect(s[0] - w / 2, y - 9, w, 18); ctx.fillStyle = HTC[x.c[0]]; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.fillText(t, s[0], y + 0.5); hit.push({ x: s[0], y: y, r: Math.max(12, w / 2), it: { kind: 'hmc', x: x } }); }); }
   }
   // v2.49.2 소유자 「범례 색 그라데이션을 숫자 가격대로 · 레이어에도 보이게」 — 실거래 칸 색 눈금(지금 화면 안 하위 10%~상위 10%) · 공시지가 칸 색 구간
   var HMR = null;
@@ -5503,7 +5510,7 @@
     if (!on.home) return null;
     return ['🏠 주택 실거래(250m)', '<div class="lg-btns">' + Object.keys(HMS).map(function (k) { return '<button data-hm="' + k + '" class="' + (k === HM ? 'on' : '') + '">' + HMS[k][0] + '</button>'; }).join('') + '</div>' +
       '<div id="m2dHmLg">' + hmScale() + '</div>' + li(HTC[0], '아파트 단지') + li(HTC[1], '오피스텔') + li(HTC[2], '연립다세대') +
-      '<div class="lg-btns"><button data-taxfree="1">🧾 세무 — 직접 넣어 계산(살 때·보유·팔 때·증여·상속)</button></div><small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 칸 숫자 = 평당 매매가 가운데 값(전용면적 기준 · 만 원) · 단독·다가구는 지번이 가려져 칸에 없음 · 단지 점을 누르면 그 단지로 세무 계산</small>'];
+      '<div class="lg-btns"><button data-taxfree="1">🧾 세무 — 직접 넣어 계산(살 때·보유·팔 때·증여·상속)</button></div><small class="lg-n">국토부 실거래 · 매매 24개월 · 전월세 12개월 · 칸 숫자 = 평당 매매가 가운데 값(전용면적 기준 · 만 원) · 가까이 보면 단지 위 알약 = 그 단지의 가장 최근 매매가(면적은 단지를 눌러 확인) · 단독·다가구는 지번이 가려져 칸에 없음 · 단지 점을 누르면 그 단지로 세무 계산</small>'];
   }
   function homeDong(k8) { for (var gu in HOMED) { var d = HOMED[gu].dong[k8]; if (d) return { v: d, m: HOMED[gu] }; } return null; }
 

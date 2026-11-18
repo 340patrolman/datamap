@@ -36,6 +36,7 @@
       if (g.mv === 'Rt' || g.mv === 'U') continue;   /* 우회전·유턴 = 신호 없음 — 칸을 쓰지 않는다 */
       var v = vNow || Math.max(5, (g.lim || 50) / 3.6 * 0.6); t += (g.d - at) / v; at = g.d;
       var s = g.unk ? null : G.sigAtT(g.no, t, g.side, g.mv), k = { g: g, dd: g.d - pos, eta: t - now, st: s && s.kind !== 'avg' ? s : null, stop: !out.length && g.d - pos < 40 && !(me && me.spd > 1) };
+      if (k.st && !out.length && k.dd < 150) { var s0 = G.sigAtT(g.no, now, g.side, g.mv); if (s0 && s0.kind !== 'avg' && !!s0.green === !!k.st.green) k.n0 = s0.green ? s0.remain : s0.wait; }   /* 눈앞 신호는 위 신호 판(지금 기준)과 같은 숫자 — 11-19 밤 같은 신호가 위 16초 · 사다리 13초(닿을 때)로 갈렸다 · 색이 닿을 때와 다르면 닿을 때 값 그대로 */
       if (k.st && !k.st.green) t += k.st.wait;   /* 닿을 때 적색이면 그만큼 서 있다가 다음으로 */
       out.push(k);
     }
@@ -43,7 +44,7 @@
   }
   function verb(k, M, nt) {
     if (!k.st) return { c: 'x', v: '눈으로', s: '?' };
-    var st = k.st, sec = Math.ceil(st.green ? st.remain : st.wait);
+    var st = k.st, sec = Math.ceil(k.n0 != null ? k.n0 : st.green ? st.remain : st.wait);
     if (M === 'e') return st.green ? { c: st.remain < 4 ? 'y' : 'g', v: st.remain < 4 ? '바뀔 무렵' : '통과', s: sec } : { c: 'r', v: '적색 진입 · 좌우', s: sec };
     if (M === 'v') return { c: st.green ? 'g' : 'r', v: st.green ? '녹색' : '적색', s: sec };
     if (st.green) return st.remain < 4 ? { c: 'y', v: '서두르지 않기', s: sec } : { c: 'g', v: nt ? '녹색' : '이대로', s: sec };

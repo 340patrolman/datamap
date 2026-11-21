@@ -83,6 +83,33 @@ def static_rules():
     return out
 
 
+def show_cover():
+    """🎬 그림 사용설명(js/show.js)이 지도의 메뉴를 빠짐없이 덮는가 (2026-11-22 소유자 「빠진 부분이 있는지 찾아서 꼭 사용설명을」)
+    지도에서 읽는 것: 도구(TOOLS) · 상황(SIT) · 근무별 한 번에(PRESETS) · 레이어 판 중분류(CATS) · 홈 경찰 전용(data-hm="dec|…") · 설정 칸 이름 · 위 단추(index.html id)
+    show.js 장면의 cov 낱말과 맞대 — 메뉴가 늘었는데 장면이 없으면 실패한다(장면을 더하거나 cov 를 고친다)"""
+    import re
+    m = open(os.path.join(ROOT, 'js', 'map2d.js'), encoding='utf-8').read()
+    ix = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
+    sh = open(os.path.join(ROOT, 'js', 'show.js'), encoding='utf-8').read()
+    cov = set(' '.join(re.findall(r"cov: '([^']*)'", sh)).split())
+    def block(start, end):
+        i = m.index(start)
+        return m[i:m.index(end, i)]
+    need = []
+    need += ['tool:' + k for k in re.findall(r"\['([a-z]+)', '[^']*', '", block('var TOOLS = [', '];')) if k != 'g']
+    need += ['sit:' + k for k in re.findall(r"\['([a-z]+)', '", block('var SIT = [', 'SITP'))]
+    need += ['chip:' + k for k in re.findall(r"\['([a-z0-9]+)', '[^']*', \[", block('var PRESETS = [', '  ];'))]
+    need += ['mid:' + k for k in re.findall(r"\['([a-z]+)', '[^']+', \[\['", block('var CATS = [', "['all', '전체', null]"))]   # 레이어 판 중분류(맨 위 칩 QCHIP 도 이 안에서 고른다)
+    need += ['dec:' + k for k in sorted(set(re.findall(r'data-hm="dec\|(d\d)"', m)))]
+    need += ['set:' + k.replace(' ', '_') for k in re.findall(r'<div class="sg"><b>([^<]+)</b>', block('function setPaint()', 'el.innerHTML = h;'))]
+    SKIP = {'m2dDateB', 'm2dNowBtn', 'm2dHm', 'm2dHp', 'm2dFoldX', 'm2dOut', 'm2dToolB', 'm2dGetB'}   # 시각 판 안쪽 단추 · 확대의 짝 · 도구 단추(도구 장면들이 덮음)
+    need += ['top:' + k for k in re.findall(r'<button[^>]*\bid="(m2d\w+)"', ix) if k not in SKIP]
+    miss = [k for k in dict.fromkeys(need) if k not in cov]
+    n_sc = len(re.findall(r"cov: '", sh))
+    return [['🎬 그림 사용설명이 메뉴 %d개를 다 덮는다(장면 %d)' % (len(set(need)), n_sc), not miss, ('빠진 것: ' + ' '.join(miss)) if miss else ''],
+            ['🎬 그림 사용설명 · 도구 %d개를 셌다(0 이면 읽는 법이 깨짐)' % len([k for k in need if k.startswith('tool:')]), len([k for k in need if k.startswith('tool:')]) >= 15, '']]
+
+
 def chrome():
     for c in ([os.environ['CHROME']] if os.environ.get('CHROME') else []) + CHROME:
         if os.path.exists(c):
@@ -99,6 +126,11 @@ def main():
     if 'gargo' in want:
         print('── 규칙 문장(코드)')
         for nm, ok, got in static_rules():
+            print(('  ✅ ' if ok else '  ❌ ') + nm + ('' if ok else ' — ' + got))
+            bad += 0 if ok else 1
+    if 'map' in want:
+        print('── 그림 사용설명(코드)')
+        for nm, ok, got in show_cover():
             print(('  ✅ ' if ok else '  ❌ ') + nm + ('' if ok else ' — ' + got))
             bad += 0 if ok else 1
     for name in want:

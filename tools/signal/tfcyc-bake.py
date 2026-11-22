@@ -8,7 +8,7 @@
 #     (RMIN 0.99 · NAG 2 면 21,444칸 · 95.7% · 새 칸 3,514)
 #   38일(10-14~11-20 · 11-21 밤 · 기본값): 어림 55,962칸 · 대조 31,842 · 맞음 97.3% · 수집기에 없는 칸 24,120
 #     —어긋남은 대개 수집기 칸이 옛 날짜 계획인 곳(1·2시 140 ↔ 120 등) 이거나 +3~4초 치우침
-#   ⚠ 이것은 주기만이다 — 지도·가르고 신호값(red/sigdir)에는 아직 넣지 않는다(녹색 자리 o·닻 a 를 이 꼴로 만들면 build 의 시각대 표와 섞여 위험 · 독립 검수 뒤)
+#   ⚠ 이것은 주기만이다 — 지도·가르고 신호값(red/sigdir)에는 넣지 않는다 · 지도 카드에는 data/sig-cyc-file.json 으로 글만(2026-11-22 · publish)(녹색 자리 o·닻 a 를 이 꼴로 만들면 build 의 시각대 표와 섞여 위험 · 독립 검수 뒤)
 #   결과: 07_API키/out/tdata/file_cyc/file_cyc.json(저장소 밖) · 날마다 모은 사건 <날짜>.pkl(다시 돌릴 때 빠름)
 #   py -3.12 -X utf8 tools/signal/tfcyc-bake.py [YYYYMMDD …]   (없으면 NAS 의 날 전부 · 하루 약 3분)
 import zipfile, io, collections, os, json, sys, math, datetime, pickle
@@ -119,6 +119,26 @@ def main(days):
                'agree_pct': round(100.0 * ok / max(1, n), 1), 'n_cmp': n, 'n_new': new,
                'fields': 'est = {"교차로|요일 갈래(0 월~목·1 금·2 토·3 일·공휴일)|시": 주기(초)}', 'est': {'%s|%d|%d' % k: v for k, v in est.items()}},
               open(os.path.join(OUT, 'file_cyc.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+    if len(days) >= 14:   # 날 몇 개로 시험해 본 것은 지도용 파일을 덮지 않는다(독립 검수 결함 2)
+        publish(est, days, n, ok, new)
+    else:
+        print('날이 14보다 적어 data/sig-cyc-file.json 은 그대로', flush=True)
+
+
+def publish(est, days, n, ok, new):
+    # 2026-11-22 지도 카드용 「주기만」 한 장 — 남은 초·옵셋·녹색 자리는 싣지 않는다(이것만으로는 「지금 몇 초」를 셀 수 없다 · 세면 틀린다)
+    #  지도는 「이 시각대 값을 못 받았다」 줄에 글로만 보이고, 가까운 시각대로 세어 보기 단추를 이 주기와 다를 때 감춘다(지킴 쪽으로만)
+    #  red·sigdir·가르고에는 넣지 않는다
+    c = collections.defaultdict(list)
+    for (i, cl, h), C in sorted(est.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2])):
+        c[i].append([cl, h, C])
+    doc = {'schema': 'tg-sig-cyc-file/1', 'source': '서울시 T-Data 신호 하루치 파일(신호 잔여시간+상태 · 교차로마다 8분에 1분 창)',
+           'how': '같은 요일 갈래·같은 시의 여러 날에서 이동류마다 녹+황+적 길이 → 주기 · 이동류 %d개 이상 ±%d초 안에서 같고 바뀌는 때가 그 주기로 모임 %.3f 이상만' % (NAG, TOL, RMIN),
+           'fields': 'c{교차로 번호: [[요일 갈래(0 월~목·1 금·2 토·3 일·공휴일), 시, 주기 초]]}',
+           'note': '주기 길이만이다 — 남은 초를 셀 수 없다 · 계획값이 아니라 그 날들에 실제로 돈 값의 가운데 · 감응·수동 운영이면 다르다 · 수집기 시각대 표와 ±2초 맞음 %.1f%%(%d칸 중)' % (100.0 * ok / max(1, n), n),
+           'days': [days[0], days[-1], len(days)], 'made': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), 'n': len(est), 'n_new': new, 'c': c}
+    json.dump(doc, open(os.path.join(ROOT, 'data', 'sig-cyc-file.json'), 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    print('지도용 data/sig-cyc-file.json', len(c), '교차로', len(est), '칸', flush=True)
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ LOG = os.path.join(os.path.dirname(ROOT), '07_API키', 'out', 'live-refresh.log'
 def log(m):
     with open(LOG, 'a', encoding='utf-8') as f: f.write(time.strftime('%Y-%m-%d %H:%M ') + m + '\n')
 def git(*a):
-    r = subprocess.run(['git'] + list(a), cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    r = subprocess.run(['git'] + list(a), cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='replace', creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))  # 2026-11-21 pythonw 에서 git 을 부를 때 검은 창이 떠 게임이 끊김 — 창 없이
     return r.returncode, (r.stdout + r.stderr).strip()
 try:
     spec = importlib.util.spec_from_file_location('fb', os.path.join(ROOT, 'tools', 'flow-bake.py')); fb = importlib.util.module_from_spec(spec); spec.loader.exec_module(fb)

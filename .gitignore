@@ -11,3 +11,9 @@ ontology-core/data/private/
 # 비공개 — 관할 도달 공백이 드러나는 자료(소유자 2026-10-23 「앞으로만 안 올라가게」) · 원본은 07_API키/out/onto
 data/onto-reach-*.json
 data/flood-delay-*.json
+
+# 2026-11-22 코워크 — 커밋 안 할 로컬 것들
+.claude/
+# 서울 전체판 실험 결과(10-14·10-18 굽기 · 앱은 6개 구 판 nav-six 를 씀) — 크고(13MB·23MB) 다시 구울 수 있다
+data/nav-seoul.json
+gargo/pack-seoul.json

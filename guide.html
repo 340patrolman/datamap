@@ -109,7 +109,7 @@
     G.cats.forEach(function (c) { if (!w && c[0] !== TAB) return; var hc = '';
       c[2].forEach(function (g) { var hg = '';
         g[2].forEach(function (sb) { var cards = sb[1].map(function (k) { var L = G.layers[k]; if (!L) return ''; var ds = G.help[k] || ''; if (w && (seen[k] || !hit(L.nm + ' ' + ds + ' ' + k, w))) return ''; seen[k] = 1; any++;
-            return '<div class="card ly"><h3>' + esc(L.nm) + (L.on ? ' <span class="badge">처음부터 켜짐</span>' : '') + '</h3><p class="ds' + (ds ? '' : ' none') + '">' + (ds ? esc(ds) : '설명 준비 중 — 지도에서 이 레이어를 켜고 점·칸을 누르면 카드에 출처와 값이 나온다') + '</p>' + path(['레이어', c[1], g[1], sb[0]]) + '<a class="go" href="./#ly=' + encodeURIComponent(k) + '">지도에서 켜기 ›</a></div>'; }).join('');
+            return '<div class="card ly" data-mid="' + g[0] + '"><h3>' + esc(L.nm) + (L.on ? ' <span class="badge">처음부터 켜짐</span>' : '') + '</h3><p class="ds' + (ds ? '' : ' none') + '">' + (ds ? esc(ds) : '설명 준비 중 — 지도에서 이 레이어를 켜고 점·칸을 누르면 카드에 출처와 값이 나온다') + '</p>' + path(['레이어', c[1], g[1], sb[0]]) + '<a class="go" href="./#ly=' + encodeURIComponent(k) + '">지도에서 켜기 ›</a></div>'; }).join('');
           if (cards) hg += '<div class="sub">' + esc(sb[0]) + '</div><div class="grid">' + cards + '</div>'; });
         if (hg) hc += '<div class="grp">' + esc(g[1]) + '</div>' + hg; });
       if (hc) h += (w ? '<div class="grp" style="font-size:17px">' + esc(c[1]) + '</div>' : '') + hc; });
@@ -139,10 +139,18 @@
       + '<div class="st"><b>⑤ 지도</b><small>같은 사이트 파일만 읽는다 · 실시간 층은 사용자가 켤 때만 바깥에 묻는다 · 올리기 전에 값 검사 관문을 통과해야 한다</small></div></div>'
       + '<ul class="rule"><li>시군구 단위 통계(세금·업종 등)는 동으로 나누지 않는다 — 「동네 차이는 반영 안 됨」</li><li>받은 날·기준일이 지난 자료는 정해진 주기에 다시 굽는다(자료 점검표)</li><li>법령·판례는 T-Book 이 정본이고, 이 지도는 자료를 겹쳐 보는 도구다</li><li>틀린 곳을 찾으면 지도 맨 아래 「자료 출처·한계」와 함께 알려 주면 고친다</li></ul></section>';
     main.innerHTML = h;
+    shg();
   }
+  /* 2026-11-22 소유자 「읽다가 그 부분을 터치하면 그 내용이 바로 보이게」 — 카드를 누르면 그 장면이 움직이는 그림으로 뜬다(js/show.js) · 그림 밑 「▶ 실제로 열어 보기」는 지도를 열고 그 화면으로 */
+  function shg() { var T = window.tgShow; if (!T || !T.pick) return; main.querySelectorAll('.card').forEach(function (c) { if (c.querySelector('.shg')) return; var h3 = c.querySelector('h3'), mid = c.getAttribute('data-mid'), k = mid && T.scenes.indexOf('m_' + mid) >= 0 ? 'm_' + mid : (T.pick(h3 ? h3.textContent : '') || T.pick(((c.querySelector('p') || {}).textContent || '').slice(0, 40)));
+      if (!k || T.scenes.indexOf(k) < 0) return; c.classList.add('tap'); c.setAttribute('data-sk', k); c.insertAdjacentHTML('beforeend', '<button class="shg" type="button" data-sk="' + k + '">🎬 그림으로 보기 <small>' + esc(T.title(k)) + '</small></button>'); }); }
+  window.addEventListener('load', function () { if (G) shg(); });
+  main.addEventListener('click', function (e) { if (e.target.closest('a,summary,[data-tab]')) return; var c = e.target.closest('[data-sk]'); if (!c || !window.tgShow) return; e.preventDefault(); window.tgShow.open(c.getAttribute('data-sk')); });
   main.addEventListener('click', function (e) { var b = e.target.closest('[data-tab]'); if (!b) return; TAB = b.getAttribute('data-tab'); paint(); document.getElementById('layer').scrollIntoView(); });
   var tm = 0; q.addEventListener('input', function () { clearTimeout(tm); tm = setTimeout(paint, 180); });
 })();
 </script>
+<style>.card.tap{cursor:pointer}.card .shg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:8px;min-height:40px;border:1px solid rgba(29,78,216,.35);background:rgba(29,78,216,.07);color:inherit;border-radius:12px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;text-align:left}.card .shg small{font-weight:500;opacity:.8}</style>
+<script src="js/show.js?v=3"></script>
 </body>
 </html>

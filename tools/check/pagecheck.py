@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 CHROME = [r'C:\Program Files\Google\Chrome\Application\chrome.exe', r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
           r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe']
-PRE = ("<script>try{localStorage.setItem('tg_map2d_gate','1');localStorage.setItem('tg_gargo_intro','1');}catch(e){}"
+PRE = ("<script>try{localStorage.setItem('tg_map2d_gate','1');localStorage.setItem('tg_map2d_tip_v1','{\"off\":1}');localStorage.setItem('tg_gargo_intro','1');}catch(e){}"
        "window.__ERR=[];window.addEventListener('error',function(e){__ERR.push(String(e.message)+' @'+String(e.filename||'').split('/').pop()+':'+e.lineno);});"
        "window.addEventListener('unhandledrejection',function(e){__ERR.push('rej '+String(e.reason&&e.reason.message||e.reason));});</script>")
 PAGES = {

@@ -85,8 +85,37 @@
     '#m2dShow .stp button.on{border-color:#1d4ed8!important;background:rgba(29,78,216,.16)!important}',
     '#m2dShow .stp .pl{justify-content:center;font-size:13px;font-weight:700;border:1px solid var(--line,#e2e7ee)}',
     '#m2dShow .sc .go{display:block;margin-top:8px;border:0;border-radius:12px;background:#1d4ed8;color:#fff;font-weight:800;font-size:14px;padding:10px 12px;min-height:44px;width:100%;cursor:pointer}',
-    'html.dark #m2dShow .sc .go{background:#2f5fe0}'
+    'html.dark #m2dShow .sc .go{background:#2f5fe0}',
+    '#m2dShow .wqs{margin:8px 0 6px;padding:10px 12px;border-radius:14px;background:rgba(29,78,216,.07);border:1px solid rgba(29,78,216,.18)}',
+    '#m2dShow .wqs>b{font-size:16px}',
+    '#m2dShow .wqs small{color:var(--ink2,#4a5568)}',
+    '#m2dShow .wqs div{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}',
+    '#m2dShow .wqs button,#m2dUse .tq button{border:1px solid rgba(29,78,216,.35);background:var(--panel,#fff);color:inherit;border-radius:18px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;min-height:40px}',
+    '#m2dShow .wqs button.on{background:#1d4ed8;border-color:#1d4ed8;color:#fff}',
+    '#m2dShow .wqp{margin:8px 0 0;font-size:14px}',
+    '#m2dShow .wqp:empty{display:none}',
+    '#m2dShow .qn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:12px;background:#1d4ed8;color:#fff;font-size:13px;margin-right:6px;vertical-align:2px}',
+    '#m2dShow .sc.hit{box-shadow:0 0 0 3px #1d4ed8;transition:box-shadow .2s}',
+    '#m2dUse{position:fixed;left:8px;right:8px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:2780;max-width:440px;margin:0 auto;background:var(--panel,#fff);color:var(--ink,#111827);border:1px solid var(--line,#e2e7ee);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:10px 12px 8px;max-height:78vh;overflow-y:auto;animation:tipIn .2s ease-out}',
+    '#m2dUse.out{opacity:0;transform:translateY(12px);transition:opacity .25s,transform .25s}',
+    '@keyframes tipIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}',
+    '@media (prefers-reduced-motion:reduce){#m2dUse{animation:none}#m2dUse.out{transition:none}}',
+    '#m2dUse .th{display:flex;justify-content:space-between;align-items:center}',
+    '#m2dUse .th b{font-size:15px}',
+    '#m2dUse .th button{border:0;background:transparent;color:inherit;font-size:18px;min-width:44px;min-height:40px;cursor:pointer}',
+    '#m2dUse h5{margin:2px 0 6px;font-size:16px}',
+    '#m2dUse svg{display:block;width:100%;height:auto;max-height:24vh;border-radius:12px;background:#eef2f7}',
+    'html.dark #m2dUse svg{background:#0f1a2c}',
+    '#m2dUse .tst{display:flex;flex-direction:column;gap:2px;margin:5px 0;font-size:14px}',
+    '#m2dUse .tst i{display:inline-flex;width:20px;height:20px;border-radius:10px;background:#1d4ed8;color:#fff;font-style:normal;font-size:12px;align-items:center;justify-content:center;margin-right:6px}',
+    '#m2dUse .tb{display:flex;gap:8px;margin:4px 0 8px}',
+    '#m2dUse .tb button{flex:1;min-height:44px;border-radius:12px;border:0;font-size:15px;font-weight:800;cursor:pointer;background:#1d4ed8;color:#fff}',
+    '#m2dUse .tb button+button{background:transparent;color:inherit;border:1px solid var(--line,#e2e7ee)}',
+    '#m2dUse .tq>b{font-size:14px}',
+    '#m2dUse .tq div{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;margin-top:6px;padding-bottom:4px;scrollbar-width:none}', '#m2dUse .tq button{flex:none}',
+    '#m2dUse .toff{display:flex;align-items:center;gap:6px;min-height:36px;margin-top:2px;font-size:13px;color:var(--ink2,#4a5568)}'
   ].join('\n');
+  CSS += '\n' + CSS.split('\n').filter(function (r) { return /^(html\.dark )?#m2dShow \./.test(r) && !/\.(wqs|wf|wq|wg|wh|wd|wn0|stp|wy|go|qn|hit|sc)\b/.test(r); }).map(function (r) { return r.split('#m2dShow ').join('#m2dUse '); }).join('\n');   /* 장면 그림 규칙을 오늘의 사용법 카드에도 */
 
   var PK = {};
   function pk(d) { d = Math.round(d); if (!PK[d]) PK[d] = '@keyframes pp' + d + '{0%,' + d + '%{transform:scale(0)}' + Math.min(99, d + 8) + '%,100%{transform:scale(1)}}'; return 'pp' + d; }
@@ -482,6 +511,27 @@
   var CAT = [['all', '전부'], ['h', '🏠 홈·경찰 전용'], ['b', '🌟 기본 조작'], ['c', '👆 누르면'], ['t', '🧰 도구'], ['l', '🗂 레이어'], ['x', '💡 숨은 기능'], ['s', '⚙ 설정']], CUR = 'all', Q = '';
   var CATN = {}; CAT.forEach(function (c) { CATN[c[0]] = c[1]; });
 
+  /* v3 (2026-11-22 소유자 「뭐가 궁금한지를 따라서 가는 것」) 궁금한 것 → 차례대로 볼 장면 */
+  var QS = [['work', '👮 오늘 어디에 서나', ['home', 'dec', 'sit', 'dui', 'rally', 'log']],
+    ['sig', '🚦 신호가 몇 초 남았나', ['sig', 'brief', 'watch', 'sim']],
+    ['risk', '🚗 여기 사고·위험은', ['m_traf', 'brief', 'm_season', 'rain', 'mrg']],
+    ['jam', '🚥 지금 어디가 막히나', ['spd', 'm_live', 'prd', 'nav']],
+    ['town', '👥 이 동네는 어떤 곳', ['dong', 'explain', 'cell', 'm_pop', 'm_life']],
+    ['home9', '🏠 집값·전세·세금', ['deal', 'apt', 'live', 'tax', 'm_estate']],
+    ['shop', '🏪 가게를 차리면', ['biz', 'esig', 'm_spend', 'rad']],
+    ['kid', '🎒 아이 학교·밤길', ['m_care', 'm_safety', 'orc']],
+    ['start', '🌟 처음이라 기본부터', ['move', 'layer', 'chips', 'time', 'leg', 'first']],
+    ['more', '💡 숨은 기능·AI', ['try', 'fav', 'ai', 'get', 'ui']]];
+  /* 글(설명서 카드 제목 등) → 가장 맞는 장면 — 앞줄이 먼저 */
+  var PICK = [[/^\s*🧩|그래서 무엇을|해 보고 다시|무엇이 있나|무엇과 이어지나/, 'orc'], [/관내 학교/, 'm_care'], [/행정동에서 시작|이 동네 한눈에/, 'dong'], [/상권 · 부동산/, 'm_spend'], [/언제 막히나|얼마나 걸리나/, 'spd'], [/지역경찰|여청|여성청소년|형사|수사\(|외사|안보|만족도·인력/, 'pstat'], [/실측 신호|신호/, 'sig'], [/음주운전 흐름|음주운전 —/, 'gdr'], [/음주/, 'dui'], [/집회|행사/, 'rally'], [/반경/, 'rad'], [/창업|가게|손익|엑셀/, 'biz'], [/세금/, 'tax'],
+    [/이사/, 'live'], [/땅|상가|시골집|집값|전세|실거래|사고팔/, 'deal'], [/도주|신고 차량/, 'prd'], [/어디에 먼저 서야|업무 시각표/, 'dec'], [/언제 막히나|얼마나 걸리나|막히는 교차로|시뮬/, 'sim'],
+    [/학교|학원|아이/, 'm_care'], [/출퇴근|붐비|사람 · 차 흐름/, 'm_move'], [/운전할 때|사고/, 'm_traf'], [/카메라|CCTV/, 'm_traf'], [/밤길|야간|소방/, 'm_safety'],
+    [/병원|약국|주차|따릉이|충전소|반려동물/, 'm_life'], [/큰비|폭염|더위|날씨가 바뀌면|눈 ·|눈·/, 'rain'], [/지금 교통|날씨/, 'm_live'], [/동네|어떤 곳|한눈에/, 'dong'],
+    [/때를 바꿔|시각을 바꿔/, 'time'], [/즐겨찾기|저장한 보기/, 'fav'], [/처음 화면|처음 세팅/, 'first'], [/상황 한 번에/, 'sit'], [/층이 뭔지|레이어가 뭐지/, 'leg'], [/엮어서|겹쳐/, 'orc'],
+    [/통신이 안|지역 받기/, 'get'], [/AI/, 'ai'], [/메뉴가 자꾸/, 'ui'], [/밤 화면|전체화면/, 'dark'], [/지표표/, 'pidx'], [/경찰 통계/, 'pstat'], [/관내 브리핑|관내 파악|들어오기/, 'home'],
+    [/관할|관서|경찰서 카드/, 'm_local'], [/상권|부동산/, 'm_spend'], [/네비|가르고/, 'nav'], [/바뀌고 있는/, 'esig'], [/지역 고르기|찾기|자리 잡기/, 'move'], [/레이어 켜기|지도 층/, 'layer'], [/눌러서 읽기/, 'explain'], [/도구 쓰기/, 'live']];
+  function pick(t) { t = String(t || ''); for (var i = 0; i < PICK.length; i++) if (PICK[i][0].test(t)) return PICK[i][1]; return ''; }
+  var PATH = null;
   function card(s, i) { var w = s.w || [0, 33, 66];
     return '<div class="sc" data-c="' + s.c + '" data-i="' + i + '"><h5>' + s.t + '</h5><p>' + s.d + '</p>' + SV + s.a + '">' + s.g + '</svg>' +
       (s.st.length ? '<div class="stp an">' + s.st.map(function (x, j) { return '<button data-st="' + j + '" style="animation-name:' + hs(w[j], j < 2 ? w[j + 1] : 100) + '"><i>' + (j + 1) + '</i>' + x + '</button>'; }).join('') + '<button data-st="p" class="pl">▶ 다시 움직이기</button></div>' : '') +
@@ -494,24 +544,33 @@
     e = document.createElement('div'); e.id = 'm2dShow'; e.setAttribute('role', 'dialog'); e.setAttribute('aria-label', '그림으로 보는 할 수 있는 것');
     e.innerHTML = '<div class="wh"><b>🎬 이 지도로 할 수 있는 것 <small>' + SC.length + '가지</small></b><button class="wx" data-w="x">✕ 닫기</button></div>' +
       '<p class="wd">그림이 저절로 움직입니다. 그림 밑 <b>① ② ③</b> 을 누르면 그 장면에서 멈추고 ▶ 로 다시 움직입니다. <b>「▶ 실제로 열어 보기」</b>는 그 화면을 바로 엽니다. 그림 속 숫자·이름은 모두 <b>예시</b>입니다.' + (RM ? ' (이 기기는 움직임 줄이기가 켜져 있어 마지막 장면으로 멈춰 둡니다 — ① ② ③ 으로 넘겨 보세요.)' : '') + '</p>' +
+      '<div class="wqs"><b>🙋 무엇이 궁금하세요?</b> <small>고르면 그것을 알아내는 차례대로 장면이 나옵니다</small><div>' + QS.map(function (q) { return '<button data-q="' + q[0] + '">' + q[1] + '</button>'; }).join('') + '</div><p class="wqp"></p></div>' +
       '<input class="wq" type="search" placeholder="🔍 찾기 — 예: 음주 · 학교 · 집값 · 신호" aria-label="장면 찾기">' +
       '<div class="wf">' + CAT.map(function (c) { return '<button data-f="' + c[0] + '"' + (c[0] === CUR ? ' class="on"' : '') + '>' + c[1] + ' <small>' + (c[0] === 'all' ? SC.length : (cnt[c[0]] || 0)) + '</small></button>'; }).join('') + '</div>' +
       '<div class="wg">' + html + '</div><p class="wn0">찾는 장면이 없습니다 — 다른 낱말로 찾거나 「전부」를 누르세요.</p>';
     document.body.appendChild(e);
-    e.addEventListener('click', function (ev) { var b = ev.target.closest('[data-w],[data-f],[data-st],[data-go]'); if (!b) return;
+    e.addEventListener('click', function (ev) { var b = ev.target.closest('[data-w],[data-f],[data-st],[data-go],[data-q]'); if (!b) return;
       if (b.getAttribute('data-w') === 'x') { close(); return; }
+      if (b.hasAttribute('data-q')) { var qk = b.getAttribute('data-q'); setQ(PATH && PATH.k === qk ? null : qk); return; }
       if (b.hasAttribute('data-go')) { go(b.getAttribute('data-go')); return; }
       if (b.hasAttribute('data-st')) { var c = b.closest('.sc'), v = b.getAttribute('data-st'); if (v === 'p') play(c); else jump(c, +v); return; }
-      CUR = b.getAttribute('data-f'); e.querySelectorAll('.wf button').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-f') === CUR); }); filt(); e.scrollTop = 0; });
+      PATH = null; paintQ(); CUR = b.getAttribute('data-f'); e.querySelectorAll('.wf button').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-f') === CUR); }); filt(); e.scrollTop = 0; });
     e.querySelector('.wq').addEventListener('input', function (ev) { Q = String(ev.target.value || '').trim(); filt(); });
     document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && isOn()) close(); });
     if (window.IntersectionObserver) { IO = new IntersectionObserver(function (es) { es.forEach(function (x) { var c = x.target; c.__vis = x.isIntersecting; if (!c.__hold) run(c, x.isIntersecting && isOn() && !RM); }); }, { root: e, rootMargin: '80px' });
       e.querySelectorAll('.sc').forEach(function (c) { IO.observe(c); }); }
     return e; }
   function filt() { var e = document.getElementById('m2dShow'), n = 0, q = Q.toLowerCase();
-    e.querySelectorAll('.sc').forEach(function (x) { var s = SC[+x.getAttribute('data-i')], ok = (CUR === 'all' || s.c === CUR) && (!q || (s.t + ' ' + s.d + ' ' + s.wy + ' ' + s.st.join(' ')).toLowerCase().indexOf(q) >= 0); x.style.display = ok ? '' : 'none'; n += ok ? 1 : 0; });
+    e.querySelectorAll('.wg .sc').forEach(function (x) { var s = SC[+x.getAttribute('data-i')], pi = PATH ? PATH.ks.indexOf(s.k) : 0, ok = pi >= 0 && (PATH || CUR === 'all' || s.c === CUR) && (!q || (s.t + ' ' + s.d + ' ' + s.wy + ' ' + s.st.join(' ')).toLowerCase().indexOf(q) >= 0);
+      x.style.display = ok ? '' : 'none'; x.style.order = PATH ? pi : ''; var nb = x.querySelector('.qn'); if (nb) nb.parentNode.removeChild(nb); if (PATH && ok) { var h5 = x.querySelector('h5'); if (h5) h5.insertAdjacentHTML('afterbegin', '<span class="qn">' + (pi + 1) + '</span>'); } n += ok ? 1 : 0; });
     e.querySelector('.wn0').style.display = n ? 'none' : 'block';
     if (RM) setTimeout(function () { e.querySelectorAll('.sc').forEach(function (c) { if (c.style.display !== 'none' && !c.__hold) jump(c, 2, true); }); }, 0); }
+  function paintQ() { var e = document.getElementById('m2dShow'); if (!e) return; e.querySelectorAll('.wqs [data-q]').forEach(function (x) { x.classList.toggle('on', !!PATH && x.getAttribute('data-q') === PATH.k); });
+    var p = e.querySelector('.wqp'); if (p) p.innerHTML = PATH ? '<b>' + PATH.t + '</b> — 이 차례대로 보면 됩니다(' + PATH.ks.length + '장면) · 같은 단추를 다시 누르면 전부 보기' : ''; }
+  function setQ(k) { var q = null; QS.forEach(function (x) { if (x[0] === k) q = x; }); var e = el();
+    PATH = q ? { k: q[0], t: q[1], ks: q[2].filter(function (z) { return SC.some(function (s) { return s.k === z; }); }) } : null; Q = ''; var qi = e.querySelector('.wq'); if (qi) qi.value = '';
+    if (PATH) { CUR = 'all'; e.querySelectorAll('.wf button').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-f') === 'all'); }); }
+    paintQ(); filt(); var w = e.querySelector('.wqs'); if (w && PATH) { try { e.scrollTop = w.offsetTop - 8; } catch (er) {} } }
   function isOn() { var e = document.getElementById('m2dShow'); return !!(e && e.classList.contains('on')); }
 
   /* 움직임 다루기 — 화면에 보이는 장면만 돈다(폰이 무거워지지 않게) · ①②③ 은 그 때로 옮겨 멈춤 · ▶ 다시 */
@@ -529,7 +588,11 @@
     if (an && an.currentTime != null) t = (an.currentTime / 1000) % 8;
     var g = t < 3.9, y = !g && t < 4.7, n = g ? Math.ceil((3.9 - t) * 10) : y ? Math.ceil((4.7 - t) * 4) : Math.ceil((8 - t) * 10);
     document.querySelectorAll('#m2dShow [data-cd="sig"]').forEach(function (x) { x.textContent = n; x.style.fill = g ? '#16a34a' : y ? '#ca8a04' : '#dc2626'; }); }
-  function open() { var e = el(); e.classList.add('on'); T0 = Date.now();
+  function open(k) { var e = el(); e.classList.add('on'); T0 = Date.now();
+    if (typeof k === 'string' && k.indexOf('q:') === 0) setQ(k.slice(2));
+    else if (typeof k === 'string' && k) { PATH = null; CUR = 'all'; Q = ''; paintQ(); filt(); var i = -1; SC.forEach(function (s, j) { if (s.k === k) i = j; }); var c = i >= 0 ? e.querySelector('.wg .sc[data-i="' + i + '"]') : null;
+      var sc9 = function () { try { e.scrollTop += c.getBoundingClientRect().top - e.getBoundingClientRect().top - 14 - ((e.querySelector('.wh') || {}).offsetHeight || 0); } catch (er) {} };
+      if (c) setTimeout(function () { sc9(); setTimeout(sc9, 350); c.classList.add('hit'); setTimeout(function () { c.classList.remove('hit'); }, 2600); if (!RM) play(c); }, 60); }
     e.querySelectorAll('.sc').forEach(function (c) { if (RM) { if (!c.__hold) jump(c, 2, true); } else if (!c.__hold) run(c, c.__vis !== false); });
     tick(); if (!TK) TK = setInterval(tick, 250);
     try { if (!(history.state || {}).m2dw) history.pushState({ m2dw: 1 }, '', location.href); } catch (er) {} }
@@ -541,6 +604,7 @@
   /* ▶ 실제로 열어 보기 — 그림판·설정·홈을 차례로 닫고 그 화면을 연다(map2d.js 의 단추를 그대로 누른다 · 고치지 않음) */
   function $i(i) { return document.getElementById(i); }
   function go(a) { var p = a.split(':'), k = p[0], v = p.slice(1).join(':');
+    if (!document.getElementById('m2dToolB')) { location.href = './#go=' + encodeURIComponent(a); return; }   /* 설명서 등 지도 밖 쪽 → 지도를 열고 그 화면으로 */
     close();
     if (k === 'set') return;
     setTimeout(function () { var sx = document.querySelector('#m2dSet.on [data-sk="x"]'); if (sx) sx.click();
@@ -569,7 +633,30 @@
   function boot() { if (document.getElementById('m2dSet')) { watch(); return; }
     if (!window.MutationObserver) { setTimeout(boot, 1000); return; }
     var mo = new MutationObserver(function () { if (document.getElementById('m2dSet')) { mo.disconnect(); watch(); } }); mo.observe(document.body, { childList: true }); }
-  window.tgShow = { open: open, close: close, scenes: SC.map(function (s) { return s.k; }), cov: SC.map(function (s) { return s.cov; }).join(' ') };
+  window.tgShow = { open: open, close: close, pick: pick, qs: QS.map(function (q) { return [q[0], q[1]]; }), scenes: SC.map(function (s) { return s.k; }), title: function (k) { var t = ''; SC.forEach(function (s) { if (s.k === k) t = s.t; }); return t; }, cov: SC.map(function (s) { return s.cov; }).join(' ') };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
-  if (/[#&]show=1/.test(location.hash)) setTimeout(open, 600);
+  (function () { var h = location.hash, m = /[#&]show=([^&]+)/.exec(h), g = /[#&]go=([^&]+)/.exec(h);
+    if (m) { var v = decodeURIComponent(m[1]); setTimeout(function () { open(v === '1' ? '' : v); }, 600); }
+    if (g && document.getElementById('m2dToolB')) { try { history.replaceState(history.state, '', location.href.replace(/[#&]go=[^&]*/, '').replace(/#$/, '')); } catch (er) {} setTimeout(function () { go(decodeURIComponent(g[1])); }, 1500); } })();
+  /* v3 「💡 오늘의 사용법」 — 지도를 열면 아래에 작은 움직이는 그림 한 장 + 「무엇이 궁금하세요?」(처음 30일 · 하루 한 번 · 손대지 않으면 15초 뒤 접힘 · T-Book 「오늘의 사용법」과 같은 결)
+     현장 주소(T-Book·가르고가 여는 #lat= · #ly= · #here= 등)로 열면 안 띄운다 · 저장 tg_map2d_tip_v1 = {f 처음 때, l 마지막 날, off 1} */
+  var TIPN = 0;
+  function tip() { if (!document.getElementById('m2dToolB') || /[#&](lat|lon|ly|here|gps|show|go|lnk|dec|sim)=/.test(location.hash)) return;
+    if (isOn() || document.querySelector('#m2dOnb.on,#m2dSet.on,#m2dGate.on')) { if (++TIPN < 60) setTimeout(function () { try { tip(); } catch (er) {} }, 3000); return; }   /* 처음 차리기·설정·그림판이 떠 있으면 닫힐 때까지 기다린다(겹치지 않게) */
+    var S = {}, td = new Date(), dk = td.getFullYear() + '-' + (td.getMonth() + 1) + '-' + td.getDate(); try { S = JSON.parse(localStorage.getItem('tg_map2d_tip_v1') || '{}') || {}; } catch (er) { S = {}; }
+    if (S.off || S.l === dk) return; if (!S.f) S.f = Date.now(); if (Date.now() - S.f > 30 * 864e5) return; S.l = dk; try { localStorage.setItem('tg_map2d_tip_v1', JSON.stringify(S)); } catch (er) {}
+    css(); var day = Math.floor(Date.now() / 864e5), pool = SC.filter(function (z) { return z.st.length && z.go; }), s = pool[day % pool.length], i = SC.indexOf(s);
+    var e = document.createElement('div'); e.id = 'm2dUse'; e.setAttribute('role', 'dialog'); e.setAttribute('aria-label', '오늘의 사용법');
+    e.innerHTML = '<div class="th"><b>💡 오늘의 사용법</b><button data-t="x" aria-label="닫기">✕</button></div><div class="tsc" data-i="' + i + '"><h5>' + s.t + '</h5>' + SV + s.a + '">' + s.g + '</svg><p class="tst">' + s.st.map(function (x, j) { return '<span><i>' + (j + 1) + '</i>' + x + '</span>'; }).join('') + '</p></div>'
+      + '<div class="tb"><button data-t="go">▶ 실제로 열어 보기</button><button data-t="more">🎬 자세히</button></div><div class="tq"><b>🙋 무엇이 궁금하세요?</b><div>' + QS.slice(0, 6).map(function (q) { return '<button data-tq="' + q[0] + '">' + q[1] + '</button>'; }).join('') + '<button data-tq="">더 보기 ›</button></div></div>'
+      + '<label class="toff"><input type="checkbox"> 다시 보지 않기</label>';
+    document.body.appendChild(e); var hold = 0, tm = setTimeout(function () { if (!hold) shut(); }, 15000);
+    function shut() { clearTimeout(tm); var cb = e.querySelector('.toff input'); if (cb && cb.checked) { S.off = 1; try { localStorage.setItem('tg_map2d_tip_v1', JSON.stringify(S)); } catch (er) {} } e.classList.add('out'); setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); }, 300); }
+    e.addEventListener('pointerdown', function () { hold = 1; clearTimeout(tm); });
+    e.addEventListener('change', function () { hold = 1; clearTimeout(tm); });
+    e.addEventListener('click', function (ev) { var b = ev.target.closest('[data-t],[data-tq]'); if (!b) return; var t = b.getAttribute('data-t');
+      if (t === 'x') { shut(); return; } if (t === 'go') { shut(); go(s.go); return; } if (t === 'more') { shut(); open(s.k); return; }
+      if (b.hasAttribute('data-tq')) { shut(); open(b.getAttribute('data-tq') ? 'q:' + b.getAttribute('data-tq') : ''); } });
+    if (RM) setTimeout(function () { anims(e).forEach(function (a) { try { a.pause(); a.currentTime = 6000; } catch (er) {} }); }, 0); }
+  setTimeout(function () { try { tip(); } catch (er) {} }, 2500);
 })();

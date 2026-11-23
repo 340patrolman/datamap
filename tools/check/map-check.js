@@ -7,7 +7,8 @@
     for (var i = 0; i < n; i++) (new Image()).src = '/__r?p=' + window.__PAGE + '&k=' + id + '&i=' + i + '&n=' + n + '&d=' + s.substr(i * 1500, 1500); }
   var poll = setInterval(function () {
     var m = window.TGMap2D;
-    if (m && m.view) { clearInterval(poll); setTimeout(function () { try { run(m); } catch (e) { ck('검사 스크립트가 끝까지 돌았다', false, e && e.message); send(); } }, 7000); }
+    if (m && m.view) { clearInterval(poll); try { m.sdCycT && m.sdCycT('0', 0, 0); } catch (e8) {}   /* 하루치 주기 파일은 처음 물을 때 받는다 — 검사 전에 미리 */
+      setTimeout(function () { try { run(m); } catch (e) { ck('검사 스크립트가 끝까지 돌았다', false, e && e.message); send(); } }, 7000); }
     else if (Date.now() - t0 > 40000) { clearInterval(poll); ck('지도가 열린다(문법)', false, (window.__ERR || []).join(' | ') || 'TGMap2D 없음'); send(); }
   }, 300);
   function run(m) { try { m.runwCardHtml && m.runwCardHtml('부산'); } catch (e1) {} try { m.accrRowsHtml && m.accrRowsHtml('0'); } catch (e2) {} try { m.pidxHtml && m.pidxHtml(); } catch (e3) {} try { m.pstatHtml && m.pstatHtml(); } catch (e4) {} try { m.pfCard && m.pfCard(0); m.pidxHtml && m.pidxHtml({ u: 'dong', num: 'f_frn', den: 'pop', sd2: '11' }); } catch (e5) {}
@@ -292,6 +293,10 @@
         ck('🏠 = 처음 세팅 화면으로 — 자리·확대·레이어·시각을 처음대로 · 홈 목록은 안 뜸 (v2.338.0)', v9.cx === 0 && v9.cy === 0 && v9.s === 0.16 && on0.cam === camD && !TGHome.state().on && document.getElementById('m2dNowBtn').classList.contains('on'), 'cx ' + v9.cx + ' · s ' + v9.s + ' · cam ' + on0.cam + ' · 홈 ' + TGHome.state().on); } catch (e) { ck('🏠 처음 세팅 검사', false, e.message); }
       try { var f0 = TGMap2D.hf(), f1 = TGMap2D.hf({ p: 4 }), ok30 = true; TGMap2D.hits().forEach(function (q) { if (q.it && q.it.kind === 'hmc') { var tr9 = q.it.x.c[8]; if (!(tr9 && tr9[3] > 300000)) ok30 = false; } }); var f2 = TGMap2D.hf({});
         ck('🏠 단지 거르기 — 30억 넘음을 고르면 그 단지 점만 남고 · 풀면 되돌아온다 (v2.340.0)', f0.f.p === 0 && f1.f.p === 4 && ok30 && f2.f.p === 0, '가격 ' + f1.f.p + ' · 남은 점이 다 30억 넘음 ' + ok30); } catch (e) { ck('단지 거르기 검사', false, e.message); }
+      /* v2.344.1 하루치 주기 파일 지킴 — 시계를 일 12:40 에 놓고 파일에 있는 교차로를 다 돌린다: 다른 때 받은 값으로 세는데(같은 요일 갈래·같은 시가 아님) 그 주기가 파일의 지금 시각대 주기와 2초 넘게 다르면 결함 · 파일은 14일 이상 */
+      try { var SF = m.scfT && m.scfT(), RD2 = Date, T2 = new RD2('2026-11-22T12:40:00+09:00').getTime(), FD2 = function () { return arguments.length ? new (Function.prototype.bind.apply(RD2, [null].concat([].slice.call(arguments))))() : new RD2(T2); }; FD2.now = function () { return T2; }; FD2.UTC = RD2.UTC; FD2.parse = RD2.parse; FD2.prototype = RD2.prototype;
+        var bad2 = [], nOk2 = 0, nHit2 = 0, nos2 = SF && SF.c ? Object.keys(SF.c) : []; window.Date = FD2; try { nos2.forEach(function (no) { var lv = m.sdLiveT(no), fc = m.sdCycT(no, lv.cl, lv.hr); if (fc == null) return; if (lv.ok && !lv.pd) { nOk2++; if (!lv.same && lv.ci && Math.abs(lv.ci - fc) > 2) bad2.push(no + ' ' + lv.ci + '≠' + fc); } else if (!lv.ok && lv.ci && Math.abs(lv.ci - fc) > 2) nHit2++; }); } finally { window.Date = RD2; }
+        ck('🚦 하루치 주기 파일 지킴(v2.344.0) — 시계 일 12:40 · 다른 때 받은 값으로 셀 때 파일 주기와 어긋나면 세지 않는다 · 파일 14일 이상', SF && SF.schema === 'tg-sig-cyc-file/1' && (SF.days || [])[2] >= 14 && nos2.length > 500 && bad2.length === 0, '파일 ' + (SF ? (SF.days || [])[2] + '일 · ' + nos2.length + '곳' : '안 읽힘') + ' · 센 곳 ' + nOk2 + ' · 막은 곳 ' + nHit2 + (bad2.length ? ' · 결함 ' + bad2.slice(0, 4).join(', ') : '')); } catch (e) { ck('하루치 주기 파일 지킴 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       setTimeout(send, 80); }); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }

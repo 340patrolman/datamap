@@ -142,7 +142,7 @@
     shg();
   }
   /* 2026-11-22 소유자 「읽다가 그 부분을 터치하면 그 내용이 바로 보이게」 — 카드를 누르면 그 장면이 움직이는 그림으로 뜬다(js/show.js) · 그림 밑 「▶ 실제로 열어 보기」는 지도를 열고 그 화면으로 */
-  function shg() { var T = window.tgShow; if (!T || !T.pick) return; main.querySelectorAll('.card').forEach(function (c) { if (c.querySelector('.shg')) return; var h3 = c.querySelector('h3'), mid = c.getAttribute('data-mid'), k = mid && T.scenes.indexOf('m_' + mid) >= 0 ? 'm_' + mid : (T.pick(h3 ? h3.textContent : '') || T.pick(((c.querySelector('p') || {}).textContent || '').slice(0, 40)));
+  function shg() { var T = window.tgShow; if (!T || !T.pick) return; main.querySelectorAll('.card').forEach(function (c) { if (c.querySelector('.shg')) return; var sec = c.closest('[id]'), h3 = c.querySelector('h3'); if (sec && sec.id === 'police' && h3 && /^\s*\d/.test(h3.textContent)) return; h3 = c.querySelector('h3'); var mid = c.getAttribute('data-mid'), k = mid && T.scenes.indexOf('m_' + mid) >= 0 ? 'm_' + mid : (T.pick(h3 ? h3.textContent : '') || T.pick(((c.querySelector('p') || {}).textContent || '').slice(0, 40)));
       if (!k || T.scenes.indexOf(k) < 0) return; c.classList.add('tap'); c.setAttribute('data-sk', k); c.insertAdjacentHTML('beforeend', '<button class="shg" type="button" data-sk="' + k + '">🎬 그림으로 보기 <small>' + esc(T.title(k)) + '</small></button>'); }); }
   window.addEventListener('load', function () { if (G) shg(); });
   main.addEventListener('click', function (e) { if (e.target.closest('a,summary,[data-tab]')) return; var c = e.target.closest('[data-sk]'); if (!c || !window.tgShow) return; e.preventDefault(); window.tgShow.open(c.getAttribute('data-sk')); });
@@ -151,6 +151,6 @@
 })();
 </script>
 <style>.card.tap{cursor:pointer}.card .shg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:8px;min-height:40px;border:1px solid rgba(29,78,216,.35);background:rgba(29,78,216,.07);color:inherit;border-radius:12px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer;text-align:left}.card .shg small{font-weight:500;opacity:.8}</style>
-<script src="js/show.js?v=3"></script>
+<script src="js/show.js?v=4"></script>
 </body>
 </html>

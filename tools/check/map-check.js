@@ -7,7 +7,7 @@
     for (var i = 0; i < n; i++) (new Image()).src = '/__r?p=' + window.__PAGE + '&k=' + id + '&i=' + i + '&n=' + n + '&d=' + s.substr(i * 1500, 1500); }
   var poll = setInterval(function () {
     var m = window.TGMap2D;
-    if (m && m.view) { clearInterval(poll); try { m.sdCycT && m.sdCycT('0', 0, 0); } catch (e8) {}   /* 하루치 주기 파일은 처음 물을 때 받는다 — 검사 전에 미리 */
+    if (m && m.view) { clearInterval(poll); try { m.sdCycT && m.sdCycT('0', 0, 0); m.tgpGet && m.tgpGet(); } catch (e8) {}   /* 하루치 주기 파일은 처음 물을 때 받는다 — 검사 전에 미리 */
       setTimeout(function () { try { run(m); } catch (e) { ck('검사 스크립트가 끝까지 돌았다', false, e && e.message); send(); } }, 7000); }
     else if (Date.now() - t0 > 40000) { clearInterval(poll); ck('지도가 열린다(문법)', false, (window.__ERR || []).join(' | ') || 'TGMap2D 없음'); send(); }
   }, 300);
@@ -297,6 +297,8 @@
       try { var SF = m.scfT && m.scfT(), RD2 = Date, T2 = new RD2('2026-11-22T12:40:00+09:00').getTime(), FD2 = function () { return arguments.length ? new (Function.prototype.bind.apply(RD2, [null].concat([].slice.call(arguments))))() : new RD2(T2); }; FD2.now = function () { return T2; }; FD2.UTC = RD2.UTC; FD2.parse = RD2.parse; FD2.prototype = RD2.prototype;
         var bad2 = [], nOk2 = 0, nHit2 = 0, nos2 = SF && SF.c ? Object.keys(SF.c) : []; window.Date = FD2; try { nos2.forEach(function (no) { var lv = m.sdLiveT(no), fc = m.sdCycT(no, lv.cl, lv.hr); if (fc == null) return; if (lv.ok && !lv.pd) { nOk2++; if (!lv.same && lv.ci && Math.abs(lv.ci - fc) > 2) bad2.push(no + ' ' + lv.ci + '≠' + fc); } else if (!lv.ok && lv.ci && Math.abs(lv.ci - fc) > 2) nHit2++; }); } finally { window.Date = RD2; }
         ck('🚦 하루치 주기 파일 지킴(v2.344.0) — 시계 일 12:40 · 다른 때 받은 값으로 셀 때 파일 주기와 어긋나면 세지 않는다 · 파일 14일 이상', SF && SF.schema === 'tg-sig-cyc-file/1' && (SF.days || [])[2] >= 14 && nos2.length > 500 && bad2.length === 0, '파일 ' + (SF ? (SF.days || [])[2] + '일 · ' + nos2.length + '곳' : '안 읽힘') + ' · 센 곳 ' + nOk2 + ' · 막은 곳 ' + nHit2 + (bad2.length ? ' · 결함 ' + bad2.slice(0, 4).join(', ') : '')); } catch (e) { ck('하루치 주기 파일 지킴 검사', false, e.message); }
+      try { var DU = m.sigDupT && m.sigDupT(); ck('🚦 같은 신호등 두 번호 합치기(v2.345.0) — 경찰청 6361(연)방배경찰서) = 실시간 23251 · 합친 곳 20곳 넘음', DU && DU['6361'] === '23251' && Object.keys(DU).length > 20 && !DU['6260'] && DU['5032'] !== '31032', DU ? Object.keys(DU).length + '곳 · 6361→' + DU['6361'] : '자료 안 읽힘'); } catch (e) { ck('신호등 합치기 검사', false, e.message); }
+      try { var TP = m.tgp && m.tgp(), x1 = TP && TP.by['1552'], w1 = m.tgisNowT('1552', '2026-11-25', '0800'), w0 = m.tgisNowT('1552', '2026-11-25', '0030'), s1 = m.tgisNowT('1552', '2026-11-28', '0750'); ck('🚦 교통과 계획 T-GIS(v2.345.0) — 70곳 넘음 · 이수역 평일 08:00 = 06:00 계획 230초 패턴 14 · 00:30 = 전날 23:00 · 토 07:50 = 07:00 190초 · 시차 표(평일 05~23 · 토 06~23)와 패턴 14 시차 현시값', TP && TP.items.length >= 70 && String(w1) === '평일,0600,230,14' && String(w0) === '평일,2300,180,4' && String(s1) === '토요일,0700,190,5' && String(x1.alt.win['1']) === '0500,2300' && String(x1.alt.win['3']) === '0600,2300' && String(x1.alt.pat['14'].a) === '32,89,59,50' && String(x1.alt.pat['14'].b) === '32,89,84,25' && String(x1.pat['14'].a) === '32,109,48,41', TP ? TP.items.length + '곳 · ' + w1 + ' / ' + s1 : '자료 안 읽힘'); } catch (e) { ck('교통과 계획 T-GIS 검사', false, e.message); }
       var er = window.__ERR || []; ck('화면 오류 0', er.length === 0, er.slice(0, 3).join(' | '));
       setTimeout(send, 80); }); }, function (e) { ck('길 자료(nav) 읽기', false, String(e)); send(); }); }, 3500);
     }

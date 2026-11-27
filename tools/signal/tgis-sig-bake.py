@@ -214,15 +214,23 @@ def main():
     dup = set(n for n in nos if nos.count(n) > 1)
     for x in [x for x in items if x['no'] in dup]: fail.append([x['c'], x['no'], x['nm'], '교차로 번호가 두 곳에 겹침'])
     items = sorted([x for x in items if x['no'] not in dup], key=lambda x: int(x['no']))
+    # 딸린 신호(연등) — T-GIS 연동 부모 코드가 실린 교차로인 것. 부모의 요일 계획·주기만 보인다(현시값은 부모 것이라 싣지 않는다)
+    byc = {x['c']: x for x in items}
+    kids = []
+    for r in T['items']:
+        c, nm, la, lo, par, cits = r[0], r[1], r[2], r[3], r[4], r[6]
+        if par and par != c and par in byc and cits and str(cits) not in nos and '경보' not in nm:
+            kids.append([str(cits), c, nm, la, lo, byc[par]['no']])
     doc = {'schema': 'tg-sig-tgis/2', 'made': datetime.date.today().isoformat(),
            'source': '서울시 교통안전시설물관리시스템(T-GIS) 교차로별 신호현시도 — 표준신호제어기데이터베이스 출력물 판독(서초·방배서 관할)',
            'note': '계획값이다 — 감응·수동 운영 중에는 실제와 다를 수 있다. 어느 현시가 어느 방향인지는 읽지 않았다. 옵셋만으로 「몇 초 남음」·연동 속도를 계산하지 않는다. filed = T-GIS 에 올라온 파일 날짜 · day = 출력물에 적힌 날짜(못 읽으면 null). how auto = 글자 인식 네 벌에서 두 번 이상 같은 값 · hand = 따로 두 번 손 판독이 같은 값.',
-           'fields': 'items[{newer 1 = 교통과 5곳 자료(sig-ksc-seocho)보다 새 파일, no 교차로 번호, c T-GIS 교차로 코드, nm, lat, lon, filed YYYYMMDD, day YYYY-MM-DD|null, plans[{k TOD 번호, label 출력물 머리 글, wd[0 일 … 6 토], hol 공휴일·특수일도 이 계획, rows[[시작 HHMM, 주기, 패턴]]}], pat{패턴: {c 주기, off 연동(옵셋), a[A링 현시별 초], b[B링]}}, how, alt{name, win{TOD 번호:[HHMM 부터, 까지]}, pat} 그 시간대에는 pat 대신 alt.pat, sicha 1 = 출력물에 「시차」 운영 표기가 있고 그 값은 읽지 않음, ped 1 = 보행자 작동 신호기 표기 · 시간제 점멸 운영 표기가 있는 곳은 싣지 않는다, td[T-Data 실측 주기와 ±1초 맞은 줄, 맞대 본 줄 — 0,0 이면 맞대 보지 못함]}] · 실측 10줄 넘게 보고 80% 못 맞으면 싣지 않는다',
-           'items': items}
+           'fields': 'items[{newer 1 = 교통과 5곳 자료(sig-ksc-seocho)보다 새 파일, no 교차로 번호, c T-GIS 교차로 코드, nm, lat, lon, filed YYYYMMDD, day YYYY-MM-DD|null, plans[{k TOD 번호, label 출력물 머리 글, wd[0 일 … 6 토], hol 공휴일·특수일도 이 계획, rows[[시작 HHMM, 주기, 패턴]]}], pat{패턴: {c 주기, off 연동(옵셋), a[A링 현시별 초], b[B링]}}, how, alt{name, win{TOD 번호:[HHMM 부터, 까지]}, pat} 그 시간대에는 pat 대신 alt.pat, sicha 1 = 출력물에 「시차」 운영 표기가 있고 그 값은 읽지 않음, ped 1 = 보행자 작동 신호기 표기 · 시간제 점멸 운영 표기가 있는 곳은 싣지 않는다, td[T-Data 실측 주기와 ±1초 맞은 줄, 맞대 본 줄 — 0,0 이면 맞대 보지 못함]}] · 실측 10줄 넘게 보고 80% 못 맞으면 싣지 않는다 · kids[[교차로 번호, T-GIS 코드, 이름, 위도, 경도, 부모 교차로 번호]] = 딸린 신호(연등) — 부모의 계획·주기로 돈다',
+           'items': items, 'kids': kids}
     json.dump(doc, open(OUT, 'w', encoding='utf-8', newline=''), ensure_ascii=False, separators=(',', ':'))
     with open(FAIL, 'w', encoding='utf-8') as f:
         f.write('T-GIS코드\t교차로번호\t파일\t까닭\n')
         for r in fail: f.write('\t'.join(str(v) for v in r) + '\n')
+    print('딸린 신호', len(kids))
     print('실음 %d (자동 %d · 손 %d) · 교통과 5곳 따로 %d · 실패 %d · %d KB' % (len(items), how['auto'], how['hand'], skip5, len(fail), os.path.getsize(OUT) // 1024))
 
 

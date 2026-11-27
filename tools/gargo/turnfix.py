@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 가르고 길 묶음에 빠진 좌회전 금지를 덧붙인다 — data/gargo-turnfix.json(자리·들어오는 방향·나가는 방향 · 길 묶음의 번호와 무관) → 각 묶음의 turns 에 [마디, 들어오는 길(way), 나가는 길(way), 0]
+# 가르고 길 묶음에 빠진 좌회전 금지를 덧붙인다(현장 확인한 곳만 · 2026-11-28 검수 뒤) — data/gargo-turnfix.json(자리·들어오는 방향·나가는 방향 · 길 묶음의 번호와 무관) → 각 묶음의 turns 에 [마디, 들어오는 길(way), 나가는 길(way), 0]
 #   소유자 2026-11-28 「좌회전 없는 곳에서 하라고 하더라 · 서초3동사거리가 그 예」 — OSM 에 회전 제한이 빠진 곳. 근거는 목록 파일의 source.
 #   길 묶음을 다시 구우면(pack-bake.py · pack-tile.py) 이 도구를 다시 돌린다(이미 막힌 곳은 건너뜀).
 #   덧붙이는 제한은 「그 좌회전만 사라지고 다른 들어오는 길·나가는 길은 그대로」인 것만 — 아니면 넣지 않고 알린다.
@@ -127,20 +127,28 @@ class Pack:
         for k in p:
             if self.dist(self.E[k][0], c) > R: start = k
         ins = set(self.around(c)) | {start}; before = {i: self.reach(i, c) for i in ins}
-        for x, y in zip(p, p[1:]):
-            key = (self.E[x][1], self.E[x][3]); w = self.E[y][3]
-            if w in self.ban[key]: continue
-            self.ban[key].add(w)
-            ok = self.path(a0, set(B), c) is None
-            for i in ins:
-                if not ok: break
-                after = self.reach(i, c); lost = before[i] - after
-                if i == start or diff(brg(self.E[i][5][-2], self.E[i][5][-1]), it['in_brg']) < 30:
-                    ok = all(diff(brg(c, self.N[self.E[f][1]]), it['out_brg']) < 40 for f in lost) and (not lost or len(after) >= 1)
-                elif lost: ok = False
-            if ok:
-                self.add.append([key[0], key[1], w, 0]); return '넣음'
-            self.ban[key].discard(w)
+        mine = []   # 한 번의 제한으로 길이 남으면(나란한 길이 둘 이상) 남은 길에서 하나씩 더(많아야 6) — 끝까지 못 막으면 모두 되돌린다
+        while p is not None and len(mine) < 6:
+            for x, y in zip(p, p[1:]):
+                key = (self.E[x][1], self.E[x][3]); w = self.E[y][3]
+                if w in self.ban[key]: continue
+                self.ban[key].add(w)
+                ok = True
+                for i in ins:
+                    after = self.reach(i, c); lost = before[i] - after
+                    if i == start or diff(brg(self.E[i][5][-2], self.E[i][5][-1]), it['in_brg']) < 30:
+                        ok = all(diff(brg(c, self.N[self.E[f][1]]), it['out_brg']) < 40 for f in lost) and (not lost or len(after) >= 1)
+                    elif lost: ok = False
+                    if not ok: break
+                if ok:
+                    mine.append([key[0], key[1], w, 0]); break
+                self.ban[key].discard(w)
+            else:
+                break
+            p = self.path(a0, set(B), c)
+        if p is None:
+            self.add.extend(mine); return '넣음'
+        for v, fw, tw, _ in mine: self.ban[(v, fw)].discard(tw)
         return '다른 길까지 막혀 안 넣음'
 
     def save(self):
@@ -158,7 +166,8 @@ class Pack:
 
 
 def main():
-    items = [i for i in load(os.path.join(ROOT, 'data', 'gargo-turnfix.json'))['items'] if not i.get('no')]   # no = 제외 목록(넣지 않는다)
+    items = [i for i in load(os.path.join(ROOT, 'data', 'gargo-turnfix.json'))['items'] if (i.get('ok') or '--all' in sys.argv) and not i.get('no')]   # 넣는 것은 현장 확인(ok)만 · --all 은 후보 점검용(--dry 와 함께)
+    assert DRY or '--all' not in sys.argv
     packs = [os.path.join(G, 'pk-six', 'core.json'), os.path.join(G, 'pk-seoul', 'core.json'), os.path.join(G, 'pack-six.json'), os.path.join(G, 'pack-seocho.json'), os.path.join(G, 'pack-seoul.json')]
     for main_ in packs:
         if not os.path.exists(main_): continue

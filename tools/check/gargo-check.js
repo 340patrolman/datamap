@@ -14,8 +14,9 @@
       window.GARGO.pkAll().then(function () { var P1 = window.GARGO.pk(); if (P1.on) ck('칸 묶음 — 골목 칸을 모두 받아 합쳤다', P1.tiles === P1.total && window.GARGO.state().G.S.length > 60000, P1.tiles + '/' + P1.total + '칸 · 길 줄 ' + window.GARGO.state().G.S.length);
         /* 내용 맞대기 — 큰길 묶음(core)의 회전 제한 200개가 길 계산이 쓰는 표(G.ban·G.only · 열쇠 「마디|들어오는 길 번호」)에 그대로 있는가. core 마디는 합칠 때 맨 앞에 core.nodes 차례로 번호가 매겨진다 */
         if (P1.on) { var PKc = window.GARGO.pkCore(), Gs = window.GARGO.state().G, idx = {}, okT = 0, badT = []; PKc.nodes.forEach(function (r, i) { idx[r[0]] = i; });
-          PKc.turns.slice(0, 200).forEach(function (t) { var tb = (t[3] ? Gs.only : Gs.ban)[idx[t[0]] + '|' + t[1]]; if (tb && tb[t[2]]) okT++; else if (badT.length < 3) badT.push(t.join(',')); });
-          ck('칸 묶음 — 큰길 회전 제한 200개가 길 계산 표에 그대로(내용 맞대기)', okT === Math.min(200, PKc.turns.length), okT + '/' + Math.min(200, PKc.turns.length) + (badT.length ? ' · 빠짐 ' + badT.join(' | ') : '')); }
+          PKc.turns.forEach(function (t) { var tb = (t[3] ? Gs.only : Gs.ban)[idx[t[0]] + '|' + t[1]]; if (tb && tb[t[2]]) okT++; else if (badT.length < 3) badT.push(t.join(',')); });
+          ck('칸 묶음 — 큰길 회전 제한이 모두 길 계산 표에 그대로(내용 맞대기)', okT === PKc.turns.length, okT + '/' + PKc.turns.length + (badT.length ? ' · 빠짐 ' + badT.join(' | ') : '')); }
+        try { var G3 = window.GARGO, a3 = G3.P(127.011735, 37.483724), b3 = G3.P(127.01095, 37.484055), f3x = function () { return G3.findRoute(a3[0], a3[1], b3[0], b3[1], new Date(), null); }, r3 = G3.noLive ? G3.noLive(f3x) : f3x(); ck('↰ 서초3동사거리 — 남쪽에서 서쪽 좌회전을 안내하지 않고 유턴 없이 돌아간다(현장 확인 2026-11-28)', !!r3 && r3.dist > 180 && !r3.mans.some(function (m) { return m.k === 'U'; }), r3 ? Math.round(r3.dist) + 'm' : '길 없음'); } catch (e) { ck('↰ 서초3동사거리 검사', false, e.message); }
         if (P1.on) ck('칸 묶음 — 회전 금지·지정 방향이 원본 묶음과 같은 수(길 번호 그대로 · v0.8.0~0.9.1 은 모두 무효였다)', window.GARGO.pkTurns() === P1.turnsTotal && P1.turnsTotal > 1000, window.GARGO.pkTurns() + ' / 원본 ' + P1.turnsTotal);
         setTimeout(function () { try { run(); } catch (e) { fail(e && e.message); } }, 2500); }); } else if (Date.now() - t0 > 45000) { clearInterval(poll); fail('45초 안에 길 묶음이 안 읽혔다(문법 오류 · 파일 없음) ' + (window.__ERR || []).join(' | ')); } }, 300);
 

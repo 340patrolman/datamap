@@ -158,7 +158,7 @@ class Pack:
 
 
 def main():
-    items = load(os.path.join(ROOT, 'data', 'gargo-turnfix.json'))['items']
+    items = [i for i in load(os.path.join(ROOT, 'data', 'gargo-turnfix.json'))['items'] if not i.get('no')]   # no = 제외 목록(넣지 않는다)
     packs = [os.path.join(G, 'pk-six', 'core.json'), os.path.join(G, 'pk-seoul', 'core.json'), os.path.join(G, 'pack-six.json'), os.path.join(G, 'pack-seocho.json'), os.path.join(G, 'pack-seoul.json')]
     for main_ in packs:
         if not os.path.exists(main_): continue

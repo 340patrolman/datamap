@@ -120,15 +120,25 @@ def tdata_match(it, meas):
 
 def notes(base):
     """출력물 글(한글 판독)에서 운영 조건 — blink 시간제 점멸(그 시간에는 계획값이 틀린다 → 싣지 않는다) · sicha 시차 운영 표기 · ped 보행자 작동 신호기"""
-    out = {'blink': 0, 'sicha': 0, 'ped': 0, 'read': 0}
+    out = {'blink': None, 'sicha': 0, 'ped': 0, 'read': 0}
     for s in ('3', '4'):
         f = os.path.join(KB, 'tgis_read', 'raw', '%s.ko.s%s.json' % (base, s))
         if not os.path.exists(f): continue
         j = json.load(open(f, encoding='utf-8-sig')); pg = j[0] if isinstance(j, list) else j
         t = ''.join(w[0] for w in sorted(pg['words'], key=lambda w: (w[2] // 30, w[1]))) + '|' + ''.join(w[0] for w in pg['words'])
         out['read'] = 1
-        for m in re.finditer(r'점멸(신호)?(운영|제어)', t):
-            if '해제' not in t[m.start():m.end() + 30] and '삭제' not in t[m.start():m.end() + 30]: out['blink'] = 1
+        for m in re.finditer(r'점멸(신호)?(운영|제어|시간대)', t):
+            tail = t[m.end():m.end() + 30]
+            if re.match(r'.{0,12}(해제|삭제)', tail): continue
+            ex = t[max(0, m.start() - 8):m.end() + 22].split('|')[0]
+            cur = out['blink'] or {'wins': [], 'all': 0, 'txt': ex}
+            for w in re.finditer(r'(\d{1,2}):(\d{2})[~∼\-～](?:익일)?(\d{1,2}):(\d{2})', t[m.end():m.end() + 24]):
+                h1, h2 = int(w.group(1)), int(w.group(3))
+                if h1 < 25 and h2 < 25:
+                    win = ['%02d%s' % (h1, w.group(2)), '%02d%s' % (h2, w.group(4))]
+                    if win not in cur['wins']: cur['wins'].append(win); cur['txt'] = ex
+            if re.search(r'전일|항시|점멸(신호)?(운영|제어)중', ex): cur['all'] = 1
+            out['blink'] = cur
         t2 = re.sub(r'시차(제)?(신호)?(운영)?(삭제|해제)', '', t)
         if re.search(r'(?<!현)시차', t2): out['sicha'] = 1
         if '보행자작동' in t: out['ped'] = 1
@@ -210,10 +220,9 @@ def main():
             no = str(src.get('no') or '')
             if cits and no and str(cits) != no: cand.append((None, d, seq, base, '출력물 번호 %s ≠ 지도 번호 %s' % (no, cits))); continue
             key = str(cits or no)
-            if not key or key == '0': cand.append((None, d, seq, base, '교차로 번호 없음')); continue
+            if not key or key == '0': key = 'T%d' % c
             used = set(r[2] for p in pl for r in p['rows'])
             nt = notes(base)
-            if nt['blink']: cand.append((None, d, seq, base, '시간제 점멸 운영 표기 — 그 시간대 계획값이 틀린다(적용 시간을 확인해야 싣는다)')); continue
             if not nt['read']: cand.append((None, d, seq, base, '참고 글을 읽지 못함')); continue
             mm = [(r[0], r[1], r[2]) for p in pl for r in p['rows'] if str(r[2]) not in src['pat'] or src['pat'][str(r[2])]['c'] != r[1]]
             if mm and src['how'] != 'hand': cand.append((None, d, seq, base, '출력물의 요일 계획 주기 ≠ 패턴 주기 %s' % (mm[:2],))); continue
@@ -228,6 +237,7 @@ def main():
             if src.get('alt'): it0['alt'] = {'name': src['alt']['name'], 'win': src['alt']['win'], 'pat': {n: {'c': q['c'], 'off': q['off'], 'a': zcut(q['a']), 'b': zcut(q['b'])} for n, q in src['alt']['pat'].items() if int(n) in used}}
             if nt['sicha'] and not src.get('alt'): it0['sicha'] = 1
             if nt['ped']: it0['ped'] = 1
+            if nt['blink']: it0['blink'] = nt['blink']
             if mm: it0['mm'] = sorted({'%s/%d/%d' % r for r in mm})
             cand.append((it0, d, seq, base, ''))
         top = max(x[1] for x in cand)
@@ -240,7 +250,7 @@ def main():
         it = good[-1][0]
         meas = (SD.get('tod') or {}).get(it['no']) or []
         ok, n = tdata_match(it, meas)
-        if n >= 10 and ok < 0.7 * n: fail.append([c, cits, newest[-1][3], 'T-Data 실측 주기와 어긋남 — 맞음 %d/%d' % (ok, n)]); continue
+        if n >= 10 and ok < 0.5 * n: fail.append([c, cits, newest[-1][3], 'T-Data 실측 주기와 어긋남 — 맞음 %d/%d' % (ok, n)]); continue
         it['td'] = [ok, n]
         if it['no'] in ksc and it['filed'] <= ksc[it['no']]: skip5 += 1; continue
         if it['no'] in ksc: it['newer'] = 1
@@ -248,7 +258,7 @@ def main():
     nos = [x['no'] for x in items]
     dup = set(n for n in nos if nos.count(n) > 1)
     for x in [x for x in items if x['no'] in dup]: fail.append([x['c'], x['no'], x['nm'], '교차로 번호가 두 곳에 겹침'])
-    items = sorted([x for x in items if x['no'] not in dup], key=lambda x: int(x['no']))
+    items = sorted([x for x in items if x['no'] not in dup], key=lambda x: int(x['no']) if x['no'].isdigit() else 10 ** 7 + x['c'])
     # 딸린 신호(연등) — T-GIS 연동 부모 코드가 실린 교차로인 것. 부모의 요일 계획·주기만 보인다(현시값은 부모 것이라 싣지 않는다)
     byc = {x['c']: x for x in items}
     kids = []
@@ -256,16 +266,39 @@ def main():
         c, nm, la, lo, par, cits = r[0], r[1], r[2], r[3], r[4], r[6]
         if par and par != c and par in byc and cits and str(cits) not in nos and '경보' not in nm:
             kids.append([str(cits), c, nm, la, lo, byc[par]['no']])
+    # 값이 없는 신호 교차로(받은 구역: 서초·방배서 관할 + 동작·관악구) — 지도에 회색 점과 까닭
+    SG = json.load(open(os.path.join(ROOT, 'data', 'signal-tod-seoul.json'), encoding='utf-8'))['spots']
+    have = [(x['lat'], x['lon']) for x in items] + [(k[3], k[4]) for k in kids] + [(float(x['lat']), float(x['lon'])) for x in SG] + [(float(x['lat']), float(x['lon'])) for x in json.load(open(KSC, encoding='utf-8'))['items']] + [(SD['pts'][k][0], SD['pts'][k][1]) for k in SD['pts'] if SD['its'].get(k)]
+    havec = {x['c'] for x in items} | {k[1] for k in kids}
+    haven = set(SD['its']) | {str(x['no']) for x in SG} | set(ksc) | {x['no'] for x in items}
+    why_f = {str(r[0]): r[3] for r in fail}
+    miss = []
+    inv = {}
+    for jf in glob.glob(os.path.join(KB, '교통과_원본', 'tgis_*', 'tgis_inventory_*.json')):
+        for k, L in json.load(open(jf, encoding='utf-8'))['items'].items():
+            if L: inv[int(k)] = len(L)
+    for r in T['items']:
+        c, nm, la, lo, par, pe, cits, gu = r[:8]
+        if not (pe in (340, 380) or gu in (590, 620, 11590, 11620)): continue
+        if c in havec or (cits and str(cits) in haven) or any(abs(a - la) < 0.0004 and abs(b - lo) < 0.0005 and ((a - la) * 111000) ** 2 + ((b - lo) * 88400) ** 2 <= 900 for a, b in have): continue
+        w = why_f.get(str(c), '')
+        if c in files: why = '현시도는 받았으나 값을 확정하지 못함(판독 대기)' if '실측' not in w else '현시도와 실측 주기가 크게 달라 싣지 않음'
+        elif inv.get(c): why = 'T-GIS 에 옛 현시도만 있어 싣지 않음 — 교통과 확인 필요'
+        elif '경보' in nm: why = '경보(점멸) 신호 — 신호 계획표가 없는 곳'
+        elif par and par != c: why = '딸린 신호(연등) — 부모 교차로의 계획을 아직 싣지 못함'
+        elif gu in (590, 620, 11590, 11620) and pe not in (340, 380): why = '현시도 판독 대기(받는 중)'
+        else: why = 'T-GIS 에 현시도 파일이 없음 — 교통과 확인 필요'
+        miss.append([str(cits or ''), c, nm, la, lo, why])
     doc = {'schema': 'tg-sig-tgis/2', 'made': datetime.date.today().isoformat(),
            'source': '서울시 교통안전시설물관리시스템(T-GIS) 교차로별 신호현시도 — 표준신호제어기데이터베이스 출력물 판독(서초·방배서 관할 · 동작·관악구)',
            'note': '계획값이다 — 감응·수동 운영 중에는 실제와 다를 수 있다. 어느 현시가 어느 방향인지는 읽지 않았다. 옵셋만으로 「몇 초 남음」·연동 속도를 계산하지 않는다. filed = T-GIS 에 올라온 파일 날짜 · day = 출력물에 적힌 날짜(못 읽으면 null). how auto = 글자 인식 네 벌에서 두 번 이상 같은 값 · hand = 따로 두 번 손 판독이 같은 값.',
-           'fields': 'items[{newer 1 = 교통과 5곳 자료(sig-ksc-seocho)보다 새 파일, no 교차로 번호, c T-GIS 교차로 코드, nm, lat, lon, filed YYYYMMDD, day YYYY-MM-DD|null, plans[{k TOD 번호, label 출력물 머리 글, wd[0 일 … 6 토], hol 공휴일·특수일도 이 계획, rows[[시작 HHMM, 주기, 패턴]]}], pat{패턴: {c 주기, off 연동(옵셋), a[A링 현시별 초], b[B링]}}, how, alt{name, win{TOD 번호:[HHMM 부터, 까지]}, pat} 그 시간대에는 pat 대신 alt.pat, sicha 1 = 출력물에 「시차」 운영 표기가 있고 그 값은 읽지 않음, ped 1 = 보행자 작동 신호기 표기 · 시간제 점멸 운영 표기가 있는 곳은 싣지 않는다, td[T-Data 실측 주기와 ±1초 맞은 줄, 맞대 본 줄 — 0,0 이면 맞대 보지 못함]}] · 실측 10줄 넘게 보고 70% 못 맞으면 싣지 않는다(80% 미만은 카드에 경고) · how check = 손 판독 한 번 + 검산 + 글자 인식과 어긋남 0 · mm[] = 출력물 안에서 계획 주기 ≠ 패턴 주기인 줄(두 번 손 판독이 같은 장만 · 카드에 경고) · kids[[교차로 번호, T-GIS 코드, 이름, 위도, 경도, 부모 교차로 번호]] = 딸린 신호(연등) — 부모의 계획·주기로 돈다',
-           'items': items, 'kids': kids}
+           'fields': 'items[{newer 1 = 교통과 5곳 자료(sig-ksc-seocho)보다 새 파일, no 교차로 번호, c T-GIS 교차로 코드, nm, lat, lon, filed YYYYMMDD, day YYYY-MM-DD|null, plans[{k TOD 번호, label 출력물 머리 글, wd[0 일 … 6 토], hol 공휴일·특수일도 이 계획, rows[[시작 HHMM, 주기, 패턴]]}], pat{패턴: {c 주기, off 연동(옵셋), a[A링 현시별 초], b[B링]}}, how, alt{name, win{TOD 번호:[HHMM 부터, 까지]}, pat} 그 시간대에는 pat 대신 alt.pat, sicha 1 = 출력물에 「시차」 운영 표기가 있고 그 값은 읽지 않음, ped 1 = 보행자 작동 신호기 표기 · blink{wins[[HHMM,HHMM]…], all 1=전일·항시, txt 글자 인식 조각} = 점멸 운영 표기(그 시간대에는 계획값을 보이지 않는다 · 시간을 모르거나 전일이면 늘 보이지 않는다) · miss[[번호|'', T-GIS 코드, 이름, 위도, 경도, 까닭]] = 받은 구역에서 값이 없는 신호 교차로, td[T-Data 실측 주기와 ±1초 맞은 줄, 맞대 본 줄 — 0,0 이면 맞대 보지 못함]}] · 실측 10줄 넘게 보고 절반도 못 맞으면 싣지 않는다(80% 미만은 카드에 경고 · 소유자 2026-11-28 「현시도 날짜대로」) · how check = 손 판독 한 번 + 검산 + 글자 인식과 어긋남 0 · mm[] = 출력물 안에서 계획 주기 ≠ 패턴 주기인 줄(두 번 손 판독이 같은 장만 · 카드에 경고) · kids[[교차로 번호, T-GIS 코드, 이름, 위도, 경도, 부모 교차로 번호]] = 딸린 신호(연등) — 부모의 계획·주기로 돈다',
+           'items': items, 'kids': kids, 'miss': miss}
     json.dump(doc, open(OUT, 'w', encoding='utf-8', newline=''), ensure_ascii=False, separators=(',', ':'))
     with open(FAIL, 'w', encoding='utf-8') as f:
         f.write('T-GIS코드\t교차로번호\t파일\t까닭\n')
         for r in fail: f.write('\t'.join(str(v) for v in r) + '\n')
-    print('딸린 신호', len(kids))
+    print('딸린 신호', len(kids), '· 값 없음 표시', len(miss), {m[5][:12]: sum(1 for x in miss if x[5] == m[5]) for m in miss})
     print('실음 %d (자동 %d · 손 %d) · 교통과 5곳 따로 %d · 실패 %d · %d KB' % (len(items), how['auto'], how['hand'] + how['check'], skip5, len(fail), os.path.getsize(OUT) // 1024))
 
 

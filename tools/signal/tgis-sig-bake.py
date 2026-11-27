@@ -10,8 +10,10 @@ import json, os, glob, re, sys, datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.join(os.path.dirname(ROOT), '07_API키', '신호앱')
-P2 = [os.path.join(KB, 'tgis_read', 'p2_t1128')]
-ORIG = os.path.join(KB, '교통과_원본', 'tgis_20261128')
+# 받은 묶음(구역)마다 원본 폴더 · 2차 판독 폴더를 한 줄씩 늘린다
+BATCH = [('tgis_20261128', 'p2_t1128'), ('tgis_20261128_djgn', 'p2_djgn')]
+P2 = [os.path.join(KB, 'tgis_read', b[1]) for b in BATCH]
+ORIG = [os.path.join(KB, '교통과_원본', b[0]) for b in BATCH]
 OUT = os.path.join(ROOT, 'data', 'sig-tgis-plan.json')
 FAIL = os.path.join(KB, 'tgis_read', '_실패목록.tsv')
 KSC = os.path.join(ROOT, 'data', 'sig-ksc-seocho.json')
@@ -133,6 +135,34 @@ def notes(base):
     return out
 
 
+# 손 판독과 글자 인식이 어긋난 칸을 원본 그림으로 가린 것(손 판독이 맞음 — 글자 인식이 한 줄 밀림) {파일: 연동(옵셋)을 가린 패턴}
+SEEN = {'tg390_20250902_91643': {'11', '14'}}   # 방배역 2026-11-28 그림 확인
+
+
+def single_reads(done):
+    """손 판독 한 번(C_)— 검산(현시 합 = 주기 · 계획 주기 = 패턴 주기)과 글자 인식이 두 번 이상 같게 읽은 칸이 하나도 어긋나지 않을 때만"""
+    out = {}
+    for cf in glob.glob(os.path.join(KB, 'tgis_read', 'hand_*', 'C_*.json')):
+        c = json.load(open(cf, encoding='utf-8')); f = c['file']
+        if f in done or c.get('alt') or c.get('sichaje') not in (None, '', [], {}, False): continue
+        P = c.get('pat') or {}
+        if not P or any(not (sum(q['a']) == sum(q['b']) == q['c']) for q in P.values()): continue
+        if any(str(r[2]) not in P or P[str(r[2])]['c'] != r[1] for L in c['tod'].values() for r in L): continue
+        bad = 0; seen = 0
+        for d in P2:
+            jf = os.path.join(d, f + '.json')
+            if not os.path.exists(jf): continue
+            m = json.load(open(jf, encoding='utf-8'))
+            for k, L in (m.get('tod') or {}).items():
+                for r in L: seen += 1; bad += r not in c['tod'].get(k, [])
+            for n, q in (m.get('pat') or {}).items():
+                if n not in P: bad += 1; continue
+                seen += 1; bad += zcut(q['a']) != zcut(P[n]['a']) or zcut(q['b']) != zcut(P[n]['b']) or (q.get('off') is not None and q['off'] != P[n]['off'] and n not in SEEN.get(f, ()))
+        if bad == 0 and seen >= 8: out[f] = dict(c, checked=seen)
+        else: print('손 한 번 판독 보류', f, '어긋남', bad, '맞대 본 칸', seen)
+    return out
+
+
 def main():
     global OUT
     if '--out' in sys.argv: i = sys.argv.index('--out'); OUT = os.path.abspath(sys.argv[i + 1]); del sys.argv[i:i + 2]
@@ -142,14 +172,16 @@ def main():
     tg = {int(r[0]): r for r in T['items']}
     ksc = {str(x['no']): str(x.get('day') or '').replace('-', '') for x in json.load(open(KSC, encoding='utf-8'))['items']}
     M = manual_pairs(man)
+    S1 = single_reads(set(M))
+    for f, c in S1.items(): M[f] = dict(c, one=1)
     SD = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))
     files = {}
-    for p in glob.glob(os.path.join(ORIG, '*.pdf')):
+    for p in [p for d9 in ORIG for p in glob.glob(os.path.join(d9, '*.pdf'))]:
         m = re.match(r'tg(\d+)_(\d{8})_(\d+)\.pdf$', os.path.basename(p))
         if not m: continue
         c, d, seq = int(m.group(1)), m.group(2), int(m.group(3))
         files.setdefault(c, []).append((d, seq, os.path.splitext(os.path.basename(p))[0]))
-    items = []; fail = []; how = {'auto': 0, 'hand': 0}; skip5 = 0
+    items = []; fail = []; how = {'auto': 0, 'hand': 0, 'check': 0}; skip5 = 0
     for c, L in sorted(files.items()):
         L.sort()
         row = tg.get(c)
@@ -158,10 +190,10 @@ def main():
         cand = []
         for d, seq, base in L:
             src = None; why = ''
-            h = [v for k, v in M.items() if k.startswith('tg_') and re.sub(r'^tg_0*(\d+)_.*', r'\1', k) == str(cits) and d in k]
+            h = [M[base]] if base in M else [v for k, v in M.items() if k.startswith('tg_') and re.sub(r'^tg_0*(\d+)_.*', r'\1', k) == str(cits) and d in k]
             if h:
                 a = h[0]
-                src = {'no': a['no'], 'day': a.get('day'), 'tod': a['tod'], 'pat': a['pat'], 'labels': {k: [v] for k, v in a['todLabel'].items()}, 'special': {'4': 30}, 'how': 'hand', 'alt': a.get('alt')}
+                src = {'no': a['no'], 'day': a.get('day'), 'tod': a['tod'], 'pat': a['pat'], 'labels': {k: [v] for k, v in a['todLabel'].items()}, 'special': {'4': 30}, 'how': 'check' if a.get('one') else 'hand', 'alt': a.get('alt')}
             else:
                 for pd in P2:
                     jf = os.path.join(pd, base + '.json')
@@ -169,7 +201,9 @@ def main():
                         m = json.load(open(jf, encoding='utf-8'))
                         if m['bad']: why = ' ; '.join(m['bad'][:3])
                         else: src = dict(m, how='auto')
-                    else: why = '2차 판독 없음'
+                        break
+                else:
+                    why = '2차 판독 없음'
             if src is None: cand.append((None, d, seq, base, why)); continue
             pl, err = plans_of(src['labels'], src['tod'], src.get('special'))
             if err: cand.append((None, d, seq, base, err)); continue
@@ -182,7 +216,7 @@ def main():
             if nt['blink']: cand.append((None, d, seq, base, '시간제 점멸 운영 표기 — 그 시간대 계획값이 틀린다(적용 시간을 확인해야 싣는다)')); continue
             if not nt['read']: cand.append((None, d, seq, base, '참고 글을 읽지 못함')); continue
             mm = [(r[0], r[1], r[2]) for p in pl for r in p['rows'] if str(r[2]) not in src['pat'] or src['pat'][str(r[2])]['c'] != r[1]]
-            if mm: cand.append((None, d, seq, base, '출력물의 요일 계획 주기 ≠ 패턴 주기 %s' % (mm[:2],))); continue
+            if mm and src['how'] != 'hand': cand.append((None, d, seq, base, '출력물의 요일 계획 주기 ≠ 패턴 주기 %s' % (mm[:2],))); continue
             hol = [p for p in pl if p['hol']]
             if len(hol) > 1 and any(p['rows'] != hol[0]['rows'] for p in hol):
                 sp9 = sorted((src.get('special') or {}).items(), key=lambda x: -x[1])
@@ -194,6 +228,7 @@ def main():
             if src.get('alt'): it0['alt'] = {'name': src['alt']['name'], 'win': src['alt']['win'], 'pat': {n: {'c': q['c'], 'off': q['off'], 'a': zcut(q['a']), 'b': zcut(q['b'])} for n, q in src['alt']['pat'].items() if int(n) in used}}
             if nt['sicha'] and not src.get('alt'): it0['sicha'] = 1
             if nt['ped']: it0['ped'] = 1
+            if mm: it0['mm'] = sorted({'%s/%d/%d' % r for r in mm})
             cand.append((it0, d, seq, base, ''))
         top = max(x[1] for x in cand)
         newest = [x for x in cand if x[1] == top]
@@ -205,7 +240,7 @@ def main():
         it = good[-1][0]
         meas = (SD.get('tod') or {}).get(it['no']) or []
         ok, n = tdata_match(it, meas)
-        if n >= 10 and ok < 0.8 * n: fail.append([c, cits, newest[-1][3], 'T-Data 실측 주기와 어긋남 — 맞음 %d/%d' % (ok, n)]); continue
+        if n >= 10 and ok < 0.7 * n: fail.append([c, cits, newest[-1][3], 'T-Data 실측 주기와 어긋남 — 맞음 %d/%d' % (ok, n)]); continue
         it['td'] = [ok, n]
         if it['no'] in ksc and it['filed'] <= ksc[it['no']]: skip5 += 1; continue
         if it['no'] in ksc: it['newer'] = 1
@@ -222,16 +257,16 @@ def main():
         if par and par != c and par in byc and cits and str(cits) not in nos and '경보' not in nm:
             kids.append([str(cits), c, nm, la, lo, byc[par]['no']])
     doc = {'schema': 'tg-sig-tgis/2', 'made': datetime.date.today().isoformat(),
-           'source': '서울시 교통안전시설물관리시스템(T-GIS) 교차로별 신호현시도 — 표준신호제어기데이터베이스 출력물 판독(서초·방배서 관할)',
+           'source': '서울시 교통안전시설물관리시스템(T-GIS) 교차로별 신호현시도 — 표준신호제어기데이터베이스 출력물 판독(서초·방배서 관할 · 동작·관악구)',
            'note': '계획값이다 — 감응·수동 운영 중에는 실제와 다를 수 있다. 어느 현시가 어느 방향인지는 읽지 않았다. 옵셋만으로 「몇 초 남음」·연동 속도를 계산하지 않는다. filed = T-GIS 에 올라온 파일 날짜 · day = 출력물에 적힌 날짜(못 읽으면 null). how auto = 글자 인식 네 벌에서 두 번 이상 같은 값 · hand = 따로 두 번 손 판독이 같은 값.',
-           'fields': 'items[{newer 1 = 교통과 5곳 자료(sig-ksc-seocho)보다 새 파일, no 교차로 번호, c T-GIS 교차로 코드, nm, lat, lon, filed YYYYMMDD, day YYYY-MM-DD|null, plans[{k TOD 번호, label 출력물 머리 글, wd[0 일 … 6 토], hol 공휴일·특수일도 이 계획, rows[[시작 HHMM, 주기, 패턴]]}], pat{패턴: {c 주기, off 연동(옵셋), a[A링 현시별 초], b[B링]}}, how, alt{name, win{TOD 번호:[HHMM 부터, 까지]}, pat} 그 시간대에는 pat 대신 alt.pat, sicha 1 = 출력물에 「시차」 운영 표기가 있고 그 값은 읽지 않음, ped 1 = 보행자 작동 신호기 표기 · 시간제 점멸 운영 표기가 있는 곳은 싣지 않는다, td[T-Data 실측 주기와 ±1초 맞은 줄, 맞대 본 줄 — 0,0 이면 맞대 보지 못함]}] · 실측 10줄 넘게 보고 80% 못 맞으면 싣지 않는다 · kids[[교차로 번호, T-GIS 코드, 이름, 위도, 경도, 부모 교차로 번호]] = 딸린 신호(연등) — 부모의 계획·주기로 돈다',
+           'fields': 'items[{newer 1 = 교통과 5곳 자료(sig-ksc-seocho)보다 새 파일, no 교차로 번호, c T-GIS 교차로 코드, nm, lat, lon, filed YYYYMMDD, day YYYY-MM-DD|null, plans[{k TOD 번호, label 출력물 머리 글, wd[0 일 … 6 토], hol 공휴일·특수일도 이 계획, rows[[시작 HHMM, 주기, 패턴]]}], pat{패턴: {c 주기, off 연동(옵셋), a[A링 현시별 초], b[B링]}}, how, alt{name, win{TOD 번호:[HHMM 부터, 까지]}, pat} 그 시간대에는 pat 대신 alt.pat, sicha 1 = 출력물에 「시차」 운영 표기가 있고 그 값은 읽지 않음, ped 1 = 보행자 작동 신호기 표기 · 시간제 점멸 운영 표기가 있는 곳은 싣지 않는다, td[T-Data 실측 주기와 ±1초 맞은 줄, 맞대 본 줄 — 0,0 이면 맞대 보지 못함]}] · 실측 10줄 넘게 보고 70% 못 맞으면 싣지 않는다(80% 미만은 카드에 경고) · how check = 손 판독 한 번 + 검산 + 글자 인식과 어긋남 0 · mm[] = 출력물 안에서 계획 주기 ≠ 패턴 주기인 줄(두 번 손 판독이 같은 장만 · 카드에 경고) · kids[[교차로 번호, T-GIS 코드, 이름, 위도, 경도, 부모 교차로 번호]] = 딸린 신호(연등) — 부모의 계획·주기로 돈다',
            'items': items, 'kids': kids}
     json.dump(doc, open(OUT, 'w', encoding='utf-8', newline=''), ensure_ascii=False, separators=(',', ':'))
     with open(FAIL, 'w', encoding='utf-8') as f:
         f.write('T-GIS코드\t교차로번호\t파일\t까닭\n')
         for r in fail: f.write('\t'.join(str(v) for v in r) + '\n')
     print('딸린 신호', len(kids))
-    print('실음 %d (자동 %d · 손 %d) · 교통과 5곳 따로 %d · 실패 %d · %d KB' % (len(items), how['auto'], how['hand'], skip5, len(fail), os.path.getsize(OUT) // 1024))
+    print('실음 %d (자동 %d · 손 %d) · 교통과 5곳 따로 %d · 실패 %d · %d KB' % (len(items), how['auto'], how['hand'] + how['check'], skip5, len(fail), os.path.getsize(OUT) // 1024))
 
 
 if __name__ == '__main__':

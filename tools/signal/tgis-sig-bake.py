@@ -261,11 +261,24 @@ def main():
     items = sorted([x for x in items if x['no'] not in dup], key=lambda x: int(x['no']) if x['no'].isdigit() else 10 ** 7 + x['c'])
     # 딸린 신호(연등) — T-GIS 연동 부모 코드가 실린 교차로인 것. 부모의 요일 계획·주기만 보인다(현시값은 부모 것이라 싣지 않는다)
     byc = {x['c']: x for x in items}
-    kids = []
+    kids = []; kid0 = 0
+    SD0 = json.load(open(os.path.join(ROOT, 'data', 'sigdir-seoul.json'), encoding='utf-8'))
+    SG0 = json.load(open(os.path.join(ROOT, 'data', 'signal-tod-seoul.json'), encoding='utf-8'))['spots']
+    oth = [(SD0['pts'][k][0], SD0['pts'][k][1], str(k)) for k in SD0['pts'] if SD0['its'].get(k)] + [(float(x['lat']), float(x['lon']), str(x['no'])) for x in SG0]
+    def same_sig(la, lo, pno):
+        # 50m 안 다른 자료의 신호가 부모 자신이거나 그 연등의 T-Data 번호(앞자리 하나 + 부모 번호 · 예 21552 = 1552)일 때만 같은 신호로 본다
+        pn = str(pno)
+        for a, b, n in oth:
+            if ((a - la) * 111000) ** 2 + ((b - lo) * 88400) ** 2 > 2500: continue
+            if n == pn or (n.isdigit() and pn.isdigit() and len(n) == 5 and n[0] in '23456789' and int(n) % 10000 == int(pn)): return True
+        return False
     for r in T['items']:
         c, nm, la, lo, par, cits = r[0], r[1], r[2], r[3], r[4], r[6]
-        if par and par != c and par in byc and cits and str(cits) not in nos and '경보' not in nm:
-            kids.append([str(cits), c, nm, la, lo, byc[par]['no']])
+        if par and par != c and par in byc and c not in byc and (not cits or str(cits) not in nos) and '경보' not in nm:
+            # 교차로 번호가 빈 연등(T-GIS 코드로) — 다른 자료의 신호가 50m 안에 있으면 같은 신호로 보고 겹쳐 그리지 않는다
+            if not cits and same_sig(la, lo, byc[par]['no']): continue
+            if not cits: kid0 += 1
+            kids.append([str(cits) if cits else 'T%d' % c, c, nm, la, lo, byc[par]['no']])
     # 값이 없는 신호 교차로(받은 구역: 서초·방배서 관할 + 동작·관악구) — 지도에 회색 점과 까닭
     SG = json.load(open(os.path.join(ROOT, 'data', 'signal-tod-seoul.json'), encoding='utf-8'))['spots']
     have = [(x['lat'], x['lon']) for x in items] + [(k[3], k[4]) for k in kids] + [(float(x['lat']), float(x['lon'])) for x in SG] + [(float(x['lat']), float(x['lon'])) for x in json.load(open(KSC, encoding='utf-8'))['items']] + [(SD['pts'][k][0], SD['pts'][k][1]) for k in SD['pts'] if SD['its'].get(k)]
@@ -280,6 +293,7 @@ def main():
     for r in T['items']:
         c, nm, la, lo, par, pe, cits, gu = r[:8]
         if not (pe in (340, 380) or gu in (590, 620, 11590, 11620)): continue
+        if par and par != c and not cits and par in byc and same_sig(la, lo, byc[par]['no']): continue
         if c in havec or (cits and str(cits) in haven) or any(abs(a - la) < 0.0004 and abs(b - lo) < 0.0005 and ((a - la) * 111000) ** 2 + ((b - lo) * 88400) ** 2 <= 900 for a, b in have): continue
         w = why_f.get(str(c), '')
         if c in files: why = '현시도는 받았으나 값을 확정하지 못함(판독 대기)' if '실측' not in w else '현시도와 실측 주기가 크게 달라 싣지 않음'
@@ -298,7 +312,7 @@ def main():
     with open(FAIL, 'w', encoding='utf-8') as f:
         f.write('T-GIS코드\t교차로번호\t파일\t까닭\n')
         for r in fail: f.write('\t'.join(str(v) for v in r) + '\n')
-    print('딸린 신호', len(kids), '· 값 없음 표시', len(miss), {m[5][:12]: sum(1 for x in miss if x[5] == m[5]) for m in miss})
+    print('딸린 신호', len(kids), '(번호 없는 연등', kid0, ')', '· 값 없음 표시', len(miss), {m[5][:12]: sum(1 for x in miss if x[5] == m[5]) for m in miss})
     print('실음 %d (자동 %d · 손 %d) · 교통과 5곳 따로 %d · 실패 %d · %d KB' % (len(items), how['auto'], how['hand'] + how['check'], skip5, len(fail), os.path.getsize(OUT) // 1024))
 
 

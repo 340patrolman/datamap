@@ -146,6 +146,8 @@ def notes(base):
 
 
 # 손 판독과 글자 인식이 어긋난 칸을 원본 그림으로 가린 것(손 판독이 맞음 — 글자 인식이 한 줄 밀림) {파일: 연동(옵셋)을 가린 패턴}
+# 현시도를 직접 보고 정한 까닭(값을 싣지 않는 곳)
+FIXWHY = {5147: '보행 신호 · 최신 현시도(2010-04-28) 참고란에 「항시 점멸 운영」 — 주기 없음'}
 SEEN = {'tg390_20250902_91643': {'11', '14'}}   # 방배역 2026-11-28 그림 확인
 
 
@@ -179,6 +181,10 @@ def main():
     man = []
     if '--manual' in sys.argv: man = sys.argv[sys.argv.index('--manual') + 1:]
     T = json.load(open(os.path.join(ROOT, 'data', 'tgis-seoul.json'), encoding='utf-8'))
+    # 손에 있는 A008 파일 뒤에 새로 생긴 교차로(T-GIS 지도 WFS 에서 받음 · 07_API키/신호앱/tgis_read/tgis_new_*.json)
+    have0 = {int(r[0]) for r in T['items']}
+    for jf in sorted(glob.glob(os.path.join(KB, 'tgis_read', 'tgis_new_*.json'))):
+        T['items'] += [r[:8] for r in json.load(open(jf, encoding='utf-8'))['items'] if int(r[0]) not in have0]
     tg = {int(r[0]): r for r in T['items']}
     ksc = {str(x['no']): str(x.get('day') or '').replace('-', '') for x in json.load(open(KSC, encoding='utf-8'))['items']}
     M = manual_pairs(man)
@@ -203,7 +209,7 @@ def main():
             h = [M[base]] if base in M else [v for k, v in M.items() if k.startswith('tg_') and re.sub(r'^tg_0*(\d+)_.*', r'\1', k) == str(cits) and d in k]
             if h:
                 a = h[0]
-                src = {'no': a['no'], 'day': a.get('day'), 'tod': a['tod'], 'pat': a['pat'], 'labels': {k: [v] for k, v in a['todLabel'].items()}, 'special': {'4': 30}, 'how': 'check' if a.get('one') else 'hand', 'alt': a.get('alt')}
+                src = {'no': a['no'], 'day': a.get('day'), 'tod': a['tod'], 'pat': a['pat'], 'labels': {k: [v] for k, v in a['todLabel'].items()}, 'special': {'4': 30}, 'how': 'check' if a.get('one') else 'hand', 'alt': a.get('alt'), 'sichaHand': a.get('sichaHand')}
             else:
                 for pd in P2:
                     jf = os.path.join(pd, base + '.json')
@@ -218,7 +224,7 @@ def main():
             pl, err = plans_of(src['labels'], src['tod'], src.get('special'))
             if err: cand.append((None, d, seq, base, err)); continue
             no = str(src.get('no') or '')
-            if cits and no and str(cits) != no: cand.append((None, d, seq, base, '출력물 번호 %s ≠ 지도 번호 %s' % (no, cits))); continue
+            # 출력물 번호 ≠ 지도 번호여도 그 T-GIS 자리의 최신 현시도이므로 싣는다(번호는 지도 것) — 소유자 11-28
             key = str(cits or no)
             if not key or key == '0': key = 'T%d' % c
             used = set(r[2] for p in pl for r in p['rows'])
@@ -235,7 +241,7 @@ def main():
             pat = {n: {'c': q['c'], 'off': q['off'], 'a': zcut(q['a']), 'b': zcut(q['b'])} for n, q in src['pat'].items() if int(n) in used}
             it0 = {'no': key, 'c': c, 'nm': nm, 'lat': row[2], 'lon': row[3], 'filed': d, 'day': src.get('day'), 'plans': pl, 'pat': pat, 'how': src['how']}
             if src.get('alt'): it0['alt'] = {'name': src['alt']['name'], 'win': src['alt']['win'], 'pat': {n: {'c': q['c'], 'off': q['off'], 'a': zcut(q['a']), 'b': zcut(q['b'])} for n, q in src['alt']['pat'].items() if int(n) in used}}
-            if nt['sicha'] and not src.get('alt'): it0['sicha'] = 1
+            if (nt['sicha'] or src.get('sichaHand')) and not src.get('alt'): it0['sicha'] = 1
             if nt['ped']: it0['ped'] = 1
             if nt['blink']: it0['blink'] = nt['blink']
             if mm: it0['mm'] = sorted({'%s/%d/%d' % r for r in mm})
@@ -243,22 +249,26 @@ def main():
         top = max(x[1] for x in cand)
         newest = [x for x in cand if x[1] == top]
         if c in PICK: newest = [x for x in newest if x[2] == PICK[c]] or newest
-        good = [x for x in newest if x[0]]
-        if len(newest) > 1 and (len(good) != len(newest) or any(json.dumps([g[0]['plans'], g[0]['pat']], sort_keys=True) != json.dumps([good[0][0]['plans'], good[0][0]['pat']], sort_keys=True) for g in good)):
-            fail.append([c, cits, newest[-1][3], '같은 날 파일 %d개가 다르거나 일부 못 읽음 — 어느 것이 운영 중인지 확인' % len(newest)]); continue
-        if not good: fail.append([c, cits, newest[-1][3], newest[-1][4]]); continue
-        it = good[-1][0]
+        # 같은 날 파일이 여럿이면 마지막에 올린 것(번호가 가장 큰 것)이 자료 — 소유자 2026-11-28 「맨 마지막 것이 자료」
+        newest.sort(key=lambda x: x[2]); last = newest[-1]
+        if not last[0]: fail.append([c, cits, last[3], last[4] or '같은 날 마지막 파일을 읽지 못함']); continue
+        it = last[0]
         meas = (SD.get('tod') or {}).get(it['no']) or []
         ok, n = tdata_match(it, meas)
-        if n >= 10 and ok < 0.5 * n: fail.append([c, cits, newest[-1][3], 'T-Data 실측 주기와 어긋남 — 맞음 %d/%d' % (ok, n)]); continue
+        # 소유자 2026-11-28 「맨 마지막 것이 자료 · 겁먹지 말고」 — 실측과 달라도 최신 현시도를 싣는다(td 는 카드 참고로만)
         it['td'] = [ok, n]
         if it['no'] in ksc and it['filed'] <= ksc[it['no']]: skip5 += 1; continue
         if it['no'] in ksc: it['newer'] = 1
         how[it['how']] += 1; items.append(it)
     nos = [x['no'] for x in items]
     dup = set(n for n in nos if nos.count(n) > 1)
-    for x in [x for x in items if x['no'] in dup]: fail.append([x['c'], x['no'], x['nm'], '교차로 번호가 두 곳에 겹침'])
-    items = sorted([x for x in items if x['no'] not in dup], key=lambda x: int(x['no']) if x['no'].isdigit() else 10 ** 7 + x['c'])
+    # 같은 출력물 번호가 둘이면 한 제어기 — 연등 아닌 쪽 · 그다음 최신 현시도 하나만 남기고 나머지 자리는 딸린 신호로(소유자 11-28 「맨 마지막 것이 자료」)
+    keep = {}; dropto = {}
+    for n in dup:
+        L = sorted([x for x in items if x['no'] == n], key=lambda x: ('연등' not in tg[x['c']][1], x['filed']))
+        keep[n] = L[-1]['c']
+        for x in L[:-1]: fail.append([x['c'], x['no'], x['nm'], '같은 번호의 최신 현시도(%s)를 씀' % L[-1]['filed']]); dropto[x['c']] = L[-1]['c']
+    items = sorted([x for x in items if x['no'] not in dup or keep[x['no']] == x['c']], key=lambda x: int(x['no']) if x['no'].isdigit() else 10 ** 7 + x['c'])
     # 딸린 신호(연등) — T-GIS 연동 부모 코드가 실린 교차로인 것. 부모의 요일 계획·주기만 보인다(현시값은 부모 것이라 싣지 않는다)
     byc = {x['c']: x for x in items}
     kids = []; kid0 = 0
@@ -282,7 +292,8 @@ def main():
         return L[0]['c'] if len(L) == 1 else None
     for r in T['items']:
         c, nm, la, lo, par, cits = r[0], r[1], r[2], r[3], r[4], r[6]
-        if (not par or par == c or par not in byc) and '연등' in nm and c not in byc: par = par_by_name(nm, la, lo) or par
+        if c in dropto: par = dropto[c]   # 같은 출력물 번호 — 남긴 쪽 계획으로 도는 자리
+        elif (not par or par == c or par not in tg) and '연등' in nm and c not in byc: par = par_by_name(nm, la, lo) or par
         if par and par != c and par in byc and c not in byc and (not cits or str(cits) not in nos) and '경보' not in nm:
             # 교차로 번호가 빈 연등(T-GIS 코드로) — 다른 자료의 신호가 50m 안에 있으면 같은 신호로 보고 겹쳐 그리지 않는다
             if not cits and same_sig(la, lo, byc[par]['no']): continue
@@ -306,6 +317,7 @@ def main():
         if c in havec or (cits and str(cits) in haven) or any(abs(a - la) < 0.0004 and abs(b - lo) < 0.0005 and ((a - la) * 111000) ** 2 + ((b - lo) * 88400) ** 2 <= 900 for a, b in have): continue
         w = why_f.get(str(c), '')
         if c in files: why = '현시도는 받았으나 값을 확정하지 못함(판독 대기)' if '실측' not in w else '현시도와 실측 주기가 크게 달라 싣지 않음'
+        elif c in FIXWHY: why = FIXWHY[c]
         elif inv.get(c): why = 'T-GIS 에 옛 현시도만 있어 싣지 않음 — 교통과 확인 필요'
         elif '경보' in nm: why = '경보(점멸) 신호 — 신호 계획표가 없는 곳'
         elif par and par != c: why = '딸린 신호(연등) — 부모 교차로의 계획을 아직 싣지 못함'

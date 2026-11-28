@@ -147,6 +147,8 @@ def notes(base):
 
 # 손 판독과 글자 인식이 어긋난 칸을 원본 그림으로 가린 것(손 판독이 맞음 — 글자 인식이 한 줄 밀림) {파일: 연동(옵셋)을 가린 패턴}
 # 현시도를 직접 보고 정한 까닭(값을 싣지 않는 곳)
+# 글자 인식이 참고란을 못 읽은 점멸 운영(원본 그림으로 확인 · 가르고 세션 11-28)
+FIXBLINK = {1151: {'wins': [['0000', '0500']], 'all': 0, 'txt': '시간제 점멸운영(00:00~05:00) — 원본 그림 확인'}, 6318: {'wins': [['0000', '0500']], 'all': 0, 'txt': '시간제 점멸운영(00:00~05:00) — 원본 그림 확인'}}
 FIXWHY = {5147: '보행 신호 · 최신 현시도(2010-04-28) 참고란에 「항시 점멸 운영」 — 주기 없음'}
 SEEN = {'tg390_20250902_91643': {'11', '14'}}   # 방배역 2026-11-28 그림 확인
 
@@ -244,6 +246,7 @@ def main():
             if (nt['sicha'] or src.get('sichaHand')) and not src.get('alt'): it0['sicha'] = 1
             if nt['ped']: it0['ped'] = 1
             if nt['blink']: it0['blink'] = nt['blink']
+            if c in FIXBLINK: it0['blink'] = FIXBLINK[c]
             if mm: it0['mm'] = sorted({'%s/%d/%d' % r for r in mm})
             cand.append((it0, d, seq, base, ''))
         top = max(x[1] for x in cand)
@@ -320,6 +323,7 @@ def main():
         elif c in FIXWHY: why = FIXWHY[c]
         elif inv.get(c): why = 'T-GIS 에 옛 현시도만 있어 싣지 않음 — 교통과 확인 필요'
         elif '경보' in nm: why = '경보(점멸) 신호 — 신호 계획표가 없는 곳'
+        elif par and par != c and par in tg and str(tg[par][6]) in ksc: why = '딸린 신호(연등) — 「%s」(교통과 현시도 · 번호 %s) 계획으로 돕니다. 그 교차로 카드를 보십시오' % (tg[par][1], tg[par][6])
         elif par and par != c: why = '딸린 신호(연등) — 부모 교차로의 계획을 아직 싣지 못함'
         else: why = 'T-GIS 에 현시도 파일이 없음 — 교통과 확인 필요'
         miss.append([str(cits or ''), c, nm, la, lo, why])

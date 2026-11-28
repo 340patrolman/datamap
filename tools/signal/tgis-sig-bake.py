@@ -272,8 +272,17 @@ def main():
             if ((a - la) * 111000) ** 2 + ((b - lo) * 88400) ** 2 > 2500: continue
             if n == pn or (n.isdigit() and pn.isdigit() and len(n) == 5 and n[0] in '23456789' and int(n) % 10000 == int(pn)): return True
         return False
+    # T-GIS 에 부모 고리가 빈 연등 — 이름에서 「(연등)n」을 뗀 이름이 같은 실린 교차로가 400m 안에 하나뿐이면 그 부모로 본다(2026-11-28 · 서원초교(연등) 등)
+    bynm = {}
+    for x in byc.values(): bynm.setdefault(re.sub(r'\s', '', tg[x['c']][1] if x['c'] in tg else x['nm']), []).append(x)
+    def par_by_name(nm, la, lo):
+        m = re.match(r'^(.+?)\(연등\)\d*$', re.sub(r'\s', '', nm))
+        if not m: return None
+        L = [x for x in bynm.get(m.group(1), []) if ((x['lat'] - la) * 111000) ** 2 + ((x['lon'] - lo) * 88400) ** 2 <= 160000]
+        return L[0]['c'] if len(L) == 1 else None
     for r in T['items']:
         c, nm, la, lo, par, cits = r[0], r[1], r[2], r[3], r[4], r[6]
+        if (not par or par == c or par not in byc) and '연등' in nm and c not in byc: par = par_by_name(nm, la, lo) or par
         if par and par != c and par in byc and c not in byc and (not cits or str(cits) not in nos) and '경보' not in nm:
             # 교차로 번호가 빈 연등(T-GIS 코드로) — 다른 자료의 신호가 50m 안에 있으면 같은 신호로 보고 겹쳐 그리지 않는다
             if not cits and same_sig(la, lo, byc[par]['no']): continue
@@ -300,7 +309,6 @@ def main():
         elif inv.get(c): why = 'T-GIS 에 옛 현시도만 있어 싣지 않음 — 교통과 확인 필요'
         elif '경보' in nm: why = '경보(점멸) 신호 — 신호 계획표가 없는 곳'
         elif par and par != c: why = '딸린 신호(연등) — 부모 교차로의 계획을 아직 싣지 못함'
-        elif gu in (590, 620, 11590, 11620) and pe not in (340, 380): why = '현시도 판독 대기(받는 중)'
         else: why = 'T-GIS 에 현시도 파일이 없음 — 교통과 확인 필요'
         miss.append([str(cits or ''), c, nm, la, lo, why])
     doc = {'schema': 'tg-sig-tgis/2', 'made': datetime.date.today().isoformat(),

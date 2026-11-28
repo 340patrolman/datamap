@@ -11,7 +11,7 @@ import json, os, glob, re, sys, datetime
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KB = os.path.join(os.path.dirname(ROOT), '07_API키', '신호앱')
 # 받은 묶음(구역)마다 원본 폴더 · 2차 판독 폴더를 한 줄씩 늘린다
-BATCH = [('tgis_20261128', 'p2_t1128'), ('tgis_20261128_djgn', 'p2_djgn')]
+BATCH = [('tgis_20261128', 'p2_t1128'), ('tgis_20261128_djgn', 'p2_djgn'), ('tgis_20261128_gangnam', 'p2_gn')]
 P2 = [os.path.join(KB, 'tgis_read', b[1]) for b in BATCH]
 ORIG = [os.path.join(KB, '교통과_원본', b[0]) for b in BATCH]
 OUT = os.path.join(ROOT, 'data', 'sig-tgis-plan.json')
@@ -315,7 +315,7 @@ def main():
             if L: inv[int(k)] = len(L)
     for r in T['items']:
         c, nm, la, lo, par, pe, cits, gu = r[:8]
-        if not (pe in (340, 380) or gu in (590, 620, 11590, 11620)): continue
+        if not (pe in (340, 380) or gu in (590, 620, 680, 11590, 11620, 11680)): continue
         if par and par != c and not cits and par in byc and same_sig(la, lo, byc[par]['no']): continue
         if c in havec or (cits and str(cits) in haven) or any(abs(a - la) < 0.0004 and abs(b - lo) < 0.0005 and ((a - la) * 111000) ** 2 + ((b - lo) * 88400) ** 2 <= 900 for a, b in have): continue
         w = why_f.get(str(c), '')
